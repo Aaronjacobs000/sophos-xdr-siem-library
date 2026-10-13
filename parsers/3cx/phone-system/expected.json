@@ -1,0 +1,204 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT > THREECX_PBX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805211523000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx.example.com",
+      "vendor": "3CX",
+      "summary": "The IP 198.51.100.7 has been blacklisted for 86400 sec. (Expires at: 13/10/2026 11:40:11). Reason: too many failed authentication attempts",
+      "alert_id": "4101",
+      "target_host_name": "pbx.example.com",
+      "title": "IP address blacklisted by 3CX anti-hacking",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "alert_category": "SIP Server",
+      "source_address": "198.51.100.7",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "12290"
+          },
+          {
+            "key": "group_name",
+            "value": "System wide"
+          },
+          {
+            "key": "blacklist_seconds",
+            "value": "86400"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT > THREECX_PBX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805290008000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx.example.com",
+      "vendor": "3CX",
+      "summary": "The IP 203.0.113.45 has been blacklisted for 3600 sec. Reason: requests rate is too high!",
+      "alert_id": "4102",
+      "target_host_name": "pbx.example.com",
+      "title": "IP address blacklisted by 3CX anti-hacking",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "alert_category": "SIP Server",
+      "source_address": "203.0.113.45",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "12292"
+          },
+          {
+            "key": "group_name",
+            "value": "System wide"
+          },
+          {
+            "key": "blacklist_seconds",
+            "value": "3600"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT > THREECX_PBX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805442341000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx.example.com",
+      "vendor": "3CX",
+      "summary": "Call from [Ext.105] to [+88216001234] has been rejected by the 3CX Country Blocking Feature [+882].\r\nReason: +88216001234 contains Prefix  +882. Calls to +882 are not allowed by system.\r\nResolution: To allow this call, go to your 3CX Admin Console and navigate to Admin > Advanced > Allowed Country Codes and enable the country or continent that matches this prefix.",
+      "alert_id": "4103",
+      "target_host_name": "pbx.example.com",
+      "title": "Call blocked by 3CX Country Blocking",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "alert_category": "Call Manager",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "12296"
+          },
+          {
+            "key": "group_name",
+            "value": "System wide"
+          },
+          {
+            "key": "caller",
+            "value": "Ext.105"
+          },
+          {
+            "key": "called_number",
+            "value": "+88216001234"
+          },
+          {
+            "key": "blocked_prefix",
+            "value": "+882"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT > THREECX_PBX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805611772000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx.example.com",
+      "vendor": "3CX",
+      "summary": "Administrator password recovery has been requested.",
+      "alert_id": "4104",
+      "target_host_name": "pbx.example.com",
+      "title": "3CX administrator password recovery requested",
+      "vendor_severity": "Info",
+      "severity": "LOW",
+      "alert_category": "Web Manager",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "10028"
+          },
+          {
+            "key": "group_name",
+            "value": "System wide"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT > THREECX_PBX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805635119000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx.example.com",
+      "vendor": "3CX",
+      "summary": "The IP 198.51.100.88 has been blacklisted for 3600 sec. Reason: requests rate is too high!",
+      "alert_id": "4105",
+      "target_host_name": "pbx.example.com",
+      "title": "IP address blacklisted by 3CX anti-hacking",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "alert_category": "SIP Server",
+      "source_address": "198.51.100.88",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "12292"
+          },
+          {
+            "key": "group_name",
+            "value": "System wide"
+          },
+          {
+            "key": "blacklist_seconds",
+            "value": "3600"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "THREECX_PBX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "3CX",
+      "event_time_usec": 1791805847077000,
+      "host_id": "pbx.example.com"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
