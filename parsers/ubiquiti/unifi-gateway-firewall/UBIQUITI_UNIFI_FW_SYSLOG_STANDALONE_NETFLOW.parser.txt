@@ -1,0 +1,70 @@
+!SAMPLE=<4>Oct 12 22:40:11 UDM-Pro [WAN_LOCAL-D-2147483647] DESCR="Block all to gateway" IN=eth8 OUT= MAC=00:00:5e:00:53:01:00:00:5e:00:53:fe:08:00 SRC=198.51.100.23 DST=203.0.113.2 LEN=60 TOS=00 PREC=0x00 TTL=50 ID=0 DF PROTO=TCP SPT=51544 DPT=22 SEQ=1234567890 ACK=0 WINDOW=64240 SYN URGP=0
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\[[A-Z0-9_]+-[A-Z]+-\d+\]\s+(?:DESCR="[^"]*"\s+)?IN=\S*\s+OUT=\S*\s+(?:MAC=\S*\s+)?SRC=\S+\s+DST=\S+\s+LEN=\d+\s.*PROTO=
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Ubiquiti UniFi gateways (UDM, UCG, UXG, USG), firewall rule logs over syslog to the
+# data collector (CyberSecure > Traffic Logging, with Syslog Logging on each rule to log).
+# Standalone parser for the Netflow schema. The native UniFi integration only reads the IDS/IPS
+# CEF records, which this parser doesn't match. Lines use the Linux netfilter LOG format:
+#   [<chain>-<action>-<rule id>] DESCR="<rule description>" IN=<if> OUT=<if> MAC=<dst><src><type> SRC=<ip> DST=<ip> LEN=<n> ... PROTO=<proto> [SPT=<port> DPT=<port>] ...
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+
+m = originalData$|^(?:<\d{1,3}>)?(?:(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+)?(?P<host>[^\s\[]+)\s+(?:[\w.-]+(?:\[\d+\])?:\s+(?:\[\s*\d+\.\d+\]\s+)?)?\[(?P<rule>(?P<chain>[A-Z0-9_]+)-(?P<act>[A-Z]+)-(?P<id>\d+))\]\s+(?:DESCR="(?P<descr>[^"]*)"\s+)?IN=(?P<in>\S*)\s+OUT=(?P<out>\S*)\s+(?:MAC=(?P<mac>\S*)\s+)?SRC=(?P<src>\S+)\s+DST=(?P<dst>\S+)\s+LEN=(?P<len>\d+)\s.*?PROTO=(?P<proto>\S+)(?:.*?\sSPT=(?P<sport>\d+)\s+DPT=(?P<dport>\d+))?
+
+sensorType$ = "UniFi Gateway"
+hostId$ = m["host"]
+# The BSD syslog time has no year and no zone: DATETIME picks the year (TRUE) and reads UTC.
+eventTimeUsec$ = DATETIME(m["time"], "Jan _2 15:04:05", TRUE)
+
+sourceAddress$ = m["src"]
+destinationAddress$ = m["dst"]
+sourcePort$ = m["sport"]
+destinationPort$ = m["dport"]
+
+proto = UPPERCASE(m["proto"])
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+
+# MAC= is the destination MAC, the source MAC and the EtherType, run together.
+mac = m["mac"]|^(?:[0-9a-fA-F]{2}:){6}(?P<src>(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})
+sourceMac$ = mac["src"]
+
+# The middle of the rule tag is the action: D drops, A accepts. Rules whose description starts
+# with Block or Allow are read from that when the tag has neither.
+act = m["act"]
+descr = LOWERCASE(m["descr"])
+blockWord = descr|^(?:block|drop|reject|deny)
+allowWord = descr|^(?:allow|accept|permit)
+flowAction$ = NULL
+flowAction$ = IF allowWord[0] != "" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF blockWord[0] != "" THEN "FW_BLOCKED" ELSE flowAction$
+flowAction$ = IF act == "A" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "D" THEN "FW_BLOCKED" ELSE flowAction$
+
+# WAN_IN and WAN_LOCAL hold traffic from the Internet, WAN_OUT traffic to it.
+chain = m["chain"]
+direction$ = NULL
+direction$ = IF chain == "WAN_IN" OR chain == "WAN_LOCAL" THEN "INBOUND" ELSE direction$
+direction$ = IF chain == "WAN_OUT" THEN "OUTBOUND" ELSE direction$
+
+r1.key$ = "rule"
+r1.value$ = m["rule"]
+r2.key$ = "in_interface"
+r2.value$ = m["in"]
+r4.key$ = "packet_length"
+r4.value$ = m["len"]
+eventMetadata$.record$ = [r1, r2, r4]
+r3.key$ = "out_interface"
+r3.value$ = m["out"]
+eventMetadata$.record$ = IF m["out"] != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r5.key$ = "rule_description"
+r5.value$ = m["descr"]
+eventMetadata$.record$ = IF m["descr"] != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$

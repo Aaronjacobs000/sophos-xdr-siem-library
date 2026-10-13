@@ -1,0 +1,31 @@
+{
+  "vendor": "Ubiquiti",
+  "product": "UniFi Gateway firewall",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://help.ui.com/hc/en-us/articles/33349041044119-UniFi-System-Logs-SIEM-Integration",
+    "https://go2docs.graylog.org/illuminate-current/content_packs/ubiquiti_unifi_content_pack.htm",
+    "https://docs.securityonion.net/en/2.4/unifi.html",
+    "https://docs.wirespeed.co/integrations/unifi",
+    "https://ipset.netfilter.org/iptables-extensions.man.html"
+  ],
+  "notes": "For UniFi gateway firewall rule logs (CyberSecure > Traffic Logging to the data collector, with Syslog Logging turned on for each rule to log). The native UniFi integration reads only the IDS/IPS CEF records; this entry adds the firewall lines, to Netflow. The action comes from the rule tag (D drops, A accepts) or, failing that, a rule description that starts with Block or Allow. Ubiquiti doesn't document the firewall line itself, so samples follow the example in Graylog's UniFi content pack and the netfilter LOG fields. The BSD syslog time has no year or zone and is read as UTC. Passed Run Test in a lab tenant on 2026-10-13.",
+  "parsers": [
+    {
+      "name": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
+      "file": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.netflow"
+    }
+  ]
+}
