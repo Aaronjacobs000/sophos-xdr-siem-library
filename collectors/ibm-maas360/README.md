@@ -62,7 +62,7 @@ Exit code 0 means every report was read and sent. On an error the collector logs
 - For each report it asks for `fromDate` (the cursor minus the overlap) to `toDate` (now), in epoch milliseconds, 250 records a page from `pageNumber` 1 until a page comes back short. A single record can come back as an object rather than a list.
 - It sends the records it hasn't sent, oldest first, then moves the cursor to the newest `loginAttemptTime` or `updateDate`.
 
-IBM doesn't publish a rate limit for these reports. The collector waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`. HTTP Ingest 400, 401, 403 and 413 are not retried.
+IBM doesn't publish a rate limit for these reports. The collector waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the MaaS360 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

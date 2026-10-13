@@ -33,6 +33,8 @@ __version__ = "0.1.0"
 LOG = logging.getLogger("teamviewer_collector")
 USER_AGENT = f"parser-studio-teamviewer-collector/{__version__}"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# The opener doesn't follow these (see _NoRedirect), so the error names them as refused.
+REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 6
 SEEN_LIMIT = 20000
 MAX_REQUESTS = 10000
@@ -106,7 +108,12 @@ def _retry_delay(attempt: int, retry_after: str | None) -> float:
 
 class HttpStatus(CollectorError):
     def __init__(self, what: str, url: str, code: int):
-        super().__init__(f"{what} to {_host(url)} failed with HTTP {code}")
+        if code in REDIRECT_STATUS:
+            message = (f"{what} to {_host(url)} answered with a redirect (HTTP {code}), which the collector refuses "
+                       "so the key or token never goes to another URL; check the URL setting")
+        else:
+            message = f"{what} to {_host(url)} failed with HTTP {code}"
+        super().__init__(message)
         self.code = code
 
 

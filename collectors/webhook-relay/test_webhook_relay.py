@@ -355,6 +355,7 @@ class RelayTest(unittest.TestCase):
         self.ingest.codes = [302]
         self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", HUDU_BODY)[0], 502)
         self.assertEqual(self.ingest.other, [])
+        self.assertIn("answered with a redirect (HTTP 302), which the relay refuses", self.log.getvalue())
 
     # -------------------------------------------------------------- dry run, logging, configuration
 

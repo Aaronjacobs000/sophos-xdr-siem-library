@@ -342,7 +342,7 @@ class CollectorTest(unittest.TestCase):
                         r.followed.clear()
                         if os.path.exists(self.state):
                             os.remove(self.state)
-                        with self.assertRaises(c.CollectorError):
+                        with self.assertRaisesRegex(c.CollectorError, rf"answered with a redirect \(HTTP {code}\), which the collector refuses"):
                             c.run_once(cfg)
                         self.assertEqual(len(r.redirected), 1)
                         self.assertEqual(r.followed, [])
