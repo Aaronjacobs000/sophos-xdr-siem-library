@@ -70,7 +70,7 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
   if (typeof meta.author !== 'string' || !HANDLE.test(meta.author)) err('meta', 'author must be a GitHub handle, without the @');
   if (!LICENSES.includes(meta.license)) err('meta', `license must be one of ${LICENSES.join(', ')}`);
   if (!SAMPLE_SOURCES.includes(meta.sample_source)) err('meta', `sample_source must be ${SAMPLE_SOURCES.join(' or ')}. Customer logs, even sanitized, are not accepted.`);
-  if (typeof meta.reference_time !== 'string' || Number.isNaN(Date.parse(meta.reference_time))) err('meta', 'reference_time must be an ISO date and time (the emulator uses it for log times with no year)');
+  if (typeof meta.reference_time !== 'string' || Number.isNaN(Date.parse(meta.reference_time))) err('meta', 'reference_time must be an ISO date and time, no earlier than the samples (the emulator uses it as the ingest time and for log times with no year)');
   if (!meta.tested || typeof meta.tested !== 'object') err('meta', 'tested must be an object like {"emulator": "0.1.0", "tenant": null}');
   else if (meta.tested.tenant !== null && meta.tested.tenant !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(meta.tested.tenant)) err('meta', 'tested.tenant must be null or the date (YYYY-MM-DD) the parsers passed Run Test in a tenant');
   if (meta.docs !== undefined && (!Array.isArray(meta.docs) || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u)))) err('meta', 'docs must be a list of https links to the vendor\'s public log format docs');

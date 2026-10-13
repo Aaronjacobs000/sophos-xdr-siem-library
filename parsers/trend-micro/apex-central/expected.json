@@ -472,7 +472,8 @@
     "schema": "scwx.generic",
     "normalized": {
       "sensor_type": "Trend Micro Apex Central",
-      "host_id": "APEXONE01"
+      "host_id": "APEXONE01",
+      "event_time_usec": 1791936000000000
     }
   }
 ]

@@ -628,7 +628,8 @@
     "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT",
     "schema": "scwx.generic",
     "normalized": {
-      "sensor_type": "Bitdefender GravityZone"
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791936000000000
     }
   }
 ]
