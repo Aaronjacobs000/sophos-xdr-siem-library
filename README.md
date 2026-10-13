@@ -46,7 +46,7 @@ parsers/eset/eset-protect-on-prem/
 
 The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
 
-It starts with parsers for ESET PROTECT On-Prem (JSON), Suricata EVE JSON, OpenSSH sshd, Squid access logs and dnsmasq queries. Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
+It has parsers for 3CX, DrayTek Vigor, dnsmasq, ESET PROTECT On-Prem (JSON), MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Squid, Suricata EVE JSON, Synology DSM, UniFi gateway firewall logs and VMware ESXi. Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
 
 ## Contributing
 
