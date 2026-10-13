@@ -1,0 +1,41 @@
+!SAMPLE=<6>date=2026-10-13 time=01:24:32 device_id=FEVM020000123456 log_id=0100000924 type=virus subtype=infected pri=information from="invoices@example.org" to="jdoe@example.com" src=203.0.113.9 session_id="49DE1A2B000401-49DE1A2B000402" msg="The file invoice_1013.zip is infected with EICAR_TEST_FILE."
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="virus"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fortinet FortiMail remote logging (key=value).
+# Child of FORTINET_FORTIMAIL_KV_PARENT: antivirus (type=virus) logs to Antivirus. The action
+# taken is in the matching history log (same session_id), not here.
+# kv, client, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# msg: "The file <file> is infected with <virus>." virus_name is new in 8.0.
+msg = STRING(kv["msg"])
+mm = msg|^The file (?P<file>.+?) is infected with (?P<virus>.+?)\.?$
+threatName$ = IF STRING(kv["virus_name"]) != "" THEN kv["virus_name"] ELSE mm["virus"]
+filePath$ = IF mm["file"] != "" THEN mm["file"] ELSE NULL
+vendorAlertType$ = kv["subtype"]
+threatType$ = "FILE"
+sub = LOWERCASE(STRING(kv["subtype"]))
+threatCategory$ = NULL
+threatCategory$ = IF sub == "infected" THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF sub == "malware-outbreak" THEN "MALWARE" ELSE threatCategory$
+threatCategory$ = IF sub == "fortisandbox" OR sub == "fortindr" THEN "AI_DETECTION" ELSE threatCategory$
+
+r1.key$ = "session_id"
+r1.value$ = STRING(kv["session_id"])
+r2.key$ = "log_id"
+r2.value$ = STRING(kv["log_id"])
+r3.key$ = "from"
+r3.value$ = STRING(kv["from"])
+r4.key$ = "to"
+r4.value$ = STRING(kv["to"])
+r5.key$ = "client_ip"
+r5.value$ = client
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]
+sig = STRING(kv["signature_id"])
+r6.key$ = "signature_id"
+r6.value$ = sig
+eventMetadata$.record$ = IF sig != "" AND sig != "0" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
