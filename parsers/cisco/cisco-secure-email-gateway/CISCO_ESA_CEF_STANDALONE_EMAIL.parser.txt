@@ -1,0 +1,176 @@
+!SAMPLE=<22>Oct 13 01:05:12 consolidated_event: CEF:0|Cisco|C300V Secure Email Gateway Virtual|16.0.2-112|ESA_CONSOLIDATED_LOG_EVENT|Consolidated Log Event|5|deviceExternalId=4215DA06E2F3F6D98116-2AADF0566001 ESAMID=48211 ESAICID=90433 ESADCID=77120 ESAAMPVerdict=CLEAN ESAASVerdict=NEGATIVE ESAAVVerdict=NEGATIVE ESACFVerdict=NO_MATCH end=Tue Oct 13 01:05:11 2026 ESADLPVerdict=NOT_EVALUATED dvc=192.0.2.25 ESAFriendlyFrom=Accounts <accounts@example.net> ESAGMVerdict=NEGATIVE start=Tue Oct 13 01:05:09 2026 deviceInboundInterface=IncomingMail deviceDirection=0 ESAMailFlowPolicy=ACCEPT suser=bounce-0921@example.net cs1Label=MailPolicy cs1=DEFAULT cs2Label=SenderCountry cs2=Australia ESAMFVerdict=NO_MATCH act=DELIVERED cs4Label=ExternalMsgID cs4='<20261013010509.4821@mail.example.net>' ESAMsgSize=48210 ESAOFVerdict=NEGATIVE duser=jdoe@example.com ESAHeloDomain=mail.example.net ESAHeloIP=198.51.100.23 cfp1Label=SBRSScore cfp1=2.1 shost=mail.example.net ESASenderGroup=UNKNOWNLIST src=198.51.100.23 msg='Invoice 0921 for October' ESASPFVerdict={'mailfrom': {'result': 'Pass', 'sender': 'bounce-0921@example.net'}, 'helo': {'result': 'None', 'sender': 'postmaster'}, 'pra': {'result': 'Pass', 'sender': 'accounts@example.net'}} ESADKIMVerdict=pass ESADMARCVerdict=pass
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:0\|Cisco\|[^|]*\|[^|]*\|ESA_CONSOLIDATED_LOG_EVENT\|
+!SCHEMA=scwx.email
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Secure Email Gateway (ESA) Consolidated Event Logs, CEF over syslog push to the
+# data collector. One line per message, written at its final disposition.
+# Standalone parser for the Email schema. Text mail logs (mail_logs) are not covered.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from the Python-style values ESA writes.
+# The admin picks which fields the subscription writes and their order, so every key is optional.
+
+v = CEF(originalData$)
+sensorType$ = "Cisco Secure Email Gateway"
+sensorVersion$ = v[3]
+# The appliance serial number identifies the gateway.
+hostId$ = v["deviceExternalId"]
+
+# Event time: the delivery (DCID) time, else the connection (ICID) time, else the syslog header.
+# AsyncOS 14 and earlier write endTime and startTime. ESA writes the appliance's local time
+# with no zone, so it is read as UTC.
+t = STRING(v["end"])
+t = IF t == "" THEN STRING(v["endTime"]) ELSE t
+t = IF t == "" THEN STRING(v["EndTime"]) ELSE t
+t = IF t == "" THEN STRING(v["start"]) ELSE t
+t = IF t == "" THEN STRING(v["startTime"]) ELSE t
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s
+eventTimeUsec$ = IF t != "" THEN DATETIME(t, "Mon Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+eventTimeUsec$ = IF t == "" AND hdr["time"] != "" THEN DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+# suser is the envelope sender (Mail From); ESAFriendlyFrom, the header From, goes to event_metadata.
+fromEmailAddress$ = v["suser"]
+rcpt = STRING(v["duser"])
+toEmailAddress$ = IF rcpt != "" THEN SPLIT(rcpt, ";") ELSE NULL
+
+# ESA quotes the subject and Message-ID Python style: '...', or "..." when the value has a '.
+subj = STRING(v["msg"])
+sq = subj|^'(?P<s>.*)'$
+dq = subj|^"(?P<s>.*)"$
+subject$ = v["msg"]
+subject$ = IF dq["s"] != "" THEN dq["s"] ELSE subject$
+subject$ = IF sq["s"] != "" THEN sq["s"] ELSE subject$
+mid = STRING(v["ExternalMsgID"])
+midm = mid|^['"]?<?(?P<id>[^'"<>]+)>?['"]?$
+messageId$ = midm["id"]
+
+size = STRING(v["ESAMsgSize"])
+messageSize$ = IF size != "" THEN INT(size, 10) ELSE NULL
+senderIp$ = v["src"]
+senderIp$ = IF STRING(v["src"]) == "" THEN v["sourceAddress"] ELSE senderIp$
+
+dir = STRING(v["deviceDirection"])
+direction$ = NULL
+direction$ = IF dir == "0" THEN "INBOUND" ELSE direction$
+direction$ = IF dir == "1" THEN "OUTBOUND" ELSE direction$
+
+# act is the final action: DELIVERED, QUARANTINED, DQ (delayed quarantine), DROPPED or BOUNCED.
+act = UPPERCASE(STRING(v["act"]))
+details = STRING(v["ESAFinalActionDetails"])
+status$ = NULL
+status$ = IF act == "DELIVERED" THEN "DELIVERED" ELSE status$
+status$ = IF act == "QUARANTINED" OR act == "DQ" THEN "QUARANTINED" ELSE status$
+status$ = IF act == "DROPPED" OR act == "BOUNCED" THEN "BLOCKED" ELSE status$
+quarantineReason$ = IF status$ == "QUARANTINED" AND details != "" THEN details ELSE NULL
+
+# The first attachment's name and SHA-256 come from ESAAttachmentDetails, a Python-style dict:
+#   {'<file name>': {'AMP': {'Verdict': '...', 'fileHash': '<sha256>'}, 'BodyScanner': {'fsize': <bytes>}}}
+attText = STRING(v["ESAAttachmentDetails"])
+attName = attText|^\{'(?P<name>[^']+)':
+attSha = attText|'fileHash':\s*'(?P<sha>[0-9A-Fa-f]{64})'
+attSize = attText|'fsize':\s*(?P<size>\d+)
+a1.fileName$ = attName["name"]
+a1.fileSize$ = IF attSize["size"] != "" THEN INT(attSize["size"], 10) ELSE NULL
+# A separate record with the hash, so a file with no hash has no empty file_hash.
+a2.fileName$ = attName["name"]
+a2.fileSize$ = a1.fileSize$
+a2.fileHash$.sha256$ = attSha["sha"]
+attList = []
+attList = IF attName["name"] != "" THEN [a1] ELSE attList
+attList = IF attName["name"] != "" AND attSha["sha"] != "" THEN [a2] ELSE attList
+attachments$ = attList
+
+# One threat per engine that flagged the message.
+av = UPPERCASE(STRING(v["ESAAVVerdict"]))
+amp = UPPERCASE(STRING(v["ESAAMPVerdict"]))
+spam = UPPERCASE(STRING(v["ESAASVerdict"]))
+of = UPPERCASE(STRING(v["ESAOFVerdict"]))
+dlp = UPPERCASE(STRING(v["ESADLPVerdict"]))
+t_av.name$ = "Anti-Virus"
+t_av.type$ = "virus"
+t_av.classification$ = av
+t_amp.name$ = "AMP"
+t_amp.type$ = "malware"
+t_amp.classification$ = amp
+t_spam.name$ = "Anti-Spam"
+t_spam.type$ = "spam"
+t_spam.classification$ = spam
+t_of.name$ = "Outbreak Filters"
+t_of.type$ = "outbreak"
+t_of.classification$ = of
+t_dlp.name$ = "DLP"
+t_dlp.type$ = "data loss"
+t_dlp.classification$ = dlp
+found = []
+found = IF av == "POSITIVE" THEN found + [t_av] ELSE found
+found = IF amp == "MALICIOUS" OR amp == "LOW_RISK" THEN found + [t_amp] ELSE found
+found = IF spam == "POSITIVE" OR spam == "SUSPECT" THEN found + [t_spam] ELSE found
+found = IF of == "POSITIVE" THEN found + [t_of] ELSE found
+found = IF dlp == "VIOLATION" THEN found + [t_dlp] ELSE found
+threats$ = found
+
+# Everything else ESA reports goes to event_metadata when it is present.
+m1.key$ = "esa_mid"
+m1.value$ = STRING(v["ESAMID"])
+m2.key$ = "esa_icid"
+m2.value$ = STRING(v["ESAICID"])
+m3.key$ = "final_action"
+m3.value$ = act
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "esa_dcid"
+m4.value$ = STRING(v["ESADCID"])
+eventMetadata$.record$ = IF STRING(v["ESADCID"]) != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "final_action_details"
+m5.value$ = details
+eventMetadata$.record$ = IF details != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "friendly_from"
+m6.value$ = STRING(v["ESAFriendlyFrom"])
+eventMetadata$.record$ = IF STRING(v["ESAFriendlyFrom"]) != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "spam_verdict"
+m7.value$ = spam
+eventMetadata$.record$ = IF spam != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "av_verdict"
+m8.value$ = av
+eventMetadata$.record$ = IF av != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "amp_verdict"
+m9.value$ = amp
+eventMetadata$.record$ = IF amp != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "outbreak_verdict"
+m10.value$ = of
+eventMetadata$.record$ = IF of != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "dmarc_verdict"
+m11.value$ = STRING(v["ESADMARCVerdict"])
+eventMetadata$.record$ = IF STRING(v["ESADMARCVerdict"]) != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "dkim_verdict"
+m12.value$ = STRING(v["ESADKIMVerdict"])
+eventMetadata$.record$ = IF STRING(v["ESADKIMVerdict"]) != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+spf = STRING(v["ESASPFVerdict"])
+spfm = spf|'mailfrom':\s*\{[^}]*'result':\s*'(?P<r>[^']*)'
+m13.key$ = "spf_mailfrom_result"
+m13.value$ = spfm["r"]
+eventMetadata$.record$ = IF spfm["r"] != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+m14.key$ = "sender_group"
+m14.value$ = STRING(v["ESASenderGroup"])
+eventMetadata$.record$ = IF STRING(v["ESASenderGroup"]) != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$
+m15.key$ = "mail_flow_policy"
+m15.value$ = STRING(v["ESAMailFlowPolicy"])
+eventMetadata$.record$ = IF STRING(v["ESAMailFlowPolicy"]) != "" THEN eventMetadata$.record$ + [m15] ELSE eventMetadata$.record$
+m16.key$ = "mail_policy"
+m16.value$ = STRING(v["MailPolicy"])
+eventMetadata$.record$ = IF STRING(v["MailPolicy"]) != "" THEN eventMetadata$.record$ + [m16] ELSE eventMetadata$.record$
+# cfp1 (labelled SBRSScore) is read by its key: CEF() resolves csN labels but not cfpN labels.
+sbrs = STRING(v["cfp1"])
+m17.key$ = "sbrs_score"
+m17.value$ = sbrs
+eventMetadata$.record$ = IF sbrs != "" AND sbrs != "not enabled" THEN eventMetadata$.record$ + [m17] ELSE eventMetadata$.record$
+shost = STRING(v["shost"])
+shost = IF shost == "" THEN STRING(v["sourceHostName"]) ELSE shost
+m18.key$ = "sender_host"
+m18.value$ = shost
+eventMetadata$.record$ = IF shost != "" AND shost != "unknown" THEN eventMetadata$.record$ + [m18] ELSE eventMetadata$.record$
+m19.key$ = "dlp_details"
+m19.value$ = STRING(v["ESADLPDetails"])
+eventMetadata$.record$ = IF STRING(v["ESADLPDetails"]) != "" THEN eventMetadata$.record$ + [m19] ELSE eventMetadata$.record$
