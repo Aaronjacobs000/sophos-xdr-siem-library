@@ -48,6 +48,10 @@ The studio reads the library from GitHub each time it loads, so a parser shows u
 
 It has parsers for 3CX, DrayTek Vigor, dnsmasq, ESET PROTECT On-Prem (JSON), MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Squid, Suricata EVE JSON, Synology DSM, UniFi gateway firewall logs and VMware ESXi. Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
 
+## Collectors
+
+Some sources only offer a pull API, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs and send each record to a Sophos NG-SIEM HTTP Ingest integration. [collectors/ai-compliance-logs](collectors/ai-compliance-logs/) covers the OpenAI and Anthropic enterprise compliance logs. Collectors are tested against the vendors' documented response shapes, not live services.
+
 ## Contributing
 
 Use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. [CONTRIBUTING.md](CONTRIBUTING.md) has the details, including how to work from a git clone.

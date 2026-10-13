@@ -25,3 +25,5 @@ jobs:
         run: node tools/validate-library.mjs --all
       - name: Build the site
         run: node tools/build-site.mjs
+      - name: Collector tests
+        run: python3 -m unittest discover -s collectors/ai-compliance-logs -p 'test_*.py' -v
