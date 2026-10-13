@@ -1,0 +1,23 @@
+!SAMPLE={"ondmarc_record":"dmarc_guardian_issue","issue":{"issueId":40211,"issueType":"dangling-cname","definitionId":"dangling-cname-v2","subjectDomain":"promo.example.com","causeDomain":"promo-site.example.net","title":"Dangling CNAME to an unclaimed hosting resource","severity":"high","createdOn":"2026-10-12T22:15:04Z","lastUpdated":"2026-10-13T01:02:03Z","details":{"@type":"dangling","status":"NXDOMAIN","rrType":"CNAME"},"affectedRecord":{"name":"promo.example.com","type":"CNAME","value":"promo-site.example.net"}},"dns":{"a":[],"aaaa":[],"mx":[],"spf":[],"dmarc":"","hasPublicIp":false},"notes":"","relatedTo":"example.com","domain":"example.com"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"ondmarc_record"\s*:\s*"(?:dmarc_guardian_issue|dns_history|aggregate_record)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Red Sift OnDMARC API v2 records, pulled by the example collector in
+# collectors/red-sift-ondmarc and posted to HTTP Ingest as JSON lines. OnDMARC has no syslog
+# or documented push format, so the collector names each record in "ondmarc_record":
+#   dmarc_guardian_issue  an issue from GET /dmarc-guardian
+#   dns_history           a DNS record change from GET /dns-history
+#   aggregate_record      a DMARC aggregate report row from GET /reports/aggregate/analyst
+# Parent: hands Guardian issues and DNS changes to the third-party alert child and aggregate
+# report rows to the Email child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Red Sift OnDMARC"
+eventType$ = json["$.ondmarc_record"]

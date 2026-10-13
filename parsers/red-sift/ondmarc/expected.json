@@ -1,0 +1,349 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791853323000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Red Sift",
+      "provider": "OnDMARC DMARC Guardian",
+      "title": "Dangling CNAME to an unclaimed hosting resource",
+      "alert_category": "dangling-cname",
+      "alert_id": "40211",
+      "domain_name": "promo.example.com",
+      "summary": "promo.example.com CNAME promo-site.example.net",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "created_time_usec": 1791843304000000,
+      "updated_time_usec": 1791853323000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "record",
+            "value": "dmarc_guardian_issue"
+          },
+          {
+            "key": "account_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "cause_domain",
+            "value": "promo-site.example.net"
+          },
+          {
+            "key": "record_name",
+            "value": "promo.example.com"
+          },
+          {
+            "key": "record_type",
+            "value": "CNAME"
+          },
+          {
+            "key": "record_value",
+            "value": "promo-site.example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791852011000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Red Sift",
+      "provider": "OnDMARC DMARC Guardian",
+      "title": "SPF include points at a domain anyone can register",
+      "alert_category": "spf-subdomain-takeover",
+      "alert_id": "40217",
+      "domain_name": "mail.example.com",
+      "summary": "mail.example.com TXT v=spf1 include:old-relay.example.org -all",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "created_time_usec": 1791852011000000,
+      "updated_time_usec": 1791852011000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "record",
+            "value": "dmarc_guardian_issue"
+          },
+          {
+            "key": "account_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "cause_domain",
+            "value": "old-relay.example.org"
+          },
+          {
+            "key": "record_name",
+            "value": "mail.example.com"
+          },
+          {
+            "key": "record_type",
+            "value": "TXT"
+          },
+          {
+            "key": "record_value",
+            "value": "v=spf1 include:old-relay.example.org -all"
+          },
+          {
+            "key": "notes",
+            "value": "Raised with the mail team"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791854100000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Red Sift",
+      "provider": "OnDMARC",
+      "title": "DNS DMARC record changed for example.com",
+      "alert_category": "dns_history",
+      "alert_id": "dh-88412",
+      "domain_name": "example.com",
+      "summary": "p=reject changed to p=none",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "record",
+            "value": "dns_history"
+          },
+          {
+            "key": "account_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "protocol",
+            "value": "dmarc"
+          },
+          {
+            "key": "record_type",
+            "value": "TXT"
+          },
+          {
+            "key": "value",
+            "value": "v=DMARC1; p=none; rua=mailto:dmarc@example.com"
+          },
+          {
+            "key": "previous_value",
+            "value": "v=DMARC1; p=reject; rua=mailto:dmarc@example.com"
+          },
+          {
+            "key": "change_types",
+            "value": "[\"policy_downgrade\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791855100000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Red Sift",
+      "provider": "OnDMARC",
+      "title": "DNS SPF record changed for example.org",
+      "alert_category": "dns_history",
+      "alert_id": "dh-88419",
+      "domain_name": "example.org",
+      "summary": "ip4:198.51.100.0/24 added",
+      "vendor_severity": "low",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "record",
+            "value": "dns_history"
+          },
+          {
+            "key": "account_domain",
+            "value": "example.org"
+          },
+          {
+            "key": "protocol",
+            "value": "spf"
+          },
+          {
+            "key": "record_type",
+            "value": "TXT"
+          },
+          {
+            "key": "value",
+            "value": "v=spf1 include:_spf.example.net ip4:198.51.100.0/24 -all"
+          },
+          {
+            "key": "previous_value",
+            "value": "v=spf1 include:_spf.example.net -all"
+          },
+          {
+            "key": "change_types",
+            "value": "[\"mechanism_added\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791763200000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "aggregate_record",
+      "sender_ip": "203.0.113.77",
+      "from_email_address": [
+        "example.com"
+      ],
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "DMARC failure",
+          "type": "spoofing",
+          "classification": "unknown"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "email_volume",
+            "value": "42"
+          },
+          {
+            "key": "dmarc_result",
+            "value": "fail"
+          },
+          {
+            "key": "dkim_result",
+            "value": "fail"
+          },
+          {
+            "key": "spf_result",
+            "value": "fail"
+          },
+          {
+            "key": "source",
+            "value": "Unknown source"
+          },
+          {
+            "key": "reporter",
+            "value": "Example Mail Receiver"
+          },
+          {
+            "key": "report_id",
+            "value": "rpt-20261012-7731"
+          },
+          {
+            "key": "policy",
+            "value": "reject"
+          },
+          {
+            "key": "classification",
+            "value": "unknown"
+          },
+          {
+            "key": "monitored_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "source_country",
+            "value": "BR"
+          },
+          {
+            "key": "envelope_from",
+            "value": "example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "REDSIFT_ONDMARC_JSON_PARENT > REDSIFT_ONDMARC_JSON_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Red Sift OnDMARC",
+      "event_time_usec": 1791763200000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "aggregate_record",
+      "sender_ip": "198.51.100.40",
+      "from_email_address": [
+        "example.com"
+      ],
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "email_volume",
+            "value": "1310"
+          },
+          {
+            "key": "dmarc_result",
+            "value": "pass"
+          },
+          {
+            "key": "dkim_result",
+            "value": "pass"
+          },
+          {
+            "key": "spf_result",
+            "value": "pass"
+          },
+          {
+            "key": "source",
+            "value": "Microsoft 365"
+          },
+          {
+            "key": "reporter",
+            "value": "Example Mail Receiver"
+          },
+          {
+            "key": "report_id",
+            "value": "rpt-20261012-7731"
+          },
+          {
+            "key": "policy",
+            "value": "reject"
+          },
+          {
+            "key": "classification",
+            "value": "valid"
+          },
+          {
+            "key": "monitored_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "source_country",
+            "value": "AU"
+          },
+          {
+            "key": "envelope_from",
+            "value": "example.com"
+          }
+        ]
+      }
+    }
+  }
+]
