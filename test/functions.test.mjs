@@ -185,3 +185,12 @@ test('IF, AND and OR fail on a list of two or more', () => {
   const v = run('one = SPLIT("x", ",")\na = IF one THEN "y" ELSE "n"\nb = IF [] THEN "y" ELSE "n"\njson = JSON(d)\nc = IF json["$.none"] THEN "y" ELSE "n"\ne = IF json["$.obj"] THEN "y" ELSE "n"\nf = IF LENGTH(SPLIT("a,b", ",")) > 0 THEN "y" ELSE "n"', { d: '{"none":[],"obj":{"k":"v"}}' });
   assert.deepEqual(['a', 'b', 'c', 'e', 'f'].map((k) => v.get(k)), ['y', 'n', 'n', 'y', 'y']);
 });
+
+test('AND and OR evaluate both sides', () => {
+  assert.throws(() => run('x = FALSE AND INT("abc", 10) == 1'), /INT could not read/);
+  assert.throws(() => run('x = TRUE OR INT("abc", 10) == 1'), /INT could not read/);
+  // IF still runs only the branch it takes.
+  assert.equal(get('x = IF FALSE THEN INT("abc", 10) ELSE 1', 'x'), 1);
+  const v = run('a = FALSE AND TRUE\nb = TRUE OR FALSE');
+  assert.deepEqual([v.get('a'), v.get('b')], [false, true]);
+});
