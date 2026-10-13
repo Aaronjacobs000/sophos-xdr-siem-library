@@ -4,6 +4,7 @@
   "versions": [],
   "format": "kv",
   "ship_method": "http-ingest",
+  "collector": "collectors/webhook-relay",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
