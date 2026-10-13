@@ -1,0 +1,433 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791853960000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.24",
+      "source_nat_address": "192.0.2.10",
+      "source_nat_port": 41822,
+      "destination_address": "192.0.2.80",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Intranet portal",
+      "tx_byte_count": 517,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791853960118000,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "open"
+          },
+          {
+            "key": "session_id",
+            "value": "kqzrwtmvbx"
+          },
+          {
+            "key": "connection_id",
+            "value": "kqzrwtmvbx,pdlwqnfhzj"
+          },
+          {
+            "key": "host",
+            "value": "intranet.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Internal web apps"
+          },
+          {
+            "key": "service_port",
+            "value": "443"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Allow engineering"
+          },
+          {
+            "key": "app_connector",
+            "value": "AC-SYD-01"
+          },
+          {
+            "key": "client_private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791854342000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.24",
+      "source_nat_address": "192.0.2.10",
+      "source_nat_port": 41822,
+      "destination_address": "192.0.2.80",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Intranet portal",
+      "tx_byte_count": 48210,
+      "rx_byte_count": 1873402,
+      "start_timestamp_usec": 1791853960118000,
+      "end_timestamp_usec": 1791854341774000,
+      "connection_end_reason": "BRK_MT_CLOSED_FROM_CLIENT",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "kqzrwtmvbx"
+          },
+          {
+            "key": "connection_id",
+            "value": "kqzrwtmvbx,pdlwqnfhzj"
+          },
+          {
+            "key": "host",
+            "value": "intranet.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Internal web apps"
+          },
+          {
+            "key": "service_port",
+            "value": "443"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Allow engineering"
+          },
+          {
+            "key": "app_connector",
+            "value": "AC-SYD-01"
+          },
+          {
+            "key": "client_private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791854475000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.77",
+      "destination_port": 3389,
+      "protocol": 6,
+      "application_name": "Finance servers",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791854475402000,
+      "end_timestamp_usec": 1791854475404000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "contractor7@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "vbtmhqzkrn"
+          },
+          {
+            "key": "connection_id",
+            "value": "vbtmhqzkrn,wfzqplxmte"
+          },
+          {
+            "key": "host",
+            "value": "fin-db01.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Server admin"
+          },
+          {
+            "key": "service_port",
+            "value": "3389"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Block contractors from servers"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791854691000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.53",
+      "destination_port": 53,
+      "protocol": 17,
+      "application_name": "Internal DNS",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791854691220000,
+      "end_timestamp_usec": 1791854691225000,
+      "connection_end_reason": "APP_NOT_REACHABLE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "kqzrwtmvbx"
+          },
+          {
+            "key": "connection_id",
+            "value": "kqzrwtmvbx,hsnydqkcwa"
+          },
+          {
+            "key": "host",
+            "value": "192.0.2.53"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Core services"
+          },
+          {
+            "key": "service_port",
+            "value": "53"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Allow engineering"
+          },
+          {
+            "key": "client_private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791853951000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jdoe@example.com",
+      "source_address": "203.0.113.24",
+      "session_id": "kqzrwtmvbx",
+      "auth_system": "Zscaler Private Access",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_status",
+            "value": "ZPN_STATUS_AUTHENTICATED"
+          },
+          {
+            "key": "client_type",
+            "value": "zpn_client_type_zapp"
+          },
+          {
+            "key": "client_version",
+            "value": "26.2.0-112-g4c1d2e9"
+          },
+          {
+            "key": "hostname",
+            "value": "LT-ENG-0042"
+          },
+          {
+            "key": "platform",
+            "value": "windows"
+          },
+          {
+            "key": "idp",
+            "value": "Example IdP"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "service_edge",
+            "value": "AU-NSW-4201"
+          },
+          {
+            "key": "private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791324189000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "amy@example.com",
+      "source_address": "198.51.100.140",
+      "session_id": "zdqlfmrwtp",
+      "auth_system": "Zscaler Private Access",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_status",
+            "value": "ZPN_STATUS_AUTH_FAILED"
+          },
+          {
+            "key": "client_type",
+            "value": "zpn_client_type_zapp"
+          },
+          {
+            "key": "client_version",
+            "value": "26.2.0-112-g4c1d2e9"
+          },
+          {
+            "key": "hostname",
+            "value": "LT-FIN-0017"
+          },
+          {
+            "key": "platform",
+            "value": "mac"
+          },
+          {
+            "key": "idp",
+            "value": "Example IdP"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "service_edge",
+            "value": "AU-VIC-3102"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791855043000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jdoe@example.com",
+      "source_address": "203.0.113.24",
+      "session_id": "kqzrwtmvbx",
+      "auth_system": "Zscaler Private Access",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_status",
+            "value": "ZPN_STATUS_DISCONNECTED"
+          },
+          {
+            "key": "client_type",
+            "value": "zpn_client_type_zapp"
+          },
+          {
+            "key": "client_version",
+            "value": "26.2.0-112-g4c1d2e9"
+          },
+          {
+            "key": "hostname",
+            "value": "LT-ENG-0042"
+          },
+          {
+            "key": "platform",
+            "value": "windows"
+          },
+          {
+            "key": "idp",
+            "value": "Example IdP"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "service_edge",
+            "value": "AU-NSW-4201"
+          },
+          {
+            "key": "private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  }
+]

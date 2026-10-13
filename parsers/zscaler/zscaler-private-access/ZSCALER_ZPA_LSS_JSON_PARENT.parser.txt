@@ -1,0 +1,32 @@
+!SAMPLE={"LogTimestamp": "Tue Oct 13 01:12:31 2026","Customer": "Acme","Username": "jdoe@example.com","SessionID": "kqzrwtmvbx","SessionStatus": "ZPN_STATUS_AUTHENTICATED","Version": "26.2.0-112-g4c1d2e9","ZEN": "AU-NSW-4201","CertificateCN": "cc-0001.example.com","PrivateIP": "198.51.100.24","PublicIP": "203.0.113.24","Latitude": -33.870000,"Longitude": 151.210000,"CountryCode": "AU","TimestampAuthentication": "2026-10-13T01:12:30.000Z","TimestampUnAuthentication": "","TotalBytesRx": 0,"TotalBytesTx": 0,"Idp": "Example IdP","Hostname": "LT-ENG-0042","Platform": "windows","ClientType": "zpn_client_type_zapp","TrustedNetworks": [],"TrustedNetworksNames": [],"SAMLAttributes": "department:Engineering","PosturesHit": ["Disk encrypted"],"PosturesMiss": [],"ZENLatitude": -33.860000,"ZENLongitude": 151.200000,"ZENCountryCode": "AU","FQDNRegistered": "0","FQDNRegisteredError": "","City": "Sydney","MicroTenantID": "0"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"LogTimestamp"\s*:\s*"[^"]*"\s*,\s*"Customer"\s*:.*"SessionID"\s*:\s*"[^"]*"\s*,.*"(?:ConnectionStatus|SessionStatus)"\s*:\s*"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zscaler Private Access Log Streaming Service (LSS), default JSON templates, over TCP
+# from an App Connector to the data collector.
+# Parent: recognizes User Activity and User Status records and hands them to its children.
+# LSS adds no syslog header, but a relay may add one, so the JSON is cut from the end of the line.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+jsonMatch = originalData$|(\{.*})\s*$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Zscaler Private Access"
+
+# LogTimestamp is ctime style in UTC ("Tue Oct 13 01:12:40 2026") unless the template was
+# changed to :iso8601.
+ts = STRING(json["$.LogTimestamp"])
+iso = ts|^\d{4}-\d{2}-\d{2}T
+eventTimeUsec$ = IF iso[0] != "" THEN DATETIME(ts, "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(ts, "Mon Jan _2 15:04:05 2006")
+
+# User Activity records carry ConnectionID and ConnectionStatus. User Status records carry
+# SessionStatus and CertificateCN; App Connector and Service Edge status records also carry
+# SessionStatus but add SessionType, so they stay generic.
+eventType$ = "other"
+eventType$ = IF STRING(json["$.ConnectionID"]) != "" AND STRING(json["$.ConnectionStatus"]) != "" THEN "user_activity" ELSE eventType$
+eventType$ = IF CONTAINS(STRING(json["$.SessionStatus"]), "ZPN_STATUS_") AND STRING(json["$.CertificateCN"]) != "" AND STRING(json["$.SessionType"]) == "" THEN "user_status" ELSE eventType$
