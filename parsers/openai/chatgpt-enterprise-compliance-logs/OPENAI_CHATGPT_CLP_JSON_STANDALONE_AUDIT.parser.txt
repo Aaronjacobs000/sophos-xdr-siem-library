@@ -1,0 +1,43 @@
+!SAMPLE={"event_id":"7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c82","type":"AUDIT_LOG","timestamp":"2026-10-12T22:17:02.908457Z","principal":{"id":"4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69","type":"CHATGPT_WORKSPACE"},"actor":{"type":"ACCOUNT_USER","user_id":"user-bobAdminExample02","user_email":"bob.admin@example.com"},"action":"SSO_SET_ENFORCEMENT","action_result":"SUCCESS","action_privilege":"ADMIN","request_metadata":{"client_ip":"192.0.2.15","client_user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36","client_ja3":"","client_ja4":"","destination_hostname":null},"action_data":{"enforcement_status":false}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[{,]\s*"type"\s*:\s*"AUDIT_LOG"\s*[,}].*"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)"|"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)".*[{,]\s*"type"\s*:\s*"AUDIT_LOG"\s*[,}]
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ChatGPT Enterprise Compliance Logs Platform, AUDIT_LOG records, one JSON object per
+# HTTP Ingest record (the API is pull only, so a collector downloads the files and sends them).
+# Standalone parser for the ManagementEvent schema: workspace settings, SSO and SCIM, roles,
+# groups, invites, keys, sharing and Compliance API calls, by admins and by users.
+# action_data varies by action and can hold free text (custom and system instructions), so
+# it is not mapped; it stays in original_data.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "ChatGPT Enterprise"
+sensorEventId$ = json["$.event_id"]
+# ISO 8601 in UTC with up to microseconds.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+operationName$ = json["$.action"]
+# SUCCESS, BLOCKED or ERROR.
+result$ = json["$.action_result"]
+# ADMIN or STANDARD_USER. The schema has no privilege field, and operation$ is its free-text
+# summary of the operation.
+operation$ = json["$.action_privilege"]
+channel$ = json["$.type"]
+# The ChatGPT workspace (or API Platform organization) the action belongs to.
+namespace$ = json["$.principal.id"]
+
+# The actor is a user, a Compliance API key, or someone in Slack or Teams using a workspace agent.
+actorType = json["$.actor.type"]
+username$ = json["$.actor.user_email"]
+username$ = IF actorType == "API_KEY" THEN "api_key " + json["$.actor.redacted_id"] ELSE username$
+username$ = IF actorType == "EXTERNAL_COLLABORATION_USER" THEN json["$.actor.provider"] + " user " + json["$.actor.provider_user_id"] ELSE username$
+
+# Every action arrives over the web or the API, so it is remote. The schema has no address
+# field; host_id takes an IP address, so the client IP goes there.
+remoteOperation$ = TRUE
+hostId$ = json["$.request_metadata.client_ip"]
+targetHostname$ = json["$.request_metadata.destination_hostname"]

@@ -1,0 +1,78 @@
+!SAMPLE={"event_id":"9d6bb4e9-3882-4dbe-9d4c-2668b692f9a2","type":"CONVERSATION_MESSAGE","timestamp":"2026-10-12T22:45:19.884516Z","previous_message_id":"msg-example-0101","principal":{"id":"4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69","type":"CHATGPT_WORKSPACE"},"actor":{"type":"ACCOUNT_USER","user_id":"user-aliceExample0001","user_email":"alice@example.com"},"message":{"id":"msg-example-0102","created_at":"2026-10-12T22:45:19Z","author":{"type":"assistant","model":"gpt-5-2-pro","tools_used":["browser"],"skills_used":["skill-example-01"],"skills_used_names":["pdfs"],"applied_custom_instructions":"[redacted]"},"content":{"type":"text","value":"[redacted]","annotations":[{"type":"url_citation","urls":["[redacted]"]}]}},"conversation":{"id":"convo-example-0002","title":"[redacted]","mode":"chat","gpt_id":"g-example0001","gpt_name":"Example Policy Helper","created_at":"2026-10-12T22:44:58Z","is_pinned":false,"is_temporary_chat":false,"is_locked_chat":false}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[{,]\s*"type"\s*:\s*"CONVERSATION_MESSAGE"\s*[,}].*"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)"|"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)".*[{,]\s*"type"\s*:\s*"CONVERSATION_MESSAGE"\s*[,}]
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ChatGPT Enterprise Compliance Logs Platform, CONVERSATION_MESSAGE records, one JSON
+# object per HTTP Ingest record (the API is pull only, so a collector downloads the files).
+# Standalone parser for the CloudAudit schema: who sent or received a message, when, with
+# which model, client, GPT or Project. Each record is one message snapshot.
+# Privacy: these records carry prompt and response text. This parser maps metadata only.
+# Message text, quotes, custom instructions, conversation titles, file names and GPT or
+# Project names never go into a normalized field. original_data keeps whatever the
+# collector sent, so redact content before it leaves the collector.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "ChatGPT Enterprise"
+sensorEventId$ = json["$.event_id"]
+# ISO 8601 in UTC with up to microseconds.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+eventName$ = json["$.type"]
+eventSource$ = "ChatGPT"
+# user for a prompt, assistant for a model response.
+eventType$ = json["$.message.author.type"]
+# The actor is the workspace member whose conversation it is, for both prompts and responses.
+userName$ = json["$.actor.user_email"]
+userId$ = json["$.actor.user_id"]
+userType$ = json["$.actor.type"]
+recipientAccountId$ = json["$.principal.id"]
+
+# Resources: the conversation and the message, plus the GPT and Project when set.
+conv.resourceId$ = json["$.conversation.id"]
+conv.resourceType$ = "conversation"
+conv.resourceAccountId$ = json["$.principal.id"]
+msg.resourceId$ = json["$.message.id"]
+msg.resourceType$ = "message"
+msg.resourceAccountId$ = json["$.principal.id"]
+resources$ = [conv, msg]
+gpt.resourceId$ = json["$.conversation.gpt_id"]
+gpt.resourceType$ = "gpt"
+gpt.resourceAccountId$ = json["$.principal.id"]
+resources$ = IF gpt.resourceId$ THEN resources$ + [gpt] ELSE resources$
+prj.resourceId$ = json["$.conversation.project_id"]
+prj.resourceType$ = "project"
+prj.resourceAccountId$ = json["$.principal.id"]
+resources$ = IF prj.resourceId$ THEN resources$ + [prj] ELSE resources$
+
+# Message metadata. Assign the list first, then add the optional keys that are present.
+mode.key$ = "conversation_mode"
+mode.value$ = json["$.conversation.mode"]
+tmp.key$ = "is_temporary_chat"
+tmp.value$ = STRING(json["$.conversation.is_temporary_chat"])
+requestParameters$.record$ = [mode, tmp]
+model.key$ = "model"
+model.value$ = json["$.message.author.model"]
+requestParameters$.record$ = IF model.value$ THEN requestParameters$.record$ + [model] ELSE requestParameters$.record$
+client.key$ = "client_type"
+client.value$ = json["$.message.author.client_type"]
+requestParameters$.record$ = IF client.value$ THEN requestParameters$.record$ + [client] ELSE requestParameters$.record$
+# STRING() turns a list into JSON text; the engine fails the event on IF <list> THEN.
+tools.key$ = "tools_used"
+tools.value$ = STRING(json["$.message.author.tools_used"])
+requestParameters$.record$ = IF tools.value$ THEN requestParameters$.record$ + [tools] ELSE requestParameters$.record$
+skills.key$ = "skills_used_names"
+skills.value$ = STRING(json["$.message.author.skills_used_names"])
+requestParameters$.record$ = IF skills.value$ THEN requestParameters$.record$ + [skills] ELSE requestParameters$.record$
+# The number of attached files, not their names.
+fileCount = LENGTH(json["$.message.files"], "list")
+files.key$ = "file_count"
+files.value$ = STRING(fileCount)
+requestParameters$.record$ = IF fileCount != 0 THEN requestParameters$.record$ + [files] ELSE requestParameters$.record$
+prev.key$ = "previous_message_id"
+prev.value$ = json["$.previous_message_id"]
+requestParameters$.record$ = IF prev.value$ THEN requestParameters$.record$ + [prev] ELSE requestParameters$.record$

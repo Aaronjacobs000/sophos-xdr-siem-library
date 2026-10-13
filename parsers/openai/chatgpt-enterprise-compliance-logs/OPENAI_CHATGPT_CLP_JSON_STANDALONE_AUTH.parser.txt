@@ -1,0 +1,80 @@
+!SAMPLE={"event_id":"0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f1","type":"AUTH_LOG","timestamp":"2026-10-12T21:58:02.114207Z","principal":{"id":"4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69","type":"CHATGPT_WORKSPACE"},"actor":{"type":"ACCOUNT_USER","user_id":"user-aliceExample0001","user_email":"alice@example.com"},"request_metadata":{"client_ip":"203.0.113.24","client_user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36"},"action_data":{"action":"login_success","auth_provider_name":"password"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[{,]\s*"type"\s*:\s*"AUTH_LOG"\s*[,}].*"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)"|"(?:CHATGPT_WORKSPACE|API_PLATFORM_ORG)".*[{,]\s*"type"\s*:\s*"AUTH_LOG"\s*[,}]
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ChatGPT Enterprise Compliance Logs Platform, AUTH_LOG records, one JSON object per
+# HTTP Ingest record (the API is pull only, so a collector downloads the files and sends them).
+# Standalone parser for the Authentication schema: sign-ins, sign-outs, failed passwords,
+# blocked sign-ins, password resets and OAuth tokens issued to apps.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "ChatGPT Enterprise"
+sensorEventId$ = json["$.event_id"]
+# ISO 8601 in UTC with up to microseconds.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+targetUserName$ = json["$.actor.user_email"]
+sourceAddress$ = json["$.request_metadata.client_ip"]
+userAgent$ = json["$.request_metadata.client_user_agent"]
+authSystem$ = json["$.action_data.auth_provider_name"]
+# Set on token_issued: the app the user granted access to.
+applicationName$ = json["$.action_data.application_name"]
+
+# OpenAI's action list, mapped to the Auth enums. Actions not listed here keep the
+# enum defaults and still carry the raw action in event_metadata.
+a = json["$.action_data.action"]
+logon = a == "login_success" OR a == "native_login_success" OR a == "signup_success" OR a == "token_issued"
+logoff = a == "logout_success" OR a == "token_revoked"
+badPassword = a == "password_login_invalid_password"
+blocked = a == "password_login_sentinel_blocked"
+challenge = a == "password_login_sentinel_challenge"
+reset = CONTAINS(a, "password_reset_")
+
+action$ = "UNCLASSIFIED"
+action$ = IF logon OR challenge THEN "LOGON" ELSE action$
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+action$ = IF badPassword OR blocked THEN "FAILURE" ELSE action$
+action$ = IF reset THEN "ACCOUNT" ELSE action$
+action$ = IF a == "password_reset_admin" THEN "USER_MANAGEMENT" ELSE action$
+
+authCategory$ = "UNKNOWN_AUTH_CATEGORY"
+authCategory$ = IF logon OR badPassword OR blocked THEN "ACCOUNT_LOGON" ELSE authCategory$
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF challenge THEN "PRE_AUTHENTICATION" ELSE authCategory$
+authCategory$ = IF reset THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+
+actionResult$ = "UNKNOWN_ACTION_RESULT"
+actionResult$ = IF logon OR logoff OR a == "password_reset_success" OR a == "password_reset_admin" THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF badPassword OR blocked OR a == "password_reset_error" THEN "FAILED" ELSE actionResult$
+
+# The anti-abuse block and reset errors give no reason, so they are OTHER_ERROR.
+failureCategory$ = NULL
+failureCategory$ = IF badPassword THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF blocked OR a == "password_reset_error" THEN "OTHER_ERROR" ELSE failureCategory$
+
+# Keys with no Auth field of their own go to event_metadata.
+act.key$ = "openai_auth_action"
+act.value$ = a
+uid.key$ = "openai_user_id"
+uid.value$ = json["$.actor.user_id"]
+ws.key$ = "openai_principal_id"
+ws.value$ = json["$.principal.id"]
+pt.key$ = "openai_principal_type"
+pt.value$ = json["$.principal.type"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [act, uid, ws, pt]
+
+# client_id and granted_scopes are only sent on token_issued.
+cid.key$ = "oauth_client_id"
+cid.value$ = json["$.action_data.client_id"]
+eventMetadata$.record$ = IF cid.value$ THEN eventMetadata$.record$ + [cid] ELSE eventMetadata$.record$
+# STRING() turns the list into JSON text. Test the text, not the list: the engine fails the
+# event on IF <list> THEN.
+scp.key$ = "oauth_granted_scopes"
+scp.value$ = STRING(json["$.action_data.granted_scopes"])
+eventMetadata$.record$ = IF scp.value$ THEN eventMetadata$.record$ + [scp] ELSE eventMetadata$.record$
