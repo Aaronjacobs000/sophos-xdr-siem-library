@@ -1,0 +1,47 @@
+!SAMPLE=<166>2026-10-12T11:40:11.482Z esx01.example.com Hostd[2098450]: [Originator@6876 sub=Vimsvc.ha-eventmgr opID=esxui-6c1d-a2f0] Event 56901 : User root@192.0.2.10 logged in as VMware-client/6.5.0
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=<\d{1,3}>(?:1\s+)?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\s+\S+\s+(?:Hostd|vobd|shell|login|sshd|sshd-session)(?:\[\d+\]:|\s+\d+\s+-)\s
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware ESXi 8 and later, sent straight to syslog (Syslog.global.logHost), no vCenter.
+# Parent: recognizes hostd, vobd, shell, login and sshd lines and hands logins to the Auth
+# child and ESXi Shell commands to the ManagementEvent child. Other lines stay generic.
+# ESXi sends RFC 3164 by default, <PRI><time> <host> <app>[<pid>]: <message>, or RFC 5424
+# with ?formatter=RFC_5424, <PRI>1 <time> <host> <app> <pid> - <structured data> <message>.
+# The time is always UTC with a Z.
+
+m = originalData$|^<\d{1,3}>(?:1\s+)?(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)\s+(?P<host>\S+)\s+(?P<app>Hostd|vobd|shell|login|sshd|sshd-session)(?:\[(?P<pid>\d+)\]:|\s+(?P<procid>\d+)\s+-)\s+(?:-\s+)?(?:\[(?P<sd>[^\]]*)\]\s*)?(?P<msg>.*?)\s*$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "VMware ESXi"
+hostId$ = m["host"]
+eventTimeUsec$ = DATETIME(m["time"], "2006-01-02T15:04:05.999999999Z07:00")
+app = m["app"]
+pid = IF m["pid"] != "" THEN m["pid"] ELSE m["procid"]
+sd = m["sd"]
+msg = m["msg"]
+
+# hostd login events (Broadcom KB 443639 and KB 319996).
+hostdIn = msg|User\s+(?P<user>\S+)@(?P<src>[0-9A-Fa-f.:]+)\s+logged in as\s+(?P<agent>.+)$
+hostdReject = msg|Rejected password for user\s+(?P<user>\S+)\s+from\s+(?P<src>[0-9A-Fa-f.:]+)(?:\s+-\s+session=(?P<session>\S+))?
+hostdDenied = msg|Cannot login user\s+(?P<user>\S+)@(?P<src>[0-9A-Fa-f.:]+):\s+no permission
+# sshd, in the OpenSSH format (Broadcom KB 321910 and KB 326765).
+ssh = msg|^(?P<result>Accepted|Failed)\s+(?P<method>\S+)\s+for\s+(?P<invalid>invalid user\s+)?(?P<user>\S+)\s+from\s+(?P<src>\S+)\s+port\s+(?P<port>\d+)
+sshPam = msg|^error: PAM: Authentication failure for\s+(?P<user>\S+)\s+from\s+(?P<src>\S+)$
+# ESXi Shell login at the console, and account lockout after failed logins.
+console = msg|^(?P<user>\S+)\s+login on\s+'(?P<tty>[^']+)'
+locked = msg|\[vob\.user\.account\.locked\]\s+Remote access for ESXi local user account\s+'(?P<user>[^']+)'\s+has been locked for\s+(?P<secs>\d+)\s+seconds after\s+(?P<tries>\d+)\s+failed login attempts
+
+kind = ""
+kind = IF app == "Hostd" AND hostdIn["user"] != "" THEN "hostd_login" ELSE kind
+kind = IF app == "Hostd" AND hostdReject["user"] != "" THEN "hostd_rejected" ELSE kind
+kind = IF app == "Hostd" AND hostdDenied["user"] != "" THEN "hostd_denied" ELSE kind
+kind = IF (app == "sshd" OR app == "sshd-session") AND ssh["user"] != "" THEN "ssh" ELSE kind
+kind = IF (app == "sshd" OR app == "sshd-session") AND sshPam["user"] != "" THEN "ssh_pam" ELSE kind
+kind = IF app == "login" AND console["user"] != "" THEN "console" ELSE kind
+kind = IF app == "vobd" AND locked["user"] != "" THEN "locked" ELSE kind
+
+eventType$ = app
+eventType$ = IF kind != "" THEN "auth" ELSE eventType$
