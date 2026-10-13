@@ -1,0 +1,30 @@
+{
+  "vendor": "Acme",
+  "product": "Web Proxy",
+  "versions": [
+    "6"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": null
+  },
+  "docs": [
+    "https://wiki.squid-cache.org/Features/LogFormat",
+    "https://www.squid-cache.org/Doc/config/access_log/"
+  ],
+  "notes": "Workflow test entry: Squid native format under an acmeproxy tag. Not for use.",
+  "parsers": [
+    {
+      "name": "ACME_WEB_PROXY_STANDALONE_HTTP",
+      "file": "ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+Oct  7 22:50:01 proxy01 acmeproxy[3011]: 1791413400.512    187 192.0.2.61 TCP_MISS/200 4120 GET http://www.example.com/index.html - HIER_DIRECT/203.0.113.80 text/html
+Oct  7 22:50:03 proxy01 acmeproxy[3011]: 1791413402.033     95 192.0.2.61 TCP_TUNNEL/200 6712 CONNECT update.example.org:443 jlee HIER_DIRECT/198.51.100.14 -
+Oct  7 22:50:09 proxy01 acmeproxy[3011]: 1791413409.871      0 192.0.2.72 TCP_DENIED/403 3920 GET http://files.example.net/tools/agent.exe?build=42 - HIER_NONE/- text/html
+Oct  7 22:50:15 proxy01 acmeproxy[3011]: 1791413415.204     12 192.0.2.61 TCP_MEM_HIT/200 1830 GET http://www.example.com/img/logo.png - HIER_NONE/- image/png

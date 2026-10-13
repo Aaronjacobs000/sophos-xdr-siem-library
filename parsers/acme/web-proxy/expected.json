@@ -1,0 +1,173 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ACME_WEB_PROXY_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Acme Web Proxy",
+      "event_time_usec": 1791413400512000,
+      "source_address": "192.0.2.61",
+      "destination_address": "203.0.113.80",
+      "http_method": "GET",
+      "response_code": 200,
+      "rx_byte_count": 4120,
+      "uri_scheme": "http",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_path_raw": "/index.html",
+      "uri_path": "/index.html",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "squid_result",
+            "value": "TCP_MISS"
+          },
+          {
+            "key": "hierarchy",
+            "value": "HIER_DIRECT"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          },
+          {
+            "key": "elapsed_ms",
+            "value": "187"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ACME_WEB_PROXY_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Acme Web Proxy",
+      "event_time_usec": 1791413402033000,
+      "source_address": "192.0.2.61",
+      "destination_address": "198.51.100.14",
+      "source_username": "jlee",
+      "http_method": "CONNECT",
+      "response_code": 200,
+      "rx_byte_count": 6712,
+      "uri_scheme": "http",
+      "uri_host_raw": "update.example.org:443",
+      "uri_host": "update.example.org",
+      "uri_port": "443",
+      "index_of_top_private_domain": 7,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "squid_result",
+            "value": "TCP_TUNNEL"
+          },
+          {
+            "key": "hierarchy",
+            "value": "HIER_DIRECT"
+          },
+          {
+            "key": "content_type"
+          },
+          {
+            "key": "elapsed_ms",
+            "value": "95"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ACME_WEB_PROXY_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Acme Web Proxy",
+      "event_time_usec": 1791413409871000,
+      "source_address": "192.0.2.72",
+      "http_method": "GET",
+      "response_code": 403,
+      "rx_byte_count": 3920,
+      "uri_scheme": "http",
+      "uri_host_raw": "files.example.net",
+      "uri_host": "files.example.net",
+      "uri_path_raw": "/tools/agent.exe",
+      "uri_path": "/tools/agent.exe",
+      "uri_query_raw": "build=42",
+      "uri_query": "build=42",
+      "index_of_top_private_domain": 6,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "squid_result",
+            "value": "TCP_DENIED"
+          },
+          {
+            "key": "hierarchy",
+            "value": "HIER_NONE"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          },
+          {
+            "key": "elapsed_ms",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ACME_WEB_PROXY_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Acme Web Proxy",
+      "event_time_usec": 1791413415204000,
+      "source_address": "192.0.2.61",
+      "http_method": "GET",
+      "response_code": 200,
+      "rx_byte_count": 1830,
+      "uri_scheme": "http",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_path_raw": "/img/logo.png",
+      "uri_path": "/img/logo.png",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "squid_result",
+            "value": "TCP_MEM_HIT"
+          },
+          {
+            "key": "hierarchy",
+            "value": "HIER_NONE"
+          },
+          {
+            "key": "content_type",
+            "value": "image/png"
+          },
+          {
+            "key": "elapsed_ms",
+            "value": "12"
+          }
+        ]
+      }
+    }
+  }
+]
