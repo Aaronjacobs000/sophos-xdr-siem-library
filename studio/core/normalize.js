@@ -3,9 +3,10 @@
 // coerced into each type follows what the engine did in a lab tenant; notes point out
 // values that change or fail on the way in.
 
-import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList } from './values.js';
+import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList, hasOwn } from './values.js';
 import { fieldsByParser, schemaInfo, typeKind, enumMembers, enumNumbers, messageType, INT_TYPES } from './schemas.js';
 import { trimPairs } from './functions.js';
+import { AUTH0_LOG_TYPES } from './auth0-log-types.js';
 
 // SANITIZE_ALL turns these into NULL, after trimming whitespace. Case-sensitive. "(null)" is
 // not in the docs but the engine does it.
@@ -191,6 +192,18 @@ export function coerce(v, field, where, notes, opts, top = true, parserField = f
   return asString(v, where, notes, opts, top);
 }
 
+// In the Auth schema the engine stores an event_metadata value that is an Auth0 log type code as
+// the code's description, whatever the key (see auth0-log-types.js).
+function auth0Codes(val, notes) {
+  if (!val || !Array.isArray(val.record)) return;
+  val.record.forEach((r, i) => {
+    const code = typeof r.value === 'string' ? r.value.toLowerCase() : null;
+    if (code === null || !hasOwn(AUTH0_LOG_TYPES, code)) return;
+    notes.push({ level: 'warning', code: 'auth0-code', field: `event_metadata.record[${i}].value`, message: `event_metadata.record[${i}].value: the Auth schema reads "${r.value}" as an Auth0 log type code, so the engine stores "${AUTH0_LOG_TYPES[code]}" instead` });
+    r.value = AUTH0_LOG_TYPES[code];
+  });
+}
+
 // vars: Map of every variable after the parser ran. Returns {record, notes}.
 export function normalize(vars, schemaId, opts = {}) {
   const info = schemaInfo(schemaId);
@@ -207,6 +220,7 @@ export function normalize(vars, schemaId, opts = {}) {
       continue;
     }
     const val = coerce(value, field, field.name, notes, o);
+    if (schemaId === 'scwx.auth' && field.name === 'event_metadata') auth0Codes(val, notes);
     // "" is the protobuf default, so it isn't stored.
     if (val === undefined || val === null || val === '') continue;
     if (!field.repeated && typeKind(field.type) === 'enum' && enumNumbers(field.type)['0'] === val && !KEEPS_ZERO.has(`${schemaId}:${field.name}`)) {

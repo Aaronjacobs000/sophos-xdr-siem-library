@@ -131,8 +131,43 @@ test('URL_PARSE, IDX_OF_TLD, BASE64_DECODE, INT, STRING', () => {
   assert.equal(v.get('ns'), 'http');
   assert.equal(v.get('np'), '/foo/bar/baz.html');
   const w = run('a = IDX_OF_TLD("aaa http://example.com")\nb = IDX_OF_TLD("http://example.com")\nc = IDX_OF_TLD("")\nd = BASE64_DECODE("aG1lZXBcISBobWVlcFwh")\ne = INT("4e0", 16)\nf = STRING(NULL)\ng = STRING(SPLIT("a,b", ","))\nh = INT("42", 10) + 1');
-  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => w.get(k)), [0, 0, -1, 'hmeep\\! hmeep\\!', 1248, '', '"a","b"', 43]);
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => w.get(k)), [0, 0, -1, 'hmeep\\! hmeep\\!', 1248, '', '["a","b"]', 43]);
   assert.throws(() => run('x = INT("abc", 10)'), /INT could not read/);
+});
+
+// What the engine gave for each in a lab tenant.
+test('STRING() of a list writes JSON the way Go does', () => {
+  const d = JSON.stringify({ arr: [{ b: 1, a: 'x<y' }, 2.5, 's', 3], nul: ['a', null, true], o: { 'k&': 'v' } });
+  const v = run(`j = JSON(d)
+t = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")
+inner = ["p", "q"]
+rec.key$ = "k"
+rec.value$ = "v"
+kv = SPLIT_NAME_VALUES("b=2 a=1", " ", "=", "\\"")
+n = NULL
+a = STRING(["a", "b"])
+b = STRING(SPLIT("x,y,z", ","))
+c = STRING([1, 2])
+e = STRING(["a<b&c", "d e", "a>b", "é"])
+f = STRING(["a", NULL, "c"])
+g = STRING(["a", n])
+h = STRING([TRUE, 7, "q"])
+i = STRING(SPLIT("a,,b", ","))
+k = STRING(j["$.arr[*]"])
+l = STRING(j["$.nul[*]"])
+m = STRING([t])
+o = STRING([inner, "c"])
+p = STRING([rec])
+q = STRING([kv])
+r = STRING([j["$.o"]])
+s = STRING(SPLIT(line, "|"))`, { d, line: '<134>x a\tb|c"d\\e' });
+  const want = {
+    a: '["a","b"]', b: '["x","y","z"]', c: '[1,2]', e: '["a\\u003cb\\u0026c","d e","a\\u003eb","é"]', f: '["a",0,"c"]', g: '["a",0]',
+    h: '[true,7,"q"]', i: '["a","","b"]', k: '[{"a":"x\\u003cy","b":1},2.5,"s",3]', l: '["a",0,true]', m: '[{}]', o: '[["p","q"],"c"]',
+    p: '[{"key$":"k","value$":"v"}]', q: '[{"a":"1","b":"2"}]', r: '[{"k\\u0026":"v"}]', s: '["\\u003c134\\u003ex a\\tb","c\\"d\\\\e"]',
+  };
+  for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
+  assert.equal(get('x = STRING(["a"])', 'x'), '["a"]');
 });
 
 test('VALIDATE_ALL_JSONPATHS_EXIST', () => {
@@ -207,6 +242,18 @@ test('a DATETIME value compares only with another DATETIME or a number', () => {
   assert.deepEqual(['a', 'b', 'c', 'd'].map((k) => v.get(k)), [true, true, true, true]);
   // A DATETIME that couldn't read its value is NULL, which compares as usual.
   assert.equal(get('t = DATETIME("garbage", "2006-01-02")\nx = t == NULL', 'x'), true);
+});
+
+test('text added to a DATETIME value must read as a number', () => {
+  const T = 't = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")\nn = NULL\n';
+  for (const add of ['"at " + t', 't + " at"', '"" + t', 't + " 5"', 't + "5 "', 't + "0x10"']) assert.throws(() => run(`${T}x = ${add}`), /unable to add: cannot convert time to string/, add);
+  const usec = Date.UTC(2026, 9, 14, 1, 2, 3) * 1000;
+  const v = run(`${T}a = "5" + t\nb = t + "-5"\nc = t + "+5"\nd = t + "1e3"\ne = t + "5.5"\nf = n + t\ng = t + 5\nh = STRING(t)`);
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'g'].map((k) => v.get(k)), [usec + 5, usec - 5, usec + 5, usec + 1000, usec + 5.5, usec + 5]);
+  assert.equal(v.get('f').usec, usec);
+  assert.equal(v.get('h'), '2026-10-14 01:02:03 +0000 UTC');
+  // Text that isn't a DATETIME still joins as before.
+  assert.deepEqual([get('x = "5" + "5"', 'x'), get('x = "a" + 5', 'x')], ['55', 'a5']);
 });
 
 test('a path that can select several nodes but selects one gives that node', () => {
