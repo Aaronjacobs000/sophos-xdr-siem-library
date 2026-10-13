@@ -54,6 +54,43 @@ test('the scan blocks secrets, private and real IPs, real emails, hostnames and 
   assert.deepEqual(kinds('ver 7.4.2 CVE-2017-5638.Struts2 time.ms local4.info'), []);
 });
 
+test('the scan lets version numbers through, but not as a way past the IP check', () => {
+  assert.deepEqual(kinds('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'), []);
+  assert.deepEqual(kinds('"browserVersion":"Chrome 141.0.0.0"'), []);
+  assert.deepEqual(kinds('"agent_version":"4.6.0.112"'), []);
+  assert.deepEqual(kinds('version 4.6.0.112'), []);
+  // The same values without a version context are addresses.
+  assert.deepEqual(kinds('src=4.6.0.112'), ['ip']);
+  assert.deepEqual(kinds('client 141.0.0.0 server 8.8.8.8'), ['ip', 'ip']);
+  // A private, carrier-grade NAT or link-local value is blocked even as a "version".
+  assert.deepEqual(kinds('Chrome/192.168.1.1'), ['ip']);
+  assert.deepEqual(kinds('"agent_version":"10.1.2.3"'), ['ip']);
+  assert.deepEqual(kinds('"osVersion":"100.64.1.2"'), ['ip']);
+});
+
+test('the scan reads parser variables and .name properties as names, not hostnames', () => {
+  assert.deepEqual(kinds('x.name$ = json["$.name"]\nrec.info$ = "a"\neventMetadata$.record$ = [x, rec]'), []);
+  assert.deepEqual(kinds('"job.name":"Backup","Session.Name":"s1","parameters.name":"x"'), []);
+  assert.deepEqual(kinds('see files.realcorp.com'), ['hostname']);
+  assert.deepEqual(kinds('host=dc01.corp.local'), ['hostname']);
+});
+
+test('the scan lets the EICAR test file name through, and only that name', () => {
+  assert.deepEqual(kinds('"file_path":"C:\\\\Users\\\\jdoe\\\\Downloads\\\\eicar.com","threat":"EICAR-Test-File"'), []);
+  assert.deepEqual(kinds('fetched from eicar.com.au'), ['hostname']);
+  assert.deepEqual(kinds('fetched from deicar.com'), ['hostname']);
+});
+
+test('the scan reads session IDs and GUIDs as identifiers unless they look like a random token', () => {
+  assert.deepEqual(kinds('session_id="q6GJMuPu003642-q6GJMuPv003642" client_ip="192.0.2.4"'), []);
+  assert.deepEqual(kinds('{"SessionId":"3fa85f64-5717-4562-b3fc-2c963f66afa6"}'), []);
+  assert.deepEqual(kinds('sessionId=1a2b3c4d5e6f'), []);
+  // A session token, a GUID under a key name, and a high-entropy session ID are still secrets.
+  assert.deepEqual(kinds('session_token=abc123def456'), ['secret']);
+  assert.deepEqual(kinds('api_key=3fa85f64-5717-4562-b3fc-2c963f66afa6'), ['secret']);
+  assert.deepEqual(kinds('session_id=Q5bXrT9kLm2Vn8Pz4Wc7Yd1Hf6Jg3Ks0Ab'), ['secret']);
+});
+
 test('the issue-form bundle round-trips through an issue body', async () => {
   const e = await loadEntryFromDir(path.join(ROOT, 'parsers/eset/eset-protect-on-prem'), ROOT);
   const body = `### Submission\n\n\`\`\`text\n${packBundle(e)}\n\`\`\`\n\n### Notes\n\nnone`;

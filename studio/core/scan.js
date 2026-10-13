@@ -13,7 +13,11 @@ export const RESERVED_DOMAIN = /(^|\.)(example\.(com|net|org)|example|test|inval
 const INTERNAL_TLD = new Set(['local', 'lan', 'internal', 'corp', 'intranet', 'home', 'localdomain', 'ad', 'private', 'domain']);
 const COMMON_CC = new Set(['au', 'uk', 'de', 'fr', 'nl', 'ca', 'jp', 'cn', 'in', 'br', 'nz', 'sg', 'ru', 'it', 'es', 'se', 'ch', 'be', 'at', 'dk', 'no', 'fi', 'pl', 'za', 'ie', 'mx', 'kr', 'hk', 'tw', 'us', 'my', 'ph', 'id', 'th', 'vn', 'ae', 'sa', 'il', 'tr', 'ar', 'cl', 'cz', 'pt', 'gr', 'hu', 'ro', 'ua']);
 const SYSLOG_SELECTOR = /^(local[0-7]|kern|user|mail|daemon|auth|syslog|lpr|news|uucp|cron|authpriv|ftp)\.(emerg|alert|crit|err|warning|notice|info|debug)$/i;
-const COMMON_TLD = new Set(['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'info', 'biz', 'me', 'app', 'dev', 'cloud', 'ai', 'xyz', 'online', 'site', 'tech', 'store', 'shop', 'live', 'pro', 'name', 'mobi', 'tv', 'cc', 'ly', 'gg', 'eu', 'asia']);
+// .name is left out: in logs and parsers it is nearly always a property, such as job.name or
+// Session.Name, not a domain.
+const COMMON_TLD = new Set(['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'info', 'biz', 'me', 'app', 'dev', 'cloud', 'ai', 'xyz', 'online', 'site', 'tech', 'store', 'shop', 'live', 'pro', 'mobi', 'tv', 'cc', 'ly', 'gg', 'eu', 'asia']);
+// The EICAR anti-malware test file is called eicar.com.
+const TEST_FILES = new Set(['eicar.com']);
 const FILE_EXT = new Set(['exe', 'dll', 'sys', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'vbs', 'js', 'jse', 'hta', 'msi', 'msp', 'cab', 'scr', 'lnk', 'jar', 'py', 'sh', 'pl', 'rb', 'php', 'asp', 'aspx', 'jsp', 'html', 'htm', 'xml', 'json', 'yml', 'yaml', 'conf', 'cfg', 'ini', 'log', 'txt', 'csv', 'tsv', 'dat', 'tmp', 'bin', 'iso', 'img', 'zip', 'rar', 'gz', 'tgz', 'tar', 'bz2', 'xz', 'doc', 'docx', 'docm', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx', 'pdf', 'rtf', 'odt', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'mp3', 'mp4', 'eml', 'msg', 'md', 'so', 'dylib', 'app', 'pkg', 'dmg', 'deb', 'rpm', 'apk', 'ipa', 'db', 'sql', 'bak', 'old', 'key', 'pem', 'crt', 'cer', 'pfx', 'p12']);
 // Well-known public service domains that turn up in vendor logs and identify no one.
 const PUBLIC_OK = /(^|\.)(microsoft\.com|windows\.com|windowsupdate\.com|office\.com|office365\.com|live\.com|azure\.com|windows\.net|google\.com|googleapis\.com|gstatic\.com|amazonaws\.com|aws\.amazon\.com|cloudflare\.com|akamai\.net|apple\.com|icloud\.com|github\.com|githubusercontent\.com|eset\.com|sophos\.com|mozilla\.org|ubuntu\.com|debian\.org|pool\.ntp\.org|digicert\.com|letsencrypt\.org|w3\.org|ietf\.org|iana\.org|opendns\.com|quad9\.net)$/i;
@@ -34,6 +38,13 @@ const SECRET_PATTERNS = [
   [/\b(?:https?:\/\/)[^\s:@/]+:[^\s@/]+@/, 'a URL with a password in it'],
 ];
 const SECRET_KEYS = /(?:^|[^A-Za-z0-9])["']?((?:client[_-]?)?secret|pass(?:word|wd)?|pwd|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth[_-]?token|access[_-]?token|refresh[_-]?token|session[_-]?(?:id|token)|bearer|x-api-key|ingest[_-]?key|integration[_-]?key|token)["']?\s*[:=]\s*["']?([^"'\s,;&}<>]{6,})/gi;
+// Logs use a session ID, such as a GUID, to tie events together. It is only treated as a
+// secret when it looks like a random token (see highEntropy).
+const SESSION_ID_KEY = /^session[_-]?id$/i;
+// A version under a key such as agent_version or browserVersion, or after a browser token such
+// as Chrome/ or "Chrome ", has the shape of an IPv4 address.
+const VERSION_WORDS = new Set(['version', 'ver', 'build', 'release']);
+const UA_PRODUCT = /(?:^|[^\w.])(?:Chrome|Chromium|CriOS|Firefox|FxiOS|Safari|Version|Edge|Edg|EdgA|EdgiOS|Opera|OPR|MSIE|Trident|SamsungBrowser|YaBrowser|Vivaldi|Brave|Electron)[/ ]$/;
 
 function lineOf(text, index) {
   let n = 1;
@@ -69,6 +80,22 @@ function entropy(s) {
   return h;
 }
 
+// The same bar the key-or-token warning below uses: 32 or more characters, upper and lower case
+// and a digit, and high Shannon entropy.
+function highEntropy(s) {
+  return s.length >= 32 && /[A-Z]/.test(s) && /[a-z]/.test(s) && /\d/.test(s) && entropy(s) >= 4.2;
+}
+
+// True when the text just before an IPv4-shaped value marks it as a version number.
+function versionContext(text, index) {
+  const before = text.slice(Math.max(0, index - 60), index);
+  if (UA_PRODUCT.test(before)) return true;
+  const key = /([A-Za-z][A-Za-z0-9_-]*)["']?\s*[:=]?\s*["']?$/.exec(before);
+  if (!key) return false;
+  const words = key[1].replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[\s_-]+/);
+  return VERSION_WORDS.has(words[words.length - 1].toLowerCase());
+}
+
 // Returns [{level, code, message, line, text}]. source names the file in messages.
 export function scanText(text, opts = {}) {
   const out = [];
@@ -87,11 +114,15 @@ export function scanText(text, opts = {}) {
     const value = m[2];
     if (PLACEHOLDER.test(value)) continue;
     if (/^[a-z]+$/i.test(value) && value.length < 12) continue;
+    if (SESSION_ID_KEY.test(m[1]) && !highEntropy(value)) continue;
     add('error', 'secret', `"${m[1]}" has a value that looks real. Replace it with REDACTED.`, m.index, `${m[1]}=...`);
   }
   for (const m of text.matchAll(/(?<![\w.:])((?:\d{1,3}\.){3}\d{1,3})(?![\w.]*\d)/g)) {
     if (!isIpv4(m[1])) continue;
     const why = classifyV4(m[1]);
+    // A version number passes only where the address would be public; a private, carrier-grade
+    // NAT or link-local value is blocked whatever comes before it.
+    if (why && why.endsWith('a real public address') && versionContext(text, m.index)) continue;
     if (why) add('error', 'ip', `${why}. Use 192.0.2.x, 198.51.100.x or 203.0.113.x (RFC 5737).`, m.index, m[1]);
   }
   for (const m of text.matchAll(/(?<![\w:])((?:[0-9A-Fa-f]{1,4}:){1,7}:?(?:[0-9A-Fa-f]{1,4})?(?::[0-9A-Fa-f]{1,4})*)(?![\w:])/g)) {
@@ -108,10 +139,11 @@ export function scanText(text, opts = {}) {
     if (isIpv4(domain)) continue;
     add('error', 'email', `${m[0]} is a real-looking email address. Use a name at example.com.`, m.index, m[0]);
   }
-  for (const m of text.matchAll(/(?<![\w@.-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24}))(?![\w-]|\.[a-z0-9])/gi)) {
+  // A name followed by $ is a parser variable (x.name$, rec.id$), not a hostname.
+  for (const m of text.matchAll(/(?<![\w@.-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24}))(?![\w$-]|\.[a-z0-9])/gi)) {
     const host = m[1].toLowerCase();
     const tld = m[2].toLowerCase();
-    if (RESERVED_DOMAIN.test(host) || PUBLIC_OK.test(host)) continue;
+    if (RESERVED_DOMAIN.test(host) || PUBLIC_OK.test(host) || TEST_FILES.has(host)) continue;
     if (text[m.index - 1] === '@') continue;
     if (INTERNAL_TLD.has(tld)) { add('error', 'hostname', `${m[1]} is an internal hostname. Use a name under example.com, such as host01.corp.example.com.`, m.index, m[1]); continue; }
     if (FILE_EXT.has(tld) && tld !== 'com') continue;
