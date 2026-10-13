@@ -1,0 +1,46 @@
+{
+  "vendor": "N-able",
+  "product": "N-central",
+  "versions": [
+    "2024.6",
+    "2025.4"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://documentation.n-able.com/N-central/userguide/Content/Administration/Audit/Configure_Syslog_Export.htm",
+    "https://documentation.n-able.com/N-central/userguide/Content/Administration/Audit/audit_events.htm",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/DataCollectors/OnPremDataCollector/"
+  ],
+  "notes": "Turn on Administration > Audit Export (the Compliance permission) and send to the data collector over TCP: N-central has no UDP option. On premises, use port 601 with TLS off when the collector is on the same network. Hosted N-central only sends TCP 6514 with TLS and a CA-signed certificate, which the data collector's documented ports (UDP 514, TCP 601) don't include, so run a TLS syslog relay that forwards to the collector; a relay that adds its own header in front of the line is fine. Logins, logouts and failed logins go to Auth; every other audit record goes to CloudAudit with the event name, technician, source address and any device or customer named in brackets. N-able documents the message layout with two examples and lists the audited events by name, not their event ids or wording: the samples use the documented layout, and their event ids (other than login.singlesignon and servicetemplate.create) and action wording are made up. The parser keys on the layout, not on event ids, and treats an action that says fail as a failed login. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13 (66 of 66 fields matched the emulator), and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "NCENTRAL_AUDIT_SYSLOG_PARENT",
+      "file": "NCENTRAL_AUDIT_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NCENTRAL_AUDIT_SYSLOG_CHILD_AUTH",
+      "file": "NCENTRAL_AUDIT_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NCENTRAL_AUDIT_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "NCENTRAL_AUDIT_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

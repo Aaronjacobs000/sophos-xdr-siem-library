@@ -1,0 +1,33 @@
+!SAMPLE=<110>1 2026-10-12T22:43:15.420+11:00 - ncentraldms - user.create - [tech.akim@example.com] logged in from 198.51.100.23 created user [support2@example.com] with role [Administrator] in Service Org [Example MSP] at 2026-10-12 22:43:15.420
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: N-able N-central Audit Export over syslog.
+# Child of NCENTRAL_AUDIT_SYSLOG_PARENT: every audit record that isn't a login or logout (user,
+# role, customer, template, discovery, scheduled task, remote control and script events) to
+# CloudAudit, with the event name, the technician and the address they came from.
+# h, msgid, user, srcIp, action, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+userName$ = user
+sourceAddress$ = srcIp
+eventName$ = msgid
+eventSource$ = "N-central"
+eventType$ = "AuditEvent"
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+# Remote control and script records name the device in brackets.
+dev = action|device \[(?P<device>[^\]]+)\]
+targetHostname$ = dev["device"]
+
+d1.key$ = "action"
+d1.value$ = action
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+cust = action|customer \[(?P<customer>[^\]]+)\]
+d2.key$ = "customer"
+d2.value$ = cust["customer"]
+additionalEventData$.record$ = IF cust["customer"] != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$

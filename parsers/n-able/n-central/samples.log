@@ -1,0 +1,8 @@
+<110>1 2026-10-12T22:40:11.726+11:00 - ncentraldms - login.singlesignon - [tech.akim@example.com] logged in from 198.51.100.23 logged in at 2026-10-12 22:40:11.726 using External IdP MSPSSO, user customer path is [System]
+<110>1 2026-10-12T22:41:02.118+11:00 - ncentraldms - login.failed - [admin@example.com] logged in from 203.0.113.45 failed to log in (3 failed attempts) at 2026-10-12 22:41:02.118, user customer path is [System]
+<110>1 2026-10-12T22:43:15.420+11:00 - ncentraldms - user.create - [tech.akim@example.com] logged in from 198.51.100.23 created user [support2@example.com] with role [Administrator] in Service Org [Example MSP] at 2026-10-12 22:43:15.420
+<110>1 2026-10-12T22:44:30.912+11:00 - ncentraldms - servicetemplate.create - [tech.akim@example.com] logged in from 198.51.100.23 created Service Template [Workstations (Service_Organization Clone)] with services [Asigra Backup] in Service Org [Service_Organization] at 2026-10-12 22:44:30.912
+<110>1 2026-10-12T22:46:02.551+11:00 - ncentraldms - remotecontrol.start - [tech.akim@example.com] logged in from 198.51.100.23 started a remote control session on device [ACME-WS-014] for customer [Acme Dental] at 2026-10-12 22:46:02.551
+<110>1 2026-10-12T22:47:40.003+11:00 - ncentraldms - script.execute - [tech.akim@example.com] logged in from 198.51.100.23 executed script [Add local admin] on device [ACME-WS-014] for customer [Acme Dental] at 2026-10-12 22:47:40.003
+Oct 12 22:48:27 192.0.2.10 <110>1 2026-10-12T22:48:26.618+11:00 - ncentraldms - logout - [tech.akim@example.com] logged in from 198.51.100.23 logged out at 2026-10-12 22:48:26.618, user customer path is [System]
+<110>1 2026-10-12T22:49:00.000+11:00 ncentral01 ntpd 2210 - - time sync status changed
