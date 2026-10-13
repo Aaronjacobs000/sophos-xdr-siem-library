@@ -1,0 +1,521 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791842260000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000001",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "sso",
+      "action": "LOGON",
+      "auth_category": "PRE_AUTHENTICATION",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "sso_login_initiated"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "unauthenticated_user_actor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791842272000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000002",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "sso",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "sso_login_failed"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "unauthenticated_user_actor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791842282114000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000003",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "sso",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "sso_login_succeeded"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "user_actor"
+          },
+          {
+            "key": "claude_user_id",
+            "value": "user_01examplealice0000001"
+          },
+          {
+            "key": "mfa_method",
+            "value": "not_used"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791842507000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000004",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "magic_link",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "magic_link_login_failed"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "unauthenticated_user_actor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791842590000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000005",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "social google",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "social_login_succeeded"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "user_actor"
+          },
+          {
+            "key": "claude_user_id",
+            "value": "user_01examplecarol0000003"
+          },
+          {
+            "key": "mfa_method",
+            "value": "not_used"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843151000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000006",
+      "target_user_name": "bob.admin@example.com",
+      "source_address": "192.0.2.15",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "step_up webauthn",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "step_up_authentication_failed"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "user_actor"
+          },
+          {
+            "key": "claude_user_id",
+            "value": "user_01examplebob000000002"
+          },
+          {
+            "key": "step_up_reason",
+            "value": "verification_failed"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791846725000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000007",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "claude_activity_type",
+            "value": "user_logged_out"
+          },
+          {
+            "key": "claude_actor_type",
+            "value": "user_actor"
+          },
+          {
+            "key": "claude_user_id",
+            "value": "user_01examplealice0000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843331000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000008",
+      "operation_name": "org_sso_toggled",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15",
+      "operation": "org_sso_toggled"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843524000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000009",
+      "operation_name": "org_user_invite_sent",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15",
+      "operation": "org_user_invite_sent dave@example.com"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843609000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000010",
+      "operation_name": "admin_api_key_created",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15",
+      "operation": "admin_api_key_created apikey_01exampleadmin00002"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843690000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000011",
+      "operation_name": "scim_user_created",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "scim directory_01example0000001",
+      "remote_operation": true,
+      "operation": "scim_user_created user_01exampledave00000004"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843891000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000012",
+      "operation_name": "org_ip_restriction_updated",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15",
+      "operation": "org_ip_restriction_updated"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791843965000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000013",
+      "operation_name": "platform_workspace_member_added",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "admin_api_key apikey_01exampleadmin00001",
+      "remote_operation": true,
+      "host_id": "203.0.113.50",
+      "operation": "platform_workspace_member_added user_01examplecarol0000003"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791844060000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000014",
+      "operation_name": "org_compliance_api_settings_updated",
+      "namespace": "org_01exampleorg000000000001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15",
+      "operation": "org_compliance_api_settings_updated"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791845098000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000015",
+      "event_name": "claude_chat_created",
+      "event_source": "Claude",
+      "recipient_account_id": "org_01exampleorg000000000001",
+      "user_type": "user_actor",
+      "user_name": "alice@example.com",
+      "user_id": "user_01examplealice0000001",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "claude_chat_01example0000000001",
+          "resource_type": "claude_chat",
+          "resource_account_id": "org_01exampleorg000000000001"
+        },
+        {
+          "resource_id": "claude_proj_01example000000001",
+          "resource_type": "claude_project",
+          "resource_account_id": "org_01exampleorg000000000001"
+        }
+      ]
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791845102000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000016",
+      "event_name": "claude_file_uploaded",
+      "event_source": "Claude",
+      "recipient_account_id": "org_01exampleorg000000000001",
+      "user_type": "user_actor",
+      "user_name": "alice@example.com",
+      "user_id": "user_01examplealice0000001",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "claude_chat_01example0000000001",
+          "resource_type": "claude_chat",
+          "resource_account_id": "org_01exampleorg000000000001"
+        },
+        {
+          "resource_id": "claude_file_01example0000000001",
+          "resource_type": "claude_file",
+          "resource_account_id": "org_01exampleorg000000000001"
+        }
+      ]
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791845235000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000017",
+      "event_name": "claude_project_viewed",
+      "event_source": "Claude",
+      "recipient_account_id": "org_01exampleorg000000000001",
+      "read_only": true,
+      "user_type": "user_actor",
+      "user_name": "carol@example.com",
+      "user_id": "user_01examplecarol0000003",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "claude_proj_01example000000001",
+          "resource_type": "claude_project",
+          "resource_account_id": "org_01exampleorg000000000001"
+        }
+      ]
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791845400000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000018",
+      "event_name": "compliance_api_accessed",
+      "event_source": "Claude",
+      "user_type": "api_actor",
+      "user_name": "api_key apikey_01examplecompliance1",
+      "access_key": "apikey_01examplecompliance1",
+      "source_address": "203.0.113.200",
+      "user_agent": "python-urllib/3.13",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_method",
+            "value": "GET"
+          },
+          {
+            "key": "url",
+            "value": "/v1/compliance/activities?limit=1000"
+          },
+          {
+            "key": "request_id",
+            "value": "req_01example00000000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Claude",
+      "event_time_usec": 1791845911000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "activity_01example0000000000000019",
+      "event_name": "claude_chat_deleted",
+      "event_source": "Claude",
+      "recipient_account_id": "org_01exampleorg000000000001",
+      "user_type": "user_actor",
+      "user_name": "alice@example.com",
+      "user_id": "user_01examplealice0000001",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "claude_chat_01example0000000001",
+          "resource_type": "claude_chat",
+          "resource_account_id": "org_01exampleorg000000000001"
+        },
+        {
+          "resource_id": "claude_proj_01example000000001",
+          "resource_type": "claude_project",
+          "resource_account_id": "org_01exampleorg000000000001"
+        }
+      ]
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

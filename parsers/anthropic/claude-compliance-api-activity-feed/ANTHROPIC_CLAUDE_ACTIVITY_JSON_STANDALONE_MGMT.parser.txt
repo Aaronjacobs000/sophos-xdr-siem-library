@@ -1,0 +1,68 @@
+!SAMPLE={"id":"activity_01example0000000000000009","created_at":"2026-10-12T22:18:44Z","organization_id":"org_01exampleorg000000000001","organization_uuid":"6e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b","actor":{"type":"user_actor","email_address":"bob.admin@example.com","user_id":"user_01examplebob000000002","ip_address":"192.0.2.15","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36"},"type":"org_user_invite_sent","invited_email":"dave@example.com","invited_role":"admin","invited_seat_tier":"enterprise_standard","invited_rbac_group_ids":null}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="organization_uuid"\s*:.*[{,]\s*"type"\s*:\s*"(?:org_[a-z0-9_]+|organization_[a-z_]+|admin_api_key_[a-z]+|api_key_created|scoped_api_key_[a-z]+|platform_api_key_[a-z]+|rbac_role_[a-z_]+|role_assignment_[a-z]+|group_[a-z_]+|scim_user_[a-z]+|primary_owner_transferred|domain_claim_initiated|claude_user_[a-z_]+|claude_organization_settings_updated|claude_pubsec_identity_configured|claude_(?:gdrive|github)_integration_[a-z]+|platform_(?:workspace|service_account|federation|spend_limit)_[a-z_]+|platform_(?:oauth_app|signing_key)_[a-z]+|platform_organization_created|inference_hooks_(?:config_[a-z]+|signing_secret_generated)|mcp_server_(?:created|deleted|updated|managed_auth_updated)|mcp_tool_policy_updated|mcp_directory_server_published|audit_log_export_[a-z]+|desktop_extension_[a-z_]+|marketplace_[a-z_]+|ccr_agent_[a-z_]+|ccr_channel_manager_[a-z]+|ccr_role_channel_assignment_[a-z]+|ccr_slack_channel_joined|(?:ghe|gitlab)_configuration_[a-z]+|github_app_installation_[a-z]+|service_(?:created|deleted|key_created|key_revoked)|tunnel_[a-z_]+|cli_plugin_exec_policy_updated|plugin_installation_preference_updated|lti_platform_[a-z]+|slack_workspace_claim(?:ed|_revoked)|workspace_(?:member_)?spend_limit_[a-z_]+|admin_connector_request_resolved|trusted_device_[a-z_]+|step_up_credential_enrolled|session_revoked)"\s*[,}]|[{,]\s*"type"\s*:\s*"(?:org_[a-z0-9_]+|organization_[a-z_]+|admin_api_key_[a-z]+|api_key_created|scoped_api_key_[a-z]+|platform_api_key_[a-z]+|rbac_role_[a-z_]+|role_assignment_[a-z]+|group_[a-z_]+|scim_user_[a-z]+|primary_owner_transferred|domain_claim_initiated|claude_user_[a-z_]+|claude_organization_settings_updated|claude_pubsec_identity_configured|claude_(?:gdrive|github)_integration_[a-z]+|platform_(?:workspace|service_account|federation|spend_limit)_[a-z_]+|platform_(?:oauth_app|signing_key)_[a-z]+|platform_organization_created|inference_hooks_(?:config_[a-z]+|signing_secret_generated)|mcp_server_(?:created|deleted|updated|managed_auth_updated)|mcp_tool_policy_updated|mcp_directory_server_published|audit_log_export_[a-z]+|desktop_extension_[a-z_]+|marketplace_[a-z_]+|ccr_agent_[a-z_]+|ccr_channel_manager_[a-z]+|ccr_role_channel_assignment_[a-z]+|ccr_slack_channel_joined|(?:ghe|gitlab)_configuration_[a-z]+|github_app_installation_[a-z]+|service_(?:created|deleted|key_created|key_revoked)|tunnel_[a-z_]+|cli_plugin_exec_policy_updated|plugin_installation_preference_updated|lti_platform_[a-z]+|slack_workspace_claim(?:ed|_revoked)|workspace_(?:member_)?spend_limit_[a-z_]+|admin_connector_request_resolved|trusted_device_[a-z_]+|step_up_credential_enrolled|session_revoked)"\s*[,}].*"organization_uuid"\s*:
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Claude Compliance API Activity Feed (GET /v1/compliance/activities), one Activity
+# from data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# Standalone parser for the ManagementEvent schema: organization settings, SSO, SCIM and
+# domain setup, invites and members, roles and groups, Admin and API keys, Console
+# workspaces and service accounts, integrations, MCP servers, desktop extensions, Claude Code
+# agent proxy settings, and the user's own trusted devices and step-up credentials.
+# The confirm string lists those activity type families; billing, verification and a few
+# other types stay in generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Claude"
+sensorEventId$ = json["$.id"]
+# RFC 3339 in UTC, with or without fractional seconds.
+eventTimeUsec$ = DATETIME(json["$.created_at"], "2006-01-02T15:04:05.999999999Z07:00")
+
+t = json["$.type"]
+operationName$ = t
+# The organization the activity belongs to; NULL for events not tied to one.
+namespace$ = json["$.organization_id"]
+
+# Who acted: a user, an API key, an Admin API key, a service account, SCIM directory sync,
+# Anthropic, or an Anthropic background process.
+actorType = json["$.actor.type"]
+username$ = json["$.actor.email_address"]
+username$ = IF actorType == "unauthenticated_user_actor" THEN json["$.actor.unauthenticated_email_address"] ELSE username$
+username$ = IF actorType == "api_actor" THEN "api_key " + json["$.actor.api_key_id"] ELSE username$
+username$ = IF actorType == "admin_api_key_actor" THEN "admin_api_key " + json["$.actor.admin_api_key_id"] ELSE username$
+username$ = IF actorType == "service_account_actor" THEN "service_account " + json["$.actor.service_account_id"] ELSE username$
+username$ = IF actorType == "scim_directory_sync_actor" THEN "scim " + json["$.actor.directory_id"] ELSE username$
+username$ = IF actorType == "anthropic_actor" THEN "anthropic" ELSE username$
+username$ = IF actorType == "system_actor" THEN "system " + json["$.actor.service"] ELSE username$
+
+# Every action arrives over the web or the API, so it is remote. The schema has no address
+# field; host_id takes an IP address, so the actor's IP goes there.
+remoteOperation$ = TRUE
+hostId$ = json["$.actor.ip_address"]
+
+# operation$ is the schema's free-text summary: the activity type and the user, key, role,
+# group or workspace it changed, when the activity names one. Fields vary by type, so the
+# first one present wins.
+target = json["$.target_email"]
+target = IF target THEN target ELSE json["$.invited_email"]
+target = IF target THEN target ELSE json["$.user_email"]
+target = IF target THEN target ELSE json["$.deleted_user_email"]
+target = IF target THEN target ELSE json["$.user_id"]
+target = IF target THEN target ELSE json["$.target_id"]
+target = IF target THEN target ELSE json["$.principal_id"]
+target = IF target THEN target ELSE json["$.admin_api_key_id"]
+target = IF target THEN target ELSE json["$.api_key_id"]
+target = IF target THEN target ELSE json["$.service_account_id"]
+target = IF target THEN target ELSE json["$.role_id"]
+target = IF target THEN target ELSE json["$.group_id"]
+target = IF target THEN target ELSE json["$.workspace_id"]
+operation$ = IF target THEN t + " " + target ELSE t
+
+# Toggles (SSO, Cowork features, discoverability and others) send enabled = true or false.
+# result$ is the schema's outcome text, so the new state goes there.
+enabled = STRING(json["$.enabled"])
+result$ = IF enabled THEN "enabled=" + enabled ELSE NULL
