@@ -1,0 +1,50 @@
+!SAMPLE={"source":"Hudu","alert":"record","action":"update","record_type":"AssetPassword","record_name":"Acme Dental - Domain Admin","record_id":"4412","company_name":"Acme Dental","company_id":"31","user":"Alex Kim","url":"https://docs.example.com/a/4412","asset_layout_id":""}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"source"\s*:\s*"Hudu"\s*,\s*"alert"\s*:\s*"(?:record|password_reveal)"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Hudu alert webhooks (Admin > Alerts > Configure Webhook) for the alert types Record
+# created/updated/deleted and One-time shared password reveal, with the JSON payloads in this
+# entry's README, posted through a relay to a Sophos NG-SIEM HTTP Ingest integration.
+# Standalone parser for CloudAudit: record changes (event name record type and action) and
+# one-time shared password reveals by a guest. The values are Hudu webhook variables.
+# Hudu sends no event time, so the event time is the ingest time.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Hudu"
+eventSource$ = "Hudu"
+alert = json["$.alert"]
+rtype = json["$.record_type"]
+reveal = alert == "password_reveal"
+eventName$ = IF reveal THEN rtype + ".one_time_reveal" ELSE rtype + "." + json["$.action"]
+eventType$ = IF reveal THEN "One-time shared password reveal" ELSE "Record created/updated/deleted"
+managementEvent$ = IF reveal THEN FALSE ELSE TRUE
+readOnly$ = reveal
+
+# For a one-time reveal, $USER is a guest with their IP address.
+user = json["$.user"]
+userName$ = user
+ipm = user|^.*?\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\b
+sourceAddress$ = ipm["ip"]
+
+d1.key$ = "record_name"
+d1.value$ = json["$.record_name"]
+d2.key$ = "record_id"
+d2.value$ = json["$.record_id"]
+d3.key$ = "company_name"
+d3.value$ = json["$.company_name"]
+d4.key$ = "url"
+d4.value$ = json["$.url"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3, d4]
+d5.key$ = "company_id"
+d5.value$ = json["$.company_id"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "asset_layout_id"
+d6.value$ = json["$.asset_layout_id"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

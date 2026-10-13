@@ -1,0 +1,169 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HUDU_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Hudu",
+      "event_time_fidelity": "MICRO",
+      "event_source": "Hudu",
+      "event_name": "AssetPassword.update",
+      "event_type": "Record created/updated/deleted",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "Alex Kim",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_name",
+            "value": "Acme Dental - Domain Admin"
+          },
+          {
+            "key": "record_id",
+            "value": "4412"
+          },
+          {
+            "key": "company_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "url",
+            "value": "https://docs.example.com/a/4412"
+          },
+          {
+            "key": "company_id",
+            "value": "31"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HUDU_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Hudu",
+      "event_time_fidelity": "MICRO",
+      "event_source": "Hudu",
+      "event_name": "AssetPassword.delete",
+      "event_type": "Record created/updated/deleted",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "Alex Kim",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_name",
+            "value": "Acme Dental - Firewall admin"
+          },
+          {
+            "key": "record_id",
+            "value": "4413"
+          },
+          {
+            "key": "company_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "url",
+            "value": "https://docs.example.com/a/4413"
+          },
+          {
+            "key": "company_id",
+            "value": "31"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HUDU_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Hudu",
+      "event_time_fidelity": "MICRO",
+      "event_source": "Hudu",
+      "event_name": "Asset.create",
+      "event_type": "Record created/updated/deleted",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "Jamie Lee",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_name",
+            "value": "ACME-SRV-02"
+          },
+          {
+            "key": "record_id",
+            "value": "9120"
+          },
+          {
+            "key": "company_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "url",
+            "value": "https://docs.example.com/a/9120"
+          },
+          {
+            "key": "company_id",
+            "value": "31"
+          },
+          {
+            "key": "asset_layout_id",
+            "value": "7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HUDU_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Hudu",
+      "event_time_fidelity": "MICRO",
+      "event_source": "Hudu",
+      "event_name": "AssetPassword.one_time_reveal",
+      "event_type": "One-time shared password reveal",
+      "management_event": false,
+      "read_only": true,
+      "user_name": "Guest (203.0.113.45)",
+      "source_address": "203.0.113.45",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_name",
+            "value": "Acme Dental - Wi-Fi guest"
+          },
+          {
+            "key": "record_id",
+            "value": "4420"
+          },
+          {
+            "key": "company_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "url",
+            "value": "https://docs.example.com/a/4420"
+          },
+          {
+            "key": "company_id",
+            "value": "31"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
