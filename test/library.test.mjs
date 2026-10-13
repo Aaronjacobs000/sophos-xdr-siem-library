@@ -39,6 +39,8 @@ test('the scan blocks secrets, private and real IPs, real emails, hostnames and 
   assert.deepEqual(kinds('src=8.8.4.4'), ['ip']);
   assert.deepEqual(kinds('ip6=fd00::1'), ['ip']);
   assert.deepEqual(kinds('from bob@realcorp.com.au'), ['email']);
+  assert.deepEqual(kinds('User root@192.0.2.10 logged in'), []);
+  assert.deepEqual(kinds('User root@8.8.4.4 logged in'), ['ip']);
   assert.deepEqual(kinds('see portal.realcorp.com.au'), ['hostname']);
   assert.deepEqual(kinds('host=dc01.corp.local'), ['hostname']);
   assert.deepEqual(kinds('Customer: Initrode Pty Ltd'), ['company']);

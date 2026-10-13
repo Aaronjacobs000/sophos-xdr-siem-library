@@ -104,6 +104,8 @@ export function scanText(text, opts = {}) {
   for (const m of text.matchAll(/[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)/g)) {
     const domain = m[1].toLowerCase();
     if (RESERVED_DOMAIN.test(domain)) continue;
+    // user@<address>, as ESXi and other logs write a login, is not an email; the IP check covers the address.
+    if (isIpv4(domain)) continue;
     add('error', 'email', `${m[0]} is a real-looking email address. Use a name at example.com.`, m.index, m[0]);
   }
   for (const m of text.matchAll(/(?<![\w@.-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24}))(?![\w-]|\.[a-z0-9])/gi)) {
