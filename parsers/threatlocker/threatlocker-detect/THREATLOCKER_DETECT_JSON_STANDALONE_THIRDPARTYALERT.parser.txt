@@ -1,0 +1,110 @@
+!SAMPLE={"source":"ThreatLocker Detect","DetectPolicyName":"Forward denies to SIEM","DateTime":"2026-10-12T22:41:07Z","Organization":"Acme Dental","Hostname":"ACME-WS-014","ComputerId":"6f1c2b9e-4d3a-4c8e-9b1f-2a7d5e0c3b41","DeviceType":"Workstation","Username":"ACME\\jlee","ActionType":"execute","PolicyAction":"Deny (Option to Request)","EffectiveAction":"Deny","PolicyName":"Default Deny","PolicyId":"","ApplicationName":"","FullPath":"C:\\Users\\jlee\\Downloads\\invoice_0921.exe","ProcessPath":"C:\\Windows\\explorer.exe","ProcessId":"4412","CmdLineParameters":"","CreatedByProcess":"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","SHA256":"9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08","TLHash":"2C624232CDD221771294DFBB310ACA000A0DF6AC8B66B696D90EF06FDEFB64A3","Certificates":"","FileSize":"482304","SourceIpAddress":"","DestinationIpAddress":"","DestinationPort":"","DestinationDomain":"","NetworkDirection":"","TransportLayer":"","Occurrences":"1","MonitorOnly":"False","Ringfenced":"False"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"source"\s*:\s*"ThreatLocker Detect"\s*,.*"PolicyAction"\s*:
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: a ThreatLocker Detect policy whose action is "Call Rest API (Client)", posting JSON to a
+# Sophos NG-SIEM HTTP Ingest integration with "Authorization: Bearer <integration key>".
+# Standalone parser for the third-party alert schema: one record per Unified Audit event the
+# Detect policy matched. The body is the template in this entry's README; its keys are the
+# ThreatLocker variable names without the % signs, and "source" marks the record.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "ThreatLocker Detect"
+vendor$ = "ThreatLocker"
+provider$ = "ThreatLocker Detect"
+
+host = json["$.Hostname"]
+user = json["$.Username"]
+actionType = json["$.ActionType"]
+policyAction = json["$.PolicyAction"]
+fullPath = json["$.FullPath"]
+
+hostId$ = host
+targetHostName$ = host
+sourceUserName$ = user
+alertCategory$ = actionType
+logType$ = actionType
+
+detect = json["$.DetectPolicyName"]
+title$ = IF detect != "" AND detect != NULL THEN detect ELSE "ThreatLocker " + policyAction
+summary$ = policyAction + ": " + actionType + " " + fullPath + " on " + host + " by " + user
+actionReason$ = json["$.PolicyName"]
+
+# PolicyAction reads like "Permit", "Deny" or "Deny (Option to Request)". Anything with deny
+# or block in it was stopped; permit and ringfence decisions let it run.
+pa = LOWERCASE(policyAction)
+action$ = "ACTION_UNKNOWN"
+action$ = IF CONTAINS(pa, "permit") OR CONTAINS(pa, "ringfence") OR CONTAINS(pa, "elevat") THEN "SUCCEEDED" ELSE action$
+action$ = IF CONTAINS(pa, "deny") OR CONTAINS(pa, "block") THEN "BLOCKED" ELSE action$
+vendorSeverity$ = policyAction
+severity$ = IF action$ == "BLOCKED" THEN "MEDIUM" ELSE "LOW"
+
+# Network Control events carry the addresses and ports.
+sourceAddress$ = json["$.SourceIpAddress"]
+destinationAddress$ = json["$.DestinationIpAddress"]
+dport = json["$.DestinationPort"]
+destinationPort$ = IF dport != "" AND dport != NULL THEN INT(dport, 10) ELSE NULL
+destinationServiceName$ = json["$.DestinationDomain"]
+dir = LOWERCASE(json["$.NetworkDirection"])
+direction$ = NULL
+direction$ = IF CONTAINS(dir, "in") THEN "INBOUND" ELSE direction$
+direction$ = IF CONTAINS(dir, "out") THEN "OUTBOUND" ELSE direction$
+proto = UPPERCASE(json["$.TransportLayer"])
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+
+# ThreatLocker doesn't document the %DateTime% format. ISO 8601 times are read; any other
+# format gives NULL and the event keeps its ingest time.
+eventTimeUsec$ = DATETIME(json["$.DateTime"], "2006-01-02T15:04:05Z07:00")
+
+# Keys with no third-party alert field go to additional_data, when ThreatLocker filled them.
+a1.key$ = "full_path"
+a1.value$ = fullPath
+a2.key$ = "effective_action"
+a2.value$ = json["$.EffectiveAction"]
+a3.key$ = "organization"
+a3.value$ = json["$.Organization"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3]
+
+a4.key$ = "process_path"
+a4.value$ = json["$.ProcessPath"]
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "command_line"
+a5.value$ = json["$.CmdLineParameters"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "created_by_process"
+a6.value$ = json["$.CreatedByProcess"]
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "sha256"
+a7.value$ = json["$.SHA256"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "tl_hash"
+a8.value$ = json["$.TLHash"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "certificates"
+a9.value$ = json["$.Certificates"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "application_name"
+a10.value$ = json["$.ApplicationName"]
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "computer_id"
+a11.value$ = json["$.ComputerId"]
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "ringfenced"
+a12.value$ = json["$.Ringfenced"]
+additionalData$.record$ = IF a12.value$ THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "monitor_only"
+a13.value$ = json["$.MonitorOnly"]
+additionalData$.record$ = IF a13.value$ THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "occurrences"
+a14.value$ = json["$.Occurrences"]
+additionalData$.record$ = IF a14.value$ THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
