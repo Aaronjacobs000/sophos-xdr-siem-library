@@ -225,3 +225,10 @@ test('CEF resolves cs, cn, flexString and flexNumber labels and keeps \\n as two
   const v = run(`v = CEF(l)\n${names.map((n, i) => `o${i} = v["${n}"]`).join('\n')}`, { l: line });
   assert.deepEqual(names.map((n, i) => v.get(`o${i}`)), ['abc', '42', 'fs', '7', null, null, null, null, null, '1.5', 'line1\\nline2 back\\slash eq=sign cr\\rx pipe\\|here']);
 });
+
+test('SPLIT_NAME_VALUES gives a delimiter inside quotes back as a space', () => {
+  const v = run('d = SPLIT_NAME_VALUES(s, ",", "=", "\\"")\nmsg = d["msg"]\nc = d["c"]\nf = d["f"]', { s: 'a=1,msg="x, y",b=2,c="p,q,r",f=" lead"' });
+  assert.deepEqual([v.get('msg'), v.get('c'), v.get('f')], ['x  y', 'p q r', ' lead']);
+  // With a space delimiter the value comes back as it was.
+  assert.equal(get('d = SPLIT_NAME_VALUES(s, " ", "=", "\\"")\nc = d["c"]', 'c', { s: 'a=1 c="x,y  z"' }), 'x,y  z');
+});
