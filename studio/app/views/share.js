@@ -24,6 +24,7 @@ export function draftEntry(results) {
     versions: state.source.version ? [state.source.version] : origin ? origin.versions || [] : [],
     format: plan ? FORMAT_FROM_ANALYSIS[plan.format] || 'other' : origin ? origin.format : 'other',
     ship_method: state.source.shipMethod || (origin && origin.ship_method) || 'syslog',
+    ...(origin && origin.collector ? { collector: origin.collector } : {}),
     author: state.shareAuthor || '',
     license: 'MIT',
     sample_source: 'synthetic',
