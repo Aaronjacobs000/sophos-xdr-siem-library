@@ -1,0 +1,30 @@
+!SAMPLE=2026-10-12 11:36:49.253879338 +0000 UTC,www.example.com,example.com,udp,,,A,NOERROR,,203.0.113.54,,,,,,,SYD,Acme Dental - Head Office,482211,,,Acme Default Policy,32119,,,,,,"Information Technology,Business",TRUE,FALSE,Category,Acme Dental,91234,,,,
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4} UTC,[^,]*,[^,]*,(?:udp|tcp|doh|tls|dot|doq)?,
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: DNSFilter Data Export to an Amazon S3 bucket that a Sophos NG-SIEM S3 Ingest
+# (customer-managed) integration reads. Each line is one DNS query in CSV, 38 columns in the
+# order DNSFilter's "Data Export: Log data descriptions" page lists them.
+# Parent: reads the columns and hands each query to a child.
+#   Queries DNSFilter flags as threats (Threat TRUE) go to the third-party alert schema.
+#   Every other query goes to the DNS schema.
+
+d = originalData$|^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4} UTC),(?P<fqdn>"(?:[^"]|"")*"|[^,]*),(?P<domain>"(?:[^"]|"")*"|[^,]*),(?P<protocol>"(?:[^"]|"")*"|[^,]*),(?P<username>"(?:[^"]|"")*"|[^,]*),(?P<userid>"(?:[^"]|"")*"|[^,]*),(?P<questiontype>"(?:[^"]|"")*"|[^,]*),(?P<code>"(?:[^"]|"")*"|[^,]*),(?P<originalcode>"(?:[^"]|"")*"|[^,]*),(?P<requestaddress>"(?:[^"]|"")*"|[^,]*),(?P<client>"(?:[^"]|"")*"|[^,]*),(?P<clientid>"(?:[^"]|"")*"|[^,]*),(?P<clienttype>"(?:[^"]|"")*"|[^,]*),(?P<clientmac>"(?:[^"]|"")*"|[^,]*),(?P<ip4>"(?:[^"]|"")*"|[^,]*),(?P<ip6>"(?:[^"]|"")*"|[^,]*),(?P<region>"(?:[^"]|"")*"|[^,]*),(?P<network>"(?:[^"]|"")*"|[^,]*),(?P<networkid>"(?:[^"]|"")*"|[^,]*),(?P<collection>"(?:[^"]|"")*"|[^,]*),(?P<collectionid>"(?:[^"]|"")*"|[^,]*),(?P<policy>"(?:[^"]|"")*"|[^,]*),(?P<policyid>"(?:[^"]|"")*"|[^,]*),(?P<scheduledpolicy>"(?:[^"]|"")*"|[^,]*),(?P<scheduledpolicyid>"(?:[^"]|"")*"|[^,]*),(?P<seccats>"(?:[^"]|"")*"|[^,]*),(?P<secallowcats>"(?:[^"]|"")*"|[^,]*),(?P<blockcats>"(?:[^"]|"")*"|[^,]*),(?P<blockallowcats>"(?:[^"]|"")*"|[^,]*),(?P<allowed>"(?:[^"]|"")*"|[^,]*),(?P<threat>"(?:[^"]|"")*"|[^,]*),(?P<method>"(?:[^"]|"")*"|[^,]*),(?P<organization>"(?:[^"]|"")*"|[^,]*),(?P<organizationid>"(?:[^"]|"")*"|[^,]*),(?P<applicationid>"(?:[^"]|"")*"|[^,]*),(?P<applicationname>"(?:[^"]|"")*"|[^,]*),(?P<applicationcategoryid>"(?:[^"]|"")*"|[^,]*),(?P<applicationcategoryname>"(?:[^"]|"")*"|[^,]*)\s*$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "DNSFilter"
+# Time is Go's default time format, for example 2026-10-12 11:36:49.253879338 +0000 UTC.
+eventTimeUsec$ = DATETIME(d["time"], "2006-01-02 15:04:05.999999999 -0700 MST")
+
+fqdn = d["fqdn"]
+client = d["client"]
+# Roaming clients report their internal address in IP4 or IP6; site traffic only has the
+# external address DNSFilter saw.
+src = d["ip4"]
+src = IF src == "" THEN d["ip6"] ELSE src
+src = IF src == "" THEN d["requestaddress"] ELSE src
+
+eventType$ = IF UPPERCASE(d["threat"]) == "TRUE" THEN "threat" ELSE "query"

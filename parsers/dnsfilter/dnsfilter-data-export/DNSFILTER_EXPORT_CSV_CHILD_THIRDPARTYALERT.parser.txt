@@ -1,0 +1,49 @@
+!SAMPLE=2026-10-12 11:44:07.031552 +0000 UTC,invoice-portal.example.net,example.net,udp,akim,550124,A,NOERROR,,198.51.100.40,ACME-WS-014,9a2d7f14-6c3b-4e58-8d21-b4f0c7e95a13,windows,,192.0.2.14,,MEL,Acme Dental - Roaming,482212,,,Acme Default Policy,32119,,,Phishing & Deception,,,,FALSE,TRUE,Category,Acme Dental,91234,,,,
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="threat"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: DNSFilter Data Export (CSV) through S3 Ingest.
+# Child of DNSFILTER_EXPORT_CSV_PARENT: queries DNSFilter flags as threats (Threat TRUE), blocked
+# or allowed, to the third-party alert schema.
+# d, fqdn, client, src, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "DNSFilter"
+provider$ = "DNSFilter"
+logType$ = "dns_query"
+allowed = UPPERCASE(d["allowed"]) == "TRUE"
+
+# Seccats lists the threat categories of a blocked query, Secallowcats those of an allowed one.
+cats = IF allowed THEN TRIM(d["secallowcats"]) ELSE TRIM(d["seccats"])
+alertCategory$ = cats
+title$ = IF allowed THEN "DNSFilter allowed a threat domain" ELSE "DNSFilter blocked a threat domain"
+summary$ = fqdn + " (" + cats + ")"
+action$ = IF allowed THEN "SUCCEEDED" ELSE "BLOCKED"
+severity$ = IF allowed THEN "HIGH" ELSE "MEDIUM"
+actionReason$ = d["policy"]
+
+destinationServiceName$ = fqdn
+sourceAddress$ = src
+sourceHostName$ = client
+hostId$ = IF client != "" THEN client ELSE d["network"]
+sourceUserName$ = d["username"]
+sourceMac$ = d["clientmac"]
+
+a1.key$ = "question_type"
+a1.value$ = d["questiontype"]
+a2.key$ = "response_code"
+a2.value$ = d["code"]
+a3.key$ = "network"
+a3.value$ = d["network"]
+a4.key$ = "organization"
+a4.value$ = d["organization"]
+a5.key$ = "region"
+a5.value$ = d["region"]
+a6.key$ = "method"
+a6.value$ = d["method"]
+a7.key$ = "request_address"
+a7.value$ = d["requestaddress"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4, a5, a6, a7]
