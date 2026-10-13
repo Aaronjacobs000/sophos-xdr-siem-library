@@ -1,0 +1,209 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "DrayTek Vigor",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "DrayTek",
+      "source_address": "192.0.2.10",
+      "destination_address": "198.51.100.53",
+      "source_port": 60475,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_set",
+            "value": "6"
+          },
+          {
+            "key": "filter_rule",
+            "value": "1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "LAN/RT/VPN->WAN"
+          },
+          {
+            "key": "router_uptime",
+            "value": "0:53:53"
+          },
+          {
+            "key": "packet_info",
+            "value": "HLen=20, TLen=56"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "DrayTek Vigor",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "DrayTek",
+      "source_address": "203.0.113.80",
+      "destination_address": "192.0.2.17",
+      "source_port": 443,
+      "destination_port": 34164,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_set",
+            "value": "2"
+          },
+          {
+            "key": "filter_rule",
+            "value": "2"
+          },
+          {
+            "key": "filter_direction",
+            "value": "WAN->LAN/RT"
+          },
+          {
+            "key": "router_uptime",
+            "value": "44:06:54"
+          },
+          {
+            "key": "packet_info",
+            "value": "HLen=20, TLen=83, Flag=AP, Seq=2127413670, Ack=4109947162, Win=16385"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "DrayTek Vigor",
+      "event_time_usec": 1791844890000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "DrayTek",
+      "source_address": "198.51.100.15",
+      "destination_address": "192.0.2.2",
+      "source_port": 56303,
+      "destination_port": 443,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_set",
+            "value": "2"
+          },
+          {
+            "key": "filter_rule",
+            "value": "2"
+          },
+          {
+            "key": "filter_direction",
+            "value": "WAN->LAN/RT"
+          },
+          {
+            "key": "router_uptime",
+            "value": "44:27:00"
+          },
+          {
+            "key": "packet_info",
+            "value": "HLen=20, TLen=1228"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "DrayTek Vigor",
+      "event_time_usec": 1791844925000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "DrayTek",
+      "source_address": "192.0.2.11",
+      "destination_address": "198.51.100.247",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_set",
+            "value": "13"
+          },
+          {
+            "key": "filter_rule",
+            "value": "1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "LAN/RT->LAN/RT"
+          },
+          {
+            "key": "router_uptime",
+            "value": "23:08:22"
+          },
+          {
+            "key": "packet_info",
+            "value": "HLen=20, TLen=84, Type=0, Code=0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "DrayTek Vigor",
+      "event_time_usec": 1791845031000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "DrayTek",
+      "source_address": "192.0.2.20",
+      "destination_address": "203.0.113.67",
+      "source_port": 52617,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_set",
+            "value": "13"
+          },
+          {
+            "key": "filter_rule",
+            "value": "1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "LAN/RT/VPN->WAN"
+          },
+          {
+            "key": "router_uptime",
+            "value": "1:02:35"
+          },
+          {
+            "key": "packet_info",
+            "value": "HLen=20, TLen=52, Flag=S, Seq=3643099039, Ack=0, Win=41548"
+          }
+        ]
+      }
+    }
+  }
+]
