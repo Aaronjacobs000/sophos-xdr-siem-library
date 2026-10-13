@@ -194,3 +194,8 @@ test('AND and OR evaluate both sides', () => {
   const v = run('a = FALSE AND TRUE\nb = TRUE OR FALSE');
   assert.deepEqual([v.get('a'), v.get('b')], [false, true]);
 });
+
+test('NULL equals "" and nothing else', () => {
+  const v = run('json = JSON(d)\na = NULL == ""\nb = "" == NULL\nc = NULL != ""\nm = json["$.missing"] == ""\ne = json["$.e"] == NULL\nf = 0 == NULL\ng = FALSE == NULL\nh = " " == NULL\ni = "null" == NULL', { d: '{"e":""}' });
+  assert.deepEqual(['a', 'b', 'c', 'm', 'e', 'f', 'g', 'h', 'i'].map((k) => v.get(k)), [true, true, false, true, true, false, false, false, false]);
+});

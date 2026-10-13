@@ -117,8 +117,12 @@ export function toBool(v) {
   return list.length === 1 && truthy(list[0]);
 }
 
+// NULL equals "" as well as NULL (checked in a lab tenant).
 export function looseEqual(a, b) {
-  if (a === null || a === undefined || b === null || b === undefined) return (a ?? null) === (b ?? null);
+  if (a === null || a === undefined || b === null || b === undefined) {
+    const x = a ?? null, y = b ?? null;
+    return x === y || x === '' || y === '';
+  }
   if (typeof a === typeof b && (typeof a !== 'object')) return a === b;
   if (typeof a === 'number' && typeof b === 'string') return String(a) === b || Number(b) === a;
   if (typeof b === 'number' && typeof a === 'string') return String(b) === a || Number(a) === b;
