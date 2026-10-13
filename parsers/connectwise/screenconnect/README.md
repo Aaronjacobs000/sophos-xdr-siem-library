@@ -1,6 +1,6 @@
 # ConnectWise ScreenConnect to Sophos NG-SIEM
 
-ScreenConnect has no syslog export. Its automations (Administration > Automations) can send a web request when an event happens. The web request has no header field, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so point the automations at a small relay (for example a cloud function) that forwards the body unchanged to the HTTP Ingest URL with that header.
+ScreenConnect has no syslog export. Its automations (Administration > Automations) can send a web request when an event happens. The web request has no header field, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so point the automations at the [webhook relay](../../../collectors/webhook-relay/) in this repo, which forwards the body to the HTTP Ingest URL with that header.
 
 ScreenConnect puts values into the body as they are, without escaping, so these templates are pipe-delimited text rather than JSON. Keep the keys and their order: the parsers read them by name, and Data must stay last.
 
@@ -33,6 +33,6 @@ ScreenConnect|category=Session|event={Event.EventType}|time={Event.Time}|session
 | Connected or Disconnected by the guest (an agent coming online) | Generic |
 | Other session events | ManagementEvent, with the command in `command` and output or file names in `result` |
 
-Not checked against a live server: the format of `{Event.Time}` (the parser reads ISO 8601 and US month/day/year times as UTC), the UserSource values, and Data that spans several lines, which HTTP Ingest splits into extra records. Send a test event and compare it with `samples.log` before you rely on it.
+Not checked against a live server: the format of `{Event.Time}` (the parser reads ISO 8601 and US month/day/year times as UTC), the UserSource values, and Data that spans several lines, which the relay keeps in one record by turning each line break into the two characters `\n`. Send a test event and compare it with `samples.log` before you rely on it.
 
 ConnectWise Labs also publishes a Splunk Integration extension that sends session and security events to a Splunk HTTP Event Collector. HTTP Ingest accepts the Splunk token scheme, so it may work without a relay, but ConnectWise doesn't publish the extension's record format and it hasn't been tested here, so this entry doesn't parse it.
