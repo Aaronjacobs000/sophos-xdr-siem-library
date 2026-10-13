@@ -1,0 +1,26 @@
+!SAMPLE=<14>Oct 13 01:40:12 airlock01 airlock: {"event":"ServerActivityMessage","checkpoint":"88412","datetime":"13/10/2026 01:40:11 AM","task":"Login","user":"admin","description":"User: admin logged in successfully from 203.0.113.10 using Chrome"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ServerActivityMessage" OR eventType$=="PolicyChangeMessage"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Airlock Digital external logging in JSON.
+# Child of AIRLOCK_DIGITAL_JSON_PARENT: server activity (logins, policy edits, client check-ins and
+# other console tasks) and policy changes to ManagementEvent.
+# json, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+server = eventType$ == "ServerActivityMessage"
+username$ = json["$.user"]
+operationName$ = IF server THEN json["$.task"] ELSE json["$.change_description"]
+operation$ = IF server THEN json["$.description"] ELSE "Policy group " + STRING(json["$.policy_group"]) + " version " + STRING(json["$.policy_version"])
+# The reason the user gave for a policy change.
+possibleCause$ = IF server THEN NULL ELSE json["$.user_reason"]
+
+# Logins name the client address in the description: "... logged in successfully from <ip> ...".
+desc = STRING(json["$.description"])
+from = desc|\sfrom\s+(?P<ip>[0-9A-Fa-f.:]+)
+clientHostname$ = IF from["ip"] != "" THEN from["ip"] ELSE NULL
+result$ = NULL
+result$ = IF CONTAINS(LOWERCASE(desc), "successfully") THEN "success" ELSE result$
+result$ = IF CONTAINS(LOWERCASE(desc), "invalid") OR CONTAINS(LOWERCASE(desc), "failed") THEN "failure" ELSE result$

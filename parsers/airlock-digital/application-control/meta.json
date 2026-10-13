@@ -1,0 +1,54 @@
+{
+  "vendor": "Airlock Digital",
+  "product": "Application Control",
+  "versions": [
+    "4.7",
+    "5",
+    "6"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://www.airlockdigital.com/airlock-digital-siem",
+    "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/AirlockDigital",
+    "https://github.com/AirlockDigital/AirlockDigitalAppForSplunk"
+  ],
+  "notes": "In the Airlock console add an external logging receiver in JSON form (Generic Syslog to the data collector, or JSON over HTTP(S) to HTTP Ingest). Airlock 4.7 or later. Executions the policy allowed (Trusted ... Execution) go to Process. Blocked and Blocklist executions, untrusted or blocklisted files that ran in audit mode, and executions allowed by a one-time password go to the third-party alert schema with the execution type, policy group and version, hashes and publisher; the Process schema has nowhere to keep those. Server activity and policy changes go to ManagementEvent. Airlock's own field reference is in its customer portal; the keys here come from the Microsoft Sentinel solution Airlock publishes and Airlock's public Splunk app. The CEF output and the syslog wrapper aren't documented publicly, so CEF isn't covered and the JSON is read from the end of the line. datetime is day first with no zone and is read as UTC. Samples are made up with Airlock's published key names. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser in that tenant matched these lines.",
+  "parsers": [
+    {
+      "name": "AIRLOCK_DIGITAL_JSON_PARENT",
+      "file": "AIRLOCK_DIGITAL_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "AIRLOCK_DIGITAL_JSON_CHILD_PROCESS",
+      "file": "AIRLOCK_DIGITAL_JSON_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "AIRLOCK_DIGITAL_JSON_PARENT",
+      "schema": "scwx.process"
+    },
+    {
+      "name": "AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+      "file": "AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "AIRLOCK_DIGITAL_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "AIRLOCK_DIGITAL_JSON_CHILD_MGMT",
+      "file": "AIRLOCK_DIGITAL_JSON_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "AIRLOCK_DIGITAL_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

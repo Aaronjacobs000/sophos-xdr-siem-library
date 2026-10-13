@@ -1,0 +1,36 @@
+!SAMPLE={"event":"FileActivityMessage","checkpoint":"104221","datetime":"13/10/2026 01:02:03 AM","hostname":"WS-FIN-041","username":"CORP\\jdoe","path":"C:\\Users\\jdoe\\Downloads\\","filename":"invoice_1013.exe","sha256":"3de2d90306c9fa530bef965c18f8f9eb32f7b78adeae6407ff3c1aeda1401462","md5":"cf5dea57f52825a77e43b750d20b94e1","sha1":"069c67a479718b6719b32758de9edc34b913e4b8","publisher":"","parentgroup":"Airlock Groups","group":"Workstations","policyid":"12","policyver":"4646.3818","execution_type":"Blocked Execution","parentprocess":"explorer.exe","gparentprocess":"userinit.exe","commandline":"","ip":"203.0.113.24","localip":"192.0.2.41"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"event"\s*:\s*"(?:FileActivityMessage|ServerActivityMessage|PolicyChangeMessage)"\s*,
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Airlock Digital external logging in JSON (Generic Syslog, JSON or HTTP(S) receivers), to
+# the data collector or HTTP Ingest. One JSON object per event, named by its "event" key.
+# Parent: hands execution events (FileActivityMessage) to the Process child and server activity
+# and policy changes to the ManagementEvent child. Airlock doesn't publish its syslog wrapper,
+# so the JSON is cut from the end of the line.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+jsonMatch = originalData$|(\{.*})\s*$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to the children.
+sensorType$ = "Airlock Digital"
+eventType$ = json["$.event"]
+
+# execution_type decides where an execution goes. Blocked and Blocklist executions were stopped;
+# [Audit] ones ran but would have been blocked; [OTP] ones ran under a one-time password. These
+# go to the third-party alert child, and Trusted executions to Process. Older servers write
+# (Audit) and (OTP).
+et = LOWERCASE(STRING(json["$.execution_type"]))
+stopped = et == "blocked execution" OR et == "blocklist execution" OR et == "blocked browser execution" OR et == "blocklist browser execution"
+audit = CONTAINS(et, "[audit]") OR CONTAINS(et, "(audit)")
+otp = CONTAINS(et, "[otp]") OR CONTAINS(et, "(otp)")
+execution = eventType$ == "FileActivityMessage"
+eventType$ = IF execution THEN "execution" ELSE eventType$
+eventType$ = IF execution AND (stopped OR audit OR otp) THEN "execution_alert" ELSE eventType$
+# datetime is day first, 12-hour, with no zone ("13/10/2026 01:02:03 AM"); read as UTC.
+dt = STRING(json["$.datetime"])
+eventTimeUsec$ = IF dt != "" THEN DATETIME(dt, "02/01/2006 03:04:05 PM") ELSE eventTimeUsec$
