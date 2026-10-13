@@ -1,0 +1,544 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791842282114207,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f1",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "login_success"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-aliceExample0001"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791842507502913,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f2",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "password_login_invalid_password"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-carolExample0003"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791842519020481,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f3",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "password_login_sentinel_blocked"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-carolExample0003"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791842713774310,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f4",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "application_name": "Example Notes Connector",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "token_issued"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-aliceExample0001"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          },
+          {
+            "key": "oauth_client_id",
+            "value": "app_exampleclient01"
+          },
+          {
+            "key": "oauth_granted_scopes",
+            "value": "[\"openid\",\"email\",\"profile\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791842980001562,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f5",
+      "target_user_name": "carol@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "action": "ACCOUNT",
+      "auth_category": "PASSWORD_RESET_ATTEMPT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "password_reset_success"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-carolExample0003"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791846725338990,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0d6f1e2a-1b3c-4d5e-8f90-a1b2c3d4e5f6",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "auth_system": "password",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_auth_action",
+            "value": "logout_success"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-aliceExample0001"
+          },
+          {
+            "key": "openai_principal_id",
+            "value": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+          },
+          {
+            "key": "openai_principal_type",
+            "value": "CHATGPT_WORKSPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791843331662104,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c81",
+      "operation_name": "WORKSPACE_TOGGLE_FEATURE",
+      "result": "SUCCESS",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791843422908457,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c82",
+      "operation_name": "SSO_SET_ENFORCEMENT",
+      "result": "SUCCESS",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791843524120036,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c83",
+      "operation_name": "USER_ROLE_UPDATED",
+      "result": "SUCCESS",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791843609457771,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c84",
+      "operation_name": "INVITE_USERS",
+      "result": "SUCCESS",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791843891003318,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c85",
+      "operation_name": "WORKSPACE_SET_IP_ALLOWLIST",
+      "result": "BLOCKED",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "carol@example.com",
+      "remote_operation": true,
+      "host_id": "198.51.100.77"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791844276845229,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c86",
+      "operation_name": "CONVERSATION_SHARE",
+      "result": "SUCCESS",
+      "operation": "STANDARD_USER",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "alice@example.com",
+      "remote_operation": true,
+      "host_id": "203.0.113.24"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791844800129554,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c87",
+      "operation_name": "DOWNLOAD_WORKSPACE_LOG_FILE",
+      "result": "SUCCESS",
+      "operation": "ADMIN",
+      "channel": "AUDIT_LOG",
+      "namespace": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "username": "api_key sk-...k7Qa",
+      "remote_operation": true,
+      "host_id": "203.0.113.200"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_CONVERSATION",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791845110311902,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9d6bb4e9-3882-4dbe-9d4c-2668b692f9a1",
+      "event_name": "CONVERSATION_MESSAGE",
+      "event_source": "ChatGPT",
+      "event_type": "user",
+      "user_name": "alice@example.com",
+      "user_id": "user-aliceExample0001",
+      "user_type": "ACCOUNT_USER",
+      "recipient_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "resources": [
+        {
+          "resource_id": "convo-example-0002",
+          "resource_type": "conversation",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        },
+        {
+          "resource_id": "msg-example-0101",
+          "resource_type": "message",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "conversation_mode",
+            "value": "chat"
+          },
+          {
+            "key": "is_temporary_chat",
+            "value": "false"
+          },
+          {
+            "key": "client_type",
+            "value": "desktop_web"
+          },
+          {
+            "key": "file_count",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_CONVERSATION",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791845119884516,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9d6bb4e9-3882-4dbe-9d4c-2668b692f9a2",
+      "event_name": "CONVERSATION_MESSAGE",
+      "event_source": "ChatGPT",
+      "event_type": "assistant",
+      "user_name": "alice@example.com",
+      "user_id": "user-aliceExample0001",
+      "user_type": "ACCOUNT_USER",
+      "recipient_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "resources": [
+        {
+          "resource_id": "convo-example-0002",
+          "resource_type": "conversation",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        },
+        {
+          "resource_id": "msg-example-0102",
+          "resource_type": "message",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        },
+        {
+          "resource_id": "g-example0001",
+          "resource_type": "gpt",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "conversation_mode",
+            "value": "chat"
+          },
+          {
+            "key": "is_temporary_chat",
+            "value": "false"
+          },
+          {
+            "key": "model",
+            "value": "gpt-5-2-pro"
+          },
+          {
+            "key": "tools_used",
+            "value": "[\"browser\"]"
+          },
+          {
+            "key": "skills_used_names",
+            "value": "[\"pdfs\"]"
+          },
+          {
+            "key": "previous_message_id",
+            "value": "msg-example-0101"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_CONVERSATION",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "ChatGPT Enterprise",
+      "event_time_usec": 1791846153507661,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9d6bb4e9-3882-4dbe-9d4c-2668b692f9a3",
+      "event_name": "CONVERSATION_MESSAGE",
+      "event_source": "ChatGPT",
+      "event_type": "user",
+      "user_name": "carol@example.com",
+      "user_id": "user-carolExample0003",
+      "user_type": "ACCOUNT_USER",
+      "recipient_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69",
+      "resources": [
+        {
+          "resource_id": "convo-example-0003",
+          "resource_type": "conversation",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        },
+        {
+          "resource_id": "msg-example-0201",
+          "resource_type": "message",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        },
+        {
+          "resource_id": "g-p-example0001",
+          "resource_type": "project",
+          "resource_account_id": "4f1c2a3b-0d5e-4c7f-9a8b-1e2d3c4b5a69"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "conversation_mode",
+            "value": "work"
+          },
+          {
+            "key": "is_temporary_chat",
+            "value": "true"
+          },
+          {
+            "key": "client_type",
+            "value": "ios_app"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "vendor": "OpenAI",
+  "product": "ChatGPT Enterprise Compliance Logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://chatgpt.com/admin/api-reference",
+    "https://help.openai.com/en/articles/9261474-compliance-api-for-chatgpt-enterprise-edu-and-chatgpt-for-teachers",
+    "https://learn.chatgpt.com/docs/enterprise/compliance-api",
+    "https://developers.openai.com/cookbook/examples/chatgpt/compliance_api/logs_platform"
+  ],
+  "notes": "ChatGPT Enterprise and Edu workspaces. The Compliance Logs Platform is pull only (the Admin API lists and serves JSONL files), so records need a collector to reach Sophos NG-SIEM: send each record as one JSON object to an HTTP Ingest integration (Security Operations > Integrations > Marketplace > Custom in Sophos Fusion). collectors/ai-compliance-logs in this repo does that. AUTH_LOG goes to Auth, AUDIT_LOG to ManagementEvent and CONVERSATION_MESSAGE to CloudAudit; APP_LOG, CODEX_LOG and the other log types stay in generic. Privacy: CONVERSATION_MESSAGE records carry prompts and responses. The parsers map metadata only (user, model, client, conversation, message, GPT and Project IDs, file count). Message text, quotes, custom instructions, titles, file names and GPT or Project names never go into a normalized field, and AUDIT_LOG action_data, which can hold system instructions, isn't mapped. original_data keeps what the collector sends, so the collector redacts content by default. ManagementEvent has no address field, so the client IP is in host_id, and action_privilege (ADMIN or STANDARD_USER) is in operation. Samples are synthetic, built from the record shapes in OpenAI's Admin API reference. No live workspace was available, so the parsers are tested against the documented shapes only. Each parser passed Run Test in a lab tenant on 2026-10-13: 182 of 182 fields matched the emulator in each of 3 runs, no parser claimed another's lines, and no built-in parser claimed any line.",
+  "parsers": [
+    {
+      "name": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH",
+      "file": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUTH.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT",
+      "file": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_AUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_CONVERSATION",
+      "file": "OPENAI_CHATGPT_CLP_JSON_STANDALONE_CONVERSATION.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
