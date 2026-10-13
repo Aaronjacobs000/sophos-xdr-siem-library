@@ -1,0 +1,43 @@
+{
+  "vendor": "Keeper Security",
+  "product": "Keeper ARAM Events",
+  "versions": [],
+  "format": "json",
+  "ship_method": "s3",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://docs.keeper.io/en/enterprise-guide/event-reporting/aws-s3-bucket",
+    "https://docs.keeper.io/en/enterprise-guide/event-reporting/syslog",
+    "https://docs.keeper.io/en/enterprise-guide/event-reporting/event-descriptions"
+  ],
+  "notes": "Needs the Advanced Reporting and Alerts Module (ARAM). In the Keeper Admin Console, set up external logging to an Amazon S3 bucket with file format Syslog and read the bucket with a Sophos NG-SIEM S3 Ingest (customer-managed) integration: each line is one event. Keeper's TCP syslog push uses the same line format, but it only connects to ports 514 or 6514 (TLS, with a valid CA-signed certificate), which the data collector's documented ports (UDP 514, TCP 601) don't match, so it needs a relay. Logins, Admin Console logins and failed logins go to Auth; every other event (record use, sharing, roles, policies, BreachWatch, MSP and managed company changes) goes to CloudAudit with the event code. Keeper already ships Sentinel, Splunk and CrowdStrike integrations; this covers Sophos NG-SIEM. Samples follow the syslog examples on Keeper's S3 and syslog pages, with event codes from its event descriptions page; the header host is changed to an example domain (Keeper sends its own) and all values are made up. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13 (65 of 65 fields matched the emulator), and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "KEEPER_ARAM_SYSLOG_PARENT",
+      "file": "KEEPER_ARAM_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "KEEPER_ARAM_SYSLOG_CHILD_AUTH",
+      "file": "KEEPER_ARAM_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "KEEPER_ARAM_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "KEEPER_ARAM_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "KEEPER_ARAM_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "KEEPER_ARAM_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
