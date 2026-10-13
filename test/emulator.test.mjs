@@ -254,6 +254,32 @@ test('in Run Test the root parser only takes a plain BSD header off the line', (
   ]);
 });
 
+// What Run Test gave for each line in a lab tenant, with its ingest time as now. The stored
+// event time is the same as before; only what the parser can read changed.
+test('with no plain BSD header, eventTimeUsec$ starts as the ingest time in microseconds', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=psr3e\n!SCHEMA=scwx.nids\nr1.key$ = "s"\nr1.value$ = STRING(eventTimeUsec$)\nr2.key$ = "l"\nr2.value$ = STRING([eventTimeUsec$])\nr3.key$ = "p"\nr3.value$ = STRING([eventTimeUsec$ + 0])\neventMetadata$.record$ = [r1, r2, r3]';
+  const lines = [
+    'psr3e {"a":1}',
+    '<134>Oct 14 01:02:03 probe.example.com psr3e hello',
+    'Oct 14 01:02:03 probe.example.com psr3e hello',
+    '<134>1 2026-10-14T01:02:03Z probe.example.com app - - - psr3e hello',
+    '2026-10-14T01:02:03Z probe.example.com psr3e hello',
+    'Oct 14 01:02:03 relay.example.com Oct 14 01:02:03 probe.example.com psr3e hello',
+  ];
+  const now = '2026-10-13T23:31:23Z';
+  const ingest = Date.parse(now) * 1000;
+  const syslog = Date.UTC(2026, 9, 14, 1, 2, 3) * 1000;
+  const r = runParsers([{ name: 'A_B', text: t }], lines, { now });
+  const got = r.map((x) => [x.normalized.event_metadata.record.map((y) => y.value), x.normalized.event_time_usec]);
+  const fromIngest = [[String(ingest), `[${ingest}]`, `[${ingest}]`], ingest];
+  // The header time is 1.5 hours ahead of ingest, so the engine moves it back 2 hours.
+  const fromHeader = [['2026-10-14 01:02:03 +0000 UTC', '[{}]', `[${syslog}]`], syslog - 2 * 3600e6];
+  assert.deepEqual(got, [fromIngest, fromIngest, fromHeader, fromIngest, fromIngest, fromHeader]);
+  // The parser never set a time, so the note about the ingest time stays.
+  assert.ok(r[0].notes.some((n) => n.code === 'ingest-time'));
+  assert.ok(!r[2].notes.some((n) => n.code === 'ingest-time'));
+});
+
 test('Go regex translation and RE2 checks', () => {
   assert.equal(compileGo('(?P<user>\\w+)@').exec('jdoe@example.com').groups.user, 'jdoe');
   assert.ok(compileGo('(?i)error').test('ERROR'));

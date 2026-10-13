@@ -158,6 +158,9 @@ function plus(a, b) {
   if (a instanceof TimeValue && (b instanceof TimeValue || typeof b === 'boolean')) return int64(a.usec + num(b, '+'));
   if (typeof a === 'boolean' && b instanceof TimeValue) return int64(Number(a) + b.usec);
   if (typeof a === 'number' && typeof b === 'number') return int64(a + b);
+  // A number and TRUE or FALSE add the same way, and so do two of them: 5 + TRUE is 6 and
+  // TRUE + TRUE is 2 (checked in a lab tenant).
+  if ((typeof a === 'number' || typeof a === 'boolean') && (typeof b === 'number' || typeof b === 'boolean')) return Number(a) + Number(b);
   return toStr(a) + toStr(b);
 }
 
@@ -229,8 +232,11 @@ export function evaluate(ctx, e) {
         case '+': return plus(a, b);
         case '-': return int64(num(a, '-') - num(b, '-'));
         case '*': return mulInt(num(a, '*'), num(b, '*'));
-        case '/': { const d = num(b, '/'); if (d === 0) throw new RuntimeError('division by zero'); const r = num(a, '/') / d; return Number.isInteger(num(a, '/')) && Number.isInteger(d) ? Math.trunc(r) : r; }
-        case '%': return num(a, '%') % num(b, '%');
+        // Division always gives a float: 3 / 2 is 1.5, -3 / 2 is -1.5 and 4 / 2 is 2. Dividing by
+        // zero fails the event. % takes the whole part of each side first, so (7 / 2) % 2 is 1
+        // (checked in a lab tenant).
+        case '/': { const d = num(b, '/'); if (d === 0) throw new RuntimeError('division by zero'); return num(a, '/') / d; }
+        case '%': { const r = Math.trunc(num(a, '%')) % Math.trunc(num(b, '%')); return r === 0 ? 0 : r; }
         default: throw new RuntimeError(`unknown operator ${e.op}`);
       }
     }
@@ -373,6 +379,7 @@ export function runParsers(parsers, samples, opts = {}) {
       notes.push({ level: 'info', code: 'global-parent', parser: current.name, message: `${current.name} extends the global parser ${current.parent}. The emulator can't run built-in parsers, so anything ${current.parent} sets is missing here.` });
     }
     let ctx = root;
+    const ingest = root.vars.get('eventTimeUsec$');
     try {
       runStatements(current, ctx, byName);
       const kids = childrenOf.get(current.name) || [];
@@ -389,6 +396,8 @@ export function runParsers(parsers, samples, opts = {}) {
         }
       }
       result.extractor_path = path.join(' > ');
+      // The parser left eventTimeUsec$ at the ingest time the root parser gave it.
+      const kept = typeof ingest === 'number' && ctx.vars.get('eventTimeUsec$') === ingest;
       const parentP = path.length > 1 ? byName.get(path[0]) : null;
       const schema = current.schema || (parentP && parentP.schema) || GENERIC;
       result.schema = schema;
@@ -406,7 +415,7 @@ export function runParsers(parsers, samples, opts = {}) {
           : 'This parser targets the generic schema.';
         // The generic event still carries the common fields the parsers set.
         const vars = timedVars(ctx.vars, nowUsec, notes, current.name);
-        result.normalized = withEventTime(normalize(vars, GENERIC, { sanitize: true, trim: !current.flags.has('TRIMALLOFF'), carriers: new Set([...vars.keys()]) }).record, nowUsec, now, notes, current.name);
+        result.normalized = withEventTime(normalize(vars, GENERIC, { sanitize: true, trim: !current.flags.has('TRIMALLOFF'), carriers: new Set([...vars.keys()]) }).record, nowUsec, now, notes, current.name, kept);
         return result;
       }
       const flags = current.flags;
@@ -418,7 +427,7 @@ export function runParsers(parsers, samples, opts = {}) {
       };
       const vars = timedVars(ctx.vars, nowUsec, notes, current.name);
       const records = real.map((sid) => ({ schema: sid, ...normalize(vars, sid, opts2) }));
-      records.forEach((r, i) => withEventTime(r.record, nowUsec, now, i ? [] : notes, current.name));
+      records.forEach((r, i) => withEventTime(r.record, nowUsec, now, i ? [] : notes, current.name, kept));
       result.normalized = records[0].record;
       if (records.length > 1) result.also = records.slice(1).map((r) => ({ schema: r.schema, normalized: r.record }));
       for (const r of records) {
@@ -486,10 +495,11 @@ function timedVars(vars, nowUsec, notes, parser) {
 }
 
 // A record with no event time, because nothing set one or DATETIME couldn't read it, gets the
-// ingest time (checked in a lab tenant). The emulator's ingest time is its "now".
-function withEventTime(record, nowUsec, now, notes, parser) {
-  if (record.event_time_usec !== undefined || !Number.isFinite(nowUsec)) return record;
-  record.event_time_usec = nowUsec;
+// ingest time (checked in a lab tenant). The emulator's ingest time is its "now". kept is true
+// when the record has the ingest time because the parser never changed eventTimeUsec$.
+function withEventTime(record, nowUsec, now, notes, parser, kept = false) {
+  if ((record.event_time_usec !== undefined && !kept) || !Number.isFinite(nowUsec)) return record;
+  record.event_time_usec ??= nowUsec;
   notes.push({ level: 'info', code: 'ingest-time', parser, message: `no event time, so the engine stores the ingest time; the emulator uses ${now}` });
   return record;
 }
@@ -500,11 +510,16 @@ export const ROOT_FIELDS = new Set(['sensor_type', 'sensor_id', 'event_time_usec
 // What the engine's root parser sets before custom parsers run (checked in a lab tenant):
 // sensorType$ "Generic", sensorId$ the syslog host, eventTimeUsec$ the syslog time in UTC and
 // the current year, eventTimeFidelity$ "MICRO", and message, the line after the BSD header.
+// With no plain BSD header, eventTimeUsec$ is the ingest time in microseconds, a number rather
+// than a DATETIME value.
 export function rootVars(sample, now) {
   const rs = rootSplit(sample);
   let time = null;
   if (rs.time) {
     try { time = goParse('Jan _2 15:04:05', rs.time, { handle2DigitYear: true, now }); } catch { time = null; }
+  } else {
+    const usec = (now === undefined ? Date.now() : Date.parse(now)) * 1000;
+    time = Number.isFinite(usec) ? usec : null;
   }
   return [['originalData$', sample], ['message', rs.message], ['sensorType$', 'Generic'], ['sensorId$', rs.host], ['eventTimeUsec$', time], ['eventTimeFidelity$', 'MICRO']];
 }

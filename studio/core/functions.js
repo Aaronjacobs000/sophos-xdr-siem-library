@@ -108,16 +108,20 @@ export function trimPairs(s, repeat) {
   return t;
 }
 
-// STRING(): a float loses its fraction, NULL becomes "", and a list, JSON object or JSON array
-// comes out as JSON the way Go's encoding/json writes it (checked in a lab tenant): ["a","b"]
-// with no spaces, object keys sorted, <, > and & escaped, a NULL item written as 0 and a
-// DATETIME item as {}. A NULL inside the value JSON() returned stays null (see JsonValue).
-// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b".
+// STRING(): a float loses its fraction, NULL becomes "", and a list, JSON object or JSON array,
+// SPLIT_NAME_VALUES object or record comes out as JSON the way Go's encoding/json writes it
+// (checked in a lab tenant): ["a","b"] with no spaces, object keys sorted, <, > and & escaped, a
+// NULL item or member written as 0 and a DATETIME one as {}. A NULL inside the value JSON()
+// returned stays null (see JsonValue), but that value inside a list or a record is written as {}.
+// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b". A float past the
+// int64 range, such as (3 / 2) * 9223372036854775807, comes out as -9223372036854775808.
+const INT64_LIMIT = 2 ** 63;
 function stringOf(v) {
   if (v === null || v === undefined) return '';
-  if (typeof v === 'number') return toStr(Math.trunc(v));
+  if (typeof v === 'number') { const t = Math.trunc(v); return toStr(t >= INT64_LIMIT || t < -INT64_LIMIT ? -INT64_LIMIT : t); }
   if (isList(v)) return goJsonList(v);
-  if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJson(v);
+  if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJsonPlain(v.value, v.doc ? 'null' : '0');
+  if (v instanceof ObjValue || v instanceof RecordValue) return goJson(v);
   return toStr(v);
 }
 
@@ -125,16 +129,18 @@ const GO_HTML = { '<': '\\u003c', '>': '\\u003e', '&': '\\u0026', '\u2028': '\\u
 const goQuote = (s) => JSON.stringify(typeof s.toWellFormed === 'function' ? s.toWellFormed() : s).replace(/[<>&\u2028\u2029]/g, (ch) => GO_HTML[ch]);
 
 function goJsonList(list) {
-  return `[${list.map((x) => (x === null || x === undefined ? '0' : goJson(x))).join(',')}]`;
+  return `[${list.map(goJson).join(',')}]`;
 }
 
+// An item of a list or a member of an object or record. 0 / -1 is -0, which Go writes as -0.
 function goJson(v) {
-  if (v === null || v === undefined) return 'null';
+  if (v === null || v === undefined) return '0';
   if (typeof v === 'string') return goQuote(v);
-  if (typeof v === 'number' || typeof v === 'boolean') return toStr(v);
+  if (typeof v === 'number') return Object.is(v, -0) ? '-0' : toStr(v);
+  if (typeof v === 'boolean') return toStr(v);
   if (isList(v)) return goJsonList(v);
   if (v instanceof TimeValue) return '{}';
-  if (v instanceof JsonValue) return goJsonPlain(v.value, v.doc ? 'null' : '0');
+  if (v instanceof JsonValue) return v.doc ? '{}' : goJsonPlain(v.value, '0');
   if (v instanceof ObjValue) return goJsonObject([...v.map]);
   if (v instanceof RecordValue) return goJsonObject([...v.fields]);
   return goJsonPlain(toPlain(v));

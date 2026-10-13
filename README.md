@@ -26,7 +26,7 @@ Everything runs in the browser tab. Your samples are never uploaded and never wr
 
 There is no public Sophos parser engine or parser API, so the emulator follows the [custom parser docs](https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/): statements, capture patterns, JSONPath, every documented function, parent and child routing, `SANITIZE_ALL` and `TRIM_ALL`. Where the docs are silent, it does what the Sophos engine did in a lab tenant. For example, enum fields take names in any case or numbers, sub-fields such as `fileHash$.sha1$` work, the root parser sets `sensor_type`, takes `sensor_id` and the event time from a plain BSD syslog header, and reading a variable that was never set fails the event. The lint marks the few behaviors that haven't been checked as inferred.
 
-The emulator handles the syslog header the way Run Test does: it takes a plain BSD header such as `Oct 14 01:02:03 host` off `message`. A line that starts with a `<PRI>` such as `<134>`, an RFC 5424 header or an ISO time keeps its header: `message` is the whole line, there is no `sensor_id`, and the event time is the ingest time. Whether ingest takes the `<PRI>` off first hasn't been checked.
+The emulator handles the syslog header the way Run Test does: it takes a plain BSD header such as `Oct 14 01:02:03 host` off `message`. A line that starts with a `<PRI>` such as `<134>`, an RFC 5424 header or an ISO time keeps its header: `message` is the whole line, there is no `sensor_id`, and the event time is the ingest time. `eventTimeUsec$` already holds it, in microseconds, when the parser starts. Whether ingest takes the `<PRI>` off first hasn't been checked.
 
 The emulator has been validated against 10 real event types.
 
