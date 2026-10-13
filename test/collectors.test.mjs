@@ -108,7 +108,7 @@ globalThis.fetch = async (url, init = {}) => {
 };
 `);
   const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')] : ['merge', '--pr', '7', '--sha', 'abc123'];
-  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output }, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
   const stepOutput = await readFile(output, 'utf8');
   await rm(dir, { recursive: true, force: true });
@@ -161,7 +161,8 @@ test('gate: after its own merge it deletes a same-repo head branch, never a fork
   // Nothing is deleted when the gate doesn't merge: native auto-merge merges later, and a held pull request waits.
   assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json'], { pull: from('library/acme') })), []);
   assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json', 'collectors/acme-pull/acme_pull.py'], { autoMerge: false, pull: from('library/acme') })), []);
-  // A delete that fails leaves the merge reported as merged.
+  // A delete that fails leaves the merge reported as merged. gateMerge pipes the gate's stderr, so
+  // the ::warning:: line it prints doesn't reach CI as an annotation.
   const failed = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, pull: from('library/acme'), deleteStatus: 403 });
   assert.equal(deletes(failed).length, 1);
   assert.equal(failed.stepOutput, 'merged=true\n');
