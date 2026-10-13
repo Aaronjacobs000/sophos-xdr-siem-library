@@ -1,0 +1,30 @@
+{
+  "vendor": "Workflow Test",
+  "product": "Proxy",
+  "versions": [
+    "6"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": null
+  },
+  "docs": [
+    "https://wiki.squid-cache.org/Features/LogFormat",
+    "https://www.squid-cache.org/Doc/config/access_log/"
+  ],
+  "notes": "Test of the issue-form route. Not for use.",
+  "parsers": [
+    {
+      "name": "WORKFLOW_TEST_PROXY_STANDALONE_HTTP",
+      "file": "WORKFLOW_TEST_PROXY_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
+  ]
+}

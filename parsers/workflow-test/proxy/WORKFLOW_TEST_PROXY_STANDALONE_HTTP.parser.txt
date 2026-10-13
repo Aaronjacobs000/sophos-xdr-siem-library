@@ -1,0 +1,56 @@
+!SAMPLE=Oct  7 22:50:01 proxy01 wtproxy[3011]: 1791413400.512    187 192.0.2.61 TCP_MISS/200 4120 GET http://www.example.com/index.html - HIER_DIRECT/203.0.113.80 text/html
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=wtproxy(\[\d+\])?:\s+\d{9,10}\.\d{3}\s+\d+\s+\S+\s+[A-Z_]+/\d{3}\s
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Squid, native access.log format over syslog (access_log syslog:...).
+# Standalone parser for the HTTP schema. Columns, from the Squid LogFormat page:
+#   time.ms elapsed client result/status bytes method URL user hierarchy/peer type
+
+m = originalData$|wtproxy(?:\[\d+\])?:\s+(?P<sec>\d+)\.(?P<ms>\d{3})\s+(?P<elapsed>\d+)\s+(?P<client>\S+)\s+(?P<result>[A-Z_]+)/(?P<status>\d{3})\s+(?P<bytes>\d+)\s+(?P<method>\S+)\s+(?P<url>\S+)\s+(?P<user>\S+)\s+(?P<hier>[A-Z_]+)/(?P<peer>\S+)\s+(?P<type>\S+)
+
+sensorType$ = "Squid"
+
+# The first column is Unix time in seconds with milliseconds; the field takes microseconds.
+eventTimeUsec$ = INT(m["sec"] + m["ms"], 10) * 1000
+
+sourceAddress$ = m["client"]
+# Squid logs "-" for no peer and no user; SANITIZE_ALL turns "-" into NULL.
+destinationAddress$ = m["peer"]
+sourceUsername$ = m["user"]
+httpMethod$ = m["method"]
+responseCode$ = INT(m["status"], 10)
+# bytes is what Squid delivered to the client.
+rxByteCount$ = INT(m["bytes"], 10)
+
+# CONNECT lines log host:port with no scheme; URL_PARSE assumes http for those.
+url = URL_PARSE(m["url"], TRUE)
+uriScheme$ = url["scheme"]
+uriHostRaw$ = url["host_raw"]
+uriHost$ = url["host"]
+uriPort$ = url["port"]
+uriPathRaw$ = url["path_raw"]
+uriPath$ = url["path"]
+uriQueryRaw$ = url["query_raw"]
+uriQuery$ = url["query"]
+
+# The docs pair IDX_OF_TLD() with indexOfTopPrivateDomain$.
+tld = IDX_OF_TLD(url["host"])
+indexOfTopPrivateDomain$ = tld
+isTopPrivateDomainParsed$ = tld != -1
+
+denied = CONTAINS(m["result"], "DENIED")
+sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+blocked$ = IF denied THEN 1 ELSE 0
+
+result.key$ = "squid_result"
+result.value$ = m["result"]
+hier.key$ = "hierarchy"
+hier.value$ = m["hier"]
+ctype.key$ = "content_type"
+ctype.value$ = m["type"]
+elapsed.key$ = "elapsed_ms"
+elapsed.value$ = m["elapsed"]
+eventMetadata$.record$ = eventMetadata$.record$ + [result, hier, ctype, elapsed]
