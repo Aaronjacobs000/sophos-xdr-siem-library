@@ -1,0 +1,287 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "incident_report.created",
+      "alert_id": "1820044",
+      "title": "CRITICAL - Incident on ACME-WS-014 (Acme Dental)",
+      "status": "sent",
+      "alert_category": "Incident report",
+      "summary": "Huntress detected hands-on-keyboard activity: a remote access tool was installed and used to dump credentials from LSASS.",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "created_time_usec": 1791805132000000,
+      "updated_time_usec": 1791805211000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/incident_reports/1820044"
+          },
+          {
+            "key": "agent_id",
+            "value": "5520317"
+          },
+          {
+            "key": "platform",
+            "value": "windows"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791806730000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "incident_report.comment_added",
+      "alert_id": "1820044",
+      "title": "CRITICAL - Incident on ACME-WS-014 (Acme Dental)",
+      "status": "sent",
+      "alert_category": "Incident report",
+      "summary": "Huntress detected hands-on-keyboard activity: a remote access tool was installed and used to dump credentials from LSASS.",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "created_time_usec": 1791805132000000,
+      "updated_time_usec": 1791806730000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/incident_reports/1820044"
+          },
+          {
+            "key": "agent_id",
+            "value": "5520317"
+          },
+          {
+            "key": "platform",
+            "value": "windows"
+          },
+          {
+            "key": "comment",
+            "value": "Customer confirmed the tool was not authorized. Remediation approved."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791811367512000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "incident_report.closed",
+      "alert_id": "1820044",
+      "title": "CRITICAL - Incident on ACME-WS-014 (Acme Dental)",
+      "status": "closed",
+      "alert_category": "Incident report",
+      "summary": "Huntress detected hands-on-keyboard activity: a remote access tool was installed and used to dump credentials from LSASS.",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "created_time_usec": 1791805132000000,
+      "updated_time_usec": 1791811367512000,
+      "closed_time_usec": 1791811367512000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/incident_reports/1820044"
+          },
+          {
+            "key": "agent_id",
+            "value": "5520317"
+          },
+          {
+            "key": "platform",
+            "value": "windows"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791813900000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "incident_report.created",
+      "alert_id": "1820107",
+      "title": "HIGH - Incident on jlee@example.com (Acme Dental)",
+      "status": "sent",
+      "alert_category": "Incident report",
+      "summary": "Huntress identified a sign-in to jlee@example.com from an unexpected VPN provider followed by a new inbox forwarding rule.",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "created_time_usec": 1791813730000000,
+      "updated_time_usec": 1791813900000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/incident_reports/1820107"
+          },
+          {
+            "key": "platform",
+            "value": "microsoft_365"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791645000000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "escalation.created",
+      "alert_id": "77310",
+      "title": "Exposed RDP service found on 2 organizations",
+      "status": "open",
+      "alert_category": "Escalation: external_recon",
+      "summary": "Exposed RDP service found on 2 organizations",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "created_time_usec": 1791645000000000,
+      "updated_time_usec": 1791645000000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/escalations/77310"
+          },
+          {
+            "key": "organizations_impacted",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "HUNTRESS_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Huntress",
+      "event_time_usec": 1791817800000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Huntress",
+      "provider": "Huntress SOC",
+      "log_type": "escalation.overdue",
+      "alert_id": "77310",
+      "title": "Exposed RDP service found on 2 organizations",
+      "status": "open",
+      "alert_category": "Escalation: external_recon",
+      "summary": "Exposed RDP service found on 2 organizations",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "created_time_usec": 1791645000000000,
+      "updated_time_usec": 1791817800000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Example MSP"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "api_url",
+            "value": "https://api.example.com/v1/escalations/77310"
+          },
+          {
+            "key": "organizations_impacted",
+            "value": "2"
+          },
+          {
+            "key": "message",
+            "value": "This escalation has been open for 48 hours."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
