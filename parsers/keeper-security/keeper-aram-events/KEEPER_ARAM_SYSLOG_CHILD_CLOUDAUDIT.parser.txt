@@ -1,0 +1,43 @@
+!SAMPLE=<165>1 2026-10-12T11:44:47.551Z keepersecurity.example.com keeper - - - {"record_uid":"AbCdEf123456GhIjKl7890","audit_event":"open_record","remote_address":"198.51.100.23","category":"usage","client_version":"Browser Extensions.17.2.3","username":"tech.akim@example.com","enterprise_id":4821}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Keeper ARAM events in syslog format.
+# Child of KEEPER_ARAM_SYSLOG_PARENT: every event outside the login category, such as
+# open_record, copy_password, exported_records, record_share_outside_user, added_to_role and
+# BreachWatch and MSP events, to CloudAudit. Event codes and categories come from Keeper's
+# event descriptions page.
+# json, auditEvent, category, user, srcIp, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Keeper Security"
+eventName$ = auditEvent
+eventType$ = category
+userName$ = user
+sourceAddress$ = srcIp
+targetUserName$ = json["$.to_username"]
+userAgent$ = json["$.client_version"]
+managementEvent$ = category != "usage" AND category != "share"
+
+d1.key$ = "enterprise_id"
+d1.value$ = STRING(json["$.enterprise_id"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+d2.key$ = "record_uid"
+d2.value$ = json["$.record_uid"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "shared_folder_uid"
+d3.value$ = json["$.shared_folder_uid"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "role_id"
+d4.value$ = STRING(json["$.role_id"])
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "team_uid"
+d5.value$ = json["$.team_uid"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "file_format"
+d6.value$ = json["$.file_format"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

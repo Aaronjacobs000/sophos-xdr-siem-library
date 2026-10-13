@@ -1,0 +1,34 @@
+!SAMPLE=<165>1 2026-10-12T11:40:11.726Z keepersecurity.example.com keeper - - - {"audit_event":"login","channel":"PASS","remote_address":"198.51.100.23","category":"login","client_version":"Web Vault.17.2.1","username":"tech.akim@example.com","enterprise_id":4821}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Keeper ARAM events in syslog format.
+# Child of KEEPER_ARAM_SYSLOG_PARENT: login (vault), login_console (Admin Console) and
+# login_failure, the events in Keeper's login category.
+# json, auditEvent, user, srcIp, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = user
+sourceAddress$ = srcIp
+channel = json["$.channel"]
+authSystem$ = IF auditEvent == "login_console" THEN "Keeper Admin Console" ELSE "Keeper vault"
+authSystem$ = IF channel != "" AND channel != NULL THEN authSystem$ + " (" + channel + ")" ELSE authSystem$
+applicationName$ = json["$.client_version"]
+
+failed = auditEvent == "login_failure"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+rc = json["$.result_code"]
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF rc == "auth_failed" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+status$ = auditEvent
+subStatus$ = rc
+
+m1.key$ = "enterprise_id"
+m1.value$ = STRING(json["$.enterprise_id"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]

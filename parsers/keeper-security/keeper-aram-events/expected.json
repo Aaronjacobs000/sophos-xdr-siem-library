@@ -1,0 +1,177 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805211726000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "Keeper vault (PASS)",
+      "application_name": "Web Vault.17.2.1",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "login",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805262118000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.45",
+      "auth_system": "Keeper vault (Web Vault)",
+      "application_name": "Web Vault.17.2.1",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "login_failure",
+      "sub_status": "auth_failed",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805350004000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "Keeper Admin Console (SSO)",
+      "application_name": "EMConsole.17.2.0",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "login_console",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805487551000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "usage",
+      "event_source": "Keeper Security",
+      "event_name": "open_record",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "user_agent": "Browser Extensions.17.2.3",
+      "management_event": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          },
+          {
+            "key": "record_uid",
+            "value": "AbCdEf123456GhIjKl7890"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805575912000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "share",
+      "event_source": "Keeper Security",
+      "event_name": "record_share_outside_user",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "target_user_name": "contractor@example.net",
+      "user_agent": "Web Vault.17.2.1",
+      "management_event": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          },
+          {
+            "key": "record_uid",
+            "value": "AbCdEf123456GhIjKl7890"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "KEEPER_ARAM_SYSLOG_PARENT > KEEPER_ARAM_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Keeper Security",
+      "event_time_usec": 1791805720300000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "security",
+      "event_source": "Keeper Security",
+      "event_name": "added_to_role",
+      "user_name": "admin@example.com",
+      "source_address": "203.0.113.45",
+      "target_user_name": "tech.new@example.com",
+      "user_agent": "EMConsole.17.2.0",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "enterprise_id",
+            "value": "4821"
+          },
+          {
+            "key": "role_id",
+            "value": "7700000000123"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

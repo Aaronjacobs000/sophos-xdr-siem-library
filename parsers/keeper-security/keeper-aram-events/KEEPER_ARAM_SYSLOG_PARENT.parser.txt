@@ -1,0 +1,29 @@
+!SAMPLE=<165>1 2026-10-12T11:40:11.726Z keepersecurity.example.com keeper - - - {"audit_event":"login","channel":"PASS","remote_address":"198.51.100.23","category":"login","client_version":"Web Vault.17.2.1","username":"tech.akim@example.com","enterprise_id":4821}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=<\d{1,3}>1 \S+ \S+ keeper \S+ \S+ \S+ \{.*"audit_event"\s*:\s*"[a-z0-9_]+"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Keeper Advanced Reporting and Alerts Module (ARAM) events in Keeper's syslog format:
+# an RFC 5424 header from Keeper's own domain with app name keeper, then one JSON event. Keeper
+# writes this format to an Amazon S3 bucket (file format Syslog) or pushes it over TCP syslog.
+# Parent: reads the header and the JSON and hands each event to a child.
+#   Vault and Admin Console logins and failed logins (category login) go to Auth.
+#   Every other event (record use, sharing, roles, policies, BreachWatch, MSP changes) goes to CloudAudit.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+h = originalData$|<(?P<pri>\d{1,3})>1 (?P<time>\S+) (?P<host>\S+) keeper \S+ \S+ \S+ (?P<json>\{.*\})\s*$
+json = JSON(h["json"])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Keeper Security"
+auditEvent = json["$.audit_event"]
+category = json["$.category"]
+user = json["$.username"]
+srcIp = json["$.remote_address"]
+eventTimeUsec$ = DATETIME(h["time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+loginEvent = category == "login" OR auditEvent == "login" OR auditEvent == "login_console" OR auditEvent == "login_failure"
+eventType$ = IF loginEvent THEN "auth" ELSE "audit"
