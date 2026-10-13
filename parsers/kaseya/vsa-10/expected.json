@@ -1,0 +1,272 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KASEYA_VSA10_NOTIFICATION_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805267000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Kaseya",
+      "provider": "Kaseya VSA 10 notifications",
+      "alert_id": "40012",
+      "title": "Antivirus threat detected",
+      "summary": "Threat Trojan:Win32/Example.A was quarantined in C:\\Users\\jlee\\Downloads\\invoice_0921.exe",
+      "host_id": "e9dcef68-339a-4a4f-b218-09ab403502e9",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_identifier",
+            "value": "e9dcef68-339a-4a4f-b218-09ab403502e9"
+          },
+          {
+            "key": "organization_id",
+            "value": "123"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KASEYA_VSA10_NOTIFICATION_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805350512000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Kaseya",
+      "provider": "Kaseya VSA 10 notifications",
+      "alert_id": "40013",
+      "title": "Windows service stopped",
+      "summary": "Service WinDefend is not running on ACME-SRV-02",
+      "host_id": "0b6e3c55-2f8a-4b1d-a7c3-5e9d1f2a8c60",
+      "vendor_severity": "Elevated",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_identifier",
+            "value": "0b6e3c55-2f8a-4b1d-a7c3-5e9d1f2a8c60"
+          },
+          {
+            "key": "organization_id",
+            "value": "123"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KASEYA_VSA10_NOTIFICATION_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805440000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Kaseya",
+      "provider": "Kaseya VSA 10 notifications",
+      "alert_id": "40014",
+      "title": "Device offline",
+      "summary": "ACME-WS-022 has been offline for 15 minutes",
+      "host_id": "9a2d7f14-6c3b-4e58-8d21-b4f0c7e95a13",
+      "vendor_severity": "Low",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_identifier",
+            "value": "9a2d7f14-6c3b-4e58-8d21-b4f0c7e95a13"
+          },
+          {
+            "key": "organization_id",
+            "value": "124"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KASEYA_VSA10_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805419000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 10",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "user_agent": "edge",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "event_name": "User Command",
+      "event_type": "Information",
+      "status": "Information",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_description",
+            "value": "Execute automation ad-hoc script 'Add local admin'"
+          },
+          {
+            "key": "audit_record_id",
+            "value": "55062"
+          },
+          {
+            "key": "request_source",
+            "value": "WebApp.0"
+          },
+          {
+            "key": "device_group",
+            "value": "Acme Dental > Head Office > Workstations"
+          },
+          {
+            "key": "device_identifier",
+            "value": "e9dcef68-339a-4a4f-b218-09ab403502e9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KASEYA_VSA10_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805502000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 10",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "user_agent": "edge",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "event_name": "Remote Control",
+      "event_type": "Information",
+      "status": "Information",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_description",
+            "value": "Remote control session started"
+          },
+          {
+            "key": "audit_record_id",
+            "value": "55063"
+          },
+          {
+            "key": "request_source",
+            "value": "WebApp.0"
+          },
+          {
+            "key": "device_group",
+            "value": "Acme Dental > Head Office > Workstations"
+          },
+          {
+            "key": "device_identifier",
+            "value": "e9dcef68-339a-4a4f-b218-09ab403502e9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "KASEYA_VSA10_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805575000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 10",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "user_agent": "edge",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "event_name": "File Transfer",
+      "event_type": "Information",
+      "status": "Information",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_description",
+            "value": "Uploaded file 'AcmeTool.exe' to C:\\Temp"
+          },
+          {
+            "key": "audit_record_id",
+            "value": "55064"
+          },
+          {
+            "key": "request_source",
+            "value": "WebApp.0"
+          },
+          {
+            "key": "extra_information",
+            "value": "Size: 482304 bytes"
+          },
+          {
+            "key": "device_group",
+            "value": "Acme Dental > Head Office > Workstations"
+          },
+          {
+            "key": "device_identifier",
+            "value": "e9dcef68-339a-4a4f-b218-09ab403502e9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "KASEYA_VSA10_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 10",
+      "event_time_usec": 1791805720000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 10",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "admin",
+      "source_address": "203.0.113.45",
+      "user_agent": "chrome",
+      "event_name": "Api Tokens",
+      "event_type": "Warning",
+      "status": "Warning",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_description",
+            "value": "Created API token 'Reporting'"
+          },
+          {
+            "key": "audit_record_id",
+            "value": "55065"
+          },
+          {
+            "key": "request_source",
+            "value": "WebApp.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

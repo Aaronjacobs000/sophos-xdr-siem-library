@@ -1,0 +1,47 @@
+!SAMPLE={"Id":40012,"Title":"Antivirus threat detected","Message":"Threat Trojan:Win32/Example.A was quarantined in C:\\Users\\jlee\\Downloads\\invoice_0921.exe","DateTime":"2026-10-12T11:41:07Z","Priority":"Critical","DeviceIdentifier":"e9dcef68-339a-4a4f-b218-09ab403502e9","OrganizationId":"123"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*"Title"\s*:.*"Priority"\s*:\s*"(?:Low|Normal|Elevated|Critical)"\s*,\s*"DeviceIdentifier"\s*:
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaseya VSA 10 notification webhooks (POST /api/v3/notifications/webhooks), posting
+# each notification to a Sophos NG-SIEM HTTP Ingest integration with the webhook's Headers set
+# to Authorization: Bearer <integration key>. Pulseway documents the same webhook.
+# Standalone parser for the third-party alert schema. The body has the fields the API docs
+# list for the Webhook Message: Id, Title, Message, DateTime, Priority, DeviceIdentifier and
+# OrganizationId. It has no device name.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Kaseya VSA 10"
+vendor$ = "Kaseya"
+provider$ = "Kaseya VSA 10 notifications"
+
+alertId$ = STRING(json["$.Id"])
+title$ = json["$.Title"]
+summary$ = json["$.Message"]
+hostId$ = json["$.DeviceIdentifier"]
+
+# Priorities are Low, Normal, Elevated and Critical.
+pri = json["$.Priority"]
+vendorSeverity$ = pri
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF pri == "Low" THEN "LOW" ELSE severity$
+severity$ = IF pri == "Normal" THEN "MEDIUM" ELSE severity$
+severity$ = IF pri == "Elevated" THEN "HIGH" ELSE severity$
+severity$ = IF pri == "Critical" THEN "CRITICAL" ELSE severity$
+
+# DateTime is ISO 8601; a time without a zone is read as UTC.
+dt = json["$.DateTime"]
+zoned = dt|(?:Z|[+-]\d{2}:?\d{2})$
+eventTimeUsec$ = IF zoned[0] != "" THEN DATETIME(dt, "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(dt, "2006-01-02T15:04:05.999999999")
+
+a1.key$ = "device_identifier"
+a1.value$ = json["$.DeviceIdentifier"]
+a2.key$ = "organization_id"
+a2.value$ = STRING(json["$.OrganizationId"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
