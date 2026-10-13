@@ -199,3 +199,12 @@ test('NULL equals "" and nothing else', () => {
   const v = run('json = JSON(d)\na = NULL == ""\nb = "" == NULL\nc = NULL != ""\nm = json["$.missing"] == ""\ne = json["$.e"] == NULL\nf = 0 == NULL\ng = FALSE == NULL\nh = " " == NULL\ni = "null" == NULL', { d: '{"e":""}' });
   assert.deepEqual(['a', 'b', 'c', 'm', 'e', 'f', 'g', 'h', 'i'].map((k) => v.get(k)), [true, true, false, true, true, false, false, false, false]);
 });
+
+test('a DATETIME value compares only with another DATETIME or a number', () => {
+  const T = 't = DATETIME("2026-10-13T00:00:00Z", "2006-01-02T15:04:05Z07:00")\n';
+  for (const cmp of ['t != NULL', 't == NULL', 'NULL == t', 't == "x"']) assert.throws(() => run(`${T}x = ${cmp}`), /cannot convert time to string/, cmp);
+  const v = run(`${T}u = DATETIME("2026-10-14T00:00:00Z", "2006-01-02T15:04:05Z07:00")\na = t == t\nb = t != u\nc = t == 1791849600000000\nd = t > 0`);
+  assert.deepEqual(['a', 'b', 'c', 'd'].map((k) => v.get(k)), [true, true, true, true]);
+  // A DATETIME that couldn't read its value is NULL, which compares as usual.
+  assert.equal(get('t = DATETIME("garbage", "2006-01-02")\nx = t == NULL', 'x'), true);
+});
