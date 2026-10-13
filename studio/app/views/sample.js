@@ -5,13 +5,14 @@ import { highlightSample } from '../highlight.js';
 import { analyse, buildPlan, keysFor, makeUnit } from '../plan.js';
 import { headerLabel } from '../../core/detect.js';
 import { compileGo, checkRe2 } from '../../core/goregex.js';
-import { overlaps } from '../../core/lint.js';
+import { call } from '../emulator-client.js';
 import { SCHEMA_IDS, GENERIC, schemaInfo } from '../../core/schemas.js';
 import { pickSchema } from '../../core/mapping.js';
 import { loadEntry, lintEntries } from '../library-client.js';
 import { steps, SHIP_LABELS, FORMAT_LABELS } from './common.js';
 
 const MAX_LINES = 500;
+let overlapSeq = 0;
 
 export function renderSample(root) {
   const lineCount = state.lines.length;
@@ -188,12 +189,16 @@ function drawRight(right) {
       status.append(h('div', { class: 'dotline' }, h('span', { class: 'dot grey' }), h('span', { text: 'Expression confirm strings are checked on the Test step.' })));
     }
     const lib = (state.library.entries || []).filter((e) => e.loaded);
-    if (state.library.status !== 'ready') status.append(h('div', { class: 'dotline' }, h('span', { class: 'dot grey' }), h('span', { text: 'Checking overlap once the library loads…' })));
-    else {
-      const o = overlaps([{ name: 'Your confirm string', text: `!CONFIRMWITH=${c.kind}\n!CONFIRMSTRING=${c.text}\n` }], state.lines, lintEntries(lib).filter((e) => e.id !== state.exampleFrom));
-      const total = (state.library.entries || []).reduce((k, e) => k + (e.meta.parsers || []).length, 0);
-      status.append(h('div', { class: 'dotline' }, h('span', { class: `dot ${o.length ? 'red' : ''}` }), h('span', { text: o.length ? o[0] : `No overlap with the ${total} library parsers${lib.length < state.library.entries.length ? ` (${lib.length} of ${state.library.entries.length} entries checked so far)` : ''}` })));
-    }
+    const line = h('div', { class: 'dotline' }, h('span', { class: 'dot grey' }), h('span', { text: state.library.status !== 'ready' ? 'Checking overlap once the library loads…' : 'Checking overlap with the library…' }));
+    status.append(line);
+    if (state.library.status !== 'ready') return;
+    // Library patterns are other people's regexes, so they run in the worker, which can be stopped.
+    const total = (state.library.entries || []).reduce((k, e) => k + (e.meta.parsers || []).length, 0);
+    const mine = ++overlapSeq;
+    call('overlap', { parsers: [{ name: 'Your confirm string', text: `!CONFIRMWITH=${c.kind}\n!CONFIRMSTRING=${c.text}\n` }], samples: state.lines, library: lintEntries(lib), selfId: state.exampleFrom }).then((o) => {
+      if (mine !== overlapSeq) return;
+      line.replaceWith(h('div', { class: 'dotline' }, h('span', { class: `dot ${o.length ? 'red' : ''}` }), h('span', { text: o.length ? o[0] : `No overlap with the ${total} library parsers${lib.length < state.library.entries.length ? ` (${lib.length} of ${state.library.entries.length} entries checked so far)` : ''}` })));
+    }).catch((e) => { if (mine === overlapSeq) line.replaceWith(h('div', { class: 'dotline' }, h('span', { class: 'dot amber' }), h('span', { text: `Overlap check stopped: ${e.message}` }))); });
   }
   paintStatus();
   ensureLibraryLoaded().then((changed) => { if (changed && document.body.contains(status)) paintStatus(); });

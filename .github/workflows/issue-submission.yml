@@ -84,6 +84,7 @@ jobs:
             fi
             PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           fi
+          gh pr edit "$PR" --add-label "library checks passed" --add-label "parser-submission" > /dev/null || true
           { echo "created=true"; echo "number=$PR"; echo "sha=$(git rev-parse HEAD)"; } >> "$GITHUB_OUTPUT"
       - name: Merge when allowed
         id: merge
