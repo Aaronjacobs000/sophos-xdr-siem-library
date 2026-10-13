@@ -1,0 +1,56 @@
+!SAMPLE={"id":900112341,"activityTime":1791805211.726,"severity":"NONE","priority":"NONE","activityType":"SYSTEM","statusCode":"APP_USER_LOGGED_IN","status":"Technician logged in","activityResult":"SUCCESS","userId":41,"subject":"tech.akim@example.com","message":"tech.akim@example.com logged in from 198.51.100.23","type":"Technician"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"activityType"\s*:\s*"[A-Z_]+".*"statusCode"\s*:\s*"[A-Z0-9_]+"|"statusCode"\s*:\s*"[A-Z0-9_]+".*"activityType"\s*:\s*"[A-Z_]+")
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NinjaOne activity webhooks (PUT /v2/webhook in the NinjaOne Public API, or the SIEM
+# Exporter app), posting JSON to a Sophos NG-SIEM HTTP Ingest integration with the custom
+# header Authorization: Bearer <integration key>. Each record is an Activity object, with the
+# device expanded when the webhook asks for it.
+# Parent: classifies each activity by activityType and statusCode and hands it to a child.
+#   Technician and end-user logins, logouts, failed logins and MFA changes go to Auth.
+#   Scripts and actions, remote access (Splashtop, TeamViewer, RDP, NinjaOne Remote), remote
+#   tools, credential access and technician role changes go to ManagementEvent.
+#   Triggered conditions and antivirus threat activities go to the third-party alert schema.
+#   Everything else stays in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "NinjaOne"
+act = json["$.activityType"]
+sc = json["$.statusCode"]
+activityId = STRING(json["$.id"])
+userId = STRING(json["$.userId"])
+subject = json["$.subject"]
+message = json["$.message"]
+host = json["$.device.systemName"]
+hostId$ = host
+
+# activityTime is seconds since 1970 as a decimal number; STRING() drops the fraction.
+eventTimeUsec$ = INT(STRING(json["$.activityTime"]), 10) * 1000000
+
+# NinjaOne doesn't document the wording of subject and message, so the user is the first email
+# address in either, and the address is the first IPv4 address in the message. The patterns
+# are anchored so each takes the first match only.
+text = STRING(subject) + " " + STRING(message)
+em = text|^.*?(?P<email>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})
+msgText = STRING(message)
+ipm = msgText|^.*?\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\b
+user = IF em["email"] != "" THEN em["email"] ELSE userId
+srcIp = ipm["ip"]
+
+login = CONTAINS(sc, "LOGGED_IN") OR CONTAINS(sc, "LOGGED_OUT") OR CONTAINS(sc, "FAILED_LOGIN") OR CONTAINS(sc, "_MFA_")
+remoteType = act == "SPLASHTOP" OR act == "TEAMVIEWER" OR act == "RDP" OR act == "NINJA_REMOTE" OR act == "NINJA_QUICK_CONNECT" OR act == "REMOTE_TOOLS"
+scriptType = act == "ACTIONSET" OR act == "ACTION" OR act == "SCRIPTING" OR act == "SCHEDULED_TASK"
+adminCode = CONTAINS(sc, "TECHNICIAN_") OR CONTAINS(sc, "SECURITY_CREDENTIAL_") OR CONTAINS(sc, "CRITICAL_ACTION") OR sc == "SCRIPT_CREATED" OR sc == "SCRIPT_UPDATED" OR sc == "SCRIPT_DELETED"
+alert = (act == "CONDITION" AND sc == "TRIGGERED") OR CONTAINS(sc, "THREAT")
+
+eventType$ = "other"
+eventType$ = IF remoteType OR scriptType OR adminCode THEN "management" ELSE eventType$
+eventType$ = IF alert THEN "alert" ELSE eventType$
+eventType$ = IF login THEN "auth" ELSE eventType$

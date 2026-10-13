@@ -1,0 +1,260 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "NinjaOne",
+      "user_display_name": "Technician",
+      "status": "APP_USER_LOGGED_IN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "status_code",
+            "value": "APP_USER_LOGGED_IN"
+          },
+          {
+            "key": "activity_id",
+            "value": "900112341"
+          },
+          {
+            "key": "user_id",
+            "value": "41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805262000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.45",
+      "auth_system": "NinjaOne",
+      "user_display_name": "Technician",
+      "status": "APP_USER_AUDIT_FAILED_LOGIN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "status_code",
+            "value": "APP_USER_AUDIT_FAILED_LOGIN"
+          },
+          {
+            "key": "activity_id",
+            "value": "900112398"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805331000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.jlee@example.com",
+      "auth_system": "NinjaOne",
+      "user_display_name": "Technician",
+      "status": "APP_USER_MFA_DELETED",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "status_code",
+            "value": "APP_USER_MFA_DELETED"
+          },
+          {
+            "key": "activity_id",
+            "value": "900112455"
+          },
+          {
+            "key": "user_id",
+            "value": "41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805402000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-WS-014",
+      "remote_operation": true,
+      "operation": "ACTIONSET",
+      "operation_name": "START_REQUESTED",
+      "operation_id": 900112512,
+      "username": "tech.akim@example.com",
+      "target_hostname": "ACME-WS-014",
+      "target_hostname_fqdn": "acme-ws-014.corp.example.com",
+      "command": "Run PowerShell: Add local admin",
+      "result": "SUCCESS: Script Run PowerShell: Add local admin requested by tech.akim@example.com"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805409000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-WS-014",
+      "remote_operation": true,
+      "operation": "ACTIONSET",
+      "operation_name": "COMPLETED",
+      "operation_id": 900112533,
+      "username": "41",
+      "target_hostname": "ACME-WS-014",
+      "target_hostname_fqdn": "acme-ws-014.corp.example.com",
+      "command": "Run PowerShell: Add local admin",
+      "result": "SUCCESS: Script Run PowerShell: Add local admin completed with exit code 0"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805500000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-SRV-02",
+      "remote_operation": true,
+      "operation": "SPLASHTOP",
+      "operation_name": "SPLASHTOP_CONNECTION_ESTABLISHED",
+      "operation_id": 900112601,
+      "username": "tech.akim@example.com",
+      "target_hostname": "ACME-SRV-02",
+      "target_hostname_fqdn": "acme-srv-02.corp.example.com",
+      "result": "SUCCESS: tech.akim@example.com connected to ACME-SRV-02"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805566000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-SRV-02",
+      "remote_operation": true,
+      "operation": "REMOTE_TOOLS",
+      "operation_name": "REMOTE_TOOLS_TERMINATE_PROCESS_SUCCESS",
+      "operation_id": 900112644,
+      "username": "41",
+      "target_hostname": "ACME-SRV-02",
+      "target_hostname_fqdn": "acme-srv-02.corp.example.com",
+      "result": "SUCCESS: Process MsMpEng.exe (PID 3120) terminated"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805620000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-WS-014",
+      "vendor": "NinjaOne",
+      "provider": "NinjaOne",
+      "alert_id": "900112702",
+      "alert_category": "ANTIVIRUS",
+      "log_type": "BDAS_BITDEFENDER_THREAT_QUARANTINED",
+      "status": "Threat quarantined",
+      "target_host_name": "ACME-WS-014",
+      "summary": "Trojan.GenericKD.70412233 quarantined in C:\\Users\\jlee\\Downloads\\invoice_0921.exe",
+      "title": "Threat quarantined",
+      "vendor_severity": "CRITICAL",
+      "severity": "CRITICAL",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "priority",
+            "value": "HIGH"
+          },
+          {
+            "key": "device_id",
+            "value": "1201"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT > NINJAONE_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805688000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ACME-SRV-02",
+      "vendor": "NinjaOne",
+      "provider": "NinjaOne",
+      "alert_id": "900112760",
+      "alert_category": "CONDITION",
+      "log_type": "TRIGGERED",
+      "status": "Condition triggered",
+      "target_host_name": "ACME-SRV-02",
+      "summary": "Windows event 4720 matched on ACME-SRV-02",
+      "title": "Windows Event ID 4720: user account created",
+      "vendor_severity": "MAJOR",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "priority",
+            "value": "HIGH"
+          },
+          {
+            "key": "device_id",
+            "value": "1188"
+          },
+          {
+            "key": "series_uid",
+            "value": "8e2a4c6f-1d3b-4a57-b9e0-3f5c7d1a2b46"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NINJAONE_WEBHOOK_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "NinjaOne",
+      "event_time_usec": 1791805752000000,
+      "host_id": "ACME-WS-014"
+    }
+  }
+]
