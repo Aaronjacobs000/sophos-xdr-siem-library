@@ -6,6 +6,7 @@
   ],
   "format": "json",
   "ship_method": "http-ingest",
+  "collector": "collectors/kaseya-vsa10-audit-logs",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
