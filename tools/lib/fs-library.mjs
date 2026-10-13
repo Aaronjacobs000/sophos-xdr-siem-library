@@ -2,7 +2,7 @@
 
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { parseSamples } from '../../studio/core/library.js';
+import { parseSamples, collectorScripts } from '../../studio/core/library.js';
 
 async function exists(p) {
   try { await stat(p); return true; } catch { return false; }
@@ -50,4 +50,27 @@ export async function listEntryDirs(root) {
 export async function loadLibrary(root) {
   const dirs = await listEntryDirs(root);
   return Promise.all(dirs.map((d) => loadEntryFromDir(d, root)));
+}
+
+// Every collector folder, collectors/<name>, with the names of the files directly in it.
+export async function listCollectors(root) {
+  const base = path.join(root, 'collectors');
+  if (!(await exists(base))) return [];
+  const out = [];
+  for (const d of await readdir(base, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    const files = (await readdir(path.join(base, d.name), { withFileTypes: true })).filter((f) => f.isFile()).map((f) => f.name).sort();
+    out.push({ path: `collectors/${d.name}`, files });
+  }
+  return out.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+// Collectors with the text the studio shows: the README and the scripts, not the tests.
+export async function loadCollectors(root) {
+  return Promise.all((await listCollectors(root)).map(async (c) => {
+    const dir = path.join(root, c.path);
+    const readme = c.files.includes('README.md') ? await readFile(path.join(dir, 'README.md'), 'utf8') : '';
+    const scripts = await Promise.all(collectorScripts(c.files).map(async (name) => ({ name, text: await readFile(path.join(dir, name), 'utf8') })));
+    return { ...c, readme, scripts };
+  }));
 }

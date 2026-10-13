@@ -18,7 +18,7 @@ export const state = {
   runError: null,
   origin: null,        // {kind: 'library'|'fork', id, meta}
   now: null,           // reference time for the emulator
-  library: { status: 'idle', entries: [], source: null, at: null, error: null },
+  library: { status: 'idle', entries: [], collectors: [], source: null, at: null, error: null },
 };
 
 const listeners = new Set();

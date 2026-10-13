@@ -52,6 +52,8 @@ It has parsers for 3CX, DrayTek Vigor, dnsmasq, ESET PROTECT On-Prem (JSON), Mik
 
 Some sources only offer a pull API, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs and send each record to a Sophos NG-SIEM HTTP Ingest integration. [collectors/ai-compliance-logs](collectors/ai-compliance-logs/) covers the OpenAI and Anthropic enterprise compliance logs. Collectors are tested against the vendors' documented response shapes, not live services.
 
+A library entry that needs a collector names it in `meta.json`, for example `"collector": "collectors/ai-compliance-logs"`. Its card in the studio shows a **needs collector** badge, and its page shows the collector's README and Python script, with Copy and Download. Collectors are code that people run, so the maintainer reviews every one before it merges.
+
 ## Contributing
 
 Use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. [CONTRIBUTING.md](CONTRIBUTING.md) has the details, including how to work from a git clone.

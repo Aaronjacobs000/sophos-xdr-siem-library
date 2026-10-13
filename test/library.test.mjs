@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug } from '../studio/core/library.js';
 import { scanText } from '../studio/core/scan.js';
-import { loadLibrary, loadEntryFromDir } from '../tools/lib/fs-library.mjs';
+import { loadLibrary, loadEntryFromDir, listCollectors } from '../tools/lib/fs-library.mjs';
 import { runParsers } from '../studio/core/engine.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,9 +16,10 @@ const kinds = (text) => scanText(text).filter((f) => f.level === 'error').map((f
 
 test('every seed entry in the library passes validation', async () => {
   const lib = await loadLibrary(ROOT);
+  const collectors = await listCollectors(ROOT);
   assert.ok(lib.length >= 5);
   for (const e of lib) {
-    const v = validateEntry(e, { library: lib.filter((x) => x.id !== e.id) });
+    const v = validateEntry(e, { library: lib.filter((x) => x.id !== e.id), collectors });
     assert.deepEqual(v.problems.filter((p) => p.level === 'error'), [], e.id);
     assert.equal(e.id, entryId(e.meta), `${e.id} folder matches vendor/product`);
   }
@@ -79,6 +80,7 @@ async function ciRun(change, author) {
   for (const d of [base, pr]) {
     await mkdir(d, { recursive: true });
     await cp(path.join(ROOT, 'parsers'), path.join(d, 'parsers'), { recursive: true });
+    await cp(path.join(ROOT, 'collectors'), path.join(d, 'collectors'), { recursive: true });
   }
   const changed = await change(pr);
   await writeFile(path.join(dir, 'changed.txt'), changed.join('\n'));
@@ -137,4 +139,59 @@ test('CI: a real IP in a sample fails, and changing someone else\'s entry needs 
   assert.match(other.report.reasons.join(' '), /belongs to @Aaronjacobs000/);
   const outside = await ciRun(async () => ['tools/validate-library.mjs'], 'octocat');
   assert.equal(outside.report.eligible, false);
+});
+
+// The OpenAI audit log entry belongs to Aaronjacobs000, so a change from that login can merge
+// without review when it passes.
+const AUDIT = 'parsers/openai/api-platform-audit-logs/meta.json';
+async function setCollector(pr, value) {
+  const f = path.join(pr, AUDIT);
+  const m = JSON.parse(await readFile(f, 'utf8'));
+  if (value === undefined) delete m.collector; else m.collector = value;
+  await writeFile(f, JSON.stringify(m, null, 2));
+}
+const collectorErrors = (r) => r.entries.flatMap((e) => e.problems).filter((p) => p.level === 'error' && p.code === 'collector').map((p) => p.message).join('\n');
+
+test('CI: an entry can point at a collector on the base branch and still merge on its own', async () => {
+  const { code, report } = await ciRun(async (pr) => { await setCollector(pr, 'collectors/ai-compliance-logs'); return [AUDIT]; }, 'Aaronjacobs000');
+  assert.equal(code, 0, JSON.stringify(report.entries.map((e) => e.problems)));
+  assert.equal(report.eligible, true, report.reasons.join('; '));
+});
+
+test('CI: a collector that is missing, outside collectors/, or only in the pull request fails', async () => {
+  const missing = await ciRun(async (pr) => { await setCollector(pr, 'collectors/no-such-collector'); return [AUDIT]; }, 'Aaronjacobs000');
+  assert.equal(missing.code, 1);
+  assert.match(collectorErrors(missing.report), /collectors\/no-such-collector is not on the main branch/);
+  for (const bad of ['parsers/openai/api-platform-audit-logs', '../collectors/ai-compliance-logs', 'collectors/ai-compliance-logs/ai_compliance_collector.py', '/collectors/ai-compliance-logs', 'https://example.com/collector.py']) {
+    const r = await ciRun(async (pr) => { await setCollector(pr, bad); return [AUDIT]; }, 'Aaronjacobs000');
+    assert.equal(r.code, 1, bad);
+    assert.match(collectorErrors(r.report), /must be the path of a folder under collectors\//, bad);
+  }
+  // Added in the same pull request: the base branch doesn't have it yet, so it fails.
+  const sameRequest = await ciRun(async (pr) => {
+    await mkdir(path.join(pr, 'collectors/acme-pull'), { recursive: true });
+    await writeFile(path.join(pr, 'collectors/acme-pull/README.md'), '# Acme\n');
+    await writeFile(path.join(pr, 'collectors/acme-pull/acme_pull.py'), 'print("hi")\n');
+    await setCollector(pr, 'collectors/acme-pull');
+    return [AUDIT, 'collectors/acme-pull/README.md', 'collectors/acme-pull/acme_pull.py'];
+  }, 'Aaronjacobs000');
+  assert.equal(sameRequest.code, 1);
+  assert.match(collectorErrors(sameRequest.report), /collectors\/acme-pull is not on the main branch/);
+  assert.equal(sameRequest.report.eligible, false);
+});
+
+test('CI: a pull request that adds a file under collectors/ never merges on its own', async () => {
+  const { code, report } = await ciRun(async (pr) => {
+    await mkdir(path.join(pr, 'collectors/acme-pull'), { recursive: true });
+    await writeFile(path.join(pr, 'collectors/acme-pull/acme_pull.py'), 'import os\nos.system("echo hi")\n');
+    await setCollector(pr, 'collectors/ai-compliance-logs');
+    return [AUDIT, 'collectors/acme-pull/acme_pull.py'];
+  }, 'Aaronjacobs000');
+  assert.equal(code, 0);
+  assert.equal(report.passed, true);
+  assert.equal(report.eligible, false);
+  assert.match(report.reasons.join('; '), /changes collector code, which a maintainer always reviews: collectors\/acme-pull\/acme_pull.py/);
+  const only = await ciRun(async () => ['collectors/ai-compliance-logs/ai_compliance_collector.py'], 'Aaronjacobs000');
+  assert.equal(only.report.eligible, false);
+  assert.match(only.report.reasons.join('; '), /collector code/);
 });

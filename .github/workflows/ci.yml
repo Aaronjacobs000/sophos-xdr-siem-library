@@ -25,5 +25,15 @@ jobs:
         run: node tools/validate-library.mjs --all
       - name: Build the site
         run: node tools/build-site.mjs
+      # Runs every collectors/*/test_*.py, so a new collector is covered without a workflow edit.
       - name: Collector tests
-        run: python3 -m unittest discover -s collectors/ai-compliance-logs -p 'test_*.py' -v
+        run: |
+          status=0
+          for dir in collectors/*/; do
+            [ -d "$dir" ] || continue
+            if ! compgen -G "${dir}test_*.py" > /dev/null; then echo "::warning::${dir} has no test_*.py"; continue; fi
+            echo "::group::${dir}"
+            python3 -m unittest discover -s "$dir" -p 'test_*.py' -v || status=1
+            echo "::endgroup::"
+          done
+          exit $status

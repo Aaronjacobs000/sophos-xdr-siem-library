@@ -1,6 +1,8 @@
 # The no-git route: someone pastes a Parser Studio submission into the issue form. This
 # reads the issue body as data, writes the entry, runs the library checks, and when they
 # pass opens a pull request for it. The issue author is recorded as the entry's author.
+# Only parsers/ is committed, and github-gate.mjs re-checks the pull request's real file list
+# before merging, so collector code can never arrive or merge this way.
 name: Issue submission
 
 on:
