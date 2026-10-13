@@ -1,0 +1,42 @@
+!SAMPLE={"id":"audit_log-example0004_20261012","type":"api_key.created","effective_at":1791842400,"project":{"id":"proj_exampleBilling02","name":"Example Billing Bot"},"actor":{"type":"session","session":{"user":{"id":"user-aliceExample0001","email":"alice@example.com"},"ip_address":"203.0.113.24","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36","ja3":"a497151ce4338a12c4418c44d375173e","ja4":"t13d1516h2_8daaf6152771_02713d6af862","ip_address_details":{"country":"AU","city":"Sydney","region":"New South Wales","region_code":"NSW","asn":"64500","latitude":"-33.86880","longitude":"151.20930"}}},"api_key.created":{"id":"key_example0001","data":{"scopes":["api.model.read","api.model.request"]}}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[{,]\s*"type"\s*:\s*"(?:api_key|certificates?|checkpoint|external_key|external_storage|group|invite|ip_allowlist|organization|project|rate_limit|resource|role|scim|service_account|tenant|tunnel|user|workload_identity_provider|workload_identity_provider_mapping)\.[a-z_.]+"\s*,.*"effective_at"\s*:\s*\d|"effective_at"\s*:\s*\d.*[{,]\s*"type"\s*:\s*"(?:api_key|certificates?|checkpoint|external_key|external_storage|group|invite|ip_allowlist|organization|project|rate_limit|resource|role|scim|service_account|tenant|tunnel|user|workload_identity_provider|workload_identity_provider_mapping)\.[a-z_.]+"\s*[,}]
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OpenAI API Platform audit logs (GET /v1/organization/audit_logs), one object from
+# data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# Standalone parser for the ManagementEvent schema: every event type in OpenAI's list except
+# login and logout (API keys, projects, users, invites, roles, groups, service accounts,
+# rate limits, IP allowlists, SCIM, certificates, organization and tenant settings).
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "OpenAI API Platform"
+sensorEventId$ = json["$.id"]
+# effective_at is Unix seconds; the field takes microseconds.
+eventTimeUsec$ = INT(STRING(json["$.effective_at"]), 10) * 1000000
+
+t = json["$.type"]
+operationName$ = t
+# The project the action was scoped to. Admin API key actions use the default project.
+namespace$ = json["$.project.id"]
+
+# The details object is keyed by the event type, for example "api_key.created": {"id": ...}.
+# operation$ is the schema's free-text summary: the event type and the ID of what it changed.
+target = json["$['" + t + "'].id"]
+operation$ = IF target THEN t + " " + target ELSE t
+
+# The actor is a signed-in user (session) or an API key that belongs to a user or a
+# service account.
+username$ = json["$.actor.session.user.email"]
+username$ = IF username$ THEN username$ ELSE json["$.actor.api_key.user.email"]
+serviceAccount = json["$.actor.api_key.service_account.id"]
+username$ = IF serviceAccount THEN "service_account " + serviceAccount ELSE username$
+
+# Every action arrives over the web or the API, so it is remote. Only sessions carry an IP.
+# The schema has no address field; host_id takes an IP address, so the client IP goes there.
+remoteOperation$ = TRUE
+hostId$ = json["$.actor.session.ip_address"]
