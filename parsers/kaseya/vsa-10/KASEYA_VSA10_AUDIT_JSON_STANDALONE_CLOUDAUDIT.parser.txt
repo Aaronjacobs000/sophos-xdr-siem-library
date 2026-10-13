@@ -1,0 +1,86 @@
+!SAMPLE={"AuditLogRecordId":55062,"AuditLogRecordDateTime":"2026-10-12T11:43:39","ActionId":1,"UserAgentDevice":"edge","UserAgentDeviceId":"2-e66f9f68-7859-46e6-b082-4bf648341309","User":"tech.akim","ExtraInformation":null,"RequestIpAddress":"198.51.100.23","RequestSource":"WebApp.0","DeviceIdentifier":"e9dcef68-339a-4a4f-b218-09ab403502e9","DeviceName":"ACME-WS-014","DeviceGroupName":"Acme Dental > Head Office > Workstations","EventDescription":"Execute automation ad-hoc script 'Add local admin'","AssociatedAccountUsername":null,"CategoryId":1,"EventTypeId":1}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"AuditLogRecordId"\s*:\s*\d+\s*,\s*"AuditLogRecordDateTime"\s*:
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaseya VSA 10 audit log records (GET /api/v3/auditlogs), sent to a Sophos NG-SIEM
+# HTTP Ingest integration one JSON record per line by the collector in
+# collectors/kaseya-vsa10-audit-logs. Pulseway's audit log API returns the same records.
+# Standalone parser for CloudAudit: script runs (User Command), remote control, file transfers,
+# API token changes and the other audit categories, with the technician, the address the
+# request came from and the device. CategoryId and EventTypeId names come from the API docs.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Kaseya VSA 10"
+eventSource$ = "Kaseya VSA 10"
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+userName$ = json["$.User"]
+sourceAddress$ = json["$.RequestIpAddress"]
+userAgent$ = json["$.UserAgentDevice"]
+targetHostname$ = json["$.DeviceName"]
+hostId$ = json["$.DeviceName"]
+
+# AuditLogRecordDateTime is UTC without a zone.
+eventTimeUsec$ = DATETIME(json["$.AuditLogRecordDateTime"], "2006-01-02T15:04:05.999999999")
+
+cat = STRING(json["$.CategoryId"])
+eventName$ = "Category " + cat
+eventName$ = IF cat == "1" THEN "User Command" ELSE eventName$
+eventName$ = IF cat == "2" THEN "System Command" ELSE eventName$
+eventName$ = IF cat == "3" THEN "Device or Application Registration" ELSE eventName$
+eventName$ = IF cat == "4" THEN "Account" ELSE eventName$
+eventName$ = IF cat == "5" THEN "Server Administration" ELSE eventName$
+eventName$ = IF cat == "6" THEN "Remote Control" ELSE eventName$
+eventName$ = IF cat == "7" THEN "Package Import" ELSE eventName$
+eventName$ = IF cat == "8" THEN "Datto BCDR Integrations" ELSE eventName$
+eventName$ = IF cat == "9" THEN "Workflow Action" ELSE eventName$
+eventName$ = IF cat == "10" THEN "Virtualization Integrations" ELSE eventName$
+eventName$ = IF cat == "11" THEN "Api Tokens" ELSE eventName$
+eventName$ = IF cat == "12" THEN "Managed Files" ELSE eventName$
+eventName$ = IF cat == "13" THEN "Datto Networking Integrations" ELSE eventName$
+eventName$ = IF cat == "14" THEN "Bulk Action" ELSE eventName$
+eventName$ = IF cat == "15" THEN "KaseyaOne" ELSE eventName$
+eventName$ = IF cat == "16" THEN "Psa Integrations" ELSE eventName$
+eventName$ = IF cat == "17" THEN "Datto Endpoint Backup Integrations" ELSE eventName$
+eventName$ = IF cat == "18" THEN "BitDefender Integrations" ELSE eventName$
+eventName$ = IF cat == "19" THEN "Datto EDR/AV Integrations" ELSE eventName$
+eventName$ = IF cat == "20" THEN "Automation Hub" ELSE eventName$
+eventName$ = IF cat == "21" THEN "MDM Commands" ELSE eventName$
+eventName$ = IF cat == "22" THEN "MDM Policies" ELSE eventName$
+eventName$ = IF cat == "23" THEN "MDM Enrollment" ELSE eventName$
+eventName$ = IF cat == "24" THEN "Device" ELSE eventName$
+eventName$ = IF cat == "25" THEN "Webroot Integrations" ELSE eventName$
+eventName$ = IF cat == "26" THEN "File Transfer" ELSE eventName$
+eventName$ = IF cat == "27" THEN "Acronis" ELSE eventName$
+
+et = STRING(json["$.EventTypeId"])
+eventType$ = "Unknown"
+eventType$ = IF et == "1" THEN "Information" ELSE eventType$
+eventType$ = IF et == "2" THEN "Warning" ELSE eventType$
+eventType$ = IF et == "3" THEN "Error" ELSE eventType$
+status$ = eventType$
+
+d1.key$ = "event_description"
+d1.value$ = json["$.EventDescription"]
+d2.key$ = "audit_record_id"
+d2.value$ = STRING(json["$.AuditLogRecordId"])
+d3.key$ = "request_source"
+d3.value$ = json["$.RequestSource"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3]
+d4.key$ = "extra_information"
+d4.value$ = json["$.ExtraInformation"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "device_group"
+d5.value$ = json["$.DeviceGroupName"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "device_identifier"
+d6.value$ = json["$.DeviceIdentifier"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
