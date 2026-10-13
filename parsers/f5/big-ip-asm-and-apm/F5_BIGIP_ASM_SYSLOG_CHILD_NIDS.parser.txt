@@ -1,0 +1,85 @@
+!SAMPLE=<131>Oct 13 01:09:41 bigip01.example.com ASM:unit_hostname="bigip01.example.com",management_ip_address="192.0.2.5",management_ip_address_2="N/A",http_class_name="/Common/portal_policy",web_application_name="/Common/portal_policy",policy_name="/Common/portal_policy",policy_apply_date="2026-10-01 09:30:00",violations="Attack signature detected,Illegal meta character in value",support_id="18205860747014046017",request_status="blocked",response_code="0",ip_client="203.0.113.77",route_domain="0",method="GET",protocol="HTTPS",query_string="id=1%27%20or%201%3D1--",x_forwarded_for_header_value="N/A",sig_ids="200002147,200002419",sig_names="SQL-INJ expressions like %22or 1=1%22 (3),SQL-INJ %22UNION SELECT%22 (Parameter)",date_time="2026-10-13 01:09:40",severity="Error",attack_type="SQL-Injection",geo_location="US",ip_address_intelligence="Scanners",username="N/A",session_id="N/A",src_port="40122",dest_port="443",dest_ip="203.0.113.10",sub_violations="N/A",virus_name="N/A",violation_rating="5",websocket_direction="N/A",websocket_message_type="N/A",device_id="N/A",staged_sig_ids="N/A",staged_sig_names="N/A",threat_campaign_names="N/A",staged_threat_campaign_names="N/A",blocking_exception_reason="N/A",captcha_result="N/A",microservice="N/A",tap_event_id="N/A",tap_vid="N/A",vs_name="/Common/portal_https_vs",sig_cves="N/A",staged_sig_cves="N/A",uri="/products/view",fragment="N/A",request="GET /products/view?id=1%27%20or%201%3D1-- HTTP/1.1\r\nHost: portal.example.com\r\nUser-Agent: sqlmap/1.8\r\n\r\n"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="violation"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP ASM / Advanced WAF request logs (Splunk key=value or ArcSight CEF).
+# Child of F5_BIGIP_ASM_SYSLOG_PARENT: requests with violations, blocked or alerted requests, and
+# attack (anomaly) events such as brute force, web scraping and DoS, to NIDS. Setting
+# source_address and destination_address lets the IP Watchlist detector use these events.
+# The request variables, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = src
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+protocol$ = 6
+direction$ = "INBOUND"
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+action$ = status
+blocked$ = IF status == "blocked" THEN 1 ELSE NULL
+sourceUsername$ = IF user != "" AND user != "N/A" THEN user ELSE NULL
+
+# Key=value lists every signature id and violation; CEF names one signature or violation (or
+# the attack type for anomaly events) in the header.
+firstSig = sigIds|^(?P<id>\d+)
+cefSig = sig|^(?P<id>\d+)$
+sigId = IF isCef THEN cefSig["id"] ELSE firstSig["id"]
+signatureId$ = IF sigId != "" THEN INT(sigId, 10) ELSE NULL
+cefName = IF isCef THEN STRING(v[5]) ELSE ""
+message$ = IF violations != "" THEN violations ELSE cefName
+message$ = IF anomaly THEN sig + ": " + cefName ELSE message$
+# attack_type (cs4 in CEF) holds the attack status in anomaly events, so those use the header.
+classification$ = IF attack != "" AND attack != "N/A" THEN attack ELSE NULL
+classification$ = IF anomaly THEN sig ELSE classification$
+
+r1.key$ = "policy"
+r1.value$ = policy
+r2.key$ = "request_status"
+r2.value$ = status
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "support_id"
+r3.value$ = support
+eventMetadata$.record$ = IF support != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "uri"
+r4.value$ = uri
+eventMetadata$.record$ = IF uri != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "http_method"
+r5.value$ = method
+eventMetadata$.record$ = IF method != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "signature_ids"
+r6.value$ = sigIds
+r7.key$ = "signature_names"
+r7.value$ = sigNames
+eventMetadata$.record$ = IF sigIds != "" THEN eventMetadata$.record$ + [r6, r7] ELSE eventMetadata$.record$
+sub = subViolations
+r8.key$ = "sub_violations"
+r8.value$ = sub
+eventMetadata$.record$ = IF sub != "" AND sub != "N/A" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+rating = IF isCef THEN "" ELSE STRING(kv["violation_rating"])
+r9.key$ = "violation_rating"
+r9.value$ = rating
+eventMetadata$.record$ = IF rating != "" AND rating != "N/A" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+sevText = IF isCef THEN STRING(v[6]) ELSE STRING(kv["severity"])
+r10.key$ = "severity"
+r10.value$ = sevText
+eventMetadata$.record$ = IF sevText != "" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
+r11.key$ = "geo_location"
+r11.value$ = geo
+eventMetadata$.record$ = IF geo != "" AND geo != "N/A" THEN eventMetadata$.record$ + [r11] ELSE eventMetadata$.record$
+ipi = ipIntel
+r12.key$ = "ip_address_intelligence"
+r12.value$ = ipi
+eventMetadata$.record$ = IF ipi != "" AND ipi != "N/A" THEN eventMetadata$.record$ + [r12] ELSE eventMetadata$.record$
+r13.key$ = "x_forwarded_for"
+r13.value$ = xff
+eventMetadata$.record$ = IF xff != "" AND xff != "N/A" THEN eventMetadata$.record$ + [r13] ELSE eventMetadata$.record$
+r14.key$ = "attack_status"
+r14.value$ = IF anomaly THEN STRING(v["cs4"]) ELSE ""
+eventMetadata$.record$ = IF anomaly THEN eventMetadata$.record$ + [r14] ELSE eventMetadata$.record$
+r15.key$ = "detection_mode"
+r15.value$ = detectionMode
+eventMetadata$.record$ = IF detectionMode != "" THEN eventMetadata$.record$ + [r15] ELSE eventMetadata$.record$

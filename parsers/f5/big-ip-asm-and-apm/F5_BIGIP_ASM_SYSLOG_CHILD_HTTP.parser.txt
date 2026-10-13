@@ -1,0 +1,44 @@
+!SAMPLE=<134>Oct 13 01:02:04 bigip01.example.com ASM:unit_hostname="bigip01.example.com",management_ip_address="192.0.2.5",management_ip_address_2="N/A",http_class_name="/Common/portal_policy",web_application_name="/Common/portal_policy",policy_name="/Common/portal_policy",policy_apply_date="2026-10-01 09:30:00",violations="N/A",support_id="18205860747014046001",request_status="passed",response_code="200",ip_client="198.51.100.23",route_domain="0",method="GET",protocol="HTTPS",query_string="page=2",x_forwarded_for_header_value="N/A",sig_ids="N/A",sig_names="N/A",date_time="2026-10-13 01:02:03",severity="Informational",attack_type="N/A",geo_location="AU",ip_address_intelligence="N/A",username="N/A",session_id="N/A",src_port="52964",dest_port="443",dest_ip="203.0.113.10",sub_violations="N/A",virus_name="N/A",violation_rating="0",websocket_direction="N/A",websocket_message_type="N/A",device_id="N/A",staged_sig_ids="N/A",staged_sig_names="N/A",threat_campaign_names="N/A",staged_threat_campaign_names="N/A",blocking_exception_reason="N/A",captcha_result="N/A",microservice="N/A",tap_event_id="N/A",tap_vid="N/A",vs_name="/Common/portal_https_vs",sig_cves="N/A",staged_sig_cves="N/A",uri="/account/orders",fragment="N/A",request="GET /account/orders?page=2 HTTP/1.1\r\nHost: portal.example.com\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\nAccept: */*\r\n\r\n"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="request"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP ASM / Advanced WAF request logs (Splunk key=value or ArcSight CEF).
+# Child of F5_BIGIP_ASM_SYSLOG_PARENT: requests with no violation (request_status passed) to HTTP.
+# They are only logged when the logging profile's request type is "all requests".
+# The request variables, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+httpMethod$ = method
+uriPath$ = IF uri != "" THEN uri ELSE line1["path"]
+q = IF isCef THEN line1["q"] ELSE query
+uriQuery$ = IF q != "" AND q != "N/A" THEN q ELSE NULL
+uriScheme$ = LOWERCASE(proto)
+uriHost$ = IF host["h"] != "" THEN host["h"] ELSE NULL
+userAgent$ = IF ua["u"] != "" THEN ua["u"] ELSE NULL
+sourceAddress$ = src
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationAddress$ = dst
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+responseCode$ = IF code != "" AND code != "0" THEN INT(code, 10) ELSE NULL
+sourceUsername$ = IF user != "" AND user != "N/A" THEN user ELSE NULL
+trueSourceAddress$ = IF xff != "" AND xff != "N/A" THEN xff ELSE NULL
+requestDirection$ = "INBOUND"
+sensorTypeActions$ = "HTTP_ALLOWED"
+
+r1.key$ = "support_id"
+r1.value$ = support
+r2.key$ = "policy"
+r2.value$ = policy
+r3.key$ = "request_status"
+r3.value$ = status
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+r4.key$ = "geo_location"
+r4.value$ = geo
+eventMetadata$.record$ = IF geo != "" AND geo != "N/A" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+vs = IF isCef THEN "" ELSE STRING(kv["vs_name"])
+r5.key$ = "virtual_server"
+r5.value$ = vs
+eventMetadata$.record$ = IF vs != "" AND vs != "N/A" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$

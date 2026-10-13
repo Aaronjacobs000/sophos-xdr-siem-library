@@ -1,0 +1,78 @@
+!SAMPLE=<133>Oct 13 01:40:17 bigip01.example.com notice apmd[20462]: 01490102:5: /Common/ap_vpn:Common:fadecabe: Access policy result: Network_Access
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s(?:apmd|apd|tmm\d*)\[\d+\]:\s+0149(?:0500|0010|0005|0102|0107|0501|0567):\d:\s
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP APM access messages, RFC 3164 remote syslog (the default) to the data collector:
+#   <PRI>Mmm dd HH:MM:SS <host> <severity> <process>[<pid>]: <message id>:<level>: <profile>:<partition>:<session>: <text>
+# Standalone parser for the Authentication schema. APM writes one session as several lines, so each
+# record carries the session ID for joining them in search:
+#   01490500 New session (client IP and virtual server)   01490010 Username
+#   01490005 Policy ending (Allow or Deny)                01490102 Access policy result
+#   01490107 AD authentication failure                    01490501, 01490567 Session deleted
+# Message texts come from F5's bug tracker pages and Splunk SC4S tests; F5 publishes no full catalogue.
+
+m = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s+(?:(?:emerg|alert|crit|err|warning|notice|info|debug)\s+)?(?P<proc>[\w-]+)\[\d+\]:\s+(?P<id>0149[0-9a-fA-F]{4}):(?P<lvl>\d):\s+(?P<prefix>\S*?):\s+(?P<text>.*?)\s*$
+id = m["id"]
+text = m["text"]
+prefix = m["prefix"]
+sess = prefix|(?P<s>[0-9a-fA-F]{8,32})$
+profile = prefix|^(?P<p>/[^:]+)
+
+sensorType$ = "F5 BIG-IP APM"
+hostId$ = m["host"]
+targetHostName$ = m["host"]
+authSystem$ = "F5 BIG-IP APM"
+sessionId$ = IF sess["s"] != "" THEN sess["s"] ELSE NULL
+# The header time has no year and no zone: DATETIME picks the year and reads it as UTC.
+eventTimeUsec$ = DATETIME(m["time"], "Jan _2 15:04:05", TRUE)
+
+start = text|^New session from client IP (?P<ip>\S+) \(ST=(?P<st>[^/]*)/CC=(?P<cc>[^/]*)/C=(?P<c>[^)]*)\) at VIP (?P<vip>\S+) Listener (?P<listener>\S+)
+uname = text|^Username '(?P<user>.*)'$
+ending = text|to ending '(?P<e>[^']*)'
+result = text|^Access policy result: (?P<r>\S+)
+adfail = text|authentication with '(?P<user>[^']*)' failed: (?P<reason>.*)$
+
+sourceAddress$ = IF start["ip"] != "" THEN start["ip"] ELSE NULL
+targetAddress$ = IF start["vip"] != "" THEN start["vip"] ELSE NULL
+user = IF uname["user"] != "" THEN uname["user"] ELSE adfail["user"]
+targetUserName$ = IF user != "" THEN user ELSE NULL
+
+denied = LOWERCASE(ending["e"]) == "deny" OR result["r"] == "Logon_Deny" OR id == "01490107"
+allowed = LOWERCASE(ending["e"]) == "allow" OR (result["r"] != "" AND result["r"] != "Logon_Deny")
+loggedOff = id == "01490501" OR id == "01490567"
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF id == "01490500" THEN "PRE_AUTHENTICATION" ELSE authCategory$
+authCategory$ = IF loggedOff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+action$ = NULL
+action$ = IF allowed THEN "LOGON" ELSE action$
+action$ = IF denied THEN "FAILURE" ELSE action$
+action$ = IF loggedOff THEN "LOGOFF" ELSE action$
+actionResult$ = NULL
+actionResult$ = IF allowed OR loggedOff THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF denied THEN "FAILED" ELSE actionResult$
+extraFailurereason$ = IF adfail["reason"] != "" THEN adfail["reason"] ELSE NULL
+
+r1.key$ = "message_id"
+r1.value$ = id
+r2.key$ = "message"
+r2.value$ = text
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "access_profile"
+r3.value$ = profile["p"]
+eventMetadata$.record$ = IF profile["p"] != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "listener"
+r4.value$ = start["listener"]
+r5.key$ = "client_country"
+r5.value$ = start["cc"]
+eventMetadata$.record$ = IF start["ip"] != "" THEN eventMetadata$.record$ + [r4, r5] ELSE eventMetadata$.record$
+r6.key$ = "policy_result"
+r6.value$ = result["r"]
+eventMetadata$.record$ = IF result["r"] != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "policy_ending"
+r7.value$ = ending["e"]
+eventMetadata$.record$ = IF ending["e"] != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$

@@ -1,0 +1,90 @@
+!SAMPLE=<131>Oct 13 01:09:41 bigip01.example.com ASM:unit_hostname="bigip01.example.com",management_ip_address="192.0.2.5",management_ip_address_2="N/A",http_class_name="/Common/portal_policy",web_application_name="/Common/portal_policy",policy_name="/Common/portal_policy",policy_apply_date="2026-10-01 09:30:00",violations="Attack signature detected,Illegal meta character in value",support_id="18205860747014046017",request_status="blocked",response_code="0",ip_client="203.0.113.77",route_domain="0",method="GET",protocol="HTTPS",query_string="id=1%27%20or%201%3D1--",x_forwarded_for_header_value="N/A",sig_ids="200002147,200002419",sig_names="SQL-INJ expressions like %22or 1=1%22 (3),SQL-INJ %22UNION SELECT%22 (Parameter)",date_time="2026-10-13 01:09:40",severity="Error",attack_type="SQL-Injection",geo_location="US",ip_address_intelligence="Scanners",username="N/A",session_id="N/A",src_port="40122",dest_port="443",dest_ip="203.0.113.10",sub_violations="N/A",virus_name="N/A",violation_rating="5",websocket_direction="N/A",websocket_message_type="N/A",device_id="N/A",staged_sig_ids="N/A",staged_sig_names="N/A",threat_campaign_names="N/A",staged_threat_campaign_names="N/A",blocking_exception_reason="N/A",captcha_result="N/A",microservice="N/A",tap_event_id="N/A",tap_vid="N/A",vs_name="/Common/portal_https_vs",sig_cves="N/A",staged_sig_cves="N/A",uri="/products/view",fragment="N/A",request="GET /products/view?id=1%27%20or%201%3D1-- HTTP/1.1\r\nHost: portal.example.com\r\nUser-Agent: sqlmap/1.8\r\n\r\n"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sASM:(?:unit_hostname="|CEF:0\|F5\|ASM\|)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP ASM / Advanced WAF request logs from a remote logging profile, in the
+# "Key-Value Pairs (Splunk)" or "Common Event Format (ArcSight)" format, to the data collector:
+#   <PRI>Mmm dd HH:MM:SS <host> ASM:unit_hostname="...",management_ip_address="...",...
+#   <PRI>Mmm dd HH:MM:SS <host> ASM:CEF:0|F5|ASM|<version>|<signature id>|<name>|<severity>|...
+# Parent: reads either form into the same variables. Requests with no violation go to the HTTP
+# child; violations, blocked or alerted requests and attack (anomaly) events go to the NIDS child.
+# The comma separated (Remote) format is positional and isn't covered.
+
+m = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s+ASM:(?P<payload>.*)$
+payload = m["payload"]
+cefm = payload|^CEF:
+isCef = cefm[0] != ""
+kv = IF isCef THEN NULL ELSE SPLIT_NAME_VALUES(payload, ",", "=", `"`)
+v = IF isCef THEN CEF(payload) ELSE NULL
+
+# SPLIT_NAME_VALUES rejoins a quoted value that holds the delimiter with spaces, so key=value
+# fields that can hold commas are read with their own patterns, up to the next ,key=".
+vio = payload|(?:^|,)violations="(?P<v>.*?)",[a-z_0-9]+="
+sid = payload|(?:^|,)sig_ids="(?P<v>.*?)",[a-z_0-9]+="
+snm = payload|(?:^|,)sig_names="(?P<v>.*?)",[a-z_0-9]+="
+atk = payload|(?:^|,)attack_type="(?P<v>.*?)",[a-z_0-9]+="
+sbv = payload|(?:^|,)sub_violations="(?P<v>.*?)",[a-z_0-9]+="
+ipa = payload|(?:^|,)ip_address_intelligence="(?P<v>.*?)",[a-z_0-9]+="
+qst = payload|(?:^|,)query_string="(?P<v>.*?)",[a-z_0-9]+="
+req = payload|(?:^|,)request="(?P<v>.*?)"(?:,[a-z_0-9]+="|$)
+xfh = payload|(?:^|,)x_forwarded_for_header_value="(?P<v>.*?)",[a-z_0-9]+="
+uri1 = payload|(?:^|,)uri="(?P<v>.*?)",[a-z_0-9]+="
+
+# Values from either form. "N/A" marks an empty value in newer builds.
+sig = IF isCef THEN STRING(v[4]) ELSE ""
+# Attack (anomaly) events label cn3 attack_id. The engine evaluates both sides of AND, so the
+# CEF read sits in IF.
+cn3Label = IF isCef THEN STRING(v["cn3Label"]) ELSE ""
+anomaly = cn3Label == "attack_id"
+method = IF isCef THEN STRING(v["requestMethod"]) ELSE STRING(kv["method"])
+proto = IF isCef THEN STRING(v["app"]) ELSE STRING(kv["protocol"])
+src = IF isCef THEN STRING(v["src"]) ELSE STRING(kv["ip_client"])
+sport = IF isCef THEN STRING(v["spt"]) ELSE STRING(kv["src_port"])
+dst = IF isCef THEN STRING(v["dst"]) ELSE STRING(kv["dest_ip"])
+dport = IF isCef THEN STRING(v["dpt"]) ELSE STRING(kv["dest_port"])
+# In attack events cn1 is detection_average, not the response code.
+code = IF isCef THEN STRING(v["cn1"]) ELSE STRING(kv["response_code"])
+code = IF anomaly THEN "" ELSE code
+status = IF isCef THEN STRING(v["act"]) ELSE STRING(kv["request_status"])
+status = LOWERCASE(status)
+support = IF isCef THEN STRING(v["externalId"]) ELSE STRING(kv["support_id"])
+policy = IF isCef THEN STRING(v["cs1"]) ELSE STRING(kv["policy_name"])
+xff = IF isCef THEN STRING(v["cs5"]) ELSE xfh["v"]
+# In attack events cs5 is the detection mode.
+detectionMode = IF anomaly THEN xff ELSE ""
+xff = IF anomaly THEN "" ELSE xff
+user = IF isCef THEN STRING(v["suser"]) ELSE STRING(kv["username"])
+attack = IF isCef THEN STRING(v["cs4"]) ELSE atk["v"]
+geo = IF isCef THEN STRING(v["cs6"]) ELSE STRING(kv["geo_location"])
+uri = IF isCef THEN STRING(v["request"]) ELSE uri1["v"]
+fullRequest = IF isCef THEN STRING(v["cs3"]) ELSE req["v"]
+violations = IF isCef THEN "" ELSE vio["v"]
+violations = IF violations == "N/A" THEN "" ELSE violations
+sigIds = IF isCef THEN "" ELSE sid["v"]
+sigIds = IF sigIds == "N/A" THEN "" ELSE sigIds
+sigNames = IF isCef THEN "" ELSE snm["v"]
+subViolations = IF isCef THEN "" ELSE sbv["v"]
+ipIntel = IF isCef THEN STRING(v["c6a4"]) ELSE ipa["v"]
+query = IF isCef THEN "" ELSE qst["v"]
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "F5 BIG-IP ASM"
+hostId$ = m["host"]
+eventType$ = "request"
+eventType$ = IF violations != "" OR sigIds != "" OR status == "blocked" OR status == "alerted" THEN "violation" ELSE eventType$
+eventType$ = IF isCef AND sig != "Successful Request" THEN "violation" ELSE eventType$
+
+# Event time: date_time (key=value) or rt (CEF), in the BIG-IP's time zone with no zone given,
+# read as UTC.
+dt = IF isCef THEN STRING(v["rt"]) ELSE STRING(kv["date_time"])
+cefTime = dt|^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s
+eventTimeUsec$ = IF dt != "" AND cefTime[0] != "" THEN DATETIME(dt, "Jan _2 2006 15:04:05") ELSE eventTimeUsec$
+eventTimeUsec$ = IF dt != "" AND cefTime[0] == "" THEN DATETIME(dt, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+
+# Host and User-Agent come from the logged request, where line breaks are written as \r\n.
+host = fullRequest|(?:\\r\\n|\r\n|\n)Host:\s*(?P<h>.*?)(?:\\r\\n|\r\n|\n|$)
+ua = fullRequest|(?:\\r\\n|\r\n|\n)User-Agent:\s*(?P<u>.*?)(?:\\r\\n|\r\n|\n|$)
+line1 = fullRequest|^\S+\s+(?P<path>[^?\s]*)(?:\?(?P<q>\S*))?\s+HTTP
