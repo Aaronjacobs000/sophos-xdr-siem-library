@@ -1,0 +1,168 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SYNCRO_RMM_ALERT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Syncro",
+      "event_time_usec": 1791805267118000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Syncro",
+      "provider": "Syncro RMM",
+      "alert_id": "91234",
+      "title": "Antivirus threat detected",
+      "summary": "Threat Trojan:Win32/Example.A quarantined from C:\\Users\\jlee\\Downloads\\invoice_0921.exe",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "alert_category": "Antivirus",
+      "status": "active",
+      "created_time_usec": 1791805267118000,
+      "updated_time_usec": 1791805267118000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "31"
+          },
+          {
+            "key": "asset_id",
+            "value": "1201"
+          },
+          {
+            "key": "resolved",
+            "value": "false"
+          },
+          {
+            "key": "check_id",
+            "value": "77"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SYNCRO_RMM_ALERT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Syncro",
+      "event_time_usec": 1791805395420000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Syncro",
+      "provider": "Syncro RMM",
+      "alert_id": "91235",
+      "title": "Event Log Monitor - Security",
+      "summary": "Event 4720: A user account was created. Account name: backupadmin",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "alert_category": "Event Log",
+      "status": "active",
+      "created_time_usec": 1791805395420000,
+      "updated_time_usec": 1791805395420000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "31"
+          },
+          {
+            "key": "asset_id",
+            "value": "1201"
+          },
+          {
+            "key": "resolved",
+            "value": "false"
+          },
+          {
+            "key": "ticket_number",
+            "value": "5521"
+          },
+          {
+            "key": "check_id",
+            "value": "78"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SYNCRO_RMM_ALERT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Syncro",
+      "event_time_usec": 1791805502551000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Syncro",
+      "provider": "Syncro RMM",
+      "alert_id": "91236",
+      "title": "Script failed",
+      "summary": "Script 'Nightly cleanup' exited with code 1",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "alert_category": "Script",
+      "status": "resolved",
+      "created_time_usec": 1791805502551000,
+      "updated_time_usec": 1791806702551000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "31"
+          },
+          {
+            "key": "asset_id",
+            "value": "1188"
+          },
+          {
+            "key": "resolved",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SYNCRO_RMM_ALERT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Syncro",
+      "event_time_usec": 1791845160000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Syncro",
+      "provider": "Syncro RMM",
+      "alert_id": "91237",
+      "title": "Asset offline",
+      "summary": "Asset offline",
+      "host_id": "ACME-WS-022",
+      "target_host_name": "ACME-WS-022",
+      "alert_category": "Offline",
+      "status": "active",
+      "created_time_usec": 1791845160000000,
+      "updated_time_usec": 1791845160000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "31"
+          },
+          {
+            "key": "asset_id",
+            "value": "1310"
+          },
+          {
+            "key": "resolved",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

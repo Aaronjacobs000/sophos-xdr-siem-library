@@ -1,0 +1,53 @@
+!SAMPLE={"id":91234,"customer_id":31,"ticket_number":null,"ticket_status":null,"computer_name":"ACME-WS-014","properties":{"trigger":"Antivirus"},"resolved":false,"check_id":77,"status":"active","formatted_output":"Threat Trojan:Win32/Example.A quarantined from C:\\Users\\jlee\\Downloads\\invoice_0921.exe","description":"Antivirus threat detected","created_at":"2026-10-12T22:41:07.118+11:00","updated_at":"2026-10-12T22:41:07.118+11:00","asset_id":1201}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"id"\s*:\s*\d+\s*,\s*"customer_id"\s*:.*"computer_name"\s*:.*"formatted_output"\s*:.*"asset_id"\s*:
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Syncro RMM alerts (GET /api/v1/rmm_alerts), sent to a Sophos NG-SIEM HTTP Ingest
+# integration one JSON record per line by the collector in collectors/syncro-rmm-alerts.
+# Standalone parser for the third-party alert schema: one record per alert, with the device,
+# the alert description and output, the ticket it opened and whether it is resolved. Fields
+# follow the RmmAlert example in Syncro's public API spec. Syncro gives no severity.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Syncro"
+vendor$ = "Syncro"
+provider$ = "Syncro RMM"
+
+alertId$ = STRING(json["$.id"])
+title$ = json["$.description"]
+out = json["$.formatted_output"]
+summary$ = IF out != "" AND out != NULL THEN out ELSE json["$.description"]
+host = json["$.computer_name"]
+hostId$ = host
+targetHostName$ = host
+alertCategory$ = json["$.properties.trigger"]
+status$ = json["$.status"]
+resolved = STRING(json["$.resolved"]) == "true"
+status$ = IF resolved AND status$ == NULL THEN "resolved" ELSE status$
+
+# created_at and updated_at are ISO 8601 with an offset.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+createdTimeUsec$ = DATETIME(json["$.created_at"], layout)
+updatedTimeUsec$ = DATETIME(json["$.updated_at"], layout)
+eventTimeUsec$ = DATETIME(json["$.created_at"], layout)
+
+a1.key$ = "customer_id"
+a1.value$ = STRING(json["$.customer_id"])
+a2.key$ = "asset_id"
+a2.value$ = STRING(json["$.asset_id"])
+a3.key$ = "resolved"
+a3.value$ = STRING(json["$.resolved"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3]
+a4.key$ = "ticket_number"
+a4.value$ = STRING(json["$.ticket_number"])
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "check_id"
+a5.value$ = STRING(json["$.check_id"])
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
