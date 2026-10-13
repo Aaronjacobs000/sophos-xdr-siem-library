@@ -1,0 +1,78 @@
+!SAMPLE=<14>Oct 13 01:31:45 egd-syslog email[1]: {"message_id":"1791855104-1012198-13101-221-1","src_ip":"198.51.100.200","hdr_from":"\"Prize Desk\" <winner@example.org>","account_id":"ESS1234567","domain_id":"11111111","ptr_record":"","attachments":null,"recipients":[{"action":"blocked","reason":"bbl","reason_extra":"198.51.100.200, in Domain Settings: example.com","delivered":"not_delivered","delivery_detail":"","email":"jdoe@example.com","taxonomy":"spam"},{"action":"blocked","reason":"bbl","reason_extra":"198.51.100.200, in Domain Settings: example.com","delivered":"not_delivered","delivery_detail":"","email":"amy@example.com","taxonomy":"spam"}],"hdr_to":"\"Jane\" <jdoe@example.com>","recipient_count":2,"dst_domain":"example.com","size":3609,"subject":"You have won a prize","env_from":"winner@example.org","timestamp":"2026-10-13T01:31:44+0000","geoip":"BRA","tls":false,"hdr_auth_results":""}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="message"
+!SCHEMA=scwx.email
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Barracuda Email Gateway Defense syslog integration (Email Protection Advanced plan),
+# JSON message log records over TCP with TLS to the data collector.
+# Child of BARRACUDA_EMAIL_SYSLOG_PARENT: message log records to Email. One record per message
+# event; status, reason and threat come from the first recipient.
+# json, eventType$ and sensorType$ come from the parent.
+
+fromEmailAddress$ = json["$.env_from"]
+toEmailAddress$ = json["$.recipients[*].email"]
+subject$ = json["$.subject"]
+messageSize$ = json["$.size"]
+senderIp$ = json["$.src_ip"]
+eventTimeUsec$ = DATETIME(STRING(json["$.timestamp"]), "2006-01-02T15:04:05Z0700")
+
+action = LOWERCASE(STRING(json["$.recipients[0].action"]))
+delivered = LOWERCASE(STRING(json["$.recipients[0].delivered"]))
+reason = STRING(json["$.recipients[0].reason"])
+reasonExtra = STRING(json["$.recipients[0].reason_extra"])
+taxonomy = LOWERCASE(STRING(json["$.recipients[0].taxonomy"]))
+
+status$ = NULL
+status$ = IF action == "allowed" OR delivered == "delivered" THEN "DELIVERED" ELSE status$
+status$ = IF action == "blocked" THEN "BLOCKED" ELSE status$
+status$ = IF action == "quarantined" THEN "QUARANTINED" ELSE status$
+quarantineReason$ = IF status$ == "QUARANTINED" AND reason != "" THEN reason ELSE NULL
+
+# taxonomy is Barracuda's threat type (spam, phishing, malware, policy and others; none when clean).
+t_first.name$ = reason
+t_first.type$ = taxonomy
+t_first.classification$ = IF reasonExtra != "" THEN reasonExtra ELSE NULL
+found = []
+found = IF taxonomy != "" AND taxonomy != "none" THEN found + [t_first] ELSE found
+threats$ = found
+
+m1.key$ = "barracuda_message_id"
+m1.value$ = json["$.message_id"]
+m2.key$ = "action"
+m2.value$ = action
+m3.key$ = "delivered"
+m3.value$ = delivered
+m4.key$ = "header_from"
+m4.value$ = json["$.hdr_from"]
+m5.key$ = "header_to"
+m5.value$ = json["$.hdr_to"]
+m6.key$ = "account_id"
+m6.value$ = json["$.account_id"]
+m7.key$ = "geoip"
+m7.value$ = json["$.geoip"]
+m8.key$ = "tls"
+m8.value$ = STRING(json["$.tls"])
+m9.key$ = "recipient_count"
+m9.value$ = STRING(json["$.recipient_count"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3, m4, m5, m6, m7, m8, m9]
+m10.key$ = "reason"
+m10.value$ = reason
+eventMetadata$.record$ = IF reason != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "reason_extra"
+m11.value$ = reasonExtra
+eventMetadata$.record$ = IF reasonExtra != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+ptr = STRING(json["$.ptr_record"])
+m12.key$ = "sender_ptr"
+m12.value$ = ptr
+eventMetadata$.record$ = IF ptr != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+auth = STRING(json["$.hdr_auth_results"])
+m13.key$ = "authentication_results"
+m13.value$ = auth
+eventMetadata$.record$ = IF auth != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+detail = STRING(json["$.recipients[0].delivery_detail"])
+m14.key$ = "delivery_detail"
+m14.value$ = detail
+eventMetadata$.record$ = IF detail != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$

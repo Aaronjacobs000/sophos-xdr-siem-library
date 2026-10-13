@@ -1,0 +1,28 @@
+!SAMPLE=<23>Oct 13 01:11:40 2026 bsg01 scan: 203.0.113.80 1791853897-11251-1-0 1791853897 1791853900 SCAN - news@example.org amy@example.com 5.6 3 31 - SZ:9120 SUBJ:Last chance to claim your prize
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s(?:inbound/pass[12]|scan|outbound/smtp)(?:\[\d+\])?\s*:\s+\S+\s+\S+\s+\d+\s+\d+\s+(?:RECV|SCAN|SEND)\s|\semail(?:\[\d+\])?:\s*\{.*"message_id"\s*:.*"recipients"\s*:\s*\[
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Barracuda Email Security Gateway (appliance) mail syslog, and Barracuda Email Gateway
+# Defense (cloud) syslog integration message log records, to the data collector.
+# Parent: recognizes both and hands them to their children. EGD audit records and the
+# appliance's web syslog stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+# Appliance mail syslog, in Barracuda's documented order:
+#   <time>[ <year>] <host> <process>: <client ip> <message id> <start> <end> <RECV|SCAN|SEND> <info>
+# The facility and priority are fixed (mail.debug). Before 6.0.2.002 the process had a [pid].
+esg = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\s+(?P<year>\d{4}))?\s+(?P<host>\S+)\s+(?P<proc>inbound/pass[12]|scan|outbound/smtp)(?:\[\d+\])?\s*:\s+(?P<ip>\S+)\s+(?P<mid>\S+)\s+(?P<start>\d+)\s+(?P<end>\d+)\s+(?P<svc>RECV|SCAN|SEND)\s+(?P<info>.*?)\s*$
+
+# Email Gateway Defense sends one JSON object per message event after an "email[1]:" tag.
+egd = originalData$|\semail(?:\[\d+\])?:\s*(?P<json>\{.*})\s*$
+json = IF egd["json"] != "" THEN JSON(egd["json"]) ELSE NULL
+
+# Variables and $ fields set here are visible to both children, which route on eventType$:
+# the appliance's service (RECV, SCAN or SEND), or "message" for EGD.
+sensorType$ = IF esg["svc"] != "" THEN "Barracuda Email Security Gateway" ELSE "Barracuda Email Gateway Defense"
+hostId$ = IF esg["host"] != "" THEN esg["host"] ELSE NULL
+eventType$ = IF esg["svc"] != "" THEN esg["svc"] ELSE "message"

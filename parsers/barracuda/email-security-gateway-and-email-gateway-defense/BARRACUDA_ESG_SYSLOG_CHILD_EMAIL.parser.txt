@@ -1,0 +1,102 @@
+!SAMPLE=<23>Oct 13 01:11:40 2026 bsg01 scan: 203.0.113.80 1791853897-11251-1-0 1791853897 1791853900 SCAN - news@example.org amy@example.com 5.6 3 31 - SZ:9120 SUBJ:Last chance to claim your prize
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="RECV" OR eventType$=="SCAN" OR eventType$=="SEND"
+!SCHEMA=scwx.email
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Barracuda Email Security Gateway (appliance) mail syslog, to the data collector.
+# Child of BARRACUDA_EMAIL_SYSLOG_PARENT: RECV, SCAN and SEND lines to Email. The appliance
+# writes one line per action per recipient, joined by the Barracuda message ID.
+# esg, eventType$, sensorType$ and hostId$ come from the parent.
+
+svc = esg["svc"]
+info = esg["info"]
+# RECV: <sender> <recipient> <action> <reason> <reason extra>
+recv = info|^(?P<from>\S+)\s+(?P<to>\S+)\s+(?P<action>\d+)\s+(?P<reason>\d+)\s*(?P<extra>.*)$
+# SCAN: <ENC|-> <sender> <recipient> <score> <action> <reason> <reason extra> [ENC|-] SZ:<bytes> SUBJ:<subject>
+scan = info|^(?P<enc>\S+)\s+(?P<from>\S+)\s+(?P<to>\S+)\s+(?P<score>\S+)\s+(?P<action>\d+)\s+(?P<reason>\d+)\s+(?P<extra>.*?)(?:\s+(?:ENC|-))?\s+SZ:(?P<size>\d+)\s+SUBJ:(?P<subj>.*)$
+# SEND: <ENC|-> <action> <queue id> <response from the next server>
+send = info|^(?P<enc>\S+)\s+(?P<action>\d+)\s+(?P<queue>\S+)\s+(?P<resp>.*)$
+
+sender = IF svc == "SCAN" THEN scan["from"] ELSE recv["from"]
+rcpt = IF svc == "SCAN" THEN scan["to"] ELSE recv["to"]
+action = recv["action"]
+action = IF svc == "SCAN" THEN scan["action"] ELSE action
+action = IF svc == "SEND" THEN send["action"] ELSE action
+reason = IF svc == "SCAN" THEN scan["reason"] ELSE recv["reason"]
+extra = IF svc == "SCAN" THEN scan["extra"] ELSE recv["extra"]
+
+# "-" marks an empty sender, recipient, score or reason extra.
+fromEmailAddress$ = IF sender != "" AND sender != "-" THEN sender ELSE NULL
+toEmailAddress$ = IF rcpt != "" AND rcpt != "-" THEN rcpt ELSE NULL
+subject$ = IF scan["subj"] != "" THEN scan["subj"] ELSE NULL
+messageSize$ = IF scan["size"] != "" THEN INT(scan["size"], 10) ELSE NULL
+# SEND lines carry 127.0.0.1 as the client address.
+senderIp$ = IF svc != "SEND" THEN esg["ip"] ELSE NULL
+
+direction$ = NULL
+direction$ = IF CONTAINS(esg["proc"], "inbound/") THEN "INBOUND" ELSE direction$
+direction$ = IF esg["proc"] == "outbound/smtp" THEN "OUTBOUND" ELSE direction$
+
+# Start is the epoch second the sender began the message. SEND lines have 0 there, so they use
+# the header time, which has no zone (read as UTC) and, before 5.1.3.007, no year.
+start = esg["start"]
+eventTimeUsec$ = IF start != "" AND start != "0" THEN INT(start, 10) * 1000000 ELSE eventTimeUsec$
+eventTimeUsec$ = IF (start == "" OR start == "0") AND esg["year"] != "" THEN DATETIME(esg["time"] + " " + esg["year"], "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+eventTimeUsec$ = IF (start == "" OR start == "0") AND esg["year"] == "" THEN DATETIME(esg["time"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+# Action and reason codes from Barracuda's syslog page. SEND lines use their own action codes.
+actions = JSON(`{"0":"Allowed","1":"Aborted","2":"Blocked","3":"Quarantined","4":"Tagged","5":"Deferred","6":"Per-User Quarantined","7":"Allow Listed","8":"Encrypted","9":"Redirected","10":"Attachments Stubbed"}`)
+sendActions = JSON(`{"1":"Delivered","2":"Rejected","3":"Deferred","4":"Expired"}`)
+reasons = JSON(`{"1":"Virus","2":"Banned Attachment","3":"RBL Match","4":"Rate Control","5":"Too Many Message In Session","6":"Timeout Exceeded","7":"No Such Domain","8":"No Such User","9":"Subject Filter Match","11":"Client IP","12":"Recipient Address","13":"No Valid Recipients","14":"Domain Not Found","15":"Sender Address","17":"Need Fully Qualified Recipient","18":"Need Fully Qualified Sender","19":"Unsupported Command","20":"MAIL FROM Syntax Error","21":"Bad Address Syntax","22":"RCPT TO Syntax Error","23":"Send EHLO/HELO First","24":"Need MAIL Command","25":"Nested MAIL Command","27":"EHLO/HELO Syntax Error","30":"Mail Protocol Violation","31":"Score","34":"Header Filter Match","35":"Sender Block/Accept","36":"Recipient Block/Accept","37":"Body Filter Match","38":"Message Size Bypass","39":"Intention Analysis Match","40":"SPF/Caller-ID","41":"Client Host Rejected","44":"Authentication Not Enabled","45":"Allowed Message Size Exceeded","46":"Too Many Recipients","47":"Need RCPT Command","48":"DATA Syntax Error","49":"Internal Error","50":"Too Many Hops","51":"Mail Protocol Error","55":"Invalid Parameter Syntax","56":"STARTTLS Syntax Error","57":"TLS Already Active","58":"Too Many Errors","59":"Need STARTTLS First","60":"Spam Fingerprint Found","61":"Barracuda Reputation Allow List","62":"Barracuda Reputation Block List","63":"DomainKeys","64":"Recipient Verification Unavailable","65":"Realtime Intent","66":"Client Reverse DNS","67":"Email Registry","68":"Invalid Bounce","69":"Intent - Adult","70":"Intent - Political","71":"Multi-Level Intent","72":"Attachment Limit Exceeded","73":"System Busy","74":"BRTS Intent","75":"Per Domain Recipient","76":"Per Domain Sender","77":"Per Domain Client IP","78":"Sender Spoofed","79":"Attachment Content","80":"Outlook Add-in","82":"Barracuda IP/Domain Reputation","83":"Authentication Failure","85":"Attachment Size","86":"Virus detected by Extended Malware Protection","87":"Extended Malware Protection engine is busy","88":"A message was categorized for Email Category","89":"Macro Blocked"}`)
+threatTypes = JSON(`{"1":"virus","86":"virus","2":"attachment","72":"attachment","79":"attachment","85":"attachment","89":"attachment","31":"spam","60":"spam","3":"reputation","62":"reputation","82":"reputation","39":"intent","65":"intent","69":"intent","70":"intent","71":"intent","74":"intent","40":"spoofing","63":"spoofing","78":"spoofing","83":"spoofing"}`)
+actionName = IF svc == "SEND" THEN sendActions["$." + action] ELSE actions["$." + action]
+reasonName = IF reason != "" AND reason != "0" THEN reasons["$." + reason] ELSE NULL
+reasonText = IF STRING(reasonName) != "" THEN STRING(reasonName) ELSE "Reason " + reason
+
+# Allowed, tagged and other passed-through mail is DELIVERED: the gateway let it through.
+# SEND lines carry the delivery result itself.
+status$ = NULL
+status$ = IF svc != "SEND" AND (action == "0" OR action == "4" OR action == "7" OR action == "8" OR action == "9" OR action == "10") THEN "DELIVERED" ELSE status$
+status$ = IF svc != "SEND" AND (action == "1" OR action == "2") THEN "BLOCKED" ELSE status$
+status$ = IF svc != "SEND" AND (action == "3" OR action == "6") THEN "QUARANTINED" ELSE status$
+status$ = IF svc == "SEND" AND action == "1" THEN "DELIVERED" ELSE status$
+quarantineReason$ = IF status$ == "QUARANTINED" THEN reasonText ELSE NULL
+
+# A blocked or quarantined message gets one threat: the reason, its kind, and the reason extra
+# (the virus, filter or list that matched).
+ttype = IF reason != "" THEN STRING(threatTypes["$." + reason]) ELSE ""
+t_reason.name$ = reasonText
+t_reason.type$ = IF ttype != "" THEN ttype ELSE "policy"
+t_reason.classification$ = IF extra != "" AND extra != "-" THEN extra ELSE NULL
+found = []
+found = IF (status$ == "BLOCKED" OR status$ == "QUARANTINED") AND reason != "" AND reason != "0" THEN found + [t_reason] ELSE found
+threats$ = found
+
+m1.key$ = "barracuda_message_id"
+m1.value$ = esg["mid"]
+m3.key$ = "process"
+m3.value$ = esg["proc"]
+m4.key$ = "action"
+m4.value$ = IF STRING(actionName) != "" THEN STRING(actionName) ELSE action
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m3, m4]
+m5.key$ = "reason"
+m5.value$ = reasonText
+eventMetadata$.record$ = IF reason != "" AND reason != "0" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "reason_extra"
+m6.value$ = extra
+eventMetadata$.record$ = IF extra != "" AND extra != "-" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "spam_score"
+m7.value$ = scan["score"]
+eventMetadata$.record$ = IF scan["score"] != "" AND scan["score"] != "-" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+enc = IF svc == "SEND" THEN send["enc"] ELSE scan["enc"]
+m8.key$ = "tls"
+m8.value$ = IF enc == "ENC" THEN "true" ELSE "false"
+eventMetadata$.record$ = IF enc != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "queue_id"
+m9.value$ = send["queue"]
+m10.key$ = "delivery_response"
+m10.value$ = send["resp"]
+eventMetadata$.record$ = IF svc == "SEND" THEN eventMetadata$.record$ + [m9, m10] ELSE eventMetadata$.record$
