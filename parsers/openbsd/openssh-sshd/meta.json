@@ -19,7 +19,7 @@
     "https://github.com/openssh/openssh-portable/blob/master/auth.c",
     "https://man.openbsd.org/sshd_config#LogLevel"
   ],
-  "notes": "Accepted and Failed logon lines from sshd at LogLevel INFO, forwarded by the host's syslog daemon. The syslog time has no zone, so the parser reads it as UTC; keep the hosts on UTC or change the layout. Samples are made up in the format OpenSSH's authlog() writes.",
+  "notes": "Accepted and Failed logon lines from sshd at LogLevel INFO, forwarded by the host's syslog daemon. The syslog time has no zone, so the parser reads it as UTC; keep the hosts on UTC or change the layout. Samples are made up in the format OpenSSH's authlog() writes. The tenant's built-in sshd parser matches the same lines, and the engine picks one parser per line: in a lab tenant on 2026-10-13 the built-in parser took the four logon lines in 17 of 29 Run Tests. Expect some sshd lines to keep the built-in mapping.",
   "parsers": [
     {
       "name": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH",
