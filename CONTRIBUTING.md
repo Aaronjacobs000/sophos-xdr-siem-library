@@ -57,7 +57,7 @@ When the parsers pass Run Test in a Sophos NG-SIEM tenant, set `tested.tenant` i
 
 ## Collectors
 
-A collector is a small script that gets a source's logs to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize them. Most poll a vendor API that only offers pull access and send each record as one JSON line. [collectors/webhook-relay](collectors/webhook-relay/) relays pushed webhooks instead, for vendors whose webhooks can't add the `Authorization: Bearer` header HTTP Ingest needs. Each one is a folder, `collectors/<vendor>-<product>/`, with:
+A collector is a small script that gets a source's logs to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize them. Most poll a vendor API that only offers pull access and send each record as one JSON line. [collectors/webhook-relay](collectors/webhook-relay/) relays pushed webhooks instead, for vendors whose webhooks can't add the `Authorization: Bearer` header HTTP Ingest needs. Each one is a folder under `collectors/`, in lowercase with hyphens, named for the source it serves (`collectors/ibm-maas360/`) or, when it serves several, for what it does (`collectors/webhook-relay/`). It holds:
 
 - `<name>.py`: Python 3, standard library only.
 - `README.md`: what to set up on both sides, every setting, and what the script sends.
@@ -66,7 +66,8 @@ A collector is a small script that gets a source's logs to a Sophos NG-SIEM HTTP
 Follow [collectors/ai-compliance-logs](collectors/ai-compliance-logs/):
 
 - Every setting comes from an environment variable, keys included: `NGSIEM_INGEST_URL` and `NGSIEM_INGEST_KEY` for HTTP Ingest, `COLLECTOR_*` for the collector's own behavior, and a vendor prefix for the vendor's keys and options.
-- `--dry-run` (or `COLLECTOR_DRY_RUN=1`) prints the NDJSON it would send, and sends and saves nothing.
+- `--dry-run` (or `COLLECTOR_DRY_RUN=1`) prints each record it would send, one per line, and sends and saves nothing.
+- A request that carries a key or token doesn't follow redirects. A redirect fails the request with an error that says it was refused, so the key only goes to the URL it was set up for.
 - Keys, the HTTP Ingest URL path and signed download URLs never reach the log.
 
 To show a collector on an entry's page, set `"collector": "collectors/<name>"` in the entry's `meta.json`. The collector has to be on the main branch first, so it merges before the entry that points at it.

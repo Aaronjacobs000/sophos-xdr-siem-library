@@ -52,7 +52,7 @@ Exit code 0 means every page was read and sent. On an error the collector logs t
 - The first run asks for `$filter=AuditLogRecordDateTime ge <now minus the lookback>` (a standard OData date filter; the documentation's own example filters with `year()`), unless `VSA10_START_ID` is set. Later runs ask for `$filter=AuditLogRecordId gt <cursor>`.
 - Every request sorts by `AuditLogRecordId asc` and reads `$top` records. After each page HTTP Ingest accepts, the cursor moves to that page's last ID. It stops at a short page.
 
-Rate limits: about 3600 requests an hour per token and endpoint, and at most 100 failed requests a minute (2000 an hour) per address. The collector waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried.
+Rate limits: about 3600 requests an hour per token and endpoint, and at most 100 failed requests a minute (2000 an hour) per address. The collector waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the VSA 10 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving the cursor can send that page again; HTTP Ingest does not remove duplicates.
 

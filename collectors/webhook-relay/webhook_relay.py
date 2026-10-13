@@ -36,6 +36,8 @@ __version__ = "0.1.0"
 LOG = logging.getLogger("webhook_relay")
 USER_AGENT = f"parser-studio-webhook-relay/{__version__}"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# The opener doesn't follow these (see _NoRedirect), so the log names them as refused.
+REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 5
 # Svix's own libraries reject a timestamp more than five minutes from the receiver's clock.
 SVIX_TOLERANCE_SECONDS = 300
@@ -276,6 +278,10 @@ class Relay:
             except urllib.error.HTTPError as e:
                 # Close the error response now so its socket is released.
                 e.close()
+                if e.code in REDIRECT_STATUS:
+                    LOG.error("%s: HTTP Ingest at %s answered with a redirect (HTTP %s), which the relay refuses so the "
+                              "token never goes to another URL; check NGSIEM_INGEST_URL. Not retried", vendor, host, e.code)
+                    return 502, "HTTP Ingest refused the delivery"
                 if e.code not in RETRY_STATUS:
                     LOG.error("%s: HTTP Ingest at %s answered HTTP %s; not retried", vendor, host, e.code)
                     return 502, "HTTP Ingest refused the delivery"

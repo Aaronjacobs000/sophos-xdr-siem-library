@@ -33,6 +33,8 @@ LOG = logging.getLogger("ai_compliance_collector")
 USER_AGENT = f"parser-studio-ai-compliance-collector/{__version__}"
 REDACTED = "[redacted]"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# _request refuses these unless told otherwise, so the error names them as refused.
+REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 6
 SEEN_LIMIT = 20000
 RECORD_WARN_BYTES = 500_000
@@ -166,6 +168,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
+            if e.code in REDIRECT_STATUS and redirects == "refuse":
+                raise CollectorError(f"{what} to {_host(url)} answered with a redirect (HTTP {e.code}), which the collector "
+                                     "refuses so the key never goes to another URL; check the URL setting") from None
             raise CollectorError(f"{what} to {_host(url)} failed with HTTP {e.code}") from None
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             if attempt < MAX_ATTEMPTS - 1:
