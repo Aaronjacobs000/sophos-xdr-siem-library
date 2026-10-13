@@ -1,0 +1,33 @@
+{
+  "vendor": "OpenVPN",
+  "product": "OpenVPN Community Server",
+  "versions": [
+    "2.6"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://openvpn.net/community-docs/community-articles/openvpn-2-6-manual.html",
+    "https://github.com/OpenVPN/openvpn/blob/release/2.6/src/openvpn/socket.c",
+    "https://github.com/OpenVPN/openvpn/blob/release/2.6/src/openvpn/ssl_verify.c",
+    "https://github.com/OpenVPN/openvpn/blob/release/2.6/src/openvpn/ssl_verify_openssl.c",
+    "https://github.com/OpenVPN/openvpn/blob/release/2.6/src/openvpn/sig.c"
+  ],
+  "notes": "For an OpenVPN 2.x server in multi-client mode logging to syslog (--syslog, or a daemon whose journal the host forwards). Completed connections, wrong user names or passwords, refused client certificates and disconnects go to Auth; other lines are left to the parsers already in the tenant. The connection line names the certificate common name: with a client certificate shared by many users, add username-as-common-name so it names the user, because the Username/Password succeeded line isn't normalized (it would count each login twice). IPv4 clients only. The BSD syslog time has no year or zone and is read as UTC. Samples are made up in the formats OpenVPN 2.6's source writes. Passed Run Test in a lab tenant on 2026-10-13.",
+  "parsers": [
+    {
+      "name": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+      "file": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.auth"
+    }
+  ]
+}

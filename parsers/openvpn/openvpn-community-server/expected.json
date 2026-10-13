@@ -1,0 +1,223 @@
+[
+  {
+    "line": 1,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 2,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 3,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 4,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn01",
+      "target_host_name": "vpn01",
+      "source_address": "203.0.113.5",
+      "source_port_number": 51544,
+      "auth_system": "OpenVPN",
+      "target_user_name": "alice",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "connected"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn01",
+      "target_host_name": "vpn01",
+      "source_address": "198.51.100.7",
+      "source_port_number": 40022,
+      "auth_system": "OpenVPN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "password_failed"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791844869000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn01",
+      "target_host_name": "vpn01",
+      "source_address": "198.51.100.7",
+      "source_port_number": 40031,
+      "auth_system": "OpenVPN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "password_failed"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791844935000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn01",
+      "target_host_name": "vpn01",
+      "source_address": "198.51.100.9",
+      "source_port_number": 61022,
+      "auth_system": "OpenVPN",
+      "target_user_name": "bob",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "certificate_refused"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn"
+          },
+          {
+            "key": "verify_error",
+            "value": "certificate has expired"
+          },
+          {
+            "key": "certificate_subject",
+            "value": "CN=bob"
+          },
+          {
+            "key": "certificate_depth",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791845740000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn01",
+      "target_host_name": "vpn01",
+      "source_address": "203.0.113.5",
+      "source_port_number": 51544,
+      "auth_system": "OpenVPN",
+      "target_user_name": "alice",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "logoff"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn"
+          },
+          {
+            "key": "signal",
+            "value": "SIGTERM[soft,remote-exit]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "OPENVPN_SERVER_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenVPN",
+      "event_time_usec": 1791806223418000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "vpn02",
+      "target_host_name": "vpn02",
+      "source_address": "192.0.2.77",
+      "source_port_number": 1194,
+      "auth_system": "OpenVPN",
+      "target_user_name": "carol",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_kind",
+            "value": "connected"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "openvpn-server"
+          }
+        ]
+      }
+    }
+  }
+]
