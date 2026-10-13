@@ -1,0 +1,29 @@
+{
+  "vendor": "ThreatLocker",
+  "product": "ThreatLocker Detect",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://threatlocker.kb.help/forwarding-information-to-your-siem-using-threatlocker-detect/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/HTTPIngest/Setup/",
+    "https://docs.taegis.secureworks.com/apis/using_http_ingest_api/"
+  ],
+  "notes": "ThreatLocker has no syslog export. A ThreatLocker Detect policy with the Call Rest API (Client) action posts each matching Unified Audit event from the agent to a Sophos NG-SIEM HTTP Ingest integration, with the header Authorization: Bearer <integration key> and the JSON body in README.md. Every record goes to the third-party alert schema; records without the template's source key stay generic. The variable names come from ThreatLocker's SIEM article and its policy editor. ThreatLocker doesn't document the values or the %DateTime% format: the parser matches deny, block, permit, ringfence and elevate in PolicyAction, reads ISO 8601 times and leaves other time formats to the ingest time. It assumes the agent escapes backslashes in paths, as a JSON body needs; if it doesn't, JSON() fails and the record stays generic. Samples are made up in the README template. Passed Run Test in a lab tenant on 2026-10-13: 85 of 85 fields matched the emulator, and for the sample time that isn't ISO 8601 the engine set the event time to the ingest time. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

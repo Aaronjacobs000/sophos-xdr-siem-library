@@ -1,0 +1,312 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatLocker Detect",
+      "event_time_usec": 1791844867000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ThreatLocker",
+      "provider": "ThreatLocker Detect",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "source_user_name": "ACME\\jlee",
+      "alert_category": "execute",
+      "log_type": "execute",
+      "title": "Forward denies to SIEM",
+      "summary": "Deny (Option to Request): execute C:\\Users\\jlee\\Downloads\\invoice_0921.exe on ACME-WS-014 by ACME\\jlee",
+      "action_reason": "Default Deny",
+      "action": "BLOCKED",
+      "vendor_severity": "Deny (Option to Request)",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "full_path",
+            "value": "C:\\Users\\jlee\\Downloads\\invoice_0921.exe"
+          },
+          {
+            "key": "effective_action",
+            "value": "Deny"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\explorer.exe"
+          },
+          {
+            "key": "created_by_process",
+            "value": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"
+          },
+          {
+            "key": "tl_hash",
+            "value": "2C624232CDD221771294DFBB310ACA000A0DF6AC8B66B696D90EF06FDEFB64A3"
+          },
+          {
+            "key": "computer_id",
+            "value": "6f1c2b9e-4d3a-4c8e-9b1f-2a7d5e0c3b41"
+          },
+          {
+            "key": "occurrences",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatLocker Detect",
+      "event_time_usec": 1791844999000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ThreatLocker",
+      "provider": "ThreatLocker Detect",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "source_user_name": "ACME\\svc-backup",
+      "alert_category": "execute",
+      "log_type": "execute",
+      "title": "Forward PowerShell to SIEM",
+      "summary": "Permit with Ringfence: execute C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe on ACME-SRV-02 by ACME\\svc-backup",
+      "action_reason": "PowerShell (Ringfenced)",
+      "action": "SUCCEEDED",
+      "vendor_severity": "Permit with Ringfence",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "full_path",
+            "value": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "effective_action",
+            "value": "Permit"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\System32\\svchost.exe"
+          },
+          {
+            "key": "command_line",
+            "value": "-NoProfile -ExecutionPolicy Bypass -File C:\\Scripts\\nightly.ps1"
+          },
+          {
+            "key": "sha256",
+            "value": "DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C"
+          },
+          {
+            "key": "certificates",
+            "value": "Microsoft Windows"
+          },
+          {
+            "key": "application_name",
+            "value": "Windows PowerShell"
+          },
+          {
+            "key": "computer_id",
+            "value": "0b6e3c55-2f8a-4b1d-a7c3-5e9d1f2a8c60"
+          },
+          {
+            "key": "ringfenced",
+            "value": "True"
+          },
+          {
+            "key": "occurrences",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatLocker Detect",
+      "event_time_usec": 1791845151000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ThreatLocker",
+      "provider": "ThreatLocker Detect",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "source_user_name": "ACME\\jlee",
+      "alert_category": "network",
+      "log_type": "network",
+      "title": "Forward denies to SIEM",
+      "summary": "Deny: network C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE on ACME-WS-014 by ACME\\jlee",
+      "action_reason": "Block outbound to untrusted",
+      "action": "BLOCKED",
+      "vendor_severity": "Deny",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.14",
+      "destination_address": "203.0.113.80",
+      "destination_port": 4444,
+      "destination_service_name": "files.example.net",
+      "direction": "OUTBOUND",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "full_path",
+            "value": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+          },
+          {
+            "key": "effective_action",
+            "value": "Deny"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Office"
+          },
+          {
+            "key": "computer_id",
+            "value": "6f1c2b9e-4d3a-4c8e-9b1f-2a7d5e0c3b41"
+          },
+          {
+            "key": "occurrences",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatLocker Detect",
+      "event_time_usec": 1791845222000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ThreatLocker",
+      "provider": "ThreatLocker Detect",
+      "host_id": "ACME-LT-031",
+      "target_host_name": "ACME-LT-031",
+      "source_user_name": "ACME\\akim",
+      "alert_category": "write",
+      "log_type": "write",
+      "title": "Forward denies to SIEM",
+      "summary": "Deny: write E:\\Payroll\\payroll_oct.xlsx on ACME-LT-031 by ACME\\akim",
+      "action_reason": "USB read only",
+      "action": "BLOCKED",
+      "vendor_severity": "Deny",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "full_path",
+            "value": "E:\\Payroll\\payroll_oct.xlsx"
+          },
+          {
+            "key": "effective_action",
+            "value": "Deny"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\explorer.exe"
+          },
+          {
+            "key": "computer_id",
+            "value": "9a2d7f14-6c3b-4e58-8d21-b4f0c7e95a13"
+          },
+          {
+            "key": "occurrences",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "THREATLOCKER_DETECT_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatLocker Detect",
+      "event_time_fidelity": "MICRO",
+      "vendor": "ThreatLocker",
+      "provider": "ThreatLocker Detect",
+      "host_id": "ACME-LT-031",
+      "target_host_name": "ACME-LT-031",
+      "source_user_name": "ACME\\akim",
+      "alert_category": "elevate",
+      "log_type": "elevate",
+      "title": "Forward elevations to SIEM",
+      "summary": "Elevate: elevate C:\\Users\\akim\\Downloads\\AcmePrintSetup.exe on ACME-LT-031 by ACME\\akim",
+      "action_reason": "Elevate printer driver installer",
+      "action": "SUCCEEDED",
+      "vendor_severity": "Elevate",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "full_path",
+            "value": "C:\\Users\\akim\\Downloads\\AcmePrintSetup.exe"
+          },
+          {
+            "key": "effective_action",
+            "value": "Permit"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\explorer.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "5994471ABB01112AFCC18159F6CC74B4F511B99806DA59B3CAF5A9C173CACFC5"
+          },
+          {
+            "key": "certificates",
+            "value": "Acme Print Software"
+          },
+          {
+            "key": "application_name",
+            "value": "Acme Print Driver"
+          },
+          {
+            "key": "computer_id",
+            "value": "9a2d7f14-6c3b-4e58-8d21-b4f0c7e95a13"
+          },
+          {
+            "key": "occurrences",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
