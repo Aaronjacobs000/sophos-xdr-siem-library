@@ -12,6 +12,9 @@ import { trimPairs } from './functions.js';
 export const SANITIZE_VALUES = new Set(['N/A', 'n/a', 'null', 'nil', '-', '', '(null)']);
 // originalData$ is the raw line, and the engine ignores ingestTimeUsec$ (checked in a lab tenant).
 const NOT_FIELDS = new Set(['originalData$', 'ingestTimeUsec$']);
+// The engine leaves out an enum field set to its zero member, as protobuf does with a default,
+// except Auth's logon_type, which it keeps (checked in a lab tenant).
+const KEEPS_ZERO = new Set(['scwx.auth:logon_type']);
 const U64 = 18446744073709551616;
 
 // SANITIZE_ALL and TRIM_ALL apply to top-level $ fields only, never inside records or lists.
@@ -206,6 +209,10 @@ export function normalize(vars, schemaId, opts = {}) {
     const val = coerce(value, field, field.name, notes, o);
     // "" is the protobuf default, so it isn't stored.
     if (val === undefined || val === null || val === '') continue;
+    if (!field.repeated && typeKind(field.type) === 'enum' && enumNumbers(field.type)['0'] === val && !KEEPS_ZERO.has(`${schemaId}:${field.name}`)) {
+      notes.push({ level: 'info', code: 'enum-zero', field: field.name, message: `${field.name}: ${val} is the zero value of ${field.type}, so the engine leaves the field out` });
+      continue;
+    }
     record[field.name] = val;
   }
   return { record, notes };
