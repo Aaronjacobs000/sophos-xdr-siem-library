@@ -1,0 +1,289 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842100000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0001_20261012",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_event_type",
+            "value": "login.succeeded"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-aliceExample0001"
+          },
+          {
+            "key": "source_country",
+            "value": "AU"
+          },
+          {
+            "key": "source_asn",
+            "value": "64500"
+          },
+          {
+            "key": "tls_ja3",
+            "value": "a497151ce4338a12c4418c44d375173e"
+          },
+          {
+            "key": "tls_ja4",
+            "value": "t13d1516h2_8daaf6152771_02713d6af862"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842160000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0002_20261012",
+      "target_user_name": "bob.admin@example.com",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "extra_failurereason": "Wrong email or password.",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_event_type",
+            "value": "login.failed"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-bobAdminExample02"
+          },
+          {
+            "key": "openai_error_code",
+            "value": "invalid_credentials"
+          },
+          {
+            "key": "source_country",
+            "value": "NL"
+          },
+          {
+            "key": "source_asn",
+            "value": "64500"
+          },
+          {
+            "key": "tls_ja3",
+            "value": "a497151ce4338a12c4418c44d375173e"
+          },
+          {
+            "key": "tls_ja4",
+            "value": "t13d1516h2_8daaf6152771_02713d6af862"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791845700000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0003_20261012",
+      "target_user_name": "alice@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "openai_event_type",
+            "value": "logout.succeeded"
+          },
+          {
+            "key": "openai_user_id",
+            "value": "user-aliceExample0001"
+          },
+          {
+            "key": "source_country",
+            "value": "AU"
+          },
+          {
+            "key": "source_asn",
+            "value": "64500"
+          },
+          {
+            "key": "tls_ja3",
+            "value": "a497151ce4338a12c4418c44d375173e"
+          },
+          {
+            "key": "tls_ja4",
+            "value": "t13d1516h2_8daaf6152771_02713d6af862"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842400000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0004_20261012",
+      "operation_name": "api_key.created",
+      "namespace": "proj_exampleBilling02",
+      "operation": "api_key.created key_example0001",
+      "username": "alice@example.com",
+      "remote_operation": true,
+      "host_id": "203.0.113.24"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842520000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0005_20261012",
+      "operation_name": "api_key.updated",
+      "namespace": "proj_exampleBilling02",
+      "operation": "api_key.updated key_example0001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842640000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0006_20261012",
+      "operation_name": "project.archived",
+      "namespace": "proj_exampleDefault01",
+      "operation": "project.archived proj_exampleBilling02",
+      "username": "bob.admin@example.com",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842760000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0007_20261012",
+      "operation_name": "invite.sent",
+      "operation": "invite.sent invite-example0001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791842880000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0008_20261012",
+      "operation_name": "user.updated",
+      "namespace": "proj_exampleBilling02",
+      "operation": "user.updated proj_exampleBilling02",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791843000000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0009_20261012",
+      "operation_name": "service_account.created",
+      "namespace": "proj_exampleBilling02",
+      "operation": "service_account.created svc_acct_example0002",
+      "username": "service_account svc_acct_example0001",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791843120000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0010_20261012",
+      "operation_name": "ip_allowlist.config.activated",
+      "operation": "ip_allowlist.config.activated",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791843240000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0011_20261012",
+      "operation_name": "organization.updated",
+      "operation": "organization.updated org-example0001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "OPENAI_API_AUDIT_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "OpenAI API Platform",
+      "event_time_usec": 1791843360000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit_log-example0012_20261012",
+      "operation_name": "role.assignment.created",
+      "operation": "role.assignment.created roleasgn_example0001",
+      "username": "bob.admin@example.com",
+      "remote_operation": true,
+      "host_id": "192.0.2.15"
+    }
+  }
+]

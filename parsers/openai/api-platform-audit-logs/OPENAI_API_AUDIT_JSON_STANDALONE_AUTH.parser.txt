@@ -1,0 +1,60 @@
+!SAMPLE={"id":"audit_log-example0002_20261012","type":"login.failed","effective_at":1791842160,"actor":{"type":"session","session":{"user":{"id":"user-bobAdminExample02","email":"bob.admin@example.com"},"ip_address":"198.51.100.77","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36","ja3":"a497151ce4338a12c4418c44d375173e","ja4":"t13d1516h2_8daaf6152771_02713d6af862","ip_address_details":{"country":"NL","city":"Amsterdam","region":"North Holland","region_code":"NH","asn":"64500","latitude":"-33.86880","longitude":"151.20930"}}},"login.failed":{"error_code":"invalid_credentials","error_message":"Wrong email or password."}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[{,]\s*"type"\s*:\s*"(?:login|logout)\.(?:succeeded|failed)"\s*,.*"effective_at"\s*:\s*\d|"effective_at"\s*:\s*\d.*[{,]\s*"type"\s*:\s*"(?:login|logout)\.(?:succeeded|failed)"\s*[,}]
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OpenAI API Platform audit logs (GET /v1/organization/audit_logs), one object from
+# data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# Standalone parser for the Authentication schema: login.succeeded, login.failed,
+# logout.succeeded and logout.failed in the API Platform organization.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "OpenAI API Platform"
+sensorEventId$ = json["$.id"]
+# effective_at is Unix seconds; the field takes microseconds.
+eventTimeUsec$ = INT(STRING(json["$.effective_at"]), 10) * 1000000
+
+t = json["$.type"]
+targetUserName$ = json["$.actor.session.user.email"]
+sourceAddress$ = json["$.actor.session.ip_address"]
+userAgent$ = json["$.actor.session.user_agent"]
+
+isLogin = CONTAINS(t, "login.")
+failed = CONTAINS(t, ".failed")
+action$ = IF isLogin THEN "LOGON" ELSE "LOGOFF"
+action$ = IF failed THEN "FAILURE" ELSE action$
+authCategory$ = IF isLogin THEN "ACCOUNT_LOGON" ELSE "ACCOUNT_LOGOFF"
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+# The details object is keyed by the event type, for example "login.failed": {...}.
+# OpenAI doesn't list its error codes, so a failure is OTHER_ERROR with the message kept.
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+extraFailurereason$ = json["$['" + t + "'].error_message"]
+
+# Keys with no Auth field of their own go to event_metadata.
+typ.key$ = "openai_event_type"
+typ.value$ = t
+uid.key$ = "openai_user_id"
+uid.value$ = json["$.actor.session.user.id"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [typ, uid]
+
+# Optional keys, added only when OpenAI sends them.
+code.key$ = "openai_error_code"
+code.value$ = json["$['" + t + "'].error_code"]
+eventMetadata$.record$ = IF code.value$ THEN eventMetadata$.record$ + [code] ELSE eventMetadata$.record$
+country.key$ = "source_country"
+country.value$ = json["$.actor.session.ip_address_details.country"]
+eventMetadata$.record$ = IF country.value$ THEN eventMetadata$.record$ + [country] ELSE eventMetadata$.record$
+asn.key$ = "source_asn"
+asn.value$ = json["$.actor.session.ip_address_details.asn"]
+eventMetadata$.record$ = IF asn.value$ THEN eventMetadata$.record$ + [asn] ELSE eventMetadata$.record$
+ja3.key$ = "tls_ja3"
+ja3.value$ = json["$.actor.session.ja3"]
+eventMetadata$.record$ = IF ja3.value$ THEN eventMetadata$.record$ + [ja3] ELSE eventMetadata$.record$
+ja4.key$ = "tls_ja4"
+ja4.value$ = json["$.actor.session.ja4"]
+eventMetadata$.record$ = IF ja4.value$ THEN eventMetadata$.record$ + [ja4] ELSE eventMetadata$.record$
