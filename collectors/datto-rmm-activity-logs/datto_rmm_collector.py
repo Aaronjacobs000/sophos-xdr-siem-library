@@ -124,6 +124,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.status, resp.read()
         except urllib.error.HTTPError as e:
+            # Close the error response now so its socket is released, not when the error is
+            # garbage collected. The code and headers stay readable.
+            e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, e.headers.get("Retry-After"))
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)

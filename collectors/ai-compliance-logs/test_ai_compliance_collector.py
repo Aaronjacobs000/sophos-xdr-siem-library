@@ -6,6 +6,7 @@ endpoint. No real service is called.
 
   python3 -m unittest discover -s collectors/ai-compliance-logs -p 'test_*.py' -v
 """
+import gc
 import gzip
 import io
 import json
@@ -16,6 +17,7 @@ import tempfile
 import threading
 import unittest
 import urllib.parse
+import warnings
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -168,6 +170,14 @@ class Handler(BaseHTTPRequestHandler):
 
 class CollectorTest(unittest.TestCase):
     def setUp(self):
+        # A test that leaves a socket or file open fails: tearDown collects garbage and checks
+        # for ResourceWarnings. Other warnings print as usual.
+        self.leaks = []
+        self._warnings = warnings.catch_warnings()
+        self._warnings.__enter__()
+        warnings.simplefilter("always", ResourceWarning)
+        show = warnings.showwarning
+        warnings.showwarning = lambda m, c, *a, **k: self.leaks.append(str(m)) if issubclass(c, ResourceWarning) else show(m, c, *a, **k)
         self.mock = Mock()
         handler = type("H", (Handler,), {"mock": self.mock})
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -188,6 +198,9 @@ class CollectorTest(unittest.TestCase):
         self.server.shutdown()
         self.server.server_close()
         self.tmp.cleanup()
+        gc.collect()
+        self._warnings.__exit__(None, None, None)
+        self.assertEqual(self.leaks, [], "a socket or file was left open")
 
     def env(self, **extra):
         e = {"NGSIEM_INGEST_URL": f"{self.base}/http-endpoint/v1/00000000-example-integration",
