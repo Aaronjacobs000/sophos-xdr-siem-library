@@ -1,0 +1,39 @@
+!SAMPLE=<6>date=2026-10-13 time=01:05:11 device_id=FEVM020000123456 log_id=0200000001 type=statistics pri=information session_id="mqbtwzkyda" client_name="mail.example.net" client_ip="198.51.100.23" client_cc="AU" dst_ip="192.0.2.25" endpoint="" from="bounce-0921@example.net" hfrom="accounts@example.net" to="jdoe@example.com" polid="0:1:2:example.com" domain="example.com" mailer="mta" resolved="OK" direction="in" virus="" disposition="Accept" classifier="FortiGuard AntiSpam-Safe" message_length="48210" subject="Invoice 0921 for October" message_id="20261013010509.4821@mail.example.net" delivery_status="Delivered" tls_version_in="TLSv1.3" tls_version_out="TLSv1.3"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\blog_id=\d{9,10}\s+type=(?:statistics|spam|virus|encrypt|event|kevent)\s+(?:subtype=\S+\s+)?pri=
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fortinet FortiMail remote logging (key=value), syslog to the data collector:
+#   <PRI>date=<date> time=<time> [eventtime=<ms> tz="<+-HHMM>"] device_id=<serial> log_id=<10 digits>
+#   type=<type> [subtype=<subtype>] pri=<level> <body>
+# FortiMail writes log_id, device_id and pri; FortiGate writes logid, devid and level.
+# Parent: hands history (statistics) and antispam logs to the Email child and antivirus logs to
+# the Antivirus child. Event, system event and encryption logs stay generic.
+
+kvm = originalData$|(?P<kv>date=\d{4}-\d{2}-\d{2}\s.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+
+# Variables and $ fields set here are visible to both children. event_type is FortiMail's type.
+sensorType$ = "Fortinet FortiMail"
+eventType$ = kv["type"]
+hostId$ = kv["device_id"]
+
+# Event time: eventtime (epoch ms, FortiMail 8.0), else date and time in the zone tz names,
+# else date and time read as UTC.
+ms = STRING(kv["eventtime"])
+dt = STRING(kv["date"]) + " " + STRING(kv["time"])
+tz = STRING(kv["tz"])
+eventTimeUsec$ = DATETIME(dt, "2006-01-02 15:04:05")
+eventTimeUsec$ = IF tz != "" THEN DATETIME(dt + " " + tz, "2006-01-02 15:04:05 -0700") ELSE eventTimeUsec$
+eventTimeUsec$ = IF ms != "" THEN INT(ms, 10) * 1000 ELSE eventTimeUsec$
+
+# client_ip is new in 8.0; older logs put the address in client_name as [a.b.c.d], and
+# antivirus logs in src.
+client = STRING(kv["client_ip"])
+cname = STRING(kv["client_name"])
+bracket = cname|^\[(?P<ip>[0-9A-Fa-f.:]+)\]$
+client = IF client == "" THEN bracket["ip"] ELSE client
+client = IF client == "" AND IS_VALID_IP(cname) THEN cname ELSE client
+client = IF client == "" THEN STRING(kv["src"]) ELSE client

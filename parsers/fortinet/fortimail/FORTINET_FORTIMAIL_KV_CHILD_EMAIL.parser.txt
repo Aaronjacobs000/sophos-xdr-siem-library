@@ -1,0 +1,111 @@
+!SAMPLE=<6>date=2026-10-13 time=01:11:39 device_id=FEVM020000123456 log_id=0200000001 type=statistics pri=information session_id="vhrnqpzlkc" client_name="relay7.example.org" client_ip="203.0.113.77" client_cc="BR" dst_ip="192.0.2.25" endpoint="" from="winner@example.org" hfrom="winner@example.org" to="amy@example.com" polid="0:1:2:example.com" domain="example.com" mailer="mta" resolved="OK" direction="in" virus="" disposition="0x20" classifier="0x07" message_length="9120" subject="You have won a prize" message_id="7f3a.9921@example.org" delivery_status="" tls_version_in="Plain" tls_version_out=""
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="statistics" OR eventType$=="spam"
+!SCHEMA=scwx.email
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fortinet FortiMail remote logging (key=value).
+# Child of FORTINET_FORTIMAIL_KV_PARENT: history (type=statistics) logs, one per recipient with
+# the final disposition, and antispam (type=spam) logs, which say why a message was spam.
+# kv, client, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+history = eventType$ == "statistics"
+spamLog = eventType$ == "spam"
+fromEmailAddress$ = kv["from"]
+toEmailAddress$ = kv["to"]
+subject$ = kv["subject"]
+messageId$ = kv["message_id"]
+size = STRING(kv["message_length"])
+messageSize$ = IF size != "" THEN INT(size, 10) ELSE NULL
+senderIp$ = IF client != "" THEN client ELSE NULL
+
+dir = LOWERCASE(STRING(kv["direction"]))
+direction$ = NULL
+direction$ = IF dir == "in" THEN "INBOUND" ELSE direction$
+direction$ = IF dir == "out" THEN "OUTBOUND" ELSE direction$
+
+# disposition is English text, or a hex bitmask of actions: 0x01 Accept, 0x04 Reject, 0x20
+# Quarantine, 0x80 Block, 0x4000 Quarantine to Review, 0x100000000 Domain Quarantine (and more).
+# The bits are read from the hex digits.
+disp = STRING(kv["disposition"])
+dl = LOWERCASE(disp)
+hex = disp|^0[xX](?P<h>[0-9A-Fa-f]+)$
+h = hex["h"]
+d1 = h|(?P<d>[0-9A-Fa-f])$
+d2 = h|(?P<d>[0-9A-Fa-f])[0-9A-Fa-f]$
+d4 = h|(?P<d>[0-9A-Fa-f])[0-9A-Fa-f]{3}$
+d9 = h|(?P<d>[0-9A-Fa-f])[0-9A-Fa-f]{8}$
+acceptBit = d1["d"] != "" AND CONTAINS("13579BDFbdf", d1["d"])
+rejectBit = d1["d"] != "" AND CONTAINS("4567CDEFcdef", d1["d"])
+blockBit = d2["d"] != "" AND CONTAINS("89ABCDEFabcdef", d2["d"])
+quarBit = d2["d"] != "" AND CONTAINS("2367ABEFabef", d2["d"])
+quarBit = quarBit OR (d4["d"] != "" AND CONTAINS("4567CDEFcdef", d4["d"])) OR (d9["d"] != "" AND CONTAINS("13579BDFbdf", d9["d"]))
+blocked = rejectBit OR blockBit OR CONTAINS(dl, "reject") OR CONTAINS(dl, "block") OR CONTAINS(dl, "discard")
+quarantined = quarBit OR CONTAINS(dl, "quarantine")
+accepted = acceptBit OR CONTAINS(dl, "accept")
+status$ = NULL
+status$ = IF history AND accepted THEN "DELIVERED" ELSE status$
+status$ = IF history AND quarantined THEN "QUARANTINED" ELSE status$
+status$ = IF history AND blocked THEN "BLOCKED" ELSE status$
+
+# classifier names the scanner that decided: English text, or a hex code from Fortinet's table.
+classNames = JSON(`{"00":"Undefined","01":"User Safe","02":"User Discard","03":"System Safe","04":"System Discard","05":"RBL","06":"SURBL","07":"FortiGuard AntiSpam","08":"FortiGuard AntiSpam-Safe","09":"Bayesian","0A":"Heuristic","0B":"Dictionary Scanner","0C":"Banned Word","0D":"Deep Header","0E":"Forged IP","0F":"Quarantine Control","10":"Tagged virus","11":"Attachment Filter","12":"Grey List","13":"Bypass Scan On Auth","14":"Disclaimer","15":"Defer Delivery","16":"Session Domain","17":"Session Limits","18":"Session Safe","19":"Session Block","1A":"Content Monitor and Filter","1B":"Content Monitor as Spam","1C":"Attachment as Spam","1D":"Image Spam","1E":"Sender Reputation","1F":"Access Control List Relay Denied","20":"Safelist Word","21":"Domain Safe","22":"Domain Block","23":"SPF","24":"Domain Key","25":"DKIM","26":"Recipient Verification","27":"Bounce Verification","28":"Endpoint Reputation","29":"SSL Profile Check","2A":"Message Cryptography","2B":"Delivery Control","2C":"Encrypted Content","2D":"SPF Failure as Spam","2E":"Fragmented Email","2F":"Email Contains Image","30":"Content Requires Encryption","31":"FortiGuard AntiSpam Black IP","32":"Session Remote","33":"FortiGuard Phishing","34":"AntiVirus","35":"Sender Address Rate Control","36":"SMTP Auth Failure","37":"Access Control List Reject","38":"Access Control List Discard","39":"Access Control List Bypass","3A":"FortiGuard Antispam Webfilter","3B":"Newsletter Suspicious","3C":"TLS Streaming","3D":"Policy Match","3E":"Dynamic Safe List","3F":"Sender Verification","40":"Behavior Analysis","41":"FortiGuard Spam Outbreak","42":"Newsletter","43":"DMARC","44":"File Signature","45":"Sandbox","46":"Malware Outbreak","47":"DLP Filter","48":"DLP Treated as Spam","49":"DLP Requires Encryption","4A":"Access Control List Safe","4B":"Virus Outbreak","4C":"FortiGuard Antispam Webfilter","4D":"Impersonation Analysis","4E":"Session Action","4F":"SPF Sender Alignment","50":"SPF Check","51":"Sandbox URL","52":"Sandbox No Result","53":"Content Modification","54":"DKIM Failure"}`)
+cls = STRING(kv["classifier"])
+clsHex = cls|^0[xX](?P<k>[0-9A-Fa-f]{2})$
+className = IF clsHex["k"] != "" THEN STRING(classNames["$." + UPPERCASE(clsHex["k"])]) ELSE cls
+className = IF className == "" THEN cls ELSE className
+quarantineReason$ = IF status$ == "QUARANTINED" AND className != "" THEN className ELSE NULL
+
+# A blocked or quarantined message, or an antispam log, gets one threat record.
+c = LOWERCASE(className)
+virusName = STRING(kv["virus"])
+ttype = "policy"
+ttype = IF CONTAINS(c, "spam") OR CONTAINS(c, "rbl") OR CONTAINS(c, "bayesian") OR CONTAINS(c, "heuristic") OR CONTAINS(c, "banned word") OR CONTAINS(c, "dictionary") OR CONTAINS(c, "reputation") OR CONTAINS(c, "newsletter") OR CONTAINS(c, "behavior") THEN "spam" ELSE ttype
+ttype = IF CONTAINS(c, "phishing") OR CONTAINS(c, "impersonation") THEN "phishing" ELSE ttype
+ttype = IF CONTAINS(c, "virus") OR CONTAINS(c, "malware") OR CONTAINS(c, "sandbox") OR virusName != "" THEN "virus" ELSE ttype
+ttype = IF history THEN ttype ELSE "spam"
+t_main.name$ = IF virusName != "" THEN virusName ELSE className
+t_main.name$ = IF history THEN t_main.name$ ELSE STRING(kv["msg"])
+t_main.type$ = ttype
+t_main.classification$ = IF history AND virusName != "" AND className != "" THEN className ELSE NULL
+found = []
+found = IF spamLog OR (history AND (status$ == "BLOCKED" OR status$ == "QUARANTINED")) THEN found + [t_main] ELSE found
+threats$ = found
+
+m1.key$ = "session_id"
+m1.value$ = STRING(kv["session_id"])
+m2.key$ = "log_id"
+m2.value$ = STRING(kv["log_id"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "disposition"
+m3.value$ = disp
+eventMetadata$.record$ = IF disp != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "classifier"
+m4.value$ = className
+eventMetadata$.record$ = IF className != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "policy_id"
+m5.value$ = STRING(kv["polid"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "header_from"
+m6.value$ = STRING(kv["hfrom"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "delivery_status"
+m7.value$ = STRING(kv["delivery_status"])
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "resolved"
+m8.value$ = STRING(kv["resolved"])
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "client_name"
+m9.value$ = STRING(kv["client_name"])
+eventMetadata$.record$ = IF m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "client_country"
+m10.value$ = STRING(kv["client_cc"])
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "tls_version_in"
+m11.value$ = STRING(kv["tls_version_in"])
+eventMetadata$.record$ = IF m11.value$ != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "spam_reason"
+m12.value$ = STRING(kv["msg"])
+eventMetadata$.record$ = IF spamLog THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$

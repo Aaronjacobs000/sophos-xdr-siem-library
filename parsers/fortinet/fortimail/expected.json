@@ -1,0 +1,423 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791853511000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "statistics",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "bounce-0921@example.net"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice 0921 for October",
+      "message_id": "20261013010509.4821@mail.example.net",
+      "message_size": 48210,
+      "sender_ip": "198.51.100.23",
+      "direction": "INBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "mqbtwzkyda"
+          },
+          {
+            "key": "log_id",
+            "value": "0200000001"
+          },
+          {
+            "key": "disposition",
+            "value": "Accept"
+          },
+          {
+            "key": "classifier",
+            "value": "FortiGuard AntiSpam-Safe"
+          },
+          {
+            "key": "policy_id",
+            "value": "0:1:2:example.com"
+          },
+          {
+            "key": "header_from",
+            "value": "accounts@example.net"
+          },
+          {
+            "key": "delivery_status",
+            "value": "Delivered"
+          },
+          {
+            "key": "resolved",
+            "value": "OK"
+          },
+          {
+            "key": "client_name",
+            "value": "mail.example.net"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "tls_version_in",
+            "value": "TLSv1.3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791853899000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "statistics",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "winner@example.org"
+      ],
+      "to_email_address": [
+        "amy@example.com"
+      ],
+      "subject": "You have won a prize",
+      "message_id": "7f3a.9921@example.org",
+      "message_size": 9120,
+      "sender_ip": "203.0.113.77",
+      "direction": "INBOUND",
+      "status": "QUARANTINED",
+      "quarantine_reason": "FortiGuard AntiSpam",
+      "threats": [
+        {
+          "name": "FortiGuard AntiSpam",
+          "type": "spam"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "vhrnqpzlkc"
+          },
+          {
+            "key": "log_id",
+            "value": "0200000001"
+          },
+          {
+            "key": "disposition",
+            "value": "0x20"
+          },
+          {
+            "key": "classifier",
+            "value": "FortiGuard AntiSpam"
+          },
+          {
+            "key": "policy_id",
+            "value": "0:1:2:example.com"
+          },
+          {
+            "key": "header_from",
+            "value": "winner@example.org"
+          },
+          {
+            "key": "resolved",
+            "value": "OK"
+          },
+          {
+            "key": "client_name",
+            "value": "relay7.example.org"
+          },
+          {
+            "key": "client_country",
+            "value": "BR"
+          },
+          {
+            "key": "tls_version_in",
+            "value": "Plain"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791854102000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "statistics",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "postmaster@example.net"
+      ],
+      "to_email_address": [
+        "nobody@example.com"
+      ],
+      "message_size": 188,
+      "sender_ip": "203.0.113.140",
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "Recipient Verification",
+          "type": "policy"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "xjdtwmfqbe"
+          },
+          {
+            "key": "log_id",
+            "value": "0200000001"
+          },
+          {
+            "key": "disposition",
+            "value": "Reject"
+          },
+          {
+            "key": "classifier",
+            "value": "Recipient Verification"
+          },
+          {
+            "key": "policy_id",
+            "value": "0:1:0"
+          },
+          {
+            "key": "resolved",
+            "value": "FAIL"
+          },
+          {
+            "key": "client_name",
+            "value": "[203.0.113.140]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791854672000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "statistics",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "invoices@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice attached",
+      "message_id": "c0ffee.1013@example.org",
+      "message_size": 3410,
+      "sender_ip": "203.0.113.9",
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "EICAR_TEST_FILE",
+          "type": "virus",
+          "classification": "AntiVirus"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "pzkrnvltgw"
+          },
+          {
+            "key": "log_id",
+            "value": "0200000001"
+          },
+          {
+            "key": "disposition",
+            "value": "0x80"
+          },
+          {
+            "key": "classifier",
+            "value": "AntiVirus"
+          },
+          {
+            "key": "policy_id",
+            "value": "0:1:2:example.com"
+          },
+          {
+            "key": "header_from",
+            "value": "invoices@example.org"
+          },
+          {
+            "key": "delivery_status",
+            "value": "Blocked"
+          },
+          {
+            "key": "resolved",
+            "value": "OK"
+          },
+          {
+            "key": "client_name",
+            "value": "smtp.example.org"
+          },
+          {
+            "key": "client_country",
+            "value": "US"
+          },
+          {
+            "key": "tls_version_in",
+            "value": "TLSv1.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791853899000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "spam",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "winner@example.org"
+      ],
+      "to_email_address": [
+        "amy@example.com"
+      ],
+      "subject": "You have won a prize",
+      "threats": [
+        {
+          "name": "Detected by BannedWord test",
+          "type": "spam"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "vhrnqpzlkc"
+          },
+          {
+            "key": "log_id",
+            "value": "0300000924"
+          },
+          {
+            "key": "client_name",
+            "value": "relay7.example.org"
+          },
+          {
+            "key": "spam_reason",
+            "value": "Detected by BannedWord test"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791854672000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FEVM020000123456",
+      "threat_name": "EICAR_TEST_FILE",
+      "file_path": "invoice_1013.zip",
+      "vendor_alert_type": "infected",
+      "threat_type": "FILE",
+      "threat_category": "VIRUS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "pzkrnvltgw"
+          },
+          {
+            "key": "log_id",
+            "value": "0100000924"
+          },
+          {
+            "key": "from",
+            "value": "invoices@example.org"
+          },
+          {
+            "key": "to",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "client_ip",
+            "value": "203.0.113.9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791857469120000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FEVM020000123456",
+      "threat_name": "W97M/Agent.EX!tr",
+      "file_path": "statement.docm",
+      "vendor_alert_type": "infected",
+      "threat_type": "FILE",
+      "threat_category": "VIRUS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "ycfhwqdmsa"
+          },
+          {
+            "key": "log_id",
+            "value": "0100000001"
+          },
+          {
+            "key": "from",
+            "value": "billing@example.net"
+          },
+          {
+            "key": "to",
+            "value": "finance@example.com"
+          },
+          {
+            "key": "client_ip",
+            "value": "198.51.100.140"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791856802000000,
+      "host_id": "FEVM020000123456"
+    }
+  }
+]
