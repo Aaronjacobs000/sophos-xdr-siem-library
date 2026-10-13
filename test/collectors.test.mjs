@@ -78,7 +78,7 @@ test('review rule: collector code and other non-library files always need a revi
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
-async function gateMerge(files, { command = 'merge', autoMerge = true } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204 } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const mock = path.join(dir, 'mock-fetch.mjs');
@@ -96,12 +96,14 @@ globalThis.fetch = async (url, init = {}) => {
   const u = new URL(url);
   let body = {};
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
-  else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, head: { sha: 'abc123' }, node_id: 'PR_7' };
+  else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, node_id: 'PR_7', ...${JSON.stringify(pull)}, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})} } };
   else if (u.pathname === '/repos/o/r/pulls/7/files') body = u.searchParams.get('page') === '1' ? files : [];
   // Without a branch rule, GitHub refuses native auto-merge and the gate merges the pull request itself.
   else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
   else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: [{ name: 'tests', status: 'completed', conclusion: 'success' }] };
   else if (method === 'GET' && /\\/(labels|comments)$/.test(u.pathname)) body = [];
+  else if (method === 'GET' && u.pathname.startsWith('/repos/o/r/git/ref/heads/')) body = { object: { sha: ${JSON.stringify(refSha)} } };
+  else if (method === 'DELETE' && u.pathname.startsWith('/repos/o/r/git/refs/heads/')) return new Response(${deleteStatus} === 204 ? null : JSON.stringify({ message: 'Reference update failed' }), { status: ${deleteStatus} });
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 };
 `);
@@ -135,6 +137,34 @@ test('gate: a merge the gate makes tells the workflow to start the Pages build',
   const held = await gateMerge(['parsers/acme/pull-api/meta.json', 'collectors/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false });
   assert.ok(!held.calls.some((c) => /\/merge$/.test(c)), held.calls.join('\n'));
   assert.equal(held.stepOutput, '');
+});
+
+test('gate: after its own merge it deletes a same-repo head branch, never a fork\'s or main', async () => {
+  const repo = { id: 1, full_name: 'o/r', default_branch: 'main' };
+  const from = (ref, headRepo = repo) => ({ head: { ref, repo: headRepo }, base: { ref: 'main', repo } });
+  const deletes = (r) => r.calls.filter((c) => c.startsWith('DELETE ') && c.includes('/git/refs/'));
+  for (const command of ['pr', 'merge']) {
+    const own = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, autoMerge: false, pull: from('submission/issue-12') });
+    assert.deepEqual(deletes(own), ['DELETE https://api.github.com/repos/o/r/git/refs/heads/submission/issue-12'], command);
+    assert.ok(own.calls.indexOf('PUT https://api.github.com/repos/o/r/pulls/7/merge') < own.calls.indexOf(deletes(own)[0]));
+    assert.equal(own.stepOutput, 'merged=true\n');
+  }
+  // A fork's branch, main, a missing head repo, and a branch that moved after the merge stay.
+  const fork = await gateMerge(['parsers/acme/pull-api/meta.json'], { autoMerge: false, pull: from('main', { id: 2, full_name: 'someone/r' }) });
+  assert.equal(fork.out, 'Merged.');
+  assert.deepEqual(deletes(fork), []);
+  assert.ok(!fork.calls.some((c) => c.includes('/git/ref')), fork.calls.join('\n'));
+  for (const pull of [from('main'), from('library/acme', null), { head: { ref: 'library/acme' } }]) {
+    assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json'], { autoMerge: false, pull })), [], JSON.stringify(pull));
+  }
+  assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json'], { autoMerge: false, pull: from('library/acme'), refSha: 'def456' })), []);
+  // Nothing is deleted when the gate doesn't merge: native auto-merge merges later, and a held pull request waits.
+  assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json'], { pull: from('library/acme') })), []);
+  assert.deepEqual(deletes(await gateMerge(['parsers/acme/pull-api/meta.json', 'collectors/acme-pull/acme_pull.py'], { autoMerge: false, pull: from('library/acme') })), []);
+  // A delete that fails leaves the merge reported as merged.
+  const failed = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, pull: from('library/acme'), deleteStatus: 403 });
+  assert.equal(deletes(failed).length, 1);
+  assert.equal(failed.stepOutput, 'merged=true\n');
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {

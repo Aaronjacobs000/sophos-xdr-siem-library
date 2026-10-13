@@ -12,7 +12,7 @@
 // already belongs to the person who opened it. Right before merging, the pull request's own
 // file list is checked again, so a change to collectors/ or anything else outside parsers/
 // never merges without review, whichever route opened it. When it merges, pr and merge write
-// merged=true to $GITHUB_OUTPUT.
+// merged=true to $GITHUB_OUTPUT and delete the pull request's branch if it is in this repo.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { reviewReasons } from './lib/merge-rules.mjs';
@@ -98,7 +98,26 @@ async function merge(pr, sha) {
   } catch {
     if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate'))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
     await gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' });
+    await deleteHeadBranch(p, sha);
     return 'Merged.';
+  }
+}
+
+// The repo setting that deletes head branches doesn't act on a merge made with GITHUB_TOKEN,
+// so after its own merge the gate deletes the branch: only one in this repo, never a fork's or
+// main, and only while it still points at the merged commit. A failure here doesn't undo the merge.
+async function deleteHeadBranch(p, sha) {
+  const head = p.head || {};
+  const base = p.base || {};
+  if (!head.ref || !head.repo || !base.repo || head.repo.id !== base.repo.id) return;
+  if ([base.ref, base.repo.default_branch, 'main'].includes(head.ref)) return;
+  const ref = `heads/${head.ref.split('/').map(encodeURIComponent).join('/')}`;
+  try {
+    const now = await gh('GET', `/repos/${REPO}/git/ref/${ref}`);
+    if (!now || !now.object || now.object.sha !== sha) return;
+    await gh('DELETE', `/repos/${REPO}/git/refs/${ref}`);
+  } catch (e) {
+    if (e.status !== 404 && e.status !== 422) console.error(`::warning::Merged, but couldn't delete the branch ${head.ref}: ${e.message}`);
   }
 }
 
