@@ -1,0 +1,328 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_fidelity": "MICRO",
+      "vendor": "Datto RMM",
+      "provider": "Datto RMM monitoring",
+      "alert_id": "5b2f0c3e-9d41-4f7a-8c12-6e0a1b2c3d4e",
+      "alert_category": "Ransomware",
+      "log_type": "Ransomware Detection",
+      "title": "Ransomware Detection alert on ACME-WS-014",
+      "summary": "Ransomware behaviour detected: 214 files renamed with extension .locked by process C:\\Users\\jlee\\AppData\\Local\\Temp\\svch0st.exe",
+      "status": "raised",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "target_user_name": "ACME\\jlee",
+      "source_address": "203.0.113.54",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "device_uid",
+            "value": "8c1d4e2f-3a5b-4c6d-9e7f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "device_os",
+            "value": "Microsoft Windows 11 Pro"
+          },
+          {
+            "key": "platform",
+            "value": "merlot"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_fidelity": "MICRO",
+      "vendor": "Datto RMM",
+      "provider": "Datto RMM monitoring",
+      "alert_id": "7a1e2d3c-4b5a-4697-8a1b-2c3d4e5f6a7b",
+      "alert_category": "Antivirus",
+      "log_type": "Antivirus status",
+      "title": "Antivirus status alert on ACME-SRV-02",
+      "summary": "Antivirus real-time protection is disabled",
+      "status": "raised",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "target_user_name": "ACME\\svc-backup",
+      "source_address": "203.0.113.54",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "device_uid",
+            "value": "1f2e3d4c-5b6a-4798-89a0-b1c2d3e4f506"
+          },
+          {
+            "key": "device_os",
+            "value": "Microsoft Windows Server 2022 Standard"
+          },
+          {
+            "key": "platform",
+            "value": "merlot"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_fidelity": "MICRO",
+      "vendor": "Datto RMM",
+      "provider": "Datto RMM monitoring",
+      "alert_id": "7a1e2d3c-4b5a-4697-8a1b-2c3d4e5f6a7b",
+      "alert_category": "Antivirus",
+      "log_type": "Antivirus status",
+      "title": "Resolved: Antivirus status alert on ACME-SRV-02",
+      "summary": "Antivirus real-time protection is disabled",
+      "status": "resolved",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "target_user_name": "ACME\\svc-backup",
+      "source_address": "203.0.113.54",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "device_uid",
+            "value": "1f2e3d4c-5b6a-4798-89a0-b1c2d3e4f506"
+          },
+          {
+            "key": "device_os",
+            "value": "Microsoft Windows Server 2022 Standard"
+          },
+          {
+            "key": "platform",
+            "value": "merlot"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_fidelity": "MICRO",
+      "vendor": "Datto RMM",
+      "provider": "Datto RMM monitoring",
+      "alert_id": "9c8b7a6d-5e4f-4321-9a8b-7c6d5e4f3a2b",
+      "alert_category": "Event Log",
+      "log_type": "Event Log",
+      "title": "Event Log alert on ACME-SRV-02",
+      "summary": "Security event 4720: a user account was created (backupadmin)",
+      "status": "raised",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "target_user_name": "ACME\\svc-backup",
+      "source_address": "203.0.113.54",
+      "vendor_severity": "Moderate",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "device_uid",
+            "value": "1f2e3d4c-5b6a-4798-89a0-b1c2d3e4f506"
+          },
+          {
+            "key": "device_os",
+            "value": "Microsoft Windows Server 2022 Standard"
+          },
+          {
+            "key": "platform",
+            "value": "merlot"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Datto RMM",
+      "event_name": "user.login",
+      "event_type": "USER",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "user_id": "17",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "activity_id",
+            "value": "b6f1d2e3-4c5a-4b69-8d7e-1f2a3b4c5d6e"
+          },
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "details",
+            "value": "{\"ip\":\"198.51.100.23\",\"twoFactor\":true}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_usec": 1791805402000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Datto RMM",
+      "event_name": "job.deployment",
+      "event_type": "DEVICE",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "user_id": "17",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "activity_id",
+            "value": "c7a2e3f4-5d6b-4c7a-9e8f-2a3b4c5d6e7f"
+          },
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "details",
+            "value": "{\"job_name\":\"Run PowerShell - Add local admin\",\"job_uid\":\"0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a08\"}"
+          },
+          {
+            "key": "device_id",
+            "value": "120155"
+          },
+          {
+            "key": "has_stdout",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_usec": 1791805500000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Datto RMM",
+      "event_name": "remote.session.start",
+      "event_type": "DEVICE",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "tech.akim",
+      "user_id": "17",
+      "target_hostname": "ACME-SRV-02",
+      "host_id": "ACME-SRV-02",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "activity_id",
+            "value": "d8b3f4a5-6e7c-4d8b-af90-3b4c5d6e7f80"
+          },
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "details",
+            "value": "{\"session.type\":\"Web Remote screen control\",\"technician\":\"Alex Kim\",\"end.user\":\"ACME\\\\svc-backup\"}"
+          },
+          {
+            "key": "device_id",
+            "value": "120143"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Datto RMM",
+      "event_time_usec": 1791805566000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Datto RMM",
+      "event_name": "user.delete",
+      "event_type": "USER",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "admin",
+      "user_id": "2",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "activity_id",
+            "value": "e9c4a5b6-7f8d-4e9c-b0a1-4c5d6e7f8091"
+          },
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "details",
+            "value": "{\"deleted.user\":\"tech.old\",\"reassigned.to\":\"tech.akim\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

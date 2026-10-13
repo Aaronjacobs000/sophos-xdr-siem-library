@@ -1,0 +1,57 @@
+!SAMPLE={"source":"Datto RMM","event":"raised","alert_uid":"5b2f0c3e-9d41-4f7a-8c12-6e0a1b2c3d4e","alert_type":"Ransomware Detection","alert_category":"Ransomware","alert_priority":"Critical","alert_message":"Ransomware behaviour detected: 214 files renamed with extension .locked by process C:\\Users\\jlee\\AppData\\Local\\Temp\\svch0st.exe","device_uid":"8c1d4e2f-3a5b-4c6d-9e7f-0a1b2c3d4e5f","device_hostname":"ACME-WS-014","device_ip":"203.0.113.54","device_os":"Microsoft Windows 11 Pro","last_user":"ACME\\jlee","site_name":"Acme Dental","site_uid":"2f3e4d5c-6b7a-4980-a1b2-c3d4e5f60718","platform":"merlot"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"source"\s*:\s*"Datto RMM"\s*,\s*"event"\s*:\s*"(?:raised|resolved)"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Datto RMM Global Webhooks (Setup > Integrations > Global Webhooks), JSON posted to a
+# Sophos NG-SIEM HTTP Ingest integration with the custom header Authorization: Bearer <key>.
+# Standalone parser for the third-party alert schema: monitor alerts raised and resolved. The
+# alert raised and alert resolved payloads are the templates in this entry's README; their
+# values are Datto RMM payload variables.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Datto RMM"
+vendor$ = "Datto RMM"
+provider$ = "Datto RMM monitoring"
+
+resolved = json["$.event"] == "resolved"
+alertId$ = json["$.alert_uid"]
+alertCategory$ = json["$.alert_category"]
+logType$ = json["$.alert_type"]
+title$ = json["$.alert_type"] + " alert on " + json["$.device_hostname"]
+title$ = IF resolved THEN "Resolved: " + title$ ELSE title$
+summary$ = json["$.alert_message"]
+status$ = IF resolved THEN "resolved" ELSE "raised"
+
+host = json["$.device_hostname"]
+hostId$ = host
+targetHostName$ = host
+targetUserName$ = json["$.last_user"]
+# [device_ip] is the device's public address.
+sourceAddress$ = json["$.device_ip"]
+
+# Datto RMM alert priorities: Critical, High, Moderate, Low and Information.
+pri = LOWERCASE(json["$.alert_priority"])
+vendorSeverity$ = json["$.alert_priority"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF pri == "information" THEN "INFO" ELSE severity$
+severity$ = IF pri == "low" THEN "LOW" ELSE severity$
+severity$ = IF pri == "moderate" THEN "MEDIUM" ELSE severity$
+severity$ = IF pri == "high" THEN "HIGH" ELSE severity$
+severity$ = IF pri == "critical" THEN "CRITICAL" ELSE severity$
+
+a1.key$ = "site_name"
+a1.value$ = json["$.site_name"]
+a2.key$ = "device_uid"
+a2.value$ = json["$.device_uid"]
+a3.key$ = "device_os"
+a3.value$ = json["$.device_os"]
+a4.key$ = "platform"
+a4.value$ = json["$.platform"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4]
