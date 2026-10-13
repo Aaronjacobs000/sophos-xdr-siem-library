@@ -1,0 +1,44 @@
+!SAMPLE={"Action":"Update","Guid":"0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a08","EntityType":"Contact","Id":30544120,"Fields":{"EMailAddress":"billing@example.com","Phone":"02 5550 1234"},"EventTime":"2026-10-12T11:42:05Z","SequenceNumber":149,"PersonID":29682885}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"Action"\s*:\s*"(?:Create|Update|Delete|Deactivated)"\s*,\s*"Guid"\s*:.*"EntityType"\s*:.*"SequenceNumber"\s*:
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Autotask PSA REST API webhooks for companies, contacts, configuration items, tickets and
+# ticket notes, posted through a relay to a Sophos NG-SIEM HTTP Ingest integration (an Autotask
+# webhook has no header setting).
+# Standalone parser for CloudAudit: who created, updated or deleted which PSA record. The fields
+# the webhook subscribes to go to request_parameters. The payload has Action, Guid, EntityType,
+# Id, Fields, EventTime, SequenceNumber and PersonID, as Autotask's webhook page documents.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Autotask PSA"
+eventSource$ = "Autotask PSA"
+action = json["$.Action"]
+etype = json["$.EntityType"]
+eventName$ = etype + "." + action
+eventType$ = "Webhook"
+managementEvent$ = TRUE
+readOnly$ = FALSE
+# PersonID is the Autotask resource (user) that made the change; Autotask doesn't send the name.
+person = STRING(json["$.PersonID"])
+userId$ = IF person != "0" THEN person ELSE NULL
+status$ = action
+
+eventTimeUsec$ = DATETIME(json["$.EventTime"], "2006-01-02T15:04:05.999999999Z07:00")
+
+# Deactivated means Autotask turned the webhook off; Fields is empty then.
+requestParameters$.record$ = FLATTEN(json["$.Fields"])
+
+d1.key$ = "entity_id"
+d1.value$ = STRING(json["$.Id"])
+d2.key$ = "webhook_guid"
+d2.value$ = json["$.Guid"]
+d3.key$ = "sequence_number"
+d3.value$ = STRING(json["$.SequenceNumber"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3]
