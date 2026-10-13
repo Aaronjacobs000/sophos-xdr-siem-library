@@ -1,0 +1,29 @@
+{
+  "vendor": "IT Glue",
+  "product": "Activity Logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "collector": "collectors/it-glue-activity-logs",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://api.itglue.com/developer/",
+    "https://help.itglue.kaseya.com/help/Content/1-admin/account-administration/activity-logs.html"
+  ],
+  "notes": "IT Glue has no syslog or log export push: workflow webhooks only send a payload you write, from a variable list shown in the app, and take no custom header. The activity log is available from GET /logs, so collectors/it-glue-activity-logs pulls it and posts each record unchanged to a Sophos NG-SIEM HTTP Ingest integration. Every record goes to CloudAudit with the event name resource-type.action (for example Password.update), the user ID, address and user agent; level 1 records, which change no data, are marked read only. The record names the user by ID only. Fields follow the /logs example in the IT Glue API docs, which only shows a create; the docs don't list the action names, so the samples' show action on a level 1 Password record is made up, and so are all values. Passed Run Test in a lab tenant on 2026-10-13 (51 of 51 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+!SAMPLE={"id":"574989297464115202","type":"logs","attributes":{"created-at":"2026-10-12T11:41:30.000Z","level":1,"account-id":1,"user-id":41,"organization-id":91234,"action":"show","resource-type":"Password","resource-name":"Acme Dental - Domain Admin","ip-address":"198.51.100.23","ip-city":"Sydney","ip-region":"NSW","ip-country":"Australia","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"id"\s*:\s*"\d+"\s*,\s*"type"\s*:\s*"logs"\s*,\s*"attributes"\s*:\s*\{
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IT Glue activity logs (GET /logs, JSON:API), sent to a Sophos NG-SIEM HTTP Ingest
+# integration one JSON record per line by the collector in collectors/it-glue-activity-logs.
+# Standalone parser for CloudAudit: every activity record (creates, updates, deletes and the
+# level 1 records, which change no data), with the event name built from resource type and
+# action, the user ID, the address and the user agent. Fields follow the example in the IT
+# Glue API docs. The record has the user's ID but not their name.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "IT Glue"
+eventSource$ = "IT Glue"
+rtype = json["$.attributes['resource-type']"]
+actionName = json["$.attributes.action"]
+eventName$ = rtype + "." + actionName
+eventType$ = "ActivityLog"
+managementEvent$ = TRUE
+
+# Level 1 records don't represent a change to data (IT Glue leaves them out of list exports).
+level = STRING(json["$.attributes.level"])
+readOnly$ = level == "1"
+
+userId$ = STRING(json["$.attributes['user-id']"])
+sourceAddress$ = json["$.attributes['ip-address']"]
+userAgent$ = json["$.attributes['user-agent']"]
+
+# created-at is RFC 3339 in UTC.
+eventTimeUsec$ = DATETIME(json["$.attributes['created-at']"], "2006-01-02T15:04:05.999999999Z07:00")
+
+d1.key$ = "resource_name"
+d1.value$ = json["$.attributes['resource-name']"]
+d2.key$ = "log_id"
+d2.value$ = json["$.id"]
+d3.key$ = "level"
+d3.value$ = level
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3]
+d4.key$ = "organization_id"
+d4.value$ = STRING(json["$.attributes['organization-id']"])
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "ip_location"
+d5.value$ = STRING(json["$.attributes['ip-city']"]) + ", " + STRING(json["$.attributes['ip-region']"]) + ", " + STRING(json["$.attributes['ip-country']"])
+additionalEventData$.record$ = IF STRING(json["$.attributes['ip-country']"]) != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$

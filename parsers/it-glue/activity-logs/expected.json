@@ -1,0 +1,210 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IT Glue",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "IT Glue",
+      "event_name": "User.create",
+      "event_type": "ActivityLog",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "41",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "Example Technician"
+          },
+          {
+            "key": "log_id",
+            "value": "574989297464115201"
+          },
+          {
+            "key": "level",
+            "value": "2"
+          },
+          {
+            "key": "ip_location",
+            "value": "Sydney, NSW, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IT Glue",
+      "event_time_usec": 1791805290000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "IT Glue",
+      "event_name": "Password.show",
+      "event_type": "ActivityLog",
+      "management_event": true,
+      "read_only": true,
+      "user_id": "41",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "Acme Dental - Domain Admin"
+          },
+          {
+            "key": "log_id",
+            "value": "574989297464115202"
+          },
+          {
+            "key": "level",
+            "value": "1"
+          },
+          {
+            "key": "organization_id",
+            "value": "91234"
+          },
+          {
+            "key": "ip_location",
+            "value": "Sydney, NSW, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IT Glue",
+      "event_time_usec": 1791805325000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "IT Glue",
+      "event_name": "Password.update",
+      "event_type": "ActivityLog",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "41",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "Acme Dental - Firewall admin"
+          },
+          {
+            "key": "log_id",
+            "value": "574989297464115203"
+          },
+          {
+            "key": "level",
+            "value": "2"
+          },
+          {
+            "key": "organization_id",
+            "value": "91234"
+          },
+          {
+            "key": "ip_location",
+            "value": "Sydney, NSW, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IT Glue",
+      "event_time_usec": 1791805487000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "IT Glue",
+      "event_name": "Configuration.delete",
+      "event_type": "ActivityLog",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "7",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "ACME-SRV-02"
+          },
+          {
+            "key": "log_id",
+            "value": "574989297464115204"
+          },
+          {
+            "key": "level",
+            "value": "2"
+          },
+          {
+            "key": "organization_id",
+            "value": "91234"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ITGLUE_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IT Glue",
+      "event_time_usec": 1791805575000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "IT Glue",
+      "event_name": "Document.update",
+      "event_type": "ActivityLog",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "41",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.120 Safari/537.36",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "Acme Dental - Backup runbook"
+          },
+          {
+            "key": "log_id",
+            "value": "574989297464115205"
+          },
+          {
+            "key": "level",
+            "value": "2"
+          },
+          {
+            "key": "organization_id",
+            "value": "91234"
+          },
+          {
+            "key": "ip_location",
+            "value": "Sydney, NSW, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
