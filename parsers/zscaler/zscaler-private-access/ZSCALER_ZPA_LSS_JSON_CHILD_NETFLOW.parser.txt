@@ -1,0 +1,82 @@
+!SAMPLE={"LogTimestamp": "Tue Oct 13 01:19:02 2026","Customer": "Acme","SessionID": "kqzrwtmvbx","ConnectionID": "kqzrwtmvbx,pdlwqnfhzj","InternalReason": "BRK_MT_CLOSED_FROM_CLIENT","ConnectionStatus": "close","IPProtocol": 6,"DoubleEncryption": 0,"Username": "jdoe@example.com","ServicePort": 443,"ClientPublicIP": "203.0.113.24","ClientPrivateIP": "198.51.100.24","ClientLatitude": -33.870000,"ClientLongitude": 151.210000,"ClientCountryCode": "AU","ClientZEN": "AU-NSW-4201","Policy": "Allow engineering","Connector": "AC-SYD-01","ConnectorZEN": "AU-NSW-4201","ConnectorIP": "192.0.2.10","ConnectorPort": 41822,"Host": "intranet.example.com","Application": "Intranet portal","AppGroup": "Internal web apps","Server": "0","ServerIP": "192.0.2.80","ServerPort": 443,"PolicyProcessingTime": 41,"ServerSetupTime": 512,"TimestampConnectionStart": "2026-10-13T01:12:40.118Z","TimestampConnectionEnd": "2026-10-13T01:19:01.774Z","TimestampCATx": "2026-10-13T01:12:40.118Z","TimestampCARx": "2026-10-13T01:12:40.119Z","TimestampAppLearnStart": "","TimestampZENFirstRxClient": "2026-10-13T01:12:40.290Z","TimestampZENFirstTxClient": "2026-10-13T01:12:40.302Z","TimestampZENLastRxClient": "2026-10-13T01:19:01.552Z","TimestampZENLastTxClient": "2026-10-13T01:19:01.560Z","TimestampConnectorZENSetupComplete": "2026-10-13T01:12:40.288Z","TimestampZENFirstRxConnector": "2026-10-13T01:12:40.301Z","TimestampZENFirstTxConnector": "2026-10-13T01:12:40.291Z","TimestampZENLastRxConnector": "2026-10-13T01:19:01.559Z","TimestampZENLastTxConnector": "2026-10-13T01:19:01.553Z","ZENTotalBytesRxClient": 48210,"ZENBytesRxClient": 1204,"ZENTotalBytesTxClient": 1873402,"ZENBytesTxClient": 20488,"ZENTotalBytesRxConnector": 1873402,"ZENBytesRxConnector": 20488,"ZENTotalBytesTxConnector": 48210,"ZENBytesTxConnector": 1204,"Idp": "Example IdP","ClientToClient": "0","ClientCity": "Sydney","MicroTenantID": "0","AppMicroTenantID": "0"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="user_activity"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zscaler Private Access Log Streaming Service (LSS), default JSON templates, over TCP
+# from an App Connector to the data collector.
+# Child of ZSCALER_ZPA_LSS_JSON_PARENT: User Activity records (one per connection state: open,
+# active, close) to Netflow. Setting source_address and destination_address lets the IP
+# Watchlist detector use these events.
+# json, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+# The client's public address is the source. The App Connector opens the connection to the
+# server on the client's behalf, so its address and port are the source NAT.
+sourceAddress$ = json["$.ClientPublicIP"]
+sourceNatAddress$ = json["$.ConnectorIP"]
+sourceNatPort$ = IF STRING(json["$.ConnectorPort"]) != "0" THEN json["$.ConnectorPort"] ELSE NULL
+
+# ServerIP is empty when the connection never reached a server; Host then may hold an address.
+host = STRING(json["$.Host"])
+destinationAddress$ = json["$.ServerIP"]
+destinationAddress$ = IF STRING(json["$.ServerIP"]) == "" AND IS_VALID_IP(host) THEN host ELSE destinationAddress$
+destinationPort$ = IF STRING(json["$.ServerPort"]) != "0" THEN json["$.ServerPort"] ELSE json["$.ServicePort"]
+protocol$ = json["$.IPProtocol"]
+applicationName$ = json["$.Application"]
+
+# Byte totals for the connection so far: what the Service Edge got from the client (sent) and
+# what it sent back to the client (received).
+txByteCount$ = json["$.ZENTotalBytesRxClient"]
+rxByteCount$ = json["$.ZENTotalBytesTxClient"]
+
+start = STRING(json["$.TimestampConnectionStart"])
+end = STRING(json["$.TimestampConnectionEnd"])
+startTimestampUsec$ = IF start != "" THEN DATETIME(start, "2006-01-02T15:04:05.999999999Z07:00") ELSE NULL
+endTimestampUsec$ = IF end != "" THEN DATETIME(end, "2006-01-02T15:04:05.999999999Z07:00") ELSE NULL
+
+# InternalReason is the session status code: empty while a connection is open or active.
+# Zscaler groups the codes as Policy Block, Info (normal closes) and Error. Policy blocks are
+# FW_BLOCKED, open connections and normal closes FW_ALLOWED, and errors stay unset.
+reason = STRING(json["$.InternalReason"])
+connectionEndReason$ = json["$.InternalReason"]
+info = reason|^(?:AST_MT_TERMINATED|MT_CLOSED_TERMINATED|MT_CLOSED_TLS_CONN_GONE(?:_AST_CLOSED|_CLIENT_CLOSED|_SCIM_USER_DISABLE)?|BRK_MT_CLOSED_FROM_(?:ASSISTANT|CLIENT)|BRK_MT_RESET_FROM_SERVER|BRK_MT_TERMINATED(?:_IDLE_TIMEOUT)?|OPEN_OR_ACTIVE_CONNECTION|FOHH_CLOSE_REASON_(?:AST_PBRK_DATA_DOWN|SNI_SLOW|SNI_TIMEOUT|SNI_MISSING|HTTP_RESPONSE|REDIRECT|CONNECT_TIMEOUT|RX_TIMEOUT|TIMEOUT|CERT_VERIFY|AST_DATA_CONN_FLOW_CONTROL|BRK_DATA_CONN_FLOW_CONTROL|TLV_CALLBACK|TLV_NO_CALLBACK|SOCKET_CLOSE|DATA_CONN_FLOW_CONTROL|LOG_RECONN|TLV_LEN|PROXY_NOT_200|PROXY_TIMEOUT|PROXY_IDLE|SSL_CTX_NONE|TLV_DESERIALIZE|AST_PBRK_VERIFY_FAILED|OPS|AST_PBRK_CTRL_CONN_CFG_CHG))$
+block = reason|^(?:BRK_MT_SETUP_FAIL_(?:REJECTED_BY_POLICY\w*|NO_POLICY_FOUND|SAML_EXPIRED|SCIM_INACTIVE|B2B_ACCESS_DENIED)|ZIA_MT_BLOCKED_BY_INSPECTION)$
+flowAction$ = NULL
+flowAction$ = IF reason == "" OR info[0] != "" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF block[0] != "" THEN "FW_BLOCKED" ELSE flowAction$
+
+# Netflow has no user field, so the user and the ZPA names go to event_metadata.
+r1.key$ = "username"
+r1.value$ = json["$.Username"]
+r2.key$ = "connection_status"
+r2.value$ = json["$.ConnectionStatus"]
+r3.key$ = "session_id"
+r3.value$ = json["$.SessionID"]
+r4.key$ = "connection_id"
+r4.value$ = json["$.ConnectionID"]
+r5.key$ = "host"
+r5.value$ = json["$.Host"]
+r6.key$ = "app_segment_group"
+r6.value$ = json["$.AppGroup"]
+r7.key$ = "service_port"
+r7.value$ = STRING(json["$.ServicePort"])
+r8.key$ = "client_country"
+r8.value$ = json["$.ClientCountryCode"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5, r6, r7, r8]
+
+# Policy and Connector are "0" when no rule or connector was involved.
+policy = STRING(json["$.Policy"])
+r9.key$ = "policy"
+r9.value$ = policy
+eventMetadata$.record$ = IF policy != "" AND policy != "0" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+connector = STRING(json["$.Connector"])
+r10.key$ = "app_connector"
+r10.value$ = connector
+eventMetadata$.record$ = IF connector != "" AND connector != "0" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
+privateIp = STRING(json["$.ClientPrivateIP"])
+r11.key$ = "client_private_ip"
+r11.value$ = privateIp
+eventMetadata$.record$ = IF privateIp != "" THEN eventMetadata$.record$ + [r11] ELSE eventMetadata$.record$
