@@ -1,4 +1,4 @@
-!SAMPLE=<6>date=2026-10-13 time=01:24:32 device_id=FEVM020000123456 log_id=0100000924 type=virus subtype=infected pri=information from="invoices@example.org" to="jdoe@example.com" src=203.0.113.9 session_id="49DE1A2B000401-49DE1A2B000402" msg="The file invoice_1013.zip is infected with EICAR_TEST_FILE."
+!SAMPLE=<6>date=2026-10-13 time=01:24:32 device_id=FEVM020000123456 log_id=0100000924 type=virus subtype=infected pri=information from="invoices@example.org" to="jdoe@example.com" src=203.0.113.9 session_id="pzkrnvltgw" msg="The file invoice_1013.zip is infected with EICAR_TEST_FILE."
 !CONFIRMWITH=EXPRESSION
 !CONFIRMSTRING=eventType$=="virus"
 !SCHEMA=scwx.antivirus
