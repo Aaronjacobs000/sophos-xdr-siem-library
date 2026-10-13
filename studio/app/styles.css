@@ -35,7 +35,7 @@ p { margin: 0; }
 .top .meta { color: #A9BCD6; font-size: 12.5px; }
 .unofficial { border: 1px solid #F2B84B; color: #FFD58A; border-radius: 999px; padding: 3px 11px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; text-decoration: none; }
 .unofficial:hover { background: rgba(242,184,75,.16); color: #FFE7B8; }
-.unofficial:focus-visible { outline: 2px solid #FFD58A; outline-offset: 2px; }
+.unofficial:focus-visible, .brandlink:focus-visible, .topnav a:focus-visible { outline: 2px solid #FFD58A; outline-offset: 2px; }
 .notice { background: #FFF6E3; border-bottom: 1px solid #F2D08C; color: #5A4300; font-size: 13px; padding: 8px 20px; }
 .notice b { font-weight: 700; }
 main { flex: 1; width: 100%; max-width: 1480px; margin: 0 auto; padding: 0 20px 24px; }
