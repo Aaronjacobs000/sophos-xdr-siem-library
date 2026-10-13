@@ -208,3 +208,13 @@ test('a DATETIME value compares only with another DATETIME or a number', () => {
   // A DATETIME that couldn't read its value is NULL, which compares as usual.
   assert.equal(get('t = DATETIME("garbage", "2006-01-02")\nx = t == NULL', 'x'), true);
 });
+
+test('a path that can select several nodes but selects one gives that node', () => {
+  const d = JSON.stringify({ arr: ['x'], arr2: ['x', 'y'], items: [{ k: 'a', v: 'va' }, { k: 'b', v: 'vb' }], o: { deep: 'd1' }, tags: [{ tag: 'a' }] });
+  const v = run('json = JSON(d)\none = json["$.arr[*]"]\ns1 = STRING(one)\ns2 = STRING(json["$.items[?(@.k==\'a\')].v"])\ns3 = STRING(json["$..deep"])\ntwo = json["$.arr2[*]"]\npres = json["$.tags.*.tag|preserve_structure"]\nhit = IF one == "x" THEN "eq" ELSE "ne"', { d });
+  assert.equal(v.get('one'), 'x');
+  assert.deepEqual(['s1', 's2', 's3', 'hit'].map((k) => v.get(k)), ['x', 'va', 'd1', 'eq']);
+  assert.deepEqual(v.get('two'), ['x', 'y']);
+  // |preserve_structure keeps the list.
+  assert.deepEqual(v.get('pres'), ['a']);
+});
