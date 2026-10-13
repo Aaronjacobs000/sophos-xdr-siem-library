@@ -1,0 +1,30 @@
+{
+  "vendor": "nginx and Apache",
+  "product": "Combined access log",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://nginx.org/en/docs/http/ngx_http_log_module.html",
+    "https://nginx.org/en/docs/syslog.html",
+    "https://httpd.apache.org/docs/2.4/logs.html",
+    "https://httpd.apache.org/docs/2.4/mod/mod_log_config.html"
+  ],
+  "notes": "One entry covers both servers because nginx and Apache httpd write the same combined format. nginx: access_log syslog:server=<collector> combined; (the tag is nginx). Apache httpd has no syslog output for access logs: pipe them to logger, for example CustomLog \"|/usr/bin/logger -t httpd -p local6.info\" combined, and let the host forward them. sensor_type comes from the syslog tag (nginx, httpd or apache, otherwise Web server). Custom log formats, the common format without referer and user agent, and error logs don't match. Samples are made up in the documented combined format. Passed Run Test in a lab tenant on 2026-10-13.",
+  "parsers": [
+    {
+      "name": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+      "file": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
+  ]
+}

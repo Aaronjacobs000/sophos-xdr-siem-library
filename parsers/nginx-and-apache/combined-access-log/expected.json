@@ -1,0 +1,261 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "192.0.2.10",
+      "response_code": 200,
+      "rx_byte_count": 5120,
+      "referer": "https://www.example.com/",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/index.html",
+      "uri_path": "/index.html",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "nginx"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791805262000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "198.51.100.23",
+      "response_code": 404,
+      "rx_byte_count": 153,
+      "user_agent": "Mozilla/5.0 zgrab/0.x",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/wp-login.php",
+      "uri_path": "/wp-login.php",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "nginx"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791805300000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.45",
+      "source_username": "alice",
+      "response_code": 401,
+      "rx_byte_count": 61,
+      "user_agent": "curl/8.5.0",
+      "request_direction": "INBOUND",
+      "http_method": "POST",
+      "uri_path_raw": "/api/v1/login",
+      "uri_path": "/api/v1/login",
+      "uri_query_raw": "next=%2Fadmin",
+      "uri_query": "next=%2Fadmin",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "nginx"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/2.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791805325000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "198.51.100.23",
+      "response_code": 400,
+      "rx_byte_count": 157,
+      "request_direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "nginx"
+          },
+          {
+            "key": "request",
+            "value": "\\x16\\x03\\x01\\x02\\x00\\x01\\x00\\x01\\xFC\\x03\\x03"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791805351000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "2001:db8::25",
+      "response_code": 200,
+      "rx_byte_count": 2,
+      "user_agent": "kube-probe/1.31",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/healthz",
+      "uri_path": "/healthz",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "nginx"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache httpd",
+      "event_time_usec": 1791805431000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web02",
+      "source_address": "192.0.2.50",
+      "source_username": "bob",
+      "response_code": 200,
+      "rx_byte_count": 482113,
+      "referer": "https://intranet.example.com/reports/",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/reports/q3.pdf",
+      "uri_path": "/reports/q3.pdf",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "httpd"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache httpd",
+      "event_time_usec": 1791805450000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web02",
+      "source_address": "192.0.2.50",
+      "source_username": "bob",
+      "response_code": 304,
+      "referer": "https://intranet.example.com/reports/",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/favicon.ico",
+      "uri_path": "/favicon.ico",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "httpd"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache httpd",
+      "event_time_usec": 1791805533000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web02",
+      "source_address": "203.0.113.80",
+      "response_code": 200,
+      "rx_byte_count": 1290,
+      "user_agent": "sqlmap/1.8 (\\\"probe\\\")",
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/search",
+      "uri_path": "/search",
+      "uri_query_raw": "q=1%27%20OR%20%271%27%3D%271",
+      "uri_query": "q=1%27%20OR%20%271%27%3D%271",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "syslog_tag",
+            "value": "httpd"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
