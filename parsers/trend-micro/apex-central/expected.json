@@ -1,0 +1,474 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791853323000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-FIN-041",
+      "threat_name": "TROJ_GEN.R002C0DJ526",
+      "computer_name": "WS-FIN-041",
+      "user_name": "jdoe",
+      "file_path": "C:\\Users\\jdoe\\Downloads\\invoice_1013.exe",
+      "file_hash": {
+        "sha1": "af94e528bd0e4629394126a5a7d2821b993f9060"
+      },
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "vendor_alert_type": "Virus/Malware",
+      "threat_category": "MALWARE",
+      "agent_priority": "Error",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "AV:File quarantined"
+          },
+          {
+            "key": "product",
+            "value": "Apex One"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "action",
+            "value": "File quarantined"
+          },
+          {
+            "key": "scan_type",
+            "value": "Real-time Scan"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Unknown threats"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791853664000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-OPS-057",
+      "threat_name": "PE_SALITY.RL",
+      "computer_name": "WS-OPS-057",
+      "user_name": "amy",
+      "file_path": "D:\\Shared\\Tools\\setup_tool.exe",
+      "file_hash": {
+        "sha1": "0428e6d257d13987dfeeac6daf5cebbb5a5544ba"
+      },
+      "action_taken": "DELETED",
+      "threat_type": "FILE",
+      "vendor_alert_type": "Virus/Malware",
+      "threat_category": "MALWARE",
+      "agent_priority": "Critical",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "AV:File deleted"
+          },
+          {
+            "key": "product",
+            "value": "Apex One"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "action",
+            "value": "File deleted"
+          },
+          {
+            "key": "second_action_result",
+            "value": "File deleted"
+          },
+          {
+            "key": "scan_type",
+            "value": "Manual Scan"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Unknown threats"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791853939000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-HR-009",
+      "threat_name": "ADW_COUPONHELPER",
+      "computer_name": "WS-HR-009",
+      "user_name": "bwong",
+      "file_path": "C:\\Users\\bwong\\AppData\\Local\\CouponHelper\\helper.dll",
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "vendor_alert_type": "Spyware/Grayware: Adware",
+      "threat_category": "APPLICATION",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "Spyware Detected"
+          },
+          {
+            "key": "product",
+            "value": "Apex One"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.9"
+          },
+          {
+            "key": "scan_type",
+            "value": "Real-time Scan"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791854398000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FS-01",
+      "threat_name": "Ransom.Win32.TRX.XXPE50FFF097",
+      "computer_name": "FS-01",
+      "user_name": "CORP\\svc_backup",
+      "process_name": "explorer.exe",
+      "file_path": "C:\\ProgramData\\svc\\lock.exe",
+      "file_hash": {
+        "sha1": "de308427e3ed464e17c5b9fc07489b70118fb0a9"
+      },
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "vendor_alert_type": "Predictive Machine Learning: Ransomware",
+      "threat_category": "RANSOMWARE",
+      "agent_confidence_score": 92,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "PML:File quarantined"
+          },
+          {
+            "key": "product",
+            "value": "Apex One"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "action",
+            "value": "File quarantined"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Ransomware"
+          },
+          {
+            "key": "command_line",
+            "value": "C:\\ProgramData\\svc\\lock.exe --all"
+          },
+          {
+            "key": "infection_source",
+            "value": "\\\\fs-02\\share"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791854397000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FS-01",
+      "vendor": "Trend Micro",
+      "provider": "Apex One",
+      "target_host_name": "FS-01",
+      "alert_id": "1C00290C0360-9CDE11EB-D4B8-F51F-C005",
+      "alert_category": "Behavior Monitoring",
+      "title": "Behavior Monitoring: Unauthorized file encryption",
+      "summary": "C:\\ProgramData\\svc\\lock.exe Write D:\\Finance\\budget_2027.xlsx",
+      "severity": "HIGH",
+      "vendor_severity": "1",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.30",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "BM:1000"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "action",
+            "value": "Terminated. Files were recovered."
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Ransomware"
+          },
+          {
+            "key": "behavior_event_type",
+            "value": "File system"
+          },
+          {
+            "key": "operation",
+            "value": "Write"
+          },
+          {
+            "key": "target",
+            "value": "D:\\Finance\\budget_2027.xlsx"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791855069000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-OPS-057",
+      "vendor": "Trend Micro",
+      "provider": "Apex One",
+      "target_host_name": "WS-OPS-057",
+      "alert_id": "1C00290C0360-9CDE11EB-D4B8-F51F-C006",
+      "alert_category": "C&C Callback",
+      "title": "C&C callback to http://update-check.example.net/gate.php",
+      "summary": "C:\\Users\\amy\\AppData\\Local\\Temp\\upd.exe",
+      "severity": "HIGH",
+      "vendor_severity": "3",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.57",
+      "destination_address": "203.0.113.66",
+      "destination_url": "http://update-check.example.net/gate.php",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "CnC:Block"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "action",
+            "value": "Block"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791855331000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-FIN-041",
+      "vendor": "Trend Micro",
+      "provider": "Apex One",
+      "target_host_name": "WS-FIN-041",
+      "alert_id": "1C00290C0360-9CDE11EB-D4B8-F51F-C007",
+      "alert_category": "Network Content Inspection",
+      "title": "Suspicious connection: DNS_TUNNELING_LONG_QUERY",
+      "summary": "C:\\Windows\\System32\\svchost.exe",
+      "severity": "MEDIUM",
+      "action": "SUCCEEDED",
+      "source_address": "192.0.2.41",
+      "destination_address": "198.51.100.53",
+      "destination_port": 53,
+      "source_port": 55012,
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "NCIE:Pass"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "action",
+            "value": "Pass"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "C&C callback"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791855611000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-HR-009",
+      "vendor": "Trend Micro",
+      "provider": "Apex One",
+      "target_host_name": "WS-HR-009",
+      "alert_id": "1C00290C0360-9CDE11EB-D4B8-F51F-C008",
+      "alert_category": "Suspicious File",
+      "title": "Suspicious file: C:\\Users\\bwong\\Downloads\\coupon_helper.exe",
+      "summary": "Suspicious file: C:\\Users\\bwong\\Downloads\\coupon_helper.exe",
+      "severity": "MEDIUM",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "FH:Log"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.9"
+          },
+          {
+            "key": "action",
+            "value": "Log"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Unknown threats"
+          },
+          {
+            "key": "file_sha1",
+            "value": "df4ebaa82f759d9d0e3ed018b3b12ec9cbe3f3d3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791855944000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-FIN-041",
+      "vendor": "Trend Micro",
+      "provider": "Apex One",
+      "target_host_name": "WS-FIN-041",
+      "alert_id": "1C00290C0360-9CDE11EB-D4B8-F51F-C009",
+      "alert_category": "Virtual Analyzer",
+      "title": "Virtual Analyzer: VAN_RANSOMWARE.umxxlockerdemo",
+      "summary": "C:\\Users\\jdoe\\Downloads\\statement.docm",
+      "severity": "HIGH",
+      "vendor_severity": "3",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "VAD"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "critical_threat_type",
+            "value": "Ransomware"
+          },
+          {
+            "key": "file_sha1",
+            "value": "c385f5369fe5c6fbe94243453e04896638d53573"
+          },
+          {
+            "key": "threat_categories",
+            "value": "Ransomware, Anti-security"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT > TRENDMICRO_APEXCENTRAL_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "event_time_usec": 1791856344000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-OPS-057",
+      "vendor": "Trend Micro",
+      "target_host_name": "WS-OPS-057",
+      "alert_id": "8c1e2d8f-a03b-47ea-aef8-5aeab99ea001",
+      "alert_category": "Attack Discovery",
+      "title": "Attack Discovery: powershell invoke expression",
+      "summary": "process - powershell.exe - {USER: amy}",
+      "severity": "HIGH",
+      "vendor_severity": "1000",
+      "target_user_name": "amy",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "700220"
+          },
+          {
+            "key": "endpoint_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "category",
+            "value": "point of entry"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "TRENDMICRO_APEXCENTRAL_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Trend Micro Apex Central",
+      "host_id": "APEXONE01"
+    }
+  }
+]

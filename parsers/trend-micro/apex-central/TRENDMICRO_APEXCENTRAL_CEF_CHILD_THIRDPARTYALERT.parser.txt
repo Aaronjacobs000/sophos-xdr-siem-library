@@ -1,0 +1,101 @@
+!SAMPLE=<134>Oct 13 01:20:05 APEXCENTRAL01 CEF:0|Trend Micro|Apex Central|2019|BM:1000|Behavior Monitoring|3|rt=Oct 13 2026 01:19:57 GMT+00:00 dvchost=APEXONE01 cs5Label=Risk_Level cs5=1 cs2Label=Policy cs2=Unauthorized file encryption sproc=C:\\ProgramData\\svc\\lock.exe cs3Label=Event_Type cs3=File system TMCMLogTarget=D:\\Finance\\budget_2027.xlsx act=Terminated. Files were recovered. cs4Label=Operation cs4=Write shost=FS-01 src=192.0.2.30 deviceFacility=Apex One reason=G deviceNtDomain=CORP dntdom=OSCEDomain1 ApexCentralHost=APEXCENTRAL01 TMCMLogDetectedHost=FS-01 TMCMLogDetectedIP=192.0.2.30 devicePayloadId=1C00290C0360-9CDE11EB-D4B8-F51F-C005 TMCMdevicePlatform=Windows Server 2022 10.0 (Build 20348)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="bm" OR eventType$=="cnc" OR eventType$=="ncie" OR eventType$=="fh" OR eventType$=="vad" OR eventType$=="ade"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Apex Central syslog forwarding, CEF.
+# Child of TRENDMICRO_APEXCENTRAL_CEF_PARENT: Behavior Monitoring (BM:), C&C callback (CnC:),
+# Network Content Inspection (NCIE:), Suspicious File (FH:), Virtual Analyzer (VAD) and Attack
+# Discovery logs to the third-party alert schema.
+# v, sig, name, reasonText, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+kind = eventType$
+vendor$ = "Trend Micro"
+provider$ = v["deviceFacility"]
+targetHostName$ = hostId$
+alertId$ = IF kind == "ade" THEN v["customerExternalID"] ELSE v["devicePayloadId"]
+
+alertCategory$ = "Behavior Monitoring"
+alertCategory$ = IF kind == "cnc" THEN "C&C Callback" ELSE alertCategory$
+alertCategory$ = IF kind == "ncie" THEN "Network Content Inspection" ELSE alertCategory$
+alertCategory$ = IF kind == "fh" THEN "Suspicious File" ELSE alertCategory$
+alertCategory$ = IF kind == "vad" THEN "Virtual Analyzer" ELSE alertCategory$
+alertCategory$ = IF kind == "ade" THEN "Attack Discovery" ELSE alertCategory$
+
+cncDest = STRING(v["cs5"])
+cncDest = IF cncDest == "" THEN STRING(v["request"]) ELSE cncDest
+cncDest = IF cncDest == "" THEN STRING(v["dst"]) ELSE cncDest
+title$ = alertCategory$
+title$ = IF kind == "bm" THEN "Behavior Monitoring: " + STRING(v["cs2"]) ELSE title$
+title$ = IF kind == "cnc" THEN "C&C callback to " + cncDest ELSE title$
+title$ = IF kind == "ncie" THEN "Suspicious connection: " + STRING(v["cs2"]) ELSE title$
+title$ = IF kind == "fh" THEN "Suspicious file: " + STRING(v["cs3"]) ELSE title$
+title$ = IF kind == "vad" THEN "Virtual Analyzer: " + STRING(v["cs1"]) ELSE title$
+title$ = IF kind == "ade" THEN "Attack Discovery: " + STRING(v["cs1"]) ELSE title$
+
+summary$ = title$
+summary$ = IF kind == "bm" THEN STRING(v["sproc"]) + " " + STRING(v["cs4"]) + " " + STRING(v["TMCMLogTarget"]) ELSE summary$
+summary$ = IF kind == "cnc" OR kind == "ncie" THEN STRING(v["deviceProcessName"]) ELSE summary$
+summary$ = IF kind == "vad" THEN STRING(v["fname"]) ELSE summary$
+summary$ = IF kind == "ade" THEN STRING(v["cs2"]) ELSE summary$
+
+# Severity from each type's own risk field; the CEF header severity is always 3.
+#   BM Risk_Level (cs5): 0 Low, 1 High. C&C risk (cn1): 1 Low, 2 Medium, 3 High.
+#   Virtual Analyzer Risk_Level (cn1): 1 Low, 2 Medium, 3 High. Attack Discovery (cn1): 100, 500, 1000.
+risk = STRING(v["cn1"])
+severity$ = "MEDIUM"
+severity$ = IF kind == "bm" AND STRING(v["cs5"]) == "1" THEN "HIGH" ELSE severity$
+severity$ = IF kind == "bm" AND STRING(v["cs5"]) == "0" THEN "LOW" ELSE severity$
+severity$ = IF (kind == "cnc" OR kind == "vad") AND risk == "1" THEN "LOW" ELSE severity$
+severity$ = IF (kind == "cnc" OR kind == "vad") AND risk == "3" THEN "HIGH" ELSE severity$
+severity$ = IF kind == "ade" AND risk == "100" THEN "LOW" ELSE severity$
+severity$ = IF kind == "ade" AND risk == "1000" THEN "HIGH" ELSE severity$
+vendorSeverity$ = IF kind == "bm" THEN STRING(v["cs5"]) ELSE NULL
+vendorSeverity$ = IF kind == "cnc" OR kind == "vad" OR kind == "ade" THEN risk ELSE vendorSeverity$
+
+act = STRING(v["act"])
+a = LOWERCASE(act)
+action$ = NULL
+action$ = IF a == "pass" OR a == "allow" OR a == "log" OR a == "monitor" THEN "SUCCEEDED" ELSE action$
+action$ = IF a == "block" OR a == "deny" OR CONTAINS(a, "terminat") OR a == "quarantine" OR a == "delete" THEN "BLOCKED" ELSE action$
+action$ = IF a == "ask" OR a == "assess" THEN "ATTEMPTED" ELSE action$
+
+src = STRING(v["src"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF (kind == "cnc" OR kind == "ncie") AND STRING(v["dst"]) != "" THEN v["dst"] ELSE NULL
+destinationPort$ = IF kind == "ncie" AND STRING(v["dpt"]) != "" THEN INT(STRING(v["dpt"]), 10) ELSE NULL
+sourcePort$ = IF kind == "ncie" AND STRING(v["spt"]) != "" THEN INT(STRING(v["spt"]), 10) ELSE NULL
+destinationUrl$ = IF kind == "cnc" AND STRING(v["request"]) != "" THEN v["request"] ELSE NULL
+user = STRING(v["duser"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+
+d1.key$ = "event_id"
+d1.value$ = sig
+d3.key$ = "endpoint_ip"
+d3.value$ = STRING(v["TMCMLogDetectedIP"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d3]
+d2.key$ = "action"
+d2.value$ = act
+additionalData$.record$ = IF act != "" THEN additionalData$.record$ + [d2] ELSE additionalData$.record$
+d4.key$ = "critical_threat_type"
+d4.value$ = reasonText
+additionalData$.record$ = IF reasonText != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_sha1"
+d5.value$ = LOWERCASE(STRING(v["fileHash"]))
+additionalData$.record$ = IF STRING(v["fileHash"]) != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "behavior_event_type"
+d6.value$ = STRING(v["cs3"])
+d7.key$ = "operation"
+d7.value$ = STRING(v["cs4"])
+d8.key$ = "target"
+d8.value$ = STRING(v["TMCMLogTarget"])
+additionalData$.record$ = IF kind == "bm" THEN additionalData$.record$ + [d6, d7, d8] ELSE additionalData$.record$
+d9.key$ = "threat_categories"
+d9.value$ = STRING(v["cs2"])
+additionalData$.record$ = IF kind == "vad" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "category"
+d10.value$ = STRING(v["cat"])
+additionalData$.record$ = IF kind == "ade" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
