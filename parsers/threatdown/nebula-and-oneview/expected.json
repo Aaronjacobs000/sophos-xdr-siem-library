@@ -1,0 +1,331 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791853556000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "Endpoint Protection 1.2.0.1488",
+      "host_id": "FIN-LT-041",
+      "vendor": "ThreatDown",
+      "provider": "Malwarebytes Endpoint Protection",
+      "alert_category": "website",
+      "title": "ThreatDown website: Malicious Websites",
+      "summary": "Website blocked; Process name: C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+      "target_host_name": "FIN-LT-041",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.41",
+      "destination_address": "203.0.113.50",
+      "destination_port": 443,
+      "destination_url": "login-portal.example.net",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "file_type",
+            "value": "OutboundConnection"
+          },
+          {
+            "key": "device_id",
+            "value": "c4a7e2b19d03f58e6a1b2c3d4e5f60718293a4b5"
+          },
+          {
+            "key": "device_mac",
+            "value": "00:00:5E:00:53:41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791854102000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "OPS-WS-057",
+      "threat_name": "Trojan.Agent",
+      "vendor_alert_type": "malware",
+      "file_path": "C:\\Users\\amy\\Downloads\\invoice_1013.exe",
+      "computer_name": "OPS-WS-057",
+      "agent_device_id": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432",
+      "file_hash": {
+        "md5": "0cc175b9c0f1b6a831c399e269772661",
+        "sha256": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+      },
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "threat_category": "MALWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "malware"
+          },
+          {
+            "key": "action",
+            "value": "quarantined"
+          },
+          {
+            "key": "file_type",
+            "value": "File"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "device_mac",
+            "value": "00:00:5E:00:53:57"
+          },
+          {
+            "key": "device_domain",
+            "value": "corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791854550000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "HR-LT-009",
+      "threat_name": "PUP.Optional.CouponHelper",
+      "vendor_alert_type": "pup",
+      "file_path": "C:\\Users\\bwong\\Downloads\\coupon_helper.exe",
+      "computer_name": "HR-LT-009",
+      "agent_device_id": "0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b",
+      "file_hash": {
+        "md5": "900150983cd24fb0d6963f7d28e17f72"
+      },
+      "action_taken": "ALERT",
+      "threat_type": "FILE",
+      "threat_category": "APPLICATION",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "pup"
+          },
+          {
+            "key": "action",
+            "value": "found"
+          },
+          {
+            "key": "file_type",
+            "value": "File"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.9"
+          },
+          {
+            "key": "device_mac",
+            "value": "00005E005309"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791855070000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FS-01",
+      "threat_name": "Malware.Ransom.Agent.Generic",
+      "vendor_alert_type": "ransomware",
+      "file_path": "C:\\Users\\Public\\svc\\lock.exe",
+      "computer_name": "FS-01",
+      "agent_device_id": "1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e",
+      "process_name": "C:\\Users\\Public\\svc\\lock.exe",
+      "action_taken": "BLOCKED",
+      "threat_type": "PROCESS",
+      "threat_category": "RANSOMWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "ransomware"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "file_type",
+            "value": "Process"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "device_mac",
+            "value": "00:00:5E:00:53:30"
+          },
+          {
+            "key": "device_domain",
+            "value": "corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791855647000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "Endpoint Protection 1.2.0.1488",
+      "host_id": "FIN-LT-041",
+      "vendor": "ThreatDown",
+      "provider": "Malwarebytes Endpoint Protection",
+      "alert_category": "exploit",
+      "title": "ThreatDown exploit: Exploit.PayloadProcessBlock",
+      "summary": "Exploit blocked; Process name: C:\\Program Files\\Acme Viewer\\viewer.exe",
+      "target_host_name": "FIN-LT-041",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.41",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "file_type",
+            "value": "Exploit"
+          },
+          {
+            "key": "device_id",
+            "value": "c4a7e2b19d03f58e6a1b2c3d4e5f60718293a4b5"
+          },
+          {
+            "key": "device_mac",
+            "value": "00:00:5E:00:53:41"
+          },
+          {
+            "key": "path",
+            "value": "C:\\Program Files\\Acme Viewer\\viewer.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791856340000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "Endpoint Detection and Response 1.2.0.1488",
+      "host_id": "OPS-WS-057",
+      "vendor": "ThreatDown",
+      "provider": "Endpoint Detection and Response",
+      "alert_category": "suspicious activity",
+      "title": "ThreatDown suspicious activity: Suspicious encoded command",
+      "summary": "Suspicious Activity found; Process name: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "target_host_name": "OPS-WS-057",
+      "alert_id": "6b5b8a56-0a1b-11f1-8d93-00005e005357",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "action": "ATTEMPTED",
+      "source_address": "192.0.2.57",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "found"
+          },
+          {
+            "key": "file_type",
+            "value": "Process"
+          },
+          {
+            "key": "device_id",
+            "value": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432"
+          },
+          {
+            "key": "device_mac",
+            "value": "00:00:5E:00:53:57"
+          },
+          {
+            "key": "path",
+            "value": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "parent_detection_id",
+            "value": "6b5b8a56-0a1b-11f1-8d93-00005e005300"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "THREATDOWN_NEBULA_CEF_PARENT > THREATDOWN_NEBULA_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ThreatDown",
+      "event_time_usec": 1791857439000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "Endpoint Protection 1.2.0.1488",
+      "host_id": "HR-LT-009",
+      "vendor": "ThreatDown",
+      "provider": "Malwarebytes Endpoint Protection",
+      "alert_category": "website",
+      "title": "ThreatDown website: Riskware",
+      "summary": "Website blocked; Process name: C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "target_host_name": "HR-LT-009",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.9",
+      "destination_address": "198.51.100.140",
+      "destination_port": 80,
+      "destination_url": "cdn-files.example.org",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "file_type",
+            "value": "OutboundConnection"
+          },
+          {
+            "key": "device_id",
+            "value": "0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b"
+          },
+          {
+            "key": "device_mac",
+            "value": "00005E005309"
+          }
+        ]
+      }
+    }
+  }
+]

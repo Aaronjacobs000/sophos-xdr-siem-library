@@ -1,0 +1,62 @@
+!SAMPLE=2026-10-13T01:15:08Z OPS-WS-057 CEF:0|Malwarebytes|Malwarebytes Endpoint Protection|Endpoint Protection 1.2.0.1488|Detection|Malware quarantined|5|deviceExternalId=9f8e7d6c5b4a39281706f5e4d3c2b1a098765432 dvchost=OPS-WS-057 deviceDnsDomain=corp.example.com dvcmac=00:00:5E:00:53:57 dvc=192.0.2.57 rt=Oct 13 2026 01:15:02 Z fileType=File cat=Malware act=quarantined msg=Malware quarantined\nFile: C:\\Users\\amy\\Downloads\\invoice_1013.exe\nMD5: 0CC175B9C0F1B6A831C399E269772661\nSHA256: CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB filePath=C:\\Users\\amy\\Downloads\\invoice_1013.exe cs1Label=Detection name cs1=Trojan.Agent
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="malware" OR eventType$=="pup" OR eventType$=="pum" OR eventType$=="ransomware"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ThreatDown (Malwarebytes) Nebula or OneView syslog logging, CEF.
+# Child of THREATDOWN_NEBULA_CEF_PARENT: Malware, PUP, PUM and Ransomware detections to Antivirus.
+# v, category, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+threatName$ = v["Detection name"]
+vendorAlertType$ = category
+filePath$ = v["filePath"]
+computerName$ = v["dvchost"]
+agentDeviceId$ = v["deviceExternalId"]
+
+# Hashes are only in msg, on their own lines: "MD5: <hex>" and "SHA256: <hex>". The engine
+# leaves CEF's \n escape in msg as the two characters, so the patterns accept either.
+msg = STRING(v["msg"])
+md5 = msg|MD5:\s*(?P<h>[0-9A-Fa-f]{32})
+sha = msg|SHA256:\s*(?P<h>[0-9A-Fa-f]{64})
+fileHash$.md5$ = IF md5["h"] != "" THEN LOWERCASE(md5["h"]) ELSE NULL
+fileHash$.sha256$ = IF sha["h"] != "" THEN LOWERCASE(sha["h"]) ELSE NULL
+proc = msg|Process name:\s*(?P<p>.+?)(?:\\n|\n|$)
+processName$ = IF proc["p"] != "" THEN proc["p"] ELSE NULL
+
+# act: blocked, found, quarantined, deleted, restored. found means detected, no action.
+act = LOWERCASE(STRING(v["act"]))
+actionTaken$ = NULL
+actionTaken$ = IF act == "quarantined" THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF act == "deleted" THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF act == "blocked" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF act == "found" THEN "ALERT" ELSE actionTaken$
+actionTaken$ = IF act == "restored" THEN "RESTORED" ELSE actionTaken$
+
+ftype = LOWERCASE(STRING(v["fileType"]))
+threatType$ = NULL
+threatType$ = IF ftype == "file" OR ftype == "module" THEN "FILE" ELSE threatType$
+threatType$ = IF ftype == "process" THEN "PROCESS" ELSE threatType$
+
+threatCategory$ = NULL
+threatCategory$ = IF category == "malware" THEN "MALWARE" ELSE threatCategory$
+threatCategory$ = IF category == "ransomware" THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF category == "pup" THEN "APPLICATION" ELSE threatCategory$
+
+r1.key$ = "category"
+r1.value$ = category
+r2.key$ = "action"
+r2.value$ = act
+r3.key$ = "file_type"
+r3.value$ = STRING(v["fileType"])
+r4.key$ = "device_ip"
+r4.value$ = STRING(v["dvc"])
+r5.key$ = "device_mac"
+r5.value$ = STRING(v["dvcmac"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]
+dom = STRING(v["deviceDnsDomain"])
+r6.key$ = "device_domain"
+r6.value$ = dom
+eventMetadata$.record$ = IF dom != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
