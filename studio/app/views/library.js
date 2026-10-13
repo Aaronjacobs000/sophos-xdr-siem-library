@@ -50,7 +50,7 @@ function legend() {
   return h('div', { class: 'legend' }, h('h3', { text: 'What the badges mean' }),
     row(pill('tenant-tested YYYY-MM-DD', 'green'), 'The parsers passed Run Test on the real NG-SIEM engine in a Sophos Fusion tenant on that date, using the entry\'s synthetic samples. Your own logs, and the built-in parsers in your tenant, can still behave differently. The entry\'s notes say what ran and where a built-in parser took some lines.'),
     row(pill('emulator only', 'amber'), 'The parsers passed the Parser Studio emulator and the repo checks but haven\'t run in a tenant yet.'),
-    row(pill('needs collector', 'cyan'), 'The source only offers a pull API, so its logs need a collector to reach Sophos NG-SIEM. The entry page has an example Python collector to copy or download.'));
+    row(pill('needs collector', 'cyan'), 'The logs need a collector to reach Sophos NG-SIEM: a script that pulls them from the vendor\'s API, or a relay that takes the vendor\'s webhooks and adds the header HTTP Ingest needs. The entry page has the Python code to copy or download.'));
 }
 
 function card(e) {
@@ -173,12 +173,12 @@ function drawEntry(root, e) {
   right.append(h('div', { class: 'callout blue' }, pill('Emulator', 'blue'), h('span', { text: 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on.' })));
 }
 
-// Pull-only sources: the example collector's README and script, from the same commit as the entry.
+// Sources that need a collector: its README and script, from the same commit as the entry.
 function collectorSection(e) {
   const path = e.meta.collector;
   const sec = h('section', { class: 'panel collect', 'aria-labelledby': 'collect-h' },
     h('div', { class: 'collecthead' }, h('h2', { id: 'collect-h', text: 'Collect the logs' }), pill('needs collector', 'cyan')),
-    h('p', { class: 'sub', text: 'This source is pull only: it has no syslog or push option, so these parsers need a collector to get its logs. The example collector below polls the vendor\'s API and sends each record to an HTTP Ingest integration in Sophos Fusion. The maintainer reviews every collector before it merges. Read the code and run it with --dry-run first.' }));
+    h('p', { class: 'sub', text: 'These parsers need a collector to get this source\'s logs. The collector below polls the vendor\'s API or relays its webhooks, and sends each record to an HTTP Ingest integration in Sophos Fusion. The maintainer reviews every collector before it merges. Read the code and run it with --dry-run first.' }));
   const body = h('div', {}, h('p', { class: 'empty', text: 'Loading the collector…' }));
   sec.append(body);
   loadCollector(state.library.collectors, path, e.ref)

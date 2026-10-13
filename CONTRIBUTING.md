@@ -34,7 +34,7 @@ Every pull request that touches `parsers/` and every issue-form submission is ch
 - The emulator's output for `samples.log` matches `expected.json`.
 - Samples, parsers and metadata contain no secrets or keys, no private or real IP addresses, no real email addresses or hostnames, and no company names that could be customers.
 - No top-level parser's confirm string matches another entry's samples.
-- `collector`, when set, names a folder under `collectors/` that is already on the main branch and holds a `README.md` and a `.py` file. An entry shipped by HTTP Ingest without one gets a warning, since a source that pushes, such as a webhook, needs none.
+- `collector`, when set, names a folder under `collectors/` that is already on the main branch and holds a `README.md` and a `.py` file. An entry shipped by HTTP Ingest without one gets a warning, since a source that sends to HTTP Ingest with the `Authorization` header itself needs none.
 
 ## Samples must be synthetic
 
@@ -57,11 +57,11 @@ When the parsers pass Run Test in a Sophos NG-SIEM tenant, set `tested.tenant` i
 
 ## Collectors
 
-A collector is a small script for a source that only offers a pull API. It polls the vendor's API and sends each record, as one JSON line, to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize it. Each one is a folder, `collectors/<vendor>-<product>/`, with:
+A collector is a small script that gets a source's logs to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize them. Most poll a vendor API that only offers pull access and send each record as one JSON line. [collectors/webhook-relay](collectors/webhook-relay/) relays pushed webhooks instead, for vendors whose webhooks can't add the `Authorization: Bearer` header HTTP Ingest needs. Each one is a folder, `collectors/<vendor>-<product>/`, with:
 
 - `<name>.py`: Python 3, standard library only.
 - `README.md`: what to set up on both sides, every setting, and what the script sends.
-- `test_<name>.py`: unit tests against a local mock of the vendor's documented API. CI runs every `collectors/*/test_*.py`.
+- `test_<name>.py`: unit tests against a local mock of the vendor's documented API or webhooks. CI runs every `collectors/*/test_*.py`.
 
 Follow [collectors/ai-compliance-logs](collectors/ai-compliance-logs/):
 
