@@ -156,6 +156,9 @@ export function lintParsers(parsers, opts = {}) {
             for (const i of checkRe2(n.args[1].v)) { if (i.level === 'error') stats.regexBad++; add(i.level, 're2', `REPLACE_REGEX: ${i.message}`, p.name, st.line); }
           }
           if (n.name === 'TENANT_LOOKUP') add('info', 'tenant-lookup', 'TENANT_LOOKUP() needs a tenant directory; the emulator always takes the default', p.name, st.line);
+          // Checked in a lab tenant: the records come out sorted by key, but starting at a random
+          // key, so the order changes from one event to the next.
+          if (n.name === 'FLATTEN') add('info', 'flatten-order', 'FLATTEN() records come out in a different order on each event in the engine: sorted by key, but starting at any key. The emulator lists them sorted, so don\'t rely on their order.', p.name, st.line);
         }
         if (n.t === 'var') {
           if (/^null$/i.test(n.name) && n.name !== 'NULL') add('warning', 'keyword-case', `${n.name} is read as a variable name; write NULL`, p.name, st.line);

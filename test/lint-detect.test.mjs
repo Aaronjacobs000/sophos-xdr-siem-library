@@ -42,6 +42,14 @@ ok = 1 > 0 AND TRUE`;
   assert.equal(r.problems.find((p) => p.code === 'datetime-year').line, 9);
 });
 
+test('lint: INT needs its base, FLATTEN order is noted, and a capture source expression is checked', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\njson = JSON(originalData$)\nn = INT("42")\neventMetadata$.record$ = FLATTEN(json)\nm = json["$.a"] + nothing|^(\\w+)\ntargetUserName$ = m[1]';
+  const r = lintParsers([{ name: 'ACME_APP_STANDALONE_AUTH', text: t }]);
+  const c = codes(r);
+  for (const want of ['error:arity', 'info:flatten-order', 'error:undefined-var']) assert.ok(c.includes(want), `expected ${want} in ${c.join(', ')}`);
+  assert.match(r.problems.find((p) => p.code === 'undefined-var').message, /^nothing is read before it is set/);
+});
+
 test('lint: parent and child structure', () => {
   const parent = { name: 'A_PARENT', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\nkind$ = "x"' };
   const child = { name: 'A_CHILD', parent: 'A_PARENT', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=missing$=="y"\n!SCHEMA=scwx.auth' };
