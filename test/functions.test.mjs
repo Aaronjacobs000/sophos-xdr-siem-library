@@ -23,6 +23,8 @@ test('SPLIT_NAME_VALUES', () => {
   assert.equal(v.get('miss'), null);
   assert.equal(get('d = SPLIT_NAME_VALUES("user=alice,role=admin", ",", "=", "\\\\")\nout = d["role"]', 'out'), 'admin');
   assert.equal(get('d = SPLIT_NAME_VALUES(\'a=1 msg="two words" b=3\', " ", "=", "\\"")\nout = d["msg"]', 'out'), 'two words');
+  // The engine rejects the parser without the quote character ("requires 4 parameters").
+  assert.throws(() => run('d = SPLIT_NAME_VALUES("a=1", " ", "=")'), /takes 4 arguments, got 3/);
 });
 
 test('JSON and JSONPath', () => {
@@ -170,6 +172,45 @@ s = STRING(SPLIT(line, "|"))`, { d, line: '<134>x a\tb|c"d\\e' });
   assert.equal(get('x = STRING(["a"])', 'x'), '["a"]');
 });
 
+// What the engine gave for each in a lab tenant. A NULL stays null only in the value JSON()
+// returned; in a part read from it, the engine writes 0.
+test('STRING() of a JSON object or array writes JSON the way Go does', () => {
+  const d = '{"o":{"b":1,"a":"x<y&z>","c":[3,1,{"z":null,"y":true}],"n":null,"f":1.5,"e":1e21,"sm":1e-7,"big":12345678901234567890,"s":"\\u00e9\\u2028"},"arr":[{"b":2,"a":1},"q<",null,2.0],"emp":{},"ea":[],"nul":["a",null,true]}';
+  const v = run(`j = JSON(d)
+o = STRING(j["$.o"])
+arr = STRING(j["$.arr"])
+emp = STRING(j["$.emp"])
+ea = STRING(j["$.ea"])
+nul = STRING(j["$.nul"])
+whole = STRING(j)
+oc = STRING(j["$.o.c"])
+plainkey = STRING(j["o"])
+arr0 = STRING(j["$.arr[0]"])
+num = STRING(j["$.o.f"])`, { d });
+  const o = '{"a":"x\\u003cy\\u0026z\\u003e","b":1,"big":12345678901234567000,"c":[3,1,{"y":true,"z":0}],"e":1e+21,"f":1.5,"n":0,"s":"é\\u2028","sm":1e-7}';
+  const want = {
+    o, arr: '[{"a":1,"b":2},"q\\u003c",0,2]', emp: '{}', ea: '[]', nul: '["a",0,true]', oc: '[3,1,{"y":true,"z":0}]', plainkey: o, arr0: '{"a":1,"b":2}', num: '1',
+    whole: '{"arr":[{"a":1,"b":2},"q\\u003c",null,2],"ea":[],"emp":{},"nul":["a",null,true],"o":{"a":"x\\u003cy\\u0026z\\u003e","b":1,"big":12345678901234567000,"c":[3,1,{"y":true,"z":null}],"e":1e+21,"f":1.5,"n":null,"s":"é\\u2028","sm":1e-7}}',
+  };
+  for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
+  const d2 = '{"o":{"n":null,"b":1,"a":"x>","c":[null,{"z":null}]},"top":null}';
+  const w = run(`j = JSON(d)
+o = j["$.o"]
+direct = STRING(JSON(d))
+root = STRING(j["$"])
+ostr = STRING(o)
+listo = STRING([o])
+star = STRING(j["$.o.*"])
+deep = STRING(j["$..c"])
+pres = STRING(j["$.o|preserve_structure"])`, { d: d2 });
+  const o2 = '{"a":"x\\u003e","b":1,"c":[0,{"z":0}],"n":0}';
+  const want2 = {
+    direct: '{"o":{"a":"x\\u003e","b":1,"c":[null,{"z":null}],"n":null},"top":null}', root: `{"o":${o2},"top":0}`, ostr: o2, listo: `[${o2}]`,
+    star: '[0,1,"x\\u003e",[0,{"z":0}]]', deep: '[0,{"z":0}]', pres: o2,
+  };
+  for (const [k, x] of Object.entries(want2)) assert.equal(w.get(k), x, k);
+});
+
 test('VALIDATE_ALL_JSONPATHS_EXIST', () => {
   const line = 'May 17 12:00:00 host alert {"event_id":"123","actor":{"id":"u1"},"action":"login"}';
   const v = run('ok = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.actor.id,$.action")\nno = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.session.id")\nbad = VALIDATE_ALL_JSONPATHS_EXIST("no json here", "$.a")', { originalData$: line });
@@ -254,6 +295,24 @@ test('text added to a DATETIME value must read as a number', () => {
   assert.equal(v.get('h'), '2026-10-14 01:02:03 +0000 UTC');
   // Text that isn't a DATETIME still joins as before.
   assert.deepEqual([get('x = "5" + "5"', 'x'), get('x = "a" + 5', 'x')], ['55', 'a5']);
+});
+
+// What the engine gave for each in a lab tenant.
+test('a DATETIME value adds to another DATETIME or to TRUE as microseconds', () => {
+  const v = run(`t = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")
+u = DATETIME("1970-01-01T00:00:01.5Z", "2006-01-02T15:04:05Z07:00")
+a = t + t
+b = t + u
+c = t + TRUE
+d = TRUE + t
+e = t + FALSE
+f = FALSE + t
+g = t + true
+h = t - u
+i = t - TRUE
+k = IF (t + t) == 3583879446000000 THEN "number" ELSE "text"`);
+  const usec = Date.UTC(2026, 9, 14, 1, 2, 3) * 1000;
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k'].map((x) => v.get(x)), [2 * usec, usec + 1500000, usec + 1, usec + 1, usec, usec, usec + 1, usec - 1500000, usec - 1, 'number']);
 });
 
 test('a path that can select several nodes but selects one gives that node', () => {
