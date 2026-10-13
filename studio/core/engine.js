@@ -101,6 +101,18 @@ function compare(op, a, b) {
 }
 const cmp = (op, a, b) => (op === '<' ? a < b : op === '>' ? a > b : op === '<=' ? a <= b : a >= b);
 
+// == and != compare a DATETIME value with another one or with a number of microseconds. With
+// anything else, NULL included, the engine fails the event (checked in a lab tenant).
+function equal(a, b) {
+  noRegex(a); noRegex(b);
+  const ta = a instanceof TimeValue, tb = b instanceof TimeValue;
+  if (!ta && !tb) return looseEqual(a, b);
+  if (ta && tb) return a.usec === b.usec;
+  const other = ta ? b : a;
+  if (typeof other === 'number') return (ta ? a : b).usec === other;
+  throw new RuntimeError(`cannot convert time to string: a DATETIME value can be compared with another DATETIME or a number, not ${typeName(other)}`, 'time-compare');
+}
+
 function memberLabel(e) {
   if (e.t === 'var') return e.name;
   if (e.t === 'member') return `${memberLabel(e.e)}.${e.name}`;
@@ -192,8 +204,8 @@ export function evaluate(ctx, e) {
       const a = evaluate(ctx, e.l);
       const b = evaluate(ctx, e.r);
       switch (e.op) {
-        case '==': return looseEqual(noRegex(a), noRegex(b));
-        case '!=': return !looseEqual(noRegex(a), noRegex(b));
+        case '==': return equal(a, b);
+        case '!=': return !equal(a, b);
         case '<': case '>': case '<=': case '>=': return compare(e.op, a, b);
         case '+': return plus(a, b);
         case '-': return int64(num(a, '-') - num(b, '-'));
