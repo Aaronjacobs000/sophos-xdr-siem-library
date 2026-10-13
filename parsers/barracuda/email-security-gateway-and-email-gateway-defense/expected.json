@@ -1,0 +1,536 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791853322000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg01",
+      "event_type": "RECV",
+      "from_email_address": [
+        "winner@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "sender_ip": "203.0.113.77",
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "Barracuda Reputation Block List",
+          "type": "reputation"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791853322-11234-1-0"
+          },
+          {
+            "key": "process",
+            "value": "inbound/pass1"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "reason",
+            "value": "Barracuda Reputation Block List"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791853508000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg01",
+      "event_type": "SCAN",
+      "from_email_address": [
+        "bounce-0921@example.net"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice 0921 for October",
+      "message_size": 48210,
+      "sender_ip": "198.51.100.23",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791853508-11240-2-0"
+          },
+          {
+            "key": "process",
+            "value": "scan"
+          },
+          {
+            "key": "action",
+            "value": "Allowed"
+          },
+          {
+            "key": "spam_score",
+            "value": "0.4"
+          },
+          {
+            "key": "tls",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791853897000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg01",
+      "event_type": "SCAN",
+      "from_email_address": [
+        "news@example.org"
+      ],
+      "to_email_address": [
+        "amy@example.com"
+      ],
+      "subject": "Last chance to claim your prize",
+      "message_size": 9120,
+      "sender_ip": "203.0.113.80",
+      "status": "QUARANTINED",
+      "quarantine_reason": "Score",
+      "threats": [
+        {
+          "name": "Score",
+          "type": "spam"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791853897-11251-1-0"
+          },
+          {
+            "key": "process",
+            "value": "scan"
+          },
+          {
+            "key": "action",
+            "value": "Quarantined"
+          },
+          {
+            "key": "reason",
+            "value": "Score"
+          },
+          {
+            "key": "spam_score",
+            "value": "5.6"
+          },
+          {
+            "key": "tls",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791854670000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg01",
+      "event_type": "SCAN",
+      "from_email_address": [
+        "invoices@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice attached",
+      "message_size": 3410,
+      "sender_ip": "203.0.113.9",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "Virus",
+          "type": "virus",
+          "classification": "EICAR-Test-File"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791854670-11262-1-0"
+          },
+          {
+            "key": "process",
+            "value": "scan"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "reason",
+            "value": "Virus"
+          },
+          {
+            "key": "reason_extra",
+            "value": "EICAR-Test-File"
+          },
+          {
+            "key": "tls",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791853512000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg01",
+      "event_type": "SEND",
+      "direction": "OUTBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791853508-11240-2-0"
+          },
+          {
+            "key": "process",
+            "value": "outbound/smtp"
+          },
+          {
+            "key": "action",
+            "value": "Delivered"
+          },
+          {
+            "key": "tls",
+            "value": "true"
+          },
+          {
+            "key": "queue_id",
+            "value": "4F2A91C0B1"
+          },
+          {
+            "key": "delivery_response",
+            "value": "250 2.0.0 OK queued as 7E21A3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_ESG_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Security Gateway",
+      "event_time_usec": 1791853603000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bsg02",
+      "event_type": "RECV",
+      "to_email_address": [
+        "postmaster@example.com"
+      ],
+      "sender_ip": "198.51.100.60",
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "No Such User",
+          "type": "policy"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791853603-27564-1-0"
+          },
+          {
+            "key": "process",
+            "value": "inbound/pass1"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "reason",
+            "value": "No Such User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_EGD_JSON_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Gateway Defense",
+      "event_time_usec": 1791854400000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "message",
+      "from_email_address": [
+        "accounts@example.net"
+      ],
+      "to_email_address": [
+        "finance@example.com"
+      ],
+      "subject": "Overdue invoice",
+      "message_size": 24316,
+      "sender_ip": "203.0.113.50",
+      "status": "QUARANTINED",
+      "quarantine_reason": "content_subject",
+      "threats": [
+        {
+          "name": "content_subject",
+          "type": "policy",
+          "classification": "overdue"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791854400-1012198-13072-403-1"
+          },
+          {
+            "key": "action",
+            "value": "quarantined"
+          },
+          {
+            "key": "delivered",
+            "value": "not_delivered"
+          },
+          {
+            "key": "header_from",
+            "value": "\"Accounts\" <accounts@example.net>"
+          },
+          {
+            "key": "header_to",
+            "value": "finance@example.com"
+          },
+          {
+            "key": "account_id",
+            "value": "ESS1234567"
+          },
+          {
+            "key": "geoip",
+            "value": "AUS"
+          },
+          {
+            "key": "tls",
+            "value": "true"
+          },
+          {
+            "key": "recipient_count",
+            "value": "1"
+          },
+          {
+            "key": "reason",
+            "value": "content_subject"
+          },
+          {
+            "key": "reason_extra",
+            "value": "overdue"
+          },
+          {
+            "key": "sender_ptr",
+            "value": "mail.example.net"
+          },
+          {
+            "key": "authentication_results",
+            "value": "spf=pass smtp.mailfrom=example.net; dkim=pass header.d=example.net; dmarc=pass header.from=example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_EGD_JSON_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Gateway Defense",
+      "event_time_usec": 1791855104000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "message",
+      "from_email_address": [
+        "winner@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com",
+        "amy@example.com"
+      ],
+      "subject": "You have won a prize",
+      "message_size": 3609,
+      "sender_ip": "198.51.100.200",
+      "status": "BLOCKED",
+      "threats": [
+        {
+          "name": "bbl",
+          "type": "spam",
+          "classification": "198.51.100.200, in Domain Settings: example.com"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791855104-1012198-13101-221-1"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "delivered",
+            "value": "not_delivered"
+          },
+          {
+            "key": "header_from",
+            "value": "\"Prize Desk\" <winner@example.org>"
+          },
+          {
+            "key": "header_to",
+            "value": "\"Jane\" <jdoe@example.com>"
+          },
+          {
+            "key": "account_id",
+            "value": "ESS1234567"
+          },
+          {
+            "key": "geoip",
+            "value": "BRA"
+          },
+          {
+            "key": "tls",
+            "value": "false"
+          },
+          {
+            "key": "recipient_count",
+            "value": "2"
+          },
+          {
+            "key": "reason",
+            "value": "bbl"
+          },
+          {
+            "key": "reason_extra",
+            "value": "198.51.100.200, in Domain Settings: example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "BARRACUDA_EMAIL_SYSLOG_PARENT > BARRACUDA_EGD_JSON_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Barracuda Email Gateway Defense",
+      "event_time_usec": 1791855611000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "message",
+      "from_email_address": [
+        "bounce-0921@example.net"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice 0921 for October",
+      "message_size": 48210,
+      "sender_ip": "198.51.100.23",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "barracuda_message_id",
+            "value": "1791855611-1012198-13140-77-1"
+          },
+          {
+            "key": "action",
+            "value": "allowed"
+          },
+          {
+            "key": "delivered",
+            "value": "delivered"
+          },
+          {
+            "key": "header_from",
+            "value": "bounce-0921@example.net"
+          },
+          {
+            "key": "header_to",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "account_id",
+            "value": "ESS1234567"
+          },
+          {
+            "key": "geoip",
+            "value": "AUS"
+          },
+          {
+            "key": "tls",
+            "value": "true"
+          },
+          {
+            "key": "recipient_count",
+            "value": "1"
+          },
+          {
+            "key": "sender_ptr",
+            "value": "mail.example.net"
+          },
+          {
+            "key": "authentication_results",
+            "value": "spf=pass smtp.mailfrom=example.net"
+          },
+          {
+            "key": "delivery_detail",
+            "value": "250 2.0.0 OK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
