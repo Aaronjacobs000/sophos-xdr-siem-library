@@ -151,8 +151,19 @@ function plus(a, b) {
   if (isList(b)) return [a, ...b];
   if (a instanceof TimeValue && typeof b === 'number') return int64(a.usec + b);
   if (typeof a === 'number' && b instanceof TimeValue) return int64(a + b.usec);
+  if (a instanceof TimeValue && typeof b === 'string') return int64(a.usec + timeAddend(b));
+  if (typeof a === 'string' && b instanceof TimeValue) return int64(timeAddend(a) + b.usec);
   if (typeof a === 'number' && typeof b === 'number') return int64(a + b);
   return toStr(a) + toStr(b);
+}
+
+// Text added to a DATETIME value counts as a number when all of it reads as one, the way Go's
+// strconv.ParseFloat reads it ("5", "-5", "5.5", "1e3"). Any other text, "" and " 5" included,
+// fails the event with "unable to add: cannot convert time to string" (checked in a lab tenant).
+const FLOAT_TEXT = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+function timeAddend(s) {
+  if (FLOAT_TEXT.test(s)) return Number(s);
+  throw new RuntimeError('unable to add: cannot convert time to string. To join a DATETIME value to text, use STRING() on it first', 'time-add');
 }
 
 function num(v, op) {

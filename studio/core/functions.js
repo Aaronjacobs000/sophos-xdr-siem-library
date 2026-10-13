@@ -108,13 +108,45 @@ export function trimPairs(s, repeat) {
   return t;
 }
 
-// STRING(): lists come out as quoted items joined by commas, a float loses its fraction, and
-// NULL becomes "" (checked in a lab tenant).
+// STRING(): a float loses its fraction, NULL becomes "", and a list comes out as JSON the way
+// Go's encoding/json writes it (checked in a lab tenant): ["a","b"] with no spaces, object keys
+// sorted, <, > and & escaped, a NULL item written as 0 and a DATETIME item as {}. TRIM_ALL then
+// takes the brackets off a top-level field, leaving "a","b".
 function stringOf(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'number') return toStr(Math.trunc(v));
-  if (isList(v)) return v.map((x) => JSON.stringify(x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x))).join(',');
+  if (isList(v)) return goJsonList(v);
   return toStr(v);
+}
+
+const GO_HTML = { '<': '\\u003c', '>': '\\u003e', '&': '\\u0026', '\u2028': '\\u2028', '\u2029': '\\u2029' };
+const goQuote = (s) => JSON.stringify(typeof s.toWellFormed === 'function' ? s.toWellFormed() : s).replace(/[<>&\u2028\u2029]/g, (ch) => GO_HTML[ch]);
+
+function goJsonList(list) {
+  return `[${list.map((x) => (x === null || x === undefined ? '0' : goJson(x))).join(',')}]`;
+}
+
+function goJson(v) {
+  if (v === null || v === undefined) return 'null';
+  if (typeof v === 'string') return goQuote(v);
+  if (typeof v === 'number' || typeof v === 'boolean') return toStr(v);
+  if (isList(v)) return goJsonList(v);
+  if (v instanceof TimeValue) return '{}';
+  if (v instanceof JsonValue) return goJsonPlain(v.value);
+  if (v instanceof ObjValue) return goJsonObject([...v.map]);
+  if (v instanceof RecordValue) return goJsonObject([...v.fields]);
+  return goJsonPlain(toPlain(v));
+}
+
+// Parsed JSON inside the list: its own nulls stay null.
+function goJsonPlain(v) {
+  if (Array.isArray(v)) return `[${v.map(goJsonPlain).join(',')}]`;
+  if (v !== null && typeof v === 'object') return goJsonObject(Object.entries(v), goJsonPlain);
+  return goJson(v);
+}
+
+function goJsonObject(entries, write = goJson) {
+  return `{${entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => `${goQuote(k)}:${write(x)}`).join(',')}}`;
 }
 
 export const FUNCTIONS = {

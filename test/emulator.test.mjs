@@ -107,6 +107,29 @@ test('integers, booleans and time follow the engine', () => {
   assert.equal(runParsers([{ name: 'A_B', text: b.replace('"no"', '" FALSE "') }], ['x'])[0].normalized.mfa_used, false);
 });
 
+test('TRIM_ALL takes the brackets off STRING() of a list in a top-level field', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\ntargetUserName$ = STRING(["a", "b"])\nuserDisplayName$ = STRING(["a"])\nr.key$ = "k"\nr.value$ = STRING(["a", "b"])\neventMetadata$.record$ = [r]';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.equal(r.normalized.target_user_name, '"a","b"');
+  assert.equal(r.normalized.user_display_name, '"a"');
+  assert.equal(r.normalized.event_metadata.record[0].value, '["a","b"]');
+  assert.ok(r.notes.some((n) => n.code === 'trim-braces' && n.field === 'target_user_name'));
+  assert.equal(runParsers([{ name: 'A_B', text: t.replace('!SCHEMA=scwx.auth', '!SCHEMA=scwx.auth\n!TRIMALLOFF') }], ['x'])[0].normalized.target_user_name, '["a","b"]');
+});
+
+test('the Auth schema stores Auth0 log type codes in event_metadata as their descriptions', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nstatus$ = "f"\na.key$ = "type"\na.value$ = "f"\nb.key$ = "other"\nb.value$ = "FS"\nc.key$ = "k"\nc.value$ = " f"\nd.key$ = "f"\nd.value$ = "x"\ne.key$ = "k"\ne.value$ = "acls_summary"\neventMetadata$.record$ = [a, b, c, d, e]\nafter = a.value$';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.deepEqual(r.normalized.event_metadata.record.map((x) => x.value), ['Failed Login', 'Failed Signup', ' f', 'x', 'acls_summary']);
+  assert.equal(r.normalized.status, 'f');
+  assert.deepEqual(r.notes.filter((n) => n.code === 'auth0-code').map((n) => n.field), ['event_metadata.record[0].value', 'event_metadata.record[1].value']);
+  // Only the Auth schema does it.
+  for (const schema of ['scwx.netflow', 'scwx.nids', 'scwx.http']) {
+    const [o] = runParsers([{ name: 'A_B', text: t.replace('scwx.auth', schema).replace('status$ = "f"\n', '') }], ['x']);
+    assert.deepEqual(o.normalized.event_metadata.record.map((x) => x.value), ['f', 'FS', ' f', 'x', 'acls_summary'], schema);
+  }
+});
+
 test('the docs\' append pattern fails until the list exists', () => {
   const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.nids\nr.key$ = "k"\nr.value$ = "v"\neventMetadata$.record$ = eventMetadata$.record$ + [r]';
   const [bad] = runParsers([{ name: 'A_B', text: t }], ['x']);
