@@ -2,7 +2,8 @@
 // by the issue form, and the validation that both the studio and CI run.
 //
 // parsers/<vendor-slug>/<product-slug>/
-//   meta.json            vendor, product, versions, format, ship method, author, license, parsers
+//   meta.json            vendor, product, versions, format, ship method, author, license, parsers,
+//                        and an optional collector (collectors/<name>) for pull-only sources
 //   <NAME>.parser.txt    one file per parser
 //   samples.log          synthetic sample lines, one event per line
 //   expected.json        the emulator result for each sample line
@@ -20,12 +21,26 @@ export const SAMPLE_SOURCES = ['synthetic', 'vendor-docs'];
 export const ROLES = ['standalone', 'parent', 'child'];
 export const ALLOWED_FILES = /^(meta\.json|samples\.log|expected\.json|README\.md|[A-Z0-9_]+\.parser\.txt)$/;
 export const LIMITS = { samples: 200, lineBytes: 16384, parserBytes: 65536, parsers: 20 };
+// An entry's optional "collector": the repo path of a folder under collectors/ that pulls the
+// source's logs from an API. Collectors are code, so they are reviewed and merged on their own.
+export const COLLECTOR_PATH = /^collectors\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const NAME = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
 
 export function slug(s) {
   return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+}
+
+export function hasCollector(meta) {
+  return Boolean(meta) && typeof meta.collector === 'string' && meta.collector.length <= 80 && COLLECTOR_PATH.test(meta.collector);
+}
+
+// The scripts a collector folder offers: its .py files, leaving out tests unless that's all.
+export function collectorScripts(fileNames) {
+  const py = (fileNames || []).filter((f) => /^[A-Za-z0-9_.-]+\.py$/.test(f)).sort();
+  const main = py.filter((f) => !/^test_|_test\.py$/.test(f));
+  return main.length ? main : py;
 }
 
 export function entryId(meta) {
@@ -41,7 +56,9 @@ export function blankMeta() {
 }
 
 // problems: [{level, code, message, file?}]
-export function validateMeta(meta, fileNames = null) {
+// opts.collectors: [{path, files}] for the collectors on the base branch. Without it, only the
+// form of "collector" is checked.
+export function validateMeta(meta, fileNames = null, opts = {}) {
   const out = [];
   const err = (code, message) => out.push({ level: 'error', code, message, file: 'meta.json' });
   const warn = (code, message) => out.push({ level: 'warning', code, message, file: 'meta.json' });
@@ -58,6 +75,20 @@ export function validateMeta(meta, fileNames = null) {
   else if (meta.tested.tenant !== null && meta.tested.tenant !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(meta.tested.tenant)) err('meta', 'tested.tenant must be null or the date (YYYY-MM-DD) the parsers passed Run Test in a tenant');
   if (meta.docs !== undefined && (!Array.isArray(meta.docs) || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u)))) err('meta', 'docs must be a list of https links to the vendor\'s public log format docs');
   if (meta.notes !== undefined && (typeof meta.notes !== 'string' || meta.notes.length > 2000)) err('meta', 'notes must be text up to 2000 characters');
+  if (meta.collector !== undefined && meta.collector !== null) {
+    if (!hasCollector(meta)) err('collector', 'collector must be the path of a folder under collectors/, in lowercase with hyphens, for example "collectors/ai-compliance-logs"');
+    else if (Array.isArray(opts.collectors)) {
+      const c = opts.collectors.find((x) => x && x.path === meta.collector);
+      if (!c) err('collector', `collector ${meta.collector} is not on the main branch. Collectors are code, so a maintainer reviews and merges each one before an entry can point at it.`);
+      else {
+        const files = Array.isArray(c.files) ? c.files : [];
+        if (!files.includes('README.md')) err('collector', `collector ${meta.collector} has no README.md`);
+        if (!files.some((f) => /\.py$/.test(f))) err('collector', `collector ${meta.collector} has no .py file`);
+      }
+    }
+  } else if (meta.ship_method === 'http-ingest') {
+    warn('collector', 'ship_method is http-ingest but there is no collector. A pull-only source needs "collector" set to its folder under collectors/; a source that pushes to HTTP Ingest, such as a webhook, needs none.');
+  }
   if (!Array.isArray(meta.parsers) || !meta.parsers.length) { err('meta', 'parsers must list at least one parser'); return out; }
   if (meta.parsers.length > LIMITS.parsers) err('meta', `at most ${LIMITS.parsers} parsers per entry`);
   const names = new Set();
@@ -124,12 +155,13 @@ export function toEngineParsers(meta, texts) {
 }
 
 // entry: {id, meta, texts: {NAME: text}, samples: [lines], expected, files: [{path, content}]}
-// library: other entries, for the overlap check. Returns {ok, problems, results}.
+// opts.library: other entries, for the overlap check. opts.collectors: see validateMeta.
+// Returns {ok, problems, results}.
 export function validateEntry(entry, opts = {}) {
   const problems = [];
   const files = entry.files || entryFiles(entry);
   const fileNames = files.map((f) => f.path.split('/').pop());
-  problems.push(...validateMeta(entry.meta, fileNames));
+  problems.push(...validateMeta(entry.meta, fileNames, { collectors: opts.collectors }));
   if (entry.meta && entry.meta.vendor && entry.meta.product && entry.id && entry.id !== entryId(entry.meta)) {
     problems.push({ level: 'warning', code: 'folder', message: `the folder is ${entry.id}; from vendor and product it would be ${entryId(entry.meta)}`, file: 'meta.json' });
   }

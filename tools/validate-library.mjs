@@ -8,11 +8,14 @@
 //
 // --all checks every entry. --changed-files checks the entries a pull request touches and
 // decides whether it can merge without review. Exit code 1 when any checked entry fails.
+// An entry's "collector" must name a folder under collectors/ in --base when it is given (the
+// base branch), otherwise in --root.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { loadLibrary, loadEntryFromDir } from './lib/fs-library.mjs';
+import { loadLibrary, loadEntryFromDir, listCollectors } from './lib/fs-library.mjs';
+import { reviewReasons } from './lib/merge-rules.mjs';
 import { validateEntry } from '../studio/core/library.js';
 
 const args = process.argv.slice(2);
@@ -24,11 +27,13 @@ const all = args.includes('--all');
 const changedFile = opt('--changed-files');
 
 const library = await loadLibrary(root);
+const collectors = await listCollectors(baseRoot || root);
 const report = { passed: true, eligible: false, reasons: [], outside: [], entries: [] };
 
 let targets = library;
+let changed = [];
 if (changedFile) {
-  const changed = (await readFile(changedFile, 'utf8')).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  changed = (await readFile(changedFile, 'utf8')).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   report.outside = changed.filter((f) => !f.startsWith('parsers/'));
   const ids = new Set();
   const deleted = new Set();
@@ -59,7 +64,7 @@ for (const entry of targets) {
     }
   }
   const others = library.filter((e) => e.id !== entry.id);
-  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others });
+  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others, collectors });
   report.entries.push({
     id: entry.id, status, baseAuthor, author: entry.meta && entry.meta.author, ok: v.ok,
     problems: v.problems.map((p) => ({ level: p.level, code: p.code, file: p.file || null, line: p.line || null, message: p.message })),
@@ -69,10 +74,10 @@ for (const entry of targets) {
 }
 
 // Merge without review only when the PR touches nothing but library entries, every entry
-// passes, and each changed entry already belongs to the PR author.
+// passes, and each changed entry already belongs to the PR author. Collector code never
+// merges without review.
 if (changedFile) {
-  const reasons = [];
-  if (report.outside.length) reasons.push(`changes files outside parsers/: ${report.outside.slice(0, 10).join(', ')}`);
+  const reasons = reviewReasons(changed);
   if (!report.entries.length) reasons.push('changes no library entries');
   for (const e of report.entries) {
     if (e.status === 'deleted') reasons.push(`deletes ${e.id}`);

@@ -9,9 +9,12 @@
 //
 // Auto-merge happens only when the repo setting "Allow auto-merge" is on, every check passed,
 // the pull request touches nothing outside parsers/, and each entry it changes is new or
-// already belongs to the person who opened it.
+// already belongs to the person who opened it. Right before merging, the pull request's own
+// file list is checked again, so a change to collectors/ or anything else outside parsers/
+// never merges without review, whichever route opened it.
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { reviewReasons } from './lib/merge-rules.mjs';
 
 const [cmd, ...rest] = process.argv.slice(2);
 const opt = (n) => { const i = rest.indexOf(n); return i === -1 ? null : rest[i + 1]; };
@@ -84,6 +87,9 @@ async function merge(pr, sha) {
   const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
   if (p.draft) return 'The pull request is a draft, so it waits.';
   if (p.head.sha !== sha) return 'The pull request changed after these checks ran; the next run decides.';
+  const files = await all(`/repos/${REPO}/pulls/${pr}/files`);
+  const held = reviewReasons(files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean)));
+  if (held.length) return `Not merged automatically: this pull request ${held.join('; ')}. A maintainer will review it.`;
   try {
     // Native auto-merge waits for any required checks; it needs a branch rule to exist.
     await gh('POST', '/graphql', { query: 'mutation($id:ID!,$sha:GitObjectID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH,expectedHeadOid:$sha}){clientMutationId}}', variables: { id: p.node_id, sha } }).then((r) => { if (r.errors) throw new Error(r.errors[0].message); });
