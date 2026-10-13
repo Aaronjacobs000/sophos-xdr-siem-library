@@ -39,7 +39,15 @@ export function renderLibrary(root) {
   };
   search.addEventListener('input', () => { state.libQuery = search.value; draw(); });
   draw();
-  root.append(h('div', { class: 'callout blue' }, pill('Read first', 'blue'), h('span', { text: 'Library parsers have passed the emulator and the repo checks, not Sophos. A parser marked "emulator only" has never run in a tenant. Test every parser with Run Test in Sophos Fusion before you turn it on. Sophos does not maintain or support custom parsers.' })));
+  root.append(legend());
+  root.append(h('div', { class: 'callout blue' }, pill('Read first', 'blue'), h('span', { text: 'Library parsers have passed the emulator and the repo checks, not Sophos. Test every parser with Run Test in Sophos Fusion before you turn it on. Sophos does not maintain or support custom parsers.' })));
+}
+
+function legend() {
+  const row = (p, text) => h('div', { class: 'lgrow' }, p, h('span', { text }));
+  return h('div', { class: 'legend' }, h('h3', { text: 'What the badges mean' }),
+    row(pill('tenant-tested YYYY-MM-DD', 'green'), 'The parsers passed Run Test on the real NG-SIEM engine in a Sophos Fusion tenant on that date, using the entry\'s synthetic samples. Your own logs, and the built-in parsers in your tenant, can still behave differently. The entry\'s notes say what ran and where a built-in parser took some lines.'),
+    row(pill('emulator only', 'amber'), 'The parsers passed the Parser Studio emulator and the repo checks but haven\'t run in a tenant yet.'));
 }
 
 function card(e) {
