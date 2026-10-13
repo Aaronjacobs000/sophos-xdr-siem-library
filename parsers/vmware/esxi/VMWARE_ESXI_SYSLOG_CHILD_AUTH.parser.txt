@@ -1,0 +1,74 @@
+!SAMPLE=<164>2026-10-12T11:41:02.118Z esx01.example.com Hostd[2098451]: [Originator@6876 sub=Vimsvc.HaSessionManager opID=esxui-7d2e-b3a1] Rejected password for user root from 198.51.100.7 - session=52c1d2e3
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware ESXi 8 and later, sent straight to syslog (Syslog.global.logHost), no vCenter.
+# Child of VMWARE_ESXI_SYSLOG_PARENT: host logins to Auth. hostd covers the Host Client,
+# API and vCenter logins, sshd covers SSH, login covers the ESXi Shell at the console, and
+# vobd reports account lockouts.
+# kind, the capture variables, app, pid, sd, msg, sensorType$, hostId$ and eventTimeUsec$
+# come from the parent.
+
+targetHostName$ = hostId$
+processId$ = pid
+
+targetUserName$ = NULL
+targetUserName$ = IF kind == "hostd_login" THEN hostdIn["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "hostd_rejected" THEN hostdReject["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "hostd_denied" THEN hostdDenied["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "ssh" THEN ssh["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "ssh_pam" THEN sshPam["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "console" THEN console["user"] ELSE targetUserName$
+targetUserName$ = IF kind == "locked" THEN locked["user"] ELSE targetUserName$
+
+sourceAddress$ = NULL
+sourceAddress$ = IF kind == "hostd_login" THEN hostdIn["src"] ELSE sourceAddress$
+sourceAddress$ = IF kind == "hostd_rejected" THEN hostdReject["src"] ELSE sourceAddress$
+sourceAddress$ = IF kind == "hostd_denied" THEN hostdDenied["src"] ELSE sourceAddress$
+sourceAddress$ = IF kind == "ssh" THEN ssh["src"] ELSE sourceAddress$
+sourceAddress$ = IF kind == "ssh_pam" THEN sshPam["src"] ELSE sourceAddress$
+# A port given as text: an empty one leaves the field unset, where INT() would fail.
+sourcePortNumber$ = ssh["port"]
+
+authSystem$ = "ESXi " + app
+authSystem$ = IF kind == "ssh" THEN "ESXi sshd " + ssh["method"] ELSE authSystem$
+userAgent$ = hostdIn["agent"]
+logonType$ = IF kind == "console" THEN "INTERACTIVE" ELSE NULL
+
+success = kind == "hostd_login" OR kind == "console" OR (kind == "ssh" AND ssh["result"] == "Accepted")
+authCategory$ = IF kind == "locked" THEN "ACCOUNT_LOCK" ELSE "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF kind == "locked" THEN "ACCOUNT" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+actionResult$ = IF kind == "locked" THEN NULL ELSE actionResult$
+
+failureCategory$ = IF success THEN NULL ELSE "INCORRECT_USER_OR_PASSWORD"
+failureCategory$ = IF kind == "ssh" AND ssh["invalid"] != "" THEN "INVALID_ACCOUNT" ELSE failureCategory$
+# "no permission" is a valid login refused by role or lockdown mode.
+failureCategory$ = IF kind == "hostd_denied" THEN "OTHER_ERROR" ELSE failureCategory$
+failureCategory$ = IF kind == "locked" THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+
+# hostd tags each request with an operation id (opID) and a session id (sid or session=).
+opid = sd|opID="?(?P<v>[^\s"\]]+)
+sid = sd|sid="?(?P<v>[^\s"\]]+)
+sessionId$ = IF sid["v"] != "" THEN sid["v"] ELSE hostdReject["session"]
+
+r1.key$ = "esxi_app"
+r1.value$ = app
+r2.key$ = "event_kind"
+r2.value$ = kind
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "op_id"
+r3.value$ = opid["v"]
+eventMetadata$.record$ = IF opid["v"] != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "tty"
+r4.value$ = console["tty"]
+eventMetadata$.record$ = IF kind == "console" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "lockout_seconds"
+r5.value$ = locked["secs"]
+r6.key$ = "failed_attempts"
+r6.value$ = locked["tries"]
+eventMetadata$.record$ = IF kind == "locked" THEN eventMetadata$.record$ + [r5, r6] ELSE eventMetadata$.record$

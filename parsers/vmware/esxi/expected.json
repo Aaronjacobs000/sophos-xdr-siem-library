@@ -1,0 +1,392 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805211482000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2098450",
+      "target_user_name": "root",
+      "source_address": "192.0.2.10",
+      "auth_system": "ESXi Hostd",
+      "user_agent": "VMware-client/6.5.0",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "Hostd"
+          },
+          {
+            "key": "event_kind",
+            "value": "hostd_login"
+          },
+          {
+            "key": "op_id",
+            "value": "esxui-6c1d-a2f0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805262118000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2098451",
+      "target_user_name": "root",
+      "source_address": "198.51.100.7",
+      "auth_system": "ESXi Hostd",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "session_id": "52c1d2e3",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "Hostd"
+          },
+          {
+            "key": "event_kind",
+            "value": "hostd_rejected"
+          },
+          {
+            "key": "op_id",
+            "value": "esxui-7d2e-b3a1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805262120000,
+      "host_id": "esx01.example.com"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805350006000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2098939",
+      "target_user_name": "svc-backup",
+      "source_address": "198.51.100.20",
+      "auth_system": "ESXi Hostd",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "session_id": "527e4b60",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "Hostd"
+          },
+          {
+            "key": "event_kind",
+            "value": "hostd_denied"
+          },
+          {
+            "key": "op_id",
+            "value": "esxcli-80-ff97"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805400004000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2101230",
+      "target_user_name": "root",
+      "source_address": "192.0.2.10",
+      "source_port_number": 51544,
+      "auth_system": "ESXi sshd keyboard-interactive/pam",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "sshd-session"
+          },
+          {
+            "key": "event_kind",
+            "value": "ssh"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805400110000,
+      "host_id": "esx01.example.com"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805401002000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell session started"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805572877000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli network firewall set --enabled false"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805600351000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "vim-cmd vmsvc/getallvms"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805445771000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2101300",
+      "target_user_name": "root",
+      "source_address": "198.51.100.7",
+      "source_port_number": 40022,
+      "auth_system": "ESXi sshd password",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "sshd-session"
+          },
+          {
+            "key": "event_kind",
+            "value": "ssh"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805447102000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2101301",
+      "target_user_name": "root",
+      "source_address": "198.51.100.7",
+      "auth_system": "ESXi sshd",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "sshd"
+          },
+          {
+            "key": "event_kind",
+            "value": "ssh_pam"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805620120000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2097521",
+      "target_user_name": "root",
+      "auth_system": "ESXi vobd",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "vobd"
+          },
+          {
+            "key": "event_kind",
+            "value": "locked"
+          },
+          {
+            "key": "lockout_seconds",
+            "value": "900"
+          },
+          {
+            "key": "failed_attempts",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805530250000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2102001",
+      "target_user_name": "root",
+      "auth_system": "ESXi login",
+      "logon_type": "INTERACTIVE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "login"
+          },
+          {
+            "key": "event_kind",
+            "value": "console"
+          },
+          {
+            "key": "tty",
+            "value": "char/tty/1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805800311000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_host_name": "esx01.example.com",
+      "process_id": "2098450",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.25",
+      "auth_system": "ESXi Hostd",
+      "user_agent": "VMware-client/6.5.0",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esxi_app",
+            "value": "Hostd"
+          },
+          {
+            "key": "event_kind",
+            "value": "hostd_login"
+          },
+          {
+            "key": "op_id",
+            "value": "esxui-1a2b-3c4d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805875400000,
+      "host_id": "esx01.example.com"
+    }
+  }
+]

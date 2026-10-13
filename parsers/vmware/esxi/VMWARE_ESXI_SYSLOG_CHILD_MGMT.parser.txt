@@ -1,0 +1,19 @@
+!SAMPLE=<14>2026-10-12T11:46:12.877Z esx01.example.com shell[2101234]: esxcli network firewall set --enabled false
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="shell"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware ESXi 8 and later, sent straight to syslog (Syslog.global.logHost), no vCenter.
+# Child of VMWARE_ESXI_SYSLOG_PARENT: ESXi Shell lines (shell.log) to ManagementEvent, the
+# schema the native vCenter integration uses for command execution. Each line is one command
+# typed at the console or over SSH. The line has no user: match client_process_id to the
+# process id of the Auth event for the same login (Broadcom KB 321910).
+# pid, msg, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetHostname$ = hostId$
+clientProcessId$ = pid
+started = msg == "Interactive shell session started"
+operationName$ = IF started THEN "ESXi Shell session started" ELSE "ESXi Shell command"
+command$ = IF started THEN NULL ELSE msg

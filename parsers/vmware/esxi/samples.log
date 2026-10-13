@@ -1,0 +1,15 @@
+<166>2026-10-12T11:40:11.482Z esx01.example.com Hostd[2098450]: [Originator@6876 sub=Vimsvc.ha-eventmgr opID=esxui-6c1d-a2f0] Event 56901 : User root@192.0.2.10 logged in as VMware-client/6.5.0
+<164>2026-10-12T11:41:02.118Z esx01.example.com Hostd[2098451]: [Originator@6876 sub=Vimsvc.HaSessionManager opID=esxui-7d2e-b3a1] Rejected password for user root from 198.51.100.7 - session=52c1d2e3
+<166>2026-10-12T11:41:02.120Z esx01.example.com Hostd[2098451]: [Originator@6876 sub=Vimsvc.ha-eventmgr opID=esxui-7d2e-b3a1 sid=52c1d2e3] Event 56902 : Cannot login root@198.51.100.7
+<166>2026-10-12T11:42:30.006Z esx01.example.com Hostd[2098939]: [Originator@6876 sub=Vimsvc.ha-eventmgr opID=esxcli-80-ff97 sid=527e4b60] Event 56903 : Cannot login user svc-backup@198.51.100.20: no permission
+<38>2026-10-12T11:43:20.004Z esx01.example.com sshd-session[2101230]: Accepted keyboard-interactive/pam for root from 192.0.2.10 port 51544 ssh2
+<38>2026-10-12T11:43:20.110Z esx01.example.com sshd-session[2101234]: Session opened for 'root' on /dev/char/pty/t0
+<14>2026-10-12T11:43:21.002Z esx01.example.com shell[2101234]: Interactive shell session started
+<14>2026-10-12T11:46:12.877Z esx01.example.com shell[2101234]: esxcli network firewall set --enabled false
+<14>2026-10-12T11:46:40.351Z esx01.example.com shell[2101234]: vim-cmd vmsvc/getallvms
+<38>2026-10-12T11:44:05.771Z esx01.example.com sshd-session[2101300]: Failed password for root from 198.51.100.7 port 40022 ssh2
+<35>2026-10-12T11:44:07.102Z esx01.example.com sshd[2101301]: error: PAM: Authentication failure for root from 198.51.100.7
+<14>2026-10-12T11:47:00.120Z esx01.example.com vobd[2097521]: [UserLevelCorrelator] 1012726884193us: [vob.user.account.locked] Remote access for ESXi local user account 'root' has been locked for 900 seconds after 5 failed login attempts.
+<38>2026-10-12T11:45:30.250Z esx01.example.com login[2102001]: root login on 'char/tty/1'
+<166>1 2026-10-12T11:50:00.311Z esx01.example.com Hostd 2098450 - [Originator@6876 sub="Vimsvc.ha-eventmgr" opID="esxui-1a2b-3c4d"] Event 56910 : User admin@192.0.2.25 logged in as VMware-client/6.5.0
+<166>2026-10-12T11:51:15.400Z esx01.example.com Hostd[2098460]: [Originator@6876 sub=Default] IpmiIfcOpenIpmiOpen: open(/dev/ipmi0, RDWR) failed 2 m
