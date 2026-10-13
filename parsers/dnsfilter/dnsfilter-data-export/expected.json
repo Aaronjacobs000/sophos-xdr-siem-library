@@ -1,0 +1,182 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805009253879,
+      "event_time_fidelity": "MICRO",
+      "query_name": "www.example.com",
+      "source_address": "203.0.113.54",
+      "host_id": "Acme Dental - Head Office",
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 0
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805082118223,
+      "event_time_fidelity": "MICRO",
+      "query_name": "login.example.net",
+      "source_address": "192.0.2.31",
+      "host_id": "ACME-LT-031",
+      "query_type": 65,
+      "query_class": 1,
+      "response_code": 0
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805155902114,
+      "event_time_fidelity": "MICRO",
+      "query_name": "nohost.example.org",
+      "source_address": "203.0.113.54",
+      "host_id": "Acme Dental - Head Office",
+      "query_type": 28,
+      "query_class": 1,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805290550000,
+      "event_time_fidelity": "MICRO",
+      "query_name": "games.example.com",
+      "source_address": "203.0.113.54",
+      "host_id": "Acme Dental - Head Office",
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 0
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805447031552,
+      "event_time_fidelity": "MICRO",
+      "vendor": "DNSFilter",
+      "provider": "DNSFilter",
+      "log_type": "dns_query",
+      "alert_category": "Phishing & Deception",
+      "title": "DNSFilter blocked a threat domain",
+      "summary": "invoice-portal.example.net (Phishing & Deception)",
+      "action": "BLOCKED",
+      "severity": "MEDIUM",
+      "action_reason": "Acme Default Policy",
+      "destination_service_name": "invoice-portal.example.net",
+      "source_address": "192.0.2.14",
+      "source_host_name": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "source_user_name": "akim",
+      "additional_data": {
+        "record": [
+          {
+            "key": "question_type",
+            "value": "A"
+          },
+          {
+            "key": "response_code",
+            "value": "NOERROR"
+          },
+          {
+            "key": "network",
+            "value": "Acme Dental - Roaming"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "region",
+            "value": "MEL"
+          },
+          {
+            "key": "method",
+            "value": "Category"
+          },
+          {
+            "key": "request_address",
+            "value": "198.51.100.40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "DNSFILTER_EXPORT_CSV_PARENT > DNSFILTER_EXPORT_CSV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "DNSFilter",
+      "event_time_usec": 1791805558700000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "DNSFilter",
+      "provider": "DNSFilter",
+      "log_type": "dns_query",
+      "alert_category": "Malware,New Domains",
+      "title": "DNSFilter allowed a threat domain",
+      "summary": "cdn7.example.org (Malware,New Domains)",
+      "action": "SUCCEEDED",
+      "severity": "HIGH",
+      "action_reason": "Acme Monitor Only",
+      "destination_service_name": "cdn7.example.org",
+      "source_address": "203.0.113.54",
+      "host_id": "Acme Dental - Head Office",
+      "additional_data": {
+        "record": [
+          {
+            "key": "question_type",
+            "value": "TXT"
+          },
+          {
+            "key": "response_code",
+            "value": "NOERROR"
+          },
+          {
+            "key": "network",
+            "value": "Acme Dental - Head Office"
+          },
+          {
+            "key": "organization",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "region",
+            "value": "SYD"
+          },
+          {
+            "key": "method",
+            "value": "Category"
+          },
+          {
+            "key": "request_address",
+            "value": "203.0.113.54"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
