@@ -1,0 +1,40 @@
+!SAMPLE=<134>Oct 13 01:02:10 APEXCENTRAL01 CEF:0|Trend Micro|Apex Central|2019|AV:File quarantined|TROJ_GEN.R002C0DJ526|3|deviceExternalId=4101 rt=Oct 13 2026 01:02:03 GMT+00:00 cnt=1 dhost=WS-FIN-041 duser=jdoe act=File quarantined cn1Label=VLF_PatternNumber cn1=1985300 cn2Label=VLF_SecondAction cn2=1 cs1Label=VLF_FunctionCode cs1=Real-time Scan cs2Label=VLF_EngineVersion cs2=23.600.1008 cs3Label=CLF_ProductVersion cs3=14.0 cs4Label=CLF_ReasonCode cs4=virus log cs5Label=VLF_FirstActionResult cs5=File quarantined cs6Label=VLF_SecondActionResult cs6=N/A cat=1703 dvchost=APEXONE01 cn3Label=CLF_ServerityCode cn3=3 fname=invoice_1013.exe filePath=C:\\Users\\jdoe\\Downloads\\ fileHash=AF94E528BD0E4629394126A5A7D2821B993F9060 dst=192.0.2.41 deviceFacility=Apex One reason=E deviceNtDomain=CORP dntdom=OSCEDomain1 ApexCentralHost=APEXCENTRAL01 TMCMLogDetectedHost=WS-FIN-041 TMCMLogDetectedIP=192.0.2.41 devicePayloadId=1C00290C0360-9CDE11EB-D4B8-F51F-C001 TMCMdevicePlatform=Windows 11 10.0 (Build 22631)
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|Trend Micro\|Apex Central\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Apex Central syslog forwarding, CEF, to the data collector:
+#   CEF:0|Trend Micro|Apex Central|2019|<event id>|<name>|3|...
+# Parent: recognizes Apex Central lines and hands them to its children by log type, from the
+# event id prefix (AV:, PML:, BM:, CnC:, NCIE:, FH:) or the name. Logon, auditing, update and
+# the other log types stay generic.
+
+v = CEF(originalData$)
+sig = STRING(v[4])
+name = STRING(v[5])
+prefix = sig|^(?P<p>AV|PML|BM|CnC|NCIE|FH|EAC|MS|WB):
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Trend Micro Apex Central"
+eventType$ = "other"
+eventType$ = IF prefix["p"] != "" THEN LOWERCASE(prefix["p"]) ELSE eventType$
+eventType$ = IF sig == "Spyware Detected" THEN "spyware" ELSE eventType$
+eventType$ = IF sig == "VAD" THEN "vad" ELSE eventType$
+eventType$ = IF name == "Attack Discovery Detections" THEN "ade" ELSE eventType$
+
+# rt is the event time in UTC: "Oct 13 2026 01:02:03 GMT+00:00" (some types write "GMT +00:00").
+rt = REPLACE(STRING(v["rt"]), "GMT +", "GMT+")
+eventTimeUsec$ = IF rt != "" THEN DATETIME(rt, "Jan _2 2006 15:04:05 GMT-07:00") ELSE eventTimeUsec$
+host = STRING(v["TMCMLogDetectedHost"])
+host = IF host == "" THEN STRING(v["dhost"]) ELSE host
+host = IF host == "" THEN STRING(v["shost"]) ELSE host
+hostId$ = IF host != "" THEN host ELSE NULL
+
+# Critical threat type letters (reason), which can be a comma list.
+reasons = JSON(`{"A":"Known Advanced Persistent Threat","B":"Social engineering attack","C":"Vulnerability attack","D":"Lateral movement","E":"Unknown threats","F":"C&C callback","G":"Ransomware"}`)
+reason = STRING(v["reason"])
+# The engine evaluates both sides of AND, so lookups sit behind a checked key in IF.
+rkey = reason|^(?P<k>[A-G])$
+reasonText = IF rkey["k"] != "" THEN STRING(reasons["$." + rkey["k"]]) ELSE reason

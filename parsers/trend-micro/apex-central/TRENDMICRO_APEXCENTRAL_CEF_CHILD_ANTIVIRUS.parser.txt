@@ -1,0 +1,107 @@
+!SAMPLE=<134>Oct 13 01:20:02 APEXCENTRAL01 CEF:0|Trend Micro|Apex Central|2019|PML:File quarantined|Ransom.Win32.TRX.XXPE50FFF097|3|deviceExternalId=310 rt=Oct 13 2026 01:19:58 GMT+00:00 deviceFacility=Apex One dvchost=APEXONE01 cn1Label=ThreatType cn1=35149 cs2Label=DetectionName cs2=Ransom.Win32.TRX.XXPE50FFF097 shost=192.0.2.30 suser=CORP\\svc_backup cn2Label=DetectionType cn2=0 filePath=C:\\ProgramData\\svc\\lock.exe fname=lock.exe deviceCustomDate1Label=FileCreationDate deviceCustomDate1=Oct 13 2026 01:18:40 GMT+00:00 sproc=explorer.exe cs4Label=ProcessCommandLine cs4=C:\\ProgramData\\svc\\lock.exe --all duser=svc_backup app=2 cs3Label=InfectionLocation cs3=\\\\fs-02\\share cn3Label=Confidence cn3=92 act=23 fileHash=DE308427E3ED464E17C5B9FC07489B70118FB0A9 dhost=FS-01 dst=192.0.2.30 reason=G deviceNtDomain=CORP dntdom=OSCEDomain1 ApexCentralHost=APEXCENTRAL01 TMCMLogDetectedHost=FS-01 TMCMLogDetectedIP=192.0.2.30 devicePayloadId=1C00290C0360-9CDE11EB-D4B8-F51F-C004 TMCMdevicePlatform=Windows Server 2022 10.0 (Build 20348)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="av" OR eventType$=="spyware" OR eventType$=="pml"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Apex Central syslog forwarding, CEF.
+# Child of TRENDMICRO_APEXCENTRAL_CEF_PARENT: Virus/Malware (AV:), Spyware/Grayware and
+# Predictive Machine Learning (PML:) logs to Antivirus.
+# v, sig, name, reasonText, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+# Labels differ between Trend's tables and its samples (CLF_SeverityCode or CLF_ServerityCode),
+# so the csN and cnN values are read by key.
+
+kind = eventType$
+av = kind == "av"
+pml = kind == "pml"
+spy = kind == "spyware"
+
+threatName$ = name
+threatName$ = IF spy THEN v["cs1"] ELSE threatName$
+threatName$ = IF pml THEN v["cs2"] ELSE threatName$
+computerName$ = hostId$
+userName$ = IF pml THEN v["suser"] ELSE v["duser"]
+processName$ = IF pml THEN v["sproc"] ELSE NULL
+
+# AV writes the folder in filePath and the file in fname; fname can also be a quarantine name
+# (<SHA-1>;0x<CRC>), which isn't a path.
+folder = STRING(v["filePath"])
+file = STRING(v["fname"])
+qname = file|^[0-9A-Fa-f]{40};0x[0-9A-Fa-f]+$
+endsSlash = folder|\\$
+filePath$ = folder
+filePath$ = IF av AND endsSlash[0] != "" AND file != "" AND qname[0] == "" THEN folder + file ELSE filePath$
+sha1 = STRING(v["fileHash"])
+sha1 = IF sha1 == "" THEN STRING(v["filehash"]) ELSE sha1
+sham = sha1|^(?P<h>[0-9A-Fa-f]{40})$
+fileHash$.sha1$ = IF sham["h"] != "" THEN LOWERCASE(sham["h"]) ELSE NULL
+
+# Predictive ML writes the action as a number from Trend's Action Mapping Table.
+actions = JSON(`{"21":"File cleaned","22":"File deleted","23":"File quarantined","24":"File renamed","25":"File passed","26":"Unable to clean file. Passed","27":"Unable to clean file. File deleted","28":"Unable to clean file. File renamed","29":"Unable to clean file. File quarantined","35":"Blocked successfully","36":"Quarantined successfully","41":"Access denied","42":"No action"}`)
+act = STRING(v["act"])
+actKey = act|^(?P<k>\d+)$
+mapped = IF actKey["k"] != "" THEN STRING(actions["$." + actKey["k"]]) ELSE ""
+act = IF pml AND mapped != "" THEN mapped ELSE act
+# AV: the second action result says what finally happened when the first action failed.
+second = STRING(v["cs6"])
+result = act
+result = IF av AND second != "" AND second != "N/A" THEN second ELSE result
+result = IF spy THEN STRING(v["cs5"]) ELSE result
+r = LOWERCASE(result)
+actionTaken$ = NULL
+actionTaken$ = IF CONTAINS(r, "passed") OR CONTAINS(r, "no action") THEN "NONE" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(r, "quarantin") THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(r, "delet") THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(r, "block") OR CONTAINS(r, "access denied") THEN "BLOCKED" ELSE actionTaken$
+
+threatType$ = "FILE"
+threatType$ = IF pml AND STRING(v["cn2"]) == "1" THEN "PROCESS" ELSE threatType$
+
+# Probable threat types for Predictive ML (cn1).
+pmlTypes = JSON(`{"35140":"Adware","35141":"Backdoor","35142":"Browser modifier","35143":"DDoS","35144":"Dialer","35145":"Exploit","35146":"Hacking tool","35147":"Joke program","35148":"PUA","35149":"Ransomware","35150":"Rootkit","35151":"Spyware","35152":"Trojan","35153":"Trojan clicker","35154":"Trojan downloader","35155":"Trojan dropper","35156":"Trojan proxy","35157":"Trojan spyware","35158":"File infector","35159":"Worm","35160":"Boot"}`)
+cn1 = STRING(v["cn1"])
+typeKey = cn1|^(?P<k>\d+)$
+pmlType = IF pml AND typeKey["k"] != "" THEN STRING(pmlTypes["$." + typeKey["k"]]) ELSE ""
+vendorAlertType$ = "Virus/Malware"
+vendorAlertType$ = IF spy THEN "Spyware/Grayware: " + STRING(v["cs3"]) ELSE vendorAlertType$
+vendorAlertType$ = IF spy AND STRING(v["cn3"]) != "" THEN "Spyware/Grayware: " + STRING(v["cn3"]) ELSE vendorAlertType$
+vendorAlertType$ = IF pml THEN "Predictive Machine Learning: " + pmlType ELSE vendorAlertType$
+threatCategory$ = IF av THEN "MALWARE" ELSE NULL
+threatCategory$ = IF spy THEN "APPLICATION" ELSE threatCategory$
+threatCategory$ = IF pml THEN "AI_DETECTION" ELSE threatCategory$
+threatCategory$ = IF pml AND pmlType == "Ransomware" THEN "RANSOMWARE" ELSE threatCategory$
+
+# AV severity code (cn3): 0 Unknown, 1 Information, 2 Warning, 3 Error, 4 Critical.
+sevNames = JSON(`{"0":"Unknown","1":"Information","2":"Warning","3":"Error","4":"Critical"}`)
+cn3 = STRING(v["cn3"])
+sevKey = cn3|^(?P<k>[0-4])$
+agentPriority$ = IF av AND sevKey["k"] != "" THEN STRING(sevNames["$." + sevKey["k"]]) ELSE NULL
+agentConfidenceScore$ = IF pml AND STRING(v["cn3"]) != "" THEN INT(STRING(v["cn3"]), 10) ELSE NULL
+
+r1.key$ = "event_id"
+r1.value$ = sig
+r3.key$ = "product"
+r3.value$ = STRING(v["deviceFacility"])
+r4.key$ = "endpoint_ip"
+r4.value$ = STRING(v["TMCMLogDetectedIP"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r3, r4]
+r2.key$ = "action"
+r2.value$ = act
+eventMetadata$.record$ = IF act != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r5.key$ = "second_action_result"
+r5.value$ = second
+eventMetadata$.record$ = IF av AND second != "" AND second != "N/A" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "scan_type"
+r6.value$ = IF spy THEN STRING(v["cn2"]) ELSE STRING(v["cs1"])
+eventMetadata$.record$ = IF av OR spy THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "critical_threat_type"
+r7.value$ = reasonText
+eventMetadata$.record$ = IF reasonText != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "command_line"
+r8.value$ = STRING(v["cs4"])
+eventMetadata$.record$ = IF pml AND r8.value$ != "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+r9.key$ = "infection_source"
+r9.value$ = STRING(v["cs3"])
+eventMetadata$.record$ = IF pml AND r9.value$ != "" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
