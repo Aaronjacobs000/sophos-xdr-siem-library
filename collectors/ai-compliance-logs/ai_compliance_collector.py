@@ -150,8 +150,13 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
             with opener.open(req, timeout=timeout) as resp:
                 return resp.status, resp.headers, resp.read()
         except urllib.error.HTTPError as e:
-            if e.code in (301, 302, 303, 307, 308) and not follow_redirects:
-                return e.code, e.headers, e.read()
+            redirect = e.code in (301, 302, 303, 307, 308) and not follow_redirects
+            # Read what a redirect needs, then close the error response so its socket is released
+            # now, not when the error is garbage collected. The code and headers stay readable.
+            error_body = e.read() if redirect else b""
+            e.close()
+            if redirect:
+                return e.code, e.headers, error_body
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, e.headers.get("Retry-After"))
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)

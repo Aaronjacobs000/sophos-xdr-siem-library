@@ -147,12 +147,16 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.status, resp.read()
         except urllib.error.HTTPError as e:
+            # Read the body, then close the error response so its socket is released now, not
+            # when the error is garbage collected.
+            error_body = e.read()
+            e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, e.headers.get("Retry-After"))
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
-            raise HttpStatus(what, url, e.code, e.read()) from None
+            raise HttpStatus(what, url, e.code, error_body) from None
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             if attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, None)
