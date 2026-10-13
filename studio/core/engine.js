@@ -317,6 +317,7 @@ function confirmVars(p) {
 // parsers: [{name, text, parent?, role?}]; samples: [string]; opts: {now}
 export function runParsers(parsers, samples, opts = {}) {
   const now = opts.now || new Date().toISOString();
+  const nowUsec = Date.parse(now) * 1000;
   const compiled = parsers.map(compileParser);
   const byName = new Map(compiled.map((p) => [p.name, p]));
   const active = compiled.filter((p) => !p.flags.has('IMPORTONLY') && !p.flags.has('DISABLED'));
@@ -389,7 +390,8 @@ export function runParsers(parsers, samples, opts = {}) {
           ? 'The parent matched but no child did. The line stays in the generic schema only.'
           : 'This parser targets the generic schema.';
         // The generic event still carries the common fields the parsers set.
-        result.normalized = normalize(ctx.vars, GENERIC, { sanitize: true, trim: !current.flags.has('TRIMALLOFF'), carriers: new Set([...ctx.vars.keys()]) }).record;
+        const vars = timedVars(ctx.vars, nowUsec, notes, current.name);
+        result.normalized = withEventTime(normalize(vars, GENERIC, { sanitize: true, trim: !current.flags.has('TRIMALLOFF'), carriers: new Set([...vars.keys()]) }).record, nowUsec, now, notes, current.name);
         return result;
       }
       const flags = current.flags;
@@ -399,7 +401,9 @@ export function runParsers(parsers, samples, opts = {}) {
         carriers,
         parser: current.name,
       };
-      const records = real.map((sid) => ({ schema: sid, ...normalize(ctx.vars, sid, opts2) }));
+      const vars = timedVars(ctx.vars, nowUsec, notes, current.name);
+      const records = real.map((sid) => ({ schema: sid, ...normalize(vars, sid, opts2) }));
+      records.forEach((r, i) => withEventTime(r.record, nowUsec, now, i ? [] : notes, current.name));
       result.normalized = records[0].record;
       if (records.length > 1) result.also = records.slice(1).map((r) => ({ schema: r.schema, normalized: r.record }));
       for (const r of records) {
@@ -436,6 +440,43 @@ export function expectedShape(r) {
 
 export function schemaList(schema) {
   return String(schema || GENERIC).split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+// What the engine does with the event time after the parsers run (checked in a lab tenant). A
+// time ahead of ingest is read as a time zone set wrong: it moves back by the fewest whole hours
+// that bring it to or before ingest, when that is at most 24 hours and lands it no more than 50
+// minutes before ingest. Any other future time becomes the ingest time.
+const HOUR = 3600e6;
+export function settleEventTime(usec, nowUsec) {
+  if (usec <= nowUsec) return { usec };
+  const hours = Math.ceil((usec - nowUsec) / HOUR);
+  const back = usec - hours * HOUR;
+  if (hours <= 24 && nowUsec - back <= 50 * 60e6) return { usec: back, hours };
+  return { usec: nowUsec };
+}
+
+// eventTimeUsec$ after settleEventTime, as a copy of the variables when it changes.
+function timedVars(vars, nowUsec, notes, parser) {
+  const t = vars.get('eventTimeUsec$');
+  const usec = t instanceof TimeValue ? t.usec : typeof t === 'number' && Number.isFinite(t) ? t : null;
+  if (usec === null || !Number.isFinite(nowUsec)) return vars;
+  const settled = settleEventTime(usec, nowUsec);
+  if (settled.usec === usec) return vars;
+  notes.push({ level: 'warning', code: 'future-time', parser, message: settled.hours
+    ? `the event time is ${settled.hours} hour${settled.hours === 1 ? '' : 's'} ahead of the ingest time, so the engine moves it back ${settled.hours} hour${settled.hours === 1 ? '' : 's'}, reading it as a time zone set wrong. Check the time zone the parser reads.`
+    : 'the event time is in the future, so the engine stores the ingest time instead' });
+  const out = new Map(vars);
+  out.set('eventTimeUsec$', settled.usec);
+  return out;
+}
+
+// A record with no event time, because nothing set one or DATETIME couldn't read it, gets the
+// ingest time (checked in a lab tenant). The emulator's ingest time is its "now".
+function withEventTime(record, nowUsec, now, notes, parser) {
+  if (record.event_time_usec !== undefined || !Number.isFinite(nowUsec)) return record;
+  record.event_time_usec = nowUsec;
+  notes.push({ level: 'info', code: 'ingest-time', parser, message: `no event time, so the engine stores the ingest time; the emulator uses ${now}` });
+  return record;
 }
 
 // Fields the engine's root parser fills before any custom parser runs.

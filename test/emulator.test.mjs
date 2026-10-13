@@ -241,3 +241,19 @@ test('the engine stores a few fields the docs\' tables leave out, only in their 
   const [auth] = runParsers([{ name: 'A_B', text: `${head('scwx.auth')}eventType$ = "et"\nhostId$ = "h"` }], ['x'], { now: NOW });
   assert.equal(auth.normalized.event_type, undefined);
 });
+
+test('the event time settles like the engine: the ingest time when missing, a future time moved back or replaced', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=pss\n!SCHEMA=scwx.auth\njson = JSON(originalData$)\neventTimeUsec$ = DATETIME(json["$.ts"], "2006-01-02T15:04:05Z07:00")\ntargetUserName$ = "u"';
+  const N = Date.parse(NOW) * 1000;
+  const at = (s) => `{"pss":1,"ts":"${new Date(Date.parse(NOW) + s * 1000).toISOString().replace('.000', '')}"}`;
+  // Seconds ahead of ingest, and where the engine put each one in a lab tenant.
+  const cases = [[-600, -600], [282, 0], [602, -2998], [882, -2718], [4182, 0], [7182, -18], [86382, -18], [88182, 0]];
+  const r = runParsers([{ name: 'A_B', text: t }], ['{"pss":1}', '{"pss":1,"ts":"garbage"}', ...cases.map(([s]) => at(s))], { now: NOW });
+  assert.deepEqual(r.map((x) => (x.normalized.event_time_usec - N) / 1e6), [0, 0, ...cases.map(([, want]) => want)]);
+  assert.ok(r[0].notes.some((n) => n.code === 'ingest-time'));
+  assert.ok(r[5].notes.some((n) => n.code === 'future-time' && /moves it back 1 hour/.test(n.message)));
+  assert.ok(r[6].notes.some((n) => n.code === 'future-time' && /ingest time instead/.test(n.message)));
+  // The same applies to the time the root parser reads from a BSD header.
+  const [hdr] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=pss\n!SCHEMA=scwx.auth\ntargetUserName$ = "u"' }], ['Oct 14 23:30:00 h01 app: pss'], { now: NOW });
+  assert.equal(hdr.normalized.event_time_usec, Date.UTC(2026, 9, 13, 23, 30) * 1000);
+});
