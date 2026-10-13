@@ -1,0 +1,48 @@
+!SAMPLE={"EventDetails":[{"OldValue":null,"NewValue":"ACME-WS-014","PolicyEnforcementNewValue":false,"PolicyEnforcementOldValue":false,"PropertyName":"PartnerName","PropertyCategory":"Session"},{"OldValue":null,"NewValue":"1234567890","PolicyEnforcementNewValue":false,"PolicyEnforcementOldValue":false,"PropertyName":"PartnerId","PropertyCategory":"Session"}],"EventName":"StartedSession","EventType":"Session","Timestamp":"2026-10-12T11:40:11.726Z","Author":"Alex Kim","AuthorEmail":"tech.akim@example.com","AffectedItem":"ACME-WS-014"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"EventName"\s*:\s*"[A-Za-z]+"\s*,\s*"EventType"\s*:\s*"(?:UserProfile|Session|CustomModules|Policy|CompanyAdministration|GroupManagement|ConditionalAccess|LicenseManagement|UserGroups|CompanyAddressBook|SingleSignOnManagement|UserRole|TFAEnforcement|DeviceManagement|DeviceGroupManagement|CompanySettings|OrganizationalUnit|CompanyRelation)"|"EventType"\s*:\s*"(?:UserProfile|Session|CustomModules|Policy|CompanyAdministration|GroupManagement|ConditionalAccess|LicenseManagement|UserGroups|CompanyAddressBook|SingleSignOnManagement|UserRole|TFAEnforcement|DeviceManagement|DeviceGroupManagement|CompanySettings|OrganizationalUnit|CompanyRelation)"\s*,\s*"EventName"\s*:\s*"[A-Za-z]+").*"Timestamp"\s*:
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: TeamViewer event log (POST /api/v2/EventLogging, AuditEvents), sent to a Sophos NG-SIEM
+# HTTP Ingest integration one JSON event per line by the collector in collectors/teamviewer-event-logs.
+# Standalone parser for CloudAudit: remote session events (started, joined, ended, files sent and
+# received, recordings, black screen and remote input) and user, role, policy, script token,
+# SSO, conditional access, TFA and device management changes. Event names and types come from
+# the AuditLogParameters description in TeamViewer's Web API spec. The first three EventDetails
+# go to request_parameters, as property name and new value.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "TeamViewer"
+eventSource$ = "TeamViewer"
+eventName$ = json["$.EventName"]
+etype = json["$.EventType"]
+eventType$ = etype
+managementEvent$ = etype != "Session"
+userName$ = json["$.AuthorEmail"]
+sourceUserName$ = json["$.Author"]
+
+eventTimeUsec$ = DATETIME(json["$.Timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+d1.key$ = "affected_item"
+d1.value$ = json["$.AffectedItem"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+
+p1.key$ = json["$.EventDetails[0].PropertyName"]
+p1.value$ = json["$.EventDetails[0].NewValue"]
+p2.key$ = json["$.EventDetails[1].PropertyName"]
+p2.value$ = json["$.EventDetails[1].NewValue"]
+p3.key$ = json["$.EventDetails[2].PropertyName"]
+p3.value$ = json["$.EventDetails[2].NewValue"]
+o1.key$ = "old_" + STRING(json["$.EventDetails[0].PropertyName"])
+o1.value$ = json["$.EventDetails[0].OldValue"]
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.key$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.key$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.key$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF o1.value$ THEN requestParameters$.record$ + [o1] ELSE requestParameters$.record$

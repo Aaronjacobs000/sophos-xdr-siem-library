@@ -1,0 +1,192 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791805211726000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "StartedSession",
+      "event_type": "Session",
+      "management_event": false,
+      "user_name": "tech.akim@example.com",
+      "source_user_name": "Alex Kim",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "ACME-WS-014"
+          }
+        ]
+      },
+      "request_parameters": {
+        "record": [
+          {
+            "key": "PartnerName",
+            "value": "ACME-WS-014"
+          },
+          {
+            "key": "PartnerId",
+            "value": "1234567890"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791805325118000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "SentFile",
+      "event_type": "Session",
+      "management_event": false,
+      "user_name": "tech.akim@example.com",
+      "source_user_name": "Alex Kim",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "ACME-WS-014"
+          }
+        ]
+      },
+      "request_parameters": {
+        "record": [
+          {
+            "key": "FileName",
+            "value": "AcmeTool.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791805939004000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "EndedSession",
+      "event_type": "Session",
+      "management_event": false,
+      "user_name": "tech.akim@example.com",
+      "source_user_name": "Alex Kim",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "ACME-WS-014"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791806490551000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "ScriptTokenAdded",
+      "event_type": "CompanyAdministration",
+      "management_event": true,
+      "user_name": "admin@example.com",
+      "source_user_name": "Admin User",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "Reporting token"
+          }
+        ]
+      },
+      "request_parameters": {
+        "record": [
+          {
+            "key": "Permissions",
+            "value": "Event logging: read"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791806627912000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "RemovedTFAEnforcementFromAccounts",
+      "event_type": "TFAEnforcement",
+      "management_event": true,
+      "user_name": "admin@example.com",
+      "source_user_name": "Admin User",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "jlee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "TeamViewer",
+      "event_time_usec": 1791806700000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "TeamViewer",
+      "event_name": "UserRoleAssigned",
+      "event_type": "UserRole",
+      "management_event": true,
+      "user_name": "admin@example.com",
+      "source_user_name": "Admin User",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "affected_item",
+            "value": "tech.new@example.com"
+          }
+        ]
+      },
+      "request_parameters": {
+        "record": [
+          {
+            "key": "UserRole",
+            "value": "Company administrator"
+          },
+          {
+            "key": "old_UserRole",
+            "value": "Technician"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
