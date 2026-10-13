@@ -17,10 +17,24 @@ const GENERIC_FIELDS = [
 
 export const SCHEMA_IDS = [GENERIC, ...Object.keys(data.schemas)];
 
+// Fields the engine stores that the docs' schema tables leave out (checked in a lab tenant). The
+// engine maps a $ variable only to a field its schema has: eventType$ became event_type in
+// Antivirus but was dropped in eleven other schemas.
+const ENGINE_FIELDS = {
+  'scwx.antivirus': [
+    { name: 'event_type', type: 'string', parser: 'eventType$', engineOnly: true },
+    { name: 'sensor_version', type: 'string', parser: 'sensorVersion$', engineOnly: true },
+    { name: 'source_address', type: 'string', parser: 'sourceAddress$', engineOnly: true },
+  ],
+  'scwx.managementevent': [
+    { name: 'source_address', type: 'string', parser: 'sourceAddress$', engineOnly: true },
+  ],
+};
+
 export function schemaInfo(id) {
   if (id === GENERIC) return { id, name: 'Generic', page: 'https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/#generic-schema', documentedId: true, fields: GENERIC_FIELDS };
   const s = data.schemas[id];
-  return s ? { id, ...s } : null;
+  return s ? { id, ...s, fields: [...s.fields, ...(ENGINE_FIELDS[id] || [])] } : null;
 }
 
 const fieldIndex = new Map();
