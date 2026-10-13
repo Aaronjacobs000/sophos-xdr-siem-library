@@ -7,7 +7,7 @@ import { REPO, BRANCH } from '../core/version.js';
 import { parseSamples, entryId } from '../core/library.js';
 
 const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
-const CACHE_KEY = 'parser-studio:library-cache:v1';
+const CACHE_KEY = 'parser-studio:library-cache:v2';
 
 export function repo() {
   try {
@@ -17,7 +17,8 @@ export function repo() {
   return REPO;
 }
 
-const raw = (path) => `https://raw.githubusercontent.com/${repo()}/${BRANCH}/${path.split('/').map(encodeURIComponent).join('/')}`;
+// Files are read at a fixed commit, so a CDN copy of an older version can't mix in.
+const raw = (path, ref = BRANCH) => `https://raw.githubusercontent.com/${repo()}/${ref}/${path.split('/').map(encodeURIComponent).join('/')}`;
 export const githubUrl = (path = '') => `https://github.com/${repo()}${path}`;
 
 function readCache() {
@@ -53,16 +54,25 @@ async function loadSnapshot() {
 }
 
 // Returns {entries, source: 'github'|'snapshot', at, sha?, error?}
+// Two API calls when the library changed (the head commit, then its tree) and one when it
+// didn't; an unchanged head answers 304, which doesn't count against GitHub's rate limit.
 export async function loadLibrary({ force = false } = {}) {
   const cache = readCache();
-  const headers = { Accept: 'application/vnd.github+json' };
-  if (cache && cache.repo === repo() && cache.etag && !force) headers['If-None-Match'] = cache.etag;
+  const api = (path, headers = {}) => fetch(`https://api.github.com/repos/${repo()}${path}`, { headers: { Accept: 'application/vnd.github+json', ...headers }, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
+  const fail = (res) => Object.assign(new Error(res.status === 403 || res.status === 429 ? 'GitHub rate limit reached' : `GitHub said ${res.status}`), { status: res.status });
   try {
-    const res = await fetch(`https://api.github.com/repos/${repo()}/git/trees/${BRANCH}?recursive=1`, { headers, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (res.status === 304 && cache) {
-      return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), source: 'github', at: cache.at, sha: cache.sha };
+    const headHeaders = { Accept: 'application/vnd.github.sha' };
+    if (cache && cache.repo === repo() && cache.headEtag && !force) headHeaders['If-None-Match'] = cache.headEtag;
+    const head = await api(`/commits/${BRANCH}`, headHeaders);
+    if (head.status === 304 && cache) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), source: 'github', at: cache.at, sha: cache.sha };
+    if (!head.ok) throw fail(head);
+    const sha = (await head.text()).trim();
+    if (cache && cache.repo === repo() && cache.sha === sha && !force) {
+      writeCache({ ...cache, headEtag: head.headers.get('ETag') });
+      return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), source: 'github', at: cache.at, sha };
     }
-    if (!res.ok) throw Object.assign(new Error(res.status === 403 || res.status === 429 ? 'GitHub rate limit reached' : `GitHub said ${res.status}`), { status: res.status });
+    const res = await api(`/git/trees/${sha}?recursive=1`);
+    if (!res.ok) throw fail(res);
     const tree = await res.json();
     const metas = tree.tree.filter((t) => t.type === 'blob' && /^parsers\/[^/]+\/[^/]+\/meta\.json$/.test(t.path));
     const files = new Map();
@@ -73,15 +83,15 @@ export async function loadLibrary({ force = false } = {}) {
     const entries = (await pool(metas, 6, async (t) => {
       const id = t.path.split('/').slice(1, 3).join('/');
       try {
-        const meta = JSON.parse(await fetchText(raw(t.path)));
-        return { id, meta, files: files.get(id) || [], vendor: meta.vendor, product: meta.product, loaded: false };
+        const meta = JSON.parse(await fetchText(raw(t.path, sha)));
+        return { id, ref: sha, meta, files: files.get(id) || [], vendor: meta.vendor, product: meta.product, loaded: false };
       } catch {
         return null;
       }
     })).filter(Boolean);
     const at = new Date().toISOString();
-    writeCache({ repo: repo(), etag: res.headers.get('ETag'), at, sha: tree.sha, entries: entries.map(({ loaded, texts, samples, expected, ...rest }) => rest) });
-    return { entries, source: 'github', at, sha: tree.sha };
+    writeCache({ repo: repo(), headEtag: head.headers.get('ETag'), at, sha, entries: entries.map(({ loaded, texts, samples, expected, ...rest }) => rest) });
+    return { entries, source: 'github', at, sha };
   } catch (err) {
     try {
       const snap = await loadSnapshot();
@@ -98,10 +108,11 @@ export async function loadEntry(entry) {
   if (entry.loaded) return entry;
   const base = `parsers/${entry.id}/`;
   const texts = {};
-  await pool(entry.meta.parsers || [], 4, async (p) => { texts[p.name] = await fetchText(raw(`${base}${p.name}.parser.txt`)); });
-  const samples = parseSamples(await fetchText(raw(`${base}samples.log`)));
+  const ref = entry.ref || BRANCH;
+  await pool(entry.meta.parsers || [], 4, async (p) => { texts[p.name] = await fetchText(raw(`${base}${p.name}.parser.txt`, ref)); });
+  const samples = parseSamples(await fetchText(raw(`${base}samples.log`, ref)));
   let expected = [];
-  try { expected = JSON.parse(await fetchText(raw(`${base}expected.json`))); } catch { expected = []; }
+  try { expected = JSON.parse(await fetchText(raw(`${base}expected.json`, ref))); } catch { expected = []; }
   Object.assign(entry, { texts, samples, expected, loaded: true });
   return entry;
 }
