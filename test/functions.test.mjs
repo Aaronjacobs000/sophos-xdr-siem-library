@@ -218,3 +218,10 @@ test('a path that can select several nodes but selects one gives that node', () 
   // |preserve_structure keeps the list.
   assert.deepEqual(v.get('pres'), ['a']);
 });
+
+test('CEF resolves cs, cn, flexString and flexNumber labels and keeps \\n as two characters', () => {
+  const line = 'CEF:0|Acme|Probe|1.0|100|probe|5|cs1=abc cs1Label=Name cn1=42 cn1Label=Count flexString1=fs flexString1Label=Flex flexNumber1=7 flexNumber1Label=FlexN cfp1=1.5 cfp1Label=Score c6a1=2001:db8::1 c6a1Label=V6 deviceCustomDate1=Oct 13 2026 10:00:00 deviceCustomDate1Label=When flexDate1=Oct 13 2026 10:00:00 flexDate1Label=FDate deviceCustomString2=dcs deviceCustomString2Label=LongS msg=line1\\nline2 back\\\\slash eq\\=sign cr\\rx pipe\\|here';
+  const names = ['Name', 'Count', 'Flex', 'FlexN', 'Score', 'V6', 'When', 'FDate', 'LongS', 'cfp1', 'msg'];
+  const v = run(`v = CEF(l)\n${names.map((n, i) => `o${i} = v["${n}"]`).join('\n')}`, { l: line });
+  assert.deepEqual(names.map((n, i) => v.get(`o${i}`)), ['abc', '42', 'fs', '7', null, null, null, null, null, '1.5', 'line1\\nline2 back\\slash eq=sign cr\\rx pipe\\|here']);
+});
