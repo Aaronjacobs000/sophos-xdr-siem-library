@@ -1,0 +1,140 @@
+!SAMPLE={"jsonrpc":"2.0","method":"addEvents","params":{"events":[{"module":"new-incident","created":"2026-10-13T01:30:12.401Z","endpointId":"65f1a2b3c4d5e6f708192a40","companyId":"65f1a2b3c4d5e6f708192a3b","computer_id":"65f1a2b3c4d5e6f708192a41","computer_fqdn":"fin-lt-041.example.com","computer_name":"FIN-LT-041","detection_name":"ATC.Malicious","attack_types":["Other"],"computer_ip":"192.0.2.41","severity_score":90,"incident_id":"6701c2d3e4f5a6b7c8d9e0f1","incident_number":42,"attack_entry":1791854990,"parent_process_path":"c:\\windows\\system32\\cmd.exe","parent_process_pid":9636,"process_path":"c:\\users\\jdoe\\appdata\\local\\temp\\loader.exe","process_pid":10324,"username":"FIN-LT-041\\jdoe","user_sid":"S-1-5-21-1111111111-2222222222-3333333333-1001","process_command_line":"loader.exe /silent","file_hash_md5":"0cc175b9c0f1b6a831c399e269772661","file_hash_sha256":"ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb","att_ck_id":["T1036","T1059"],"severity":"high","main_action":"action_needed"}]},"id":1791855013220}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="new-incident" OR eventType$=="new-extended-incident" OR eventType$=="avc" OR eventType$=="antiexploit" OR eventType$=="network-monitor" OR eventType$=="ransomware-mitigation" OR eventType$=="network-sandboxing" OR eventType$=="aph"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitdefender GravityZone Event Push Service, serviceType jsonRPC, to HTTP Ingest.
+# Child of BITDEFENDER_GZ_JSONRPC_PARENT: EDR and XDR incidents, Advanced Threat Control,
+# Advanced Anti-Exploit, Network Attack Defense, ransomware mitigation, Sandbox Analyzer and
+# Antiphishing events to the third-party alert schema.
+# json, e, batchSize, eventType$ and sensorType$ come from the parent.
+
+module = eventType$
+incident = module == "new-incident" OR module == "new-extended-incident"
+vendor$ = "Bitdefender"
+provider$ = "GravityZone"
+alertCategory$ = module
+
+# Endpoint names: network-sandboxing writes computerName and computerIp.
+host = STRING(json[e + "computer_name"])
+host = IF host == "" THEN STRING(json[e + "computerName"]) ELSE host
+targetHostName$ = IF host != "" THEN host ELSE NULL
+hostId$ = targetHostName$
+
+title$ = "GravityZone " + module
+title$ = IF module == "new-incident" THEN "GravityZone incident: " + STRING(json[e + "detection_name"]) ELSE title$
+title$ = IF module == "new-extended-incident" THEN "GravityZone extended incident " + STRING(json[e + "incident_number"]) ELSE title$
+title$ = IF module == "avc" THEN "Advanced Threat Control: " + STRING(json[e + "exploit_type"]) ELSE title$
+title$ = IF module == "antiexploit" THEN "Advanced Anti-Exploit: " + STRING(json[e + "detection_exploitTechnique"]) ELSE title$
+title$ = IF module == "network-monitor" THEN "Network Attack Defense: " + STRING(json[e + "detection_name"]) ELSE title$
+title$ = IF module == "ransomware-mitigation" THEN "Ransomware mitigation: " + STRING(json[e + "attack_type"]) + " attack" ELSE title$
+title$ = IF module == "network-sandboxing" THEN "Sandbox Analyzer: " + STRING(json[e + "threatType"]) ELSE title$
+title$ = IF module == "aph" THEN "Antiphishing: " + STRING(json[e + "aph_type"]) ELSE title$
+
+# Incidents carry Bitdefender's severity (low, medium, high) and a 1 to 100 score; the test
+# template spells the score severityScore. Other modules have no severity, so ransomware
+# mitigation, Sandbox Analyzer and Anti-Exploit are HIGH and the rest MEDIUM.
+sev = LOWERCASE(STRING(json[e + "severity"]))
+vendorSeverity$ = IF sev != "" THEN sev ELSE NULL
+severity$ = "MEDIUM"
+severity$ = IF module == "ransomware-mitigation" OR module == "network-sandboxing" OR module == "antiexploit" THEN "HIGH" ELSE severity$
+severity$ = IF incident AND sev == "low" THEN "LOW" ELSE severity$
+severity$ = IF incident AND sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF incident AND sev == "high" THEN "HIGH" ELSE severity$
+score = json[e + "severity_score"]
+score = IF STRING(score) == "" THEN json[e + "severityScore"] ELSE score
+riskScore$ = IF STRING(score) != "" THEN score ELSE NULL
+alertId$ = IF incident THEN json[e + "incident_id"] ELSE NULL
+
+# What the endpoint did about it.
+avcStatus = LOWERCASE(STRING(json[e + "status"]))
+act = LOWERCASE(STRING(json[e + "detection_action"]))
+nad = LOWERCASE(STRING(json[e + "actionTaken"]))
+action$ = NULL
+action$ = IF avcStatus == "avc_blocked" OR avcStatus == "avc_disinfected" OR avcStatus == "aph_blocked" THEN "BLOCKED" ELSE action$
+action$ = IF avcStatus == "avc_allowed" THEN "SUCCEEDED" ELSE action$
+action$ = IF avcStatus == "reportonly" OR nad == "reportonly" THEN "ATTEMPTED" ELSE action$
+action$ = IF nad == "blocked" OR act == "kill" OR act == "block" THEN "BLOCKED" ELSE action$
+action$ = IF module == "ransomware-mitigation" AND STRING(json[e + "action"]) == "1" THEN "BLOCKED" ELSE action$
+action$ = IF module == "ransomware-mitigation" AND STRING(json[e + "action"]) == "2" THEN "ATTEMPTED" ELSE action$
+
+# Addresses: Network Attack Defense names the source and the victim; ransomware mitigation
+# names the remote attack source.
+sourceAddress$ = NULL
+sourceAddress$ = IF module == "network-monitor" THEN json[e + "source_ip"] ELSE sourceAddress$
+attackSource = STRING(json[e + "attack_source"])
+sourceAddress$ = IF module == "ransomware-mitigation" AND IS_VALID_IP(attackSource) THEN attackSource ELSE sourceAddress$
+destinationAddress$ = IF module == "network-monitor" THEN json[e + "victim_ip"] ELSE NULL
+destinationPort$ = IF module == "network-monitor" AND STRING(json[e + "local_port"]) != "" THEN INT(STRING(json[e + "local_port"]), 10) ELSE NULL
+destinationUrl$ = IF module == "aph" THEN json[e + "url"] ELSE NULL
+
+user = STRING(json[e + "username"])
+user = IF user == "" THEN STRING(json[e + "detection_username"]) ELSE user
+user = IF user == "" THEN STRING(json[e + "user.userName"]) ELSE user
+user = IF user == "" THEN STRING(json[e + "user['name']"]) ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+
+# Event time by module: ISO 8601 UTC strings, or epoch seconds for ransomware mitigation and
+# Sandbox Analyzer.
+t = STRING(json[e + "created"])
+t = IF t == "" THEN STRING(json[e + "last_blocked"]) ELSE t
+t = IF t == "" THEN STRING(json[e + "detection_time"]) ELSE t
+t = IF t == "" THEN STRING(json[e + "timestamp"]) ELSE t
+epoch = STRING(json[e + "detected_on"])
+epoch = IF epoch == "" THEN STRING(json[e + "detectionTime"]) ELSE epoch
+eventTimeUsec$ = IF t != "" THEN DATETIME(t, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF t == "" AND epoch != "" THEN INT(epoch, 10) * 1000000 ELSE eventTimeUsec$
+
+summary$ = title$
+summary$ = IF module == "new-incident" THEN STRING(json[e + "process_path"]) + " on " + host ELSE summary$
+summary$ = IF module == "avc" THEN STRING(json[e + "exploit_path"]) ELSE summary$
+summary$ = IF module == "antiexploit" THEN STRING(json[e + "detection_path"]) ELSE summary$
+summary$ = IF module == "network-sandboxing" THEN STRING(json[e + "filePaths[0]"]) ELSE summary$
+summary$ = IF module == "aph" THEN STRING(json[e + "url"]) ELSE summary$
+
+a1.key$ = "module"
+a1.value$ = module
+a2.key$ = "company_id"
+a2.value$ = json[e + "companyId"]
+a3.key$ = "events_in_batch"
+a3.value$ = batchSize
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3]
+ip = STRING(json[e + "computer_ip"])
+ip = IF ip == "" THEN STRING(json[e + "computerIp"]) ELSE ip
+a4.key$ = "computer_ip"
+a4.value$ = ip
+additionalData$.record$ = IF ip != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "main_action"
+a5.value$ = STRING(json[e + "main_action"])
+additionalData$.record$ = IF incident THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "process_path"
+a6.value$ = STRING(json[e + "process_path"])
+a7.key$ = "file_sha256"
+a7.value$ = STRING(json[e + "file_hash_sha256"])
+a8.key$ = "attck_ids"
+a8.value$ = STRING(json[e + "att_ck_id"])
+additionalData$.record$ = IF module == "new-incident" THEN additionalData$.record$ + [a6, a7, a8] ELSE additionalData$.record$
+a9.key$ = "attack_types"
+a9.value$ = STRING(json[e + "attack_types"])
+additionalData$.record$ = IF incident THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "killchain_phase"
+a10.value$ = STRING(json[e + "last_killchain_phase"])
+additionalData$.record$ = IF module == "new-extended-incident" THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "vendor_status"
+a11.value$ = avcStatus
+additionalData$.record$ = IF avcStatus != "" THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "detection_name"
+a12.value$ = STRING(json[e + "detection_threatName"])
+additionalData$.record$ = IF module == "antiexploit" THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "cve"
+a13.value$ = STRING(json[e + "detection_cve"])
+additionalData$.record$ = IF module == "antiexploit" AND a13.value$ != "" THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "attack_technique"
+a14.value$ = STRING(json[e + "detection_attackTechnique"])
+additionalData$.record$ = IF module == "network-monitor" THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
+a15.key$ = "item_count"
+a15.value$ = STRING(json[e + "item_count"])
+additionalData$.record$ = IF module == "ransomware-mitigation" THEN additionalData$.record$ + [a15] ELSE additionalData$.record$

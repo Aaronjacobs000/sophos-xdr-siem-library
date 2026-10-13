@@ -1,0 +1,23 @@
+!SAMPLE={"jsonrpc":"2.0","method":"addEvents","params":{"events":[{"module":"av","product_installed":"BEST","user":{"id":"S-1-5-21-1111111111-2222222222-3333333333-1001","name":"jdoe"},"companyId":"65f1a2b3c4d5e6f708192a3b","computer_name":"FIN-LT-041","computer_fqdn":"fin-lt-041.example.com","computer_ip":"192.0.2.41","computer_id":"65f1a2b3c4d5e6f708192a41","malware_type":"file","malware_name":"EICAR-Test-File (not a virus)","hash":"275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f","final_status":"quarantined","file_path":"C:\\Users\\jdoe\\Downloads\\eicar0000001.txt","timestamp":"2026-10-13T01:02:03.000Z","signaturesNumber":"7.98112","scanEngineType":3,"cleaned":0,"blocked":0,"deleted":0,"quarantined":1,"ignored":0,"present":0}]},"id":1791853324120}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*"method"\s*:\s*"addEvents".*"events"\s*:\s*\[\s*\{.*"module"\s*:\s*"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitdefender GravityZone Event Push Service, serviceType jsonRPC, posted to an NG-SIEM
+# HTTP Ingest integration. Each POST body is one record:
+#   {"jsonrpc":"2.0","method":"addEvents","params":{"events":[{...}, ...]},"id":<epoch ms>}
+# Parent: recognizes the body and hands the first event to its children by module. A parser
+# makes one event per record, so in a batch only the first event is normalized; the whole body
+# stays in generic. Incident workflow, health and management modules stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children. e is the first event's path.
+e = "$.params.events[0]."
+sensorType$ = "Bitdefender GravityZone"
+eventType$ = json[e + "module"]
+batchSize = STRING(LENGTH(json["$.params.events"]))

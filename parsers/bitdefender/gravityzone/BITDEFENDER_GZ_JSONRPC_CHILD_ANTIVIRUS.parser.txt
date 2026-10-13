@@ -1,0 +1,86 @@
+!SAMPLE={"jsonrpc":"2.0","method":"addEvents","params":{"events":[{"module":"hd","product_installed":"BEST","user":{"name":"jdoe","sid":"S-1-5-21-1111111111-2222222222-3333333333-1001"},"companyId":"65f1a2b3c4d5e6f708192a3b","computer_name":"FIN-LT-041","computer_fqdn":"fin-lt-041.example.com","computer_ip":"192.0.2.41","computer_id":"65f1a2b3c4d5e6f708192a41","malware_type":"file","malware_name":"Gen:Heur.Ransom.HiddenTears.1","hash":"8c5e2d0f1a3b4c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5","final_status":"blocked","file_path":"C:\\Users\\jdoe\\AppData\\Roaming\\svc\\lock.exe","attack_type":"ransomware","detection_level":"normal","is_fileless_attack":0,"command_line_parameters":"--all","process_info_path":"C:\\Users\\jdoe\\AppData\\Roaming\\svc\\lock.exe","process_info_command_line":"C:\\Users\\jdoe\\AppData\\Roaming\\svc\\lock.exe --all","parent_process_id":4120,"parent_process_path":"C:\\Windows\\explorer.exe","hwid":"00000000-0000-0000-0000-00005e005301","date":"2026-10-13T01:15:20.000Z"}]},"id":1791854121005}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="av" OR eventType$=="hd" OR eventType$=="exchange-malware"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitdefender GravityZone Event Push Service, serviceType jsonRPC, to HTTP Ingest.
+# Child of BITDEFENDER_GZ_JSONRPC_PARENT: Antimalware (av), HyperDetect (hd) and Security for
+# Exchange (exchange-malware) detections to Antivirus.
+# json, e, batchSize, eventType$ and sensorType$ come from the parent.
+
+module = eventType$
+exch = module == "exchange-malware"
+hd = module == "hd"
+
+threatName$ = IF exch THEN json[e + "malware[0].malwareName"] ELSE json[e + "malware_name"]
+vendorAlertType$ = json[e + "malware_type"]
+vendorAlertType$ = IF hd AND STRING(json[e + "attack_type"]) != "" THEN json[e + "attack_type"] ELSE vendorAlertType$
+vendorAlertType$ = IF exch THEN json[e + "malware[0].malwareType"] ELSE vendorAlertType$
+filePath$ = IF exch THEN json[e + "malware[0].infectedObject"] ELSE json[e + "file_path"]
+hash = STRING(json[e + "hash"])
+sha = hash|^(?P<h>[0-9A-Fa-f]{64})$
+fileHash$.sha256$ = IF sha["h"] != "" THEN sha["h"] ELSE NULL
+processName$ = IF hd THEN json[e + "process_info_path"] ELSE NULL
+
+computerName$ = json[e + "computer_name"]
+hostId$ = json[e + "computer_name"]
+agentDeviceId$ = json[e + "computer_id"]
+# The user object differs by module: av sends {id, name}, hd {name, sid}.
+userName$ = json[e + "user['name']"]
+
+# Event time: av timestamp, hd date, exchange-malware detectionTime, all ISO 8601 UTC.
+t = STRING(json[e + "timestamp"])
+t = IF hd THEN STRING(json[e + "date"]) ELSE t
+t = IF exch THEN STRING(json[e + "detectionTime"]) ELSE t
+eventTimeUsec$ = IF t != "" THEN DATETIME(t, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+# final_status (av, hd): ignored, still present, deleted, blocked, quarantined, disinfected, restored.
+# actionTaken (exchange-malware): quarantine, delete, block and others.
+status = LOWERCASE(STRING(json[e + "final_status"]))
+status = IF exch THEN LOWERCASE(STRING(json[e + "malware[0].actionTaken"])) ELSE status
+actionTaken$ = NULL
+actionTaken$ = IF CONTAINS(status, "quarantin") THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(status, "delet") THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(status, "block") THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF status == "restored" THEN "RESTORED" ELSE actionTaken$
+actionTaken$ = IF status == "ignored" OR status == "still present" THEN "NONE" ELSE actionTaken$
+
+mtype = LOWERCASE(STRING(json[e + "malware_type"]))
+threatType$ = NULL
+threatType$ = IF mtype == "file" OR exch THEN "FILE" ELSE threatType$
+threatType$ = IF mtype == "process" THEN "PROCESS" ELSE threatType$
+threatType$ = IF hd AND STRING(json[e + "is_fileless_attack"]) == "1" THEN "MEMORY" ELSE threatType$
+
+# HyperDetect is Bitdefender's machine learning layer.
+attack = LOWERCASE(STRING(json[e + "attack_type"]))
+threatCategory$ = NULL
+threatCategory$ = IF hd THEN "AI_DETECTION" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(attack, "ransomware") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(attack, "exploit") THEN "EXPLOIT" ELSE threatCategory$
+threatCategory$ = IF exch AND LOWERCASE(STRING(json[e + "malware[0].malwareType"])) == "virus" THEN "VIRUS" ELSE threatCategory$
+
+r1.key$ = "module"
+r1.value$ = module
+r2.key$ = "company_id"
+r2.value$ = json[e + "companyId"]
+r3.key$ = "computer_ip"
+r3.value$ = json[e + "computer_ip"]
+r4.key$ = "vendor_status"
+r4.value$ = status
+r5.key$ = "events_in_batch"
+r5.value$ = batchSize
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]
+r6.key$ = "detection_level"
+r6.value$ = STRING(json[e + "detection_level"])
+eventMetadata$.record$ = IF hd THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "parent_process_path"
+r7.value$ = STRING(json[e + "parent_process_path"])
+eventMetadata$.record$ = IF hd AND r7.value$ != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "sender"
+r8.value$ = STRING(json[e + "sender"])
+r9.key$ = "subject"
+r9.value$ = STRING(json[e + "subject"])
+eventMetadata$.record$ = IF exch THEN eventMetadata$.record$ + [r8, r9] ELSE eventMetadata$.record$
