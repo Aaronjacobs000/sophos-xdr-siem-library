@@ -1,0 +1,32 @@
+!SAMPLE=2026-10-13T01:15:08Z OPS-WS-057 CEF:0|Malwarebytes|Malwarebytes Endpoint Protection|Endpoint Protection 1.2.0.1488|Detection|Malware quarantined|5|deviceExternalId=9f8e7d6c5b4a39281706f5e4d3c2b1a098765432 dvchost=OPS-WS-057 deviceDnsDomain=corp.example.com dvcmac=00:00:5E:00:53:57 dvc=192.0.2.57 rt=Oct 13 2026 01:15:02 Z fileType=File cat=Malware act=quarantined msg=Malware quarantined\nFile: C:\\Users\\amy\\Downloads\\invoice_1013.exe\nMD5: 0CC175B9C0F1B6A831C399E269772661\nSHA256: CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB filePath=C:\\Users\\amy\\Downloads\\invoice_1013.exe cs1Label=Detection name cs1=Trojan.Agent
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:0\|Malwarebytes\|[^|]*\|[^|]*\|Detection\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ThreatDown (Malwarebytes) Nebula or OneView syslog logging: a Windows syslog
+# communication endpoint polls the console and sends CEF over TCP or UDP to the data collector.
+#   <ISO time> <host> CEF:0|Malwarebytes|<plugin>|<plugin version>|Detection|<category action>|<severity>|...
+# Parent: recognizes detection lines and hands them to its children by threat category.
+
+v = CEF(originalData$)
+
+# Syslog and the API write the category's short name (malware, pup, pum, arw, ae, rid, mwac);
+# the console and some lines write the full name. Both map to one category.
+cat = LOWERCASE(STRING(v["cat"]))
+category = cat
+category = IF cat == "arw" THEN "ransomware" ELSE category
+category = IF cat == "ae" THEN "exploit" ELSE category
+category = IF cat == "rid" THEN "remote intrusion" ELSE category
+category = IF cat == "mwac" THEN "website" ELSE category
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "ThreatDown"
+sensorVersion$ = v[3]
+eventType$ = category
+hostId$ = v["dvchost"]
+# rt is the detection time in UTC ("Oct 13 2026 01:05:56 Z"); the line arrives after the
+# endpoint's polling interval.
+rt = STRING(v["rt"])
+eventTimeUsec$ = IF rt != "" THEN DATETIME(rt, "Jan _2 2006 15:04:05 Z") ELSE eventTimeUsec$

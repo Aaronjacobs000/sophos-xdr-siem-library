@@ -1,0 +1,64 @@
+!SAMPLE=2026-10-13T01:40:52Z FIN-LT-041 CEF:0|Malwarebytes|Malwarebytes Endpoint Protection|Endpoint Protection 1.2.0.1488|Detection|Exploit blocked|5|deviceExternalId=c4a7e2b19d03f58e6a1b2c3d4e5f60718293a4b5 dvchost=FIN-LT-041 deviceDnsDomain=corp.example.com dvcmac=00:00:5E:00:53:41 dvc=192.0.2.41 rt=Oct 13 2026 01:40:47 Z fileType=Exploit cat=Exploit act=blocked msg=Exploit blocked\nProcess name: C:\\Program Files\\Acme Viewer\\viewer.exe filePath=C:\\Program Files\\Acme Viewer\\viewer.exe cs1Label=Detection name cs1=Exploit.PayloadProcessBlock
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="suspicious activity" OR eventType$=="exploit" OR eventType$=="remote intrusion" OR eventType$=="website"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ThreatDown (Malwarebytes) Nebula or OneView syslog logging, CEF.
+# Child of THREATDOWN_NEBULA_CEF_PARENT: EDR Suspicious Activity, Exploit, Remote Intrusion and
+# Website (web protection) detections to the third-party alert schema.
+# v, category, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "ThreatDown"
+provider$ = v[2]
+alertCategory$ = category
+detection = STRING(v["Detection name"])
+title$ = IF detection != "" THEN "ThreatDown " + category + ": " + detection ELSE "ThreatDown " + STRING(v[5])
+# msg holds several lines. The engine leaves CEF's \n escape as the two characters, so both
+# forms become "; ".
+summary$ = REPLACE_REGEX(STRING(v["msg"]), `\\n|\n`, "; ")
+targetHostName$ = v["dvchost"]
+alertId$ = v["Detection ID"]
+
+# Only EDR Suspicious Activity carries a severity (cs2). The header severity is one fixed
+# value set in the syslog settings, so the others get HIGH for exploits and remote
+# intrusions and MEDIUM for websites.
+sev = LOWERCASE(STRING(v["Suspicious Activity severity"]))
+vendorSeverity$ = IF sev != "" THEN sev ELSE NULL
+severity$ = IF category == "website" THEN "MEDIUM" ELSE "HIGH"
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+severity$ = IF sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "low" THEN "LOW" ELSE severity$
+
+act = LOWERCASE(STRING(v["act"]))
+action$ = NULL
+action$ = IF act == "blocked" OR act == "quarantined" OR act == "deleted" THEN "BLOCKED" ELSE action$
+action$ = IF act == "found" THEN "ATTEMPTED" ELSE action$
+
+# Web protection writes the blocked site as domain(ip:port) in filePath.
+site = STRING(v["filePath"])
+web = site|^(?P<domain>[^()\s]+)\((?P<ip>[0-9A-Fa-f.:]+):(?P<port>\d+)\)$
+sourceAddress$ = v["dvc"]
+destinationAddress$ = IF web["ip"] != "" THEN web["ip"] ELSE NULL
+destinationPort$ = IF web["port"] != "" THEN INT(web["port"], 10) ELSE NULL
+destinationUrl$ = IF web["domain"] != "" THEN web["domain"] ELSE NULL
+
+a1.key$ = "action"
+a1.value$ = act
+a2.key$ = "file_type"
+a2.value$ = STRING(v["fileType"])
+a3.key$ = "device_id"
+a3.value$ = STRING(v["deviceExternalId"])
+a4.key$ = "device_mac"
+a4.value$ = STRING(v["dvcmac"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4]
+a5.key$ = "path"
+a5.value$ = site
+additionalData$.record$ = IF site != "" AND web["domain"] == "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+parent = STRING(v["Parent Detection ID"])
+a6.key$ = "parent_detection_id"
+a6.value$ = parent
+additionalData$.record$ = IF parent != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
