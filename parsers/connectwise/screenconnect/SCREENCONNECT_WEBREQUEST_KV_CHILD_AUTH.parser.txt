@@ -1,0 +1,64 @@
+!SAMPLE=ScreenConnect|category=Security|event=LoginAttempt|result=Success|time=10/12/2026 10:40:11 PM|user=tech.akim|source=Internal|address=198.51.100.23
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ConnectWise ScreenConnect automations, text/plain web requests through a relay to HTTP Ingest.
+# Child of SCREENCONNECT_WEBREQUEST_KV_PARENT:
+#   Security records: logins to the ScreenConnect web interface and password changes.
+#     OperationResult values come from ScreenConnect's default security automations:
+#     Success, PasswordInvalid, OneTimePasswordInvalid and LockedOut.
+#   Session records where a technician (process_type Host) connects to or disconnects from a
+#     machine, as remote logons and logoffs.
+# sc, sec, ses, category, event, result, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+security = category == "Security"
+ok = result == "Success"
+
+# Security records
+targetUserName$ = sec["user"]
+sourceAddress$ = sec["address"]
+authSystem$ = "ScreenConnect " + sec["source"]
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF event == "ChangePasswordAttempt" THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+authCategory$ = IF result == "LockedOut" THEN "ACCOUNT_LOCK" ELSE authCategory$
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+action$ = IF event == "ChangePasswordAttempt" AND ok THEN "ACCOUNT" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF result == "PasswordInvalid" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF result == "OneTimePasswordInvalid" THEN "INCORRECT_MFA" ELSE failureCategory$
+failureCategory$ = IF result == "LockedOut" THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+mfaUsed$ = IF result == "OneTimePasswordInvalid" THEN TRUE ELSE NULL
+status$ = result
+
+# Session records: the technician's ScreenConnect account logs on to the guest machine.
+targetUserName$ = IF security THEN targetUserName$ ELSE ses["participant"]
+sourceAddress$ = IF security THEN sourceAddress$ ELSE ses["address"]
+authSystem$ = IF security THEN authSystem$ ELSE "ScreenConnect " + ses["stype"] + " session"
+targetHostName$ = IF security THEN NULL ELSE ses["gmachine"]
+hostId$ = IF security THEN NULL ELSE ses["gmachine"]
+targetDomainName$ = IF security THEN NULL ELSE ses["gdomain"]
+sessionId$ = IF security THEN NULL ELSE ses["sid"]
+logonType$ = IF security THEN NULL ELSE "REMOTEINTERACTIVE"
+authCategory$ = IF event == "Disconnected" THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+action$ = IF security THEN action$ ELSE "LOGON"
+action$ = IF event == "Disconnected" THEN "LOGOFF" ELSE action$
+actionResult$ = IF security THEN actionResult$ ELSE "SUCCESS"
+failureCategory$ = IF security THEN failureCategory$ ELSE NULL
+status$ = IF security THEN status$ ELSE event
+
+m1.key$ = "event_type"
+m1.value$ = event
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m3.key$ = "company"
+m3.value$ = ses["company"]
+m4.key$ = "guest_logged_on_user"
+m4.value$ = ses["guser"]
+m5.key$ = "guest_os"
+m5.value$ = ses["gos"]
+eventMetadata$.record$ = IF security THEN eventMetadata$.record$ ELSE eventMetadata$.record$ + [m3, m4, m5]

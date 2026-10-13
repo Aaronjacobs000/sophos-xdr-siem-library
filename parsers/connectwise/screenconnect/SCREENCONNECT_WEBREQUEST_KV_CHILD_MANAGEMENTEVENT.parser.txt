@@ -1,0 +1,30 @@
+!SAMPLE=ScreenConnect|category=Session|event=QueuedCommand|time=10/12/2026 10:46:02 PM|session_type=Access|session_guid=3f2b8c1e-5a7d-4e9b-b6c2-1d8e7f0a9b34|company=Acme Dental|guest_machine=ACME-WS-014|guest_domain=ACME|guest_user=jlee|guest_os=Microsoft Windows 11 Pro|host=tech.akim|participant=|process_type=|address=|data=net user backupadmin /add
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="management"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ConnectWise ScreenConnect automations, text/plain web requests through a relay to HTTP Ingest.
+# Child of SCREENCONNECT_WEBREQUEST_KV_PARENT: session events other than connects and
+# disconnects, such as QueuedCommand, RanCommand, QueuedTool, RanFiles, SentFiles and
+# CreatedSession, to ManagementEvent. Event types come from ScreenConnect's list of
+# automation definitions.
+# sc, ses, event, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+remoteOperation$ = TRUE
+operationName$ = event
+operation$ = ses["stype"] + " session"
+targetHostname$ = ses["gmachine"]
+hostId$ = ses["gmachine"]
+
+# Event.Host names the technician when the event happened outside a connection; inside one,
+# the connection's participant did it.
+username$ = IF ses["participant"] != "" THEN ses["participant"] ELSE ses["host"]
+
+# Event.Data holds the command or tool for queued commands and tools, the output for
+# RanCommand, and the file for file transfers.
+data = ses["data"]
+queued = event == "QueuedCommand" OR event == "QueuedTool" OR event == "QueuedElevatedTool"
+command$ = IF queued THEN data ELSE NULL
+result$ = IF queued OR data == "" THEN NULL ELSE data
