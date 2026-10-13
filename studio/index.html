@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Parser Studio</title>
+<meta name="description" content="Write and test Sophos NG-SIEM custom parsers in your browser, and share them in a community library. Unofficial project, not from Sophos.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app/styles.css">
+<script type="module" src="app/main.js"></script>
+</head>
+<body>
+<header class="top">
+  <a class="brandlink" href="#/build/sample" aria-label="Parser Studio home">
+    <span class="glyph" aria-hidden="true">{ }</span>
+    <span class="brand">Parser Studio <small>custom parsers for Sophos NG-SIEM</small></span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="#/build/sample" data-nav="build">Build</a>
+    <a href="#/library" data-nav="library">Library</a>
+    <a href="#/help" data-nav="help">How it works</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="meta" id="top-meta">v0.1.0 · MIT</span>
+  <span class="unofficial">Unofficial community tool</span>
+</header>
+<div class="notice" role="note"><b>Not from Sophos.</b> A personal project, not built, endorsed, or supported by Sophos. Everything runs in this browser tab, and results are emulator output until you Run Test in your own tenant.</div>
+<main id="app" tabindex="-1">
+  <noscript><p class="pad">Parser Studio needs JavaScript. It runs entirely in your browser.</p></noscript>
+</main>
+<footer class="foot">
+  <span>Parser Studio is an unofficial, MIT-licensed project by Aaron Jacobs. It is not a Sophos product. Report problems as <a href="https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio/issues" rel="noopener noreferrer" target="_blank">issues on GitHub</a>, not to Sophos support.</span>
+</footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

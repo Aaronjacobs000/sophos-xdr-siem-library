@@ -1,0 +1,134 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ESET_PROTECT_JSON_PARENT > ESET_PROTECT_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "source_address": "198.51.100.23",
+      "source_port": 54568,
+      "destination_address": "192.0.2.30",
+      "destination_port": 80,
+      "message": "Security vulnerability exploitation attempt",
+      "classification": "CVE-2017-5638.Struts2",
+      "application_name": "C:\\Program Files\\Apache Software Foundation\\apache-tomcat-9.0.41\\bin\\tomcat9.exe",
+      "source_username": "NT AUTHORITY\\NETWORK SERVICE",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "host_id": "w16test",
+      "direction": "INBOUND",
+      "protocol": 6,
+      "event_time_usec": 1791411664000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "group_name",
+            "value": "All/Servers"
+          },
+          {
+            "key": "eset_severity",
+            "value": "Warning"
+          },
+          {
+            "key": "aggregate_count",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ESET_PROTECT_JSON_PARENT > ESET_PROTECT_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "source_address": "192.0.2.41",
+      "source_port": 50112,
+      "destination_address": "203.0.113.80",
+      "destination_port": 4444,
+      "message": "Communication denied by rule",
+      "application_name": "C:\\Users\\akim\\AppData\\Local\\Temp\\updater.exe",
+      "source_username": "FIN-LT-041\\akim",
+      "action": "Blocked",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "host_id": "fin-lt-041",
+      "direction": "OUTBOUND",
+      "protocol": 6,
+      "event_time_usec": 1791411885000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "group_name",
+            "value": "All/Finance"
+          },
+          {
+            "key": "eset_severity",
+            "value": "Warning"
+          },
+          {
+            "key": "aggregate_count",
+            "value": "3"
+          },
+          {
+            "key": "rule_name",
+            "value": "Block outbound 4444"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ESET_PROTECT_JSON_PARENT > ESET_PROTECT_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "threat_name": "XF/Gydhex.A",
+      "vendor_alert_type": "Virus",
+      "agent_priority": "Warning",
+      "process_name": "C:\\Program Files\\WinRAR\\WinRAR.exe",
+      "user_name": "FIN-LT-041\\akim",
+      "computer_name": "fin-lt-041",
+      "host_id": "fin-lt-041",
+      "agent_device_id": "1361a9f6-1d45-4561-b33a-b5d6c62c71e0",
+      "file_path": "C:/Users/akim/Downloads/xls/YICT080714.xls",
+      "file_hash": {
+        "sha1": "5B97884A45C6C05F93B22C4059F3D9189E88E8B7"
+      },
+      "event_time_usec": 1791411751000000,
+      "threat_type": "FILE",
+      "threat_category": "VIRUS",
+      "action_taken": "DELETED"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ESET_PROTECT_JSON_PARENT > ESET_PROTECT_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "threat_name": "Win32/Agent.ABCD",
+      "vendor_alert_type": "Trojan",
+      "agent_priority": "Warning",
+      "process_name": "C:\\Program Files\\ESET\\ESET Security\\ekrn.exe",
+      "user_name": "OPS-WS-057\\jlee",
+      "computer_name": "ops-ws-057",
+      "host_id": "ops-ws-057",
+      "agent_device_id": "5dbe31ae-4ca7-4e8c-972f-15c197d12474",
+      "file_path": "C:/Users/jlee/Downloads/invoice_0921.zip",
+      "file_hash": {
+        "sha1": "0A1B2C3D4E5F60718293A4B5C6D7E8F901234567"
+      },
+      "event_time_usec": 1791412269000000,
+      "threat_type": "FILE",
+      "threat_category": "TROJAN",
+      "action_taken": "QUARANTINED"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ESET_PROTECT_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

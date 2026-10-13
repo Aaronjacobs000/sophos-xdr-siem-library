@@ -1,0 +1,82 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "event_time_usec": 1791412811000000,
+      "target_host_name": "bastion01",
+      "host_id": "bastion01",
+      "sensor_type": "OpenSSH",
+      "target_user_name": "alice",
+      "source_address": "203.0.113.10",
+      "source_port_number": 51234,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "auth_system": "sshd password"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "event_time_usec": 1791412862000000,
+      "target_host_name": "bastion01",
+      "host_id": "bastion01",
+      "sensor_type": "OpenSSH",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.7",
+      "source_port_number": 40022,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INVALID_ACCOUNT",
+      "auth_system": "sshd password"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "event_time_usec": 1791412865000000,
+      "target_host_name": "bastion01",
+      "host_id": "bastion01",
+      "sensor_type": "OpenSSH",
+      "target_user_name": "root",
+      "source_address": "198.51.100.7",
+      "source_port_number": 40024,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "auth_system": "sshd password"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "event_time_usec": 1791413077000000,
+      "target_host_name": "bastion01",
+      "host_id": "bastion01",
+      "sensor_type": "OpenSSH",
+      "target_user_name": "deploy",
+      "source_address": "192.0.2.15",
+      "source_port_number": 50122,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "auth_system": "sshd publickey"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

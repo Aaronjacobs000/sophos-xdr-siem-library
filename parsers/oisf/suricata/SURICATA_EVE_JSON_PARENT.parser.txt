@@ -1,0 +1,29 @@
+!SAMPLE=Oct  7 22:13:42 ids01 suricata[2201]: {"timestamp":"2026-10-07T22:13:41.532140+0000","flow_id":1676750115612680,"in_iface":"eth1","event_type":"alert","src_ip":"203.0.113.45","src_port":35361,"dest_ip":"192.0.2.37","dest_port":49175,"proto":"TCP","tx_id":1,"alert":{"action":"allowed","gid":1,"signature_id":2045001,"rev":1,"signature":"ET ATTACK_RESPONSE Win32/LeftHook Stealer Browser Extension Config Inbound","category":"A Network Trojan was detected","severity":1},"app_proto":"http","direction":"to_client"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=suricata(\[\d+\])?:\s*\{"timestamp":"[^"]+","flow_id":\d+
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Suricata EVE JSON (eve-log with type: syslog), JSON over syslog to the data collector.
+# Parent: recognizes every EVE record and hands the parsed JSON to its children.
+# alert, dns and flow records have children; other event types stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+# Cut the JSON object off the end of the syslog line, then parse it.
+jsonMatch = originalData$|(\{.*})$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to every child.
+eventType$ = json["$.event_type"]
+sensorType$ = "Suricata"
+
+# Every EVE record carries the 5-tuple and a time with a zone offset.
+eventTime = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z0700")
+proto = UPPERCASE(STRING(json["$.proto"]))
+protoNumber = IF proto == "TCP" THEN 6 ELSE 0
+protoNumber = IF proto == "UDP" THEN 17 ELSE protoNumber
+protoNumber = IF proto == "ICMP" THEN 1 ELSE protoNumber
+protoNumber = IF proto == "IPV6-ICMP" THEN 58 ELSE protoNumber
+protoNumber = IF proto == "SCTP" THEN 132 ELSE protoNumber

@@ -1,0 +1,32 @@
+name: Parser submission
+description: Add parsers to the library without git. Paste the submission Parser Studio copied for you.
+title: "Parser: "
+labels: ["parser-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use **Share to the library** on the Test step of [Parser Studio](https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/). It runs the library checks, then copies a submission for this form.
+        A workflow checks the submission again and opens a pull request for it. You are recorded as the author.
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Submission
+      description: Paste the whole submission, starting with {"bundle":
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before you submit
+      options:
+        - label: The samples are synthetic or copied from public vendor docs. They hold no customer data, real IP addresses, hostnames, user names, email addresses or keys.
+          required: true
+        - label: I agree to publish these parsers under the license in the submission, in this public repo.
+          required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Optional. Notes for the maintainer.

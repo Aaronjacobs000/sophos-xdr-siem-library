@@ -1,0 +1,80 @@
+# Acts on "Parser checks" with write access. It trusts nothing from that run except the pull
+# request number, which it checks against the head commit. It validates again with the
+# default branch's code, labels the pull request, posts the report, and merges when the repo
+# allows auto-merge and the pull request only adds or updates its author's own entries.
+name: Parser labels and merge
+
+on:
+  workflow_run:
+    workflows: [Parser checks]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: parser-merge-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the default branch (trusted code)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: base
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parser-checks
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: artifact
+      - name: Match the pull request to the checked commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          PR=$(tr -dc '0-9' < artifact/pr-number.txt)
+          if [ -z "$PR" ]; then echo "no pull request number"; exit 1; fi
+          INFO=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.head.sha, .user.login, .state] | @tsv')
+          SHA=$(echo "$INFO" | cut -f1); AUTHOR=$(echo "$INFO" | cut -f2); STATE=$(echo "$INFO" | cut -f3)
+          if [ "$SHA" != "$HEAD_SHA" ] || [ "$STATE" != "open" ]; then echo "pull request moved on; skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          { echo "number=$PR"; echo "author=$AUTHOR"; echo "skip=false"; } >> "$GITHUB_OUTPUT"
+      - name: Fetch the pull request files (data only)
+        if: steps.pr.outputs.skip == 'false'
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git init -q pr
+          cd pr
+          git fetch -q --depth=1 "https://github.com/$GITHUB_REPOSITORY.git" "refs/pull/$PR/head"
+          test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
+          git checkout -q FETCH_HEAD
+      - name: Validate again with trusted code
+        if: steps.pr.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ steps.pr.outputs.number }}
+          AUTHOR: ${{ steps.pr.outputs.author }}
+        run: |
+          node base/tools/github-gate.mjs changed --pr "$PR" --out changed.txt
+          node base/tools/validate-library.mjs --root pr --base base --changed-files changed.txt --author "$AUTHOR" --report report.json --markdown report.md || true
+      - name: Label, report and merge
+        if: steps.pr.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node base/tools/github-gate.mjs pr --pr "$PR" --sha "$HEAD_SHA" --report report.json --markdown report.md

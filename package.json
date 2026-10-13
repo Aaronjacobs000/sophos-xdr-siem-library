@@ -1,0 +1,26 @@
+{
+  "name": "sophos-ngsiem-parser-studio",
+  "version": "0.1.0",
+  "description": "Write and test Sophos NG-SIEM custom parsers in the browser, with a community parser library. Unofficial project, not from Sophos.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Aaron Jacobs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "validate": "node tools/validate-library.mjs --all",
+    "build": "node tools/build-site.mjs",
+    "serve": "node tools/serve.mjs",
+    "emulate": "node tools/emulate.mjs",
+    "expected": "node tools/update-expected.mjs",
+    "schemas": "node tools/build-schemas.mjs",
+    "check": "node --test \"test/*.test.mjs\" && node tools/validate-library.mjs --all"
+  }
+}

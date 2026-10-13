@@ -1,0 +1,40 @@
+!SAMPLE=Oct  7 22:40:11 bastion01 sshd[4182]: Accepted password for alice from 203.0.113.10 port 51234 ssh2
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=sshd(\[\d+\])?:\s+(Accepted|Failed)\s+\S+\s+for\s+.+\s+from\s+\S+\s+port\s+\d+\s+ssh2
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OpenSSH sshd, plain text over syslog to the data collector.
+# Standalone parser for the Authentication schema: "Accepted" and "Failed" logon lines only.
+# Other sshd lines (sessions, disconnects) stay in the generic schema.
+# The line format comes from authlog() in OpenSSH's auth.c:
+#   <Accepted|Failed> <method> for [invalid user ]<user> from <address> port <port> ssh2[: <key>]
+
+m = originalData$|sshd(?:\[\d+\])?:\s+(?P<result>Accepted|Failed)\s+(?P<method>\S+)\s+for\s+(?P<invalid>invalid user\s+)?(?P<user>\S+)\s+from\s+(?P<address>\S+)\s+port\s+(?P<port>\d+)\s+ssh2
+
+# The syslog header has the time and the host name. It carries no year and no zone, so
+# DATETIME picks the year (TRUE) and reads the time as UTC: run sshd hosts on UTC.
+hdr = originalData$|^(?:<\d+>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+eventTimeUsec$ = DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE)
+targetHostName$ = hdr["host"]
+hostId$ = hdr["host"]
+
+sensorType$ = "OpenSSH"
+targetUserName$ = m["user"]
+sourceAddress$ = m["address"]
+sourcePortNumber$ = INT(m["port"], 10)
+
+authCategory$ = "ACCOUNT_LOGON"
+accepted = m["result"] == "Accepted"
+action$ = IF accepted THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF accepted THEN "SUCCESS" ELSE "FAILED"
+
+# "invalid user" means the account doesn't exist on the host.
+failureCategory$ = NULL
+failureCategory$ = IF accepted THEN NULL ELSE "INCORRECT_USER_OR_PASSWORD"
+failureCategory$ = IF m["invalid"] != "" THEN "INVALID_ACCOUNT" ELSE failureCategory$
+
+# The Auth schema page gives event_metadata no parser field, so the method (password,
+# publickey, keyboard-interactive) goes into auth_system instead.
+authSystem$ = "sshd " + m["method"]

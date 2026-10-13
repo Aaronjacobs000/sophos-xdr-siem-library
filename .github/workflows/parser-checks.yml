@@ -1,0 +1,63 @@
+# Runs on every pull request with a read-only token. It checks out the base branch and the
+# pull request side by side and runs the base branch's validator on the pull request's
+# files, so a pull request can't change the rules it is checked against. The result goes to
+# an artifact; the "Parser labels and merge" workflow acts on it with write access.
+name: Parser checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the base branch (trusted code)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - name: Check out the pull request (data only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: List the changed files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node base/tools/github-gate.mjs changed --pr "$PR_NUMBER" --out changed.txt
+      - name: Validate the library entries
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node base/tools/validate-library.mjs --root pr --base base --changed-files changed.txt --author "$PR_AUTHOR" --report report.json --markdown report.md
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f report.md ]; then cat report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Record the pull request
+        if: always()
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "$PR_NUMBER" > pr-number.txt
+          echo "$HEAD_SHA" > head-sha.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: parser-checks
+          path: |
+            pr-number.txt
+            head-sha.txt
+          retention-days: 7

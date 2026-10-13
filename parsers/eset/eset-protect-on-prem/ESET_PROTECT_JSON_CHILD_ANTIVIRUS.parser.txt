@@ -1,0 +1,48 @@
+!SAMPLE=Oct  8 09:22:40 eraserver ERAServer[5648]: {"event_type":"Threat_Event","ipv4":"192.0.2.41","hostname":"fin-lt-041","group_name":"All/Finance","os_name":"Microsoft Windows 11 Pro","group_description":"Finance laptops","source_uuid":"1361a9f6-1d45-4561-b33a-b5d6c62c71e0","occured":"07-Oct-2026 22:22:31","severity":"Warning","threat_type":"Virus","threat_name":"XF/Gydhex.A","scanner_id":"Real-time file system protection","scan_id":"virlog.dat","engine_version":"23497 (20210621)","object_type":"file","object_uri":"file:///C:/Users/akim/Downloads/xls/YICT080714.xls","action_taken":"Deleted","threat_handled":true,"need_restart":false,"username":"FIN-LT-041\\akim","processname":"C:\\Program Files\\WinRAR\\WinRAR.exe","circumstances":"Event occurred on a newly created file.","firstseen":"07-Oct-2026 22:22:30","hash":"5B97884A45C6C05F93B22C4059F3D9189E88E8B7"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="Threat_Event"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT On-Prem, JSON over syslog to the data collector.
+# Child of ESET_PROTECT_JSON_PARENT: antivirus detections (Threat_Event) to the Antivirus schema.
+# json, eventType$ and sensorType$ come from the parent.
+
+threatName$ = json["$.threat_name"]
+vendorAlertType$ = json["$.threat_type"]
+agentPriority$ = json["$.severity"]
+processName$ = json["$.processname"]
+userName$ = json["$.username"]
+computerName$ = json["$.hostname"]
+hostId$ = json["$.hostname"]
+agentDeviceId$ = json["$.source_uuid"]
+
+# ESET sends the file as a file:/// URI.
+filePath$ = REPLACE(json["$.object_uri"], "file:///", "")
+
+# ESET documents hash as SHA1. FileHash has md5$, sha1$, sha256$ and sha512$.
+fileHash$.sha1$ = json["$.hash"]
+
+# ESET documents the key as "occurred" but its examples send "occured". Read both. ESET sends UTC.
+occurred = json["$.occured"]
+occurred = IF occurred == NULL THEN json["$.occurred"] ELSE occurred
+eventTimeUsec$ = DATETIME(occurred, "02-Jan-2006 15:04:05")
+
+# Enum fields take the enum name. ESET says it can't list every value of threat_type,
+# object_type or action_taken, so anything unrecognized falls to the UNKNOWN_ member.
+threatType$ = IF LOWERCASE(json["$.object_type"]) == "file" THEN "FILE" ELSE "UNKNOWN_THREATTYPE"
+
+category = LOWERCASE(json["$.threat_type"])
+threatCategory$ = "UNKNOWN_THREATCATEGORY"
+threatCategory$ = IF CONTAINS(category, "virus") THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "potentially unwanted") THEN "APPLICATION" ELSE threatCategory$
+
+action = LOWERCASE(json["$.action_taken"])
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF CONTAINS(action, "delet") THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(action, "quarantin") THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(action, "block") THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(action, "terminat") THEN "TERMINATED" ELSE actionTaken$

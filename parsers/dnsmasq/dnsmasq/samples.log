@@ -1,0 +1,7 @@
+Oct  7 23:02:11 gw01 dnsmasq[812]: query[A] update.example.com from 192.0.2.50
+Oct  7 23:02:11 gw01 dnsmasq[812]: forwarded update.example.com to 198.51.100.53
+Oct  7 23:02:11 gw01 dnsmasq[812]: reply update.example.com is 203.0.113.80
+Oct  7 23:02:14 gw01 dnsmasq[812]: query[AAAA] mail.example.org from 192.0.2.61
+Oct  7 23:02:14 gw01 dnsmasq[812]: cached mail.example.org is 2001:db8::25
+Oct  7 23:02:20 gw01 dnsmasq[812]: query[MX] example.net from 192.0.2.61
+Oct  7 23:02:31 gw01 dnsmasq[812]: query[type=65] cdn.example.com from 192.0.2.50

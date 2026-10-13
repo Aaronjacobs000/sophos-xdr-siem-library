@@ -1,0 +1,5 @@
+Oct  7 22:40:11 bastion01 sshd[4182]: Accepted password for alice from 203.0.113.10 port 51234 ssh2
+Oct  7 22:41:02 bastion01 sshd[4190]: Failed password for invalid user admin from 198.51.100.7 port 40022 ssh2
+Oct  7 22:41:05 bastion01 sshd[4190]: Failed password for root from 198.51.100.7 port 40024 ssh2
+Oct  7 22:44:37 bastion01 sshd[4231]: Accepted publickey for deploy from 192.0.2.15 port 50122 ssh2: ED25519 SHA256:EXAMPLExfingerprintxnotxrealxxxxxxxxxxxxxxx
+Oct  7 22:44:37 bastion01 sshd[4231]: pam_unix(sshd:session): session opened for user deploy(uid=1001) by (uid=0)

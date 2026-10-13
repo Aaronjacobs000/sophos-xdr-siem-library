@@ -1,0 +1,17 @@
+{
+  "vendor": "OpenBSD",
+  "product": "OpenSSH sshd",
+  "versions": ["9", "10"],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": { "emulator": "0.1.0", "tenant": null },
+  "docs": ["https://github.com/openssh/openssh-portable/blob/master/auth.c", "https://man.openbsd.org/sshd_config#LogLevel"],
+  "notes": "Accepted and Failed logon lines from sshd at LogLevel INFO, forwarded by the host's syslog daemon. The syslog time has no zone, so the parser reads it as UTC; keep the hosts on UTC or change the layout. Samples are made up in the format OpenSSH's authlog() writes.",
+  "parsers": [
+    { "name": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH", "file": "OPENSSH_SSHD_SYSLOG_STANDALONE_AUTH.parser.txt", "role": "standalone", "schema": "scwx.auth" }
+  ]
+}

@@ -1,0 +1,44 @@
+!SAMPLE=Oct  7 22:16:10 ids01 suricata[2201]: {"timestamp":"2026-10-07T22:16:10.004512+0000","flow_id":2093384551023887,"in_iface":"eth1","event_type":"dns","src_ip":"192.0.2.50","src_port":53122,"dest_ip":"192.0.2.53","dest_port":53,"proto":"UDP","dns":{"version":3,"type":"request","id":16000,"queries":[{"rrname":"update.example.com","rrtype":"A"}]}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="dns"
+!SCHEMA=scwx.dnsquery
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Suricata EVE JSON (eve-log with type: syslog), JSON over syslog to the data collector.
+# Child of SURICATA_EVE_JSON_PARENT: dns records to the DNS schema.
+# Setting query_name lets the Domain Generation Algorithms and Domain Watchlist detectors use these events.
+# json, eventTime, eventType$ and sensorType$ come from the parent.
+
+eventTimeUsec$ = eventTime
+sourceAddress$ = json["$.src_ip"]
+destinationAddress$ = json["$.dest_ip"]
+
+# Suricata 8 (DNS log version 3) lists queries; Suricata 7 (version 2) logs rrname on the record.
+queryName$ = json["$.dns.queries[0].rrname"]
+queryName$ = IF queryName$ == NULL THEN json["$.dns.rrname"] ELSE queryName$
+rrtype = json["$.dns.queries[0].rrtype"]
+rrtype = IF rrtype == NULL THEN json["$.dns.rrtype"] ELSE rrtype
+
+# query_type and response_code take the DNS numbers (IANA); EVE logs the names.
+queryType$ = NULL
+queryType$ = IF rrtype == "A" THEN 1 ELSE queryType$
+queryType$ = IF rrtype == "NS" THEN 2 ELSE queryType$
+queryType$ = IF rrtype == "CNAME" THEN 5 ELSE queryType$
+queryType$ = IF rrtype == "SOA" THEN 6 ELSE queryType$
+queryType$ = IF rrtype == "PTR" THEN 12 ELSE queryType$
+queryType$ = IF rrtype == "MX" THEN 15 ELSE queryType$
+queryType$ = IF rrtype == "TXT" THEN 16 ELSE queryType$
+queryType$ = IF rrtype == "AAAA" THEN 28 ELSE queryType$
+queryType$ = IF rrtype == "SRV" THEN 33 ELSE queryType$
+queryType$ = IF rrtype == "HTTPS" THEN 65 ELSE queryType$
+queryType$ = IF rrtype == "ANY" THEN 255 ELSE queryType$
+
+rcode = json["$.dns.rcode"]
+responseCode$ = NULL
+responseCode$ = IF rcode == "NOERROR" THEN 0 ELSE responseCode$
+responseCode$ = IF rcode == "FORMERR" THEN 1 ELSE responseCode$
+responseCode$ = IF rcode == "SERVFAIL" THEN 2 ELSE responseCode$
+responseCode$ = IF rcode == "NXDOMAIN" THEN 3 ELSE responseCode$
+responseCode$ = IF rcode == "NOTIMP" THEN 4 ELSE responseCode$
+responseCode$ = IF rcode == "REFUSED" THEN 5 ELSE responseCode$

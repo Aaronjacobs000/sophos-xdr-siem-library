@@ -1,0 +1,109 @@
+# The no-git route: someone pastes a Parser Studio submission into the issue form. This
+# reads the issue body as data, writes the entry, runs the library checks, and when they
+# pass opens a pull request for it. The issue author is recorded as the entry's author.
+name: Issue submission
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: issue-submission-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    if: contains(github.event.issue.labels.*.name, 'parser-submission') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Write the entry from the issue
+        id: entry
+        env:
+          BODY: ${{ github.event.issue.body }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/sub"
+          printf '%s' "$BODY" > "$RUNNER_TEMP/sub/body.txt"
+          cp -r . "$RUNNER_TEMP/base"
+          if node tools/issue-submission.mjs --body "$RUNNER_TEMP/sub/body.txt" --author "$AUTHOR" --changed "$RUNNER_TEMP/sub/changed.txt" > "$RUNNER_TEMP/sub/out.txt" 2> "$RUNNER_TEMP/sub/err.txt"; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            grep '^ENTRY_ID=' "$RUNNER_TEMP/sub/out.txt" | sed 's/^ENTRY_ID=/id=/' >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report a submission that can't be read
+        if: steps.entry.outputs.ok == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: node tools/github-gate.mjs issue --issue "$ISSUE" --failed "$(head -c 1000 "$RUNNER_TEMP/sub/err.txt")"
+      - name: Run the library checks
+        id: checks
+        if: steps.entry.outputs.ok == 'true'
+        env:
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          if node "$RUNNER_TEMP/base/tools/validate-library.mjs" --root . --base "$RUNNER_TEMP/base" --changed-files "$RUNNER_TEMP/sub/changed.txt" --author "$AUTHOR" --report "$RUNNER_TEMP/sub/report.json" --markdown "$RUNNER_TEMP/sub/report.md"; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+          fi
+          node -e "const r=require(process.argv[1]); console.log('eligible=' + r.eligible)" "$RUNNER_TEMP/sub/report.json" >> "$GITHUB_OUTPUT"
+      - name: Open or update the pull request
+        id: pr
+        if: steps.checks.outputs.passed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          ENTRY: ${{ steps.entry.outputs.id }}
+        run: |
+          BRANCH="submission/issue-$ISSUE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898231+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A parsers
+          git commit -q -m "feat(library): add $ENTRY from issue #$ISSUE" -m "Submitted by @$AUTHOR through the issue form."
+          git push -q -f origin "$BRANCH"
+          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -z "$PR" ]; then
+            if ! gh pr create --head "$BRANCH" --base main --title "Add $ENTRY (issue #$ISSUE)" --body-file "$RUNNER_TEMP/sub/report.md" > "$RUNNER_TEMP/sub/pr.txt" 2>&1; then
+              echo "created=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          fi
+          { echo "created=true"; echo "number=$PR"; echo "sha=$(git rev-parse HEAD)"; } >> "$GITHUB_OUTPUT"
+      - name: Merge when allowed
+        id: merge
+        if: steps.pr.outputs.created == 'true' && steps.checks.outputs.eligible == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ steps.pr.outputs.number }}
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: echo "outcome=$(node tools/github-gate.mjs merge --pr "$PR" --sha "$SHA" 2>&1 | tail -1)" >> "$GITHUB_OUTPUT"
+      - name: Report on the issue
+        if: steps.entry.outputs.ok == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          PASSED: ${{ steps.checks.outputs.passed }}
+          CREATED: ${{ steps.pr.outputs.created }}
+          PR: ${{ steps.pr.outputs.number }}
+          OUTCOME: ${{ steps.merge.outputs.outcome }}
+        run: |
+          NOTE=""
+          if [ "$PASSED" = "true" ] && [ "$CREATED" = "true" ]; then NOTE="Pull request: #$PR. $OUTCOME"; fi
+          if [ "$PASSED" = "true" ] && [ "$CREATED" != "true" ]; then NOTE="The checks passed, but this workflow couldn't open the pull request. A maintainer will open it."; fi
+          node tools/github-gate.mjs issue --issue "$ISSUE" --markdown "$RUNNER_TEMP/sub/report.md" --note "$NOTE"

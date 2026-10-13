@@ -1,0 +1,45 @@
+!SAMPLE=Oct  7 22:13:42 ids01 suricata[2201]: {"timestamp":"2026-10-07T22:13:41.532140+0000","flow_id":1676750115612680,"in_iface":"eth1","event_type":"alert","src_ip":"203.0.113.45","src_port":35361,"dest_ip":"192.0.2.37","dest_port":49175,"proto":"TCP","tx_id":1,"alert":{"action":"allowed","gid":1,"signature_id":2045001,"rev":1,"signature":"ET ATTACK_RESPONSE Win32/LeftHook Stealer Browser Extension Config Inbound","category":"A Network Trojan was detected","severity":1},"app_proto":"http","direction":"to_client"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Suricata EVE JSON (eve-log with type: syslog), JSON over syslog to the data collector.
+# Child of SURICATA_EVE_JSON_PARENT: alert records to NIDS.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, eventTime, protoNumber, eventType$ and sensorType$ come from the parent.
+
+eventTimeUsec$ = eventTime
+sourceAddress$ = json["$.src_ip"]
+sourcePort$ = json["$.src_port"]
+destinationAddress$ = json["$.dest_ip"]
+destinationPort$ = json["$.dest_port"]
+protocol$ = protoNumber
+applicationName$ = json["$.app_proto"]
+
+generatorId$ = json["$.alert.gid"]
+signatureId$ = json["$.alert.signature_id"]
+signatureRevision$ = json["$.alert.rev"]
+message$ = json["$.alert.signature"]
+classification$ = json["$.alert.category"]
+priority$ = json["$.alert.severity"]
+action$ = json["$.alert.action"]
+blocked$ = IF json["$.alert.action"] == "blocked" THEN 1 ELSE 0
+
+# Emerging Threats rule names start with "ET " or "ETPRO ".
+signature = json["$.alert.signature"]
+etRule = signature|^(ET|ETPRO)\s
+countermeasureAuthor$ = IF etRule != NULL THEN "EMERGING_THREATS" ELSE NULL
+
+# EVE direction says which way the packet that fired the rule was going.
+flowDirection = json["$.direction"]
+direction$ = NULL
+direction$ = IF flowDirection == "to_server" THEN "CLIENT_TO_SERVER" ELSE direction$
+direction$ = IF flowDirection == "to_client" THEN "SERVER_TO_CLIENT" ELSE direction$
+
+flowId.key$ = "flow_id"
+flowId.value$ = STRING(json["$.flow_id"])
+iface.key$ = "in_iface"
+iface.value$ = json["$.in_iface"]
+eventMetadata$.record$ = eventMetadata$.record$ + [flowId, iface]

@@ -1,0 +1,51 @@
+!SAMPLE=Oct  8 09:21:07 eraserver ERAServer[5648]: {"event_type":"FirewallAggregated_Event","ipv4":"192.0.2.30","hostname":"w16test","group_name":"All/Servers","os_name":"Microsoft Windows Server 2022 Standard","group_description":"Production servers","source_uuid":"d9477661-8fa4-4144-b8d4-e37b983bcd69","occured":"07-Oct-2026 22:21:04","severity":"Warning","event":"Security vulnerability exploitation attempt","source_address":"198.51.100.23","source_address_type":"IPv4","source_port":54568,"target_address":"192.0.2.30","target_address_type":"IPv4","target_port":80,"protocol":"TCP","account":"NT AUTHORITY\\NETWORK SERVICE","process_name":"C:\\Program Files\\Apache Software Foundation\\apache-tomcat-9.0.41\\bin\\tomcat9.exe","inbound":true,"threat_name":"CVE-2017-5638.Struts2","aggregate_count":1}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="FirewallAggregated_Event"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT On-Prem, JSON over syslog to the data collector.
+# Child of ESET_PROTECT_JSON_PARENT: ESET Firewall detections (FirewallAggregated_Event) to NIDS.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, eventType$ and sensorType$ come from the parent.
+
+sourceAddress$ = json["$.source_address"]
+sourcePort$ = json["$.source_port"]
+destinationAddress$ = json["$.target_address"]
+destinationPort$ = json["$.target_port"]
+message$ = json["$.event"]
+classification$ = json["$.threat_name"]
+applicationName$ = json["$.process_name"]
+sourceUsername$ = json["$.account"]
+action$ = json["$.action"]
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+hostId$ = json["$.hostname"]
+
+# ESET's firewall runs on the endpoint, so traffic is INBOUND or OUTBOUND from that host.
+direction$ = IF STRING(json["$.inbound"]) == "true" THEN "INBOUND" ELSE "OUTBOUND"
+
+# protocol takes the IANA number; ESET sends a name.
+proto = UPPERCASE(STRING(json["$.protocol"]))
+protocol$ = IF proto == "TCP" THEN 6 ELSE 0
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+
+# ESET documents the key as "occurred" but its examples send "occured". Read both. ESET sends UTC.
+occurred = json["$.occured"]
+occurred = IF occurred == NULL THEN json["$.occurred"] ELSE occurred
+eventTimeUsec$ = DATETIME(occurred, "02-Jan-2006 15:04:05")
+
+# Keys with no NIDS field of their own go to event_metadata.
+grp.key$ = "group_name"
+grp.value$ = json["$.group_name"]
+sev.key$ = "eset_severity"
+sev.value$ = json["$.severity"]
+cnt.key$ = "aggregate_count"
+cnt.value$ = STRING(json["$.aggregate_count"])
+eventMetadata$.record$ = eventMetadata$.record$ + [grp, sev, cnt]
+
+# rule_name is optional, so add it only when ESET sends it.
+rule.key$ = "rule_name"
+rule.value$ = json["$.rule_name"]
+eventMetadata$.record$ = IF rule.value$ THEN eventMetadata$.record$ + [rule] ELSE eventMetadata$.record$

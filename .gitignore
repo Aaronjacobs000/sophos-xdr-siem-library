@@ -1,0 +1,15 @@
+# Build output
+_site/
+
+# Dependencies (there are none, but keep stray installs out)
+node_modules/
+
+# Editor and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code local config
+.claude/

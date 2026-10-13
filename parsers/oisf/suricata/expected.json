@@ -1,0 +1,179 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411221532140,
+      "source_address": "203.0.113.45",
+      "source_port": 35361,
+      "destination_address": "192.0.2.37",
+      "destination_port": 49175,
+      "protocol": 6,
+      "application_name": "http",
+      "generator_id": 1,
+      "signature_id": 2045001,
+      "signature_revision": 1,
+      "message": "ET ATTACK_RESPONSE Win32/LeftHook Stealer Browser Extension Config Inbound",
+      "classification": "A Network Trojan was detected",
+      "priority": 1,
+      "action": "allowed",
+      "blocked": 0,
+      "countermeasure_author": "EMERGING_THREATS",
+      "direction": "SERVER_TO_CLIENT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1676750115612680"
+          },
+          {
+            "key": "in_iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411302118604,
+      "source_address": "192.0.2.50",
+      "source_port": 51544,
+      "destination_address": "198.51.100.200",
+      "destination_port": 2222,
+      "protocol": 6,
+      "application_name": "ssh",
+      "generator_id": 1,
+      "signature_id": 1000001,
+      "signature_revision": 2,
+      "message": "LOCAL Outbound SSH to an unusual port",
+      "classification": "Potentially Bad Traffic",
+      "priority": 2,
+      "action": "blocked",
+      "blocked": 1,
+      "direction": "CLIENT_TO_SERVER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1182736455120931"
+          },
+          {
+            "key": "in_iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411370004512,
+      "source_address": "192.0.2.50",
+      "destination_address": "192.0.2.53",
+      "query_name": "update.example.com",
+      "query_type": 1
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411371207731,
+      "source_address": "192.0.2.53",
+      "destination_address": "192.0.2.50",
+      "query_name": "qx7v2kd9a.example.net",
+      "query_type": 28,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411253752399,
+      "source_address": "192.0.2.37",
+      "source_port": 49175,
+      "destination_address": "203.0.113.45",
+      "destination_port": 35361,
+      "protocol": 6,
+      "application_name": "http",
+      "direction": "CLIENT_TO_SERVER",
+      "tx_byte_count": 3536402,
+      "rx_byte_count": 94102,
+      "tx_packet_count": 3869,
+      "rx_packet_count": 1523,
+      "start_timestamp_usec": 1791411213324862,
+      "end_timestamp_usec": 1791411253752399,
+      "connection_end_reason": "shutdown",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1676750115612680"
+          },
+          {
+            "key": "flow_state",
+            "value": "closed"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT > SURICATA_EVE_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Suricata",
+      "event_time_usec": 1791411509882015,
+      "source_address": "192.0.2.50",
+      "source_port": 51544,
+      "destination_address": "198.51.100.200",
+      "destination_port": 2222,
+      "protocol": 6,
+      "application_name": "ssh",
+      "direction": "CLIENT_TO_SERVER",
+      "tx_byte_count": 296,
+      "rx_byte_count": 0,
+      "tx_packet_count": 4,
+      "rx_packet_count": 0,
+      "start_timestamp_usec": 1791411302110911,
+      "end_timestamp_usec": 1791411302118604,
+      "connection_end_reason": "timeout",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "938817235511622"
+          },
+          {
+            "key": "flow_state",
+            "value": "closed"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SURICATA_EVE_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

@@ -1,0 +1,41 @@
+!SAMPLE=Oct  7 22:14:14 ids01 suricata[2201]: {"timestamp":"2026-10-07T22:14:13.752399+0000","flow_id":1676750115612680,"in_iface":"eth1","event_type":"flow","src_ip":"192.0.2.37","src_port":49175,"dest_ip":"203.0.113.45","dest_port":35361,"proto":"TCP","app_proto":"http","flow":{"pkts_toserver":3869,"pkts_toclient":1523,"bytes_toserver":3536402,"bytes_toclient":94102,"start":"2026-10-07T22:13:33.324862+0000","end":"2026-10-07T22:14:13.752399+0000","age":40,"state":"closed","reason":"shutdown","alerted":true}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Suricata EVE JSON (eve-log with type: syslog), JSON over syslog to the data collector.
+# Child of SURICATA_EVE_JSON_PARENT: flow records to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, eventTime, protoNumber, eventType$ and sensorType$ come from the parent.
+
+eventTimeUsec$ = eventTime
+sourceAddress$ = json["$.src_ip"]
+sourcePort$ = json["$.src_port"]
+destinationAddress$ = json["$.dest_ip"]
+destinationPort$ = json["$.dest_port"]
+protocol$ = protoNumber
+applicationName$ = json["$.app_proto"]
+
+# In a flow record the source is the client, so "to server" counts are what it sent.
+direction$ = "CLIENT_TO_SERVER"
+txByteCount$ = json["$.flow.bytes_toserver"]
+rxByteCount$ = json["$.flow.bytes_toclient"]
+txPacketCount$ = json["$.flow.pkts_toserver"]
+rxPacketCount$ = json["$.flow.pkts_toclient"]
+startTimestampUsec$ = DATETIME(json["$.flow.start"], "2006-01-02T15:04:05.999999999Z0700")
+endTimestampUsec$ = DATETIME(json["$.flow.end"], "2006-01-02T15:04:05.999999999Z0700")
+connectionEndReason$ = json["$.flow.reason"]
+
+# EVE logs flow.action only in IPS mode: "pass" or "drop".
+action = json["$.flow.action"]
+flowAction$ = NULL
+flowAction$ = IF action == "pass" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF action == "drop" THEN "FW_BLOCKED" ELSE flowAction$
+
+flowId.key$ = "flow_id"
+flowId.value$ = STRING(json["$.flow_id"])
+state.key$ = "flow_state"
+state.value$ = json["$.flow.state"]
+eventMetadata$.record$ = eventMetadata$.record$ + [flowId, state]

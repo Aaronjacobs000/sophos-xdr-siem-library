@@ -1,0 +1,20 @@
+!SAMPLE=Oct  8 09:21:07 eraserver ERAServer[5648]: {"event_type":"FirewallAggregated_Event","ipv4":"192.0.2.30","hostname":"w16test","group_name":"All/Servers","os_name":"Microsoft Windows Server 2022 Standard","group_description":"Production servers","source_uuid":"d9477661-8fa4-4144-b8d4-e37b983bcd69","occured":"07-Oct-2026 22:21:04","severity":"Warning","event":"Security vulnerability exploitation attempt","source_address":"198.51.100.23","source_address_type":"IPv4","source_port":54568,"target_address":"192.0.2.30","target_address_type":"IPv4","target_port":80,"protocol":"TCP","account":"NT AUTHORITY\\NETWORK SERVICE","process_name":"C:\\Program Files\\Apache Software Foundation\\apache-tomcat-9.0.41\\bin\\tomcat9.exe","inbound":true,"threat_name":"CVE-2017-5638.Struts2","aggregate_count":1}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=ERAServer\[\d+\]:\s*\{\s*"event_type"\s*:\s*"[A-Za-z]+_Event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT On-Prem, JSON over syslog to the data collector.
+# Parent: recognizes every ESET PROTECT JSON event and hands the parsed JSON to its children.
+# Events with no child (Audit_Event, HipsAggregated_Event and others) stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+# Cut the JSON object off the end of the syslog line, then parse it.
+jsonMatch = originalData$|(\{.*})$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to every child.
+eventType$ = json["$.event_type"]
+sensorType$ = "ESET PROTECT"
