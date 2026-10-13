@@ -4,6 +4,7 @@
 // parsers/<vendor-slug>/<product-slug>/
 //   meta.json            vendor, product, versions, format, ship method, author, license, parsers,
 //                        and an optional collector (collectors/<name>) for pull-only sources
+//                        and webhooks that need a relay
 //   <NAME>.parser.txt    one file per parser
 //   samples.log          synthetic sample lines, one event per line
 //   expected.json        the emulator result for each sample line
@@ -22,7 +23,8 @@ export const ROLES = ['standalone', 'parent', 'child'];
 export const ALLOWED_FILES = /^(meta\.json|samples\.log|expected\.json|README\.md|[A-Z0-9_]+\.parser\.txt)$/;
 export const LIMITS = { samples: 200, lineBytes: 16384, parserBytes: 65536, parsers: 20 };
 // An entry's optional "collector": the repo path of a folder under collectors/ that pulls the
-// source's logs from an API. Collectors are code, so they are reviewed and merged on their own.
+// source's logs from an API or relays its webhooks. Collectors are code, so they are reviewed and
+// merged on their own.
 export const COLLECTOR_PATH = /^collectors\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const NAME = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
@@ -87,7 +89,7 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
       }
     }
   } else if (meta.ship_method === 'http-ingest') {
-    warn('collector', 'ship_method is http-ingest but there is no collector. A pull-only source needs "collector" set to its folder under collectors/; a source that pushes to HTTP Ingest, such as a webhook, needs none.');
+    warn('collector', 'ship_method is http-ingest but there is no collector. A pull-only source, or a webhook that can\'t add the Authorization header, needs "collector" set to its folder under collectors/; a source that sends to HTTP Ingest with the header itself needs none.');
   }
   if (!Array.isArray(meta.parsers) || !meta.parsers.length) { err('meta', 'parsers must list at least one parser'); return out; }
   if (meta.parsers.length > LIMITS.parsers) err('meta', `at most ${LIMITS.parsers} parsers per entry`);
