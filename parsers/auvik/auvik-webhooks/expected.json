@@ -1,0 +1,193 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Auvik",
+      "event_time_usec": 1791805153719000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Auvik",
+      "provider": "Auvik Network Management",
+      "alert_id": "MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NA==",
+      "title": "Firewall configuration changed",
+      "summary": "The running configuration of ACME-FW-01 changed",
+      "status": "Triggered",
+      "host_id": "ACME-FW-01",
+      "target_host_name": "ACME-FW-01",
+      "alert_category": "device",
+      "log_type": "alert",
+      "vendor_severity": "Critical",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_id",
+            "value": "191992599575398404"
+          },
+          {
+            "key": "correlation_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NA=="
+          },
+          {
+            "key": "entity_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNDczNjQ5ODI3NjQ3OTI="
+          },
+          {
+            "key": "link",
+            "value": "https://acme.example.com/alert/193884525816632836/summary"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Auvik",
+      "event_time_usec": 1791805262118000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Auvik",
+      "provider": "Auvik Network Management",
+      "alert_id": "MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NQ==",
+      "title": "Device is offline",
+      "summary": "ACME-SW-CORE has stopped responding",
+      "status": "Triggered",
+      "host_id": "ACME-SW-CORE",
+      "target_host_name": "ACME-SW-CORE",
+      "alert_category": "device",
+      "log_type": "alert",
+      "vendor_severity": "Emergency",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_id",
+            "value": "191992599575398404"
+          },
+          {
+            "key": "correlation_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NQ=="
+          },
+          {
+            "key": "entity_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNDczNjQ5ODI3NjQ3OTI="
+          },
+          {
+            "key": "link",
+            "value": "https://acme.example.com/alert/193884525816632901/summary"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Auvik",
+      "event_time_usec": 1791806072114000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Auvik",
+      "provider": "Auvik Network Management",
+      "alert_id": "MTI3Mzg5NDYxMjM5NzQsNTM1MzQzNjM0MzQz",
+      "title": "Device is offline",
+      "summary": "Device Online Status is now not equal to Offline",
+      "status": "Cleared",
+      "host_id": "ACME-SW-CORE",
+      "target_host_name": "ACME-SW-CORE",
+      "alert_category": "device",
+      "log_type": "alert",
+      "vendor_severity": "Info",
+      "severity": "INFO",
+      "closed_time_usec": 1791806072114000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_id",
+            "value": "191992599575398404"
+          },
+          {
+            "key": "correlation_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NQ=="
+          },
+          {
+            "key": "entity_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNDczNjQ5ODI3NjQ3OTI="
+          },
+          {
+            "key": "link",
+            "value": "https://acme.example.com/alert/193884525816661508/summary"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Auvik",
+      "event_time_usec": 1791806520000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Auvik",
+      "provider": "Auvik Network Management",
+      "alert_id": "MTI3Mzg5NDYxMjM5NzQsNTM1MzQzNjM0Mzk5",
+      "title": "Interface utilization is high",
+      "summary": "Transmit utilization above 90% for 10 minutes",
+      "status": "Triggered",
+      "host_id": "ACME-FW-01 port 1 (WAN)",
+      "target_host_name": "ACME-FW-01 port 1 (WAN)",
+      "alert_category": "interface",
+      "log_type": "alert",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "site_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_id",
+            "value": "191992599575398404"
+          },
+          {
+            "key": "correlation_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNTM1MzQzNjM0Mzk5"
+          },
+          {
+            "key": "entity_id",
+            "value": "MTI3Mzg5NDYxMjM5NzQsNDczNjQ5ODI3NjQ3OTI="
+          },
+          {
+            "key": "link",
+            "value": "https://acme.example.com/alert/193884525816661600/summary"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
