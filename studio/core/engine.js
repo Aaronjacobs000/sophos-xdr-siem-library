@@ -182,8 +182,13 @@ export function evaluate(ctx, e) {
       return fn(ctx, e.args.map((a) => evaluate(ctx, a)));
     }
     case 'bin': {
-      if (e.op === 'AND') return toBool(evaluate(ctx, e.l)) && toBool(evaluate(ctx, e.r));
-      if (e.op === 'OR') return toBool(evaluate(ctx, e.l)) || toBool(evaluate(ctx, e.r));
+      // AND and OR evaluate both sides, so an error on the right fails the event even when the
+      // left side decides the result (checked in a lab tenant).
+      if (e.op === 'AND' || e.op === 'OR') {
+        const l = toBool(evaluate(ctx, e.l));
+        const r = toBool(evaluate(ctx, e.r));
+        return e.op === 'AND' ? l && r : l || r;
+      }
       const a = evaluate(ctx, e.l);
       const b = evaluate(ctx, e.r);
       switch (e.op) {
