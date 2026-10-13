@@ -119,6 +119,8 @@ def _require_https(url: str, what: str) -> None:
 # ---------------------------------------------------------------- HTTP
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Following a redirect would send the request's key to another URL, so it isn't followed."""
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
         return None
 
@@ -140,17 +142,19 @@ def _retry_delay(attempt: int, retry_after: str | None) -> float:
 
 
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float,
-             follow_redirects: bool = True, what: str = "request"):
+             redirects: str = "refuse", what: str = "request"):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, headers, body).
-    Redirects are returned to the caller when follow_redirects is False."""
-    opener = urllib.request.build_opener() if follow_redirects else _NO_REDIRECT
+    A redirect fails like any other status by default, so a key only goes to the configured host.
+    redirects="return" hands a redirect to the caller instead, and "follow" follows it, for a
+    request that carries no key."""
+    opener = urllib.request.build_opener() if redirects == "follow" else _NO_REDIRECT
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
         try:
             with opener.open(req, timeout=timeout) as resp:
                 return resp.status, resp.headers, resp.read()
         except urllib.error.HTTPError as e:
-            redirect = e.code in (301, 302, 303, 307, 308) and not follow_redirects
+            redirect = e.code in (301, 302, 303, 307, 308) and redirects == "return"
             # Read what a redirect needs, then close the error response so its socket is released
             # now, not when the error is garbage collected. The code and headers stay readable.
             error_body = e.read() if redirect else b""
@@ -347,7 +351,7 @@ def collect_openai_clp(cfg: dict, state: dict, sink: Sink, save) -> int:
 
 def _download_clp_file(url: str, auth: dict, timeout: float) -> list[dict]:
     status, headers, body = _request("GET", url, {**auth, "User-Agent": USER_AGENT}, None, timeout,
-                                     follow_redirects=False, what="download log file")
+                                     redirects="return", what="download log file")
     if status in (301, 302, 303, 307, 308):
         location = headers.get("Location")
         if not location:
@@ -355,7 +359,8 @@ def _download_clp_file(url: str, auth: dict, timeout: float) -> list[dict]:
         location = urllib.parse.urljoin(url, location)
         # The signed URL carries its own authorization: never send the API key to it, and
         # never log it (its query string is a credential).
-        _, _, body = _request("GET", location, {"User-Agent": USER_AGENT}, None, timeout, what="signed file download")
+        _, _, body = _request("GET", location, {"User-Agent": USER_AGENT}, None, timeout, redirects="follow",
+                              what="signed file download")
     out = []
     for line in body.decode("utf-8").splitlines():
         if line.strip():
