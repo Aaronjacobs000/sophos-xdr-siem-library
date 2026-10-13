@@ -1,7 +1,7 @@
 // Looks at sample lines and works out the syslog header, the body format, the fields in each
 // line, the key that splits event types, and a confirm string. Rules only.
 
-import { splitSyslog, parseCef, parseLeef, splitNameValues, isIpv4, isIpv6 } from './formats.js';
+import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, isIpv4, isIpv6 } from './formats.js';
 import { goParse } from './gotime.js';
 import { compileGo } from './goregex.js';
 
@@ -289,7 +289,11 @@ export function analyseSample(lines) {
   const product = format === 'cef' ? keys.get('device_product')?.values[0] : format === 'leef' ? keys.get('product')?.values[0] : null;
   const confirm = suggestConfirm(events, { format, tagName, tagPid, vendor, product, keys });
   const notes = [];
-  if (header !== 'none') notes.push(`The ${headerLabel(header)} header comes off before parsers see \`message\`; \`originalData$\` keeps the whole line.`);
+  if (header !== 'none') {
+    const stripped = events.filter((e) => rootSplit(e.line).message !== e.line).length;
+    if (stripped === events.length) notes.push(`The ${headerLabel(header)} header comes off before parsers see \`message\`, and its host and time become sensor_id and the default event time; \`originalData$\` keeps the whole line.`);
+    else notes.push(`The engine only strips a plain BSD syslog header from \`message\`. With a <PRI> prefix, an RFC 5424 header or an ISO time, \`message\` is the whole line, so read fields from \`originalData$\`.`);
+  }
   if (formats.json && events.some((e) => e.jsonAtEnd)) notes.push('The JSON object sits at the end of the line, so the parser cuts it off with a capture before JSON().');
   for (const k of keys.values()) {
     if (k.shape === 'time' && k.layout && !/Z07|-07|MST/.test(k.layout)) notes.push(`${k.key} has no time zone, so DATETIME() reads it as UTC. Check what the device sends.`);
