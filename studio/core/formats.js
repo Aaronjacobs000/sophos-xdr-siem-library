@@ -139,7 +139,9 @@ export function parseLeef(line, delimiterOverride = null) {
 
 // SPLIT_NAME_VALUES(data, delimiter, separator, quoteChar). Keys and unquoted values are
 // trimmed (docs example: "User: Unknown, InitiatorPackets: 2"). A backslash quote character,
-// as in the docs examples, means values are not quoted.
+// as in the docs examples, means values are not quoted. The engine splits on the delimiter
+// before it reads quotes, so each delimiter inside a quoted value comes back as a space:
+// msg="x, y" with delimiter "," gives "x  y" (checked in a lab tenant).
 export function splitNameValues(data, delimiter, separator, quoteChar) {
   if (data === null || data === undefined) return null;
   const s = String(data);
@@ -162,7 +164,7 @@ export function splitNameValues(data, delimiter, separator, quoteChar) {
     if (q && s.startsWith(q, i)) {
       const close = s.indexOf(q, i + q.length);
       if (close === -1) { value = s.slice(i + q.length); i = s.length; } else {
-        value = s.slice(i + q.length, close);
+        value = s.slice(i + q.length, close).split(d).join(' ');
         i = close + q.length;
         const nd = s.indexOf(d, i);
         i = nd === -1 ? s.length : nd + d.length;
