@@ -185,7 +185,7 @@ function unitBody(plan, unit, read, keysByName) {
         names.push(v);
         out.push(`${v}.key$ = ${q(k.key)}`, `${v}.value$ = STRING(${read(k)})`);
       }
-      out.push(`eventMetadata$.record$ = eventMetadata$.record$ + [${names.join(', ')}]`);
+      out.push(`eventMetadata$.record$ = [${names.join(', ')}]`);
     }
   }
   return out;

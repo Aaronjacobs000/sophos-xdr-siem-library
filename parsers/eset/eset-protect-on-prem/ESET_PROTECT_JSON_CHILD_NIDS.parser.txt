@@ -43,7 +43,8 @@ sev.key$ = "eset_severity"
 sev.value$ = json["$.severity"]
 cnt.key$ = "aggregate_count"
 cnt.value$ = STRING(json["$.aggregate_count"])
-eventMetadata$.record$ = eventMetadata$.record$ + [grp, sev, cnt]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [grp, sev, cnt]
 
 # rule_name is optional, so add it only when ESET sends it.
 rule.key$ = "rule_name"

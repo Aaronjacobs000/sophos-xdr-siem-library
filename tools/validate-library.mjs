@@ -63,7 +63,7 @@ for (const entry of targets) {
   report.entries.push({
     id: entry.id, status, baseAuthor, author: entry.meta && entry.meta.author, ok: v.ok,
     problems: v.problems.map((p) => ({ level: p.level, code: p.code, file: p.file || null, line: p.line || null, message: p.message })),
-    lines: v.results.length, normalized: v.results.filter((r) => r.normalized).length,
+    lines: v.results.length, normalized: v.results.filter((r) => r.normalized && r.schema !== 'scwx.generic').length,
   });
   if (!v.ok) report.passed = false;
 }

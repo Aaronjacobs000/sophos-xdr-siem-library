@@ -10,7 +10,8 @@ import { trimPairs } from './functions.js';
 // SANITIZE_ALL turns these into NULL, after trimming whitespace. Case-sensitive. "(null)" is
 // not in the docs but the engine does it.
 export const SANITIZE_VALUES = new Set(['N/A', 'n/a', 'null', 'nil', '-', '', '(null)']);
-const NOT_FIELDS = new Set(['originalData$']);
+// originalData$ is the raw line, and the engine ignores ingestTimeUsec$ (checked in a lab tenant).
+const NOT_FIELDS = new Set(['originalData$', 'ingestTimeUsec$']);
 const U64 = 18446744073709551616;
 
 // SANITIZE_ALL and TRIM_ALL apply to top-level $ fields only, never inside records or lists.

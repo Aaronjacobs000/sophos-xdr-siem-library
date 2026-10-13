@@ -127,7 +127,18 @@ export function lintParsers(parsers, opts = {}) {
       }
       // Assignment: functions, variables, literal arguments.
       const memberBases = new Set();
-      walk(st.expr, (n) => { if (n.t === 'member' && n.e.t === 'var') memberBases.add(n.e); });
+      const label = (n) => (n.t === 'var' ? n.name : n.t === 'member' ? `${label(n.e)}.${n.name}` : null);
+      walk(st.expr, (n) => {
+        if (n.t !== 'member') return;
+        let b = n;
+        while (b.t === 'member') b = b.e;
+        if (b.t === 'var') memberBases.add(b);
+        const full = label(n);
+        if (full && !known.has(full) && !(b.t === 'var' && ROOT_VARS.has(b.name))) {
+          const fix = full === 'eventMetadata$.record$' ? ' Set the list directly first, for example eventMetadata$.record$ = [r1, r2]; the docs\' append pattern only works once the list exists.' : '';
+          add('error', 'undefined-var', `${full} is read before it is set, so the engine fails the event.${fix}`, p.name, st.line);
+        }
+      });
       walk(st.expr, (n) => {
         if (n.t === 'call') {
           if (!FUNCTION_NAMES.has(n.name)) add('error', 'unknown-function', `${n.name}() is not a documented function`, p.name, st.line);
@@ -146,7 +157,7 @@ export function lintParsers(parsers, opts = {}) {
         if (n.t === 'var') {
           if (/^null$/i.test(n.name) && n.name !== 'NULL') add('warning', 'keyword-case', `${n.name} is read as a variable name; write NULL`, p.name, st.line);
           else if (!known.has(n.name) && !n.name.endsWith('$')) add('error', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}; the engine fails the event`, p.name, st.line);
-          else if (!known.has(n.name) && n.name.endsWith('$') && !memberBases.has(n)) add('warning', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}; the engine fails the event when a variable was never assigned`, p.name, st.line);
+          else if (!known.has(n.name) && n.name.endsWith('$') && !memberBases.has(n)) add('error', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}; the engine fails the event`, p.name, st.line);
         }
         if (n.t === 'bin' && ['==', '!=', '+'].includes(n.op)) {
           for (const side of [n.l, n.r]) {

@@ -186,6 +186,10 @@
     "line": 7,
     "extractor_path": "SURICATA_EVE_JSON_PARENT",
     "schema": "scwx.generic",
-    "normalized": null
+    "normalized": {
+      "sensor_type": "Suricata",
+      "sensor_id": "ids01",
+      "event_time_usec": 1791411584000000
+    }
   }
 ]

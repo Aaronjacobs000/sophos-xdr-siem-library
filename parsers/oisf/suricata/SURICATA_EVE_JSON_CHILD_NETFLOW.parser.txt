@@ -38,4 +38,4 @@ flowId.key$ = "flow_id"
 flowId.value$ = STRING(json["$.flow_id"])
 state.key$ = "flow_state"
 state.value$ = json["$.flow.state"]
-eventMetadata$.record$ = eventMetadata$.record$ + [flowId, state]
+eventMetadata$.record$ = [flowId, state]

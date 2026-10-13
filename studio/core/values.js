@@ -88,7 +88,8 @@ export function toStr(v) {
   if (v === null || v === undefined) return null;
   if (typeof v === 'string') return v;
   if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(v);
+  // Whole numbers past 2^53 print in full, the way Go prints an int64.
+  if (typeof v === 'number') return Number.isInteger(v) && !Number.isSafeInteger(v) ? BigInt(v).toString() : String(v);
   if (v instanceof TimeValue) return formatTime(v);
   return compactJson(toPlain(v));
 }

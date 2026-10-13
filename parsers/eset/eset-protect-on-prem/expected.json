@@ -137,6 +137,10 @@
     "line": 5,
     "extractor_path": "ESET_PROTECT_JSON_PARENT",
     "schema": "scwx.generic",
-    "normalized": null
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "sensor_id": "eraserver",
+      "event_time_usec": 1791452520000000
+    }
   }
 ]

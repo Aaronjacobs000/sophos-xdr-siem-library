@@ -53,4 +53,4 @@ ctype.key$ = "content_type"
 ctype.value$ = m["type"]
 elapsed.key$ = "elapsed_ms"
 elapsed.value$ = m["elapsed"]
-eventMetadata$.record$ = eventMetadata$.record$ + [result, hier, ctype, elapsed]
+eventMetadata$.record$ = [result, hier, ctype, elapsed]

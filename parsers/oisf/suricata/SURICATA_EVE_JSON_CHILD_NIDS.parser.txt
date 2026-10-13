@@ -42,4 +42,4 @@ flowId.key$ = "flow_id"
 flowId.value$ = STRING(json["$.flow_id"])
 iface.key$ = "in_iface"
 iface.value$ = json["$.in_iface"]
-eventMetadata$.record$ = eventMetadata$.record$ + [flowId, iface]
+eventMetadata$.record$ = [flowId, iface]

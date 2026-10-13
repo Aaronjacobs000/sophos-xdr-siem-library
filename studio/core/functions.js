@@ -93,9 +93,13 @@ function flatten(v, keyLabel, valueLabel) {
 // TRIM() and TRIM_ALL(): strip space, tab and newline (not \r), then remove a matching
 // enclosing pair of {} [] () <> "" or ''. TRIM() repeats; TRIM_ALL removes one pair.
 const PAIRS = { '{': '}', '[': ']', '(': ')', '<': '>', '"': '"', "'": "'" };
+function enclosed(t) {
+  return t.length >= 2 && PAIRS[t[0]] === t[t.length - 1];
+}
+
 export function trimPairs(s, repeat) {
   let t = s.replace(/^[ \t\n]+|[ \t\n]+$/g, '');
-  while (t.length >= 2 && PAIRS[t[0]] === t[t.length - 1]) {
+  while (enclosed(t)) {
     t = t.slice(1, -1);
     if (!repeat) break;
     t = t.replace(/^[ \t\n]+|[ \t\n]+$/g, '');
@@ -107,7 +111,7 @@ export function trimPairs(s, repeat) {
 // NULL becomes "" (checked in a lab tenant).
 function stringOf(v) {
   if (v === null || v === undefined) return '';
-  if (typeof v === 'number') return String(Math.trunc(v));
+  if (typeof v === 'number') return toStr(Math.trunc(v));
   if (isList(v)) return v.map((x) => JSON.stringify(x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x))).join(',');
   return toStr(v);
 }

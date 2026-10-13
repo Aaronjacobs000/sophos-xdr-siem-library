@@ -38,7 +38,7 @@ txByteCount$ = json["$.bytes"]
 flowAction$ = IF json["$.act"] == "deny" THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
 rule.key$ = "rule"
 rule.value$ = json["$.rule"]
-eventMetadata$.record$ = eventMetadata$.record$ + [rule]`;
+eventMetadata$.record$ = [rule]`;
 
 const parsers = [
   { name: 'ACME_GW_JSON_PARENT', text: PARENT },
@@ -59,8 +59,10 @@ test('routes each line through the parent to the matching child', () => {
   assert.equal(r[1].extractor_path, 'ACME_GW_JSON_PARENT > ACME_GW_JSON_CHILD_NETFLOW');
   assert.equal(r[2].extractor_path, 'ACME_GW_JSON_PARENT');
   assert.equal(r[2].schema, 'scwx.generic');
-  assert.equal(r[2].normalized, null);
+  // The generic event keeps the common fields the parent set.
+  assert.deepEqual(r[2].normalized, { sensor_type: 'Acme Gateway', sensor_id: 'gw01', event_time_usec: Date.UTC(2026, 9, 7, 22, 0, 3) * 1000 });
   assert.equal(r[3].extractor_path, null);
+  assert.equal(r[3].normalized, null);
 });
 
 test('normalizes into schema field names and types', () => {
@@ -103,6 +105,14 @@ test('integers, booleans and time follow the engine', () => {
   const b = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nmfaUsed$ = "no"';
   assert.equal(runParsers([{ name: 'A_B', text: b }], ['x'])[0].normalized.mfa_used, true);
   assert.equal(runParsers([{ name: 'A_B', text: b.replace('"no"', '" FALSE "') }], ['x'])[0].normalized.mfa_used, false);
+});
+
+test('the docs\' append pattern fails until the list exists', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.nids\nr.key$ = "k"\nr.value$ = "v"\neventMetadata$.record$ = eventMetadata$.record$ + [r]';
+  const [bad] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.match(bad.error, /variable eventMetadata\$\.record\$ is not set/);
+  const [good] = runParsers([{ name: 'A_B', text: t.replace('eventMetadata$.record$ = eventMetadata$.record$ + [r]', 'eventMetadata$.record$ = [r]\neventMetadata$.record$ = eventMetadata$.record$ + [r]') }], ['x']);
+  assert.equal(good.normalized.event_metadata.record.length, 2);
 });
 
 test('captures keep every match, and an unset variable fails the event', () => {

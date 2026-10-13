@@ -101,6 +101,12 @@ function compare(op, a, b) {
 }
 const cmp = (op, a, b) => (op === '<' ? a < b : op === '>' ? a > b : op === '<=' ? a <= b : a >= b);
 
+function memberLabel(e) {
+  if (e.t === 'var') return e.name;
+  if (e.t === 'member') return `${memberLabel(e.e)}.${e.name}`;
+  return '(value)';
+}
+
 function noRegex(v) {
   if (v instanceof MatchValue) throw new RuntimeError('cannot convert regex to string; index the capture, for example m[1]', 'regex-compare');
   return v;
@@ -112,12 +118,13 @@ function int64(n) {
   if (!Number.isInteger(n) || Number.isSafeInteger(n)) return n;
   return Number(BigInt.asIntN(64, BigInt(Math.trunc(n))));
 }
+// Multiplication runs in float64 and converts to int64, so an overflow gives the minimum
+// int64 value (a time times 1000000 came out as -9223372036854775808 in a lab tenant).
+const INT64_MIN = -9223372036854775808;
 function mulInt(a, b) {
-  if (Number.isInteger(a) && Number.isInteger(b)) {
-    const r = a * b;
-    return Number.isSafeInteger(r) ? r : Number(BigInt.asIntN(64, BigInt(a) * BigInt(b)));
-  }
-  return a * b;
+  const r = a * b;
+  if (Number.isInteger(a) && Number.isInteger(b) && (r >= 9223372036854775808 || r < INT64_MIN)) return INT64_MIN;
+  return r;
 }
 
 function plus(a, b) {
@@ -148,11 +155,18 @@ export function evaluate(ctx, e) {
     case 'if': return truthy(evaluate(ctx, e.c)) ? evaluate(ctx, e.a) : evaluate(ctx, e.b);
     case 'neg': return -num(evaluate(ctx, e.e), '-');
     case 'member': {
-      // x.field$ on a record that was never assigned reads as NULL, so the docs' append
-      // pattern eventMetadata$.record$ = eventMetadata$.record$ + [r] starts from nothing.
-      if (e.e.t === 'var' && !ctx.vars.has(e.e.name)) return null;
+      // Reading x.field$ before it was assigned fails the event, like any unset variable. That
+      // includes the docs' append pattern eventMetadata$.record$ = eventMetadata$.record$ + [r]
+      // when nothing set the list first (checked in a lab tenant).
+      const label = memberLabel(e);
+      if (e.e.t === 'var' && !ctx.vars.has(e.e.name)) {
+        if (ctx.lenient) return null;
+        throw new RuntimeError(`variable ${label} is not set`, 'unset-var');
+      }
       const base = evaluate(ctx, e.e);
-      return base instanceof RecordValue ? (base.fields.has(e.name) ? base.fields.get(e.name) : null) : null;
+      if (base instanceof RecordValue && base.fields.has(e.name)) return base.fields.get(e.name);
+      if (ctx.lenient) return null;
+      throw new RuntimeError(`variable ${label} is not set`, 'unset-var');
     }
     case 'index': return index(evaluate(ctx, e.e), evaluate(ctx, e.i));
     case 'call': {
@@ -352,6 +366,8 @@ export function runParsers(parsers, samples, opts = {}) {
         result.result = path.length === 1 && (childrenOf.get(path[0]) || []).length
           ? 'The parent matched but no child did. The line stays in the generic schema only.'
           : 'This parser targets the generic schema.';
+        // The generic event still carries the common fields the parsers set.
+        result.normalized = normalize(ctx.vars, GENERIC, { sanitize: true, trim: !current.flags.has('TRIMALLOFF'), carriers: new Set([...ctx.vars.keys()]) }).record;
         return result;
       }
       const flags = current.flags;
