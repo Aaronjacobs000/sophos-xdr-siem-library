@@ -1,5 +1,7 @@
 # Publishes the studio to GitHub Pages. The page reads the library from GitHub at runtime;
-# the daily run only refreshes the copy it falls back to when GitHub can't be reached.
+# the build refreshes the copy it falls back to when GitHub can't be reached. A library pull
+# request that the workflows merge starts this with workflow_dispatch, because a merge made
+# with GITHUB_TOKEN starts no push workflows. The daily run is a backstop.
 name: Pages
 
 on:

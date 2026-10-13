@@ -44,7 +44,7 @@ parsers/eset/eset-protect-on-prem/
   expected.json                          the emulator's result for each line
 ```
 
-The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
+The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed on every merge and daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
 
 It has 45 entries with 97 parsers:
 

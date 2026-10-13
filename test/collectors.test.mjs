@@ -78,11 +78,15 @@ test('review rule: collector code and other non-library files always need a revi
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
-async function gateMerge(files) {
+async function gateMerge(files, { command = 'merge', autoMerge = true } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const mock = path.join(dir, 'mock-fetch.mjs');
+  const output = path.join(dir, 'github-output.txt');
   await writeFile(log, '');
+  await writeFile(output, '');
+  await writeFile(path.join(dir, 'report.json'), JSON.stringify({ passed: true, eligible: true }));
+  await writeFile(path.join(dir, 'report.md'), '### Parser library checks: passed\n');
   await writeFile(mock, `
 import { appendFileSync } from 'node:fs';
 const files = ${JSON.stringify(files.map((filename) => ({ filename })))};
@@ -94,14 +98,19 @@ globalThis.fetch = async (url, init = {}) => {
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
   else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, head: { sha: 'abc123' }, node_id: 'PR_7' };
   else if (u.pathname === '/repos/o/r/pulls/7/files') body = u.searchParams.get('page') === '1' ? files : [];
-  else if (u.pathname === '/graphql') body = { data: { enablePullRequestAutoMerge: { clientMutationId: null } } };
+  // Without a branch rule, GitHub refuses native auto-merge and the gate merges the pull request itself.
+  else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
+  else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: [{ name: 'tests', status: 'completed', conclusion: 'success' }] };
+  else if (method === 'GET' && /\\/(labels|comments)$/.test(u.pathname)) body = [];
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 };
 `);
-  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), 'merge', '--pr', '7', '--sha', 'abc123'], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test' }, encoding: 'utf8' });
+  const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')] : ['merge', '--pr', '7', '--sha', 'abc123'];
+  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output }, encoding: 'utf8' });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
+  const stepOutput = await readFile(output, 'utf8');
   await rm(dir, { recursive: true, force: true });
-  return { out: out.trim(), calls };
+  return { out: out.trim(), calls, stepOutput };
 }
 
 test('gate: the merge step refuses a pull request with collector code, from either route', async () => {
@@ -112,6 +121,20 @@ test('gate: the merge step refuses a pull request with collector code, from eith
   const ok = await gateMerge(['parsers/acme/pull-api/meta.json']);
   assert.equal(ok.out, 'Auto-merge is on for this pull request.');
   assert.ok(ok.calls.some((c) => c === 'POST https://api.github.com/graphql'));
+});
+
+test('gate: a merge the gate makes tells the workflow to start the Pages build', async () => {
+  // The repo has no branch rule, so the gate merges the pull request itself, from either route.
+  for (const command of ['pr', 'merge']) {
+    const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, autoMerge: false });
+    assert.ok(merged.calls.includes('PUT https://api.github.com/repos/o/r/pulls/7/merge'), merged.calls.join('\n'));
+    assert.equal(merged.stepOutput, 'merged=true\n', command);
+  }
+  // Native auto-merge merges later, and a held pull request doesn't merge, so neither says merged.
+  assert.equal((await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr' })).stepOutput, '');
+  const held = await gateMerge(['parsers/acme/pull-api/meta.json', 'collectors/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false });
+  assert.ok(!held.calls.some((c) => /\/merge$/.test(c)), held.calls.join('\n'));
+  assert.equal(held.stepOutput, '');
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {

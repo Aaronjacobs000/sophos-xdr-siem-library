@@ -26,6 +26,8 @@ jobs:
     if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Check out the default branch (trusted code)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,9 +76,25 @@ jobs:
           node base/tools/github-gate.mjs changed --pr "$PR" --out changed.txt
           node base/tools/validate-library.mjs --root pr --base base --changed-files changed.txt --author "$AUTHOR" --report report.json --markdown report.md || true
       - name: Label, report and merge
+        id: merge
         if: steps.pr.outputs.skip == 'false'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR: ${{ steps.pr.outputs.number }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: node base/tools/github-gate.mjs pr --pr "$PR" --sha "$HEAD_SHA" --report report.json --markdown report.md
+  # A merge made with GITHUB_TOKEN starts no push workflows, so Pages would keep the old library
+  # snapshot until its daily run. workflow_dispatch is an event GITHUB_TOKEN may start, and this
+  # job's token can do nothing else.
+  pages:
+    needs: gate
+    if: needs.gate.outputs.merged == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start the Pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main

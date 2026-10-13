@@ -23,6 +23,8 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'parser-submission') && github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -110,3 +112,18 @@ jobs:
           if [ "$PASSED" = "true" ] && [ "$CREATED" = "true" ]; then NOTE="Pull request: #$PR. $OUTCOME"; fi
           if [ "$PASSED" = "true" ] && [ "$CREATED" != "true" ]; then NOTE="The checks passed, but this workflow couldn't open the pull request. A maintainer will open it."; fi
           node tools/github-gate.mjs issue --issue "$ISSUE" --markdown "$RUNNER_TEMP/sub/report.md" --note "$NOTE"
+  # A merge made with GITHUB_TOKEN starts no push workflows, so Pages would keep the old library
+  # snapshot until its daily run. workflow_dispatch is an event GITHUB_TOKEN may start, and this
+  # job's token can do nothing else.
+  pages:
+    needs: submit
+    if: needs.submit.outputs.merged == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start the Pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
