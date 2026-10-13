@@ -1,0 +1,84 @@
+!SAMPLE={"id":"activity_01example0000000000000015","created_at":"2026-10-12T22:44:58Z","organization_id":"org_01exampleorg000000000001","organization_uuid":"6e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b","actor":{"type":"user_actor","email_address":"alice@example.com","user_id":"user_01examplealice0000001","ip_address":"203.0.113.24","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36"},"type":"claude_chat_created","claude_chat_id":"claude_chat_01example0000000001","claude_project_id":"claude_proj_01example000000001"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="organization_uuid"\s*:.*[{,]\s*"type"\s*:\s*"(?:claude_(?:chat|file|project|artifact|published|skill|plugin|command|survey|code)_[a-z0-9_]+|ccr_session_[a-z]+|cowork_session_[a-z]+|design_project_[a-z_]+|compliance_api_accessed|platform_(?:file|skill_version|agent|memory)_[a-z_]+|session_share_[a-z]+|mcp_server_managed_auth_token_exchanged|integration_user_[a-z]+|ghe_user_[a-z]+|pending_share_[a-z]+|inference_hooks_(?:request_[a-z_]+|circuit_breaker_tripped))"\s*[,}]|[{,]\s*"type"\s*:\s*"(?:claude_(?:chat|file|project|artifact|published|skill|plugin|command|survey|code)_[a-z0-9_]+|ccr_session_[a-z]+|cowork_session_[a-z]+|design_project_[a-z_]+|compliance_api_accessed|platform_(?:file|skill_version|agent|memory)_[a-z_]+|session_share_[a-z]+|mcp_server_managed_auth_token_exchanged|integration_user_[a-z]+|ghe_user_[a-z]+|pending_share_[a-z]+|inference_hooks_(?:request_[a-z_]+|circuit_breaker_tripped))"\s*[,}].*"organization_uuid"\s*:
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Claude Compliance API Activity Feed (GET /v1/compliance/activities), one Activity
+# from data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# Standalone parser for the CloudAudit schema: what users and keys did with Claude content.
+# Chats, files, projects, artifacts, skills, plugins, Claude Code and Cowork sessions,
+# Claude Design projects, platform files, agents and memory, inference hook decisions, and
+# Compliance API calls.
+# The Activity Feed carries no prompt or response text. Files, documents and artifacts have
+# no name or title in it (Anthropic sends those fields empty). This parser maps IDs only and
+# leaves request_body (on compliance_api_accessed) in original_data.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Claude"
+sensorEventId$ = json["$.id"]
+# RFC 3339 in UTC, with or without fractional seconds.
+eventTimeUsec$ = DATETIME(json["$.created_at"], "2006-01-02T15:04:05.999999999Z07:00")
+
+t = json["$.type"]
+eventName$ = t
+eventSource$ = "Claude"
+recipientAccountId$ = json["$.organization_id"]
+# claude_*_viewed means a Claude app loaded the content, not that a person read it.
+readOnly$ = IF CONTAINS(t, "_viewed") THEN TRUE ELSE NULL
+
+actorType = json["$.actor.type"]
+userType$ = actorType
+userName$ = json["$.actor.email_address"]
+userId$ = json["$.actor.user_id"]
+# A customer API key (Claude API or Compliance API) acts as an api_actor.
+accessKey$ = json["$.actor.api_key_id"]
+userName$ = IF actorType == "api_actor" THEN "api_key " + accessKey$ ELSE userName$
+userName$ = IF actorType == "service_account_actor" THEN "service_account " + json["$.actor.service_account_id"] ELSE userName$
+sourceAddress$ = json["$.actor.ip_address"]
+userAgent$ = json["$.actor.user_agent"]
+
+# Resources: the chat, project, file, artifact, design project, session or workspace the
+# activity names. Assign the list first, then add the ones that are present.
+org = json["$.organization_id"]
+chat.resourceId$ = json["$.claude_chat_id"]
+chat.resourceType$ = "claude_chat"
+chat.resourceAccountId$ = org
+resources$ = IF chat.resourceId$ THEN [chat] ELSE []
+proj.resourceId$ = json["$.claude_project_id"]
+proj.resourceType$ = "claude_project"
+proj.resourceAccountId$ = org
+resources$ = IF proj.resourceId$ THEN resources$ + [proj] ELSE resources$
+file.resourceId$ = json["$.claude_file_id"]
+file.resourceType$ = "claude_file"
+file.resourceAccountId$ = org
+resources$ = IF file.resourceId$ THEN resources$ + [file] ELSE resources$
+art.resourceId$ = json["$.claude_artifact_id"]
+art.resourceType$ = "claude_artifact"
+art.resourceAccountId$ = org
+resources$ = IF art.resourceId$ THEN resources$ + [art] ELSE resources$
+design.resourceId$ = json["$.design_project_id"]
+design.resourceType$ = "design_project"
+design.resourceAccountId$ = org
+resources$ = IF design.resourceId$ THEN resources$ + [design] ELSE resources$
+sess.resourceId$ = json["$.session_id"]
+sess.resourceType$ = "session"
+sess.resourceAccountId$ = org
+resources$ = IF sess.resourceId$ THEN resources$ + [sess] ELSE resources$
+ws.resourceId$ = json["$.workspace_id"]
+ws.resourceType$ = "workspace"
+ws.resourceAccountId$ = org
+resources$ = IF ws.resourceId$ THEN resources$ + [ws] ELSE resources$
+
+# compliance_api_accessed: the call that read or deleted compliance data.
+status$ = STRING(json["$.status_code"])
+method.key$ = "request_method"
+method.value$ = json["$.request_method"]
+url.key$ = "url"
+url.value$ = json["$.url"]
+req.key$ = "request_id"
+req.value$ = json["$.request_id"]
+requestParameters$.record$ = IF method.value$ THEN [method, url, req] ELSE NULL

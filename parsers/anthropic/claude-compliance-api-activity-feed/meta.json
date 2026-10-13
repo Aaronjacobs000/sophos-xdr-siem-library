@@ -1,0 +1,42 @@
+{
+  "vendor": "Anthropic",
+  "product": "Claude Compliance API Activity Feed",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://platform.claude.com/docs/en/manage-claude/compliance-activity-feed",
+    "https://platform.claude.com/docs/en/api/compliance/activities/list",
+    "https://platform.claude.com/docs/en/manage-claude/compliance-api-access",
+    "https://platform.claude.com/docs/en/manage-claude/compliance-integration-patterns"
+  ],
+  "notes": "Claude Enterprise organizations, and standalone Claude Console organizations once an admin turns on the Compliance API. The Activity Feed is pull only, so records need a collector to reach Sophos NG-SIEM: send each Activity from data[] as one JSON record to an HTTP Ingest integration in Sophos Fusion. collectors/ai-compliance-logs in this repo does that. SSO, magic link and social sign-ins (started, succeeded, failed), sign-outs and step-up checks go to Auth. Organization settings, SSO and SCIM setup, invites and members, roles, groups, keys, Console workspaces and service accounts, integrations, MCP servers and other admin changes go to ManagementEvent. Chats, files, projects, artifacts, skills, plugins, Claude Code and Cowork sessions, Claude Design, platform files, agents and memory, inference hook decisions and Compliance API calls go to CloudAudit. The confirm strings list activity type families; billing, verification and a few other types (59 of the 525 documented) stay in generic. The feed carries no prompt or response text, and Anthropic now sends file and artifact names empty. The parsers map IDs only; request_body on compliance_api_accessed stays in original_data, and the collector redacts it by default. ManagementEvent has no address field, so the actor IP is in host_id; toggles put enabled=true or enabled=false in result. Samples are synthetic, built from the Activity object and per-type fields in Anthropic's API reference. No live organization was available, so the parsers are tested against the documented shapes only. Each parser passed Run Test in a lab tenant on 2026-10-13: 202 of 202 fields matched the emulator in each of 3 runs, no parser claimed another's lines, and no built-in parser claimed any line.",
+  "parsers": [
+    {
+      "name": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH",
+      "file": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_AUTH.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT",
+      "file": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_MGMT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY",
+      "file": "ANTHROPIC_CLAUDE_ACTIVITY_JSON_STANDALONE_ACTIVITY.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

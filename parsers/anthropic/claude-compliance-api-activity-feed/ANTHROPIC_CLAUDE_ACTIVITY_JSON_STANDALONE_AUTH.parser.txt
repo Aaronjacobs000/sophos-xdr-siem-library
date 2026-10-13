@@ -1,0 +1,75 @@
+!SAMPLE={"id":"activity_01example0000000000000003","created_at":"2026-10-12T21:58:02.114Z","organization_id":null,"organization_uuid":null,"actor":{"type":"user_actor","email_address":"alice@example.com","user_id":"user_01examplealice0000001","ip_address":"203.0.113.24","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.80 Safari/537.36"},"type":"sso_login_succeeded","auth_method":"sso","mfa_method":"not_used"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="organization_uuid"\s*:.*[{,]\s*"type"\s*:\s*"(?:sso_login_(?:succeeded|failed|initiated)|magic_link_login_(?:succeeded|failed|initiated)|social_login_succeeded|user_logged_out|step_up_authentication_(?:succeeded|failed))"\s*[,}]|[{,]\s*"type"\s*:\s*"(?:sso_login_(?:succeeded|failed|initiated)|magic_link_login_(?:succeeded|failed|initiated)|social_login_succeeded|user_logged_out|step_up_authentication_(?:succeeded|failed))"\s*[,}].*"organization_uuid"\s*:
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Claude Compliance API Activity Feed (GET /v1/compliance/activities), one Activity
+# from data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# Standalone parser for the Authentication schema: SSO, magic link and social sign-ins
+# (started, succeeded, failed), sign-outs, and step-up identity checks.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Claude"
+sensorEventId$ = json["$.id"]
+# RFC 3339 in UTC, with or without fractional seconds.
+eventTimeUsec$ = DATETIME(json["$.created_at"], "2006-01-02T15:04:05.999999999Z07:00")
+
+t = json["$.type"]
+# A signed-in user is a user_actor; before sign-in completes the actor is an
+# unauthenticated_user_actor that carries the email address typed in.
+actorType = json["$.actor.type"]
+targetUserName$ = json["$.actor.email_address"]
+targetUserName$ = IF actorType == "unauthenticated_user_actor" THEN json["$.actor.unauthenticated_email_address"] ELSE targetUserName$
+sourceAddress$ = json["$.actor.ip_address"]
+userAgent$ = json["$.actor.user_agent"]
+
+stepUp = CONTAINS(t, "step_up_")
+authSystem$ = IF CONTAINS(t, "sso_") THEN "sso" ELSE NULL
+authSystem$ = IF CONTAINS(t, "magic_link_") THEN "magic_link" ELSE authSystem$
+authSystem$ = IF t == "social_login_succeeded" THEN "social " + json["$.provider"] ELSE authSystem$
+authSystem$ = IF stepUp THEN "step_up " + json["$.method"] ELSE authSystem$
+
+succeeded = CONTAINS(t, "_succeeded")
+failed = CONTAINS(t, "_failed")
+started = CONTAINS(t, "_initiated")
+logoff = t == "user_logged_out"
+
+action$ = "LOGON"
+action$ = IF failed THEN "FAILURE" ELSE action$
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF started THEN "PRE_AUTHENTICATION" ELSE authCategory$
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+# A started sign-in has no outcome yet.
+actionResult$ = IF succeeded OR logoff THEN "SUCCESS" ELSE NULL
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+# Failed sign-ins carry no reason. A failed step-up check is a failed second factor.
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND stepUp THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF stepUp THEN TRUE ELSE NULL
+
+# Keys with no Auth field of their own go to event_metadata.
+typ.key$ = "claude_activity_type"
+typ.value$ = t
+at.key$ = "claude_actor_type"
+at.value$ = actorType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [typ, at]
+
+# Optional keys, added only when Anthropic sends them.
+uid.key$ = "claude_user_id"
+uid.value$ = json["$.actor.user_id"]
+eventMetadata$.record$ = IF uid.value$ THEN eventMetadata$.record$ + [uid] ELSE eventMetadata$.record$
+org.key$ = "claude_organization_id"
+org.value$ = json["$.organization_id"]
+eventMetadata$.record$ = IF org.value$ THEN eventMetadata$.record$ + [org] ELSE eventMetadata$.record$
+mfa.key$ = "mfa_method"
+mfa.value$ = json["$.mfa_method"]
+eventMetadata$.record$ = IF mfa.value$ THEN eventMetadata$.record$ + [mfa] ELSE eventMetadata$.record$
+why.key$ = "step_up_reason"
+why.value$ = json["$.reason"]
+eventMetadata$.record$ = IF why.value$ THEN eventMetadata$.record$ + [why] ELSE eventMetadata$.record$
