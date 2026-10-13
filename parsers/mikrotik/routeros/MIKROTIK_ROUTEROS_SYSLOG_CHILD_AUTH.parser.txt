@@ -1,0 +1,33 @@
+!SAMPLE=<27>2026-10-12T22:41:02.118+11:00 gw01 system,error,critical login failure for user admin from 198.51.100.7 via ssh
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: MikroTik RouterOS, plain text over syslog to the data collector.
+# Child of MIKROTIK_ROUTEROS_SYSLOG_PARENT: management logins, logouts and login failures
+# (WinBox, WebFig, SSH, Telnet, API and the others the "via" word names) to Auth.
+# login, topics, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+failed = login["failure"] != ""
+loggedOut = login["io"] == "out"
+
+targetUserName$ = IF failed THEN login["fuser"] ELSE login["user"]
+sourceAddress$ = login["src"]
+targetHostName$ = hostId$
+authSystem$ = "RouterOS " + login["via"]
+
+authCategory$ = IF loggedOut THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "LOGON"
+action$ = IF loggedOut THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+# RouterOS logs the same "login failure" for a wrong password and for an unknown user.
+failureCategory$ = IF failed THEN "INCORRECT_USER_OR_PASSWORD" ELSE NULL
+
+r1.key$ = "service"
+r1.value$ = login["via"]
+r2.key$ = "topics"
+r2.value$ = topics
+eventMetadata$.record$ = [r1, r2]
