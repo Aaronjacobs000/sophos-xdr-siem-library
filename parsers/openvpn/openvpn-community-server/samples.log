@@ -1,0 +1,9 @@
+<29>Oct 12 22:40:10 vpn01 openvpn[1201]: 203.0.113.5:51544 TLS: Initial packet from [AF_INET]203.0.113.5:51544, sid=1a2b3c4d 5e6f7a8b
+<29>Oct 12 22:40:10 vpn01 openvpn[1201]: 203.0.113.5:51544 VERIFY OK: depth=0, CN=alice
+<29>Oct 12 22:40:11 vpn01 openvpn[1201]: 203.0.113.5:51544 TLS: Username/Password authentication succeeded for username 'alice' 
+<29>Oct 12 22:40:11 vpn01 openvpn[1201]: 203.0.113.5:51544 [alice] Peer Connection Initiated with [AF_INET]203.0.113.5:51544
+<27>Oct 12 22:41:02 vpn01 openvpn[1201]: 198.51.100.7:40022 TLS Auth Error: Auth Username/Password verification failed for peer
+<27>Oct 12 22:41:09 vpn01 openvpn[1201]: 198.51.100.7:40031 TLS Auth Error: Auth Username/Password verification failed for peer
+<27>Oct 12 22:42:15 vpn01 openvpn[1201]: 198.51.100.9:61022 VERIFY ERROR: depth=0, error=certificate has expired: CN=bob, serial=4096
+<29>Oct 12 22:55:40 vpn01 openvpn[1201]: alice/203.0.113.5:51544 SIGTERM[soft,remote-exit] received, client-instance exiting
+<29>2026-10-12T22:57:03.418+11:00 vpn02 openvpn-server[884]: 192.0.2.77:1194 [carol] Peer Connection Initiated with [AF_INET]192.0.2.77:1194
