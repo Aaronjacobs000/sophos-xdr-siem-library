@@ -9,7 +9,7 @@ import { validatePath } from './jsonpath.js';
 import { hasYear, hasZone, layoutChunks } from './gotime.js';
 import { FUNCTION_NAMES, ARITY, DEPRECATED } from './functions.js';
 import { schemaInfo, fieldsByParser, typeKind, enumMembers, enumNumbers, messageType, docMisspellings, GENERIC } from './schemas.js';
-import { toStr, truthy } from './values.js';
+import { toStr, truthy, toBool } from './values.js';
 
 const NAME_RE = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
 // Set by the engine's root parser before custom parsers run.
@@ -316,7 +316,7 @@ export function topConfirms(p, sample) {
     if (p.confirm.kind === 'PATTERN') return compileGo(p.confirm.pattern).test(sample);
     const vars = new Map(rootVars(sample));
     const ctx = { vars, now: undefined, get: (n) => (vars.has(n) ? vars.get(n) : null), note() {}, sink: [] };
-    return truthy(evaluate(ctx, p.confirm.ast));
+    return toBool(evaluate(ctx, p.confirm.ast));
   } catch {
     return false;
   }

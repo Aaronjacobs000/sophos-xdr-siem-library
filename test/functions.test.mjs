@@ -174,3 +174,14 @@ test('TENANT_LOOKUP takes its default, PARSE_ERROR stops the parser', () => {
   assert.equal(get('t = TENANT_LOOKUP("label", "value", "fallback")', 't'), 'fallback');
   assert.throws(() => run('x = PARSE_ERROR("bad data received")'), /PARSE_ERROR: bad data received/);
 });
+
+// Engine behaviors checked with Run Test in a lab tenant.
+
+test('IF, AND and OR fail on a list of two or more', () => {
+  assert.throws(() => run('l = SPLIT("a,b", ",")\nx = IF l THEN "y" ELSE "n"'), /cannot convert list to bool/);
+  assert.throws(() => run('json = JSON(d)\nx = IF json["$.arr"] THEN "y" ELSE "n"', { d: '{"arr":["x","y"]}' }), /cannot convert list to bool/);
+  assert.throws(() => run('l = SPLIT("a,b", ",")\nx = l AND TRUE'), /cannot convert list to bool/);
+  // An empty list is false, a list of one counts as its item, and a JSON object is true.
+  const v = run('one = SPLIT("x", ",")\na = IF one THEN "y" ELSE "n"\nb = IF [] THEN "y" ELSE "n"\njson = JSON(d)\nc = IF json["$.none"] THEN "y" ELSE "n"\ne = IF json["$.obj"] THEN "y" ELSE "n"\nf = IF LENGTH(SPLIT("a,b", ",")) > 0 THEN "y" ELSE "n"', { d: '{"none":[],"obj":{"k":"v"}}' });
+  assert.deepEqual(['a', 'b', 'c', 'e', 'f'].map((k) => v.get(k)), ['y', 'n', 'n', 'y', 'y']);
+});
