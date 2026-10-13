@@ -118,7 +118,10 @@ export function lintParsers(parsers, opts = {}) {
       }
       if (st.kind === 'capture') {
         stats.regexes++;
-        if (!known.has(st.source)) add('error', 'undefined-var', `${st.source} is read before it is set; the engine fails the event`, p.name, st.line);
+        const sources = new Set();
+        if (st.sourceExpr) walk(st.sourceExpr, (n) => { if (n.t === 'var') sources.add(n.name); });
+        else sources.add(st.source);
+        for (const v of sources) if (!known.has(v)) add('error', 'undefined-var', `${v} is read before it is set; the engine fails the event`, p.name, st.line);
         if (/\s#/.test(st.pattern)) add('warning', 'capture-comment', 'a capture pattern runs to the end of the line, so the comment here is part of the regex', p.name, st.line);
         for (const i of checkRe2(st.pattern)) { if (i.level === 'error') stats.regexBad++; add(i.level, 're2', i.message, p.name, st.line); }
         known.add(st.target);
