@@ -12,7 +12,7 @@
   "reference_time": "2026-10-14T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://docs.trendmicro.com/en-us/documentation/article/trend-micro-apex-central-patch-6-syslog-mapping-cef",
@@ -28,7 +28,7 @@
     "https://docs.trendmicro.com/en-us/documentation/article/trend-micro-apex-central-patch-6-cef-ade-logs",
     "https://docs.trendmicro.com/en-us/documentation/article/trend-micro-apex-central-patch-6-cef-action-table"
   ],
-  "notes": "In Apex Central go to Administration > Settings > Syslog Settings, turn on syslog forwarding to the data collector (UDP, TCP or TLS) with log format CEF, and pick the security log types. Logs are sent in batches at the forwarding frequency, so the event time is rt. Virus/Malware, Spyware/Grayware and Predictive Machine Learning logs go to Antivirus; Behavior Monitoring, C&C callback, Network Content Inspection, Suspicious File, Virtual Analyzer and Attack Discovery logs go to the third-party alert schema. Logon, auditing, intrusion prevention, application control, DLP, update and other log types stay generic. Trend's labels in its samples don't always match its tables (CLF_SeverityCode or CLF_ServerityCode, for example), so the csN and cnN values are read by key. The CEF header severity is always 3, so alert severity comes from each type's risk field. Samples are made up in the layout of Trend's CEF samples for each log type. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. The engine also stored event_type on the antivirus records, a field its antivirus schema has but the docs' table doesn't list. No built-in parser in that tenant matched these lines; Sophos Fusion's Apex Central integration is no longer supported.",
+  "notes": "In Apex Central go to Administration > Settings > Syslog Settings, turn on syslog forwarding to the data collector (UDP, TCP or TLS) with log format CEF, and pick the security log types. Logs are sent in batches at the forwarding frequency, so the event time is rt. Virus/Malware, Spyware/Grayware and Predictive Machine Learning logs go to Antivirus; Behavior Monitoring, C&C callback, Network Content Inspection, Suspicious File, Virtual Analyzer and Attack Discovery logs go to the third-party alert schema. Logon, auditing, intrusion prevention, application control, DLP, update and other log types stay generic. Trend's labels in its samples don't always match its tables (CLF_SeverityCode or CLF_ServerityCode, for example), so the csN and cnN values are read by key. The CEF header severity is always 3, so alert severity comes from each type's risk field. Samples are made up in the layout of Trend's CEF samples for each log type. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent. The engine also stored event_type on the antivirus records, a field its antivirus schema has but the docs' table doesn't list. No built-in parser in that tenant matched these lines; Sophos Fusion's Apex Central integration is no longer supported.",
   "parsers": [
     {
       "name": "TRENDMICRO_APEXCENTRAL_CEF_PARENT",

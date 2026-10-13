@@ -14,7 +14,7 @@
   "reference_time": "2026-10-14T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://docs.fortinet.com/document/fortimail/7.4.0/log-reference/890875/log-message-syntax",
@@ -25,7 +25,7 @@
     "https://docs.fortinet.com/document/fortimail/8.0.0/log-reference/292270/schema",
     "https://docs.fortinet.com/document/fortimail/7.6.4/cli-reference/820362"
   ],
-  "notes": "Under Log & Report > Log Settings > Remote, send history, antispam and antivirus logs to the data collector over syslog (udp or tcp-legacy for newline framing) with CSV format off. History (type=statistics) logs, one per recipient with the final disposition, and antispam logs go to Email; antivirus logs go to Antivirus. Event, system event and encryption logs stay generic. disposition and classifier arrive as English text or as hex codes, and both are read. date and time are in the appliance's zone: the parser uses eventtime or tz when FortiMail sends them (8.0) and otherwise reads the time as UTC. The tenant's built-in Fortinet_Master_non-cef parser matches the same lines and normalizes nothing; the engine picks one parser per line, and in a lab tenant on 2026-10-13 the FortiMail parent took the lines in 5 of 12 Run Tests and the combined children in 9 of 24. Expect some lines to stay generic. Samples are made up from Fortinet's log reference examples. Each child, combined with the parent into one parser, passed Run Test in that tenant when it took the lines; the parent and children have not run together as separate parsers yet. The engine also stored event_type on the antivirus records, a field its antivirus schema has but the docs' table doesn't list.",
+  "notes": "Under Log & Report > Log Settings > Remote, send history, antispam and antivirus logs to the data collector over syslog (udp or tcp-legacy for newline framing) with CSV format off. History (type=statistics) logs, one per recipient with the final disposition, and antispam logs go to Email; antivirus logs go to Antivirus. Event, system event and encryption logs stay generic. disposition and classifier arrive as English text or as hex codes, and both are read. date and time are in the appliance's zone: the parser uses eventtime or tz when FortiMail sends them (8.0) and otherwise reads the time as UTC. The tenant's built-in Fortinet_Master_non-cef parser matches the same lines and normalizes nothing; the engine picks one parser per line, and in a lab tenant on 2026-10-13 the FortiMail parent took the lines in 5 of 12 Run Tests and the combined children in 9 of 24. Expect some lines to stay generic. Samples are made up from Fortinet's log reference examples. Each child, combined with the parent into one parser, passed Run Test in that tenant when it took the lines. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent when it took the lines, but the built-in parser still won most runs: the email child took its lines in 5 of 13 Run Tests, the antivirus child in 3 of 5, and the built-in parser took the line only the parent reads both times. The engine also stored event_type on the antivirus records, a field its antivirus schema has but the docs' table doesn't list.",
   "parsers": [
     {
       "name": "FORTINET_FORTIMAIL_KV_PARENT",

@@ -13,13 +13,13 @@
   "reference_time": "2026-10-13T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://docs.suricata.io/en/latest/output/eve/eve-json-format.html",
     "https://docs.suricata.io/en/latest/output/eve/eve-json-output.html"
   ],
-  "notes": "Send EVE to syslog (eve-log type: syslog, identity suricata). alert records go to NIDS, dns to DNS and flow to Netflow; other event types stay in generic. Samples follow the EVE format page with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13; the parent and children have not run together as separate parsers yet. The tenant's built-in suricata_generic parser matches the same lines and normalizes nothing; the engine picks one parser per line, and in a lab tenant on 2026-10-13 it took the alert lines in 9 of 11 Run Tests and the flow lines in 5 of 11. Expect some lines to keep the built-in mapping.",
+  "notes": "Send EVE to syslog (eve-log type: syslog, identity suricata). alert records go to NIDS, dns to DNS and flow to Netflow; other event types stay in generic. Samples follow the EVE format page with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent. The tenant's built-in suricata_generic parser matches the same lines and normalizes nothing; the engine picks one parser per line, and in a lab tenant on 2026-10-13 it took the alert lines in 9 of 11 Run Tests and the flow lines in 5 of 11. Expect some lines to keep the built-in mapping.",
   "parsers": [
     {
       "name": "SURICATA_EVE_JSON_PARENT",

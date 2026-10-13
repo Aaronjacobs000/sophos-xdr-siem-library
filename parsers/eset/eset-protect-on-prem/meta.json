@@ -10,12 +10,12 @@
   "reference_time": "2026-10-13T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://help.eset.com/protect_admin/latest/en-US/events-exported-to-json-format.html"
   ],
-  "notes": "Set Syslog export to JSON in ESET PROTECT On-Prem (More > Settings > Syslog server). Firewall and antivirus detections get their own schemas; Audit, HIPS, web filtering, ESET Inspect and blocked file events stay in generic. Samples follow ESET's published JSON examples with the values changed. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13; the parent and children have not run together as separate parsers yet. In a lab tenant on 2026-10-13 the antivirus lines also got event_type = \"Threat_Event\", a field the engine's antivirus schema has but the docs' schema table doesn't list.",
+  "notes": "Set Syslog export to JSON in ESET PROTECT On-Prem (More > Settings > Syslog server). Firewall and antivirus detections get their own schemas; Audit, HIPS, web filtering, ESET Inspect and blocked file events stay in generic. Samples follow ESET's published JSON examples with the values changed. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent. In a lab tenant on 2026-10-13 the antivirus lines also got event_type = \"Threat_Event\", a field the engine's antivirus schema has but the docs' schema table doesn't list.",
   "parsers": [
     {
       "name": "ESET_PROTECT_JSON_PARENT",
