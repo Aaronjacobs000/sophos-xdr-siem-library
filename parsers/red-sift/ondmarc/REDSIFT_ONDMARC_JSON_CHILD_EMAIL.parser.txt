@@ -1,0 +1,63 @@
+!SAMPLE={"ondmarc_record":"aggregate_record","ondmarc_domain":"example.com","report_id":"rpt-20261012-7731","receiver":"Example Mail Receiver","receiver_email":"noreply-dmarc@example.net","source":"unknown-203.0.113.77","source_display_name":"Unknown source","source_ip":"203.0.113.77","source_asn":"Example Hosting","source_country":"BR","has_blocklist":true,"email_volume":42,"disposition":"reject","dkim_result":"fail","spf_result":"fail","dmarc_result":"fail","pass_volume":0,"fail_volume":42,"source_hostname":null,"header_from":"example.com","envelope_from":"example.com","envelope_to":"example.net","policy_domain":"example.com","policy_p":"reject","auth_dkim_domain":null,"auth_dkim_result":"none","auth_spf_domain":"example.com","auth_spf_result":"fail","classification":"unknown","date":"2026-10-12"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="aggregate_record"
+!SCHEMA=scwx.email
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Red Sift OnDMARC API v2 records from the example collector.
+# Child of REDSIFT_ONDMARC_JSON_PARENT: DMARC aggregate report rows (one sending source, header
+# From domain and result for one day, with a message count) to Email. Rows that fail DMARC get a
+# threat record. The analyst endpoint needs OnDMARC's DMARC Analyst feature.
+# json, eventType$ and sensorType$ come from the parent.
+
+# A row covers many messages: from_email_address holds the header From domain, and the message
+# count is email_volume in event_metadata.
+senderIp$ = json["$.source_ip"]
+fromEmailAddress$ = json["$.header_from"]
+eventTimeUsec$ = DATETIME(STRING(json["$.date"]), "2006-01-02")
+
+disp = LOWERCASE(STRING(json["$.disposition"]))
+status$ = NULL
+status$ = IF disp == "none" THEN "DELIVERED" ELSE status$
+status$ = IF disp == "quarantine" THEN "QUARANTINED" ELSE status$
+status$ = IF disp == "reject" THEN "BLOCKED" ELSE status$
+
+dmarc = LOWERCASE(STRING(json["$.dmarc_result"]))
+t_dmarc.name$ = "DMARC failure"
+t_dmarc.type$ = "spoofing"
+t_dmarc.classification$ = STRING(json["$.classification"])
+found = []
+found = IF dmarc == "fail" THEN found + [t_dmarc] ELSE found
+threats$ = found
+
+m1.key$ = "email_volume"
+m1.value$ = STRING(json["$.email_volume"])
+m2.key$ = "dmarc_result"
+m2.value$ = dmarc
+m3.key$ = "dkim_result"
+m3.value$ = STRING(json["$.dkim_result"])
+m4.key$ = "spf_result"
+m4.value$ = STRING(json["$.spf_result"])
+m5.key$ = "source"
+m5.value$ = STRING(json["$.source_display_name"])
+m6.key$ = "reporter"
+m6.value$ = STRING(json["$.receiver"])
+m7.key$ = "report_id"
+m7.value$ = STRING(json["$.report_id"])
+m8.key$ = "policy"
+m8.value$ = STRING(json["$.policy_p"])
+m9.key$ = "classification"
+m9.value$ = STRING(json["$.classification"])
+m10.key$ = "monitored_domain"
+m10.value$ = STRING(json["$.ondmarc_domain"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10]
+country = STRING(json["$.source_country"])
+m11.key$ = "source_country"
+m11.value$ = country
+eventMetadata$.record$ = IF country != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+envFrom = STRING(json["$.envelope_from"])
+m12.key$ = "envelope_from"
+m12.value$ = envFrom
+eventMetadata$.record$ = IF envFrom != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$

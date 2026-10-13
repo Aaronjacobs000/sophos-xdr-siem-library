@@ -1,0 +1,74 @@
+!SAMPLE={"ondmarc_record":"dmarc_guardian_issue","issue":{"issueId":40217,"issueType":"spf-subdomain-takeover","definitionId":"spf-include-unregistered","subjectDomain":"mail.example.com","causeDomain":"old-relay.example.org","title":"SPF include points at a domain anyone can register","severity":"critical","createdOn":"2026-10-13T00:40:11Z","lastUpdated":"2026-10-13T00:40:11Z","details":{"@type":"subdo","status":"available"},"affectedRecord":{"name":"mail.example.com","type":"TXT","value":"v=spf1 include:old-relay.example.org -all"}},"dns":{"a":["203.0.113.25"],"aaaa":[],"mx":["mx1.example.com"],"spf":["v=spf1 include:old-relay.example.org -all"],"dmarc":"v=DMARC1; p=reject","hasPublicIp":true},"notes":"Raised with the mail team","relatedTo":"example.com","domain":"example.com"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="dmarc_guardian_issue" OR eventType$=="dns_history"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Red Sift OnDMARC API v2 records from the example collector.
+# Child of REDSIFT_ONDMARC_JSON_PARENT: DMARC Guardian issues (dangling DNS records and SPF
+# subdomain takeover risks) and DNS record changes on monitored domains to the third-party
+# alert schema.
+# json, eventType$ and sensorType$ come from the parent.
+
+guardian = eventType$ == "dmarc_guardian_issue"
+vendor$ = "Red Sift"
+provider$ = IF guardian THEN "OnDMARC DMARC Guardian" ELSE "OnDMARC"
+
+title$ = IF guardian THEN json["$.issue.title"] ELSE "DNS " + UPPERCASE(STRING(json["$.protocol"])) + " record changed for " + STRING(json["$.domain"])
+alertCategory$ = IF guardian THEN json["$.issue.issueType"] ELSE "dns_history"
+alertId$ = IF guardian THEN STRING(json["$.issue.issueId"]) ELSE json["$.id"]
+domainName$ = IF guardian THEN json["$.issue.subjectDomain"] ELSE json["$.domain"]
+recName = STRING(json["$.issue.affectedRecord.name"])
+recType = STRING(json["$.issue.affectedRecord.type"])
+recValue = STRING(json["$.issue.affectedRecord.value"])
+summary$ = IF guardian THEN recName + " " + recType + " " + recValue ELSE json["$.diff"]
+
+# Guardian severity is critical, high, medium or low. DNS changes carry the severity they were
+# reported at; values OnDMARC doesn't document are kept as vendor_severity and set to LOW.
+sev = LOWERCASE(STRING(IF guardian THEN json["$.issue.severity"] ELSE json["$.severity"]))
+vendorSeverity$ = IF sev != "" THEN sev ELSE NULL
+severity$ = "LOW"
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+severity$ = IF sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "info" OR sev == "informational" THEN "INFO" ELSE severity$
+
+created = STRING(json["$.issue.createdOn"])
+updated = STRING(json["$.issue.lastUpdated"])
+observed = STRING(json["$.observedAt"])
+createdTimeUsec$ = IF guardian AND created != "" THEN DATETIME(created, "2006-01-02T15:04:05.999999999Z07:00") ELSE NULL
+updatedTimeUsec$ = IF guardian AND updated != "" THEN DATETIME(updated, "2006-01-02T15:04:05.999999999Z07:00") ELSE NULL
+t = IF guardian THEN updated ELSE observed
+eventTimeUsec$ = IF t != "" THEN DATETIME(t, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+a1.key$ = "record"
+a1.value$ = eventType$
+a2.key$ = "account_domain"
+a2.value$ = STRING(json["$.domain"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "cause_domain"
+a3.value$ = STRING(json["$.issue.causeDomain"])
+a4.key$ = "record_name"
+a4.value$ = recName
+a5.key$ = "record_type"
+a5.value$ = recType
+a6.key$ = "record_value"
+a6.value$ = recValue
+additionalData$.record$ = IF guardian THEN additionalData$.record$ + [a3, a4, a5, a6] ELSE additionalData$.record$
+notes = STRING(json["$.notes"])
+a7.key$ = "notes"
+a7.value$ = notes
+additionalData$.record$ = IF guardian AND notes != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "protocol"
+a8.value$ = STRING(json["$.protocol"])
+a9.key$ = "record_type"
+a9.value$ = STRING(json["$.recordType"])
+a10.key$ = "value"
+a10.value$ = STRING(json["$.value"])
+a11.key$ = "previous_value"
+a11.value$ = STRING(json["$.previousValue"])
+a12.key$ = "change_types"
+a12.value$ = STRING(json["$.changeTypes"])
+additionalData$.record$ = IF guardian THEN additionalData$.record$ ELSE additionalData$.record$ + [a8, a9, a10, a11, a12]
