@@ -63,12 +63,19 @@ function splitUnescaped(s, sep, limit) {
   return out;
 }
 
+// The engine unescapes \= and \\ in extension values and leaves \n, \r, \t and \| as two
+// characters (checked in a lab tenant).
 function unescapeCefValue(v) {
-  return v.replace(/\\([=\\nr|])/g, (_, c) => ({ n: '\n', r: '\r' }[c] ?? c));
+  return v.replace(/\\([=\\])/g, '$1');
 }
 
+// Extension keys whose <key>Label the engine resolves, so values["<label text>"] works (docs
+// example). cfpN, c6aN, deviceCustomDateN, flexDateN and the long deviceCustom* names are not
+// resolved (checked in a lab tenant).
+const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
+
 // Header fields by number ([0] is "CEF:<version>", [1] vendor, [2] product, ...), extension
-// keys by name, and each csNLabel resolved so values["<label text>"] works (docs example).
+// keys by name, and the labels in LABELLED resolved.
 export function parseCef(line) {
   if (line === null || line === undefined) return null;
   const s = String(line);
@@ -93,7 +100,7 @@ export function parseCef(line) {
   for (const [k, v] of [...map]) {
     if (k.endsWith('Label')) {
       const base = k.slice(0, -5);
-      if (map.has(base) && !map.has(v)) map.set(v, map.get(base));
+      if (LABELLED.test(base) && map.has(base) && !map.has(v)) map.set(v, map.get(base));
     }
   }
   return new ObjValue(map, header);
