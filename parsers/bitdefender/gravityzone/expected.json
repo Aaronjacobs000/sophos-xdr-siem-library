@@ -1,0 +1,629 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791853323000000,
+      "event_time_fidelity": "MICRO",
+      "threat_name": "EICAR-Test-File (not a virus)",
+      "vendor_alert_type": "file",
+      "file_path": "C:\\Users\\jdoe\\Downloads\\eicar0000001.txt",
+      "file_hash": {
+        "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
+      },
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "agent_device_id": "65f1a2b3c4d5e6f708192a41",
+      "user_name": "jdoe",
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "av"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "vendor_status",
+            "value": "quarantined"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791853784000000,
+      "event_time_fidelity": "MICRO",
+      "threat_name": "Trojan.GenericKD.71234567",
+      "vendor_alert_type": "file",
+      "file_path": "C:\\Users\\amy\\AppData\\Local\\Temp\\upd.exe",
+      "file_hash": {
+        "sha256": "3e7c1a9b2d4f6a8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f2a4c6e8b0d1f3a5c"
+      },
+      "computer_name": "OPS-WS-057",
+      "host_id": "OPS-WS-057",
+      "agent_device_id": "65f1a2b3c4d5e6f708192a57",
+      "user_name": "amy",
+      "action_taken": "DELETED",
+      "threat_type": "FILE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "av"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "vendor_status",
+            "value": "deleted"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791854120000000,
+      "event_time_fidelity": "MICRO",
+      "threat_name": "Gen:Heur.Ransom.HiddenTears.1",
+      "vendor_alert_type": "ransomware",
+      "file_path": "C:\\Users\\jdoe\\AppData\\Roaming\\svc\\lock.exe",
+      "file_hash": {
+        "sha256": "8c5e2d0f1a3b4c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5"
+      },
+      "process_name": "C:\\Users\\jdoe\\AppData\\Roaming\\svc\\lock.exe",
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "agent_device_id": "65f1a2b3c4d5e6f708192a41",
+      "user_name": "jdoe",
+      "action_taken": "BLOCKED",
+      "threat_type": "FILE",
+      "threat_category": "RANSOMWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "hd"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "vendor_status",
+            "value": "blocked"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "detection_level",
+            "value": "normal"
+          },
+          {
+            "key": "parent_process_path",
+            "value": "C:\\Windows\\explorer.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791854671000000,
+      "event_time_fidelity": "MICRO",
+      "threat_name": "Trojan.Agent.FXQB",
+      "vendor_alert_type": "virus",
+      "file_path": "invoice_1013.zip",
+      "computer_name": "MBX-01",
+      "host_id": "MBX-01",
+      "agent_device_id": "65f1a2b3c4d5e6f708192a25",
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "threat_category": "VIRUS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "exchange-malware"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.25"
+          },
+          {
+            "key": "vendor_status",
+            "value": "quarantine"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "sender",
+            "value": "invoices@example.org"
+          },
+          {
+            "key": "subject",
+            "value": "Invoice attached"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791855012401000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "new-incident",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "title": "GravityZone incident: ATC.Malicious",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "risk_score": 90,
+      "alert_id": "6701c2d3e4f5a6b7c8d9e0f1",
+      "target_user_name": "FIN-LT-041\\jdoe",
+      "summary": "c:\\users\\jdoe\\appdata\\local\\temp\\loader.exe on FIN-LT-041",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "new-incident"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "main_action",
+            "value": "action_needed"
+          },
+          {
+            "key": "process_path",
+            "value": "c:\\users\\jdoe\\appdata\\local\\temp\\loader.exe"
+          },
+          {
+            "key": "file_sha256",
+            "value": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+          },
+          {
+            "key": "attck_ids",
+            "value": "[\"T1036\",\"T1059\"]"
+          },
+          {
+            "key": "attack_types",
+            "value": "[\"Other\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791855720120000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "new-extended-incident",
+      "title": "GravityZone extended incident 43",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "risk_score": 76,
+      "alert_id": "6701c2d3e4f5a6b7c8d9e0f9",
+      "summary": "GravityZone extended incident 43",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "new-extended-incident"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "main_action",
+            "value": "action_needed"
+          },
+          {
+            "key": "attack_types",
+            "value": "[\"spearphishing\",\"exploit\"]"
+          },
+          {
+            "key": "killchain_phase",
+            "value": "execution"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791856233000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "avc",
+      "target_host_name": "OPS-WS-057",
+      "host_id": "OPS-WS-057",
+      "title": "Advanced Threat Control: AVC APP",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "summary": "C:\\Users\\amy\\Downloads\\setup_tool.exe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "avc"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "vendor_status",
+            "value": "avc_blocked"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791856502000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "antiexploit",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "title": "Advanced Anti-Exploit: ROP/StackPivot",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "target_user_name": "jdoe@example.com",
+      "summary": "C:\\Program Files\\Acme Viewer\\viewer.exe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "antiexploit"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "detection_name",
+            "value": "Exploit.CVE-2026-0001.Gen"
+          },
+          {
+            "key": "cve",
+            "value": "CVE-2026-0001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791856875000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "network-monitor",
+      "target_host_name": "OPS-WS-057",
+      "host_id": "OPS-WS-057",
+      "title": "Network Attack Defense: PrivacyThreat.PasswordStealer.HTTP",
+      "severity": "MEDIUM",
+      "action": "ATTEMPTED",
+      "source_address": "192.0.2.57",
+      "destination_address": "203.0.113.80",
+      "destination_port": 80,
+      "target_user_name": "amy@example.com",
+      "summary": "Network Attack Defense: PrivacyThreat.PasswordStealer.HTTP",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "network-monitor"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "attack_technique",
+            "value": "discovery"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791857100000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "ransomware-mitigation",
+      "target_host_name": "FS-01",
+      "host_id": "FS-01",
+      "title": "Ransomware mitigation: remote attack",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.88",
+      "target_user_name": "SYSTEM",
+      "summary": "Ransomware mitigation: remote attack",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "ransomware-mitigation"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "item_count",
+            "value": "11"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791857400000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "network-sandboxing",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "title": "Sandbox Analyzer: RANSOMWARE",
+      "severity": "HIGH",
+      "summary": "C:\\Users\\jdoe\\Downloads\\statement.docm",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "network-sandboxing"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791857741000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Bitdefender",
+      "provider": "GravityZone",
+      "alert_category": "aph",
+      "target_host_name": "OPS-WS-057",
+      "host_id": "OPS-WS-057",
+      "title": "Antiphishing: phishing",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "destination_url": "http://login-check.example.net/verify",
+      "summary": "http://login-check.example.net/verify",
+      "additional_data": {
+        "record": [
+          {
+            "key": "module",
+            "value": "aph"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "1"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "vendor_status",
+            "value": "aph_blocked"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT > BITDEFENDER_GZ_JSONRPC_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone",
+      "event_time_usec": 1791858007000000,
+      "event_time_fidelity": "MICRO",
+      "threat_name": "Adware.Generic.512",
+      "vendor_alert_type": "file",
+      "file_path": "C:\\Users\\bwong\\Downloads\\coupon_helper.exe",
+      "file_hash": {
+        "sha256": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9"
+      },
+      "computer_name": "HR-LT-009",
+      "host_id": "HR-LT-009",
+      "agent_device_id": "65f1a2b3c4d5e6f708192a09",
+      "user_name": "bwong",
+      "action_taken": "NONE",
+      "threat_type": "FILE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "av"
+          },
+          {
+            "key": "company_id",
+            "value": "65f1a2b3c4d5e6f708192a3b"
+          },
+          {
+            "key": "computer_ip",
+            "value": "192.0.2.9"
+          },
+          {
+            "key": "vendor_status",
+            "value": "still present"
+          },
+          {
+            "key": "events_in_batch",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "BITDEFENDER_GZ_JSONRPC_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Bitdefender GravityZone"
+    }
+  }
+]
