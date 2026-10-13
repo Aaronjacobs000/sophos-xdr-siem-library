@@ -1,0 +1,166 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KASEYA_VSA95_DW_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 9.5",
+      "event_time_usec": 1791805211120000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 9.5",
+      "event_name": "RemoteControlSessions",
+      "management_event": false,
+      "user_name": "tech.akim",
+      "event_type": "Kaseya Remote Control",
+      "status": "Ended",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "agent_id",
+            "value": "118551706373495"
+          },
+          {
+            "key": "session_id",
+            "value": "example-session-3fa85f64"
+          },
+          {
+            "key": "duration",
+            "value": "00:12:08"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KASEYA_VSA95_DW_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 9.5",
+      "event_time_usec": 1791805385118000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 9.5",
+      "event_name": "RemoteControlFileTransferSessions",
+      "management_event": false,
+      "user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "event_type": "File Transfer",
+      "status": "Success",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "agent_id",
+            "value": "118551706373495"
+          },
+          {
+            "key": "description",
+            "value": "C:\\Temp\\AcmeTool.exe"
+          },
+          {
+            "key": "session_id",
+            "value": "example-session-5d8f2c1a"
+          },
+          {
+            "key": "transfer_direction",
+            "value": "Upload"
+          },
+          {
+            "key": "client_endpoint_ip",
+            "value": "192.0.2.14"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KASEYA_VSA95_DW_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 9.5",
+      "event_time_usec": 1791805575912000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 9.5",
+      "event_name": "AgentLiveConnectAuditLogs",
+      "management_event": false,
+      "user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "event_type": "AgentLiveConnectAuditLogs",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "agent_id",
+            "value": "118551706373495"
+          },
+          {
+            "key": "description",
+            "value": "Started Live Connect session with ACME-WS-014"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KASEYA_VSA95_DW_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 9.5",
+      "event_time_usec": 1791805720300000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 9.5",
+      "event_name": "LiveConnectOnDemandAudit",
+      "management_event": false,
+      "user_name": "tech.akim",
+      "event_type": "Session started",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "agent_id",
+            "value": "339922110044"
+          },
+          {
+            "key": "description",
+            "value": "Technician joined the on-demand session"
+          },
+          {
+            "key": "customer_email",
+            "value": "jlee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KASEYA_VSA95_DW_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kaseya VSA 9.5",
+      "event_time_usec": 1791805802551000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Kaseya VSA 9.5",
+      "event_name": "ConfigurationChangeEvents",
+      "management_event": true,
+      "event_type": "ConfigurationChangeEvents",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "agent_id",
+            "value": "118551706373495"
+          },
+          {
+            "key": "description",
+            "value": "Agent procedure 'Add local admin' scheduled by tech.akim"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

@@ -1,0 +1,76 @@
+!SAMPLE={"Dataset":"RemoteControlSessions","AgentId":"118551706373495","PartitionId":"1","SessionId":"example-session-3fa85f64","SessionStartTime":"2026-10-12T11:40:11.120Z","RemoteControlAdministratorName":"tech.akim","SessionLastActiveTime":"2026-10-12T11:52:19.004Z","SessionTypeDescription":"Kaseya Remote Control","SessionStatus":"Ended","Duration":"00:12:08","SessionDate":"2026-10-12T11:40:11.120Z","SessionNotes":""}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"Dataset"\s*:\s*"(?:RemoteControlSessions|RemoteControlFileTransferSessions|AgentLiveConnectAuditLogs|LiveConnectOnDemandAudit|ConfigurationChangeEvents)"\s*,
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaseya VSA 9.5 Data Warehouse API records, sent to a Sophos NG-SIEM HTTP Ingest
+# integration one JSON record per line by the collector in collectors/kaseya-vsa95-data-warehouse,
+# which adds the dataset name as the first key, "Dataset".
+# Standalone parser for CloudAudit, for five datasets (fields from the Data Warehouse API reference):
+#   RemoteControlSessions, RemoteControlFileTransferSessions, AgentLiveConnectAuditLogs,
+#   LiveConnectOnDemandAudit and ConfigurationChangeEvents.
+# The records name agents by AgentId, not by machine name.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Kaseya VSA 9.5"
+eventSource$ = "Kaseya VSA 9.5"
+dataset = json["$.Dataset"]
+eventName$ = dataset
+managementEvent$ = dataset == "ConfigurationChangeEvents"
+
+# Each dataset names the technician, the address and the time in its own field.
+user = json["$.RemoteControlAdministratorName"]
+user = IF user == NULL OR user == "" THEN json["$.LoginName"] ELSE user
+user = IF user == NULL OR user == "" THEN json["$.AdminName"] ELSE user
+userName$ = user
+ip = json["$.RemoteControlAdministratorIp"]
+ip = IF ip == NULL OR ip == "" THEN json["$.IpAddress"] ELSE ip
+sourceAddress$ = ip
+kind = json["$.SessionTypeDescription"]
+kind = IF kind == NULL OR kind == "" THEN json["$.AuditAction"] ELSE kind
+eventType$ = IF kind == NULL OR kind == "" THEN dataset ELSE kind
+st = json["$.TransferResult"]
+st = IF st == NULL OR st == "" THEN json["$.SessionStatus"] ELSE st
+status$ = st
+
+t = json["$.TransferTime"]
+t = IF t == NULL OR t == "" THEN json["$.SessionStartTime"] ELSE t
+t = IF t == NULL OR t == "" THEN json["$.EntryTimeStamp"] ELSE t
+t = IF t == NULL OR t == "" THEN json["$.CreationDateTime"] ELSE t
+t = IF t == NULL OR t == "" THEN json["$.ChangeEventDateTime"] ELSE t
+eventTimeUsec$ = DATETIME(t, "2006-01-02T15:04:05.999999999Z07:00")
+
+desc = json["$.ChangeDescription"]
+desc = IF desc == NULL OR desc == "" THEN json["$.LogEntry"] ELSE desc
+desc = IF desc == NULL OR desc == "" THEN json["$.ActionInfo"] ELSE desc
+desc = IF desc == NULL OR desc == "" THEN json["$.TransferFileOrFolderName"] ELSE desc
+agent = json["$.AgentId"]
+agent = IF agent == NULL OR agent == "" THEN json["$.TempAgentId"] ELSE agent
+
+d1.key$ = "agent_id"
+d1.value$ = agent
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+d2.key$ = "description"
+d2.value$ = desc
+additionalEventData$.record$ = IF desc != NULL AND desc != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "session_id"
+d3.value$ = json["$.SessionId"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "transfer_direction"
+d4.value$ = json["$.TransferDirection"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "client_endpoint_ip"
+d5.value$ = json["$.ClientEndpointIpAddress"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "duration"
+d6.value$ = json["$.Duration"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "customer_email"
+d7.value$ = json["$.CustomerEmail"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
