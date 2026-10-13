@@ -1,0 +1,125 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "IBM_MAAS360_JSON_PARENT > IBM_MAAS360_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "IBM MaaS360",
+      "event_time_usec": 1791853323120000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "secadmin@example.com",
+      "source_address": "203.0.113.10",
+      "auth_system": "IBM MaaS360 Portal",
+      "user_agent": "Edge 141.0",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_report",
+            "value": "getAdminLoginReports"
+          },
+          {
+            "key": "auth_status",
+            "value": "Successful"
+          },
+          {
+            "key": "operating_system",
+            "value": "Windows 11"
+          },
+          {
+            "key": "logout_time",
+            "value": "1791856923000"
+          },
+          {
+            "key": "duration",
+            "value": "60"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "IBM_MAAS360_JSON_PARENT > IBM_MAAS360_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "IBM MaaS360",
+      "event_time_usec": 1791854012400000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "helpdesk2@example.com",
+      "source_address": "198.51.100.77",
+      "auth_system": "IBM MaaS360 Portal",
+      "user_agent": "Chrome 141.0.7390",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_report",
+            "value": "getAdminLoginReports"
+          },
+          {
+            "key": "auth_status",
+            "value": "Failed"
+          },
+          {
+            "key": "operating_system",
+            "value": "MacOS 15.6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "IBM_MAAS360_JSON_PARENT > IBM_MAAS360_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "IBM MaaS360",
+      "event_time_usec": 1791854107880000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.77",
+      "auth_system": "IBM MaaS360 Portal",
+      "auth_category": "ACCOUNT_LOGON",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_report",
+            "value": "getAdminLoginReports"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "IBM_MAAS360_JSON_PARENT > IBM_MAAS360_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "IBM MaaS360",
+      "event_time_usec": 1791855001000000,
+      "event_time_fidelity": "MICRO",
+      "username": "secadmin@example.com",
+      "client_hostname": "203.0.113.10",
+      "operation_name": "Administrator CHANGE",
+      "operation": "administrator=helpdesk2@example.com; account_status=Active; roles_added=Help Desk"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "IBM_MAAS360_JSON_PARENT > IBM_MAAS360_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "IBM MaaS360",
+      "event_time_usec": 1791855320000000,
+      "event_time_fidelity": "MICRO",
+      "username": "secadmin@example.com",
+      "client_hostname": "203.0.113.10",
+      "operation_name": "Administrator CHANGE",
+      "operation": "administrator=contractor@example.com; account_status=Inactive; roles_removed=Administrator"
+    }
+  }
+]
