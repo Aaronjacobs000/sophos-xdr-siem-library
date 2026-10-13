@@ -1,0 +1,167 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "UniFi Gateway",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "UDM-Pro",
+      "source_address": "198.51.100.23",
+      "destination_address": "203.0.113.2",
+      "source_port": 51544,
+      "destination_port": 22,
+      "protocol": 6,
+      "source_mac": "00:00:5e:00:53:fe",
+      "flow_action": "FW_BLOCKED",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule",
+            "value": "WAN_LOCAL-D-2147483647"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth8"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "rule_description",
+            "value": "Block all to gateway"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "UniFi Gateway",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "UDM-Pro",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.40",
+      "protocol": 1,
+      "source_mac": "00:00:5e:00:53:fe",
+      "flow_action": "FW_BLOCKED",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule",
+            "value": "WAN_IN-D-3001"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth8"
+          },
+          {
+            "key": "packet_length",
+            "value": "84"
+          },
+          {
+            "key": "out_interface",
+            "value": "br10"
+          },
+          {
+            "key": "rule_description",
+            "value": "no rule description"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "UniFi Gateway",
+      "event_time_usec": 1791844935000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "UDM-Pro",
+      "source_address": "192.0.2.50",
+      "destination_address": "198.51.100.53",
+      "source_port": 53122,
+      "destination_port": 53,
+      "protocol": 17,
+      "source_mac": "00:00:5e:00:53:22",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule",
+            "value": "LAN_IN-A-2001"
+          },
+          {
+            "key": "in_interface",
+            "value": "br10"
+          },
+          {
+            "key": "packet_length",
+            "value": "71"
+          },
+          {
+            "key": "out_interface",
+            "value": "eth8"
+          },
+          {
+            "key": "rule_description",
+            "value": "Allow DNS to resolver"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "UniFi Gateway",
+      "event_time_usec": 1791845010000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "UDM-Pro",
+      "source_address": "192.0.2.76",
+      "destination_address": "192.0.2.1",
+      "source_port": 33725,
+      "destination_port": 7550,
+      "protocol": 6,
+      "source_mac": "00:00:5e:00:53:33",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule",
+            "value": "LAN_LOCAL-RET-2147483647"
+          },
+          {
+            "key": "in_interface",
+            "value": "br148"
+          },
+          {
+            "key": "packet_length",
+            "value": "1500"
+          },
+          {
+            "key": "rule_description",
+            "value": "no rule description"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
