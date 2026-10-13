@@ -1,0 +1,67 @@
+!SAMPLE=<30>2026-10-12T22:45:03.551+11:00 gw01 firewall,info WAN_DROP input: in:ether1 out:(unknown 0), connection-state:new src-mac 00:00:5e:00:53:01, proto TCP (SYN), 198.51.100.23:51544->203.0.113.1:8291, len 60
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="firewall"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: MikroTik RouterOS, plain text over syslog to the data collector.
+# Child of MIKROTIK_ROUTEROS_SYSLOG_PARENT: firewall rule log lines to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# fw, topics, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = fw["src"]
+destinationAddress$ = fw["dst"]
+sourcePort$ = fw["sport"]
+destinationPort$ = fw["dport"]
+sourceMac$ = fw["mac"]
+
+# protocol takes the IANA number; RouterOS logs a name.
+proto = UPPERCASE(fw["proto"])
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "IPSEC-ESP" THEN 50 ELSE protocol$
+protocol$ = IF proto == "IPSEC-AH" THEN 51 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "SCTP" THEN 132 ELSE protocol$
+
+# The input chain holds traffic to the router and output traffic from it. Forwarded traffic
+# has no direction the line can tell.
+chain = fw["chain"]
+direction$ = NULL
+direction$ = IF chain == "input" THEN "INBOUND" ELSE direction$
+direction$ = IF chain == "output" THEN "OUTBOUND" ELSE direction$
+
+# The line doesn't say what the rule did. Put the action in the rule's log-prefix (for
+# example DROP_WAN or ACCEPT_VPN) and it is read from there; other prefixes leave it unset.
+prefix = LOWERCASE(fw["prefix"])
+flowAction$ = NULL
+flowAction$ = IF CONTAINS(prefix, "accept") OR CONTAINS(prefix, "allow") THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF CONTAINS(prefix, "drop") OR CONTAINS(prefix, "reject") OR CONTAINS(prefix, "block") OR CONTAINS(prefix, "deny") THEN "FW_BLOCKED" ELSE flowAction$
+
+# Fields with no Netflow home go to event_metadata. len is the size of the one logged packet.
+r1.key$ = "chain"
+r1.value$ = chain
+r2.key$ = "in_interface"
+r2.value$ = fw["in"]
+r3.key$ = "out_interface"
+r3.value$ = fw["out"]
+r4.key$ = "packet_length"
+r4.value$ = fw["len"]
+r5.key$ = "topics"
+r5.value$ = topics
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]
+
+r6.key$ = "log_prefix"
+r6.value$ = fw["prefix"]
+eventMetadata$.record$ = IF fw["prefix"] != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "connection_state"
+r7.value$ = fw["state"]
+eventMetadata$.record$ = IF fw["state"] != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "protocol_detail"
+r8.value$ = fw["flags"]
+eventMetadata$.record$ = IF fw["flags"] != "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$

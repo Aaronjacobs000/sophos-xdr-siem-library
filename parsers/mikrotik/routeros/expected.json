@@ -1,0 +1,391 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805211726000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS winbox",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "winbox"
+          },
+          {
+            "key": "topics",
+            "value": "system,info,account"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805262118000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.7",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "ssh"
+          },
+          {
+            "key": "topics",
+            "value": "system,error,critical"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805264530000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "root",
+      "source_address": "198.51.100.7",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "ssh"
+          },
+          {
+            "key": "topics",
+            "value": "system,error,critical"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805338003000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "netops",
+      "source_address": "192.0.2.25",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "web"
+          },
+          {
+            "key": "topics",
+            "value": "system,info,account"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805431270000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "api-svc",
+      "source_address": "203.0.113.45",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS api",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "api"
+          },
+          {
+            "key": "topics",
+            "value": "system,error,critical"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805470912000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "gw01",
+      "auth_system": "RouterOS winbox",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "winbox"
+          },
+          {
+            "key": "topics",
+            "value": "system,info,account"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805503551000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "source_address": "198.51.100.23",
+      "destination_address": "203.0.113.1",
+      "source_port": 51544,
+      "destination_port": 8291,
+      "source_mac": "00:00:5e:00:53:01",
+      "protocol": 6,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "chain",
+            "value": "input"
+          },
+          {
+            "key": "in_interface",
+            "value": "ether1"
+          },
+          {
+            "key": "out_interface",
+            "value": "(unknown 0)"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "topics",
+            "value": "firewall,info"
+          },
+          {
+            "key": "log_prefix",
+            "value": "WAN_DROP"
+          },
+          {
+            "key": "connection_state",
+            "value": "new"
+          },
+          {
+            "key": "protocol_detail",
+            "value": "SYN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805509004000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "source_address": "198.51.100.23",
+      "destination_address": "203.0.113.1",
+      "source_mac": "00:00:5e:00:53:01",
+      "protocol": 1,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "chain",
+            "value": "input"
+          },
+          {
+            "key": "in_interface",
+            "value": "ether1"
+          },
+          {
+            "key": "out_interface",
+            "value": "(unknown 0)"
+          },
+          {
+            "key": "packet_length",
+            "value": "84"
+          },
+          {
+            "key": "topics",
+            "value": "firewall,info"
+          },
+          {
+            "key": "log_prefix",
+            "value": "WAN_DROP"
+          },
+          {
+            "key": "protocol_detail",
+            "value": "type 8, code 0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791805587318000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "source_address": "192.0.2.50",
+      "destination_address": "198.51.100.53",
+      "source_port": 53122,
+      "destination_port": 53,
+      "source_mac": "00:00:5e:00:53:22",
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "chain",
+            "value": "forward"
+          },
+          {
+            "key": "in_interface",
+            "value": "bridge"
+          },
+          {
+            "key": "out_interface",
+            "value": "ether1"
+          },
+          {
+            "key": "packet_length",
+            "value": "71"
+          },
+          {
+            "key": "topics",
+            "value": "firewall,info"
+          },
+          {
+            "key": "log_prefix",
+            "value": "LAN_ACCEPT"
+          },
+          {
+            "key": "connection_state",
+            "value": "new"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "MIKROTIK_ROUTEROS_SYSLOG_PARENT > MIKROTIK_ROUTEROS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "MikroTik RouterOS",
+      "event_time_usec": 1791845235000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
+      "source_address": "198.51.100.40",
+      "destination_address": "203.0.113.1",
+      "source_port": 40022,
+      "destination_port": 22,
+      "source_mac": "00:00:5e:00:53:01",
+      "protocol": 6,
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "chain",
+            "value": "input"
+          },
+          {
+            "key": "in_interface",
+            "value": "ether1"
+          },
+          {
+            "key": "out_interface",
+            "value": "(unknown 0)"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "topics",
+            "value": "firewall,info"
+          },
+          {
+            "key": "protocol_detail",
+            "value": "SYN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

@@ -1,0 +1,11 @@
+<30>2026-10-12T22:40:11.726+11:00 gw01 system,info,account user admin logged in from 192.0.2.10 via winbox
+<27>2026-10-12T22:41:02.118+11:00 gw01 system,error,critical login failure for user admin from 198.51.100.7 via ssh
+<27>2026-10-12T22:41:04.530+11:00 gw01 system,error,critical login failure for user root from 198.51.100.7 via ssh
+<30>2026-10-12T22:42:18.003+11:00 gw01 system,info,account user netops logged in from 192.0.2.25 via web
+<27>2026-10-12T22:43:51.270+11:00 gw01 system,error,critical login failure for user api-svc from 203.0.113.45 via api
+<30>2026-10-12T22:44:30.912+11:00 gw01 system,info,account user admin logged out from 192.0.2.10 via winbox
+<30>2026-10-12T22:45:03.551+11:00 gw01 firewall,info WAN_DROP input: in:ether1 out:(unknown 0), connection-state:new src-mac 00:00:5e:00:53:01, proto TCP (SYN), 198.51.100.23:51544->203.0.113.1:8291, len 60
+<30>2026-10-12T22:45:09.004+11:00 gw01 firewall,info WAN_DROP input: in:ether1 out:(unknown 0), src-mac 00:00:5e:00:53:01, proto ICMP (type 8, code 0), 198.51.100.23->203.0.113.1, len 84
+<30>2026-10-12T22:46:27.318+11:00 gw01 firewall,info LAN_ACCEPT forward: in:bridge out:ether1, connection-state:new src-mac 00:00:5e:00:53:22, proto UDP, 192.0.2.50:53122->198.51.100.53:53, len 71
+<30>Oct 12 22:47:15 gw01 firewall,info input: in:ether1 out:(unknown 0), src-mac 00:00:5e:00:53:01, proto TCP (SYN), 198.51.100.40:40022->203.0.113.1:22, len 60
+<30>2026-10-12T22:48:00.441+11:00 gw01 interface,info ether2 link up (speed 1G, full duplex)
