@@ -1,0 +1,550 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791853323000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "http_method": "GET",
+      "uri_path": "/account/orders",
+      "uri_query": "page=2",
+      "uri_scheme": "https",
+      "uri_host": "portal.example.com",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "source_address": "198.51.100.23",
+      "source_port": 52964,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "response_code": 200,
+      "request_direction": "INBOUND",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "support_id",
+            "value": "18205860747014046001"
+          },
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "passed"
+          },
+          {
+            "key": "geo_location",
+            "value": "AU"
+          },
+          {
+            "key": "virtual_server",
+            "value": "/Common/portal_https_vs"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791853780000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "source_address": "203.0.113.77",
+      "source_port": 40122,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "blocked",
+      "blocked": 1,
+      "signature_id": 200002147,
+      "message": "Attack signature detected,Illegal meta character in value",
+      "classification": "SQL-Injection",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "blocked"
+          },
+          {
+            "key": "support_id",
+            "value": "18205860747014046017"
+          },
+          {
+            "key": "uri",
+            "value": "/products/view"
+          },
+          {
+            "key": "http_method",
+            "value": "GET"
+          },
+          {
+            "key": "signature_ids",
+            "value": "200002147,200002419"
+          },
+          {
+            "key": "signature_names",
+            "value": "SQL-INJ expressions like %22or 1=1%22 (3),SQL-INJ %22UNION SELECT%22 (Parameter)"
+          },
+          {
+            "key": "violation_rating",
+            "value": "5"
+          },
+          {
+            "key": "severity",
+            "value": "Error"
+          },
+          {
+            "key": "geo_location",
+            "value": "US"
+          },
+          {
+            "key": "ip_address_intelligence",
+            "value": "Scanners"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791854121000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "source_address": "198.51.100.140",
+      "source_port": 51001,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "alerted",
+      "message": "Evasion technique detected",
+      "classification": "Detection Evasion,Path Traversal",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "alerted"
+          },
+          {
+            "key": "support_id",
+            "value": "18205860747014046031"
+          },
+          {
+            "key": "uri",
+            "value": "/static/..%2f..%2fetc/passwd"
+          },
+          {
+            "key": "http_method",
+            "value": "GET"
+          },
+          {
+            "key": "sub_violations",
+            "value": "Evasion technique detected:Directory traversals"
+          },
+          {
+            "key": "violation_rating",
+            "value": "3"
+          },
+          {
+            "key": "severity",
+            "value": "Warning"
+          },
+          {
+            "key": "geo_location",
+            "value": "BR"
+          },
+          {
+            "key": "x_forwarded_for",
+            "value": "192.0.2.200"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791854399000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "http_method": "POST",
+      "uri_path": "/login",
+      "uri_scheme": "https",
+      "uri_host": "portal.example.com",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6)",
+      "source_address": "198.51.100.60",
+      "source_port": 53210,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "response_code": 200,
+      "source_username": "jdoe",
+      "request_direction": "INBOUND",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "support_id",
+            "value": "18205860747014046044"
+          },
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "passed"
+          },
+          {
+            "key": "geo_location",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791854735000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "source_address": "203.0.113.88",
+      "source_port": 44102,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "blocked",
+      "blocked": 1,
+      "signature_id": 200021069,
+      "message": "Automated client access \"wget\"",
+      "classification": "Non-browser Client",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "blocked"
+          },
+          {
+            "key": "support_id",
+            "value": "18205860747014046059"
+          },
+          {
+            "key": "uri",
+            "value": "/backup.zip"
+          },
+          {
+            "key": "http_method",
+            "value": "GET"
+          },
+          {
+            "key": "severity",
+            "value": "5"
+          },
+          {
+            "key": "geo_location",
+            "value": "NL"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791855060000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "source_address": "198.51.100.200",
+      "protocol": 6,
+      "direction": "INBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "alerted",
+      "message": "Brute Force Attack: Transparent",
+      "classification": "Brute Force Attack",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "alerted"
+          },
+          {
+            "key": "uri",
+            "value": "/login"
+          },
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "geo_location",
+            "value": "AU"
+          },
+          {
+            "key": "attack_status",
+            "value": "Ongoing"
+          },
+          {
+            "key": "detection_mode",
+            "value": "Number of Failed Logins Increased"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791855611000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "fadecabe",
+      "source_address": "198.51.100.23",
+      "target_address": "203.0.113.20",
+      "auth_category": "PRE_AUTHENTICATION",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490500"
+          },
+          {
+            "key": "message",
+            "value": "New session from client IP 198.51.100.23 (ST=New South Wales/CC=AU/C=OC) at VIP 203.0.113.20 Listener /Common/vpn_https_vs (Reputation=Unknown)"
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          },
+          {
+            "key": "listener",
+            "value": "/Common/vpn_https_vs"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791855615000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "fadecabe",
+      "target_user_name": "jdoe",
+      "auth_category": "ACCOUNT_LOGON",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490010"
+          },
+          {
+            "key": "message",
+            "value": "Username 'jdoe'"
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791855617000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "fadecabe",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490005"
+          },
+          {
+            "key": "message",
+            "value": "Following rule 'Successful' from item 'AD Auth' to ending 'Allow'"
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          },
+          {
+            "key": "policy_ending",
+            "value": "Allow"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791855617000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "fadecabe",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490102"
+          },
+          {
+            "key": "message",
+            "value": "Access policy result: Network_Access"
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          },
+          {
+            "key": "policy_result",
+            "value": "Network_Access"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791855842000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "beadfeed",
+      "target_user_name": "amy",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Clients credentials have been revoked, principal name: amy@EXAMPLE.COM. (-1765328366)",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490107"
+          },
+          {
+            "key": "message",
+            "value": "AD module: authentication with 'amy' failed: Clients credentials have been revoked, principal name: amy@EXAMPLE.COM. (-1765328366)"
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "F5_BIGIP_APM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP APM",
+      "event_time_usec": 1791857440000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "target_host_name": "bigip01.example.com",
+      "auth_system": "F5 BIG-IP APM",
+      "session_id": "fadecabe",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "01490567"
+          },
+          {
+            "key": "message",
+            "value": "Session deleted (user_initiated, code - 1)."
+          },
+          {
+            "key": "access_profile",
+            "value": "/Common/ap_vpn"
+          }
+        ]
+      }
+    }
+  }
+]
