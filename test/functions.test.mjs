@@ -232,3 +232,7 @@ test('SPLIT_NAME_VALUES gives a delimiter inside quotes back as a space', () => 
   // With a space delimiter the value comes back as it was.
   assert.equal(get('d = SPLIT_NAME_VALUES(s, " ", "=", "\\"")\nc = d["c"]', 'c', { s: 'a=1 c="x,y  z"' }), 'x,y  z');
 });
+
+test('INT needs its base', () => {
+  assert.throws(() => run('n = INT("42")'), /INT\(\) takes 2 arguments, got 1/);
+});

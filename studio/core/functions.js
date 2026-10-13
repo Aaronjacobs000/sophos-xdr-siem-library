@@ -61,7 +61,8 @@ function objectEntries(v) {
 }
 
 // INT() is strict, like Go's strconv.ParseInt: "1 " with a trailing space is an error that
-// fails the event (checked in a lab tenant).
+// fails the event (checked in a lab tenant). The base is required: the engine rejects a parser
+// that calls INT(value) with one argument.
 function parseIntGo(s, base) {
   if (typeof s === 'number') return Math.trunc(s);
   if (s === null || s === undefined) return null;
@@ -180,7 +181,7 @@ export const FUNCTIONS = {
     const bin = typeof atob === 'function' ? atob(t.padEnd(Math.ceil(t.length / 4) * 4, '=')) : Buffer.from(t, 'base64').toString('binary');
     return new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
   }],
-  INT: [1, 2, (c, [s, base]) => parseIntGo(s, base)],
+  INT: [2, 2, (c, [s, base]) => parseIntGo(s, base)],
   STRING: [1, 1, (c, [v]) => stringOf(v)],
   OBJKEYS: [1, 1, (c, [v]) => { const e = objectEntries(v); return e ? e.map(([k]) => k).sort() : null; }],
   OBJVALUES: [1, 1, (c, [v]) => {
