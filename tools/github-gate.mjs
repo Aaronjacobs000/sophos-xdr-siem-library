@@ -11,9 +11,10 @@
 // the pull request touches nothing outside parsers/, and each entry it changes is new or
 // already belongs to the person who opened it. Right before merging, the pull request's own
 // file list is checked again, so a change to collectors/ or anything else outside parsers/
-// never merges without review, whichever route opened it.
+// never merges without review, whichever route opened it. When it merges, pr and merge write
+// merged=true to $GITHUB_OUTPUT.
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { reviewReasons } from './lib/merge-rules.mjs';
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -101,6 +102,12 @@ async function merge(pr, sha) {
   }
 }
 
+// A merge made with GITHUB_TOKEN starts no push workflows, so the workflow reads merged=true
+// from the step output and starts the Pages build itself.
+async function reportMerged(outcome) {
+  if (outcome === 'Merged.' && process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, 'merged=true\n');
+}
+
 if (cmd === 'changed') {
   const files = await all(`/repos/${REPO}/pulls/${opt('--pr')}/files`);
   const names = files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean));
@@ -117,6 +124,7 @@ if (cmd === 'changed') {
   } else if (report.eligible) {
     await setLabels(pr, [LABELS.passed[0]], [LABELS.failed[0], LABELS.review[0]]);
     const outcome = await merge(pr, sha).catch((e) => `Merging failed: ${e.message}`);
+    await reportMerged(outcome);
     if (/Merged|Auto-merge is on/.test(outcome)) await setLabels(pr, [LABELS.auto[0]], []);
     else await setLabels(pr, [LABELS.review[0]], []);
     md += `\n${outcome}\n`;
@@ -134,7 +142,9 @@ if (cmd === 'changed') {
   const passed = /checks: passed/.test(md);
   await setLabels(num, [passed ? LABELS.passed[0] : LABELS.failed[0]], [passed ? LABELS.failed[0] : LABELS.passed[0]]);
 } else if (cmd === 'merge') {
-  console.log(await merge(opt('--pr'), opt('--sha')));
+  const outcome = await merge(opt('--pr'), opt('--sha'));
+  await reportMerged(outcome);
+  console.log(outcome);
 } else {
   console.error('usage: github-gate.mjs changed|pr|issue|merge ...');
   process.exit(2);
