@@ -46,11 +46,20 @@ parsers/eset/eset-protect-on-prem/
 
 The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
 
-It has parsers for 3CX, DrayTek Vigor, dnsmasq, ESET PROTECT On-Prem (JSON), MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Squid, Suricata EVE JSON, Synology DSM, UniFi gateway firewall logs and VMware ESXi. Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
+It has 45 entries with 97 parsers:
+
+- Network, firewall and web: dnsmasq, DNSFilter, DrayTek Vigor, F5 BIG-IP ASM and APM, MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Squid, Suricata EVE JSON, UniFi gateway firewall logs and Zscaler Private Access.
+- Email: Barracuda Email Security Gateway and Email Gateway Defense, Cisco Secure Email Gateway, FortiMail and Red Sift OnDMARC.
+- Endpoint and application control: Airlock Digital, Bitdefender GravityZone, ESET PROTECT On-Prem (JSON), ThreatDown Nebula and OneView, ThreatLocker Detect and Trend Micro Apex Central.
+- MSP tools: Autotask, Auvik, ConnectWise ScreenConnect, Datto RMM, Hudu, Huntress, IT Glue, Kaseya VSA 10 and 9.5, N-able N-central and N-sight RMM, NinjaOne, Splashtop, Syncro and TeamViewer.
+- Identity, devices and AI audit: IBM MaaS360, Keeper Security, OpenAI ChatGPT Enterprise compliance logs, OpenAI API Platform audit logs and the Claude Compliance API activity feed.
+- Other: 3CX, Synology DSM and VMware ESXi.
+
+Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
 
 ## Collectors
 
-Some sources only offer a pull API, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs and send each record to a Sophos NG-SIEM HTTP Ingest integration. [collectors/ai-compliance-logs](collectors/ai-compliance-logs/) covers the OpenAI and Anthropic enterprise compliance logs. Collectors are tested against the vendors' documented response shapes, not live services.
+Some sources only offer a pull API, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs and send each record to a Sophos NG-SIEM HTTP Ingest integration. There are collectors for the OpenAI and Anthropic enterprise compliance logs ([collectors/ai-compliance-logs](collectors/ai-compliance-logs/)), Datto RMM, IBM MaaS360, IT Glue, Kaseya VSA 10 and 9.5, N-able N-sight RMM, Red Sift OnDMARC, Syncro and TeamViewer. Collectors are tested against the vendors' documented response shapes, not live services.
 
 A library entry that needs a collector names it in `meta.json`, for example `"collector": "collectors/ai-compliance-logs"`. Its card in the studio shows a **needs collector** badge, and its page shows the collector's README and Python script, with Copy and Download. Collectors are code that people run, so the maintainer reviews every one before it merges.
 
@@ -86,6 +95,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | --- | --- |
 | `studio/` | The static site. `studio/core/` is the emulator, lint, detection, mapping and library code, shared by the page and the Node tools. `studio/app/` is the interface. |
 | `parsers/` | The community library. |
+| `collectors/` | Example collectors for pull-only sources, each with a README and unit tests. The maintainer reviews every one. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
 | `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, and the Pages deploy. |
