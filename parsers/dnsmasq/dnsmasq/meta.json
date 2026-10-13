@@ -12,7 +12,7 @@
   "reference_time": "2026-10-13T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": null
+    "tenant": "2026-10-13"
   },
   "docs": [
     "https://thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html",

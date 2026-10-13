@@ -8,12 +8,34 @@
   "license": "MIT",
   "sample_source": "synthetic",
   "reference_time": "2026-10-13T00:00:00Z",
-  "tested": { "emulator": "0.1.0", "tenant": null },
-  "docs": ["https://help.eset.com/protect_admin/latest/en-US/events-exported-to-json-format.html"],
-  "notes": "Set Syslog export to JSON in ESET PROTECT On-Prem (More > Settings > Syslog server). Firewall and antivirus detections get their own schemas; Audit, HIPS, web filtering, ESET Inspect and blocked file events stay in generic. Samples follow ESET's published JSON examples with the values changed.",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": null
+  },
+  "docs": [
+    "https://help.eset.com/protect_admin/latest/en-US/events-exported-to-json-format.html"
+  ],
+  "notes": "Set Syslog export to JSON in ESET PROTECT On-Prem (More > Settings > Syslog server). Firewall and antivirus detections get their own schemas; Audit, HIPS, web filtering, ESET Inspect and blocked file events stay in generic. Samples follow ESET's published JSON examples with the values changed. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13; the parent and children have not run together as separate parsers yet.",
   "parsers": [
-    { "name": "ESET_PROTECT_JSON_PARENT", "file": "ESET_PROTECT_JSON_PARENT.parser.txt", "role": "parent", "schema": "scwx.generic" },
-    { "name": "ESET_PROTECT_JSON_CHILD_NIDS", "file": "ESET_PROTECT_JSON_CHILD_NIDS.parser.txt", "role": "child", "parent": "ESET_PROTECT_JSON_PARENT", "schema": "scwx.nids" },
-    { "name": "ESET_PROTECT_JSON_CHILD_ANTIVIRUS", "file": "ESET_PROTECT_JSON_CHILD_ANTIVIRUS.parser.txt", "role": "child", "parent": "ESET_PROTECT_JSON_PARENT", "schema": "scwx.antivirus" }
+    {
+      "name": "ESET_PROTECT_JSON_PARENT",
+      "file": "ESET_PROTECT_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ESET_PROTECT_JSON_CHILD_NIDS",
+      "file": "ESET_PROTECT_JSON_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "ESET_PROTECT_JSON_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "ESET_PROTECT_JSON_CHILD_ANTIVIRUS",
+      "file": "ESET_PROTECT_JSON_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "ESET_PROTECT_JSON_PARENT",
+      "schema": "scwx.antivirus"
+    }
   ]
 }

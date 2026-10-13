@@ -6,7 +6,7 @@ import { h, clear, select, copyText, download, toast, ext } from '../dom.js';
 import { state } from '../store.js';
 import { call } from '../emulator-client.js';
 import { libraryForLint, enginePayload } from './test.js';
-import { problemRow, SHIP_LABELS } from './common.js';
+import { problemRow, SHIP_LABELS, FORMAT_LABELS } from './common.js';
 import { entryId, entryFiles, packBundle, expectedFrom, FORMATS, LICENSES } from '../../core/library.js';
 import { makeZip } from '../../core/zip.js';
 import { TOOL_VERSION, BRANCH } from '../../core/version.js';
@@ -57,7 +57,7 @@ export function openShare() {
   const product = h('input', { class: 'input', value: m.product });
   const versions = h('input', { class: 'input', value: m.versions.join(', '), placeholder: 'for example 11.1, 12' });
   const author = h('input', { class: 'input', value: m.author, placeholder: 'your-github-handle', autocomplete: 'username' });
-  const format = select(FORMATS.map((f) => ({ value: f })), m.format, () => {}, { class: 'input' });
+  const format = select(FORMATS.map((f) => ({ value: f, label: FORMAT_LABELS[f] || f })), m.format, () => {}, { class: 'input' });
   const ship = select(Object.entries(SHIP_LABELS).map(([value, label]) => ({ value, label })), m.ship_method, () => {}, { class: 'input' });
   const license = select(LICENSES.map((l) => ({ value: l })), m.license, () => {}, { class: 'input' });
   const source = select([{ value: 'synthetic', label: 'Synthetic (made up)' }, { value: 'vendor-docs', label: 'From public vendor docs' }], m.sample_source, () => {}, { class: 'input' });

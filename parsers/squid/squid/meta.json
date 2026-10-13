@@ -1,17 +1,30 @@
 {
   "vendor": "Squid",
   "product": "Squid",
-  "versions": ["6"],
+  "versions": [
+    "6"
+  ],
   "format": "syslog",
   "ship_method": "syslog",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
   "reference_time": "2026-10-13T00:00:00Z",
-  "tested": { "emulator": "0.1.0", "tenant": null },
-  "docs": ["https://wiki.squid-cache.org/Features/LogFormat", "https://www.squid-cache.org/Doc/config/access_log/"],
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://wiki.squid-cache.org/Features/LogFormat",
+    "https://www.squid-cache.org/Doc/config/access_log/"
+  ],
   "notes": "Squid's native access.log format sent to syslog, for example access_log syslog:local4.info squid. Custom logformat lines won't match. Samples are made up in the documented column order.",
   "parsers": [
-    { "name": "SQUID_ACCESS_SYSLOG_STANDALONE_HTTP", "file": "SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt", "role": "standalone", "schema": "scwx.http" }
+    {
+      "name": "SQUID_ACCESS_SYSLOG_STANDALONE_HTTP",
+      "file": "SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
   ]
 }

@@ -1,20 +1,52 @@
 {
   "vendor": "OISF",
   "product": "Suricata",
-  "versions": ["7", "8"],
+  "versions": [
+    "7",
+    "8"
+  ],
   "format": "json",
   "ship_method": "syslog",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
   "reference_time": "2026-10-13T00:00:00Z",
-  "tested": { "emulator": "0.1.0", "tenant": null },
-  "docs": ["https://docs.suricata.io/en/latest/output/eve/eve-json-format.html", "https://docs.suricata.io/en/latest/output/eve/eve-json-output.html"],
-  "notes": "Send EVE to syslog (eve-log type: syslog, identity suricata). alert records go to NIDS, dns to DNS and flow to Netflow; other event types stay in generic. Samples follow the EVE format page with made-up values.",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": null
+  },
+  "docs": [
+    "https://docs.suricata.io/en/latest/output/eve/eve-json-format.html",
+    "https://docs.suricata.io/en/latest/output/eve/eve-json-output.html"
+  ],
+  "notes": "Send EVE to syslog (eve-log type: syslog, identity suricata). alert records go to NIDS, dns to DNS and flow to Netflow; other event types stay in generic. Samples follow the EVE format page with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13; the parent and children have not run together as separate parsers yet.",
   "parsers": [
-    { "name": "SURICATA_EVE_JSON_PARENT", "file": "SURICATA_EVE_JSON_PARENT.parser.txt", "role": "parent", "schema": "scwx.generic" },
-    { "name": "SURICATA_EVE_JSON_CHILD_NIDS", "file": "SURICATA_EVE_JSON_CHILD_NIDS.parser.txt", "role": "child", "parent": "SURICATA_EVE_JSON_PARENT", "schema": "scwx.nids" },
-    { "name": "SURICATA_EVE_JSON_CHILD_DNS", "file": "SURICATA_EVE_JSON_CHILD_DNS.parser.txt", "role": "child", "parent": "SURICATA_EVE_JSON_PARENT", "schema": "scwx.dnsquery" },
-    { "name": "SURICATA_EVE_JSON_CHILD_NETFLOW", "file": "SURICATA_EVE_JSON_CHILD_NETFLOW.parser.txt", "role": "child", "parent": "SURICATA_EVE_JSON_PARENT", "schema": "scwx.netflow" }
+    {
+      "name": "SURICATA_EVE_JSON_PARENT",
+      "file": "SURICATA_EVE_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "SURICATA_EVE_JSON_CHILD_NIDS",
+      "file": "SURICATA_EVE_JSON_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "SURICATA_EVE_JSON_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "SURICATA_EVE_JSON_CHILD_DNS",
+      "file": "SURICATA_EVE_JSON_CHILD_DNS.parser.txt",
+      "role": "child",
+      "parent": "SURICATA_EVE_JSON_PARENT",
+      "schema": "scwx.dnsquery"
+    },
+    {
+      "name": "SURICATA_EVE_JSON_CHILD_NETFLOW",
+      "file": "SURICATA_EVE_JSON_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "SURICATA_EVE_JSON_PARENT",
+      "schema": "scwx.netflow"
+    }
   ]
 }
