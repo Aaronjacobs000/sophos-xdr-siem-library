@@ -1,0 +1,43 @@
+!SAMPLE={"id":900112341,"activityTime":1791805211.726,"severity":"NONE","priority":"NONE","activityType":"SYSTEM","statusCode":"APP_USER_LOGGED_IN","status":"Technician logged in","activityResult":"SUCCESS","userId":41,"subject":"tech.akim@example.com","message":"tech.akim@example.com logged in from 198.51.100.23","type":"Technician"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NinjaOne activity webhooks through HTTP Ingest.
+# Child of NINJAONE_WEBHOOK_JSON_PARENT: console logins and logouts, failed logins and MFA
+# setup or removal (statusCode APP_USER_*, END_USER_* and USER_*) to Auth.
+# json, sc, user, srcIp, userId, activityId, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = user
+sourceAddress$ = srcIp
+authSystem$ = "NinjaOne"
+userDisplayName$ = json["$.type"]
+status$ = sc
+
+failed = CONTAINS(sc, "FAILED") OR json["$.activityResult"] == "FAILURE"
+logout = CONTAINS(sc, "LOGGED_OUT")
+mfa = CONTAINS(sc, "_MFA_")
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF mfa THEN NULL ELSE authCategory$
+action$ = "LOGON"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF mfa THEN "ACCOUNT" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+# NinjaOne doesn't say why a login failed.
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+
+m1.key$ = "status_code"
+m1.value$ = sc
+m2.key$ = "activity_id"
+m2.value$ = activityId
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "user_id"
+m3.value$ = userId
+eventMetadata$.record$ = IF userId != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

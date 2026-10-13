@@ -1,0 +1,51 @@
+{
+  "vendor": "NinjaOne",
+  "product": "NinjaOne Webhooks",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://app.ninjarmm.com/apidocs-beta/core-resources/articles/webhooks/overview",
+    "https://app.ninjarmm.com/apidocs-beta/NinjaRMM-API-v2.yaml",
+    "https://www.ninjaone.com/docs/endpoint-management/ninjaone-endpoint-management-how-to-send-ninjaone-webhooks-via-siem/",
+    "https://docs.taegis.secureworks.com/apis/using_http_ingest_api/"
+  ],
+  "notes": "NinjaOne has no syslog export for activities. Configure its activity webhook (PUT /v2/webhook in the Public API, or the SIEM Exporter app) with a Sophos NG-SIEM HTTP Ingest URL, the header Authorization: Bearer <integration key>, the activity types you want and the device expansion; README.md has an example body. Each delivery is an Activity object from NinjaOne's public API schema. Console logins, logouts, failed logins and MFA changes go to Auth; scripts and actions, remote access, remote tools, credential access and technician role changes go to ManagementEvent; triggered conditions and antivirus threat activities go to the third-party alert schema; the rest stays generic. activityType and statusCode values come from the API schema. NinjaOne doesn't document the wording of subject and message, so the user is the first email address in them (else userId) and the source address is the first IPv4 address in the message; check both against a real delivery. Event times keep whole seconds. Samples are made up in the Activity schema. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13 (112 of 112 fields matched the emulator), and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "NINJAONE_WEBHOOK_JSON_PARENT",
+      "file": "NINJAONE_WEBHOOK_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NINJAONE_WEBHOOK_JSON_CHILD_AUTH",
+      "file": "NINJAONE_WEBHOOK_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NINJAONE_WEBHOOK_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT",
+      "file": "NINJAONE_WEBHOOK_JSON_CHILD_MANAGEMENTEVENT.parser.txt",
+      "role": "child",
+      "parent": "NINJAONE_WEBHOOK_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "NINJAONE_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+      "file": "NINJAONE_WEBHOOK_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "NINJAONE_WEBHOOK_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+!SAMPLE={"id":900112702,"activityTime":1791805620.0,"severity":"CRITICAL","priority":"HIGH","activityType":"ANTIVIRUS","statusCode":"BDAS_BITDEFENDER_THREAT_QUARANTINED","status":"Threat quarantined","activityResult":"SUCCESS","deviceId":1201,"message":"Trojan.GenericKD.70412233 quarantined in C:\\Users\\jlee\\Downloads\\invoice_0921.exe","type":"Antivirus","device":{"id":1201,"parentDeviceId":null,"organizationId":12,"locationId":31,"nodeClass":"WINDOWS_WORKSTATION","nodeRoleId":1,"rolePolicyId":4,"policyId":7,"approvalStatus":"APPROVED","offline":false,"displayName":"ACME-WS-014","systemName":"ACME-WS-014","dnsName":"acme-ws-014.corp.example.com","netbiosName":"ACME-WS-014","created":1756204800.0,"lastContact":1791805100.442,"lastUpdate":1791805100.442}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NinjaOne activity webhooks through HTTP Ingest.
+# Child of NINJAONE_WEBHOOK_JSON_PARENT: triggered conditions (policy monitors) and antivirus
+# threat activities (statusCodes with THREAT in them) to the third-party alert schema.
+# json, act, sc, host, activityId, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "NinjaOne"
+provider$ = "NinjaOne"
+alertId$ = activityId
+alertCategory$ = act
+logType$ = sc
+status$ = json["$.status"]
+targetHostName$ = host
+summary$ = json["$.message"]
+src = json["$.sourceName"]
+title$ = IF src != "" AND src != NULL THEN src ELSE json["$.status"]
+
+sev = json["$.severity"]
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "NONE" THEN "INFO" ELSE severity$
+severity$ = IF sev == "MINOR" THEN "LOW" ELSE severity$
+severity$ = IF sev == "MODERATE" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "MAJOR" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "CRITICAL" THEN "CRITICAL" ELSE severity$
+
+stopped = CONTAINS(sc, "QUARANTIN") OR CONTAINS(sc, "BLOCKED") OR CONTAINS(sc, "DELETED") OR CONTAINS(sc, "CLEANED")
+action$ = IF stopped THEN "BLOCKED" ELSE NULL
+
+a1.key$ = "priority"
+a1.value$ = json["$.priority"]
+a2.key$ = "device_id"
+a2.value$ = STRING(json["$.deviceId"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "series_uid"
+a3.value$ = json["$.seriesUid"]
+additionalData$.record$ = IF a3.value$ THEN additionalData$.record$ + [a3] ELSE additionalData$.record$

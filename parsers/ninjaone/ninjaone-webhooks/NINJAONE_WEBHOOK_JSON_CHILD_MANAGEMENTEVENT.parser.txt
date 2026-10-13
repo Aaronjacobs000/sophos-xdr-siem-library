@@ -1,0 +1,26 @@
+!SAMPLE={"id":900112512,"activityTime":1791805402.551,"severity":"NONE","priority":"NONE","activityType":"ACTIONSET","statusCode":"START_REQUESTED","status":"Script requested","activityResult":"SUCCESS","deviceId":1201,"seriesUid":"5d8f2c1a-7b3e-4f60-9a24-0c1e8b7d6f35","sourceConfigUid":"0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a08","sourceName":"Run PowerShell: Add local admin","userId":41,"subject":"Run PowerShell: Add local admin","message":"Script Run PowerShell: Add local admin requested by tech.akim@example.com","type":"Action","device":{"id":1201,"parentDeviceId":null,"organizationId":12,"locationId":31,"nodeClass":"WINDOWS_WORKSTATION","nodeRoleId":1,"rolePolicyId":4,"policyId":7,"approvalStatus":"APPROVED","offline":false,"displayName":"ACME-WS-014","systemName":"ACME-WS-014","dnsName":"acme-ws-014.corp.example.com","netbiosName":"ACME-WS-014","created":1756204800.0,"lastContact":1791805100.442,"lastUpdate":1791805100.442}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="management"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NinjaOne activity webhooks through HTTP Ingest.
+# Child of NINJAONE_WEBHOOK_JSON_PARENT: script and action runs, remote access connections,
+# remote tools (processes, services, registry, files), credential access and technician role
+# changes to ManagementEvent.
+# json, act, sc, user, host, activityId, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+remoteOperation$ = TRUE
+operation$ = act
+operationName$ = sc
+operationId$ = json["$.id"]
+username$ = user
+targetHostname$ = host
+targetHostnameFqdn$ = json["$.device.dnsName"]
+
+# sourceName is the script, action set or policy item that ran.
+scriptRun = act == "ACTIONSET" OR act == "ACTION" OR act == "SCRIPTING" OR act == "SCHEDULED_TASK"
+command$ = IF scriptRun THEN json["$.sourceName"] ELSE NULL
+result$ = json["$.activityResult"] + ": " + STRING(json["$.message"])
