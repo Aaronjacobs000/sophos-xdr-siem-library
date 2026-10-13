@@ -1,0 +1,84 @@
+!SAMPLE={"event_type":"incident_report.created","id":1820044,"account":{"id":4821,"name":"Example MSP"},"organization":{"id":91234,"name":"Acme Dental"},"agent_id":5520317,"platform":"windows","severity":"critical","status":"sent","subject":"CRITICAL - Incident on ACME-WS-014 (Acme Dental)","summary":"Huntress detected hands-on-keyboard activity: a remote access tool was installed and used to dump credentials from LSASS.","body":"<p>Huntress SOC analysts observed an unauthorized remote access tool on ACME-WS-014 followed by credential dumping.</p>","indicator_counts":{"footholds":1,"process_detections":3,"monitored_files":0,"ransomware_canaries":0,"antivirus_detections":1},"api_url":"https://api.example.com/v1/incident_reports/1820044","created_at":"2026-10-12T11:38:52Z","sent_at":"2026-10-12T11:40:11Z","updated_at":"2026-10-12T11:40:11Z","status_updated_at":"2026-10-12T11:40:11Z","closed_at":null}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"event_type"\s*:\s*"(?:incident_report\.(?:created|closed|comment_added)|escalation\.(?:created|closed|overdue))".*"api_url"\s*:|"api_url"\s*:.*"event_type"\s*:\s*"(?:incident_report\.(?:created|closed|comment_added)|escalation\.(?:created|closed|overdue))")
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huntress webhooks (Integrations > Webhooks), JSON posted to a Sophos NG-SIEM HTTP Ingest
+# integration. A Huntress endpoint takes only a URL and categories, so a relay forwards each body
+# unchanged with "Authorization: Bearer <integration key>" (see meta.json notes).
+# Standalone parser for the third-party alert schema: incident report and escalation events.
+# Platform action and account notice events stay in the generic schema.
+# Fields follow the Huntress Webhook Payload Reference (IncidentReportPayload, EscalationPayload).
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Huntress"
+vendor$ = "Huntress"
+provider$ = "Huntress SOC"
+
+eventType = json["$.event_type"]
+logType$ = eventType
+alertId$ = STRING(json["$.id"])
+title$ = json["$.subject"]
+status$ = json["$.status"]
+
+report = CONTAINS(eventType, "incident_report.")
+alertCategory$ = IF report THEN "Incident report" ELSE "Escalation"
+escType = json["$.type"]
+alertCategory$ = IF escType != "" AND escType != NULL THEN alertCategory$ + ": " + escType ELSE alertCategory$
+sum = json["$.summary"]
+summary$ = IF sum != "" AND sum != NULL THEN sum ELSE json["$.subject"]
+
+# Huntress rates reports and escalations critical, high or low.
+sev = LOWERCASE(json["$.severity"])
+vendorSeverity$ = json["$.severity"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "low" THEN "LOW" ELSE severity$
+severity$ = IF sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+
+# Times are RFC 3339. The event time is when the report or escalation last changed.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+# Test the text, not the time: the engine can't compare a time value with NULL.
+created = json["$.created_at"]
+updated = json["$.updated_at"]
+closed = json["$.closed_at"]
+closed = IF closed == NULL OR closed == "" THEN json["$.resolved_at"] ELSE closed
+createdTimeUsec$ = DATETIME(created, layout)
+updatedTimeUsec$ = DATETIME(updated, layout)
+closedTimeUsec$ = DATETIME(closed, layout)
+eventTimeUsec$ = DATETIME(IF updated != NULL AND updated != "" THEN updated ELSE created, layout)
+
+# Incident reports name one organization; escalations list the organizations they affect.
+orgName = json["$.organization.name"]
+orgName = IF orgName == NULL THEN json["$.organizations[0].name"] ELSE orgName
+
+a1.key$ = "account_name"
+a1.value$ = json["$.account.name"]
+a2.key$ = "organization_name"
+a2.value$ = orgName
+a3.key$ = "api_url"
+a3.value$ = json["$.api_url"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3]
+
+a4.key$ = "agent_id"
+a4.value$ = STRING(json["$.agent_id"])
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "platform"
+a5.value$ = json["$.platform"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "comment"
+a6.value$ = json["$.comment"]
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "organizations_impacted"
+a7.value$ = STRING(json["$.total_organizations_impacted"])
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "message"
+a8.value$ = json["$.message"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
