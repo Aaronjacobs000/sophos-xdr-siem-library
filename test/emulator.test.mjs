@@ -228,3 +228,16 @@ test('enum fields set to their zero value are left out, except Auth logon_type',
   assert.equal(av.normalized.threat_type, undefined);
   assert.equal(av.normalized.action_taken, 'DELETED');
 });
+
+test('the engine stores a few fields the docs\' tables leave out, only in their schemas', () => {
+  const head = (schema) => `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=${schema}\n`;
+  const [av] = runParsers([{ name: 'A_B', text: `${head('scwx.antivirus')}eventType$ = "Threat_Event"\nsensorVersion$ = "9.9"\nsourceAddress$ = "192.0.2.1"\nfooBar$ = "fb"\nthreatName$ = "t"` }], ['x'], { now: NOW });
+  assert.deepEqual([av.normalized.event_type, av.normalized.sensor_version, av.normalized.source_address], ['Threat_Event', '9.9', '192.0.2.1']);
+  assert.ok(av.notes.some((n) => n.code === 'not-a-field' && n.field === 'fooBar$'));
+  const [mgmt] = runParsers([{ name: 'A_B', text: `${head('scwx.managementevent')}sourceAddress$ = "192.0.2.1"\neventType$ = "et"\noperation$ = "op"` }], ['x'], { now: NOW });
+  assert.equal(mgmt.normalized.source_address, '192.0.2.1');
+  assert.equal(mgmt.normalized.event_type, undefined);
+  // A variable isn't mapped just because it is named like a field: Auth has no event_type.
+  const [auth] = runParsers([{ name: 'A_B', text: `${head('scwx.auth')}eventType$ = "et"\nhostId$ = "h"` }], ['x'], { now: NOW });
+  assert.equal(auth.normalized.event_type, undefined);
+});
