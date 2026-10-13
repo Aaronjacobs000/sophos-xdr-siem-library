@@ -1,0 +1,37 @@
+{
+  "vendor": "Datto",
+  "product": "Datto RMM",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Setup/Integrations/GlobalWebhooks.htm",
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Monitors/Webhooks.htm",
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Analytics/ActivityLog.htm",
+    "https://rmm.datto.com/help/en/Content/2SETUP/APIv2.htm",
+    "https://merlot-api.centrastage.net/api/v3/api-docs"
+  ],
+  "notes": "Two record types. Monitor alerts come from Datto RMM Global Webhooks, which can add an Authorization: Bearer header, posting the JSON payloads in README.md (Datto RMM payload variables) to a Sophos NG-SIEM HTTP Ingest integration; they go to the third-party alert schema. The Activity Log (logins, jobs, remote takeover and Web Remote sessions, file transfers, device and user changes) is only available from GET /v2/activity-logs, so collectors/datto-rmm-activity-logs pulls it and posts each record unchanged; those go to CloudAudit with the event name category.action. Activity Log fields follow the ActivityLog schema in Datto's public API spec; Datto doesn't list the categories and actions, so the samples use its example job.deployment and made-up ones for the rest, and the details text is kept as it is. The webhook parser assumes Datto escapes quotes and backslashes in payload values. Samples are made up in those formats. Both parsers passed Run Test in a lab tenant on 2026-10-13: 104 of 104 fields matched the emulator, and the engine set the event time of the webhook alerts, which carry no time, to the ingest time. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
