@@ -146,6 +146,48 @@ class Handler(BaseHTTPRequestHandler):
         self._json({})
 
 
+class Redirects:
+    """A server that answers every request with a redirect to /elsewhere on itself, and records
+    any request that follows one there. None should."""
+
+    def __init__(self):
+        self.code = 302
+        self.redirected = []
+        self.followed = []
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def _answer(self):
+                n = int(self.headers.get("Content-Length") or 0)
+                if n:
+                    self.rfile.read(n)
+                seen = (self.command, self.path, dict(self.headers))
+                if self.path.startswith("/elsewhere"):
+                    outer.followed.append(seen)
+                    self.send_response(200)
+                else:
+                    outer.redirected.append(seen)
+                    self.send_response(outer.code)
+                    self.send_header("Location", f"{outer.base}/elsewhere")
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", "2")
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+            do_GET = do_POST = _answer
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
 class CollectorTest(unittest.TestCase):
     def setUp(self):
         # A test that leaves a socket or file open fails: tearDown collects garbage and checks
@@ -306,6 +348,30 @@ class CollectorTest(unittest.TestCase):
             c.load_config({"ONDMARC_API_KEY": API_KEY, "ONDMARC_SOURCES": "guardian,forensic"})
         with self.assertRaises(c.CollectorError):
             c.load_config({})
+
+    def test_redirects_are_not_followed(self):
+        # Following a redirect would send the key or token to another URL, so the run fails
+        # instead, and nothing reaches the redirect's target.
+        self.mock.issues = [issue(0, self.now)]
+        r = Redirects()
+        try:
+            cases = {"HTTP Ingest": self.cfg(NGSIEM_INGEST_URL=f"{r.base}/http-endpoint/v1/00000000-example-integration"),
+                     "OnDMARC API": self.cfg(ONDMARC_API_URL=f"{r.base}{PREFIX}")}
+            for code in (301, 302, 303, 307, 308):
+                r.code = code
+                for name, cfg in cases.items():
+                    with self.subTest(code=code, url=name):
+                        r.redirected.clear()
+                        r.followed.clear()
+                        if os.path.exists(self.state):
+                            os.remove(self.state)
+                        with self.assertRaises(c.CollectorError):
+                            c.run_once(cfg)
+                        self.assertEqual(len(r.redirected), 1)
+                        self.assertEqual(r.followed, [])
+                        self.assertFalse(os.path.exists(self.state))
+        finally:
+            r.close()
 
 
 if __name__ == "__main__":

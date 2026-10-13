@@ -107,12 +107,23 @@ class HttpStatus(CollectorError):
         self.code = code
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Following a redirect would send the request's key or token to another URL, so it isn't
+    followed: the redirect fails like any other status."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers={**headers, "User-Agent": USER_AGENT})
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with _OPENER.open(req, timeout=timeout) as resp:
                 return resp.status, resp.read()
         except urllib.error.HTTPError as e:
             # Close the error response now so its socket is released, not when the error is
