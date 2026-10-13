@@ -139,9 +139,14 @@ export function parseExpression(src) {
 }
 
 const IDENT = '[A-Za-z_][A-Za-z0-9_]*\\$?';
-// The engine also accepts a space before the pipe (x = originalData$ |regex) and an indexed
-// source (x = acct[2]|regex), both checked in a lab tenant.
-const CAPTURE = new RegExp(`^(${IDENT})\\s*=\\s*(${IDENT}(?:\\[[^\\]|]*\\])*)\\s*\\|(.*)$`);
+// The engine reads a line as a capture when the text between = and the first | outside [...] is
+// either free of quotes and "(", or an opening quote with no closing quote before the |. So the
+// source can be a variable, an index such as acct[2] or json["$.mail"], or an expression such
+// as a + b, with or without a space before the pipe, but not a function call; a | inside [...]
+// stays part of the expression; and x = "a|b" or r.value$ = 'a|b' becomes a capture whose
+// source "a can't be read, which fails the parser (checked in a lab tenant).
+const CAPTURE = new RegExp(`^(${IDENT}(?:\\.${IDENT})*)\\s*=\\s*((?:[^"'(|\\[]|\\[[^\\]]*\\])*?|["'][^"'|]*)\\s*\\|(.*)$`);
+const PLAIN_SOURCE = new RegExp(`^${IDENT}$`);
 const ASSIGN = new RegExp(`^(${IDENT}(?:\\.${IDENT})*)\\s*=(?!=)\\s*(.*)$`);
 
 // Parse one parser script. Returns {directives, flags, statements, problems, sample}.
@@ -178,13 +183,13 @@ export function parseScript(text) {
     }
     let m = CAPTURE.exec(s);
     if (m) {
-      const st = { line, kind: 'capture', target: m[1], source: m[2].replace(/\[.*$/, ''), pattern: m[3] };
-      if (st.source !== m[2]) {
+      const st = { line, kind: 'capture', target: m[1], source: m[2], pattern: m[3] };
+      if (!PLAIN_SOURCE.test(m[2])) {
         try {
           st.sourceExpr = parseExpression(m[2]).ast;
           st.sourceText = m[2];
         } catch (e) {
-          problems.push({ level: 'error', code: 'syntax', line, message: e.message });
+          problems.push({ level: 'error', code: 'syntax', line, message: `the text before the first | is read as a capture source: ${e.message}` });
           return;
         }
       }

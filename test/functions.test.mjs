@@ -236,3 +236,15 @@ test('SPLIT_NAME_VALUES gives a delimiter inside quotes back as a space', () => 
 test('INT needs its base', () => {
   assert.throws(() => run('n = INT("42")'), /INT\(\) takes 2 arguments, got 1/);
 });
+
+test('a capture source can be an expression, but not a function call', () => {
+  const v = run('m = a + b|^(\\w+)-\nfirst = m[1]\nj = JSON(d)\nn = j["$.mail"] |@(\\S+)$\ndomain = n[1]', { a: 'left', b: '-right', d: '{"mail":"jdoe@example.com"}' });
+  assert.deepEqual([v.get('first'), v.get('domain')], ['left', 'example.com']);
+  assert.throws(() => run('m = STRING(v)|(\\w+)', { v: 'x' }), /can't read/);
+  // A string with a | as the first thing on the right is read as a capture source, which fails.
+  assert.throws(() => run('x = "a|b"'), /read as a capture source/);
+  assert.throws(() => run("r.value$ = 'a|b'"), /read as a capture source/);
+  // After another string, after "(", or inside [...], a | stays part of the assignment.
+  const w = run('a = "x" + "|"\nb = REPLACE(p, "|", "/")\nj = JSON(d)\nc = j["$[\'p|q\']"]', { p: 'a|b', d: '{"p|q":"pq"}' });
+  assert.deepEqual([w.get('a'), w.get('b'), w.get('c')], ['x|', 'a/b', 'pq']);
+});
