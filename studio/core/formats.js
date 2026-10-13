@@ -32,7 +32,8 @@ export function splitSyslog(line) {
   return null;
 }
 
-// What the engine's root parser does before custom parsers run (checked in a lab tenant):
+// What the engine's root parser does before custom parsers run (checked with Run Test in a lab
+// tenant; ingest wasn't checked):
 // it strips a leading BSD header "Mmm dd hh:mm:ss host " (twice for a relayed line) and
 // nothing else. A <PRI> prefix, an RFC 5424 header or an ISO timestamp leaves the line whole.
 const BSD_ONLY = /^((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) {1,2}\d{1,2} \d{2}:\d{2}:\d{2}) (\S+) /;

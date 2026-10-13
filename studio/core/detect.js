@@ -292,7 +292,7 @@ export function analyseSample(lines) {
   if (header !== 'none') {
     const stripped = events.filter((e) => rootSplit(e.line).message !== e.line).length;
     if (stripped === events.length) notes.push(`The ${headerLabel(header)} header comes off before parsers see \`message\`, and its host and time become sensor_id and the default event time; \`originalData$\` keeps the whole line.`);
-    else notes.push(`The engine only strips a plain BSD syslog header from \`message\`. With a <PRI> prefix, an RFC 5424 header or an ISO time, \`message\` is the whole line, so read fields from \`originalData$\`.`);
+    else notes.push(`In Run Test the engine only strips a plain BSD syslog header from \`message\`. With a <PRI> prefix, an RFC 5424 header or an ISO time, \`message\` is the whole line, so read fields from \`originalData$\`.`);
   }
   if (formats.json && events.some((e) => e.jsonAtEnd)) notes.push('The JSON object sits at the end of the line, so the parser cuts it off with a capture before JSON().');
   for (const k of keys.values()) {
