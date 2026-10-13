@@ -1,0 +1,21 @@
+!SAMPLE={"maas360_record":"admin_login","username":"secadmin@example.com","loginAttemptTime":1791853323120,"logoutTime":1791856923000,"duration":60.0,"operatingSystem":"Windows 11","browserVersion":"Edge 141.0","ipAddress":"203.0.113.10","authStatus":"Successful"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"maas360_record"\s*:\s*"(?:admin_login|admin_change)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM MaaS360 portal administrator reports, pulled by the example collector in
+# collectors/ibm-maas360 and posted to HTTP Ingest as JSON lines. MaaS360 has no syslog or webhook
+# for these reports, so the collector names each record in "maas360_record":
+#   admin_login   a record from the administrator login report (getAdminLoginReports)
+#   admin_change  a record from the administrator changes audit (getAdminChangesAudit)
+# Parent: hands logins to the Auth child and administrator changes to the ManagementEvent child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "IBM MaaS360"
+eventType$ = json["$.maas360_record"]

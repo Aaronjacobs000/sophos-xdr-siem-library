@@ -1,0 +1,52 @@
+!SAMPLE={"maas360_record":"admin_login","username":"helpdesk2@example.com","loginAttemptTime":1791854012400,"logoutTime":"","duration":"","operatingSystem":"MacOS 15.6","browserVersion":"Chrome 141.0.7390","ipAddress":"198.51.100.77","authStatus":"Failed"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin_login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM MaaS360 administrator login report records from the example collector.
+# Child of IBM_MAAS360_JSON_PARENT: MaaS360 Portal administrator logins to Auth.
+# json, eventType$ and sensorType$ come from the parent.
+
+user = STRING(json["$.username"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+sourceAddress$ = json["$.ipAddress"]
+authSystem$ = "IBM MaaS360 Portal"
+browser = STRING(json["$.browserVersion"])
+userAgent$ = IF browser != "" THEN browser ELSE NULL
+# loginAttemptTime is epoch milliseconds.
+eventTimeUsec$ = INT(STRING(json["$.loginAttemptTime"]), 10) * 1000
+
+# authStatus is "Successful" for a login; IBM describes the report's status as success or
+# failure, so any status with "fail" in it is a failed login. Some records leave it empty.
+status = LOWERCASE(STRING(json["$.authStatus"]))
+ok = CONTAINS(status, "success")
+failed = CONTAINS(status, "fail")
+authCategory$ = "ACCOUNT_LOGON"
+action$ = NULL
+action$ = IF ok THEN "LOGON" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = NULL
+actionResult$ = IF ok THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+
+r1.key$ = "source_report"
+r1.value$ = "getAdminLoginReports"
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r5.key$ = "auth_status"
+r5.value$ = STRING(json["$.authStatus"])
+eventMetadata$.record$ = IF status != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+os = STRING(json["$.operatingSystem"])
+r2.key$ = "operating_system"
+r2.value$ = os
+eventMetadata$.record$ = IF os != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+logout = STRING(json["$.logoutTime"])
+r3.key$ = "logout_time"
+r3.value$ = logout
+eventMetadata$.record$ = IF logout != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+dur = STRING(json["$.duration"])
+r4.key$ = "duration"
+r4.value$ = dur
+eventMetadata$.record$ = IF dur != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$

@@ -1,0 +1,24 @@
+!SAMPLE={"maas360_record":"admin_change","updateDate":1791855001000,"performedBy":"secadmin@example.com","operationType":"CHANGE","ipAddress":"203.0.113.10","administrator":{"email":"helpdesk2@example.com","username":"helpdesk2@example.com","firstName":"Pat","middleName":"","lastName":"Example","address":"","phone":"","jobTitle":"Service desk","watchSubscription":"N","accountStatus":"Active","managedUserGroups":"All groups","lastLoginTime":"","rolesAdded":"Help Desk","rolesDeleted":"","previousState":""}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin_change"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM MaaS360 administrator changes audit records from the example collector.
+# Child of IBM_MAAS360_JSON_PARENT: changes to MaaS360 Portal administrator accounts (roles added
+# or removed, account status) to ManagementEvent.
+# json, eventType$ and sensorType$ come from the parent.
+
+username$ = json["$.performedBy"]
+clientHostname$ = json["$.ipAddress"]
+operationName$ = "Administrator " + STRING(json["$.operationType"])
+target = STRING(json["$.administrator.username"])
+added = STRING(json["$.administrator.rolesAdded"])
+removed = STRING(json["$.administrator.rolesDeleted"])
+acct = STRING(json["$.administrator.accountStatus"])
+operation$ = "administrator=" + target + "; account_status=" + acct
+operation$ = IF added != "" THEN operation$ + "; roles_added=" + added ELSE operation$
+operation$ = IF removed != "" THEN operation$ + "; roles_removed=" + removed ELSE operation$
+# updateDate is epoch milliseconds.
+eventTimeUsec$ = INT(STRING(json["$.updateDate"]), 10) * 1000
