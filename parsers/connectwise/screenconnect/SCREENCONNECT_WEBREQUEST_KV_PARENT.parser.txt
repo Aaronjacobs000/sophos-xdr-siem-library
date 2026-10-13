@@ -1,0 +1,40 @@
+!SAMPLE=ScreenConnect|category=Security|event=LoginAttempt|result=Success|time=10/12/2026 10:40:11 PM|user=tech.akim|source=Internal|address=198.51.100.23
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*ScreenConnect\|category=(?:Security|Session)\|event=[A-Za-z]+\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ConnectWise ScreenConnect automations (Administration > Automations) with a Perform Web
+# Request action, posting the text/plain bodies in this entry's README through a relay to a
+# Sophos NG-SIEM HTTP Ingest integration.
+# Parent: reads both templates and hands each record to a child.
+#   Security records (login and password change attempts) go to Auth.
+#   Session records where a technician connects or disconnects go to Auth as remote logons.
+#   Other session records (commands, tools, file transfers, session changes) go to ManagementEvent.
+#   Guest connects and disconnects (agents coming online) stay in the generic schema.
+# ScreenConnect doesn't JSON-escape the values it substitutes, so the templates are
+# pipe-delimited key=value text with the free-text Data value last.
+
+sc = originalData$|^\s*ScreenConnect\|category=(?P<category>[A-Za-z]+)\|event=(?P<event>[A-Za-z]+)\|(?:result=(?P<result>[^|]*)\|)?time=(?P<time>[^|]*)\|(?P<rest>.*)$
+sec = sc["rest"]|^user=(?P<user>.*?)\|source=(?P<source>.*?)\|address=(?P<address>.*?)\s*$
+ses = sc["rest"]|^session_type=(?P<stype>.*?)\|session_guid=(?P<sid>.*?)\|company=(?P<company>.*?)\|guest_machine=(?P<gmachine>.*?)\|guest_domain=(?P<gdomain>.*?)\|guest_user=(?P<guser>.*?)\|guest_os=(?P<gos>.*?)\|host=(?P<host>.*?)\|participant=(?P<participant>.*?)\|process_type=(?P<ptype>.*?)\|address=(?P<address>.*?)\|data=(?P<data>.*)$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "ConnectWise ScreenConnect"
+category = sc["category"]
+event = sc["event"]
+result = sc["result"]
+
+# {Event.Time} is the server's default .NET date format, read here as UTC. ISO 8601 and
+# US month/day/year times are read; other formats keep the ingest time.
+time = sc["time"]
+iso = time|^\d{4}-
+eventTimeUsec$ = IF iso[0] != "" THEN DATETIME(time, "2006-01-02T15:04:05Z07:00") ELSE DATETIME(time, "1/2/2006 3:04:05 PM")
+
+hostLink = category == "Session" AND (event == "Connected" OR event == "Disconnected") AND ses["ptype"] == "Host"
+guestLink = category == "Session" AND (event == "Connected" OR event == "Disconnected") AND ses["ptype"] != "Host"
+eventType$ = "other"
+eventType$ = IF category == "Session" THEN "management" ELSE eventType$
+eventType$ = IF guestLink THEN "other" ELSE eventType$
+eventType$ = IF category == "Security" OR hostLink THEN "auth" ELSE eventType$

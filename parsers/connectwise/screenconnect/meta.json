@@ -1,0 +1,44 @@
+{
+  "vendor": "ConnectWise",
+  "product": "ScreenConnect",
+  "versions": [],
+  "format": "kv",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/List_of_automation_definitions",
+    "https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/Create_a_new_security_automation",
+    "https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/Example_session_automations",
+    "https://docs.taegis.secureworks.com/apis/using_http_ingest_api/"
+  ],
+  "notes": "ScreenConnect has no syslog or SIEM export. Two automations (a security automation and a session automation) with a Perform Web Request action send the text/plain templates in README.md. The web request has only URL, method, content type and body fields, and HTTP Ingest needs an Authorization: Bearer header, so post to a small relay that forwards the body unchanged to a Sophos NG-SIEM HTTP Ingest integration with the bearer token. ScreenConnect substitutes values without JSON escaping, so the templates are pipe-delimited key=value text with Event.Data last. Logins and password changes go to Auth; a technician's connects and disconnects go to Auth as remote logons; commands, tools, file transfers and session changes go to ManagementEvent; agents coming online stay generic. Not checked against a live server: the {Event.Time} format (the parser reads ISO 8601 and US month/day/year as UTC), UserSource values, and multi-line Event.Data, which HTTP Ingest splits into extra records. Samples are made up in the README templates with property and event names from ScreenConnect's automation docs. ConnectWise Labs' Splunk Integration extension is another push path, but its record format isn't published. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13 (113 of 113 fields matched the emulator), and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "SCREENCONNECT_WEBREQUEST_KV_PARENT",
+      "file": "SCREENCONNECT_WEBREQUEST_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+      "file": "SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "SCREENCONNECT_WEBREQUEST_KV_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "SCREENCONNECT_WEBREQUEST_KV_CHILD_MANAGEMENTEVENT",
+      "file": "SCREENCONNECT_WEBREQUEST_KV_CHILD_MANAGEMENTEVENT.parser.txt",
+      "role": "child",
+      "parent": "SCREENCONNECT_WEBREQUEST_KV_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

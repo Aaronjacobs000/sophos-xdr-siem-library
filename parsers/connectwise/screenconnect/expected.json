@@ -1,0 +1,275 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "auth_system": "ScreenConnect Internal",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "Success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "LoginAttempt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "auth_system": "ScreenConnect Internal",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "PasswordInvalid",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "LoginAttempt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791844890000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.jlee",
+      "source_address": "203.0.113.45",
+      "auth_system": "ScreenConnect Internal",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "status": "OneTimePasswordInvalid",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "LoginAttempt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791844925000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.jlee",
+      "source_address": "203.0.113.45",
+      "auth_system": "ScreenConnect Internal",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "status": "LockedOut",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "LoginAttempt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845087000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "auth_system": "ScreenConnect Internal",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "status": "Success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "ChangePasswordAttempt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845110000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "auth_system": "ScreenConnect Access session",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "Connected",
+      "target_host_name": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "target_domain_name": "ACME",
+      "session_id": "3f2b8c1e-5a7d-4e9b-b6c2-1d8e7f0a9b34",
+      "logon_type": "REMOTEINTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "Connected"
+          },
+          {
+            "key": "company",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "guest_logged_on_user",
+            "value": "jlee"
+          },
+          {
+            "key": "guest_os",
+            "value": "Microsoft Windows 11 Pro"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845162000000,
+      "event_time_fidelity": "MICRO",
+      "remote_operation": true,
+      "operation_name": "QueuedCommand",
+      "operation": "Access session",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "username": "tech.akim",
+      "command": "net user backupadmin /add"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845165000000,
+      "event_time_fidelity": "MICRO",
+      "remote_operation": true,
+      "operation_name": "RanCommand",
+      "operation": "Access session",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "username": "tech.akim",
+      "result": "The command completed successfully."
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_MANAGEMENTEVENT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845260000000,
+      "event_time_fidelity": "MICRO",
+      "remote_operation": true,
+      "operation_name": "SentFiles",
+      "operation": "Access session",
+      "target_hostname": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "username": "tech.akim",
+      "result": "C:\\Temp\\AcmeTool.exe"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT > SCREENCONNECT_WEBREQUEST_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845539000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim",
+      "source_address": "198.51.100.23",
+      "auth_system": "ScreenConnect Access session",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "status": "Disconnected",
+      "target_host_name": "ACME-WS-014",
+      "host_id": "ACME-WS-014",
+      "target_domain_name": "ACME",
+      "session_id": "3f2b8c1e-5a7d-4e9b-b6c2-1d8e7f0a9b34",
+      "logon_type": "REMOTEINTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "Disconnected"
+          },
+          {
+            "key": "company",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "guest_logged_on_user",
+            "value": "jlee"
+          },
+          {
+            "key": "guest_os",
+            "value": "Microsoft Windows 11 Pro"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "SCREENCONNECT_WEBREQUEST_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "ConnectWise ScreenConnect",
+      "event_time_usec": 1791845580000000
+    }
+  }
+]
