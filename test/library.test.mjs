@@ -92,10 +92,10 @@ async function ciRun(change, author) {
 test('CI: a new entry from its author passes and can merge without review', async () => {
   const { code, report } = await ciRun(async (pr) => {
     const from = path.join(pr, 'parsers/squid/squid');
-    const to = path.join(pr, 'parsers/acme/web-proxy');
+    const to = path.join(pr, 'parsers/ci-fixture/acme-web-proxy');
     await cp(from, to, { recursive: true });
     const meta = JSON.parse(await readFile(path.join(to, 'meta.json'), 'utf8'));
-    Object.assign(meta, { vendor: 'Acme', product: 'Web Proxy', author: 'octocat' });
+    Object.assign(meta, { vendor: 'CI Fixture', product: 'Acme Web Proxy', author: 'octocat' });
     meta.parsers[0].name = 'ACME_WEB_PROXY_STANDALONE_HTTP';
     meta.parsers[0].file = 'ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt';
     await writeFile(path.join(to, 'meta.json'), JSON.stringify(meta, null, 2));
@@ -108,7 +108,7 @@ test('CI: a new entry from its author passes and can merge without review', asyn
     const res = runParsers(e.parsers, e.samples, { now: e.meta.reference_time });
     const { expectedFrom } = await import('../studio/core/library.js');
     await writeFile(path.join(to, 'expected.json'), JSON.stringify(expectedFrom(res), null, 2));
-    return ['parsers/acme/web-proxy/meta.json', 'parsers/acme/web-proxy/samples.log'];
+    return ['parsers/ci-fixture/acme-web-proxy/meta.json', 'parsers/ci-fixture/acme-web-proxy/samples.log'];
   }, 'octocat');
   assert.equal(code, 0, JSON.stringify(report.entries.map((e) => e.problems), null, 1));
   assert.equal(report.passed, true);

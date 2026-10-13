@@ -67,9 +67,20 @@ async function comment(num, markdown) {
   else await gh('POST', `/repos/${REPO}/issues/${num}/comments`, { body });
 }
 
+// Waits for the other checks on the commit (CI's unit tests, for example) and reports
+// whether they all passed. The workflow that runs this script is left out by job name.
+async function otherChecksPassed(sha, self) {
+  for (let i = 0; i < 40; i++) {
+    const runs = (await gh('GET', `/repos/${REPO}/commits/${sha}/check-runs?per_page=100`)).check_runs.filter((r) => r.name !== self);
+    if (runs.every((r) => r.status === 'completed')) return runs.every((r) => ['success', 'skipped', 'neutral'].includes(r.conclusion));
+    await new Promise((r) => setTimeout(r, 15000));
+  }
+  return false;
+}
+
 async function merge(pr, sha) {
   const repo = await gh('GET', `/repos/${REPO}`);
-  if (!repo.allow_auto_merge) return 'Auto-merge is off for this repo, so a maintainer merges it.';
+  if (!repo.allow_auto_merge) return 'Auto-merge is off for this repo, so a maintainer will merge it.';
   const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
   if (p.draft) return 'The pull request is a draft, so it waits.';
   if (p.head.sha !== sha) return 'The pull request changed after these checks ran; the next run decides.';
@@ -78,6 +89,7 @@ async function merge(pr, sha) {
     await gh('POST', '/graphql', { query: 'mutation($id:ID!,$sha:GitObjectID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH,expectedHeadOid:$sha}){clientMutationId}}', variables: { id: p.node_id, sha } }).then((r) => { if (r.errors) throw new Error(r.errors[0].message); });
     return 'Auto-merge is on for this pull request.';
   } catch {
+    if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate'))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
     await gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' });
     return 'Merged.';
   }

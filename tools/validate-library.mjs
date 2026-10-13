@@ -97,7 +97,7 @@ function markdown() {
     lines.push('');
   }
   if (changedFile) {
-    lines.push(report.eligible ? 'This pull request only adds or updates the author\'s own library entries and every check passed, so it can merge without review.' : `This pull request needs a maintainer review: ${report.reasons.join('; ') || 'see above'}.`);
+    lines.push(report.eligible ? 'This pull request only adds or updates its author\'s own library entries, and every library check passed, so it qualifies to merge without a review.' : `This pull request needs a maintainer review: ${report.reasons.join('; ') || 'see above'}.`);
   }
   lines.push('', 'Results come from the Parser Studio emulator, not from Sophos NG-SIEM.');
   return lines.join('\n') + '\n';
