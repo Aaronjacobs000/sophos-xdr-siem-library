@@ -1,0 +1,216 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NSIGHT_FAILING_CHECK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "N-able N-sight RMM",
+      "event_time_usec": 1791805260000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "N-able",
+      "provider": "N-sight RMM",
+      "status": "failing",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "alert_id": "12:23",
+      "title": "Windows Service Check - WinDefend",
+      "summary": "Status: STOPPED",
+      "alert_category": "Check type 1012",
+      "log_type": "failing_check",
+      "additional_data": {
+        "record": [
+          {
+            "key": "client_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_name",
+            "value": "Head office"
+          },
+          {
+            "key": "device_type",
+            "value": "workstation"
+          },
+          {
+            "key": "check_id",
+            "value": "23"
+          },
+          {
+            "key": "check_status",
+            "value": "testerror"
+          },
+          {
+            "key": "check_time",
+            "value": "2026-10-12 22:40:11"
+          },
+          {
+            "key": "dsc_247",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NSIGHT_FAILING_CHECK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "N-able N-sight RMM",
+      "event_time_usec": 1791805260000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "N-able",
+      "provider": "N-sight RMM",
+      "status": "failing",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "alert_id": "14:31",
+      "title": "Event Log Check - Security",
+      "summary": "4 events matched: Event ID 4625",
+      "alert_category": "Check type 1009",
+      "log_type": "failing_check",
+      "additional_data": {
+        "record": [
+          {
+            "key": "client_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_name",
+            "value": "Head office"
+          },
+          {
+            "key": "device_type",
+            "value": "server"
+          },
+          {
+            "key": "check_id",
+            "value": "31"
+          },
+          {
+            "key": "check_status",
+            "value": "testerror"
+          },
+          {
+            "key": "check_time",
+            "value": "2026-10-12 22:40:11"
+          },
+          {
+            "key": "dsc_247",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NSIGHT_FAILING_CHECK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "N-able N-sight RMM",
+      "event_time_usec": 1791805260000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "N-able",
+      "provider": "N-sight RMM",
+      "status": "failing",
+      "host_id": "ACME-SRV-02",
+      "target_host_name": "ACME-SRV-02",
+      "alert_id": "14:32",
+      "title": "Backup Check - Veeam",
+      "summary": "Backup failed",
+      "alert_category": "Check type 1014",
+      "log_type": "failing_check",
+      "additional_data": {
+        "record": [
+          {
+            "key": "client_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_name",
+            "value": "Head office"
+          },
+          {
+            "key": "device_type",
+            "value": "server"
+          },
+          {
+            "key": "check_id",
+            "value": "32"
+          },
+          {
+            "key": "check_status",
+            "value": "testerror"
+          },
+          {
+            "key": "check_time",
+            "value": "2026-10-12 22:40:11"
+          },
+          {
+            "key": "dsc_247",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NSIGHT_FAILING_CHECK_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "N-able N-sight RMM",
+      "event_time_usec": 1791805560000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "N-able",
+      "provider": "N-sight RMM",
+      "status": "cleared",
+      "host_id": "ACME-WS-014",
+      "target_host_name": "ACME-WS-014",
+      "alert_id": "12:23",
+      "title": "Cleared: Windows Service Check - WinDefend",
+      "summary": "Status: STOPPED",
+      "alert_category": "Check type 1012",
+      "log_type": "failing_check",
+      "additional_data": {
+        "record": [
+          {
+            "key": "client_name",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "site_name",
+            "value": "Head office"
+          },
+          {
+            "key": "device_type",
+            "value": "workstation"
+          },
+          {
+            "key": "check_id",
+            "value": "23"
+          },
+          {
+            "key": "check_status",
+            "value": "testerror"
+          },
+          {
+            "key": "check_time",
+            "value": "2026-10-12 22:40:11"
+          },
+          {
+            "key": "dsc_247",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

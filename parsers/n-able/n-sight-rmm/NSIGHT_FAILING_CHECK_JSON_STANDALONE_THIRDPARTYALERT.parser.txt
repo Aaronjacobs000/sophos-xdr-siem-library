@@ -1,0 +1,54 @@
+!SAMPLE={"State":"failing","ObservedAt":"2026-10-12T11:41:00Z","Source":"N-sight RMM","ClientId":"1234","ClientName":"Acme Dental","SiteId":"123","SiteName":"Head office","DeviceType":"workstation","DeviceId":"12","DeviceName":"ACME-WS-014","CheckId":"23","CheckType":"1012","Dsc247":"1","Description":"Windows Service Check - WinDefend","CheckDate":"2026-10-12","CheckTime":"22:40:11","StartDate":"","StartTime":"","FormattedOutput":"Status: STOPPED","CheckStatus":"testerror"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"State"\s*:\s*"(?:failing|cleared)"\s*,\s*"ObservedAt"\s*:\s*"[^"]+"\s*,\s*"Source"\s*:\s*"N-sight RMM"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: N-able N-sight RMM failing checks, sent to a Sophos NG-SIEM HTTP Ingest integration one
+# JSON record per line by the collector in collectors/n-able-n-sight-failing-checks. The collector
+# polls the Data Extraction API service list_failing_checks and writes a record when a check
+# starts failing (State failing) or clears (State cleared), with the fields of the API's XML.
+# Standalone parser for the third-party alert schema. N-sight gives no severity.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "N-able N-sight RMM"
+vendor$ = "N-able"
+provider$ = "N-sight RMM"
+
+state = json["$.State"]
+status$ = state
+host = json["$.DeviceName"]
+hostId$ = host
+targetHostName$ = host
+alertId$ = json["$.DeviceId"] + ":" + json["$.CheckId"]
+title$ = json["$.Description"]
+title$ = IF state == "cleared" THEN "Cleared: " + title$ ELSE title$
+out = json["$.FormattedOutput"]
+summary$ = IF out != "" AND out != NULL THEN out ELSE json["$.Description"]
+alertCategory$ = "Check type " + json["$.CheckType"]
+logType$ = "failing_check"
+
+# ObservedAt is when the collector saw the change, in UTC.
+eventTimeUsec$ = DATETIME(json["$.ObservedAt"], "2006-01-02T15:04:05Z07:00")
+
+a1.key$ = "client_name"
+a1.value$ = json["$.ClientName"]
+a2.key$ = "site_name"
+a2.value$ = json["$.SiteName"]
+a3.key$ = "device_type"
+a3.value$ = json["$.DeviceType"]
+a4.key$ = "check_id"
+a4.value$ = json["$.CheckId"]
+a5.key$ = "check_status"
+a5.value$ = json["$.CheckStatus"]
+a6.key$ = "check_time"
+a6.value$ = json["$.CheckDate"] + " " + json["$.CheckTime"]
+# dsc_247 is the API's flag for the check schedule (DSC or 24x7), kept as it is.
+a7.key$ = "dsc_247"
+a7.value$ = json["$.Dsc247"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4, a5, a6, a7]
