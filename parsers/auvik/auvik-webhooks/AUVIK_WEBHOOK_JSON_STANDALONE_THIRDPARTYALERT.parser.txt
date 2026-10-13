@@ -1,0 +1,57 @@
+!SAMPLE={"entityId":"MTI3Mzg5NDYxMjM5NzQsNDczNjQ5ODI3NjQ3OTI=","subject":"You have a new alert!","alertStatusString":"Triggered","alertId":"MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NA==","alertName":"Firewall configuration changed","entityName":"ACME-FW-01","companyName":"Acme Dental","entityType":"device","date":"2026-10-12T11:39:13.719Z","link":"https://acme.example.com/alert/193884525816632836/summary","alertStatus":0,"alertDescription":"The running configuration of ACME-FW-01 changed","alertSeverityString":"Critical","alertSeverity":2,"companyId":"191992599575398404","correlationId":"MTI3Mzg5NDYxMjM5NzQsNTI4NzY0OTgyNzM2NA=="}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*"alertStatusString"\s*:\s*"(?:Triggered|Cleared)".*"alertSeverityString"\s*:.*"correlationId"\s*:
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Auvik webhook integration (alert notifications, no JSONata transformation), posting to
+# a Sophos NG-SIEM HTTP Ingest integration with the additional header
+# Authorization: Bearer <integration key>.
+# Standalone parser for the third-party alert schema: alerts triggered and cleared, with the
+# asset, the site, the severity and the alert link. Fields follow Auvik's webhook payload page.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Auvik"
+vendor$ = "Auvik"
+provider$ = "Auvik Network Management"
+
+alertId$ = json["$.alertId"]
+title$ = json["$.alertName"]
+summary$ = json["$.alertDescription"]
+status$ = json["$.alertStatusString"]
+host = json["$.entityName"]
+hostId$ = host
+targetHostName$ = host
+alertCategory$ = json["$.entityType"]
+logType$ = "alert"
+
+# Severity: 1 Emergency, 2 Critical, 3 Warning, 4 Informational.
+sev = STRING(json["$.alertSeverity"])
+vendorSeverity$ = json["$.alertSeverityString"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "4" THEN "INFO" ELSE severity$
+severity$ = IF sev == "3" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "2" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "1" THEN "CRITICAL" ELSE severity$
+
+# date is UTC, yyyy-MM-dd'T'HH:mm:ss.SSSXXX.
+eventTimeUsec$ = DATETIME(json["$.date"], "2006-01-02T15:04:05.999999999Z07:00")
+closed = STRING(json["$.alertStatus"]) == "1"
+closedTimeUsec$ = IF closed THEN DATETIME(json["$.date"], "2006-01-02T15:04:05.999999999Z07:00") ELSE NULL
+
+a1.key$ = "site_name"
+a1.value$ = json["$.companyName"]
+a2.key$ = "site_id"
+a2.value$ = json["$.companyId"]
+a3.key$ = "correlation_id"
+a3.value$ = json["$.correlationId"]
+a4.key$ = "entity_id"
+a4.value$ = json["$.entityId"]
+a5.key$ = "link"
+a5.value$ = json["$.link"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4, a5]

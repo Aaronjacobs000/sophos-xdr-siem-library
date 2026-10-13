@@ -1,0 +1,28 @@
+{
+  "vendor": "Auvik",
+  "product": "Auvik Webhooks",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://support.auvik.com/hc/en-us/articles/360048647112",
+    "https://support.auvik.com/hc/en-us/articles/216977386"
+  ],
+  "notes": "Add a webhook integration in Auvik with the Sophos NG-SIEM HTTP Ingest URL, the additional header Authorization: Bearer <integration key>, no JSONata transformation, and an alert notification that uses it. Alerts triggered and cleared go to the third-party alert schema with the asset, site, severity and link. Auvik is network monitoring built for MSPs; its alerts (device offline, configuration changed, interface problems) cover client network devices that often have no log feed of their own. Samples follow the triggered and cleared examples on Auvik's webhook payload page with the values changed. Passed Run Test in a lab tenant on 2026-10-13 (61 of 61 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "AUVIK_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
