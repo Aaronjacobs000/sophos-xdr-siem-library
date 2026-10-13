@@ -124,6 +124,8 @@ test('captures keep every match, and an unset variable fails the event', () => {
   assert.match(cmp.error, /cannot convert regex to string/);
   const [unset] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\ntargetUserName$ = nothing' }], ['x']);
   assert.match(unset.error, /variable nothing is not set/);
+  const [indexed] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nacct = originalData$|user=(\\S+)\nname = acct[1]|^(\\w+)\ntargetUserName$ = name[1]' }], ['x user=alice$']);
+  assert.equal(indexed.normalized.target_user_name, 'alice');
 });
 
 test('TRIM_ALL removes one enclosing pair; TRIM removes them all', () => {

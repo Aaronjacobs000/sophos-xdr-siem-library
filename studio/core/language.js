@@ -139,8 +139,9 @@ export function parseExpression(src) {
 }
 
 const IDENT = '[A-Za-z_][A-Za-z0-9_]*\\$?';
-// The engine also accepts a space before the pipe: x = originalData$ |regex
-const CAPTURE = new RegExp(`^(${IDENT})\\s*=\\s*(${IDENT})\\s*\\|(.*)$`);
+// The engine also accepts a space before the pipe (x = originalData$ |regex) and an indexed
+// source (x = acct[2]|regex), both checked in a lab tenant.
+const CAPTURE = new RegExp(`^(${IDENT})\\s*=\\s*(${IDENT}(?:\\[[^\\]|]*\\])*)\\s*\\|(.*)$`);
 const ASSIGN = new RegExp(`^(${IDENT}(?:\\.${IDENT})*)\\s*=(?!=)\\s*(.*)$`);
 
 // Parse one parser script. Returns {directives, flags, statements, problems, sample}.
@@ -177,7 +178,17 @@ export function parseScript(text) {
     }
     let m = CAPTURE.exec(s);
     if (m) {
-      statements.push({ line, kind: 'capture', target: m[1], source: m[2], pattern: m[3] });
+      const st = { line, kind: 'capture', target: m[1], source: m[2].replace(/\[.*$/, ''), pattern: m[3] };
+      if (st.source !== m[2]) {
+        try {
+          st.sourceExpr = parseExpression(m[2]).ast;
+          st.sourceText = m[2];
+        } catch (e) {
+          problems.push({ level: 'error', code: 'syntax', line, message: e.message });
+          return;
+        }
+      }
+      statements.push(st);
       return;
     }
     m = ASSIGN.exec(s);

@@ -256,9 +256,9 @@ function runStatementsInner(p, ctx, byName, depth) {
       continue;
     }
     if (st.kind === 'capture') {
-      const src = ctx.get(st.source);
+      const src = st.sourceExpr ? evaluate(ctx, st.sourceExpr) : ctx.get(st.source);
       ctx.vars.set(st.target, capture(st.pattern, src === null ? '' : toStr(src)));
-      if (ctx.vars.get(st.target).nomatch) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.source}, so ${st.target}[n] gives ""`);
+      if (ctx.vars.get(st.target).nomatch) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.sourceText || st.source}, so ${st.target}[n] gives ""`);
       continue;
     }
     ctx.set(st.target, evaluate(ctx, st.expr));
