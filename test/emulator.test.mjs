@@ -130,6 +130,26 @@ test('the Auth schema stores Auth0 log type codes in event_metadata as their des
   }
 });
 
+// Every other code in Auth0's tenant log catalog; the engine stored each one as it was.
+test('the Auth schema leaves the Auth0 codes its list doesn\'t have as they are', () => {
+  const kept = `acls_summary actions_execution_failed acul_sdk_notice api_limit_warning appi ciba_exchange_failed ciba_exchange_succeeded ciba_start_failed
+ciba_start_succeeded connected_accounts_connection_failed connected_accounts_connection_succeeded connected_accounts_delete_failed connected_accounts_delete_succeeded
+custom_domain_verification_failed directory_sync_completed directory_sync_failed directory_sync_started failed_on_behalf_of_token_exchange fdeleacft fdelsa fecte
+federated_logout_failed feta flows_execution_completed flows_execution_failed forms_submission_failed forms_submission_succeeded fpar fpurh fscim
+gd_auth_email_verification gd_email_settings_update gd_phone_settings_update gd_send_email gd_send_email_verification gd_send_pn_failure gd_start_enroll_failed
+gd_webauthn_challenge_failed gd_webauthn_enrollment_failed idjag_exchange_failed idjag_exchange_succeeded jwt_bearer_exchange_failed kms_key_management_failure
+kms_key_management_success kms_key_state_changed limit_phone my_account_authentication_method_failed my_account_authentication_method_succeeded
+oidc_backchannel_logout_failed oidc_backchannel_logout_succeeded organization_member_added passkey_challenge_failed passkey_challenge_started reset_pwd_leak
+resource_cleanup rich_consents_access_error scv sdel sdeleacft sdelsa secte sepkoobft sepkotpft sepkrcft seta signup_pwd_leak ss_sso_failure ss_sso_info
+ss_sso_success sscim success_on_behalf_of_token_exchange universal_logout_failed universal_logout_succeeded wn wum`.split(/\s+/);
+  assert.equal(kept.length, 75);
+  const recs = kept.map((c, i) => `r${i}.key$ = "k${i}"\nr${i}.value$ = "${c}"`).join('\n');
+  const t = `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\n${recs}\neventMetadata$.record$ = [${kept.map((_, i) => `r${i}`).join(', ')}]`;
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.deepEqual(r.normalized.event_metadata.record.map((x) => x.value), kept);
+  assert.ok(!r.notes.some((n) => n.code === 'auth0-code'));
+});
+
 test('the docs\' append pattern fails until the list exists', () => {
   const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.nids\nr.key$ = "k"\nr.value$ = "v"\neventMetadata$.record$ = eventMetadata$.record$ + [r]';
   const [bad] = runParsers([{ name: 'A_B', text: t }], ['x']);
@@ -210,6 +230,28 @@ test('the syslog header comes off for `message`', () => {
   assert.equal(splitSyslog('<34>1 2026-10-07T22:14:15.003Z host01 su - ID47 - msg').body, 'su - ID47 - msg');
   assert.equal(splitSyslog('Aug 21 12:12:20 192.0.2.254 1 1566000000.000000000 IDOFDEVICE flows').body, '1 1566000000.000000000 IDOFDEVICE flows');
   assert.equal(splitSyslog('{"a":1}'), null);
+});
+
+// What Run Test gave for each line in a lab tenant.
+test('in Run Test the root parser only takes a plain BSD header off the line', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=zzprobe\n!SCHEMA=scwx.nids\nr1.key$ = "message"\nr1.value$ = message\nr2.key$ = "sensorId"\nr2.value$ = sensorId$\neventMetadata$.record$ = [r1, r2]';
+  const lines = [
+    '<134>Oct 14 01:02:03 probe.example.com zzprobe hello',
+    'Oct 14 01:02:03 probe.example.com zzprobe hello',
+    '<134>1 2026-10-14T01:02:03Z probe.example.com app - - - zzprobe hello',
+    'Oct 14 01:02:03 relay.example.com Oct 14 01:02:03 probe.example.com zzprobe hello',
+    '2026-10-14T01:02:03Z probe.example.com zzprobe hello',
+  ];
+  const now = '2026-10-14T03:00:00Z';
+  const syslog = Date.UTC(2026, 9, 14, 1, 2, 3) * 1000;
+  const got = runParsers([{ name: 'A_B', text: t }], lines, { now }).map((r) => [r.normalized.event_metadata.record.map((x) => x.value), r.normalized.sensor_id, r.normalized.event_time_usec]);
+  assert.deepEqual(got, [
+    [[lines[0], undefined], undefined, Date.parse(now) * 1000],
+    [['zzprobe hello', 'probe.example.com'], 'probe.example.com', syslog],
+    [[lines[2], undefined], undefined, Date.parse(now) * 1000],
+    [['zzprobe hello', 'probe.example.com'], 'probe.example.com', syslog],
+    [[lines[4], undefined], undefined, Date.parse(now) * 1000],
+  ]);
 });
 
 test('Go regex translation and RE2 checks', () => {
