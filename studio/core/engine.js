@@ -7,7 +7,7 @@
 
 import {
   JsonValue, ObjValue, MatchValue, RecordValue, TimeValue, RuntimeError, ParseErrorSignal,
-  toStr, truthy, looseEqual, wrapJson, isList, typeName, hasOwn,
+  toStr, toBool, looseEqual, wrapJson, isList, typeName, hasOwn,
 } from './values.js';
 import { parseScript, parseExpression, walk } from './language.js';
 import { FUNCTIONS, LAZY } from './functions.js';
@@ -152,7 +152,7 @@ export function evaluate(ctx, e) {
     case 'lit': return e.v;
     case 'var': return ctx.get(e.name);
     case 'list': return e.items.map((x) => evaluate(ctx, x));
-    case 'if': return truthy(evaluate(ctx, e.c)) ? evaluate(ctx, e.a) : evaluate(ctx, e.b);
+    case 'if': return toBool(evaluate(ctx, e.c)) ? evaluate(ctx, e.a) : evaluate(ctx, e.b);
     case 'neg': return -num(evaluate(ctx, e.e), '-');
     case 'member': {
       // Reading x.field$ before it was assigned fails the event, like any unset variable. That
@@ -182,8 +182,8 @@ export function evaluate(ctx, e) {
       return fn(ctx, e.args.map((a) => evaluate(ctx, a)));
     }
     case 'bin': {
-      if (e.op === 'AND') return truthy(evaluate(ctx, e.l)) && truthy(evaluate(ctx, e.r));
-      if (e.op === 'OR') return truthy(evaluate(ctx, e.l)) || truthy(evaluate(ctx, e.r));
+      if (e.op === 'AND') return toBool(evaluate(ctx, e.l)) && toBool(evaluate(ctx, e.r));
+      if (e.op === 'OR') return toBool(evaluate(ctx, e.l)) || toBool(evaluate(ctx, e.r));
       const a = evaluate(ctx, e.l);
       const b = evaluate(ctx, e.r);
       switch (e.op) {
@@ -226,7 +226,7 @@ function confirms(p, ctx) {
   ctx.parser = p.name;
   ctx.line = p.script.directiveLines.CONFIRMSTRING ?? null;
   try {
-    return truthy(evaluate(ctx, p.confirm.ast));
+    return toBool(evaluate(ctx, p.confirm.ast));
   } catch (e) {
     ctx.note('warning', 'confirm-error', `${p.name}: the confirm expression raised "${e.message}", so it counts as no match`);
     return false;

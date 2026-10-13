@@ -107,6 +107,16 @@ export function truthy(v) {
   return true;
 }
 
+// IF, AND and OR read their operands like truthy(), except for lists (checked in a lab tenant):
+// an empty list is false, a list of one counts as its item, and a list of two or more fails
+// the event with "cannot convert list to bool". A JSON array counts as a list.
+export function toBool(v) {
+  const list = isList(v) ? v : v instanceof JsonValue && Array.isArray(v.value) ? v.value.map(wrapJson) : null;
+  if (!list) return truthy(v);
+  if (list.length > 1) throw new RuntimeError(`cannot convert list to bool: the condition is a list of ${list.length}. Test LENGTH(list) > 0 or one item instead.`, 'list-bool');
+  return list.length === 1 && truthy(list[0]);
+}
+
 export function looseEqual(a, b) {
   if (a === null || a === undefined || b === null || b === undefined) return (a ?? null) === (b ?? null);
   if (typeof a === typeof b && (typeof a !== 'object')) return a === b;
