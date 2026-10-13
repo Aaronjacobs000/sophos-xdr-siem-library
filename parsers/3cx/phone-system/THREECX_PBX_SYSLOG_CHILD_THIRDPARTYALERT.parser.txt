@@ -1,0 +1,54 @@
+!SAMPLE=<191>1 2026-10-12T22:40:11+11:00 pbx.example.com EventLog - - - {"id":4101,"timestamp":"2026-10-12T11:40:11.5230000Z","message":"The IP 198.51.100.7 has been blacklisted for 86400 sec. (Expires at: 13/10/2026 11:40:11). Reason: too many failed authentication attempts","template":"The IP %1 has been blacklisted for %2 sec. (Expires at: %3). Reason: %4","params":["198.51.100.7","86400","13/10/2026 11:40:11","too many failed authentication attempts"],"source":"SIP Server","type":1,"event_id":12290,"group_name":"System wide"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="12290" OR eventType$=="12292" OR eventType$=="12296" OR eventType$=="10028"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: 3CX Remote Syslog, EventLog records over syslog to the data collector.
+# Child of THREECX_PBX_SYSLOG_PARENT: 3CX's own security events to the third-party alert schema.
+#   12290, 12292  an IP address blacklisted by the anti-hacking checks
+#   12296         a call blocked by Country Blocking (possible toll fraud)
+#   10028         administrator password recovery requested
+# Event ids and message templates come from the "3CX Events Explained" page.
+# json, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+message = json["$.message"]
+vendor$ = "3CX"
+summary$ = message
+alertId$ = STRING(json["$.id"])
+targetHostName$ = hostId$
+
+blacklist = eventType$ == "12290" OR eventType$ == "12292"
+title$ = "3CX event " + eventType$
+title$ = IF blacklist THEN "IP address blacklisted by 3CX anti-hacking" ELSE title$
+title$ = IF eventType$ == "12296" THEN "Call blocked by 3CX Country Blocking" ELSE title$
+title$ = IF eventType$ == "10028" THEN "3CX administrator password recovery requested" ELSE title$
+
+# 3CX rates these events Warning (blacklist, country block) or Info (password recovery).
+vendorSeverity$ = IF eventType$ == "10028" THEN "Info" ELSE "Warning"
+severity$ = IF eventType$ == "10028" THEN "LOW" ELSE "MEDIUM"
+action$ = IF blacklist OR eventType$ == "12296" THEN "BLOCKED" ELSE NULL
+alertCategory$ = json["$.source"]
+
+# The address comes from the message text, which follows the documented template.
+ip = message|The IP\s+(?P<addr>\S+)\s+has been blacklisted for\s+(?P<secs>\d+)\s+sec
+sourceAddress$ = ip["addr"]
+call = message|^Call from \[(?P<from>[^\]]*)\] to \[(?P<to>[^\]]*)\] has been rejected by the 3CX Country Blocking Feature \[(?P<prefix>[^\]]*)\]
+
+a1.key$ = "event_id"
+a1.value$ = eventType$
+a2.key$ = "group_name"
+a2.value$ = json["$.group_name"]
+additionalData$.record$ = [a1, a2]
+a3.key$ = "blacklist_seconds"
+a3.value$ = ip["secs"]
+additionalData$.record$ = IF ip["secs"] != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "caller"
+a4.value$ = call["from"]
+a5.key$ = "called_number"
+a5.value$ = call["to"]
+a6.key$ = "blocked_prefix"
+a6.value$ = call["prefix"]
+additionalData$.record$ = IF call["to"] != "" THEN additionalData$.record$ + [a4, a5, a6] ELSE additionalData$.record$
