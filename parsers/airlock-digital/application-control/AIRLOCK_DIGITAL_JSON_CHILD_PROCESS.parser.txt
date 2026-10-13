@@ -1,0 +1,25 @@
+!SAMPLE={"event":"FileActivityMessage","checkpoint":"104230","datetime":"13/10/2026 01:15:20 AM","hostname":"WS-OPS-057","username":"CORP\\bwong","path":"C:\\Program Files\\Acme Viewer\\","filename":"viewer.exe","sha256":"1de3f62300000f594b571b9c7e841e79af2154fbf55e0eb6c427921a703c4794","md5":"9afe47bce19df5195dfbc3a0bf76a4e1","sha1":"5975550e1ba918244491c254f1c330a2d12ee304","publisher":"Acme Corp","parentgroup":"Airlock Groups","group":"Workstations","policyid":"12","policyver":"4646.3818","execution_type":"Trusted Publisher Execution","parentprocess":"explorer.exe","gparentprocess":"userinit.exe","commandline":"C:\\Users\\bwong\\Documents\\plan.acv","ip":"203.0.113.58","localip":"192.0.2.58"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="execution"
+!SCHEMA=scwx.process
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Airlock Digital external logging in JSON.
+# Child of AIRLOCK_DIGITAL_JSON_PARENT: executions the policy allowed (Trusted ... Execution) to
+# Process. Blocked, audit and one-time-password executions go to the third-party alert child.
+# json, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+computerName$ = json["$.hostname"]
+hostId$ = json["$.hostname"]
+username$ = json["$.username"]
+# path is the folder with its trailing separator; filename is the file.
+imagePath$ = STRING(json["$.path"]) + STRING(json["$.filename"])
+process$ = json["$.filename"]
+commandline$ = json["$.commandline"]
+# Airlock names the parent process, not its path.
+parentImagePath$ = json["$.parentprocess"]
+programHash$.sha256$ = json["$.sha256"]
+programHash$.sha1$ = json["$.sha1"]
+programHash$.md5$ = json["$.md5"]
+

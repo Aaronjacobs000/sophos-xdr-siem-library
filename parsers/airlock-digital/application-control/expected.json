@@ -1,0 +1,312 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791853323000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104221",
+      "title": "Airlock Blocked Execution: invoice_1013.exe",
+      "summary": "C:\\Users\\jdoe\\Downloads\\invoice_1013.exe",
+      "target_host_name": "WS-FIN-041",
+      "host_id": "WS-FIN-041",
+      "target_user_name": "CORP\\jdoe",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Blocked Execution"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3818"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Users\\jdoe\\Downloads\\invoice_1013.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "3de2d90306c9fa530bef965c18f8f9eb32f7b78adeae6407ff3c1aeda1401462"
+          },
+          {
+            "key": "parent_process",
+            "value": "explorer.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791853784000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104225",
+      "title": "Airlock Untrusted Execution [Audit]: tool",
+      "summary": "/Users/amy/Downloads/tool.app/Contents/MacOS/tool",
+      "target_host_name": "mac-eng-07.example.com",
+      "host_id": "mac-eng-07.example.com",
+      "target_user_name": "amy",
+      "severity": "LOW",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Untrusted Execution [Audit]"
+          },
+          {
+            "key": "policy_group",
+            "value": "Apple Mac"
+          },
+          {
+            "key": "policy_version",
+            "value": "v485"
+          },
+          {
+            "key": "image_path",
+            "value": "/Users/amy/Downloads/tool.app/Contents/MacOS/tool"
+          },
+          {
+            "key": "sha256",
+            "value": "8cc27d9a50c6b368e8ffdf675a954c0ea41e39c90a5c45ec6640d8bd9662504b"
+          },
+          {
+            "key": "parent_process",
+            "value": "launchd"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "publisher",
+            "value": "Example Tools Pty (ABCDE12345) (Mac)"
+          },
+          {
+            "key": "commandline",
+            "value": "--update-check"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791854120000000,
+      "event_time_fidelity": "MICRO",
+      "computer_name": "WS-OPS-057",
+      "host_id": "WS-OPS-057",
+      "username": "CORP\\bwong",
+      "image_path": "C:\\Program Files\\Acme Viewer\\viewer.exe",
+      "process": "viewer.exe",
+      "commandline": "C:\\Users\\bwong\\Documents\\plan.acv",
+      "parent_image_path": "explorer.exe",
+      "program_hash": {
+        "sha256": "1de3f62300000f594b571b9c7e841e79af2154fbf55e0eb6c427921a703c4794",
+        "sha1": "5975550e1ba918244491c254f1c330a2d12ee304",
+        "md5": "9afe47bce19df5195dfbc3a0bf76a4e1"
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791854672000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104238",
+      "title": "Airlock Blocklist Execution: psexec.exe",
+      "summary": "C:\\Users\\jdoe\\AppData\\Local\\Temp\\psexec.exe",
+      "target_host_name": "WS-FIN-041",
+      "host_id": "WS-FIN-041",
+      "target_user_name": "CORP\\jdoe",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Blocklist Execution"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3818"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Users\\jdoe\\AppData\\Local\\Temp\\psexec.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "665b4c00f317270d4fcecb2f5abdcbfb8838b33886bcf25e3649bb1bf0af8a86"
+          },
+          {
+            "key": "parent_process",
+            "value": "cmd.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "commandline",
+            "value": "\\\\192.0.2.30 -s cmd.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791855005000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104240",
+      "title": "Airlock Untrusted Execution [OTP]: driver_setup.exe",
+      "summary": "C:\\Users\\bwong\\Downloads\\driver_setup.exe",
+      "target_host_name": "WS-OPS-057",
+      "host_id": "WS-OPS-057",
+      "target_user_name": "CORP\\bwong",
+      "severity": "LOW",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Untrusted Execution [OTP]"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3818"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Users\\bwong\\Downloads\\driver_setup.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "3ab910109f816c96815bcbf2a3d3bc036e7c414445e14eecd484b45536332c17"
+          },
+          {
+            "key": "parent_process",
+            "value": "explorer.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.58"
+          },
+          {
+            "key": "commandline",
+            "value": "/quiet"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791855611000000,
+      "event_time_fidelity": "MICRO",
+      "username": "admin",
+      "operation_name": "Login",
+      "operation": "User: admin logged in successfully from 203.0.113.10 using Chrome",
+      "client_hostname": "203.0.113.10",
+      "result": "success"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791855757000000,
+      "event_time_fidelity": "MICRO",
+      "username": "admin",
+      "operation_name": "Policy Modify",
+      "operation": "Policy group Workstations modified"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791855756000000,
+      "event_time_fidelity": "MICRO",
+      "username": "admin",
+      "operation_name": "User Updated Group",
+      "operation": "Policy group Workstations version 4646.3819",
+      "possible_cause": "Allow the Acme Viewer update"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791857148000000,
+      "event_time_fidelity": "MICRO",
+      "computer_name": "FS-01",
+      "host_id": "FS-01",
+      "username": "NT AUTHORITY\\SYSTEM",
+      "image_path": "C:\\Program Files\\Backup Agent\\agent.exe",
+      "process": "agent.exe",
+      "commandline": "--service",
+      "parent_image_path": "services.exe",
+      "program_hash": {
+        "sha256": "4909d60767534217f3a7a91696b633656dc69e4d698943ed104ffd8acbac6470",
+        "sha1": "28e978ff7fe1292d3e03f294f3d355a465167efa",
+        "md5": "54da99a45b34abfae0bd89537f65c145"
+      }
+    }
+  }
+]

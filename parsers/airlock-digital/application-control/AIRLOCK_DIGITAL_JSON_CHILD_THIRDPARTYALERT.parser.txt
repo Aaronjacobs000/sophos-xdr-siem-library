@@ -1,0 +1,57 @@
+!SAMPLE={"event":"FileActivityMessage","checkpoint":"104221","datetime":"13/10/2026 01:02:03 AM","hostname":"WS-FIN-041","username":"CORP\\jdoe","path":"C:\\Users\\jdoe\\Downloads\\","filename":"invoice_1013.exe","sha256":"3de2d90306c9fa530bef965c18f8f9eb32f7b78adeae6407ff3c1aeda1401462","md5":"cf5dea57f52825a77e43b750d20b94e1","sha1":"069c67a479718b6719b32758de9edc34b913e4b8","publisher":"","parentgroup":"Airlock Groups","group":"Workstations","policyid":"12","policyver":"4646.3818","execution_type":"Blocked Execution","parentprocess":"explorer.exe","gparentprocess":"userinit.exe","commandline":"","ip":"203.0.113.24","localip":"192.0.2.41"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="execution_alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Airlock Digital external logging in JSON.
+# Child of AIRLOCK_DIGITAL_JSON_PARENT: executions Airlock blocked (Blocked and Blocklist
+# executions), executions that ran in audit mode but would have been blocked, and executions
+# allowed by a one-time password (OTP), to the third-party alert schema.
+# json, et, stopped, audit, otp, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Airlock Digital"
+alertCategory$ = "Application Control"
+alertId$ = json["$.checkpoint"]
+execType = STRING(json["$.execution_type"])
+file = STRING(json["$.filename"])
+image = STRING(json["$.path"]) + file
+title$ = "Airlock " + execType + ": " + file
+summary$ = image
+targetHostName$ = json["$.hostname"]
+hostId$ = json["$.hostname"]
+targetUserName$ = json["$.username"]
+
+# Blocklist hits are known-bad files: HIGH whether blocked or only audited. Other blocked
+# executions are MEDIUM, and untrusted audit and OTP executions LOW.
+blocklist = CONTAINS(et, "blocklist")
+severity$ = "LOW"
+severity$ = IF stopped THEN "MEDIUM" ELSE severity$
+severity$ = IF blocklist THEN "HIGH" ELSE severity$
+action$ = IF stopped THEN "BLOCKED" ELSE "SUCCEEDED"
+
+a1.key$ = "execution_type"
+a1.value$ = execType
+a2.key$ = "policy_group"
+a2.value$ = STRING(json["$.group"])
+a3.key$ = "policy_version"
+a3.value$ = STRING(json["$.policyver"])
+a4.key$ = "image_path"
+a4.value$ = image
+a5.key$ = "sha256"
+a5.value$ = STRING(json["$.sha256"])
+a6.key$ = "parent_process"
+a6.value$ = STRING(json["$.parentprocess"])
+a7.key$ = "local_ip"
+a7.value$ = STRING(json["$.localip"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4, a5, a6, a7]
+pub = STRING(json["$.publisher"])
+a8.key$ = "publisher"
+a8.value$ = pub
+additionalData$.record$ = IF pub != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+cmd = STRING(json["$.commandline"])
+a9.key$ = "commandline"
+a9.value$ = cmd
+additionalData$.record$ = IF cmd != "" THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
