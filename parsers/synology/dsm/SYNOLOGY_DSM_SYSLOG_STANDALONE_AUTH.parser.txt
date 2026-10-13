@@ -1,0 +1,54 @@
+!SAMPLE=<12>Oct 12 22:41:02 nas01 Connection SYSTEM:	User [admin] from [198.51.100.7] failed to sign in to [DSM] via [password] due to authorization failure.
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sConnection\s+[^:]*:\s*User \[[^\]]*\] from \[[^\]]+\] (?:signed in to \[[^\]]+\] successfully via|failed to sign in to \[[^\]]+\] via \[[^\]]+\] due to|failed to log in via \[[^\]]+\] due to)
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Synology DSM Log Center, "Send to a syslog server" in BSD (RFC 3164) format.
+# Standalone parser for the Auth schema: sign-in successes and failures from the Connection log.
+#   User [<name>] from [<address>] signed in to [<service>] successfully via [<method>].
+#   User [<name>] from [<address>] failed to sign in to [<service>] via [<method>] due to <reason>.
+#   User [<name>] from [<address>] failed to log in via [<service>] due to <reason>.        (DSM 6)
+# DSM 6 also logs "User [<name>] failed to log in from [<address>] via [<service>]." for the
+# same failure; it stays generic so each failure counts once.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+ok = originalData$|User \[(?P<user>[^\]]*)\] from \[(?P<src>[^\]]+)\] signed in to \[(?P<service>[^\]]+)\] successfully via \[(?P<method>[^\]]+)\]
+bad = originalData$|User \[(?P<user>[^\]]*)\] from \[(?P<src>[^\]]+)\] failed to sign in to \[(?P<service>[^\]]+)\] via \[(?P<method>[^\]]+)\] due to (?P<reason>[^.]+)
+old = originalData$|User \[(?P<user>[^\]]*)\] from \[(?P<src>[^\]]+)\] failed to log in via \[(?P<service>[^\]]+)\] due to (?P<reason>[^.]+)
+
+sensorType$ = "Synology DSM"
+hostId$ = hdr["host"]
+targetHostName$ = hdr["host"]
+# The BSD syslog time has no year and no zone: DATETIME picks the year (TRUE) and reads UTC.
+eventTimeUsec$ = DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE)
+
+success = ok["user"] != ""
+targetUserName$ = ok["user"]
+targetUserName$ = IF bad["user"] != "" THEN bad["user"] ELSE targetUserName$
+targetUserName$ = IF old["user"] != "" THEN old["user"] ELSE targetUserName$
+sourceAddress$ = ok["src"]
+sourceAddress$ = IF bad["src"] != "" THEN bad["src"] ELSE sourceAddress$
+sourceAddress$ = IF old["src"] != "" THEN old["src"] ELSE sourceAddress$
+service = ok["service"]
+service = IF bad["service"] != "" THEN bad["service"] ELSE service
+service = IF old["service"] != "" THEN old["service"] ELSE service
+authSystem$ = "Synology " + service
+
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+reason = IF bad["reason"] != "" THEN bad["reason"] ELSE old["reason"]
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF reason == "authorization failure" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+r1.key$ = "service"
+r1.value$ = service
+eventMetadata$.record$ = [r1]
+r2.key$ = "method"
+r2.value$ = IF success THEN ok["method"] ELSE bad["method"]
+eventMetadata$.record$ = IF r2.value$ != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "failure_reason"
+r3.value$ = reason
+eventMetadata$.record$ = IF reason != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$

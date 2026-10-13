@@ -1,0 +1,33 @@
+{
+  "vendor": "Synology",
+  "product": "DSM",
+  "versions": [
+    "6",
+    "7"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://kb.synology.com/en-global/DSM/help/LogCenter/logcenter_client?version=7",
+    "https://kb.synology.com/en-global/DSM/tutorial/NAS_shows_failed_login_attempts",
+    "https://docs.nxlog.co/integrate/synology.html",
+    "https://www.it-connect.fr/nas-synology-notification-par-e-mail-quand-un-utilisateur-se-connecte/"
+  ],
+  "notes": "In Log Center > Log Sending, send to the data collector in BSD (RFC 3164) format and include the Connection category. DSM sign-in successes and failures go to Auth; every other line is left to the parsers already in the tenant. Synology doesn't publish its log messages, so this entry covers only the sign-in lines shown in Synology's failed login article and in public third-party guides (linked), and other admin and security events aren't covered. Check a few of your own lines with Parse Message first. The BSD syslog time has no year or zone and is read as UTC. Passed Run Test in a lab tenant on 2026-10-13.",
+  "parsers": [
+    {
+      "name": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",
+      "file": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.auth"
+    }
+  ]
+}

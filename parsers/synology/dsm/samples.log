@@ -1,0 +1,7 @@
+<14>Oct 12 22:40:11 nas01 Connection SYSTEM:	User [alice] from [192.0.2.10] signed in to [DSM] successfully via [password].
+<12>Oct 12 22:41:02 nas01 Connection SYSTEM:	User [admin] from [198.51.100.7] failed to sign in to [DSM] via [password] due to authorization failure.
+<12>Oct 12 22:41:09 nas01 Connection SYSTEM:	User [administrator] from [198.51.100.7] failed to sign in to [DSM] via [password] due to authorization failure.
+<12>Oct 12 22:43:00 nas02 Connection SYSTEM:	User [backup] from [203.0.113.45] failed to log in via [DSM] due to authorization failure.
+<14>Oct 12 22:43:00 nas02 Connection SYSTEM:	User [backup] failed to log in from [203.0.113.45] via [DSM].
+<14>Oct 12 22:45:00 nas01 Connection alice:	CIFS client [alice] from [192.0.2.10(IP:192.0.2.10)] accessed the shared folder [finance].
+<14>Oct 12 22:46:00 nas01 System Test message from Synology Syslog Client from (192.0.2.5)
