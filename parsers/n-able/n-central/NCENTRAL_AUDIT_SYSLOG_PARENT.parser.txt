@@ -1,0 +1,32 @@
+!SAMPLE=<110>1 2026-10-12T22:40:11.726+11:00 - ncentraldms - login.singlesignon - [tech.akim@example.com] logged in from 198.51.100.23 logged in at 2026-10-12 22:40:11.726 using External IdP MSPSSO, user customer path is [System]
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=<\d{1,3}>1 \d{4}-\d{2}-\d{2}T\S+ \S+ ncentraldms \S+ \S+ \S+ \[[^\]]*\] logged in from \S+
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: N-able N-central Audit Export (Administration > Audit Export), RFC 5424 syslog over TCP
+# to the data collector, or through a relay that adds its own syslog header in front.
+# Parent: reads the RFC 5424 header and the audit message and hands each record to a child.
+#   Logins, logouts and failed logins go to Auth.
+#   Every other audit record (users, roles, templates, remote control, scripts) goes to CloudAudit.
+# N-able documents the line as: <PRI>1 <time> <host> ncentraldms <procid> <event> <sd> [<user>]
+# logged in from <address> <action> at <yyyy-mm-dd hh:mm:ss.mmm>[, or more text].
+
+h = originalData$|<(?P<pri>\d{1,3})>1 (?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})) (?P<host>\S+) ncentraldms (?P<procid>\S+) (?P<msgid>\S+) (?P<sd>-|\[[^\]]*\]) (?P<msg>.*?)\s*$
+msg = h["msg"]
+who = msg|^\[(?P<user>[^\]]*)\] logged in from (?P<ip>\S+) (?P<rest>.*)$
+act = msg|^\[[^\]]*\] logged in from \S+ (?P<action>.*) at (?P<at>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?)(?P<tail>.*)$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "N-able N-central"
+msgid = h["msgid"]
+user = who["user"]
+srcIp = who["ip"]
+action = IF act["action"] != "" THEN act["action"] ELSE who["rest"]
+eventTimeUsec$ = DATETIME(h["time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+lowAction = LOWERCASE(action)
+lowId = LOWERCASE(msgid)
+loginRecord = CONTAINS(lowId, "login") OR CONTAINS(lowId, "logout") OR CONTAINS(lowAction, "logged in") OR CONTAINS(lowAction, "logged out") OR CONTAINS(lowAction, "log in")
+eventType$ = IF loginRecord THEN "auth" ELSE "audit"

@@ -1,0 +1,216 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805211726000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "N-central External IdP MSPSSO",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "audit_event",
+            "value": "login.singlesignon"
+          },
+          {
+            "key": "action",
+            "value": "logged in"
+          },
+          {
+            "key": "customer_path",
+            "value": "System"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805262118000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.45",
+      "auth_system": "N-central login.failed",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "audit_event",
+            "value": "login.failed"
+          },
+          {
+            "key": "action",
+            "value": "failed to log in (3 failed attempts)"
+          },
+          {
+            "key": "customer_path",
+            "value": "System"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805395420000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditEvent",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "event_name": "user.create",
+      "event_source": "N-central",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "created user [support2@example.com] with role [Administrator] in Service Org [Example MSP]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805470912000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditEvent",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "event_name": "servicetemplate.create",
+      "event_source": "N-central",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "created Service Template [Workstations (Service_Organization Clone)] with services [Asigra Backup] in Service Org [Service_Organization]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805562551000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditEvent",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "event_name": "remotecontrol.start",
+      "event_source": "N-central",
+      "management_event": true,
+      "read_only": false,
+      "target_hostname": "ACME-WS-014",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "started a remote control session on device [ACME-WS-014] for customer [Acme Dental]"
+          },
+          {
+            "key": "customer",
+            "value": "Acme Dental"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "event_time_usec": 1791805660003000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditEvent",
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "event_name": "script.execute",
+      "event_source": "N-central",
+      "management_event": true,
+      "read_only": false,
+      "target_hostname": "ACME-WS-014",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "executed script [Add local admin] on device [ACME-WS-014] for customer [Acme Dental]"
+          },
+          {
+            "key": "customer",
+            "value": "Acme Dental"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NCENTRAL_AUDIT_SYSLOG_PARENT > NCENTRAL_AUDIT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "N-able N-central",
+      "sensor_id": "192.0.2.10",
+      "event_time_usec": 1791805706618000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "N-central logout",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "audit_event",
+            "value": "logout"
+          },
+          {
+            "key": "action",
+            "value": "logged out"
+          },
+          {
+            "key": "customer_path",
+            "value": "System"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
