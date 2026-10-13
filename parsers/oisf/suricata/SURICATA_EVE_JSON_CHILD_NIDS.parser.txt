@@ -30,7 +30,7 @@ blocked$ = IF json["$.alert.action"] == "blocked" THEN 1 ELSE 0
 # Emerging Threats rule names start with "ET " or "ETPRO ".
 signature = json["$.alert.signature"]
 etRule = signature|^(ET|ETPRO)\s
-countermeasureAuthor$ = IF etRule != NULL THEN "EMERGING_THREATS" ELSE NULL
+countermeasureAuthor$ = IF etRule[1] != "" THEN "EMERGING_THREATS" ELSE NULL
 
 # EVE direction says which way the packet that fired the rule was going.
 flowDirection = json["$.direction"]

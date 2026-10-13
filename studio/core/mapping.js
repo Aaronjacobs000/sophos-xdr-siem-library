@@ -115,7 +115,7 @@ const SCHEMA_HINTS = [
   ['scwx.email', /mail|smtp|message.?trace|phish|spam/i],
   ['scwx.cloudaudit', /cloudtrail|audit|api.?call|activity.?log/i],
   ['scwx.dhcp', /dhcp|lease/i],
-  ['scwx.thirdparty', /alert|incident|finding|case/i],
+  ['scwx.thirdpartyalert', /alert|incident|finding|case/i],
 ];
 
 // Value words -> enum member words. Members match when their words appear in the value.
@@ -287,7 +287,7 @@ const GENERAL_FIELDS = new Set(['hostId$', 'sensorEventId$', 'eventTimeUsec$', '
 // stay in the generic schema until someone picks a schema on purpose.
 export function pickSchema(keys, typeValue = '', { child = false, extraText = '' } = {}) {
   const best = suggestSchema(keys, typeValue, extraText)[0];
-  if (!best) return child ? GENERIC : 'scwx.thirdparty';
+  if (!best) return child ? GENERIC : 'scwx.thirdpartyalert';
   return child && best.score < 3 ? GENERIC : best.id;
 }
 
@@ -304,7 +304,7 @@ export function suggestSchema(keys, typeValue = '', extraText = '') {
     if (hint && typeValue && hint[1].test(String(typeValue))) score += 5;
     else if (hint && hint[1].test(text)) score += 2;
     // Third-party alerts fit almost anything, so only pick them on a clear hint.
-    else if (id === 'scwx.thirdparty') score -= 3;
+    else if (id === 'scwx.thirdpartyalert') score -= 3;
     scores.push({ id, score });
   }
   return scores.sort((a, b) => b.score - a.score);

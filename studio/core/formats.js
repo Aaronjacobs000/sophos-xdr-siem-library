@@ -32,14 +32,30 @@ export function splitSyslog(line) {
   return null;
 }
 
+// What the engine's root parser does before custom parsers run (checked in a lab tenant):
+// it strips a leading BSD header "Mmm dd hh:mm:ss host " (twice for a relayed line) and
+// nothing else. A <PRI> prefix, an RFC 5424 header or an ISO timestamp leaves the line whole.
+const BSD_ONLY = /^((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) {1,2}\d{1,2} \d{2}:\d{2}:\d{2}) (\S+) /;
+
+export function rootSplit(line) {
+  let m = BSD_ONLY.exec(line);
+  if (!m) return { message: line, host: null, time: null };
+  let rest = line.slice(m[0].length);
+  let time = m[1], host = m[2];
+  const inner = BSD_ONLY.exec(rest);
+  if (inner) { rest = rest.slice(inner[0].length); time = inner[1]; host = inner[2]; }
+  return { message: rest, host, time };
+}
+
 // ---------------------------------------------------------------- CEF
 
+// Splits on unescaped separators. The engine keeps the backslash in CEF and LEEF header fields.
 function splitUnescaped(s, sep, limit) {
   const out = [];
   let cur = '';
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
-    if (c === '\\' && i + 1 < s.length && (s[i + 1] === sep || s[i + 1] === '\\')) { cur += s[i + 1]; i++; continue; }
+    if (c === '\\' && i + 1 < s.length && (s[i + 1] === sep || s[i + 1] === '\\')) { cur += c + s[i + 1]; i++; continue; }
     if (c === sep && out.length < limit - 1) { out.push(cur); cur = ''; continue; }
     cur += c;
   }
@@ -85,11 +101,9 @@ export function parseCef(line) {
 
 // ---------------------------------------------------------------- LEEF
 
+// The engine takes the delimiter field literally: a hex form such as x5E is not decoded.
 function leefDelimiter(spec) {
   if (!spec) return '\t';
-  const hex = /^(?:0x|x)([0-9a-fA-F]{2,4})$/.exec(spec);
-  if (hex) return String.fromCharCode(parseInt(hex[1], 16));
-  if (spec === '\\t') return '\t';
   return spec;
 }
 

@@ -25,7 +25,8 @@ sourceAddress$ = m["client"]
 # query_type takes the DNS type number. dnsmasq logs the name, or type=<n> for types it can't name.
 qtype = m["type"]
 typeNumber = qtype|^type=(\d+)$
-queryType$ = IF typeNumber != NULL THEN INT(typeNumber[1], 10) ELSE NULL
+# A capture that matched nothing still exists; its groups read as "", so test the group.
+queryType$ = IF typeNumber[1] != "" THEN INT(typeNumber[1], 10) ELSE NULL
 queryType$ = IF qtype == "A" THEN 1 ELSE queryType$
 queryType$ = IF qtype == "NS" THEN 2 ELSE queryType$
 queryType$ = IF qtype == "CNAME" THEN 5 ELSE queryType$

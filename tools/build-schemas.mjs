@@ -35,7 +35,7 @@ const SCHEMAS = [
   ['NIDSSchema', 'NIDS', 'scwx.nids', true],
   ['ProcessSchema', 'Process', 'scwx.process', false],
   ['RegistrySchema', 'Registry', 'scwx.registry', false],
-  ['ThirdpartySchema', 'Thirdparty', 'scwx.thirdparty', false],
+  ['ThirdpartySchema', 'Thirdparty', 'scwx.thirdpartyalert', false],
 ];
 
 const args = process.argv.slice(2);
@@ -87,11 +87,15 @@ function fieldRow(row) {
   if (parser === 'repeated') { repeated = true; parser = ''; }
   // A few rows give a nested path such as os$.os$; the top-level parser field is the first part.
   if (parser.includes('.')) { subPath = parser; parser = parser.split('.')[0]; }
-  if (!parser || !parser.endsWith('$')) { parser = camel(name); derived = true; }
-  const f = { name, type, parser };
+  if (!parser || !parser.endsWith('$')) derived = true;
+  // The parser field is the camelCase of the normalized name plus $, as the docs describe. A
+  // handful of rows in the docs' parser-field column don't follow that rule (typos such as
+  // extraUserpricipalname$), and the engine uses the rule name, so the rule wins.
+  const rule = name.includes('.') ? parser : camel(name);
+  const f = { name, type, parser: rule };
   if (repeated) f.repeated = true;
-  // derived: the docs give no parser field for this row, so the name is our camelCase guess.
   if (derived) f.derived = true;
+  if (!derived && parser !== rule) f.docParser = parser;
   if (subPath) f.docPath = subPath;
   return f;
 }
@@ -101,6 +105,7 @@ function collect(html, into) {
     const cols = t.columns.map((c) => c.toLowerCase().replace(/\s+/g, ''));
     if (cols[0] === 'name' && cols[1] === 'number') {
       into.enums[t.heading] = t.rows.map((r) => r[0]);
+      into.enumNumbers[t.heading] = Object.fromEntries(t.rows.filter((r) => /^\d+$/.test(r[1])).map((r) => [r[1], r[0]]));
     } else if ((cols[0] === 'normalizedfield' || cols[0] === 'field') && cols[2] === 'parserfield') {
       // A page can split one heading's fields over two tables; keep them together.
       into.messages[t.heading] = [...(into.messages[t.heading] || []), ...t.rows.map(fieldRow)];
@@ -108,11 +113,11 @@ function collect(html, into) {
   }
 }
 
-const data = { generated: new Date().toISOString().slice(0, 10), sources: { sophos: SOPHOS, types: TYPES }, schemas: {}, types: { enums: {}, messages: {} } };
+const data = { generated: new Date().toISOString().slice(0, 10), sources: { sophos: SOPHOS, types: TYPES }, schemas: {}, types: { enums: {}, enumNumbers: {}, messages: {} } };
 
 for (const [slug, name, id, documented] of SCHEMAS) {
   const html = await load(`${SOPHOS}${slug}/`, `${slug}.html`);
-  const found = { enums: {}, messages: {} };
+  const found = { enums: {}, enumNumbers: {}, messages: {} };
   collect(html, found);
   const fields = found.messages['Schema fields'];
   if (!fields) throw new Error(`${slug}: no Schema fields table`);
@@ -130,13 +135,15 @@ for (const [slug, name, id, documented] of SCHEMAS) {
   delete found.messages['Schema summary'];
   data.schemas[id] = { name, page: `${SOPHOS}${slug}/`, documentedId: documented, fields };
   Object.assign(data.types.enums, found.enums);
+  Object.assign(data.types.enumNumbers, found.enumNumbers);
   Object.assign(data.types.messages, found.messages);
 }
 
 for (const [url, file] of [[TYPES, 'schema_types.html'], [OS, 'schema_os.html']]) {
-  const found = { enums: {}, messages: {} };
+  const found = { enums: {}, enumNumbers: {}, messages: {} };
   collect(await load(url, file), found);
   for (const [k, v] of Object.entries(found.enums)) if (!data.types.enums[k]) data.types.enums[k] = v;
+  for (const [k, v] of Object.entries(found.enumNumbers)) if (!data.types.enumNumbers[k]) data.types.enumNumbers[k] = v;
   for (const [k, v] of Object.entries(found.messages)) if (!data.types.messages[k]) data.types.messages[k] = v;
 }
 

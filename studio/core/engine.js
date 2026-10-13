@@ -13,7 +13,8 @@ import { parseScript, parseExpression, walk } from './language.js';
 import { FUNCTIONS, LAZY } from './functions.js';
 import { compileGo } from './goregex.js';
 import { query, isMultiPath } from './jsonpath.js';
-import { splitSyslog } from './formats.js';
+import { rootSplit } from './formats.js';
+import { goParse } from './gotime.js';
 import { normalize } from './normalize.js';
 import { GENERIC, schemaInfo } from './schemas.js';
 
@@ -30,8 +31,12 @@ class Ctx {
   note(level, code, message) {
     this.sink.push({ level, code, message, parser: this.parser, line: this.line });
   }
+  // Reading a variable that was never assigned fails the event in the engine (checked in a
+  // lab tenant). A variable assigned NULL is fine.
   get(name) {
-    return this.vars.has(name) ? this.vars.get(name) : null;
+    if (this.vars.has(name)) return this.vars.get(name);
+    if (this.lenient) return null;
+    throw new RuntimeError(`variable ${name} is not set`, 'unset-var');
   }
   set(target, value) {
     const parts = target.split('.');
@@ -52,6 +57,7 @@ class Ctx {
 function index(base, idx) {
   if (base === null || base === undefined) return null;
   if (base instanceof MatchValue) {
+    if (base.nomatch) return '';
     if (typeof idx === 'number') {
       if (idx < 0 || idx >= base.groups.length) throw new RuntimeError(`regex group ${idx} is out of range (the pattern has ${base.groups.length - 1} groups)`, 'group-range');
       return base.groups[idx] ?? '';
@@ -60,6 +66,11 @@ function index(base, idx) {
     return base.named[idx] ?? '';
   }
   if (base instanceof JsonValue) {
+    // j["key"] without "$." is a plain key lookup (checked in a lab tenant).
+    if (typeof idx === 'string' && !idx.trimStart().startsWith('$')) {
+      const o = base.value;
+      return o && typeof o === 'object' && !Array.isArray(o) && hasOwn(o, idx) ? wrapJson(o[idx]) : null;
+    }
     if (typeof idx === 'string') {
       const r = query(base.value, idx);
       if (r === null) return null;
@@ -90,13 +101,34 @@ function compare(op, a, b) {
 }
 const cmp = (op, a, b) => (op === '<' ? a < b : op === '>' ? a > b : op === '<=' ? a <= b : a >= b);
 
+function noRegex(v) {
+  if (v instanceof MatchValue) throw new RuntimeError('cannot convert regex to string; index the capture, for example m[1]', 'regex-compare');
+  return v;
+}
+
+// int64 arithmetic: a time value counts as its microseconds, and results wrap like Go's int64
+// (checked in a lab tenant: d * 1000000 overflows).
+function int64(n) {
+  if (!Number.isInteger(n) || Number.isSafeInteger(n)) return n;
+  return Number(BigInt.asIntN(64, BigInt(Math.trunc(n))));
+}
+function mulInt(a, b) {
+  if (Number.isInteger(a) && Number.isInteger(b)) {
+    const r = a * b;
+    return Number.isSafeInteger(r) ? r : Number(BigInt.asIntN(64, BigInt(a) * BigInt(b)));
+  }
+  return a * b;
+}
+
 function plus(a, b) {
+  noRegex(a); noRegex(b);
   if (a === null || a === undefined) return b ?? null;
   if (b === null || b === undefined) return a;
   if (isList(a)) return [...a, ...(isList(b) ? b : [b])];
   if (isList(b)) return [a, ...b];
-  if (a instanceof TimeValue && typeof b === 'number') return new TimeValue(a.usec + b, a.offset, a.zone);
-  if (typeof a === 'number' && typeof b === 'number') return a + b;
+  if (a instanceof TimeValue && typeof b === 'number') return int64(a.usec + b);
+  if (typeof a === 'number' && b instanceof TimeValue) return int64(a + b.usec);
+  if (typeof a === 'number' && typeof b === 'number') return int64(a + b);
   return toStr(a) + toStr(b);
 }
 
@@ -116,6 +148,9 @@ export function evaluate(ctx, e) {
     case 'if': return truthy(evaluate(ctx, e.c)) ? evaluate(ctx, e.a) : evaluate(ctx, e.b);
     case 'neg': return -num(evaluate(ctx, e.e), '-');
     case 'member': {
+      // x.field$ on a record that was never assigned reads as NULL, so the docs' append
+      // pattern eventMetadata$.record$ = eventMetadata$.record$ + [r] starts from nothing.
+      if (e.e.t === 'var' && !ctx.vars.has(e.e.name)) return null;
       const base = evaluate(ctx, e.e);
       return base instanceof RecordValue ? (base.fields.has(e.name) ? base.fields.get(e.name) : null) : null;
     }
@@ -138,12 +173,12 @@ export function evaluate(ctx, e) {
       const a = evaluate(ctx, e.l);
       const b = evaluate(ctx, e.r);
       switch (e.op) {
-        case '==': return looseEqual(a, b);
-        case '!=': return !looseEqual(a, b);
+        case '==': return looseEqual(noRegex(a), noRegex(b));
+        case '!=': return !looseEqual(noRegex(a), noRegex(b));
         case '<': case '>': case '<=': case '>=': return compare(e.op, a, b);
         case '+': return plus(a, b);
-        case '-': return num(a, '-') - num(b, '-');
-        case '*': return num(a, '*') * num(b, '*');
+        case '-': return int64(num(a, '-') - num(b, '-'));
+        case '*': return mulInt(num(a, '*'), num(b, '*'));
         case '/': { const d = num(b, '/'); if (d === 0) throw new RuntimeError('division by zero'); const r = num(a, '/') / d; return Number.isInteger(num(a, '/')) && Number.isInteger(d) ? Math.trunc(r) : r; }
         case '%': return num(a, '%') % num(b, '%');
         default: throw new RuntimeError(`unknown operator ${e.op}`);
@@ -208,14 +243,31 @@ function runStatementsInner(p, ctx, byName, depth) {
     }
     if (st.kind === 'capture') {
       const src = ctx.get(st.source);
-      const re = compileGo(st.pattern);
-      const m = src === null ? null : re.exec(toStr(src));
-      if (!m) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.source}, so ${st.target} is NULL`);
-      ctx.vars.set(st.target, m ? new MatchValue([...m].map((x) => (x === undefined ? '' : x)), { ...(m.groups || {}) }) : null);
+      ctx.vars.set(st.target, capture(st.pattern, src === null ? '' : toStr(src)));
+      if (ctx.vars.get(st.target).nomatch) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.source}, so ${st.target}[n] gives ""`);
       continue;
     }
     ctx.set(st.target, evaluate(ctx, st.expr));
   }
+}
+
+// The engine keeps every match of a capture pattern (checked in a lab tenant).
+function capture(pattern, text) {
+  const re = compileGo(pattern, 'g');
+  re.lastIndex = 0;
+  const all = [];
+  let m;
+  while ((m = re.exec(text))) {
+    all.push(m);
+    if (m[0] === '') re.lastIndex++;
+    if (all.length > 10000) break;
+  }
+  if (!all.length) return new MatchValue([], {}, 0);
+  const fix = (x) => (x === undefined ? '' : x);
+  if (all.length === 1) return new MatchValue([...all[0]].map(fix), Object.fromEntries(Object.entries(all[0].groups || {}).map(([k, v]) => [k, fix(v)])), 1);
+  const groups = all[0].map((_, i) => all.map((x) => fix(x[i])));
+  const named = Object.fromEntries(Object.keys(all[0].groups || {}).map((k) => [k, all.map((x) => fix(x.groups[k]))]));
+  return new MatchValue(groups, named, all.length);
 }
 
 // Variables a child's confirm string reads from its parent, so the lint can tell carrier
@@ -247,8 +299,7 @@ export function runParsers(parsers, samples, opts = {}) {
 
   return samples.map((sample, n) => {
     const notes = [];
-    const header = splitSyslog(sample);
-    const root = new Ctx([['originalData$', sample], ['message', header ? header.body : sample]], { now }, notes);
+    const root = new Ctx(rootVars(sample, now), { now }, notes);
     const result = { line: n + 1, sample, extractor_path: null, schema: GENERIC, normalized: null, notes };
     let matched;
     try {
@@ -289,26 +340,34 @@ export function runParsers(parsers, samples, opts = {}) {
       const parentP = path.length > 1 ? byName.get(path[0]) : null;
       const schema = current.schema || (parentP && parentP.schema) || GENERIC;
       result.schema = schema;
-      if (!schemaInfo(schema)) {
-        result.error = `!SCHEMA=${schema} is not a schema custom parsers can use`;
+      // !SCHEMA can list several schemas; the engine then stores one event in each.
+      const schemas = schemaList(schema);
+      const bad = schemas.filter((x) => !schemaInfo(x));
+      if (bad.length) {
+        result.error = `!SCHEMA=${bad.join(',')} is not a schema custom parsers can use`;
         return result;
       }
-      if (schema === GENERIC) {
+      const real = schemas.filter((x) => x !== GENERIC);
+      if (!real.length) {
         result.result = path.length === 1 && (childrenOf.get(path[0]) || []).length
           ? 'The parent matched but no child did. The line stays in the generic schema only.'
           : 'This parser targets the generic schema.';
         return result;
       }
       const flags = current.flags;
-      const norm = normalize(ctx.vars, schema, {
+      const opts2 = {
         sanitize: !flags.has('SANITIZEALLOFF') || Boolean(ctx.flagsNow && ctx.flagsNow.sanitize),
         trim: !flags.has('TRIMALLOFF') || Boolean(ctx.flagsNow && ctx.flagsNow.trim),
         carriers,
         parser: current.name,
-      });
-      result.normalized = norm.record;
-      notes.push(...norm.notes);
-      if (!Object.keys(norm.record).length) notes.push({ level: 'warning', code: 'empty-record', parser: current.name, message: `${current.name} matched this line but set no ${schemaInfo(schema).name} fields` });
+      };
+      const records = real.map((sid) => ({ schema: sid, ...normalize(ctx.vars, sid, opts2) }));
+      result.normalized = records[0].record;
+      if (records.length > 1) result.also = records.slice(1).map((r) => ({ schema: r.schema, normalized: r.record }));
+      for (const r of records) {
+        notes.push(...r.notes);
+        if (!Object.keys(r.record).some((k) => !ROOT_FIELDS.has(k))) notes.push({ level: 'warning', code: 'empty-record', parser: current.name, message: `${current.name} matched this line but set no ${schemaInfo(r.schema).name} fields of its own` });
+      }
     } catch (e) {
       if (e instanceof ParseErrorSignal) {
         result.error = e.message;
@@ -332,8 +391,28 @@ export function runParsers(parsers, samples, opts = {}) {
 // The comparable part of a result, as stored in a library entry's expected.json.
 export function expectedShape(r) {
   const out = { line: r.line, extractor_path: r.extractor_path, schema: r.schema, normalized: r.normalized };
+  if (r.also) out.also = r.also;
   if (r.error) out.error = true;
   return out;
+}
+
+export function schemaList(schema) {
+  return String(schema || GENERIC).split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+// Fields the engine's root parser fills before any custom parser runs.
+export const ROOT_FIELDS = new Set(['sensor_type', 'sensor_id', 'event_time_usec', 'event_time_fidelity']);
+
+// What the engine's root parser sets before custom parsers run (checked in a lab tenant):
+// sensorType$ "Generic", sensorId$ the syslog host, eventTimeUsec$ the syslog time in UTC and
+// the current year, eventTimeFidelity$ "MICRO", and message, the line after the BSD header.
+export function rootVars(sample, now) {
+  const rs = rootSplit(sample);
+  let time = null;
+  if (rs.time) {
+    try { time = goParse('Jan _2 15:04:05', rs.time, { handle2DigitYear: true, now }); } catch { time = null; }
+  }
+  return [['originalData$', sample], ['message', rs.message], ['sensorType$', 'Generic'], ['sensorId$', rs.host], ['eventTimeUsec$', time], ['eventTimeFidelity$', 'MICRO']];
 }
 
 // Run one script's statements with some starting variables and return every variable.

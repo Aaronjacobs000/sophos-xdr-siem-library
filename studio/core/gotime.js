@@ -250,10 +250,13 @@ export function goParse(layout, value, opts = {}) {
 
 // DATETIME(data) with no layout: try the common shapes. INFERRED: the docs call the layout
 // optional but don't say what the engine tries without one.
+// Checked in a lab tenant: RFC 3339 with Z, +01:00 or +0100, "2006-01-02 15:04:05",
+// "01/02/2006 15:04:05", "Jan 02 2006 15:04:05", RFC 1123 and epoch seconds or milliseconds
+// parse; a value with no year ("Sep 14 22:59:23") gets year 0.
 const FALLBACK = [
-  '2006-01-02T15:04:05.999999999Z07:00', '2006-01-02T15:04:05Z07:00', '2006-01-02T15:04:05.999999999',
-  '2006-01-02T15:04:05', '2006-01-02 15:04:05.999999999Z07:00', '2006-01-02 15:04:05Z07:00', '2006-01-02 15:04:05',
-  'Mon, 02 Jan 2006 15:04:05 -0700', 'Mon, 02 Jan 2006 15:04:05 MST', 'Jan _2 2006 15:04:05', 'Jan _2 15:04:05',
+  '2006-01-02T15:04:05Z07:00', '2006-01-02T15:04:05Z0700', '2006-01-02T15:04:05', '2006-01-02 15:04:05Z07:00',
+  '2006-01-02 15:04:05', '01/02/2006 15:04:05', 'Mon, 02 Jan 2006 15:04:05 -0700', 'Mon, 02 Jan 2006 15:04:05 MST',
+  'Jan _2 2006 15:04:05', 'Jan _2 15:04:05',
 ];
 
 export function goParseAuto(value, opts = {}) {
@@ -262,7 +265,7 @@ export function goParseAuto(value, opts = {}) {
   if (/^\d{13}$/.test(s)) return new TimeValue(Number(s) * 1000);
   if (/^\d{16}$/.test(s)) return new TimeValue(Number(s));
   for (const layout of FALLBACK) {
-    try { return goParse(layout, s, { ...opts, handle2DigitYear: true }); } catch { /* next */ }
+    try { return goParse(layout, s, { ...opts, handle2DigitYear: false }); } catch { /* next */ }
   }
   throw new RuntimeError(`DATETIME could not read "${s}" without a layout; give it a Go layout`, 'datetime');
 }

@@ -141,6 +141,14 @@ export function resultDetail(r) {
     box.append(h('p', { class: 'sub', text: r.result || '' }));
     if (r.error) box.append(h('div', { class: 'dotline' }, h('span', { class: 'dot red' }), h('span', { class: 'mono', text: r.error })));
   }
+  for (const extra of r.also || []) {
+    box.append(h('h3', { text: `Also stored in ${extra.schema}` }));
+    const t2 = h('table', { class: 'rec' });
+    const tb2 = h('tbody');
+    for (const [k, v] of recordRows(extra.normalized)) tb2.append(h('tr', {}, h('td', { text: k }), h('td', { text: v })));
+    t2.append(tb2);
+    box.append(t2);
+  }
   const notes = (r.notes || []).filter((n) => n.level !== 'info' || n.code === 'sanitized');
   if (notes.length) {
     const list = h('div', { class: 'problems' });

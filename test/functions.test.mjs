@@ -54,7 +54,8 @@ test('CEF header by number and extensions by name, with csNLabel', () => {
   assert.equal(v.get('o3'), 'IPS');
   const esc = run('v = CEF(l)\nmsg = v["msg"]\nname = v[5]', { l: 'CEF:0|Acme|FW|1.0|100|Pipe \\| in name|5|msg=a\\=b c suser=x' });
   assert.equal(esc.get('msg'), 'a=b c');
-  assert.equal(esc.get('name'), 'Pipe | in name');
+  // The engine keeps the backslash in header fields and unescapes extension values.
+  assert.equal(esc.get('name'), 'Pipe \\| in name');
 });
 
 test('LEEF 1.0 and 2.0', () => {
@@ -84,7 +85,8 @@ test('DATETIME with Go layouts', () => {
   assert.equal(new Date(yearZero.usec / 1000).getUTCFullYear(), 0);
   const pm = run('out = DATETIME("10/07/2026 03:04:05 PM", "01/02/2006 03:04:05 PM")').get('out');
   assert.equal(pm.usec, Date.UTC(2026, 9, 7, 15, 4, 5) * 1000);
-  assert.throws(() => run('out = DATETIME("not a date", "2006-01-02")'), /DATETIME could not read/);
+  // A value DATETIME can't read gives NULL, as in the engine.
+  assert.equal(run('out = DATETIME("not a date", "2006-01-02")').get('out'), null);
 });
 
 test('IP functions', () => {
@@ -129,7 +131,7 @@ test('URL_PARSE, IDX_OF_TLD, BASE64_DECODE, INT, STRING', () => {
   assert.equal(v.get('ns'), 'http');
   assert.equal(v.get('np'), '/foo/bar/baz.html');
   const w = run('a = IDX_OF_TLD("aaa http://example.com")\nb = IDX_OF_TLD("http://example.com")\nc = IDX_OF_TLD("")\nd = BASE64_DECODE("aG1lZXBcISBobWVlcFwh")\ne = INT("4e0", 16)\nf = STRING(NULL)\ng = STRING(SPLIT("a,b", ","))\nh = INT("42", 10) + 1');
-  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => w.get(k)), [0, 0, -1, 'hmeep\\! hmeep\\!', 1248, '', '["a","b"]', 43]);
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => w.get(k)), [0, 0, -1, 'hmeep\\! hmeep\\!', 1248, '', '"a","b"', 43]);
   assert.throws(() => run('x = INT("abc", 10)'), /INT could not read/);
 });
 
@@ -153,7 +155,7 @@ test('capture statements, numbered and named groups', () => {
   assert.equal(v.get('msg'), 'disk almost full');
   assert.throws(() => run('m = s|(a)(b)\nx = m[3]', { s: 'ab' }), /out of range/);
   assert.throws(() => run('m = s|(?P<x>a)\nx = m["y"]', { s: 'a' }), /not in the pattern/);
-  assert.equal(run('m = s|zzz\nx = m[1]', { s: 'ab' }).get('x'), null);
+  assert.equal(run('m = s|zzz\nx = m[1]', { s: 'ab' }).get('x'), '');
 });
 
 test('IF, AND, OR, comparisons, lists and records', () => {

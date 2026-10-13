@@ -204,7 +204,8 @@ export default {
     {
      "name": "resource_id",
      "type": "string",
-     "parser": "resoureId$"
+     "parser": "resourceId$",
+     "docParser": "resoureId$"
     },
     {
      "name": "tenant_id",
@@ -259,7 +260,8 @@ export default {
     {
      "name": "ingest_time_usec",
      "type": "uint64",
-     "parser": "IngestTimeUsec$"
+     "parser": "ingestTimeUsec$",
+     "docParser": "IngestTimeUsec$"
     },
     {
      "name": "event_time_fidelity",
@@ -284,7 +286,8 @@ export default {
     {
      "name": "process_create_time_usec",
      "type": "uint64",
-     "parser": "parentCreateTimeUsec$"
+     "parser": "processCreateTimeUsec$",
+     "docParser": "parentCreateTimeUsec$"
     },
     {
      "name": "process_correlation_id",
@@ -434,7 +437,8 @@ export default {
     {
      "name": "process_file_hash",
      "type": "FileHash",
-     "parser": "fileHash$"
+     "parser": "processFileHash$",
+     "docParser": "fileHash$"
     },
     {
      "name": "commandline",
@@ -661,7 +665,8 @@ export default {
     {
      "name": "extra_homedirectory",
      "type": "string",
-     "parser": "extraHomedirector$"
+     "parser": "extraHomedirectory$",
+     "docParser": "extraHomedirector$"
     },
     {
      "name": "extra_impersonationlevel",
@@ -711,12 +716,14 @@ export default {
     {
      "name": "extra_userprincipalname",
      "type": "string",
-     "parser": "extraUserpricipalname$"
+     "parser": "extraUserprincipalname$",
+     "docParser": "extraUserpricipalname$"
     },
     {
      "name": "extra_virtualaccount",
      "type": "string",
-     "parser": "extraVirtualAccount$"
+     "parser": "extraVirtualaccount$",
+     "docParser": "extraVirtualAccount$"
     },
     {
      "name": "extra_workstationname",
@@ -1537,7 +1544,8 @@ export default {
     {
      "name": "issuer_order",
      "type": "string",
-     "parser": "issueOrder$"
+     "parser": "issuerOrder$",
+     "docParser": "issueOrder$"
     },
     {
      "name": "subject_common_name",
@@ -2333,7 +2341,8 @@ export default {
     {
      "name": "created_process_id",
      "type": "uint64",
-     "parser": "creaetedProcessId$"
+     "parser": "createdProcessId$",
+     "docParser": "creaetedProcessId$"
     }
    ]
   },
@@ -2549,7 +2558,8 @@ export default {
     {
      "name": "processCorrelationID",
      "type": "ProcessCorrelationID",
-     "parser": "processCorrelationId$"
+     "parser": "processCorrelationID$",
+     "docParser": "processCorrelationId$"
     },
     {
      "name": "process_image_path",
@@ -2801,7 +2811,8 @@ export default {
     {
      "name": "pcap",
      "type": "bytes",
-     "parser": "bytes$"
+     "parser": "pcap$",
+     "docParser": "bytes$"
     },
     {
      "name": "pcapref",
@@ -3007,7 +3018,8 @@ export default {
     {
      "name": "program_hash",
      "type": "Process.Hash",
-     "parser": "processHash$"
+     "parser": "programHash$",
+     "docParser": "processHash$"
     },
     {
      "name": "user_is_admin",
@@ -3208,7 +3220,7 @@ export default {
     }
    ]
   },
-  "scwx.thirdparty": {
+  "scwx.thirdpartyalert": {
    "name": "Thirdparty",
    "page": "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
    "documentedId": false,
@@ -3899,6 +3911,324 @@ export default {
     "OS_ANDROID",
     "OS_IPAD"
    ]
+  },
+  "enumNumbers": {
+   "Antivirus.ActionTaken": {
+    "0": "UNKNOWN_ACTIONTAKEN",
+    "1": "QUARANTINED",
+    "2": "ALERT",
+    "3": "DELETED",
+    "4": "BLOCKED",
+    "5": "TERMINATED",
+    "6": "NONE",
+    "7": "RESTORED"
+   },
+   "Antivirus.ThreatCategory": {
+    "0": "UNKNOWN_THREATCATEGORY",
+    "1": "APPLICATION",
+    "2": "TROJAN",
+    "3": "VIRUS",
+    "4": "MALWARE",
+    "5": "MINER",
+    "6": "TORRENT",
+    "7": "RANSOMWARE",
+    "8": "GENERIC",
+    "9": "BACKDOOR",
+    "10": "AI_DETECTION",
+    "11": "EXPLOIT"
+   },
+   "Antivirus.ThreatType": {
+    "0": "UNKNOWN_THREATTYPE",
+    "1": "PROCESS",
+    "2": "FILE",
+    "3": "MEMORY",
+    "4": "SCAN"
+   },
+   "Auth.Action": {
+    "0": "UNCLASSIFIED",
+    "1": "LOGON",
+    "2": "ACCOUNT",
+    "3": "PRIVILEGE",
+    "4": "POLICY",
+    "5": "SYSTEM",
+    "6": "LOG",
+    "7": "LOGOFF",
+    "8": "FAILURE",
+    "9": "USER_MANAGEMENT"
+   },
+   "Auth.AuthCategory": {
+    "0": "UNKNOWN_AUTH_CATEGORY",
+    "10": "ACCOUNT_LOGON",
+    "20": "ACCOUNT_LOGOFF",
+    "30": "ACCOUNT_LOCK",
+    "40": "ACCOUNT_UNLOCK",
+    "50": "PASSWORD_CHANGE_ATTEMPT",
+    "60": "PASSWORD_RESET_ATTEMPT",
+    "70": "PRE_AUTHENTICATION"
+   },
+   "Auth.ActionResult": {
+    "0": "UNKNOWN_ACTION_RESULT",
+    "10": "SUCCESS",
+    "20": "FAILED"
+   },
+   "Auth.FailureCategory": {
+    "0": "UNKNOWN_FAILURE_CATEGORY",
+    "10": "INCORRECT_USER_OR_PASSWORD",
+    "20": "EXPIRED_PASSWORD",
+    "30": "INVALID_ACCOUNT",
+    "40": "INCORRECT_MFA",
+    "50": "OUTSIDE_PERMISSIBLE_HOURS",
+    "60": "OVERDUE_PASSWORD_CHANGE",
+    "70": "ACCOUNT_LOCKED_OUT",
+    "80": "ACCOUNT_DISABLED",
+    "90": "OTHER_ERROR"
+   },
+   "Auth.TrustFeatures": {
+    "0": "UNKNOWN_TRUSTED_FEATURES",
+    "10": "MFA_USED",
+    "20": "TRUSTED_IP_ADDRESS",
+    "30": "OTHER_TRUSTED_ACCOUNT"
+   },
+   "Auth.EncryptionType": {
+    "0": "ENCRYPTION_UNKNOWN",
+    "1": "DES_CBC_CRC",
+    "2": "DES_CBC_MD4",
+    "3": "DES_CBC_MD5",
+    "4": "DES3_CBC_MD5",
+    "5": "DES3_CBC_SHA1",
+    "6": "DSA_WITH_SHA1_CMSOID",
+    "7": "MD5_WITH_RSA_ENCRYPTION_CMSOID",
+    "8": "SHA1_WITH_RSA_ENCRYPTION_CMSOID",
+    "9": "RC2CBC_ENVOID",
+    "10": "RSA_ENCRYPTION_ENVOID",
+    "11": "RSA_ES_OAEP_ENV_OID",
+    "12": "DES_EDE3_CBC_ENV_OID",
+    "13": "DES3_CBC_SHA1_KD",
+    "14": "AES128_CTS_HMAC_SHA1_96",
+    "15": "AES256_CTS_HMAC_SHA1_96",
+    "16": "RC4_HMAC",
+    "17": "RC4_HMAC_EXP",
+    "18": "SUBKEY_KEYMATERIAL"
+   },
+   "Auth.LogonType": {
+    "0": "SYSTEMONLY",
+    "1": "UNKNOWN",
+    "2": "INTERACTIVE",
+    "3": "NETWORK",
+    "4": "BATCH",
+    "5": "SERVICE",
+    "6": "PROXY",
+    "7": "UNLOCK",
+    "8": "NETWORKCLEARTEXT",
+    "9": "NEWCREDENTIALS",
+    "10": "REMOTEINTERACTIVE",
+    "11": "CACHEDINTERACTIVE",
+    "12": "CACHEDREMOTEINTERACTIVE",
+    "13": "CACHEDUNLOCKED"
+   },
+   "Dhcp.DHCP_Action": {
+    "0": "UNKNOWN",
+    "1": "DISCOVER",
+    "2": "OFFER",
+    "3": "REQUEST",
+    "4": "INFORM",
+    "5": "ACK",
+    "6": "NACK",
+    "7": "DECLINE",
+    "8": "RELEASE",
+    "9": "LEASE"
+   },
+   "Email.Direction": {
+    "0": "UNKNOWN",
+    "1": "INBOUND",
+    "2": "OUTBOUND",
+    "3": "INTERNAL"
+   },
+   "Email.Status": {
+    "0": "UNKNOWN_STATUS",
+    "1": "DELIVERED",
+    "2": "QUARANTINED",
+    "3": "BLOCKED"
+   },
+   "Encrypt.Protocol": {
+    "0": "UNKNOWN_PROTOCOL",
+    "1": "TLS",
+    "2": "SSL",
+    "3": "SSH"
+   },
+   "Encrypt.TlsVersion": {
+    "0": "TLS_UNKNOWN",
+    "1": "TLS_10",
+    "2": "TLS_11",
+    "3": "TLS_12",
+    "4": "TLS_13"
+   },
+   "Http.Direction": {
+    "0": "UNKNOWN",
+    "1": "INBOUND",
+    "2": "OUTBOUND"
+   },
+   "Http.actions": {
+    "0": "HTTP_UNKNOWN",
+    "1": "HTTP_BLOCKED",
+    "2": "HTTP_ALLOWED"
+   },
+   "ManagementEvent.ManagementInterface": {
+    "0": "UNKNOWN",
+    "1": "WMI",
+    "2": "SUDO"
+   },
+   "Netflow.Direction": {
+    "0": "UNKNOWN",
+    "1": "INBOUND",
+    "2": "OUTBOUND",
+    "3": "CLIENT_TO_SERVER",
+    "4": "SERVER_TO_CLIENT"
+   },
+   "Netflow.fw_action": {
+    "0": "FW_UNKNOWN",
+    "1": "FW_BLOCKED",
+    "2": "FW_ALLOWED",
+    "3": "FW_RESET_CLIENT_TO_SERVER",
+    "4": "FW_RESET_SERVER_TO_CLIENT",
+    "5": "FW_RESET_BOTH",
+    "6": "FW_ICMP_CLIENT"
+   },
+   "Nids.Direction": {
+    "0": "UNKNOWN",
+    "1": "INBOUND",
+    "2": "OUTBOUND",
+    "3": "CLIENT_TO_SERVER",
+    "4": "SERVER_TO_CLIENT"
+   },
+   "Nids.author": {
+    "0": "DEFAULT_ORIGIN",
+    "1": "VENDOR_OF_SENSOR",
+    "2": "SCWX_CTU",
+    "3": "EMERGING_THREATS"
+   },
+   "Process.FileInfo.FileType": {
+    "0": "UNKNOWN",
+    "1": "REG",
+    "2": "DIR",
+    "3": "LINK",
+    "101": "WIN_FILE_TYPE_DISK",
+    "102": "WIN_FILE_TYPE_CHAR",
+    "103": "WIN_FILE_TYPE_PIPE"
+   },
+   "Process.Hidden": {
+    "0": "NOT_HIDDEN",
+    "1": "THREAD_PARENT_MISSING"
+   },
+   "Registry.RegistryValue.ValueType": {
+    "0": "REG_NONE",
+    "1": "REG_SZ",
+    "2": "REG_EXPAND_SZ",
+    "3": "REG_BINARY",
+    "4": "REG_DWORD",
+    "7": "REG_MULTI_SZ",
+    "11": "REG_QWORD",
+    "12": "REG_DWORD_LITTLE_ENDIAN",
+    "13": "REG_DWORD_BIG_ENDIAN",
+    "14": "REG_LINK",
+    "15": "REG_QWORD_LITTLE_ENDIAN"
+   },
+   "Thirdparty.Action": {
+    "0": "ACTION_UNKNOWN",
+    "1": "ATTEMPTED",
+    "2": "SUCCEEDED",
+    "3": "BLOCKED",
+    "4": "FAILED"
+   },
+   "Thirdparty.AlertSeverity": {
+    "0": "UNKNOWN_SEVERITY",
+    "1": "INFO",
+    "2": "LOW",
+    "3": "MEDIUM",
+    "4": "HIGH",
+    "5": "CRITICAL"
+   },
+   "Thirdparty.Direction": {
+    "0": "UNKNOWN",
+    "1": "INBOUND",
+    "2": "OUTBOUND"
+   },
+   "EntityOptions.Direction": {
+    "0": "NON_DETERMINISTIC",
+    "1": "SOURCE",
+    "2": "SINK"
+   },
+   "IdentityType": {
+    "0": "UNKNOWN_IDENTITY_TYPE",
+    "10": "USER",
+    "20": "ROLE",
+    "30": "ADMIN",
+    "40": "SERVICE_ACCOUNT",
+    "50": "GUEST",
+    "60": "SYSTEM"
+   },
+   "NullableBoolean": {
+    "0": "UNSET",
+    "10": "TRUE",
+    "20": "FALSE"
+   },
+   "SearchOptions.LogicalType": {
+    "0": "UNKNOWN",
+    "1": "TIMESTAMP_MILLIS",
+    "2": "TIMESTAMP_MICROS",
+    "3": "UUID",
+    "4": "IP",
+    "5": "DOMAIN",
+    "6": "HOSTNAME",
+    "7": "USERNAME",
+    "8": "PORT",
+    "9": "LATITUDE",
+    "10": "LONGITUDE",
+    "11": "MAC_ADDRESS",
+    "12": "PROGRAM_HASH",
+    "13": "FILE_PATH",
+    "14": "URL",
+    "15": "COMMAND_LINE",
+    "16": "SENSOR_ID"
+   },
+   "SearchOptions.TokenizationType": {
+    "0": "NONE",
+    "1": "WHITESPACE",
+    "2": "DEFAULT"
+   },
+   "TimeFidelity": {
+    "0": "UNDEFINED",
+    "1": "SECOND",
+    "2": "MILLI",
+    "3": "MICRO",
+    "4": "NANO"
+   },
+   "Visibility": {
+    "0": "UNKNOWN",
+    "1": "PUBLIC",
+    "2": "PRIVATE",
+    "3": "SHARED"
+   },
+   "OperatingSystem.Arch": {
+    "0": "ARCH_UNKNOWN",
+    "1": "ARCH_x86",
+    "2": "ARCH_x64",
+    "3": "ARCH_ARM64"
+   },
+   "OperatingSystem.MetaOS": {
+    "0": "METAOS_NONE",
+    "1": "METAOS_POSIX",
+    "2": "METAOS_WINDOWS"
+   },
+   "OperatingSystem.OS": {
+    "0": "OS_UNKNOWN",
+    "1": "OS_MAC",
+    "2": "OS_LINUX",
+    "3": "OS_WINDOWS",
+    "4": "OS_IPHONE",
+    "5": "OS_ANDROID",
+    "6": "OS_IPAD"
+   }
   },
   "messages": {
    "CloudAudit.CloudResource": [

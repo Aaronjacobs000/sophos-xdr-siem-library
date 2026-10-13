@@ -5,7 +5,9 @@
     "schema": "scwx.nids",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411221532140,
+      "event_time_fidelity": "MICRO",
       "source_address": "203.0.113.45",
       "source_port": 35361,
       "destination_address": "192.0.2.37",
@@ -42,7 +44,9 @@
     "schema": "scwx.nids",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411302118604,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.50",
       "source_port": 51544,
       "destination_address": "198.51.100.200",
@@ -78,7 +82,9 @@
     "schema": "scwx.dnsquery",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411370004512,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.50",
       "destination_address": "192.0.2.53",
       "query_name": "update.example.com",
@@ -91,7 +97,9 @@
     "schema": "scwx.dnsquery",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411371207731,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.53",
       "destination_address": "192.0.2.50",
       "query_name": "qx7v2kd9a.example.net",
@@ -105,7 +113,9 @@
     "schema": "scwx.netflow",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411253752399,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.37",
       "source_port": 49175,
       "destination_address": "203.0.113.45",
@@ -140,7 +150,9 @@
     "schema": "scwx.netflow",
     "normalized": {
       "sensor_type": "Suricata",
+      "sensor_id": "ids01",
       "event_time_usec": 1791411509882015,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.50",
       "source_port": 51544,
       "destination_address": "198.51.100.200",

@@ -60,11 +60,13 @@ function objectEntries(v) {
   return null;
 }
 
+// INT() is strict, like Go's strconv.ParseInt: "1 " with a trailing space is an error that
+// fails the event (checked in a lab tenant).
 function parseIntGo(s, base) {
   if (typeof s === 'number') return Math.trunc(s);
   if (s === null || s === undefined) return null;
   const b = Number(base ?? 10);
-  let t = String(s).trim();
+  let t = String(s);
   let neg = false;
   if (t.startsWith('-') || t.startsWith('+')) { neg = t[0] === '-'; t = t.slice(1); }
   const digits = '0123456789abcdefghijklmnopqrstuvwxyz'.slice(0, b);
@@ -73,17 +75,41 @@ function parseIntGo(s, base) {
   return neg ? -n : n;
 }
 
+// FLATTEN sorts keys and keeps string leaves only; numbers, booleans and nulls are dropped
+// (checked in a lab tenant).
 function flatten(v, keyLabel, valueLabel) {
   const kf = (keyLabel ?? 'key').endsWith('$') ? keyLabel ?? 'key' : `${keyLabel ?? 'key'}$`;
   const vf = (valueLabel ?? 'value').endsWith('$') ? valueLabel ?? 'value' : `${valueLabel ?? 'value'}$`;
   const out = [];
   const walk = (prefix, node) => {
     if (Array.isArray(node)) node.forEach((x, i) => walk(prefix ? `${prefix}.${i}` : String(i), x));
-    else if (node && typeof node === 'object') Object.entries(node).forEach(([k, x]) => walk(prefix ? `${prefix}.${k}` : k, x));
-    else out.push(new RecordValue(new Map([[kf, prefix], [vf, node === null ? null : toStr(node)]])));
+    else if (node && typeof node === 'object') Object.keys(node).sort().forEach((k) => walk(prefix ? `${prefix}.${k}` : k, node[k]));
+    else if (typeof node === 'string') out.push(new RecordValue(new Map([[kf, prefix], [vf, node]])));
   };
   walk('', toPlain(v));
   return out;
+}
+
+// TRIM() and TRIM_ALL(): strip space, tab and newline (not \r), then remove a matching
+// enclosing pair of {} [] () <> "" or ''. TRIM() repeats; TRIM_ALL removes one pair.
+const PAIRS = { '{': '}', '[': ']', '(': ')', '<': '>', '"': '"', "'": "'" };
+export function trimPairs(s, repeat) {
+  let t = s.replace(/^[ \t\n]+|[ \t\n]+$/g, '');
+  while (t.length >= 2 && PAIRS[t[0]] === t[t.length - 1]) {
+    t = t.slice(1, -1);
+    if (!repeat) break;
+    t = t.replace(/^[ \t\n]+|[ \t\n]+$/g, '');
+  }
+  return t;
+}
+
+// STRING(): lists come out as quoted items joined by commas, a float loses its fraction, and
+// NULL becomes "" (checked in a lab tenant).
+function stringOf(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number') return String(Math.trunc(v));
+  if (isList(v)) return v.map((x) => JSON.stringify(x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x))).join(',');
+  return toStr(v);
 }
 
 export const FUNCTIONS = {
@@ -104,8 +130,14 @@ export const FUNCTIONS = {
     if (s === null) return null;
     if (s instanceof TimeValue) return s;
     const opts = { handle2DigitYear: truthy(two ?? false), now: c.now };
-    if (layout === undefined || layout === null) { c.note('inferred', 'datetime-no-layout', 'DATETIME() without a layout: the emulator tries common formats; the docs do not say what the engine tries'); return goParseAuto(s, opts); }
-    return goParse(toStr(layout), toStr(s), opts);
+    // A value DATETIME can't read gives NULL, not an error (checked in a lab tenant).
+    try {
+      if (layout === undefined || layout === null) return goParseAuto(s, opts);
+      return goParse(toStr(layout), toStr(s), opts);
+    } catch (e) {
+      c.note('warning', 'datetime-failed', `${e.message}. The engine leaves the result NULL.`);
+      return null;
+    }
   }],
   IS_PRIVATE_IP: [1, 1, (c, [s]) => isRfc1918(str(s) ?? '')],
   IS_VALID_IP: [1, 1, (c, [s]) => isValidIp(str(s) ?? '')],
@@ -119,7 +151,7 @@ export const FUNCTIONS = {
   }],
   UPPERCASE: [1, 1, (c, [s]) => (s === null ? null : toStr(s).toUpperCase())],
   LOWERCASE: [1, 1, (c, [s]) => (s === null ? null : toStr(s).toLowerCase())],
-  TRIM: [1, 1, (c, [s]) => (s === null ? null : toStr(s).replace(/^[\s"'{}[\]]+|[\s"'{}[\]]+$/g, ''))],
+  TRIM: [1, 1, (c, [s]) => (s === null ? null : trimPairs(toStr(s), true))],
   SANITIZE_ALL: [0, 0, (c) => { c.sanitizeNow(); return null; }],
   TRIM_ALL: [0, 0, (c) => { c.trimNow(); return null; }],
   ADDFIELD: [3, 3, (c, [coll, name, values]) => {
@@ -145,7 +177,7 @@ export const FUNCTIONS = {
     return new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
   }],
   INT: [1, 2, (c, [s, base]) => parseIntGo(s, base)],
-  STRING: [1, 1, (c, [v]) => (v === null || v === undefined ? '' : toStr(v))],
+  STRING: [1, 1, (c, [v]) => stringOf(v)],
   OBJKEYS: [1, 1, (c, [v]) => { const e = objectEntries(v); return e ? e.map(([k]) => k).sort() : null; }],
   OBJVALUES: [1, 1, (c, [v]) => {
     const e = objectEntries(v);

@@ -65,31 +65,78 @@ test('routes each line through the parent to the matching child', () => {
 
 test('normalizes into schema field names and types', () => {
   const [auth, flow] = runParsers(parsers, lines);
+  // The root parser's defaults (sensor_id from the syslog host, event_time_fidelity) come first.
   assert.deepEqual(auth.normalized, {
-    sensor_type: 'Acme Gateway', target_user_name: 'jdoe', source_address: '192.0.2.10', source_port_number: 51000,
-    event_time_usec: Date.UTC(2026, 9, 7, 22, 0, 1) * 1000, action: 'LOGON', action_result: 'SUCCESS', mfa_used: true,
+    sensor_type: 'Acme Gateway', sensor_id: 'gw01', event_time_usec: Date.UTC(2026, 9, 7, 22, 0, 1) * 1000, event_time_fidelity: 'MICRO',
+    target_user_name: 'jdoe', source_address: '192.0.2.10', source_port_number: 51000, action: 'LOGON', action_result: 'SUCCESS', mfa_used: true,
   });
   assert.ok(auth.notes.some((n) => n.code === 'not-a-field' && n.field === 'notAField$'));
   assert.equal(flow.normalized.destination_port, 443);
-  assert.ok(flow.notes.some((n) => n.code === 'int-from-string'));
   assert.equal(flow.normalized.flow_action, 'FW_BLOCKED');
-  // SANITIZE_ALL turns "N/A" into NULL, so the record keeps its key and loses the value.
-  assert.deepEqual(flow.normalized.event_metadata, { record: [{ key: 'rule' }] });
+  // SANITIZE_ALL only touches top-level fields, so "N/A" stays inside event_metadata.
+  assert.deepEqual(flow.normalized.event_metadata, { record: [{ key: 'rule', value: 'N/A' }] });
   assert.equal(expectedShape(flow).extractor_path, 'ACME_GW_JSON_PARENT > ACME_GW_JSON_CHILD_NETFLOW');
 });
 
-test('flags enum values that are not members, and unknown sub-fields', () => {
-  const p = [{ name: 'X_STANDALONE_AV', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=av\n!SCHEMA=scwx.antivirus\nactionTaken$ = "Deleted"\nfileHash$.sha1$ = "abc"\nfileHash$.crc$ = "x"' }];
-  const [r] = runParsers(p, ['av event']);
-  assert.ok(r.notes.some((n) => n.code === 'enum' && /did you mean "DELETED"/.test(n.message)));
+test('enums take names in any case or numbers; anything else fails the event', () => {
+  const base = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=av\n!SCHEMA=scwx.antivirus\nfileHash$.sha1$ = "abc"\nfileHash$.crc$ = "x"\n';
+  const [r] = runParsers([{ name: 'X_AV', text: `${base}actionTaken$ = " Deleted "\nthreatType$ = 2\nthreatCategory$ = "3"` }], ['av event']);
+  assert.equal(r.normalized.action_taken, 'DELETED');
+  assert.equal(r.normalized.threat_type, 'FILE');
+  assert.equal(r.normalized.threat_category, 'VIRUS');
   assert.ok(r.notes.some((n) => n.code === 'sub-field'));
   assert.deepEqual(r.normalized.file_hash, { sha1: 'abc' });
+  const [bad] = runParsers([{ name: 'X_AV', text: `${base}actionTaken$ = "Removed"` }], ['av event']);
+  assert.match(bad.error, /not a Antivirus.ActionTaken name or number/);
+  assert.equal(bad.normalized, null);
+});
+
+test('integers, booleans and time follow the engine', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.netflow\nsourcePort$ = " 88 "\ndestinationPort$ = "1.5"\ntxByteCount$ = "abc"\nrxByteCount$ = "-5"\nprotocol$ = 99999999999\nstartTimestampUsec$ = DATETIME("2026-10-07 22:00:00", "2006-01-02 15:04:05") + 1000000';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.equal(r.normalized.source_port, 88);
+  assert.equal(r.normalized.destination_port, 1);
+  assert.equal(r.normalized.tx_byte_count, undefined);
+  assert.equal(r.normalized.rx_byte_count, 18446744073709551616 - 5);
+  assert.equal(r.normalized.protocol, 1215752191);
+  assert.equal(r.normalized.start_timestamp_usec, Date.UTC(2026, 9, 7, 22, 0, 1) * 1000);
+  const b = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nmfaUsed$ = "no"';
+  assert.equal(runParsers([{ name: 'A_B', text: b }], ['x'])[0].normalized.mfa_used, true);
+  assert.equal(runParsers([{ name: 'A_B', text: b.replace('"no"', '" FALSE "') }], ['x'])[0].normalized.mfa_used, false);
+});
+
+test('captures keep every match, and an unset variable fails the event', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nm = originalData$|n=(\\d)\ntargetUserName$ = m[1]\nmiss = originalData$|zzz(\\d)\nsourceUserName$ = IF miss[1] != "" THEN "hit" ELSE "miss"';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x n=1 n=2 n=3']);
+  assert.equal(r.normalized.target_user_name, '1,2,3');
+  assert.equal(r.normalized.source_user_name, 'miss');
+  const [cmp] = runParsers([{ name: 'A_B', text: t + '\nauthSystem$ = IF miss != NULL THEN "a" ELSE "b"' }], ['x n=1']);
+  assert.match(cmp.error, /cannot convert regex to string/);
+  const [unset] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\ntargetUserName$ = nothing' }], ['x']);
+  assert.match(unset.error, /variable nothing is not set/);
+});
+
+test('TRIM_ALL removes one enclosing pair; TRIM removes them all', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\ntargetUserName$ = " {jdoe} "\nsourceUserName$ = "((a))"\nauthSystem$ = TRIM("[\\"a\\"]")\nuserAgent$ = "a}"';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.equal(r.normalized.target_user_name, 'jdoe');
+  assert.equal(r.normalized.source_user_name, '(a)');
+  assert.equal(r.normalized.auth_system, 'a');
+  assert.equal(r.normalized.user_agent, 'a}');
+});
+
+test('!SCHEMA can list several schemas', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth,scwx.cloudaudit\ntargetUserName$ = "u"\nuserName$ = "v"';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x']);
+  assert.equal(r.normalized.target_user_name, 'u');
+  assert.equal(r.also[0].schema, 'scwx.cloudaudit');
+  assert.equal(r.also[0].normalized.user_name, 'v');
 });
 
 test('TRIM_ALL strips braces unless !TRIMALLOFF', () => {
   const base = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\ntargetUserName$ = "  {jdoe}  "';
   const [on] = runParsers([{ name: 'A_B', text: base }], ['x']);
-  assert.equal(on.normalized.target_user_name, 'jdoe');
+  assert.equal(on.normalized.target_user_name, '  jdoe  '.trim());
   assert.ok(on.notes.some((n) => n.code === 'trim-braces'));
   const [off] = runParsers([{ name: 'A_B', text: base.replace('!SCHEMA', '!TRIMALLOFF\n!SCHEMA') }], ['x']);
   assert.equal(off.normalized.target_user_name, '  {jdoe}  ');

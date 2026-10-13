@@ -5,7 +5,9 @@
     "schema": "scwx.http",
     "normalized": {
       "sensor_type": "Squid",
+      "sensor_id": "proxy01",
       "event_time_usec": 1791413400512000,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.61",
       "destination_address": "203.0.113.80",
       "http_method": "GET",
@@ -48,7 +50,9 @@
     "schema": "scwx.http",
     "normalized": {
       "sensor_type": "Squid",
+      "sensor_id": "proxy01",
       "event_time_usec": 1791413402033000,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.61",
       "destination_address": "198.51.100.14",
       "source_username": "jlee",
@@ -74,7 +78,8 @@
             "value": "HIER_DIRECT"
           },
           {
-            "key": "content_type"
+            "key": "content_type",
+            "value": "-"
           },
           {
             "key": "elapsed_ms",
@@ -90,7 +95,9 @@
     "schema": "scwx.http",
     "normalized": {
       "sensor_type": "Squid",
+      "sensor_id": "proxy01",
       "event_time_usec": 1791413409871000,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.72",
       "http_method": "GET",
       "response_code": 403,
@@ -134,7 +141,9 @@
     "schema": "scwx.http",
     "normalized": {
       "sensor_type": "Squid",
+      "sensor_id": "proxy01",
       "event_time_usec": 1791413415204000,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.61",
       "http_method": "GET",
       "response_code": 200,

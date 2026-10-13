@@ -93,6 +93,7 @@ export function compileGo(pattern, extraFlags = '') {
       const n = src[i + 1];
       if (n === undefined) throw new RuntimeError('trailing backslash');
       i++;
+      classStart = false;
       if (n === 'Q') {
         const end = src.indexOf('\\E', i + 1);
         const lit = end === -1 ? src.slice(i + 1) : src.slice(i + 1, end);

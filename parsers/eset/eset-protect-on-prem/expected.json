@@ -5,6 +5,9 @@
     "schema": "scwx.nids",
     "normalized": {
       "sensor_type": "ESET PROTECT",
+      "sensor_id": "eraserver",
+      "event_time_usec": 1791411664000000,
+      "event_time_fidelity": "MICRO",
       "source_address": "198.51.100.23",
       "source_port": 54568,
       "destination_address": "192.0.2.30",
@@ -17,7 +20,6 @@
       "host_id": "w16test",
       "direction": "INBOUND",
       "protocol": 6,
-      "event_time_usec": 1791411664000000,
       "event_metadata": {
         "record": [
           {
@@ -42,6 +44,9 @@
     "schema": "scwx.nids",
     "normalized": {
       "sensor_type": "ESET PROTECT",
+      "sensor_id": "eraserver",
+      "event_time_usec": 1791411885000000,
+      "event_time_fidelity": "MICRO",
       "source_address": "192.0.2.41",
       "source_port": 50112,
       "destination_address": "203.0.113.80",
@@ -54,7 +59,6 @@
       "host_id": "fin-lt-041",
       "direction": "OUTBOUND",
       "protocol": 6,
-      "event_time_usec": 1791411885000000,
       "event_metadata": {
         "record": [
           {
@@ -83,6 +87,9 @@
     "schema": "scwx.antivirus",
     "normalized": {
       "sensor_type": "ESET PROTECT",
+      "sensor_id": "eraserver",
+      "event_time_usec": 1791411751000000,
+      "event_time_fidelity": "MICRO",
       "threat_name": "XF/Gydhex.A",
       "vendor_alert_type": "Virus",
       "agent_priority": "Warning",
@@ -95,7 +102,6 @@
       "file_hash": {
         "sha1": "5B97884A45C6C05F93B22C4059F3D9189E88E8B7"
       },
-      "event_time_usec": 1791411751000000,
       "threat_type": "FILE",
       "threat_category": "VIRUS",
       "action_taken": "DELETED"
@@ -107,6 +113,9 @@
     "schema": "scwx.antivirus",
     "normalized": {
       "sensor_type": "ESET PROTECT",
+      "sensor_id": "eraserver",
+      "event_time_usec": 1791412269000000,
+      "event_time_fidelity": "MICRO",
       "threat_name": "Win32/Agent.ABCD",
       "vendor_alert_type": "Trojan",
       "agent_priority": "Warning",
@@ -119,7 +128,6 @@
       "file_hash": {
         "sha1": "0A1B2C3D4E5F60718293A4B5C6D7E8F901234567"
       },
-      "event_time_usec": 1791412269000000,
       "threat_type": "FILE",
       "threat_category": "TROJAN",
       "action_taken": "QUARANTINED"

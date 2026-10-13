@@ -31,6 +31,8 @@ export function tokenize(src) {
     else if (m[4]) out.push({ k: 'str', v: unescape(m[4].slice(1, -1)), at, quote: "'" });
     else if (m[5]) out.push({ k: 'str', v: m[5].slice(1, -1), at, quote: '`' });
     else if (m[6]) out.push({ k: 'num', v: m[6].includes('.') ? parseFloat(m[6]) : parseInt(m[6], 10), at });
+    // TRUE and FALSE also work in lower case (checked in a lab tenant).
+    else if (m[7] && /^(true|false)$/i.test(m[7])) out.push({ k: 'kw', v: m[7].toUpperCase(), at });
     else if (m[7]) out.push({ k: KEYWORDS.has(m[7]) ? 'kw' : 'id', v: m[7], at });
     else out.push({ k: 'op', v: m[8], at });
   }
@@ -137,7 +139,8 @@ export function parseExpression(src) {
 }
 
 const IDENT = '[A-Za-z_][A-Za-z0-9_]*\\$?';
-const CAPTURE = new RegExp(`^(${IDENT})\\s*=\\s*(${IDENT})\\|(.*)$`);
+// The engine also accepts a space before the pipe: x = originalData$ |regex
+const CAPTURE = new RegExp(`^(${IDENT})\\s*=\\s*(${IDENT})\\s*\\|(.*)$`);
 const ASSIGN = new RegExp(`^(${IDENT}(?:\\.${IDENT})*)\\s*=(?!=)\\s*(.*)$`);
 
 // Parse one parser script. Returns {directives, flags, statements, problems, sample}.
@@ -149,6 +152,9 @@ export function parseScript(text) {
   const problems = [];
   const directiveLines = {};
   const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
+  // The console saves test messages after a "*** Tests ***" line; the engine ignores them.
+  const end = lines.findIndex((l) => /^\s*\*{3}\s*Tests\s*\*{3}/i.test(l));
+  if (end !== -1) lines.length = end;
   lines.forEach((raw, n) => {
     const line = n + 1;
     const s = raw.trim();

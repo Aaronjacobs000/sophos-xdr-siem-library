@@ -24,11 +24,11 @@ Everything runs in the browser tab. Your samples are never uploaded and never wr
 
 ## The emulator and its limits
 
-There is no public Sophos parser engine or parser API, so the emulator follows the [custom parser docs](https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/): statements, capture patterns, JSONPath, every documented function, parent and child routing, `SANITIZE_ALL` and `TRIM_ALL`. Where the docs are silent the emulator has to choose, and the lint marks those lines as inferred. Examples: enum fields set by name, sub-fields such as `fileHash$.sha1$`, the `AND` and `OR` operators, what `message` holds, and the `!SCHEMA` identifiers the docs don't list.
+There is no public Sophos parser engine or parser API, so the emulator follows the [custom parser docs](https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/): statements, capture patterns, JSONPath, every documented function, parent and child routing, `SANITIZE_ALL` and `TRIM_ALL`. Where the docs are silent, it does what the Sophos engine did in a lab tenant. For example, enum fields take names in any case or numbers, sub-fields such as `fileHash$.sha1$` work, the root parser sets `sensor_type`, `sensor_id` and the event time from the syslog header, and reading a variable that was never set fails the event. The lint marks the few behaviors that haven't been checked as inferred.
 
-The emulator has been checked against 0 real event types in a Sophos NG-SIEM lab tenant, read only.
+The emulator has been validated against 10 real event types.
 
-A parser that passes here is a tested draft. The emulator can't see the built-in parsers in your tenant, which may claim the same lines first. Before you turn a parser on, add it in Sophos Fusion under Security Operations > Integrations > Custom Parsers, add your samples, and use Parse Message and Run Test. Sophos does not maintain custom parsers, and this tool does not replace Sophos Professional Services, which builds custom parsers for customers.
+The emulator only knows the fields in the docs' schema tables. The engine's schemas have more, so a field the emulator drops with a warning may still be stored. It also can't see the built-in parsers in your tenant, which may claim the same lines first. So a parser that passes here is a tested draft: add it in Sophos Fusion under Security Operations > Integrations > Custom Parsers, add your samples, and use Parse Message and Run Test before you turn it on. Sophos does not maintain custom parsers, and this tool does not replace Sophos Professional Services, which builds custom parsers for customers.
 
 ## The community library
 

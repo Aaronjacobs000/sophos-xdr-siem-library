@@ -4,9 +4,11 @@
     "extractor_path": "DNSMASQ_QUERY_SYSLOG_STANDALONE_DNS",
     "schema": "scwx.dnsquery",
     "normalized": {
-      "event_time_usec": 1791414131000000,
-      "host_id": "gw01",
       "sensor_type": "dnsmasq",
+      "sensor_id": "gw01",
+      "event_time_usec": 1791414131000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
       "query_name": "update.example.com",
       "source_address": "192.0.2.50",
       "query_type": 1
@@ -29,9 +31,11 @@
     "extractor_path": "DNSMASQ_QUERY_SYSLOG_STANDALONE_DNS",
     "schema": "scwx.dnsquery",
     "normalized": {
-      "event_time_usec": 1791414134000000,
-      "host_id": "gw01",
       "sensor_type": "dnsmasq",
+      "sensor_id": "gw01",
+      "event_time_usec": 1791414134000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
       "query_name": "mail.example.org",
       "source_address": "192.0.2.61",
       "query_type": 28
@@ -48,9 +52,11 @@
     "extractor_path": "DNSMASQ_QUERY_SYSLOG_STANDALONE_DNS",
     "schema": "scwx.dnsquery",
     "normalized": {
-      "event_time_usec": 1791414140000000,
-      "host_id": "gw01",
       "sensor_type": "dnsmasq",
+      "sensor_id": "gw01",
+      "event_time_usec": 1791414140000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
       "query_name": "example.net",
       "source_address": "192.0.2.61",
       "query_type": 15
@@ -61,9 +67,11 @@
     "extractor_path": "DNSMASQ_QUERY_SYSLOG_STANDALONE_DNS",
     "schema": "scwx.dnsquery",
     "normalized": {
-      "event_time_usec": 1791414151000000,
-      "host_id": "gw01",
       "sensor_type": "dnsmasq",
+      "sensor_id": "gw01",
+      "event_time_usec": 1791414151000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "gw01",
       "query_name": "cdn.example.com",
       "source_address": "192.0.2.50",
       "query_type": 65

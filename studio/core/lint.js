@@ -2,18 +2,18 @@
 // Levels: error (fix before you deploy), warning (likely wrong), inferred (works in the
 // emulator, but the docs never show it, so confirm it on the first Parse Message), info.
 
-import { compileParser, runParsers, evaluate } from './engine.js';
+import { compileParser, runParsers, evaluate, schemaList, rootVars } from './engine.js';
 import { walk } from './language.js';
 import { checkRe2, compileGo, groupCount, groupNames } from './goregex.js';
 import { validatePath } from './jsonpath.js';
 import { hasYear, hasZone, layoutChunks } from './gotime.js';
 import { FUNCTION_NAMES, ARITY, DEPRECATED } from './functions.js';
-import { schemaInfo, fieldsByParser, typeKind, enumMembers, messageType, GENERIC } from './schemas.js';
-import { splitSyslog } from './formats.js';
+import { schemaInfo, fieldsByParser, typeKind, enumMembers, enumNumbers, messageType, docMisspellings, GENERIC } from './schemas.js';
 import { toStr, truthy } from './values.js';
 
 const NAME_RE = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
-const ROOT_VARS = new Set(['originalData$', 'message']);
+// Set by the engine's root parser before custom parsers run.
+const ROOT_VARS = new Set(['originalData$', 'message', 'sensorType$', 'sensorId$', 'eventTimeUsec$', 'eventTimeFidelity$']);
 const LEVEL_ORDER = { error: 0, warning: 1, inferred: 2, info: 3 };
 
 function literalStrings(e) {
@@ -91,9 +91,12 @@ export function lintParsers(parsers, opts = {}) {
     }
 
     let schema = d.SCHEMA || null;
-    if (schema && !schemaInfo(schema)) add('error', 'schema', `!SCHEMA=${schema} is not one of the schemas custom parsers can use`, p.name, dl.SCHEMA);
-    if (schema && schemaInfo(schema) && !schemaInfo(schema).documentedId) inferred('schema-id', `the docs show !SCHEMA identifiers only for scwx.auth, scwx.dnsquery, scwx.generic, scwx.netflow and scwx.nids. ${schema} follows the same pattern but is unconfirmed.`, p.name, dl.SCHEMA);
-    if (!schema && parentP) schema = parentP.schema;
+    if (schema) {
+      for (const id of schemaList(schema)) if (!schemaInfo(id)) add('error', 'schema', `!SCHEMA=${id} is not one of the schemas custom parsers can use${id === 'scwx.thirdparty' ? '; the Third Party Alerts schema is scwx.thirdpartyalert' : ''}`, p.name, dl.SCHEMA);
+      if (schemaList(schema).length > 1) add('info', 'multi-schema', `!SCHEMA lists ${schemaList(schema).length} schemas, so the engine stores one event in each`, p.name, dl.SCHEMA);
+      schema = schemaList(schema).find((x) => schemaInfo(x) && x !== GENERIC) || schemaList(schema)[0];
+    }
+    if (!schema && parentP) schema = parentP.schema ? schemaList(parentP.schema)[0] : null;
     if (!schema && !parentP && !isLib) {
       if (role === 'parent') add('info', 'schema', 'no !SCHEMA, so this parent uses the generic schema', p.name);
       else add('error', 'schema', 'set !SCHEMA to the destination schema, for example !SCHEMA=scwx.auth', p.name);
@@ -106,6 +109,7 @@ export function lintParsers(parsers, opts = {}) {
 
     const fields = schema && schemaInfo(schema) ? fieldsByParser(schema) : new Map();
     const known = new Set([...ROOT_VARS, ...(parentP ? assignedNames(parentP) : [])]);
+    const captures = new Set();
     for (const st of p.script.statements) {
       if (st.kind === 'import') {
         if (!byName.has(st.target)) add('warning', 'import', `!IMPORT=${st.target}: not in this set, so the emulator can't run it`, p.name, st.line);
@@ -114,13 +118,16 @@ export function lintParsers(parsers, opts = {}) {
       }
       if (st.kind === 'capture') {
         stats.regexes++;
-        if (!known.has(st.source)) add('warning', 'undefined-var', `${st.source} is read before it is set`, p.name, st.line);
+        if (!known.has(st.source)) add('error', 'undefined-var', `${st.source} is read before it is set; the engine fails the event`, p.name, st.line);
         if (/\s#/.test(st.pattern)) add('warning', 'capture-comment', 'a capture pattern runs to the end of the line, so the comment here is part of the regex', p.name, st.line);
         for (const i of checkRe2(st.pattern)) { if (i.level === 'error') stats.regexBad++; add(i.level, 're2', i.message, p.name, st.line); }
         known.add(st.target);
+        captures.add(st.target);
         continue;
       }
       // Assignment: functions, variables, literal arguments.
+      const memberBases = new Set();
+      walk(st.expr, (n) => { if (n.t === 'member' && n.e.t === 'var') memberBases.add(n.e); });
       walk(st.expr, (n) => {
         if (n.t === 'call') {
           if (!FUNCTION_NAMES.has(n.name)) add('error', 'unknown-function', `${n.name}() is not a documented function`, p.name, st.line);
@@ -137,9 +144,14 @@ export function lintParsers(parsers, opts = {}) {
           if (n.name === 'TENANT_LOOKUP') add('info', 'tenant-lookup', 'TENANT_LOOKUP() needs a tenant directory; the emulator always takes the default', p.name, st.line);
         }
         if (n.t === 'var') {
-          if (/^(true|false|null)$/i.test(n.name) && n.name !== n.name.toUpperCase()) add('warning', 'keyword-case', `${n.name} is read as a variable name; write ${n.name.toUpperCase()}`, p.name, st.line);
-          else if (!known.has(n.name) && !n.name.endsWith('$')) add('warning', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}`, p.name, st.line);
-          if (n.name === 'message') inferred('message-var', '`message` is the line after the syslog timestamp and host. The docs use it in examples but never define it.', p.name, st.line);
+          if (/^null$/i.test(n.name) && n.name !== 'NULL') add('warning', 'keyword-case', `${n.name} is read as a variable name; write NULL`, p.name, st.line);
+          else if (!known.has(n.name) && !n.name.endsWith('$')) add('error', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}; the engine fails the event`, p.name, st.line);
+          else if (!known.has(n.name) && n.name.endsWith('$') && !memberBases.has(n)) add('warning', 'undefined-var', `${n.name} is read before it is set${parentP ? ` (here or in ${parentP.name})` : ''}; the engine fails the event when a variable was never assigned`, p.name, st.line);
+        }
+        if (n.t === 'bin' && ['==', '!=', '+'].includes(n.op)) {
+          for (const side of [n.l, n.r]) {
+            if (side.t === 'var' && captures.has(side.name)) add('error', 'regex-compare', `${side.name} is a capture; comparing or joining it fails in the engine ("cannot convert regex to string"). Use ${side.name}[1] != "" to test for a match.`, p.name, st.line);
+          }
         }
         if (n.t === 'index' && n.i.t === 'lit') {
           if (typeof n.i.v === 'string' && n.i.v.startsWith('$')) {
@@ -160,7 +172,7 @@ export function lintParsers(parsers, opts = {}) {
         }
       });
       for (const op of st.ops || []) {
-        if (['AND', 'OR', '<', '>', '<=', '>=', '/', '%', '*', '-'].includes(op)) inferred(`op-${op}`, `the ${op} operator isn't in the docs; the emulator supports it but confirm it in Sophos Fusion`, p.name, st.line);
+        if (['<', '>', '<=', '>=', '/', '%'].includes(op)) inferred(`op-${op}`, `the ${op} operator isn't in the docs; the emulator supports it but confirm it in Sophos Fusion`, p.name, st.line);
       }
       checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf);
       known.add(st.target.split('.')[0]);
@@ -218,8 +230,8 @@ function checkDatetime(n, p, st, add, inferred) {
   if (!chunks.some((c) => c.std)) add('error', 'datetime-layout', `DATETIME layout "${layout.v}" has no Go reference fields. Write the reference time Mon Jan 2 15:04:05 MST 2006 in your format, for example "Jan 02 2006 15:04:05".`, p.name, st.line);
   const two = n.args[2];
   const twoOn = two && two.t === 'lit' && truthy(two.v);
-  if (!hasYear(layout.v) && !twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" has no year, and Go reads that as year 0. Pass TRUE as the third argument so the engine picks the year.`, p.name, st.line);
-  if (!hasZone(layout.v)) inferred('datetime-utc', `DATETIME layout "${layout.v}" has no zone, so the time is read as UTC (the docs' example output is UTC)`, p.name, st.line);
+  if (!hasYear(layout.v) && !twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" has no year, so Go reads year 0 and the engine stores a huge number. Pass TRUE as the third argument so the engine picks the year.`, p.name, st.line);
+  if (!hasZone(layout.v)) add('info', 'datetime-utc', `DATETIME layout "${layout.v}" has no zone, so the engine reads the time as UTC`, p.name, st.line);
 }
 
 function checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf) {
@@ -230,13 +242,14 @@ function checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf) {
   if (!schema || schema === GENERIC) return;
   stats.fieldsSet++;
   const field = fields.get(head);
+  const misspelt = docMisspellings(schema).get(head);
+  if (!field && misspelt) { add('error', 'doc-misspelling', `${head} is how the ${schemaInfo(schema).name} schema page spells it, but the engine only accepts ${misspelt}`, p.name, st.line); return; }
   if (!field) {
     const usedByChild = (childrenOf.get(p.name) || []).some((c) => c.confirm && c.confirm.ast && JSON.stringify(c.confirm.ast).includes(`"${head}"`));
-    if (!usedByChild) add('warning', 'not-a-field', `${head} is not a parser field of the ${schemaInfo(schema).name} schema, so the engine drops it`, p.name, st.line);
+    if (!usedByChild) add('warning', 'not-a-field', `${head} isn't in the documented ${schemaInfo(schema).name} field table. The engine's schemas have more fields than the docs list, so check it with Run Test; a typo is dropped without an error.`, p.name, st.line);
     return;
   }
   stats.fieldsKnown++;
-  if (field.derived) add('warning', 'undocumented-parser-field', `the ${schemaInfo(schema).name} schema page gives no parser field for ${field.name}; ${head} is a guess`, p.name, st.line);
   if (parts.length > 1) {
     let type = field.type;
     for (const sub of parts.slice(1)) {
@@ -246,19 +259,20 @@ function checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf) {
       if (!f) { add('error', 'sub-field', `${st.target}: ${sub} is not a field of ${type} (fields: ${def.map((x) => x.parser).join(', ')})`, p.name, st.line); return; }
       type = f.type;
     }
-    if (st.target !== 'eventMetadata$.record$') inferred('nested', `${st.target}: setting a sub-field this way follows the documented eventMetadata$.record$ pattern, but the docs don't show it for ${field.type}`, p.name, st.line);
     return;
   }
   if (typeKind(field.type) === 'enum') {
     stats.enumsChecked++;
     const members = enumMembers(field.type);
+    const numbers = enumNumbers(field.type);
     const { lits, dynamic, names } = literalStrings(st.expr);
     const others = names.filter((x) => x !== head);
-    const bad = lits.filter((v) => typeof v === 'string' && !members.includes(v));
-    if (bad.length) { stats.enumsBad++; add('error', 'enum', `${head}: ${bad.map((b) => `"${b}"`).join(', ')} ${bad.length === 1 ? 'is not a' : 'are not'} ${field.type} name${bad.length === 1 ? '' : 's'}. Use one of ${members.join(', ')}.`, p.name, st.line); }
-    if (dynamic === true) add('warning', 'enum-raw', `${head} takes a value straight from the log. Enum fields need a ${field.type} name; map the source values with IF ... THEN "NAME" ELSE ...`, p.name, st.line);
+    // The engine takes a name in any case, a number or a digit string; anything else fails the event.
+    const ok = (v) => (typeof v === 'string' && (members.some((m) => m.toLowerCase() === v.trim().toLowerCase()) || numbers[v.trim()])) || (typeof v === 'number' && numbers[String(v)]);
+    const bad = lits.filter((v) => !ok(v));
+    if (bad.length) { stats.enumsBad++; add('error', 'enum', `${head}: ${bad.map((b) => JSON.stringify(b)).join(', ')} ${bad.length === 1 ? 'is not a' : 'are not'} ${field.type} name${bad.length === 1 ? '' : 's'}, so the engine fails the event. Use one of ${members.join(', ')}.`, p.name, st.line); }
+    if (dynamic === true) add('warning', 'enum-raw', `${head} takes a value straight from the log. Any value that isn't a ${field.type} name or number fails the event; map the source values with IF ... THEN "NAME" ELSE ...`, p.name, st.line);
     if (dynamic === 'var' && others.length) add('info', 'enum-var', `${head} is set from ${others.join(', ')}; make sure ${others.length === 1 ? 'it holds' : 'they hold'} a ${field.type} name`, p.name, st.line);
-    inferred('enum-name', `${head}: enum fields are set by name here. The docs never show an enum assignment, so check the first Parse Message.`, p.name, st.line);
   }
   if (typeKind(field.type) === 'message' && st.expr.t !== 'var' && st.expr.t !== 'call' && st.expr.t !== 'bin' && st.expr.t !== 'list' && st.expr.t !== 'if') {
     add('error', 'type', `${head} is a ${field.type}; set its sub-fields, for example ${head}.${(messageType(field.type)[0] || {}).parser || 'field$'} = ...`, p.name, st.line);
@@ -289,8 +303,7 @@ export function topConfirms(p, sample) {
   if (!p.confirm || p.confirm.error) return false;
   try {
     if (p.confirm.kind === 'PATTERN') return compileGo(p.confirm.pattern).test(sample);
-    const header = splitSyslog(sample);
-    const vars = new Map([['originalData$', sample], ['message', header ? header.body : sample]]);
+    const vars = new Map(rootVars(sample));
     const ctx = { vars, now: undefined, get: (n) => (vars.has(n) ? vars.get(n) : null), note() {}, sink: [] };
     return truthy(evaluate(ctx, p.confirm.ast));
   } catch {

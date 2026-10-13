@@ -36,7 +36,7 @@ actionTaken$ = LOWERCASE(originalData$)
 ok = 1 > 0 AND TRUE`;
   const r = lintParsers([{ name: 'ACME_FW_STANDALONE_AV', text: t }]);
   const c = codes(r);
-  for (const want of ['warning:not-a-field', 'error:sub-field', 'warning:datetime-year', 'warning:deprecated', 'warning:enum-raw', 'inferred:nested', 'inferred:datetime-utc', 'inferred:schema-id', 'inferred:op-AND']) {
+  for (const want of ['warning:not-a-field', 'error:sub-field', 'warning:datetime-year', 'warning:deprecated', 'warning:enum-raw', 'info:datetime-utc', 'inferred:op->']) {
     assert.ok(c.includes(want), `expected ${want} in ${c.join(', ')}`);
   }
   assert.equal(r.problems.find((p) => p.code === 'datetime-year').line, 9);
@@ -61,7 +61,7 @@ test('lint: overlap with library parsers works both ways', () => {
 });
 
 test('lint: runtime notes are folded in with the sample lines they came from', () => {
-  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nsourcePortNumber$ = "123"';
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\nsourcePortNumber$ = "12.5"';
   const r = lintParsers([{ name: 'X_Y', text: t }], { samples: ['x 1', 'x 2', 'nothing'] });
   const p = r.problems.find((x) => x.code === 'int-from-string');
   assert.deepEqual(p.lines, [1, 2]);

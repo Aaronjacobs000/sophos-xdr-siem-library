@@ -36,6 +36,10 @@ export function enumMembers(type) {
   return data.types.enums[type] || null;
 }
 
+export function enumNumbers(type) {
+  return (data.types.enumNumbers && data.types.enumNumbers[type]) || {};
+}
+
 export function messageType(type) {
   return data.types.messages[type] || null;
 }
@@ -59,6 +63,11 @@ export function schemaIdFromName(name) {
 }
 
 export function hasEventMetadata(id) {
-  const f = fieldsByParser(id).get('eventMetadata$');
-  return Boolean(f && !f.derived);
+  return fieldsByParser(id).has('eventMetadata$');
+}
+
+// The docs' parser-field column misspells a few names; the engine only takes the rule name.
+export function docMisspellings(id) {
+  const s = schemaInfo(id);
+  return s ? new Map(s.fields.filter((f) => f.docParser).map((f) => [f.docParser, f.parser])) : new Map();
 }

@@ -12,8 +12,12 @@ export class ObjValue {
   get(key) { return this.map.has(key) ? this.map.get(key) : null; }
 }
 
+// A capture result. The engine keeps every match: with one match each group is a string,
+// with several each group is the list of values across matches. A capture that matched
+// nothing still exists; indexing it gives "" (checked in a lab tenant).
 export class MatchValue {
-  constructor(groups, named) { this.groups = groups; this.named = named; }
+  constructor(groups, named, count = 1) { this.groups = groups; this.named = named; this.count = count; }
+  get nomatch() { return this.count === 0; }
 }
 
 // A dotted variable such as grp.key$ or fileHash$.sha1$.
@@ -95,7 +99,7 @@ export function toStr(v) {
 export function truthy(v) {
   if (v === null || v === undefined) return false;
   if (typeof v === 'boolean') return v;
-  if (typeof v === 'string') return v !== '' && v.toLowerCase() !== 'false';
+  if (typeof v === 'string') { const t = v.trim(); return t !== '' && t.toLowerCase() !== 'false'; }
   if (typeof v === 'number') return v !== 0;
   if (isList(v)) return v.length > 0;
   if (v instanceof JsonValue) return v.value !== null && v.value !== false;
