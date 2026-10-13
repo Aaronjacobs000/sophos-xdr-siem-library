@@ -1,0 +1,567 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791853511000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "16.0.2-112",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566001",
+      "from_email_address": [
+        "bounce-0921@example.net"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice 0921 for October",
+      "message_id": "20261013010509.4821@mail.example.net",
+      "message_size": 48210,
+      "sender_ip": "198.51.100.23",
+      "direction": "INBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "48211"
+          },
+          {
+            "key": "esa_icid",
+            "value": "90433"
+          },
+          {
+            "key": "final_action",
+            "value": "DELIVERED"
+          },
+          {
+            "key": "esa_dcid",
+            "value": "77120"
+          },
+          {
+            "key": "friendly_from",
+            "value": "Accounts <accounts@example.net>"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "av_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "CLEAN"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "dmarc_verdict",
+            "value": "pass"
+          },
+          {
+            "key": "dkim_verdict",
+            "value": "pass"
+          },
+          {
+            "key": "spf_mailfrom_result",
+            "value": "Pass"
+          },
+          {
+            "key": "sender_group",
+            "value": "UNKNOWNLIST"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "ACCEPT"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "sbrs_score",
+            "value": "2.1"
+          },
+          {
+            "key": "sender_host",
+            "value": "mail.example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791853899000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "16.0.2-112",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566001",
+      "from_email_address": [
+        "winner@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com",
+        "amy@example.com"
+      ],
+      "subject": "You have won a prize",
+      "message_id": "7f3a.9921@example.org",
+      "message_size": 9120,
+      "sender_ip": "203.0.113.77",
+      "direction": "INBOUND",
+      "status": "QUARANTINED",
+      "quarantine_reason": "To SPAM",
+      "threats": [
+        {
+          "name": "Anti-Spam",
+          "type": "spam",
+          "classification": "POSITIVE"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "48230"
+          },
+          {
+            "key": "esa_icid",
+            "value": "90457"
+          },
+          {
+            "key": "final_action",
+            "value": "QUARANTINED"
+          },
+          {
+            "key": "final_action_details",
+            "value": "To SPAM"
+          },
+          {
+            "key": "friendly_from",
+            "value": "Prize Desk <winner@example.org>"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "POSITIVE"
+          },
+          {
+            "key": "av_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "dmarc_verdict",
+            "value": "PermFailure"
+          },
+          {
+            "key": "dkim_verdict",
+            "value": "None"
+          },
+          {
+            "key": "spf_mailfrom_result",
+            "value": "SoftFail"
+          },
+          {
+            "key": "sender_group",
+            "value": "SUSPECTLIST"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "ACCEPT"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "sbrs_score",
+            "value": "-4.5"
+          },
+          {
+            "key": "sender_host",
+            "value": "relay7.example.org"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791854281000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "16.0.2-112",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566001",
+      "from_email_address": [
+        "billing@example.net"
+      ],
+      "to_email_address": [
+        "finance@example.com"
+      ],
+      "subject": "Your October statement isn't ready",
+      "message_id": "a91c.20488@example.net",
+      "message_size": 24316,
+      "sender_ip": "198.51.100.140",
+      "direction": "INBOUND",
+      "status": "QUARANTINED",
+      "quarantine_reason": "To POLICY",
+      "attachments": [
+        {
+          "file_name": "statement_october.pdf",
+          "file_size": 20488,
+          "file_hash": {
+            "sha256": "9b2f6c1d0e8a7b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c"
+          }
+        }
+      ],
+      "threats": [
+        {
+          "name": "Outbreak Filters",
+          "type": "outbreak",
+          "classification": "POSITIVE"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "48244"
+          },
+          {
+            "key": "esa_icid",
+            "value": "90471"
+          },
+          {
+            "key": "final_action",
+            "value": "QUARANTINED"
+          },
+          {
+            "key": "final_action_details",
+            "value": "To POLICY"
+          },
+          {
+            "key": "friendly_from",
+            "value": "Billing <billing@example.net>"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "av_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "UNKNOWN"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "POSITIVE"
+          },
+          {
+            "key": "sender_group",
+            "value": "UNKNOWNLIST"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "ACCEPT"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "sbrs_score",
+            "value": "None"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791854672000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "16.0.2-112",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566001",
+      "from_email_address": [
+        "invoices@example.org"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Invoice attached",
+      "message_id": "c0ffee.1013@example.org",
+      "message_size": 3410,
+      "sender_ip": "203.0.113.9",
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "attachments": [
+        {
+          "file_name": "invoice_1013.zip",
+          "file_size": 1024
+        }
+      ],
+      "threats": [
+        {
+          "name": "Anti-Virus",
+          "type": "virus",
+          "classification": "POSITIVE"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "48259"
+          },
+          {
+            "key": "esa_icid",
+            "value": "90488"
+          },
+          {
+            "key": "final_action",
+            "value": "DROPPED"
+          },
+          {
+            "key": "friendly_from",
+            "value": "invoices@example.org"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "av_verdict",
+            "value": "POSITIVE"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "sender_group",
+            "value": "UNKNOWNLIST"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "ACCEPT"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "sbrs_score",
+            "value": "-1.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791855006000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "15.2.0-334",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566002",
+      "from_email_address": [
+        "payroll@example.com"
+      ],
+      "to_email_address": [
+        "agent@example.net"
+      ],
+      "subject": "Staff list",
+      "message_id": "20261013013005.3120@mx01.example.com",
+      "message_size": 815,
+      "sender_ip": "192.0.2.60",
+      "direction": "OUTBOUND",
+      "status": "DELIVERED",
+      "attachments": [
+        {
+          "file_name": "staff_tfn_list.txt"
+        }
+      ],
+      "threats": [
+        {
+          "name": "DLP",
+          "type": "data loss",
+          "classification": "VIOLATION"
+        }
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "3120"
+          },
+          {
+            "key": "esa_icid",
+            "value": "2211"
+          },
+          {
+            "key": "final_action",
+            "value": "DELIVERED"
+          },
+          {
+            "key": "esa_dcid",
+            "value": "1980"
+          },
+          {
+            "key": "friendly_from",
+            "value": "payroll@example.com"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "av_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "RELAY"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "dlp_details",
+            "value": "{'DLPSeverity': 'MEDIUM', 'DLPScore': '46', 'DLPPolicy': \"'Tax File Numbers (Australia)'\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_ESA_CEF_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Cisco Secure Email Gateway",
+      "event_time_usec": 1791857443000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "14.0.0-657",
+      "host_id": "4215DA06E2F3F6D98116-2AADF0566003",
+      "from_email_address": [
+        "news@example.net"
+      ],
+      "to_email_address": [
+        "amy@example.com"
+      ],
+      "subject": "October newsletter",
+      "message_id": "n.88410@example.net",
+      "message_size": 60211,
+      "sender_ip": "198.51.100.60",
+      "direction": "INBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "esa_mid",
+            "value": "9921"
+          },
+          {
+            "key": "esa_icid",
+            "value": "6610"
+          },
+          {
+            "key": "final_action",
+            "value": "DELIVERED"
+          },
+          {
+            "key": "esa_dcid",
+            "value": "5502"
+          },
+          {
+            "key": "friendly_from",
+            "value": "news@example.net"
+          },
+          {
+            "key": "spam_verdict",
+            "value": "MARKETING_MAIL"
+          },
+          {
+            "key": "av_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "amp_verdict",
+            "value": "NOT_EVALUATED"
+          },
+          {
+            "key": "outbreak_verdict",
+            "value": "NEGATIVE"
+          },
+          {
+            "key": "sender_group",
+            "value": "UNKNOWNLIST"
+          },
+          {
+            "key": "mail_flow_policy",
+            "value": "ACCEPT"
+          },
+          {
+            "key": "mail_policy",
+            "value": "DEFAULT"
+          },
+          {
+            "key": "sbrs_score",
+            "value": "4.0"
+          },
+          {
+            "key": "sender_host",
+            "value": "mail.example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
