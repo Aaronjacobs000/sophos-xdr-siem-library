@@ -1,0 +1,151 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Synology DSM",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_host_name": "nas01",
+      "target_user_name": "alice",
+      "source_address": "192.0.2.10",
+      "auth_system": "Synology DSM",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "DSM"
+          },
+          {
+            "key": "method",
+            "value": "password"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Synology DSM",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_host_name": "nas01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.7",
+      "auth_system": "Synology DSM",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "DSM"
+          },
+          {
+            "key": "method",
+            "value": "password"
+          },
+          {
+            "key": "failure_reason",
+            "value": "authorization failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Synology DSM",
+      "event_time_usec": 1791844869000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_host_name": "nas01",
+      "target_user_name": "administrator",
+      "source_address": "198.51.100.7",
+      "auth_system": "Synology DSM",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "DSM"
+          },
+          {
+            "key": "method",
+            "value": "password"
+          },
+          {
+            "key": "failure_reason",
+            "value": "authorization failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Synology DSM",
+      "event_time_usec": 1791844980000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas02",
+      "target_host_name": "nas02",
+      "target_user_name": "backup",
+      "source_address": "203.0.113.45",
+      "auth_system": "Synology DSM",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "service",
+            "value": "DSM"
+          },
+          {
+            "key": "failure_reason",
+            "value": "authorization failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
