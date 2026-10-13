@@ -1,0 +1,216 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AUTOTASK_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Autotask PSA",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Autotask PSA",
+      "event_name": "Account.Create",
+      "event_type": "Webhook",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "29682885",
+      "status": "Create",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "CompanyName",
+            "value": "Acme Dental"
+          },
+          {
+            "key": "OwnerResourceID",
+            "value": "29682885"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_id",
+            "value": "31022494"
+          },
+          {
+            "key": "webhook_guid",
+            "value": "dfcbca8b-1bfc-4810-b1fa-c79bbc4405c4"
+          },
+          {
+            "key": "sequence_number",
+            "value": "148"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AUTOTASK_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Autotask PSA",
+      "event_time_usec": 1791805325000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Autotask PSA",
+      "event_name": "Contact.Update",
+      "event_type": "Webhook",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "29682885",
+      "status": "Update",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "EMailAddress",
+            "value": "billing@example.com"
+          },
+          {
+            "key": "Phone",
+            "value": "02 5550 1234"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_id",
+            "value": "30544120"
+          },
+          {
+            "key": "webhook_guid",
+            "value": "0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a08"
+          },
+          {
+            "key": "sequence_number",
+            "value": "149"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AUTOTASK_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Autotask PSA",
+      "event_time_usec": 1791805487000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Autotask PSA",
+      "event_name": "ConfigurationItem.Delete",
+      "event_type": "Webhook",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "29682890",
+      "status": "Delete",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "ReferenceTitle",
+            "value": "ACME-SRV-02"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_id",
+            "value": "29011873"
+          },
+          {
+            "key": "webhook_guid",
+            "value": "5d8f2c1a-7b3e-4f60-9a24-0c1e8b7d6f35"
+          },
+          {
+            "key": "sequence_number",
+            "value": "150"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AUTOTASK_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Autotask PSA",
+      "event_time_usec": 1791805575000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Autotask PSA",
+      "event_name": "Ticket.Update",
+      "event_type": "Webhook",
+      "management_event": true,
+      "read_only": false,
+      "user_id": "29682885",
+      "status": "Update",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "AssignedResourceID",
+            "value": "29682890"
+          },
+          {
+            "key": "Status",
+            "value": "5"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_id",
+            "value": "7712044"
+          },
+          {
+            "key": "webhook_guid",
+            "value": "8e2a4c6f-1d3b-4a57-b9e0-3f5c7d1a2b46"
+          },
+          {
+            "key": "sequence_number",
+            "value": "151"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AUTOTASK_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Autotask PSA",
+      "event_time_usec": 1791805800000000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Autotask PSA",
+      "event_name": "Ticket.Deactivated",
+      "event_type": "Webhook",
+      "management_event": true,
+      "read_only": false,
+      "status": "Deactivated",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_id",
+            "value": "0"
+          },
+          {
+            "key": "webhook_guid",
+            "value": "2c4e6a8b-0d1f-4b3c-9e5a-7f1b3d5c7e92"
+          },
+          {
+            "key": "sequence_number",
+            "value": "152"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

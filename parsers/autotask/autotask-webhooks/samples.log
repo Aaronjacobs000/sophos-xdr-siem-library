@@ -1,0 +1,6 @@
+{"Action":"Create","Guid":"dfcbca8b-1bfc-4810-b1fa-c79bbc4405c4","EntityType":"Account","Id":31022494,"Fields":{"CompanyName":"Acme Dental","OwnerResourceID":"29682885"},"EventTime":"2026-10-12T11:40:11Z","SequenceNumber":148,"PersonID":29682885}
+{"Action":"Update","Guid":"0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a08","EntityType":"Contact","Id":30544120,"Fields":{"EMailAddress":"billing@example.com","Phone":"02 5550 1234"},"EventTime":"2026-10-12T11:42:05Z","SequenceNumber":149,"PersonID":29682885}
+{"Action":"Delete","Guid":"5d8f2c1a-7b3e-4f60-9a24-0c1e8b7d6f35","EntityType":"ConfigurationItem","Id":29011873,"Fields":{"ReferenceTitle":"ACME-SRV-02"},"EventTime":"2026-10-12T11:44:47Z","SequenceNumber":150,"PersonID":29682890}
+{"Action":"Update","Guid":"8e2a4c6f-1d3b-4a57-b9e0-3f5c7d1a2b46","EntityType":"Ticket","Id":7712044,"Fields":{"AssignedResourceID":"29682890","Status":"5"},"EventTime":"2026-10-12T11:46:15Z","SequenceNumber":151,"PersonID":29682885}
+{"Action":"Deactivated","Guid":"2c4e6a8b-0d1f-4b3c-9e5a-7f1b3d5c7e92","EntityType":"Ticket","Id":0,"Fields":{},"EventTime":"2026-10-12T11:50:00Z","SequenceNumber":152,"PersonID":0}
+{"Action": "Create", "Ticket": {"id": 1}}
