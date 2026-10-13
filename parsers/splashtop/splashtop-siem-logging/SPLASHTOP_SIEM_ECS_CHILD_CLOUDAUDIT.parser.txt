@@ -1,0 +1,36 @@
+!SAMPLE={"@timestamp":"2026-10-12 11:40:11 UTC","labels":{"service":"Splashtop","env":"web"},"event":{"id":"history_42940642","original":"2026-10-12 11:40:11 UTC Assign Group, user: tech.akim@example.com, IP: 198.51.100.23","action":"assign_group","code":"history_31","kind":"event","category":"configuration","module":"n/a"},"client":{"ip":"198.51.100.23","user":{"email":"tech.akim@example.com","device":"n/a"}},"destination":{"ip":"n/a","user":{"device":"n/a","platform":"n/a"}},"user":{"email":"tech.akim@example.com"},"service":{"name":"Splashtop","version":"1.0"},"message":"Assign Group"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Splashtop Enterprise SIEM Logging (ECS) through HTTP Ingest.
+# Child of SPLASHTOP_SIEM_ECS_PARENT: team history changes and session logs (remote, file transfer,
+# chat, command and background action sessions) to CloudAudit, with the Splashtop account, the
+# technician's address and device, and the remote device.
+# json, code, action, category, message, email, cip, cdev, ddev, dip, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Splashtop"
+eventName$ = action
+eventType$ = category
+managementEvent$ = category == "configuration"
+userName$ = email
+sourceAddress$ = cip
+targetHostname$ = ddev
+
+d1.key$ = "event_code"
+d1.value$ = code
+d2.key$ = "event_id"
+d2.value$ = json["$.event.id"]
+d3.key$ = "message"
+d3.value$ = message
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3]
+d4.key$ = "client_device"
+d4.value$ = cdev
+additionalEventData$.record$ = IF cdev != NULL THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "destination_ip"
+d5.value$ = dip
+additionalEventData$.record$ = IF dip != NULL THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$

@@ -1,0 +1,176 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SPLASHTOP_SIEM_ECS_PARENT > SPLASHTOP_SIEM_ECS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Splashtop",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "configuration",
+      "event_source": "Splashtop",
+      "event_name": "assign_group",
+      "management_event": true,
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_code",
+            "value": "history_31"
+          },
+          {
+            "key": "event_id",
+            "value": "history_42940642"
+          },
+          {
+            "key": "message",
+            "value": "Assign Group"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SPLASHTOP_SIEM_ECS_PARENT > SPLASHTOP_SIEM_ECS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Splashtop",
+      "event_time_usec": 1791805262000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.45",
+      "auth_system": "Splashtop",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "history_159",
+      "sub_status": "Login failed from Business app or web portal",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "history_42940655"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SPLASHTOP_SIEM_ECS_PARENT > SPLASHTOP_SIEM_ECS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Splashtop",
+      "event_time_usec": 1791805290000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "tech.jlee@example.com",
+      "source_address": "203.0.113.46",
+      "auth_system": "Splashtop",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "status": "history_316",
+      "sub_status": "Login failed from web portal due to IP not in whitelist",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "history_42940660"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SPLASHTOP_SIEM_ECS_PARENT > SPLASHTOP_SIEM_ECS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Splashtop",
+      "event_time_usec": 1791805510000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "session",
+      "event_source": "Splashtop",
+      "event_name": "session_start",
+      "management_event": false,
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "target_hostname": "ACME-WS-014",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_code",
+            "value": "unattended_remote"
+          },
+          {
+            "key": "event_id",
+            "value": "session_333938"
+          },
+          {
+            "key": "message",
+            "value": "Remote session started"
+          },
+          {
+            "key": "client_device",
+            "value": "ACME-TECH-01"
+          },
+          {
+            "key": "destination_ip",
+            "value": "203.0.113.54"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SPLASHTOP_SIEM_ECS_PARENT > SPLASHTOP_SIEM_ECS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Splashtop",
+      "event_time_usec": 1791805660000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "session",
+      "event_source": "Splashtop",
+      "event_name": "session_start",
+      "management_event": false,
+      "user_name": "tech.akim@example.com",
+      "source_address": "198.51.100.23",
+      "target_hostname": "ACME-WS-014",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_code",
+            "value": "unattended_file"
+          },
+          {
+            "key": "event_id",
+            "value": "session_333940"
+          },
+          {
+            "key": "message",
+            "value": "File transfer session started"
+          },
+          {
+            "key": "client_device",
+            "value": "ACME-TECH-01"
+          },
+          {
+            "key": "destination_ip",
+            "value": "203.0.113.54"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

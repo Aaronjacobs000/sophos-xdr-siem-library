@@ -1,0 +1,43 @@
+{
+  "vendor": "Splashtop",
+  "product": "Splashtop SIEM Logging",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-13"
+  },
+  "docs": [
+    "https://support-splashtopbusiness.splashtop.com/hc/en-us/articles/4412075621019-SIEM-Logging",
+    "https://support-splashtopbusiness.splashtop.com/hc/en-us/articles/52943667021851-Set-up-Splashtop-SIEM-with-Microsoft-Sentinel",
+    "https://files.splashtop.com/doc/Splashtop_Open_API.pdf"
+  ],
+  "notes": "SIEM Logging is a Splashtop Enterprise feature. Under Management > SIEM Logging, create a push mode app with Integration Others, the Sophos NG-SIEM HTTP Ingest URL, the integration key as the Authentication Token, and Log format Elastic Common Schema. Splashtop doesn't document the header it puts the token in; HTTP Ingest needs Authorization: Bearer, so if records don't arrive, put a small relay in front that adds that header. Failed logins (team history kinds 159, 315, 316 and 375, from Splashtop's Open API guide) go to Auth; every other team history and session log record goes to CloudAudit. Splashtop publishes one ECS sample, a team history record: the session and login records in samples.log follow its layout, but their event action, code and category values are made up. Business Access and Remote Support have no SIEM export. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13 (51 of 51 fields matched the emulator), and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet. No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "SPLASHTOP_SIEM_ECS_PARENT",
+      "file": "SPLASHTOP_SIEM_ECS_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "SPLASHTOP_SIEM_ECS_CHILD_AUTH",
+      "file": "SPLASHTOP_SIEM_ECS_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "SPLASHTOP_SIEM_ECS_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "SPLASHTOP_SIEM_ECS_CHILD_CLOUDAUDIT",
+      "file": "SPLASHTOP_SIEM_ECS_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "SPLASHTOP_SIEM_ECS_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

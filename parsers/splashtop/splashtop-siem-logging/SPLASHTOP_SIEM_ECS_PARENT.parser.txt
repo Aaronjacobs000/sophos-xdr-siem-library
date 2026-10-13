@@ -1,0 +1,42 @@
+!SAMPLE={"@timestamp":"2026-10-12 11:40:11 UTC","labels":{"service":"Splashtop","env":"web"},"event":{"id":"history_42940642","original":"2026-10-12 11:40:11 UTC Assign Group, user: tech.akim@example.com, IP: 198.51.100.23","action":"assign_group","code":"history_31","kind":"event","category":"configuration","module":"n/a"},"client":{"ip":"198.51.100.23","user":{"email":"tech.akim@example.com","device":"n/a"}},"destination":{"ip":"n/a","user":{"device":"n/a","platform":"n/a"}},"user":{"email":"tech.akim@example.com"},"service":{"name":"Splashtop","version":"1.0"},"message":"Assign Group"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"@timestamp"\s*:\s*"[^"]*"\s*,\s*"labels"\s*:\s*\{\s*"service"\s*:\s*"Splashtop"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Splashtop Enterprise SIEM Logging in push mode (Integration: Others, Log format: Elastic
+# Common Schema), posting each team history and session log record to a Sophos NG-SIEM HTTP Ingest
+# integration.
+# Parent: reads the ECS record and hands it to a child.
+#   Failed logins (team history kinds 159, 315, 316 and 375) go to Auth.
+#   Every other record (team history changes, remote sessions, file transfers) goes to CloudAudit.
+# Splashtop writes "n/a" for an empty value; the parser treats it as empty.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Splashtop"
+code = json["$.event.code"]
+action = json["$.event.action"]
+category = json["$.event.category"]
+message = json["$.message"]
+cip = json["$.client.ip"]
+cip = IF cip == "n/a" THEN NULL ELSE cip
+email = json["$.user.email"]
+email = IF email == "n/a" THEN json["$.client.user.email"] ELSE email
+email = IF email == "n/a" THEN NULL ELSE email
+cdev = json["$.client.user.device"]
+cdev = IF cdev == "n/a" THEN NULL ELSE cdev
+ddev = json["$.destination.user.device"]
+ddev = IF ddev == "n/a" THEN NULL ELSE ddev
+dip = json["$.destination.ip"]
+dip = IF dip == "n/a" THEN NULL ELSE dip
+
+# @timestamp reads like 2026-06-03 16:47:14 UTC.
+eventTimeUsec$ = DATETIME(json["$['@timestamp']"], "2006-01-02 15:04:05 MST")
+
+failedLogin = code == "history_159" OR code == "history_315" OR code == "history_316" OR code == "history_375"
+eventType$ = IF failedLogin THEN "auth" ELSE "audit"
