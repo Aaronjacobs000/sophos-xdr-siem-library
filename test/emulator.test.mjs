@@ -213,3 +213,18 @@ test('statement parsing reports problems with line numbers', () => {
   assert.deepEqual(s.problems.map((p) => [p.line, p.code]), [[2, 'unknown-directive'], [3, 'syntax']]);
   assert.equal(s.statements.length, 1);
 });
+
+// Engine behaviors checked with Run Test in a lab tenant.
+const NOW = '2026-10-14T00:00:00Z';
+
+test('enum fields set to their zero value are left out, except Auth logon_type', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.auth\naction$ = "UNCLASSIFIED"\nactionResult$ = 0\nlogonType$ = "SYSTEMONLY"\ntargetUserName$ = "u"';
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['x'], { now: NOW });
+  assert.equal(r.normalized.action, undefined);
+  assert.equal(r.normalized.action_result, undefined);
+  assert.equal(r.normalized.logon_type, 'SYSTEMONLY');
+  assert.ok(r.notes.some((n) => n.code === 'enum-zero' && n.field === 'action'));
+  const [av] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=x\n!SCHEMA=scwx.antivirus\nthreatType$ = "UNKNOWN_THREATTYPE"\nactionTaken$ = "DELETED"' }], ['x'], { now: NOW });
+  assert.equal(av.normalized.threat_type, undefined);
+  assert.equal(av.normalized.action_taken, 'DELETED');
+});
