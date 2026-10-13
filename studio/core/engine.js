@@ -74,7 +74,11 @@ function index(base, idx) {
     if (typeof idx === 'string') {
       const r = query(base.value, idx);
       if (r === null) return null;
-      return Array.isArray(r) && isMultiPath(idx) ? r.map(wrapJson) : wrapJson(r);
+      if (!Array.isArray(r) || !isMultiPath(idx)) return wrapJson(r);
+      // A path that can select several nodes but selects one gives that node, not a list of one;
+      // |preserve_structure keeps the list (checked in a lab tenant).
+      if (r.length === 1 && !/\|preserve_structure\s*$/.test(idx)) return wrapJson(r[0]);
+      return r.map(wrapJson);
     }
     if (typeof idx === 'number' && Array.isArray(base.value)) return wrapJson(base.value[idx < 0 ? base.value.length + idx : idx]);
     return null;
