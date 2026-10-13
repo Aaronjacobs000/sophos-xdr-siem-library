@@ -1,8 +1,10 @@
 // The engine reads every event_metadata value in the Auth schema as an Auth0 log type code and
 // stores the code's description instead: "f" becomes "Failed Login" and "fs" "Failed Signup".
 // The match ignores case but not spaces, the key doesn't matter, and no other schema or field
-// does this (checked in a lab tenant). These are the codes the engine was seen to replace; it
-// left newer Auth0 codes such as acls_summary, sepotpft and wum as they were.
+// does this (checked in a lab tenant). These are the codes the engine was seen to replace. It
+// was given all 169 codes in Auth0's tenant log catalog of October 2026 and left the other 75,
+// such as acls_summary, sdel and wum, as they were. It also left codes the catalog doesn't
+// list, such as limit_ui and sepotpft.
 
 export const AUTH0_LOG_TYPES = {
   admin_update_launch: 'Auth0 Update Launched',

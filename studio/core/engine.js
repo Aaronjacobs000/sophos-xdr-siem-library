@@ -153,6 +153,10 @@ function plus(a, b) {
   if (typeof a === 'number' && b instanceof TimeValue) return int64(a + b.usec);
   if (a instanceof TimeValue && typeof b === 'string') return int64(a.usec + timeAddend(b));
   if (typeof a === 'string' && b instanceof TimeValue) return int64(timeAddend(a) + b.usec);
+  // Two DATETIME values add as microseconds, and TRUE counts as 1 and FALSE as 0 (checked in a
+  // lab tenant).
+  if (a instanceof TimeValue && (b instanceof TimeValue || typeof b === 'boolean')) return int64(a.usec + num(b, '+'));
+  if (typeof a === 'boolean' && b instanceof TimeValue) return int64(Number(a) + b.usec);
   if (typeof a === 'number' && typeof b === 'number') return int64(a + b);
   return toStr(a) + toStr(b);
 }

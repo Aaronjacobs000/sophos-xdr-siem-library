@@ -108,14 +108,16 @@ export function trimPairs(s, repeat) {
   return t;
 }
 
-// STRING(): a float loses its fraction, NULL becomes "", and a list comes out as JSON the way
-// Go's encoding/json writes it (checked in a lab tenant): ["a","b"] with no spaces, object keys
-// sorted, <, > and & escaped, a NULL item written as 0 and a DATETIME item as {}. TRIM_ALL then
-// takes the brackets off a top-level field, leaving "a","b".
+// STRING(): a float loses its fraction, NULL becomes "", and a list, JSON object or JSON array
+// comes out as JSON the way Go's encoding/json writes it (checked in a lab tenant): ["a","b"]
+// with no spaces, object keys sorted, <, > and & escaped, a NULL item written as 0 and a
+// DATETIME item as {}. A NULL inside the value JSON() returned stays null (see JsonValue).
+// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b".
 function stringOf(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'number') return toStr(Math.trunc(v));
   if (isList(v)) return goJsonList(v);
+  if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJson(v);
   return toStr(v);
 }
 
@@ -132,16 +134,19 @@ function goJson(v) {
   if (typeof v === 'number' || typeof v === 'boolean') return toStr(v);
   if (isList(v)) return goJsonList(v);
   if (v instanceof TimeValue) return '{}';
-  if (v instanceof JsonValue) return goJsonPlain(v.value);
+  if (v instanceof JsonValue) return goJsonPlain(v.value, v.doc ? 'null' : '0');
   if (v instanceof ObjValue) return goJsonObject([...v.map]);
   if (v instanceof RecordValue) return goJsonObject([...v.fields]);
   return goJsonPlain(toPlain(v));
 }
 
-// Parsed JSON inside the list: its own nulls stay null.
-function goJsonPlain(v) {
-  if (Array.isArray(v)) return `[${v.map(goJsonPlain).join(',')}]`;
-  if (v !== null && typeof v === 'object') return goJsonObject(Object.entries(v), goJsonPlain);
+// Parsed JSON, with each NULL written as nul. Its numbers are float64 in Go, so a whole number
+// past 2^53 prints rounded, the way JavaScript prints it.
+function goJsonPlain(v, nul = 'null') {
+  if (v === null || v === undefined) return nul;
+  if (Array.isArray(v)) return `[${v.map((x) => goJsonPlain(x, nul)).join(',')}]`;
+  if (typeof v === 'object') return goJsonObject(Object.entries(v), (x) => goJsonPlain(x, nul));
+  if (typeof v === 'number') return String(v);
   return goJson(v);
 }
 
@@ -155,11 +160,13 @@ export const FUNCTIONS = {
     const parts = toStr(s).split(toStr(d));
     return truthy(greedy) ? parts.filter((p) => p !== '') : parts;
   }],
-  SPLIT_NAME_VALUES: [3, 4, (c, [s, d, sep, q]) => splitNameValues(str(s), str(d), str(sep), q === undefined ? null : str(q))],
+  // The quote character is required: the engine rejects a parser that calls SPLIT_NAME_VALUES
+  // with 3 arguments ("requires 4 parameters", checked in a lab tenant).
+  SPLIT_NAME_VALUES: [4, 4, (c, [s, d, sep, q]) => splitNameValues(str(s), str(d), str(sep), str(q))],
   JSON: [1, 1, (c, [s]) => {
     if (s === null) return null;
     if (s instanceof JsonValue) return s;
-    try { return new JsonValue(JSON.parse(toStr(s))); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
+    try { return new JsonValue(JSON.parse(toStr(s)), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
   }],
   CEF: [1, 1, (c, [s]) => parseCef(str(s))],
   LEEF: [1, 2, (c, [s, d]) => parseLeef(str(s), d === undefined ? null : str(d))],

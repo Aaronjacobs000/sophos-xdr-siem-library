@@ -30,7 +30,10 @@ export function tokenize(src) {
     if (m[3]) out.push({ k: 'str', v: unescape(m[3].slice(1, -1)), at, quote: '"' });
     else if (m[4]) out.push({ k: 'str', v: unescape(m[4].slice(1, -1)), at, quote: "'" });
     else if (m[5]) out.push({ k: 'str', v: m[5].slice(1, -1), at, quote: '`' });
-    else if (m[6]) out.push({ k: 'num', v: m[6].includes('.') ? parseFloat(m[6]) : parseInt(m[6], 10), at });
+    // The engine reads whole numbers only: 1.5 anywhere, in a list or not, makes it reject the
+    // parser with a syntax error (checked in a lab tenant).
+    else if (m[6] && m[6].includes('.')) throw new SyntaxError2(`${m[6]}: the engine reads whole numbers only, so it rejects the parser with a syntax error`, at);
+    else if (m[6]) out.push({ k: 'num', v: parseInt(m[6], 10), at });
     // TRUE and FALSE also work in lower case (checked in a lab tenant).
     else if (m[7] && /^(true|false)$/i.test(m[7])) out.push({ k: 'kw', v: m[7].toUpperCase(), at });
     else if (m[7]) out.push({ k: KEYWORDS.has(m[7]) ? 'kw' : 'id', v: m[7], at });

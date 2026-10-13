@@ -1,8 +1,11 @@
 // Runtime value types for the emulator. Plain JS values stand in for STRING, number, bool
 // and NULL; the classes below cover the rest of the language's value kinds.
 
+// doc is true for the value JSON() returns, and false for a part of it read with an index such
+// as json["$.o"]. STRING() writes a NULL inside a doc as null and inside a part as 0 (checked in
+// a lab tenant).
 export class JsonValue {
-  constructor(value) { this.value = value; }
+  constructor(value, doc = false) { this.value = value; this.doc = doc; }
 }
 
 // OBJECT values from SPLIT_NAME_VALUES, CEF, LEEF and URL_PARSE. CEF and LEEF also carry

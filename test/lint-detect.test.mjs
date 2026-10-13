@@ -50,6 +50,20 @@ test('lint: INT needs its base, FLATTEN order is noted, and a capture source exp
   assert.match(r.problems.find((p) => p.code === 'undefined-var').message, /^nothing is read before it is set/);
 });
 
+// The engine rejected each parser marked bad and ran the others (checked in a lab tenant).
+test('lint: SPLIT_NAME_VALUES needs its quote character, and numbers must be whole', () => {
+  const lint = (line) => lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.nids\n${line}` }]).problems.filter((p) => p.level === 'error');
+  const kv = lint('kv = SPLIT_NAME_VALUES(message, " ", "=")');
+  assert.deepEqual(kv.map((p) => [p.code, p.line]), [['arity', 4]]);
+  assert.match(kv[0].message, /takes 4 arguments, not 3/);
+  assert.deepEqual(lint('kv = SPLIT_NAME_VALUES(message, " ", "=", "\\"")'), []);
+  for (const bad of ['l = 1.5', 'l = 1.0', 'l = [1.5]', 'l = [TRUE, 1.5, "q"]', 'l = IF 2 > 1.5 THEN "y" ELSE "n"', 'l = STRING(1.5)', 'l = .5', 'l = 1.']) {
+    assert.deepEqual(lint(bad).map((p) => p.code), ['syntax'], bad);
+  }
+  assert.match(lint('l = [TRUE, 1.5, "q"]')[0].message, /^1\.5: the engine reads whole numbers only/);
+  for (const good of ['l = [1, 2]', 'l = [-1]', 'l = -1', 'l = [TRUE, 7, "q"]', 'l = "1.5"', 'l = 3 / 2', 'l = [3 / 2]']) assert.deepEqual(lint(good), [], good);
+});
+
 test('lint: parent and child structure', () => {
   const parent = { name: 'A_PARENT', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\nkind$ = "x"' };
   const child = { name: 'A_CHILD', parent: 'A_PARENT', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=missing$=="y"\n!SCHEMA=scwx.auth' };
