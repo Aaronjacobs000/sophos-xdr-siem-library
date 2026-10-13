@@ -12,7 +12,7 @@
   "reference_time": "2026-10-13T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://manual.mikrotik.com/docs/diagnostics-monitoring-and-troubleshooting/log/",
@@ -20,7 +20,7 @@
     "https://manual.mikrotik.com/docs/cli-reference/ip/firewall/filter/",
     "https://manual.mikrotik.com/docs/cli-reference/log/"
   ],
-  "notes": "Set the remote logging action to remote-log-format=syslog, add-topics-string=yes and syslog-time-format=iso8601, and add rules for the info, error and critical topics (the firewall lines use info, login failures error and critical). Login lines go to Auth and firewall rule log lines (action=log or log=yes) to Netflow; every other RouterOS line is left to the parsers already in the tenant. The firewall line doesn't say what the rule did, so put ACCEPT, ALLOW, DROP, REJECT, BLOCK or DENY in the rule's log-prefix to fill flow_action. The CEF format isn't covered. Samples are made up in the formats the RouterOS manual describes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet.",
+  "notes": "Set the remote logging action to remote-log-format=syslog, add-topics-string=yes and syslog-time-format=iso8601, and add rules for the info, error and critical topics (the firewall lines use info, login failures error and critical). Login lines go to Auth and firewall rule log lines (action=log or log=yes) to Netflow; every other RouterOS line is left to the parsers already in the tenant. The firewall line doesn't say what the rule did, so put ACCEPT, ALLOW, DROP, REJECT, BLOCK or DENY in the rule's log-prefix to fill flow_action. The CEF format isn't covered. Samples are made up in the formats the RouterOS manual describes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent.",
   "parsers": [
     {
       "name": "MIKROTIK_ROUTEROS_SYSLOG_PARENT",

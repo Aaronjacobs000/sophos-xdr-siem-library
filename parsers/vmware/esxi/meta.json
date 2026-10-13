@@ -13,7 +13,7 @@
   "reference_time": "2026-10-13T00:00:00Z",
   "tested": {
     "emulator": "0.1.0",
-    "tenant": "2026-10-13"
+    "tenant": "2026-10-14"
   },
   "docs": [
     "https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/esx-installation-and-setup/installing-and-setting-up-esxi-install/setting-up-esxi-install/configuring-system-logging-install/syslog-message-transmissions-install.html",
@@ -24,7 +24,7 @@
     "https://knowledge.broadcom.com/external/article/326765/remote-access-for-esxi-local-user-accoun.html",
     "https://knowledge.broadcom.com/external/article/421596/esxi-log-file-formats-introduced-from-vs.html"
   ],
-  "notes": "For ESXi hosts that send syslog straight to the data collector (Syslog.global.logHost), not through vCenter; vCenter has a native integration. ESXi 8 and later, RFC 3164 (the default) or RFC 5424. hostd logins and refused logins, sshd logins, console logins and account lockouts go to Auth, and ESXi Shell commands to ManagementEvent. hostd's \"Cannot login\" line that follows each rejected password stays generic, so a failed login counts once. ESXi 8.0 Update 3 and later log SSH logins under sshd-session. Older builds log them under sshd, where the tenant's built-in sshd parser and the OpenSSH sshd library entry match them too; the tenant's built-in login parser also matches console login lines. The engine picks one parser per line, so some of those lines may keep the other mapping. DCUI menu use and ESXi 7 lines aren't covered. Samples are made up in the formats Broadcom's docs and knowledge base articles show. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there; the parent and children have not run together as separate parsers yet.",
+  "notes": "For ESXi hosts that send syslog straight to the data collector (Syslog.global.logHost), not through vCenter; vCenter has a native integration. ESXi 8 and later, RFC 3164 (the default) or RFC 5424. hostd logins and refused logins, sshd logins, console logins and account lockouts go to Auth, and ESXi Shell commands to ManagementEvent. hostd's \"Cannot login\" line that follows each rejected password stays generic, so a failed login counts once. ESXi 8.0 Update 3 and later log SSH logins under sshd-session. Older builds log them under sshd, where the tenant's built-in sshd parser and the OpenSSH sshd library entry match them too; the tenant's built-in login parser also matches console login lines. The engine picks one parser per line, so some of those lines may keep the other mapping. DCUI menu use and ESXi 7 lines aren't covered. Samples are made up in the formats Broadcom's docs and knowledge base articles show. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same lines there. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent.",
   "parsers": [
     {
       "name": "VMWARE_ESXI_SYSLOG_PARENT",
