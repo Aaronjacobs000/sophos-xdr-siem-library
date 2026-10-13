@@ -1,0 +1,34 @@
+!SAMPLE={"@timestamp":"2026-10-12 11:41:02 UTC","labels":{"service":"Splashtop","env":"web"},"event":{"id":"history_42940655","original":"2026-10-12 11:41:02 UTC Login failed from Business app or web portal, user: admin@example.com, IP: 203.0.113.45","action":"login_failed","code":"history_159","kind":"event","category":"authentication","module":"n/a"},"client":{"ip":"203.0.113.45","user":{"email":"admin@example.com","device":"n/a"}},"destination":{"ip":"n/a","user":{"device":"n/a","platform":"n/a"}},"user":{"email":"admin@example.com"},"service":{"name":"Splashtop","version":"1.0"},"message":"Login failed from Business app or web portal"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Splashtop Enterprise SIEM Logging (ECS) through HTTP Ingest.
+# Child of SPLASHTOP_SIEM_ECS_PARENT: failed logins to the Splashtop web portal and Business app.
+# The team history kinds come from the Splashtop Open API guide:
+#   159 Login failed from Business app or web portal
+#   315 Login failed from Business app due to IP not in whitelist
+#   316 Login failed from web portal due to IP not in whitelist
+#   375 Login failed from Business app due to MAC address not in whitelist
+# json, code, message, email, cip, cdev, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = email
+sourceAddress$ = cip
+authSystem$ = "Splashtop"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = "FAILURE"
+actionResult$ = "FAILED"
+failureCategory$ = IF code == "history_159" THEN "INCORRECT_USER_OR_PASSWORD" ELSE "OTHER_ERROR"
+status$ = code
+subStatus$ = message
+
+m1.key$ = "event_id"
+m1.value$ = json["$.event.id"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "client_device"
+m2.value$ = cdev
+eventMetadata$.record$ = IF cdev != NULL THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
