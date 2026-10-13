@@ -5,6 +5,7 @@
     "schema": "scwx.cloudaudit",
     "normalized": {
       "sensor_type": "Hudu",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "event_source": "Hudu",
       "event_name": "AssetPassword.update",
@@ -35,8 +36,7 @@
             "value": "31"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -45,6 +45,7 @@
     "schema": "scwx.cloudaudit",
     "normalized": {
       "sensor_type": "Hudu",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "event_source": "Hudu",
       "event_name": "AssetPassword.delete",
@@ -75,8 +76,7 @@
             "value": "31"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -85,6 +85,7 @@
     "schema": "scwx.cloudaudit",
     "normalized": {
       "sensor_type": "Hudu",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "event_source": "Hudu",
       "event_name": "Asset.create",
@@ -119,8 +120,7 @@
             "value": "7"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -129,6 +129,7 @@
     "schema": "scwx.cloudaudit",
     "normalized": {
       "sensor_type": "Hudu",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "event_source": "Hudu",
       "event_name": "AssetPassword.one_time_reveal",
@@ -160,8 +161,7 @@
             "value": "31"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {

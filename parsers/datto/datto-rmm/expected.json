@@ -5,6 +5,7 @@
     "schema": "scwx.thirdpartyalert",
     "normalized": {
       "sensor_type": "Datto RMM",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "vendor": "Datto RMM",
       "provider": "Datto RMM monitoring",
@@ -39,8 +40,7 @@
             "value": "merlot"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -49,6 +49,7 @@
     "schema": "scwx.thirdpartyalert",
     "normalized": {
       "sensor_type": "Datto RMM",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "vendor": "Datto RMM",
       "provider": "Datto RMM monitoring",
@@ -83,8 +84,7 @@
             "value": "merlot"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -93,6 +93,7 @@
     "schema": "scwx.thirdpartyalert",
     "normalized": {
       "sensor_type": "Datto RMM",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "vendor": "Datto RMM",
       "provider": "Datto RMM monitoring",
@@ -127,8 +128,7 @@
             "value": "merlot"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {
@@ -137,6 +137,7 @@
     "schema": "scwx.thirdpartyalert",
     "normalized": {
       "sensor_type": "Datto RMM",
+      "event_time_usec": 1791849600000000,
       "event_time_fidelity": "MICRO",
       "vendor": "Datto RMM",
       "provider": "Datto RMM monitoring",
@@ -171,8 +172,7 @@
             "value": "merlot"
           }
         ]
-      },
-      "event_time_usec": 1791849600000000
+      }
     }
   },
   {

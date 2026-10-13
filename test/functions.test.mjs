@@ -211,6 +211,62 @@ pres = STRING(j["$.o|preserve_structure"])`, { d: d2 });
   for (const [k, x] of Object.entries(want2)) assert.equal(w.get(k), x, k);
 });
 
+// What the engine gave for each in a lab tenant. Inside a list or a record, the value JSON()
+// returned is written as {}, whatever it holds; a part read from it is written in full.
+test('STRING() writes the value JSON() returned as {} inside a list or a record', () => {
+  const d = '{"psr3a":1,"o":{"b":1,"a":"x<y&z>","c":[1,null]},"n":null}';
+  const v = run(`j = JSON(d)
+ja = JSON("[1,2]")
+js = JSON("5")
+o = j["$.o"]
+listj = STRING([j])
+direct = STRING([JSON(d)])
+listja = STRING([ja])
+listjs = STRING([js])
+listo = STRING([o])
+mixed = STRING([j, o, "x"])
+nested = STRING([[j]])
+listroot = STRING([j["$"]])
+whole = STRING(j)`, { d });
+  const o = '{"a":"x\\u003cy\\u0026z\\u003e","b":1,"c":[1,0]}';
+  const want = {
+    listj: '[{}]', direct: '[{}]', listja: '[{}]', listjs: '[{}]', listo: `[${o}]`, mixed: `[{},${o},"x"]`, nested: '[[{}]]',
+    listroot: `[{"n":0,"o":${o},"psr3a":1}]`, whole: '{"n":null,"o":{"a":"x\\u003cy\\u0026z\\u003e","b":1,"c":[1,null]},"psr3a":1}',
+  };
+  for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
+});
+
+// What the engine gave for each in a lab tenant.
+test('STRING() of a SPLIT_NAME_VALUES object or a record writes JSON the way Go does', () => {
+  const d = '{"psr3a":1,"o":{"b":1,"a":"x<y&z>","c":[1,null]},"n":null}';
+  const v = run(`j = JSON(d)
+o = j["$.o"]
+kv = SPLIT_NAME_VALUES("b=2 a=x<y&z> Z=3 c=", " ", "=", "\\"")
+rr.b$ = "x<y>&"
+rr.a$ = 1
+rr.Z$ = TRUE
+rr.n$ = NULL
+rr.l$ = [1, "q", NULL]
+rr.t$ = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")
+rr.g.h$ = "deep"
+rr.j$ = j
+rr.o$ = o
+rr.kv$ = kv
+rn.b$ = NULL
+rn.a$ = "x"
+kvs = STRING(kv)
+listkv = STRING([kv])
+rrs = STRING(rr)
+listrr = STRING([rr])
+rrg = STRING(rr.g)
+rns = STRING(rn)
+listrn = STRING([rn])`, { d });
+  const kv = '{"Z":"3","a":"x\\u003cy\\u0026z\\u003e","b":"2","c":""}';
+  const rr = `{"Z$":true,"a$":1,"b$":"x\\u003cy\\u003e\\u0026","g":{"h$":"deep"},"j$":{},"kv$":${kv},"l$":[1,"q",0],"n$":0,"o$":{"a":"x\\u003cy\\u0026z\\u003e","b":1,"c":[1,0]},"t$":{}}`;
+  const want = { kvs: kv, listkv: `[${kv}]`, rrs: rr, listrr: `[${rr}]`, rrg: '{"h$":"deep"}', rns: '{"a$":"x","b$":0}', listrn: '[{"a$":"x","b$":0}]' };
+  for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
+});
+
 test('VALIDATE_ALL_JSONPATHS_EXIST', () => {
   const line = 'May 17 12:00:00 host alert {"event_id":"123","actor":{"id":"u1"},"action":"login"}';
   const v = run('ok = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.actor.id,$.action")\nno = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.session.id")\nbad = VALIDATE_ALL_JSONPATHS_EXIST("no json here", "$.a")', { originalData$: line });
@@ -313,6 +369,91 @@ i = t - TRUE
 k = IF (t + t) == 3583879446000000 THEN "number" ELSE "text"`);
   const usec = Date.UTC(2026, 9, 14, 1, 2, 3) * 1000;
   assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k'].map((x) => v.get(x)), [2 * usec, usec + 1500000, usec + 1, usec + 1, usec, usec, usec + 1, usec - 1500000, usec - 1, 'number']);
+});
+
+// What the engine gave for each in a lab tenant.
+test('a number and TRUE or FALSE add as numbers', () => {
+  const v = run(`jn = JSON(d)
+a = 5 + TRUE
+b = TRUE + 5
+c = TRUE + TRUE
+e = FALSE + FALSE
+f = 5 + FALSE
+g = -1 + TRUE
+h = FALSE + TRUE
+i = TRUE + -5
+k = STRING(5 + TRUE)
+l = STRING([TRUE + 0])
+m = IF (5 + TRUE) == 6 THEN "number" ELSE "text"
+n = STRING([(3 / 2) + TRUE])
+o = STRING([jn["$.f"] + TRUE])
+p = TRUE - TRUE
+q = 5 * TRUE
+r = "a" + TRUE
+s = TRUE + "a"
+t = STRING([TRUE + NULL])
+u = STRING([[1] + TRUE])`, { d: '{"f":1.5,"n":5}' });
+  const want = { a: 6, b: 6, c: 2, e: 0, f: 5, g: 0, h: 1, i: -4, k: '6', l: '[1]', m: 'number', n: '[2.5]', o: '[2.5]', p: 0, q: 5, r: 'atrue', s: 'truea', t: '[true]', u: '[[1,true]]' };
+  for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
+});
+
+// What the engine gave for each in a lab tenant.
+test('division gives a float, and % takes the whole part of each side', () => {
+  const v = run(`jn = JSON(d)
+a = STRING([3 / 2])
+b = STRING([4 / 2])
+c = STRING([-3 / 2])
+e = STRING([1 / 3])
+f = STRING([2 / 3])
+g = STRING([10 / 4])
+h = STRING([0 / 5])
+i = STRING([0 / -1])
+k = STRING([3 / -2])
+l = STRING(3 / 2)
+m = STRING(-3 / 2)
+n = STRING(0 / -1)
+o = STRING([(3 / 2) * 2])
+p = STRING([(3 / 2) + 1])
+q = STRING([(3 / 2) - 1])
+r = STRING([1 / 1000000])
+s = STRING([1 / 10000000])
+t = STRING(["7" / "2"])
+u = IF 3 / 2 > 1 THEN "gt" ELSE "le"
+w = IF 3 / 2 == 1 THEN "eq1" ELSE "ne1"
+x = IF (0 / -1) == 0 THEN "eq0" ELSE "ne0"
+y = STRING([(1 / 3) * 3])
+z = STRING([3 * 2 / 4])
+a2 = STRING([2 / 4 * 4])
+b2 = STRING([jn["$.n"] / 2])
+c2 = STRING([6 / 3])
+e2 = STRING([100000000 / 3])
+f2 = STRING([(3 / 2) / 2])
+g2 = STRING([(3 / 2) * 3])
+h2 = STRING([(3 / 2) - (1 / 4)])
+i2 = STRING([(7 / 2) % 2])
+k2 = STRING([(7 / 2) % 3])
+l2 = STRING([7 % (5 / 2)])
+m2 = STRING([-7 % 2])
+n2 = STRING([(-7 / 2) % 2])
+o2 = STRING([(3 / 2) % 1])
+p2 = STRING([7 % 2])
+q2 = STRING((3 / 2) * 9223372036854775807)
+r2 = STRING((-3 / 2) * 9223372036854775807)
+s2 = STRING((1 / 2) * 9223372036854775807)
+t2 = STRING((1000000000000 / 1) * 1000000000)
+raw = 3 / 2
+neg = -3 / 2
+whole = 4 / 2`, { d: '{"f":1.5,"n":5}' });
+  const want = {
+    a: '[1.5]', b: '[2]', c: '[-1.5]', e: '[0.3333333333333333]', f: '[0.6666666666666666]', g: '[2.5]', h: '[0]', i: '[-0]', k: '[-1.5]',
+    l: '1', m: '-1', n: '0', o: '[3]', p: '[2.5]', q: '[0.5]', r: '[0.000001]', s: '[1e-7]', t: '[3.5]', u: 'gt', w: 'ne1', x: 'eq0',
+    y: '[1]', z: '[1.5]', a2: '[2]', b2: '[2.5]', c2: '[2]', e2: '[33333333.333333332]', f2: '[0.75]', g2: '[4.5]', h2: '[1.25]',
+    i2: '[1]', k2: '[0]', l2: '[1]', m2: '[-1]', n2: '[-1]', o2: '[0]', p2: '[1]',
+    q2: '-9223372036854775808', r2: '-9223372036854775808', s2: '4611686018427387904', t2: '-9223372036854775808', raw: 1.5, neg: -1.5, whole: 2,
+  };
+  for (const [k, x] of Object.entries(want)) assert.equal(v.get(k), x, k);
+  // Dividing by zero fails the event ("division by 0").
+  for (const div of ['5 / 0', '0 / 0', '5 / (0 / 1)', '(3 / 2) / 0']) assert.throws(() => run(`x = ${div}`), /division by zero/, div);
 });
 
 test('a path that can select several nodes but selects one gives that node', () => {
