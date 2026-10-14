@@ -1,0 +1,46 @@
+{
+  "vendor": "Wazuh",
+  "product": "Wazuh alerts",
+  "versions": [
+    "4.14"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://documentation.wazuh.com/current/user-manual/reference/ossec-conf/syslog-output.html",
+    "https://documentation.wazuh.com/current/user-manual/manager/manual-syslog-output.html",
+    "https://documentation.wazuh.com/current/user-manual/ruleset/rules/rules-classification.html",
+    "https://github.com/wazuh/wazuh/blob/v4.14.8/src/os_csyslogd/alert.c"
+  ],
+  "notes": "Wazuh 4.x managers; Wazuh 5.0 removes syslog output. On the manager, add a syslog_output block with the data collector as server and <format>json</format>, run wazuh-control enable csyslogd and restart the manager. It sends each alert from alerts.json over UDP 514 with the tag ossec. Alerts in the authentication_success or authentication_failed rule groups go to Auth, with the Windows Security logon fields mapped. Every other alert, brute force and lockout correlations included, goes to the third-party alert schema with the rule description as title and a severity from rule.level: 0 to 3 INFO, 4 to 7 LOW, 8 to 11 MEDIUM, 12 to 14 HIGH, 15 and up CRITICAL. The event time is the alert's own timestamp with its offset. OSSEC's JSON output has a different layout and isn't covered. Samples are made up in the alerts.json layout Wazuh documents. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (163 of 163 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent. The tenant's built-in sshd parser also matches alerts whose full_log is an sshd line, as does the library's OpenSSH entry; in a lab tenant on 2026-10-14 the built-in parser took those lines in 7 of 15 Run Tests. Expect some of those alerts to keep the built-in mapping.",
+  "parsers": [
+    {
+      "name": "WAZUH_ALERT_JSON_PARENT",
+      "file": "WAZUH_ALERT_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "WAZUH_ALERT_JSON_CHILD_AUTH",
+      "file": "WAZUH_ALERT_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "WAZUH_ALERT_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+      "file": "WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "WAZUH_ALERT_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

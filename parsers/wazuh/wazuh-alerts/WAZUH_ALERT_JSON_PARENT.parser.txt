@@ -1,0 +1,32 @@
+!SAMPLE=<132>Oct 12 22:40:14 wazuh-mgr01 ossec: {"timestamp":"2026-10-12T22:40:14.123+0000","rule":{"level":10,"description":"syslog: User missed the password more than one time","id":"2502","mitre":{"id":["T1110"],"tactic":["Credential Access"],"technique":["Brute Force"]},"firedtimes":1,"mail":false,"groups":["syslog","access_control","authentication_failed"],"pci_dss":["10.2.4","10.2.5"],"gdpr":["IV_35.7.d","IV_32.2"]},"agent":{"id":"003","name":"web01","ip":"192.0.2.10"},"manager":{"name":"wazuh-mgr01"},"id":"1791844814.10241","full_log":"Oct 12 22:40:13 web01 sshd[2201]: PAM 2 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.7  user=root","predecoder":{"program_name":"sshd","timestamp":"Oct 12 22:40:13","hostname":"web01"},"decoder":{"parent":"sshd","name":"sshd"},"data":{"srcip":"198.51.100.7","dstuser":"root"},"location":"/var/log/auth.log"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sossec:\s*\{\s*"timestamp"\s*:\s*"\d{4}-\d{2}-\d{2}T[\d:.]+[+-]\d{4}"\s*,\s*"rule"\s*:\s*\{
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Wazuh 4.x manager alerts, syslog_output with <format>json</format>, to the data collector.
+# Parent: recognizes Wazuh JSON alerts and hands them to its children. The manager sends
+#   <132>Mmm dd hh:mm:ss <manager> ossec: {<the alert from alerts.json>}
+# Single logon successes and failures go to Auth; every other alert goes to the third-party alert schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+jsonMatch = originalData$|ossec:\s*(\{.*})\s*$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Wazuh"
+# The alert time is the manager's local time with its offset, for example 2026-10-12T22:40:14.123+0000.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.000-0700")
+hostId$ = json["$.agent.name"]
+
+# rule.groups, as text, for example "syslog","sshd","authentication_failed".
+gm = jsonMatch[1]|"rule"\s*:\s*\{.*?"groups"\s*:\s*\[(?P<g>[^\]]*)\]
+groups = REPLACE(gm["g"], "\"", "")
+
+# Wazuh marks single logon events with authentication_success or authentication_failed
+# (win_authentication_failed on older rules). authentication_failures marks correlated alerts,
+# such as brute force and lockouts, which stay alerts.
+eventType$ = "alert"
+eventType$ = IF CONTAINS(groups, "authentication_success") OR CONTAINS(groups, "authentication_failed") THEN "auth" ELSE eventType$
