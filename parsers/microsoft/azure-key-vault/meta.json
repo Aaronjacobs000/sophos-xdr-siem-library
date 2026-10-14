@@ -1,0 +1,33 @@
+{
+  "vendor": "Microsoft",
+  "product": "Azure Key Vault",
+  "versions": [],
+  "format": "json",
+  "ship_method": "azure",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/azure/key-vault/general/logging",
+    "https://learn.microsoft.com/en-us/azure/key-vault/general/monitor-key-vault-reference",
+    "https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/azkvauditlogs",
+    "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/stream-monitoring-data-event-hubs",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/MicrosoftAzure/EventHubs/Setup/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "Add a diagnostic setting on each key vault that streams the AuditEvent category to an event hub, and read the hub with a Sophos NG-SIEM Azure Event Hubs integration (Standard tier or above). The parser is a child of the global parser Azure_Monitor_Master, which claims each Azure resource log record but leaves Key Vault's in the generic schema; a standalone parser lost every line to it in a lab tenant. In Sophos Fusion, create it with Set Global Parent in Parser Script turned on. In a lab tenant on 2026-10-14 the parser API refused to save code containing !PARENT (restricted syntax) although Run Test accepted it, so save it in the console with that option. Every request (secrets, keys, certificates and the vault itself) goes to CloudAudit, with the operation (such as SecretGet) as the event name, the caller's UPN or app ID as the user, the subscription as the recipient account, and the secret, key or certificate as the object key and a resource. Vault operations are management events; gets, lists, backups and cryptographic operations are read-only. Records carry no event ID, and correlationId is optional and set by the client, so it goes to additional_event_data. Samples follow Microsoft's AuditEvent example and the AZKVAuditLogs columns with made-up values. They write vault hosts under azure.example, because the library's sample scan won't take Microsoft's service domain, and use the short upn claim; the parser also reads the claims URI forms. Each record of an event hub batch reaches the parsers on its own: Azure_Monitor_Master claims single records and not the {\"records\": [...]} wrapper. No live event hub was available. The parser passed Run Test in a lab tenant on 2026-10-14 as a child of Azure_Monitor_Master (123 of 123 fields matched the emulator in each of 3 runs, every line through Azure_Monitor_Master to this parser).",
+  "parsers": [
+    {
+      "name": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+      "file": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "Azure_Monitor_Master",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
