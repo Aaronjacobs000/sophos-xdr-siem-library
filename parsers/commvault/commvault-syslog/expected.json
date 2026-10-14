@@ -1,0 +1,365 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805209000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "channel": "Commvault events",
+      "operation_name": "WebServer",
+      "operation": "Syslog - Audit is enabled for Commcell",
+      "target_hostname": "commserve01",
+      "result": "Information",
+      "event_id": 874213
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805290000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "channel": "Commvault events",
+      "operation_name": "MediaManager",
+      "operation": "Access Path [D:\\CVLibrary] on MediaAgent [ma01] for MountPath [[ma01] D:\\CVLibrary] in library [DiskLib01] is offline.",
+      "target_hostname": "ma01",
+      "result": "Major",
+      "event_id": 874220
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805442000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "vendor": "Commvault",
+      "provider": "Commvault",
+      "log_type": "Event",
+      "alert_id": "874231",
+      "created_time_usec": 1791805442000000,
+      "alert_category": "Anomaly detection",
+      "summary": "Detected file type classification anomaly in job [185412] for client [fileserver02]. Number of files affected [1320].",
+      "title": "Detected file type classification anomaly in job [185412] for client [fileserver02]. Number of files affected [1320].",
+      "target_host_name": "fileserver02",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "commcell",
+            "value": "commserve01"
+          },
+          {
+            "key": "program",
+            "value": "CvStatAnalysis"
+          },
+          {
+            "key": "event_code",
+            "value": "14:337"
+          },
+          {
+            "key": "anomaly_type",
+            "value": "2"
+          },
+          {
+            "key": "suspicious_file_count",
+            "value": "1320"
+          },
+          {
+            "key": "file_counts_modified_renamed_created_deleted",
+            "value": "1288/32/0/0"
+          },
+          {
+            "key": "subclient",
+            "value": "defaultBackupSet/default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805511000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "target_user_name": "jlee",
+      "target_domain_name": "CORP",
+      "auth_system": "Commvault CommServe",
+      "source_address": "192.0.2.61",
+      "logon_application_family": "AdminConsole",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "User Logged in"
+          },
+          {
+            "key": "audit_id",
+            "value": "119262"
+          },
+          {
+            "key": "details",
+            "value": "Login success: username:[CORP\\jlee], host/ device:[192.0.2.61], logged in from: [AdminConsole]"
+          },
+          {
+            "key": "severity",
+            "value": "Low"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805531000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "target_user_name": "akim",
+      "target_domain_name": "CORP",
+      "auth_system": "Commvault CommServe",
+      "source_address": "198.51.100.40",
+      "logon_application_family": "AdminConsole",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "Login Failed"
+          },
+          {
+            "key": "audit_id",
+            "value": "119263"
+          },
+          {
+            "key": "details",
+            "value": "Login failure: username:[CORP\\akim], host/ device:[198.51.100.40], login attempted from: [AdminConsole]"
+          },
+          {
+            "key": "severity",
+            "value": "Medium"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805565000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "target_user_name": "akim",
+      "target_domain_name": "CORP",
+      "auth_system": "Commvault CommServe",
+      "action": "ACCOUNT",
+      "auth_category": "ACCOUNT_LOCK",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "User account locked"
+          },
+          {
+            "key": "audit_id",
+            "value": "119271"
+          },
+          {
+            "key": "details",
+            "value": "Login attempts for user [CORP\\akim] exceeded limit. Account is locked for [5minute(s)]"
+          },
+          {
+            "key": "severity",
+            "value": "High"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791845235000000,
+      "event_time_fidelity": "MICRO",
+      "channel": "Commvault audit trail",
+      "operation_name": "Restore Contents",
+      "operation": "Restore job [185419] started for client [fileserver02] to destination [fileserver02]",
+      "username": "jlee",
+      "result": "Low",
+      "event_id": 119276
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805680000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01.example.com",
+      "target_user_name": "backup-admin",
+      "target_domain_name": "CORP",
+      "target_host_name": "commserve01",
+      "auth_system": "Commvault CommServe",
+      "extra_workstationname": "ws-041",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "User Logged out"
+          },
+          {
+            "key": "audit_id",
+            "value": "119280"
+          },
+          {
+            "key": "details",
+            "value": "Login Name: CORP\\backup-admin Machine: ws-041"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805760000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01.example.com",
+      "channel": "Commvault events",
+      "operation_name": "JobManager",
+      "operation": "Backup job [185501] for client [sql02] failed. Reason: the client is not reachable.",
+      "target_hostname": "sql02",
+      "event_id": 874240
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01.example.com",
+      "vendor": "Commvault",
+      "provider": "Commvault",
+      "log_type": "Alert",
+      "alert_id": "3104",
+      "created_time_usec": 1791805862000000,
+      "alert_category": "Anomaly detection",
+      "summary": "Detected file activity anomaly in job [185412] for client [fileserver02]. Number of files affected [1320].",
+      "title": "File Activity Anomaly Alert",
+      "target_host_name": "fileserver02",
+      "additional_data": {
+        "record": [
+          {
+            "key": "commcell",
+            "value": "commserve01"
+          },
+          {
+            "key": "job_id",
+            "value": "185412"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791805960000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01.example.com",
+      "vendor": "Commvault",
+      "provider": "Commvault",
+      "log_type": "Alert",
+      "alert_id": "3111",
+      "created_time_usec": 1791805960000000,
+      "summary": "Job [185501] for client [sql02] failed with error [The client is not reachable].",
+      "title": "Backup Job Failed",
+      "target_host_name": "sql02",
+      "additional_data": {
+        "record": [
+          {
+            "key": "commcell",
+            "value": "commserve01"
+          },
+          {
+            "key": "job_id",
+            "value": "185501"
+          },
+          {
+            "key": "company",
+            "value": "Commcell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

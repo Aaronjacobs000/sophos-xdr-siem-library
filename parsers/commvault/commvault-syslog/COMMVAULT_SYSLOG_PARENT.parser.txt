@@ -1,0 +1,104 @@
+!SAMPLE=<14>Oct 12 22:50:43 commserve01 AuditTrail: Opid = {119262} Audittime = {12 Oct 2026 22:45:11} Severitylevel = {Low} Username = {jlee} Operation = {User Logged in} Details = { Login success: username:[CORP\jlee], host/ device:[192.0.2.61], logged in from: [AdminConsole]} Companyname = {Commcell} Utctimestamp = {1791805511}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:(?:^|\s)(?:Events:\s+Eventid|AuditTrail:\s+Opid)\s{0,3}=\s*\{|\sCommserver\s+\S+\s+(?:Alert|Audit|Event)\s+\[(?:Alert|Audit|Event)@14604\s)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Commvault CommServe syslog forwarding of events, the audit trail and alerts.
+# Parent: reads both forms and hands each record to a child.
+#   RFC 5424 (bUseRFC5424FormatInSyslog), as Commvault's syslog templates publish it:
+#     <PRI>1 <time>Z <host> Commserver <pid> Audit [Audit@14604 OpId="..." ...] <details>
+#   The default form, as Commvault's community shows it:
+#     Events: Eventid = {...}  Occurrencetime = {...}  ...  Description = {...}  Utctimestamp = {...}
+#     AuditTrail: Opid = {...} Audittime = {...} ... Operation = {...} Details = {...}
+# Logins from the audit trail go to Auth; ransomware and anomaly detections and every alert go to
+# the third-party alert schema; other audit records and events go to Management Event.
+# !TRIMALLOFF stops TRIM_ALL() stripping the braces and brackets Commvault writes in values.
+
+h5 = originalData$|^(?:<\d{1,3}>)?1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s+(?P<host>\S+)\s+Commserver\s
+hb = originalData$|^(?:<\d{1,3}>)?[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<host>\S+)\s+(?:Events|AuditTrail):
+leg = originalData$|(?:^|\s)(?P<cat>Events|AuditTrail):\s+(?P<body>(?:Eventid|Opid)\s{0,3}=\s*\{.*?)\s*$
+rfc = originalData$|\sCommserver\s+\S+\s+(?P<cat>Alert|Audit|Event)\s+\[(?:Alert|Audit|Event)@14604\s+(?P<sd>.*?")\]\s*(?P<msg>.*?)\s*$
+b = leg["body"]
+sd = rfc["sd"]
+
+# Each value: Key = {value} in the default form, Key="value" in the RFC 5424 form. Only one
+# form matches a line, so joining the two captures gives the value. The captures leave out the
+# spaces inside the braces. TRIM() isn't used because it also strips <> and [] pairs.
+# Sophos Fusion won't save a parser whose code has an asterisk right before an equals sign,
+# so the patterns put \s{0,3} before each =.
+x1 = b|\b(?:Eventid|Opid)\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\b(?:EventId|OpId|AlertId)="(?P<v>(?:[^"\\]|\\.)*)"
+recordId = x1["v"] + x2["v"]
+x1 = b|\b(?:Occurrencetime|Audittime)\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\b(?:OccurrenceTime|AuditTime|DetectedTime)="(?P<v>(?:[^"\\]|\\.)*)"
+localTime = x1["v"] + x2["v"]
+x1 = b|\bUtctimestamp\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bUTCTimestamp="(?P<v>(?:[^"\\]|\\.)*)"
+utc = x1["v"] + x2["v"]
+x1 = b|\b(?:Eventseverity|Severitylevel)\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+cvSeverity = x1["v"]
+x1 = b|\bCommcellname\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bCommcellName="(?P<v>(?:[^"\\]|\\.)*)"
+commcell = x1["v"] + x2["v"]
+x1 = b|\bCompanyname\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bCompanyName="(?P<v>(?:[^"\\]|\\.)*)"
+company = x1["v"] + x2["v"]
+x1 = b|\bComputer\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bComputer="(?P<v>(?:[^"\\]|\\.)*)"
+computer = x1["v"] + x2["v"]
+x1 = b|\bProgram\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bProgram="(?P<v>(?:[^"\\]|\\.)*)"
+program = x1["v"] + x2["v"]
+x1 = b|\bEventcode\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bEventCode="(?P<v>(?:[^"\\]|\\.)*)"
+eventCode = x1["v"] + x2["v"]
+x1 = b|\bUsername\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bUser="(?P<v>(?:[^"\\]|\\.)*)"
+user = x1["v"] + x2["v"]
+x1 = b|\bOperation\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bOperation="(?P<v>(?:[^"\\]|\\.)*)"
+operation = x1["v"] + x2["v"]
+x1 = b|\bJobid\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+x2 = sd|\bJobId="(?P<v>(?:[^"\\]|\\.)*)"
+jobId = x1["v"] + x2["v"]
+x2 = sd|\bAlertName="(?P<v>(?:[^"\\]|\\.)*)"
+alertName = x2["v"]
+# The free text: Description or Details, or the message after the structured data.
+x1 = b|\b(?:Description|Details)\s{0,3}=\s*\{\s*(?P<v>.*?)\s*\}(?:\s+[A-Z][a-z]+\s{0,3}=\s*\{|\s*$)
+text = x1["v"] + rfc["msg"]
+
+# RFC 5424 escapes ", \ and ] in values with a backslash.
+user = REPLACE(REPLACE(REPLACE(user, `\"`, `"`), `\]`, `]`), `\\`, `\`)
+operation = REPLACE(REPLACE(REPLACE(operation, `\"`, `"`), `\]`, `]`), `\\`, `\`)
+alertName = REPLACE(REPLACE(REPLACE(alertName, `\"`, `"`), `\]`, `]`), `\\`, `\`)
+
+cat = leg["cat"] + rfc["cat"]
+kind = "event"
+kind = IF cat == "AuditTrail" OR cat == "Audit" THEN "audit" ELSE kind
+kind = IF cat == "Alert" THEN "alert" ELSE kind
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Commvault"
+hostId$ = IF h5["host"] != "" THEN h5["host"] ELSE hb["host"]
+hostId$ = IF hostId$ == "" OR hostId$ == NULL THEN commcell ELSE hostId$
+
+# Commvault sends in batches about every eight minutes, so the time comes from the record.
+# Utctimestamp is Unix time in seconds. The DD Mon YYYY times are the CommServe's local time
+# with no zone, so they are only used, read as UTC, when Utctimestamp is missing.
+lt = localTime|^(?P<t>\d{1,2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2})$
+eventTimeUsec$ = IF lt["t"] != "" THEN DATETIME(lt["t"], "2 Jan 2006 15:04:05") ELSE eventTimeUsec$
+eventTimeUsec$ = IF h5["iso"] != "" THEN DATETIME(h5["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+ut = utc|^(?P<n>\d{9,11})$
+eventTimeUsec$ = IF ut["n"] != "" THEN INT(ut["n"], 10) * 1000000 ELSE eventTimeUsec$
+
+op = LOWERCASE(operation)
+login = CONTAINS(op, "logged in") OR CONTAINS(op, "logged out") OR CONTAINS(op, "login fail") OR CONTAINS(op, "account locked")
+# Anomaly and ransomware detections come from the CvStatAnalysis program, event code 14:337.
+anomaly = program == "CvStatAnalysis" OR eventCode == "14:337" OR CONTAINS(LOWERCASE(text), "anomaly")
+
+eventType$ = "mgmt"
+eventType$ = IF kind == "audit" AND login THEN "auth" ELSE eventType$
+eventType$ = IF kind == "alert" OR (kind == "event" AND anomaly) THEN "alert" ELSE eventType$
