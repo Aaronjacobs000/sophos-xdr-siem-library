@@ -113,12 +113,13 @@ export function trimPairs(s, repeat) {
 // (checked in a lab tenant): ["a","b"] with no spaces, object keys sorted, <, > and & escaped, a
 // NULL item or member written as 0 and a DATETIME one as {}. A NULL inside the value JSON()
 // returned stays null (see JsonValue), but that value inside a list or a record is written as {}.
-// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b". A float past the
-// int64 range, such as (3 / 2) * 9223372036854775807, comes out as -9223372036854775808.
+// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b". A number becomes an
+// int64 first: the whole part in full, or -9223372036854775808 when it doesn't fit, as with
+// (3 / 2) * 9223372036854775807 and 9223372036854775807 itself, which is the float 2^63.
 const INT64_LIMIT = 2 ** 63;
 function stringOf(v) {
   if (v === null || v === undefined) return '';
-  if (typeof v === 'number') { const t = Math.trunc(v); return toStr(t >= INT64_LIMIT || t < -INT64_LIMIT ? -INT64_LIMIT : t); }
+  if (typeof v === 'number') { const t = Math.trunc(v); return t < INT64_LIMIT && t >= -INT64_LIMIT ? BigInt(t).toString() : '-9223372036854775808'; }
   if (isList(v)) return goJsonList(v);
   if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJsonPlain(v.value, v.doc ? 'null' : '0');
   if (v instanceof ObjValue || v instanceof RecordValue) return goJson(v);
@@ -132,11 +133,15 @@ function goJsonList(list) {
   return `[${list.map(goJson).join(',')}]`;
 }
 
-// An item of a list or a member of an object or record. 0 / -1 is -0, which Go writes as -0.
+// A float the way Go's encoding/json writes it, which JavaScript's String() matches: 1e-7, 1e+21,
+// 9223372036854776000. 0 / -1 is -0, which Go writes as -0.
+const goJsonNumber = (n) => (Object.is(n, -0) ? '-0' : String(n));
+
+// An item of a list or a member of an object or record.
 function goJson(v) {
   if (v === null || v === undefined) return '0';
   if (typeof v === 'string') return goQuote(v);
-  if (typeof v === 'number') return Object.is(v, -0) ? '-0' : toStr(v);
+  if (typeof v === 'number') return goJsonNumber(v);
   if (typeof v === 'boolean') return toStr(v);
   if (isList(v)) return goJsonList(v);
   if (v instanceof TimeValue) return '{}';
@@ -152,7 +157,7 @@ function goJsonPlain(v, nul = 'null') {
   if (v === null || v === undefined) return nul;
   if (Array.isArray(v)) return `[${v.map((x) => goJsonPlain(x, nul)).join(',')}]`;
   if (typeof v === 'object') return goJsonObject(Object.entries(v), (x) => goJsonPlain(x, nul));
-  if (typeof v === 'number') return String(v);
+  if (typeof v === 'number') return goJsonNumber(v);
   return goJson(v);
 }
 

@@ -91,10 +91,92 @@ export function toStr(v) {
   if (v === null || v === undefined) return null;
   if (typeof v === 'string') return v;
   if (typeof v === 'boolean') return v ? 'true' : 'false';
-  // Whole numbers past 2^53 print in full, the way Go prints an int64.
-  if (typeof v === 'number') return Number.isInteger(v) && !Number.isSafeInteger(v) ? BigInt(v).toString() : String(v);
+  if (typeof v === 'number') return goFloatText(v);
   if (v instanceof TimeValue) return formatTime(v);
   return compactJson(toPlain(v));
+}
+
+// Every number in the engine is a float64, whole numbers and literals included, so
+// 9007199254740993 is 9007199254740992 (checked in a lab tenant). As text, joined or stored in a
+// string field, a number is written the way Go's strconv.FormatFloat(f, 'f', -1, 64) writes it:
+// the fewest digits that read back as the same float, and never an exponent. 1 / 10000000 is
+// 0.0000001, 0 / -1 is -0 and 9223372036854775807 is 9223372036854776000.
+export function goFloatText(n) {
+  if (n === 0) return Object.is(n, -0) ? '-0' : '0';
+  if (!Number.isFinite(n)) return Number.isNaN(n) ? 'NaN' : n > 0 ? '+Inf' : '-Inf';
+  const [m, e] = Math.abs(n).toExponential().split('e');
+  const digits = m.replace('.', '');
+  const exp = Number(e);
+  let out;
+  if (exp >= digits.length - 1) out = digits + '0'.repeat(exp - digits.length + 1);
+  else if (exp >= 0) out = `${digits.slice(0, exp + 1)}.${digits.slice(exp + 1)}`;
+  else out = `0.${'0'.repeat(-exp - 1)}${digits}`;
+  return n < 0 ? `-${out}` : out;
+}
+
+// Text counts as a number when Go's strconv.ParseFloat reads all of it: "5", "+5", "-5", "5.",
+// ".5", "1e3", "1_000" and the hex float "0x1p4". Spaces, "", "0x10", "inf", "NaN" and a value
+// out of range such as "1e400" don't (checked in a lab tenant). Returns the number or null.
+export function parseGoFloat(s) {
+  if (typeof s !== 'string') return null;
+  let i = 0;
+  if (s[i] === '+' || s[i] === '-') i++;
+  let hex = false;
+  if (i + 2 < s.length && s[i] === '0' && (s[i + 1] === 'x' || s[i + 1] === 'X')) { hex = true; i += 2; }
+  const isDigit = (c) => (c >= '0' && c <= '9') || (hex && /^[a-fA-F]$/.test(c));
+  let sawDot = false, sawDigits = false, mant = '', frac = 0;
+  for (; i < s.length; i++) {
+    const c = s[i];
+    if (c === '_') continue;
+    if (c === '.') { if (sawDot) break; sawDot = true; continue; }
+    if (!isDigit(c)) break;
+    sawDigits = true;
+    mant += c;
+    if (sawDot) frac++;
+  }
+  if (!sawDigits) return null;
+  let exp = 0;
+  if (i < s.length && s[i].toLowerCase() === (hex ? 'p' : 'e')) {
+    i++;
+    let sign = 1;
+    if (s[i] === '+') i++;
+    else if (s[i] === '-') { sign = -1; i++; }
+    if (!(s[i] >= '0' && s[i] <= '9')) return null;
+    let e = '';
+    for (; i < s.length && ((s[i] >= '0' && s[i] <= '9') || s[i] === '_'); i++) if (s[i] !== '_') e += s[i];
+    exp = sign * Number(e);
+  } else if (hex) {
+    return null;
+  }
+  if (i !== s.length || (s.includes('_') && !underscoreOK(s))) return null;
+  const v = hex ? Number(BigInt(`0x${mant}`)) * 2 ** (exp - 4 * frac) : Number(s.replace(/_/g, ''));
+  if (!Number.isFinite(v)) return null;
+  return s[0] === '-' && hex ? -v : v;
+}
+
+// Go's rule for _ in a number: only between digits, or between a base prefix and a digit.
+function underscoreOK(s) {
+  let saw = '^';
+  let i = 0;
+  if (s[0] === '+' || s[0] === '-') s = s.slice(1);
+  let hex = false;
+  if (s.length >= 2 && s[0] === '0' && /^[bBoOxX]$/.test(s[1])) { i = 2; saw = '0'; hex = /^[xX]$/.test(s[1]); }
+  for (; i < s.length; i++) {
+    const c = s[i];
+    if ((c >= '0' && c <= '9') || (hex && /^[a-fA-F]$/.test(c))) { saw = '0'; continue; }
+    if (c === '_') { if (saw !== '0') return false; saw = '_'; continue; }
+    if (saw === '_') return false;
+    saw = '!';
+  }
+  return saw !== '_';
+}
+
+// A number, TRUE or FALSE (1 or 0), or text that reads as a number, as a float; otherwise null.
+export function asNumber(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  if (typeof v === 'string') return parseGoFloat(v);
+  return null;
 }
 
 // IF conditions: TRUE, a non-empty string other than "false", a non-zero number, or a
@@ -120,15 +202,18 @@ export function toBool(v) {
   return list.length === 1 && truthy(list[0]);
 }
 
-// NULL equals "" as well as NULL (checked in a lab tenant).
+// NULL equals "" as well as NULL (checked in a lab tenant). When both sides are numbers, TRUE or
+// FALSE, or text that reads as a number, they compare as floats: "5" == "5.0", "1" == TRUE and
+// 9223372036854775807 == 9223372036854775806. Anything else compares as text, so TRUE == "true"
+// but not "TRUE", and " 5" != 5 (checked in a lab tenant).
 export function looseEqual(a, b) {
   if (a === null || a === undefined || b === null || b === undefined) {
     const x = a ?? null, y = b ?? null;
     return x === y || x === '' || y === '';
   }
+  const x = asNumber(a), y = asNumber(b);
+  if (x !== null && y !== null) return x === y;
   if (typeof a === typeof b && (typeof a !== 'object')) return a === b;
-  if (typeof a === 'number' && typeof b === 'string') return String(a) === b || Number(b) === a;
-  if (typeof b === 'number' && typeof a === 'string') return String(b) === a || Number(a) === b;
   return toStr(a) === toStr(b);
 }
 

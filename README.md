@@ -28,6 +28,8 @@ There is no public Sophos parser engine or parser API, so the emulator follows t
 
 The emulator handles the syslog header the way Run Test does: it takes a plain BSD header such as `Oct 14 01:02:03 host` off `message`. A line that starts with a `<PRI>` such as `<134>`, an RFC 5424 header or an ISO time keeps its header: `message` is the whole line, there is no `sensor_id`, and the event time is the ingest time. `eventTimeUsec$` already holds it, in microseconds, when the parser starts. Whether ingest takes the `<PRI>` off first hasn't been checked.
 
+Numbers work the way the engine's do. Every number is a 64-bit float, so a whole number past 9007199254740992 rounds: `9007199254740993` is `9007199254740992`. Text that reads as a number adds to a number or `TRUE`, so `"5" + 5` is `10`, but two texts still join: `"5" + "5"` is `"55"`.
+
 The emulator has been validated against 10 real event types.
 
 The emulator knows the fields in the docs' schema tables, plus the few more the engine was seen to store: `event_type`, `sensor_version` and `source_address` in Antivirus, and `source_address` in Management Event. The engine's schemas may have others, so a field the emulator drops with a warning may still be stored. A line with no event time gets the ingest time, which for a library entry is its `reference_time`. It also can't see the built-in parsers in your tenant, which may claim the same lines first. So a parser that passes here is a tested draft: add it in Sophos Fusion under Security Operations > Integrations > Custom Parsers, add your samples, and use Parse Message and Run Test before you turn it on. Sophos does not maintain custom parsers, and this tool does not replace Sophos Professional Services, which builds custom parsers for customers.
