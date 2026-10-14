@@ -1,0 +1,493 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NUTANIX_PC_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nutanix Prism Central",
+      "event_time_usec": 1791844811702537,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pc01",
+      "sensor_event_id": "c47c84ef-2044-4d93-a377-f97706392b93",
+      "event_name": "VmCreateAudit",
+      "event_type": "Create",
+      "event_source": "Prism Central",
+      "user_name": "admin",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "params",
+            "value": "{\"vm_name\":\"web-03\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "default_msg",
+            "value": "Created VM web-03"
+          },
+          {
+            "key": "entity_type",
+            "value": "vm"
+          },
+          {
+            "key": "entity_name",
+            "value": "web-03"
+          },
+          {
+            "key": "entity_uuid",
+            "value": "8c1f4e2a-7b3d-4a5e-9f60-1a2b3c4d5e6f"
+          },
+          {
+            "key": "originating_cluster_uuid",
+            "value": "0005f1e2-3a4b-5c6d-0000-000000012345"
+          },
+          {
+            "key": "op_start_usecs",
+            "value": "1791844809114027"
+          },
+          {
+            "key": "op_end_usecs",
+            "value": "1791844811698211"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NUTANIX_PC_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nutanix Prism Central",
+      "event_time_usec": 1791845011880412,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pc01",
+      "sensor_event_id": "9b2a7e10-4c3d-4f5e-8a6b-7c8d9e0f1a2b",
+      "event_name": "VmMigrateAudit",
+      "event_type": "Migrate",
+      "event_source": "Prism Central",
+      "user_name": "jlee@corp.example.com",
+      "user_id": "3a8c19be-336d-52f0-bb52-1012345678ab",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "default_msg",
+            "value": "Migrated VM db-01 to host ahv-host-02"
+          },
+          {
+            "key": "entity_type",
+            "value": "vm"
+          },
+          {
+            "key": "entity_name",
+            "value": "db-01"
+          },
+          {
+            "key": "entity_uuid",
+            "value": "2d4e6f80-1a3b-4c5d-8e7f-9a0b1c2d3e4f"
+          },
+          {
+            "key": "affected_entities",
+            "value": "[{\"entityType\":\"vm\",\"name\":\"db-01\",\"uuid\":\"2d4e6f80-1a3b-4c5d-8e7f-9a0b1c2d3e4f\"},{\"entityType\":\"host\",\"name\":\"ahv-host-02\",\"uuid\":\"5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d\"}]"
+          },
+          {
+            "key": "originating_cluster_uuid",
+            "value": "0005f1e2-3a4b-5c6d-0000-000000012345"
+          },
+          {
+            "key": "op_start_usecs",
+            "value": "1791844998310554"
+          },
+          {
+            "key": "op_end_usecs",
+            "value": "1791845011876001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NUTANIX_PC_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nutanix Prism Central",
+      "event_time_usec": 1791845105311940,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pc01",
+      "sensor_event_id": "e1f2a3b4-c5d6-4e7f-8091-a2b3c4d5e6f7",
+      "event_name": "VmDeleteAudit",
+      "event_type": "Delete",
+      "event_source": "Prism Central",
+      "user_name": "jlee@corp.example.com",
+      "user_id": "3a8c19be-336d-52f0-bb52-1012345678ab",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "default_msg",
+            "value": "Deleted VM legacy-app-01"
+          },
+          {
+            "key": "entity_type",
+            "value": "vm"
+          },
+          {
+            "key": "entity_name",
+            "value": "legacy-app-01"
+          },
+          {
+            "key": "entity_uuid",
+            "value": "6e7f8091-a2b3-4c4d-9e5f-6a7b8c9d0e1f"
+          },
+          {
+            "key": "originating_cluster_uuid",
+            "value": "0005f1e2-3a4b-5c6d-0000-000000012345"
+          },
+          {
+            "key": "op_start_usecs",
+            "value": "1791845103022871"
+          },
+          {
+            "key": "op_end_usecs",
+            "value": "1791845105307118"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NUTANIX_PC_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nutanix Prism Central",
+      "event_time_usec": 1791845260551002,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pc01",
+      "sensor_event_id": "4f5e6d7c-8b9a-4011-a2b3-c4d5e6f70819",
+      "event_name": "PairingAudit",
+      "event_type": "Create",
+      "event_source": "Prism Central",
+      "user_name": "admin",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "params",
+            "value": "{\"remote_cluster_url\":\"\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "default_msg",
+            "value": "Failed to pair with remote prism central None: Internal Server Error. Could not create remote connection. Skip pairing"
+          },
+          {
+            "key": "entity_type",
+            "value": "cluster"
+          },
+          {
+            "key": "entity_name",
+            "value": "Unnamed"
+          },
+          {
+            "key": "entity_uuid",
+            "value": "0005f1e2-3a4b-5c6d-0000-000000012345"
+          },
+          {
+            "key": "originating_cluster_uuid",
+            "value": "0005f1e2-3a4b-5c6d-0000-000000012345"
+          },
+          {
+            "key": "op_start_usecs",
+            "value": "1791845260549117"
+          },
+          {
+            "key": "op_end_usecs",
+            "value": "1791845260549117"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791805801000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-01",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.80",
+      "source_port": 49873,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "direction": "OUTBOUND",
+      "tx_packet_count": 3,
+      "tx_byte_count": 180,
+      "rx_packet_count": 2,
+      "rx_byte_count": 120,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "app-tier-policy"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "ff16a6fb-ff89-4c2d-a9c8-f67030f93d79"
+          },
+          {
+            "key": "session_state",
+            "value": "New"
+          },
+          {
+            "key": "policy_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "Genesis_1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791805831000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-01",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.80",
+      "source_port": 49873,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "direction": "OUTBOUND",
+      "tx_packet_count": 995,
+      "tx_byte_count": 85031,
+      "rx_packet_count": 585,
+      "rx_byte_count": 101450,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "app-tier-policy"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "ff16a6fb-ff89-4c2d-a9c8-f67030f93d79"
+          },
+          {
+            "key": "session_state",
+            "value": "Update"
+          },
+          {
+            "key": "policy_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "Genesis_1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791805929000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-01",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.80",
+      "source_port": 49873,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "direction": "OUTBOUND",
+      "tx_packet_count": 1402,
+      "tx_byte_count": 118220,
+      "rx_packet_count": 911,
+      "rx_byte_count": 812774,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "app-tier-policy"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "ff16a6fb-ff89-4c2d-a9c8-f67030f93d79"
+          },
+          {
+            "key": "session_state",
+            "value": "Destroy"
+          },
+          {
+            "key": "policy_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "Genesis_1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791806024000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-02",
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.40",
+      "source_port": 51544,
+      "destination_port": 3389,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "direction": "INBOUND",
+      "tx_packet_count": 1,
+      "tx_byte_count": 60,
+      "rx_packet_count": 0,
+      "rx_byte_count": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "quarantine-strict"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "dd721468-033f-4368-bdc9-c22a99044421"
+          },
+          {
+            "key": "session_state",
+            "value": "New"
+          },
+          {
+            "key": "policy_action",
+            "value": "DROP"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "Genesis_3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791806058000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-02",
+      "source_address": "192.0.2.40",
+      "destination_address": "198.51.100.53",
+      "source_port": 34745,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "direction": "OUTBOUND",
+      "tx_packet_count": 1,
+      "tx_byte_count": 74,
+      "rx_packet_count": 1,
+      "rx_byte_count": 128,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "dns-monitoring"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "41c77188-4268-4aa3-86cd-2b081ea25af6"
+          },
+          {
+            "key": "session_state",
+            "value": "New"
+          },
+          {
+            "key": "policy_action",
+            "value": "MONITOR"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "Genesis_3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NUTANIX_FLOW_HITLOG_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Nutanix Flow Network Security",
+      "event_time_usec": 1791806118000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ahv-host-03",
+      "source_address": "192.0.2.50",
+      "destination_address": "192.0.2.10",
+      "source_port": 22,
+      "destination_port": 40726,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "tx_packet_count": 9,
+      "tx_byte_count": 468,
+      "rx_packet_count": 0,
+      "rx_byte_count": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "policy_name",
+            "value": "quarantine-strict"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "dd721468-033f-4368-bdc9-c22a99044421"
+          },
+          {
+            "key": "session_state",
+            "value": "Update"
+          },
+          {
+            "key": "policy_action",
+            "value": "DROP"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "flow-hitCount4"
+          }
+        ]
+      }
+    }
+  }
+]
