@@ -1,0 +1,424 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791853804218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000001",
+      "auth_system": "Atlassian",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "status": "user_login",
+      "sub_status": "Logged in to account",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+          },
+          {
+            "key": "actor_id",
+            "value": "5b10ac8d82e05b22cc7d4ef5"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791856721502000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000002",
+      "auth_system": "Atlassian",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "status": "user_logout",
+      "sub_status": "Logged out of account",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+          },
+          {
+            "key": "actor_id",
+            "value": "5b10ac8d82e05b22cc7d4ef5"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791854413660000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "User management",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000003",
+      "event_source": "Atlassian",
+      "event_name": "group_user_added",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "sam.admin@example.com",
+      "user_id": "62f0c1a2b3c4d5e6f7a8b9c0",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "8a9b0c1d2e3f4a5b6c7d8e9f",
+          "resource_type": "users",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "4d5e6f70-8192-4a3b-9c4d-5e6f70819203",
+          "resource_type": "groups",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Added user to group"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:20:13.697Z"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791854695031000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Security policies",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000004",
+      "event_source": "Atlassian",
+      "event_name": "auth_policy_updated",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "sam.admin@example.com",
+      "user_id": "62f0c1a2b3c4d5e6f7a8b9c0",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "0a1b2c3d-4e5f-4061-8a7b-8c9d0e1f2a3b",
+          "resource_type": "authentication-policies",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Updated authentication policy"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:24:55.068Z"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791855067884000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Atlassian accounts",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000005",
+      "event_source": "Atlassian",
+      "event_name": "user_deactivated",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "sam.admin@example.com",
+      "user_id": "62f0c1a2b3c4d5e6f7a8b9c0",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "8a9b0c1d2e3f4a5b6c7d8e9f",
+          "resource_type": "users",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Deactivated account"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:31:07.921Z"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791855322415000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Settings",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000006",
+      "event_source": "Atlassian",
+      "event_name": "admin_api_key_created",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "sam.admin@example.com",
+      "user_id": "62f0c1a2b3c4d5e6f7a8b9c0",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+          "resource_type": "api-keys",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Created admin API key"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:35:22.452Z"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791855600120000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Settings",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000007",
+      "event_source": "Atlassian",
+      "event_name": "audit_log_exported",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "sam.admin@example.com",
+      "user_id": "62f0c1a2b3c4d5e6f7a8b9c0",
+      "access_key": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Exported organization audit log"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:40:00.157Z"
+          },
+          {
+            "key": "auth_type",
+            "value": "api-token"
+          },
+          {
+            "key": "token_label",
+            "value": "audit-export"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791855856733000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Confluence user actions",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000008",
+      "event_source": "Atlassian",
+      "event_name": "confluence_page_viewed",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "pat@example.com",
+      "user_id": "5b10ac8d82e05b22cc7d4ef5",
+      "source_address": "203.0.113.10",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "655361",
+          "resource_type": "pages",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "7f3e2d1c-0b9a-4876-9543-21fedcba9876",
+          "resource_type": "sites",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_display_name",
+            "value": "Viewed Confluence page"
+          },
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:44:16.770Z"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ATLASSIAN_ORG_AUDIT_JSON_PARENT > ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Atlassian",
+      "event_time_usec": 1791856079006000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c8b7a6d-5e4f-4321-8abc-000000000009",
+      "event_source": "Atlassian",
+      "event_name": "rovo_agent_published",
+      "recipient_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_name": "pat@example.com",
+      "user_id": "5b10ac8d82e05b22cc7d4ef5",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "f1e2d3c4-b5a6-4978-8695-a4b3c2d1e0f9",
+          "resource_type": "agents",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "7f3e2d1c-0b9a-4876-9543-21fedcba9876",
+          "resource_type": "sites",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "resource_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "resource_type": "organizations",
+          "resource_account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "processed_at",
+            "value": "2026-10-13T01:47:59.043Z"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  }
+]

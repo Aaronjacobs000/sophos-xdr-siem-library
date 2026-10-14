@@ -1,0 +1,38 @@
+!SAMPLE={"atlassian_record":"event","orgId":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","id":"9c8b7a6d-5e4f-4321-8abc-000000000001","type":"events","attributes":{"time":"2026-10-13T01:10:04.218Z","processedAt":"2026-10-13T01:10:04.255Z","action":"user_login","actor":{"id":"5b10ac8d82e05b22cc7d4ef5","name":"Pat Example","email":"pat@example.com"},"context":[{"id":"5b10ac8d82e05b22cc7d4ef5","type":"users","attributes":{}}],"container":[{"id":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","type":"organizations","attributes":{}}],"location":{"ip":"203.0.113.10","countryName":"Australia","regionName":"New South Wales","city":"Sydney"}},"actionDisplayName":"Logged in to account","actionGroup":"Atlassian accounts"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Atlassian organization audit log events from the example collector: Logged in to
+# account (user_login) and Logged out of account. Atlassian's activities list has no failed
+# sign-in.
+# Child of ATLASSIAN_ORG_AUDIT_JSON_PARENT: each one to Auth.
+# json, act, display, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+authSystem$ = "Atlassian"
+email = json["$.attributes.actor.email"]
+targetUserName$ = IF email THEN email ELSE json["$.attributes.actor.id"]
+userDisplayName$ = json["$.attributes.actor.name"]
+sourceAddress$ = json["$.attributes.location.ip"]
+status$ = act
+subStatus$ = display
+
+logout = display == "Logged out of account"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF logout THEN "LOGOFF" ELSE "LOGON"
+actionResult$ = "SUCCESS"
+
+m1.key$ = "org_id"
+m1.value$ = json["$.orgId"]
+m2.key$ = "actor_id"
+m2.value$ = json["$.attributes.actor.id"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+city = json["$.attributes.location.city"]
+m3.key$ = "location"
+m3.value$ = IF city THEN city + ", " + STRING(json["$.attributes.location.countryName"]) ELSE json["$.attributes.location.countryName"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

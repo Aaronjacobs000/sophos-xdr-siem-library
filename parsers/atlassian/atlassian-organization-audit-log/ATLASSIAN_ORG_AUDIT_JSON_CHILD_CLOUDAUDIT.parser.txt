@@ -1,0 +1,79 @@
+!SAMPLE={"atlassian_record":"event","orgId":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","id":"9c8b7a6d-5e4f-4321-8abc-000000000003","type":"events","attributes":{"time":"2026-10-13T01:20:13.660Z","processedAt":"2026-10-13T01:20:13.697Z","action":"group_user_added","actor":{"id":"62f0c1a2b3c4d5e6f7a8b9c0","name":"Sam Admin","email":"sam.admin@example.com"},"context":[{"id":"8a9b0c1d2e3f4a5b6c7d8e9f","type":"users","attributes":{}},{"id":"4d5e6f70-8192-4a3b-9c4d-5e6f70819203","type":"groups","attributes":{}}],"container":[{"id":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","type":"organizations","attributes":{}}],"location":{"ip":"198.51.100.77","countryName":"Australia","regionName":"Victoria","city":"Melbourne"}},"actionDisplayName":"Added user to group","actionGroup":"User management"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Atlassian organization audit log events from the example collector: every event that
+# isn't a sign-in or sign-out. Users, groups, accounts, security policies, API keys and tokens,
+# settings, and, with Guard Premium or a Cloud Enterprise plan, activity in the apps.
+# Child of ATLASSIAN_ORG_AUDIT_JSON_PARENT: each one to CloudAudit, with the action key as the
+# event name and the action's group (such as User management) as the event type. The context
+# (what the action was performed against) and the container (where) become resources.
+# json, act, display, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+eventSource$ = "Atlassian"
+eventName$ = act
+group = json["$.actionGroup"]
+eventType$ = IF group THEN group ELSE NULL
+org = json["$.orgId"]
+recipientAccountId$ = org
+email = json["$.attributes.actor.email"]
+userName$ = IF email THEN email ELSE json["$.attributes.actor.name"]
+userName$ = IF userName$ THEN userName$ ELSE json["$.attributes.actor.id"]
+userId$ = json["$.attributes.actor.id"]
+# The API token the actor used, when it acted with one.
+accessKey$ = json["$.attributes.actor.auth.tokenId"]
+sourceAddress$ = json["$.attributes.location.ip"]
+
+# Activity inside the apps (the "user actions" groups) is data; the rest changes the organization.
+lowName = LOWERCASE(STRING(display))
+lowGroup = LOWERCASE(STRING(group))
+managementEvent$ = NOT CONTAINS(lowGroup, "user actions")
+readOnly$ = CONTAINS(lowName, "viewed") OR CONTAINS(lowName, "searched") OR CONTAINS(lowName, "exported") OR CONTAINS(lowName, "downloaded")
+
+c1.resourceId$ = json["$.attributes.context[0].id"]
+c1.resourceType$ = json["$.attributes.context[0].type"]
+c1.resourceAccountId$ = org
+c2.resourceId$ = json["$.attributes.context[1].id"]
+c2.resourceType$ = json["$.attributes.context[1].type"]
+c2.resourceAccountId$ = org
+k1.resourceId$ = json["$.attributes.container[0].id"]
+k1.resourceType$ = json["$.attributes.container[0].type"]
+k1.resourceAccountId$ = org
+k2.resourceId$ = json["$.attributes.container[1].id"]
+k2.resourceType$ = json["$.attributes.container[1].type"]
+k2.resourceAccountId$ = org
+resources$ = []
+resources$ = IF c1.resourceId$ THEN resources$ + [c1] ELSE resources$
+resources$ = IF c2.resourceId$ THEN resources$ + [c2] ELSE resources$
+resources$ = IF k1.resourceId$ THEN resources$ + [k1] ELSE resources$
+resources$ = IF k2.resourceId$ THEN resources$ + [k2] ELSE resources$
+
+d1.key$ = "action_display_name"
+d1.value$ = display
+d2.key$ = "processed_at"
+d2.value$ = json["$.attributes.processedAt"]
+d3.key$ = "auth_type"
+d3.value$ = json["$.attributes.actor.auth.authType"]
+d4.key$ = "token_label"
+d4.value$ = json["$.attributes.actor.auth.tokenLabel"]
+d5.key$ = "on_behalf_of"
+d5.value$ = json["$.attributes.actor.onBehalfOf.email"]
+d6.key$ = "app_type"
+d6.value$ = json["$.attributes.actor.app.type"]
+city = json["$.attributes.location.city"]
+d7.key$ = "location"
+d7.value$ = IF city THEN city + ", " + STRING(json["$.attributes.location.countryName"]) ELSE json["$.attributes.location.countryName"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$

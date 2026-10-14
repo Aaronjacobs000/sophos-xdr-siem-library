@@ -1,0 +1,45 @@
+{
+  "vendor": "Atlassian",
+  "product": "Atlassian organization audit log",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://developer.atlassian.com/cloud/admin/organization/rest/api-group-events/",
+    "https://support.atlassian.com/security-and-access-policies/docs/accessing-audit-log-activities/",
+    "https://support.atlassian.com/security-and-access-policies/docs/audit-log-activities-database/",
+    "https://developer.atlassian.com/cloud/admin/scopes/"
+  ],
+  "notes": "The organization audit log needs Atlassian Guard or a Cloud Enterprise plan, and reaches other tools through the Organizations REST API, which is pull only, so these parsers read events polled from the events stream by the example collector in collectors/atlassian-org-audit and posted to HTTP Ingest. The collector puts \"atlassian_record\": \"event\" first and adds orgId, and each action's display name and group from the event actions list. Use an API key with only the read:events:admin scope. Atlassian doesn't publish its action keys; apart from user_login, which Atlassian staff have discussed in public, the keys in the samples are made up. So the parsers route by the display names, from Atlassian's audit log activities list: Logged in to account (or user_login) and Logged out of account go to Auth. Atlassian lists no failed sign-in activity. Every other event goes to CloudAudit with the action key as the event name and the action's group (such as User management or Security policies) as the event type; the context and container entries become resources, and an API token the actor used is the access key. App activity (the user actions groups) is data, and views, searches, exports and downloads are read-only. Samples follow the event shape in Atlassian's OpenAPI document with made-up values, tagged by the collector's own code; they leave out the links URLs, which the parsers don't read. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (118 of 118 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (118 of 118 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "ATLASSIAN_ORG_AUDIT_JSON_PARENT",
+      "file": "ATLASSIAN_ORG_AUDIT_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ATLASSIAN_ORG_AUDIT_JSON_CHILD_AUTH",
+      "file": "ATLASSIAN_ORG_AUDIT_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "ATLASSIAN_ORG_AUDIT_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT",
+      "file": "ATLASSIAN_ORG_AUDIT_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "ATLASSIAN_ORG_AUDIT_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "collector": "collectors/atlassian-org-audit"
+}
