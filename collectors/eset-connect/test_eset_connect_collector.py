@@ -1,0 +1,441 @@
+"""Unit tests for eset_connect_collector.py against a local mock server.
+
+The mock serves the ESET Connect shapes from ESET's public API reference and OpenAPI specifications:
+POST /oauth/token (application/x-www-form-urlencoded, grant_type password or refresh_token, answering
+{"access_token", "refresh_token", "token_type", "expires_in"}), and GET /v1/detections
+(startTime inclusive and endTime exclusive on occurTime, pageSize, pageToken, answering
+{"detections", "nextPageToken", "totalSize"}, or 202 with a response-id header while a query is
+pending), with "Authorization: Bearer", plus a Sophos NG-SIEM HTTP Ingest endpoint. No real service
+is called.
+
+  python3 -m unittest discover -s collectors/eset-connect -p 'test_*.py' -v
+"""
+import gc
+import gzip
+import io
+import json
+import logging
+import os
+import sys
+import tempfile
+import threading
+import time
+import unittest
+import urllib.parse
+import warnings
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import eset_connect_collector as c  # noqa: E402
+
+USERNAME = "api-reader@example.com"
+PASSWORD = "test-eset-password-not-real"
+REFRESH = "test-eset-refresh-token-not-real"
+INGEST_KEY = "test-ngsiem-ingest-key-not-real"
+
+
+def iso(epoch, frac=False):
+    dt = datetime.fromtimestamp(epoch, tz=timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" if frac else dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse(value):
+    return c._epoch(value)
+
+
+def detection(i, epoch, category="DETECTION_CATEGORY_ANTIVIRUS"):
+    return {"uuid": f"00000000-0000-4000-8000-{i:012d}", "category": category, "severityLevel": "SEVERITY_LEVEL_MEDIUM",
+            "displayName": "Win32/Agent.EXAMPLE", "typeName": "Trojan", "occurTime": iso(epoch, frac=i % 2 == 0),
+            "objectName": f"C:\\Users\\jdoe\\Downloads\\invoice_{i}.exe", "objectTypeName": "File",
+            "objectUrl": f"file:///C:/Users/jdoe/Downloads/invoice_{i}.exe", "objectHashSha1": "0" * 40,
+            "context": {"circumstances": "Event occurred on a newly created file.", "deviceUuid": "11111111-2222-4333-8444-555555555555",
+                        "process": {"path": "C:\\Windows\\explorer.exe"}, "userName": "EXAMPLE\\jdoe"},
+            "networkCommunication": None,
+            "responses": [{"description": "Deleted", "deviceRestartRequired": False, "displayName": "Cleaned by deleting",
+                           "protectionName": "Real-time file system protection"}]}
+
+
+class Mock:
+    def __init__(self):
+        self.detections = []
+        self.page_size = 2
+        self.tokens = []
+        self.expires_in = 3600
+        self.expire_once = False
+        self.pending = 0
+        self.pending_ids = set()
+        self.codes = []
+        self.ingest_codes = []
+        self.ingested = []
+        self.requests = []
+        self.token_forms = []
+
+    def new_token(self):
+        tok = f"test-eset-access-token-{len(self.tokens)}-not-real"
+        self.tokens.append(tok)
+        return tok
+
+
+class Handler(BaseHTTPRequestHandler):
+    mock: Mock = None
+
+    def log_message(self, *a):
+        pass
+
+    def _send(self, code, body, ctype="application/json", extra=None):
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        if code == 429:
+            self.send_header("Retry-After", "0")
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _json(self, obj, code=200, extra=None):
+        self._send(code, json.dumps(obj).encode(), extra=extra)
+
+    def do_POST(self):
+        m = self.mock
+        body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+        m.requests.append(("POST", self.path, dict(self.headers)))
+        if self.path == "/oauth/token":
+            form = {k: v[0] for k, v in urllib.parse.parse_qs(body.decode()).items()}
+            m.token_forms.append(form)
+            if self.headers.get("Content-Type") != "application/x-www-form-urlencoded":
+                return self._json({"error": "invalid_request"}, 400)
+            ok = (form.get("grant_type") == "password" and form.get("username") == USERNAME and form.get("password") == PASSWORD) \
+                or (form.get("grant_type") == "refresh_token" and form.get("refresh_token") == REFRESH)
+            if not ok:
+                return self._json({"error": "invalid_grant"}, 400)
+            return self._json({"access_token": m.new_token(), "refresh_token": REFRESH, "token_type": "Bearer", "expires_in": m.expires_in})
+        if not self.path.startswith("/http-endpoint/v1/") or self.headers.get("Authorization") != f"Bearer {INGEST_KEY}":
+            return self._json({}, 401)
+        if m.ingest_codes:
+            code = m.ingest_codes.pop(0)
+            if code != 200:
+                return self._json({}, code)
+        if self.headers.get("Content-Encoding") == "gzip":
+            body = gzip.decompress(body)
+        m.ingested.append({"headers": dict(self.headers), "raw": body.decode(),
+                           "lines": [json.loads(x) for x in body.decode().splitlines() if x.strip()]})
+        self._json({})
+
+    def do_GET(self):
+        m = self.mock
+        m.requests.append(("GET", self.path, dict(self.headers)))
+        u = urllib.parse.urlsplit(self.path)
+        q = {k: v[0] for k, v in urllib.parse.parse_qs(u.query).items()}
+        if not m.tokens or self.headers.get("Authorization") != f"Bearer {m.tokens[-1]}":
+            return self._json({"code": 16, "message": "unauthenticated"}, 401)
+        if m.expire_once:
+            m.expire_once = False
+            return self._json({"code": 16, "message": "token expired"}, 401)
+        if m.codes:
+            return self._json({}, m.codes.pop(0))
+        if u.path != "/v1/detections":
+            return self._json({}, 404)
+        rid = self.headers.get("response-id")
+        if m.pending:
+            m.pending -= 1
+            new_id = rid or f"resp-{len(m.requests)}"
+            m.pending_ids.add(new_id)
+            return self._send(202, b"", extra={"response-id": new_id})
+        if rid and rid not in m.pending_ids:
+            return self._json({}, 404)
+        lo, hi = parse(q["startTime"]), parse(q["endTime"])
+        size = min(int(q.get("pageSize") or 50), m.page_size)
+        offset = int(q.get("pageToken") or 0)
+        hits = [d for d in m.detections if lo <= parse(d["occurTime"]) < hi
+                and (not q.get("deviceUuid") or d["context"]["deviceUuid"] == q["deviceUuid"])]
+        hits.sort(key=lambda d: -parse(d["occurTime"]))  # newest first, so the collector has to sort
+        chunk = hits[offset:offset + size]
+        nxt = str(offset + size) if offset + size < len(hits) else ""
+        self._json({"detections": chunk, "nextPageToken": nxt, "totalSize": len(hits)})
+
+
+class Redirects:
+    """A server that answers every request with a redirect to /elsewhere on itself, and records
+    any request that follows one there. None should."""
+
+    def __init__(self):
+        self.code = 302
+        self.redirected = []
+        self.followed = []
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def _answer(self):
+                n = int(self.headers.get("Content-Length") or 0)
+                if n:
+                    self.rfile.read(n)
+                seen = (self.command, self.path, dict(self.headers))
+                if self.path.startswith("/elsewhere"):
+                    outer.followed.append(seen)
+                    self.send_response(200)
+                else:
+                    outer.redirected.append(seen)
+                    self.send_response(outer.code)
+                    self.send_header("Location", f"{outer.base}/elsewhere")
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", "2")
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+            do_GET = do_POST = _answer
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+class CollectorTest(unittest.TestCase):
+    def setUp(self):
+        # A test that leaves a socket or file open fails: tearDown collects garbage and checks
+        # for ResourceWarnings. Other warnings print as usual.
+        self.leaks = []
+        self._warnings = warnings.catch_warnings()
+        self._warnings.__enter__()
+        warnings.simplefilter("always", ResourceWarning)
+        show = warnings.showwarning
+        warnings.showwarning = lambda m, cat, *a, **k: self.leaks.append(str(m)) if issubclass(cat, ResourceWarning) else show(m, cat, *a, **k)
+        self.mock = Mock()
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), type("H", (Handler,), {"mock": self.mock}))
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.tmp = tempfile.TemporaryDirectory()
+        self.state = os.path.join(self.tmp.name, "state.json")
+        self.logbuf = io.StringIO()
+        self.handler = logging.StreamHandler(self.logbuf)
+        c.LOG.addHandler(self.handler)
+        c.LOG.setLevel(logging.DEBUG)
+        self._sleep = c.time.sleep
+        c.time.sleep = lambda s: None
+        self.now = time.time()
+
+    def tearDown(self):
+        c.time.sleep = self._sleep
+        c.LOG.removeHandler(self.handler)
+        self.server.shutdown()
+        self.server.server_close()
+        self.tmp.cleanup()
+        gc.collect()
+        self._warnings.__exit__(None, None, None)
+        self.assertEqual(self.leaks, [], "a socket or file was left open")
+
+    def cfg(self, **extra):
+        e = {"NGSIEM_INGEST_URL": f"{self.base}/http-endpoint/v1/00000000-example-integration", "NGSIEM_INGEST_KEY": INGEST_KEY,
+             "ESET_CONNECT_TOKEN_URL": self.base, "ESET_CONNECT_API_URL": self.base,
+             "ESET_CONNECT_USERNAME": USERNAME, "ESET_CONNECT_PASSWORD": PASSWORD, "COLLECTOR_STATE_FILE": self.state}
+        e.update(extra)
+        return c.load_config(e)
+
+    def sent(self):
+        return [line for post in self.mock.ingested for line in post["lines"]]
+
+    def queries(self):
+        return [urllib.parse.parse_qs(urllib.parse.urlsplit(p).query) for m, p, h in self.mock.requests if m == "GET"]
+
+    def test_detections_are_paged_tagged_and_oldest_first(self):
+        self.mock.detections = [detection(i, self.now - 3600 + i * 60) for i in range(5)]
+        n = c.run_once(self.cfg())
+        rows = self.sent()
+        self.assertEqual(n, 5)
+        self.assertEqual([r["uuid"] for r in rows], [d["uuid"] for d in self.mock.detections])
+        self.assertEqual({k: v for k, v in rows[0].items() if k != "eset_connect_record"}, self.mock.detections[0])
+        self.assertTrue(self.mock.ingested[0]["raw"].startswith('{"eset_connect_record":"detection"'))
+        self.assertEqual(len(self.queries()), 3)
+        self.assertEqual(self.mock.token_forms[0], {"grant_type": "password", "username": USERNAME, "password": PASSWORD})
+
+    def test_query_window_page_size_and_device_filter(self):
+        self.mock.detections = [detection(1, self.now - 60)]
+        c.run_once(self.cfg(ESET_CONNECT_PAGE_SIZE="250", ESET_CONNECT_DEVICE_UUID="11111111-2222-4333-8444-555555555555",
+                            COLLECTOR_LOOKBACK_HOURS="2", COLLECTOR_OVERLAP_SECONDS="600"))
+        q = self.queries()[0]
+        self.assertEqual(q["pageSize"], ["250"])
+        self.assertEqual(q["deviceUuid"], ["11111111-2222-4333-8444-555555555555"])
+        self.assertRegex(q["startTime"][0], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertAlmostEqual(parse(q["startTime"][0]), self.now - 7200 - 600, delta=5)
+        self.assertAlmostEqual(parse(q["endTime"][0]), self.now, delta=5)
+        self.assertEqual(len(self.sent()), 1)
+
+    def test_next_run_sends_only_new_detections(self):
+        self.mock.detections = [detection(i, self.now - 600 + i * 10) for i in range(3)]
+        cfg = self.cfg()
+        c.run_once(cfg)
+        self.mock.ingested.clear()
+        late = detection(9, time.time() - 1)
+        self.mock.detections.append(late)
+        # The second run's window starts an overlap before the first run's end, so it reads the
+        # first three again; only the new one is sent.
+        with open(self.state, encoding="utf-8") as fh:
+            state = json.load(fh)
+        state["detections"]["since"] -= 5
+        with open(self.state, "w", encoding="utf-8") as fh:
+            json.dump(state, fh)
+        c.run_once(cfg)
+        self.assertEqual([r["uuid"] for r in self.sent()], [late["uuid"]])
+
+    def test_a_late_detection_inside_the_overlap_is_sent_once(self):
+        cfg = self.cfg(COLLECTOR_OVERLAP_SECONDS="3600")
+        self.mock.detections = [detection(1, self.now - 300)]
+        c.run_once(cfg)
+        # A detection that happened 20 minutes ago reaches ESET Connect only now (the device was
+        # offline). Its occurTime is before the last run's end but inside the overlap.
+        self.mock.detections.append(detection(2, self.now - 1200))
+        self.mock.ingested.clear()
+        c.run_once(cfg)
+        c.run_once(cfg)
+        self.assertEqual([r["uuid"] for r in self.sent()], [detection(2, 0)["uuid"]])
+
+    def test_lookback_limits_the_first_run(self):
+        self.mock.detections = [detection(0, self.now - 3 * 86400), detection(1, self.now - 3600)]
+        c.run_once(self.cfg(COLLECTOR_LOOKBACK_HOURS="24", COLLECTOR_OVERLAP_SECONDS="0"))
+        self.assertEqual([r["uuid"] for r in self.sent()], [detection(1, 0)["uuid"]])
+
+    def test_bad_credentials_stop_and_save_nothing(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        with self.assertRaises(c.CollectorError) as cm:
+            c.run_once(self.cfg(ESET_CONNECT_PASSWORD="wrong-password-000"))
+        self.assertIn("ESET Connect sign-in failed with HTTP 400", str(cm.exception))
+        self.assertFalse(os.path.exists(self.state))
+        self.assertEqual(self.mock.ingested, [])
+
+    def test_a_rejected_token_is_refreshed_once(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        self.mock.expire_once = True
+        c.run_once(self.cfg())
+        self.assertEqual(len(self.sent()), 1)
+        self.assertEqual([f["grant_type"] for f in self.mock.token_forms], ["password", "refresh_token"])
+
+    def test_the_token_is_renewed_before_it_expires(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        cfg = self.cfg()
+        client = c.EsetConnect(cfg)
+        c.run_once(cfg, client=client)
+        client.expires_at = time.time() - 1
+        c.run_once(cfg, client=client)
+        self.assertEqual([f["grant_type"] for f in self.mock.token_forms], ["password", "refresh_token"])
+        gets = [h["Authorization"] for m, p, h in self.mock.requests if m == "GET"]
+        self.assertEqual(gets, [f"Bearer {self.mock.tokens[0]}", f"Bearer {self.mock.tokens[1]}"])
+
+    def test_a_pending_query_is_collected_with_its_response_id(self):
+        self.mock.detections = [detection(i, self.now - 600 + i) for i in range(3)]
+        self.mock.pending = 2
+        c.run_once(self.cfg())
+        self.assertEqual(len(self.sent()), 3)
+        gets = [(p, {k.lower(): v for k, v in h.items()}.get("response-id")) for m, p, h in self.mock.requests if m == "GET"]
+        # The first ask has no response-id; the next two repeat the same query with it.
+        self.assertIsNone(gets[0][1])
+        self.assertTrue(gets[1][1] and gets[2][1] == gets[1][1])
+        self.assertEqual(gets[0][0], gets[1][0])
+        self.assertEqual(gets[1][0], gets[2][0])
+
+    def test_a_query_pending_too_long_stops_without_saving(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        self.mock.pending = c.PENDING_ATTEMPTS + 5
+        with self.assertRaisesRegex(c.CollectorError, "still preparing"):
+            c.run_once(self.cfg())
+        self.assertFalse(os.path.exists(self.state))
+
+    def test_dry_run_prints_and_changes_nothing(self):
+        self.mock.detections = [detection(i, self.now - 60 + i) for i in range(3)]
+        out = io.StringIO()
+        c.run_once(self.cfg(NGSIEM_INGEST_URL="", NGSIEM_INGEST_KEY=""), dry_run=True, out=out)
+        lines = out.getvalue().splitlines()
+        self.assertEqual(len(lines), 3)
+        self.assertEqual(json.loads(lines[0])["eset_connect_record"], "detection")
+        self.assertEqual(self.mock.ingested, [])
+        self.assertFalse(os.path.exists(self.state))
+
+    def test_rate_limit_and_server_errors_are_retried(self):
+        self.mock.detections = [detection(i, self.now - 60 + i) for i in range(3)]
+        self.mock.codes = [429, 503]
+        self.mock.ingest_codes = [429]
+        c.run_once(self.cfg())
+        self.assertEqual(len(self.sent()), 3)
+
+    def test_ingest_failure_keeps_the_cursor(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        with self.assertRaises(c.CollectorError):
+            c.run_once(self.cfg(NGSIEM_INGEST_KEY="wrong-key-000000000"))
+        self.assertFalse(os.path.exists(self.state))
+
+    def test_gzip_batches_and_headers(self):
+        self.mock.detections = [detection(i, self.now - 600 + i) for i in range(12)]
+        c.run_once(self.cfg(COLLECTOR_BATCH_BYTES="2500"))
+        self.assertGreater(len(self.mock.ingested), 1)
+        self.assertEqual(len(self.sent()), 12)
+        for post in self.mock.ingested:
+            self.assertEqual(post["headers"]["Content-Encoding"], "gzip")
+            self.assertEqual(post["headers"]["Content-Type"], "application/json")
+
+    def test_secrets_never_logged(self):
+        self.mock.detections = [detection(0, self.now - 60)]
+        self.mock.expire_once = True
+        self.mock.pending = 1
+        self.mock.codes = [503]
+        self.mock.ingest_codes = [503]
+        c.run_once(self.cfg())
+        logged = self.logbuf.getvalue()
+        self.assertIn("detections", logged)
+        for secret in (PASSWORD, REFRESH, INGEST_KEY, "00000000-example-integration", *self.mock.tokens):
+            self.assertNotIn(secret, logged)
+
+    def test_config_regions_https_and_required_values(self):
+        base = {"ESET_CONNECT_USERNAME": USERNAME, "ESET_CONNECT_PASSWORD": PASSWORD}
+        cfg = c.load_config({**base, "ESET_CONNECT_REGION": "JPN"})
+        self.assertEqual(cfg["token_url"], "https://jpn.business-account.iam.eset.systems")
+        self.assertEqual(cfg["api_url"], "https://jpn.incident-management.eset.systems")
+        self.assertEqual(c.load_config(base)["api_url"], "https://eu.incident-management.eset.systems")
+        for bad in ({"ESET_CONNECT_REGION": "au"}, {"ESET_CONNECT_API_URL": "http://incident-management.example.com"},
+                    {"ESET_CONNECT_TOKEN_URL": "http://iam.example.com"}, {"NGSIEM_INGEST_URL": "http://ingest.example.com/x"},
+                    {"ESET_CONNECT_PAGE_SIZE": "5000"}, {"ESET_CONNECT_PAGE_SIZE": "many"}):
+            with self.subTest(bad=bad), self.assertRaises(c.CollectorError):
+                c.load_config({**base, **bad})
+        with self.assertRaises(c.CollectorError):
+            c.load_config({"ESET_CONNECT_USERNAME": USERNAME})
+
+    def test_occur_time_formats(self):
+        self.assertEqual(c._epoch("2026-10-13T01:02:03Z"), datetime(2026, 10, 13, 1, 2, 3, tzinfo=timezone.utc).timestamp())
+        self.assertAlmostEqual(c._epoch("2026-10-13T01:02:03.250Z"), datetime(2026, 10, 13, 1, 2, 3, tzinfo=timezone.utc).timestamp() + 0.25)
+        self.assertEqual(c._epoch("2026-10-13T11:02:03+10:00"), c._epoch("2026-10-13T01:02:03Z"))
+        self.assertIsNone(c._epoch("not a time"))
+
+    def test_redirects_are_not_followed(self):
+        # Following a redirect would send the password, token or key to another URL, so the run
+        # fails instead, and nothing reaches the redirect's target.
+        self.mock.detections = [detection(0, self.now - 60)]
+        r = Redirects()
+        try:
+            cases = {"HTTP Ingest": self.cfg(NGSIEM_INGEST_URL=f"{r.base}/http-endpoint/v1/00000000-example-integration"),
+                     "ESET token URL": self.cfg(ESET_CONNECT_TOKEN_URL=r.base),
+                     "ESET API URL": self.cfg(ESET_CONNECT_API_URL=r.base)}
+            for code in (301, 302, 303, 307, 308):
+                r.code = code
+                for name, cfg in cases.items():
+                    with self.subTest(code=code, url=name):
+                        r.redirected.clear()
+                        r.followed.clear()
+                        if os.path.exists(self.state):
+                            os.remove(self.state)
+                        with self.assertRaisesRegex(c.CollectorError, rf"answered with a redirect \(HTTP {code}\), which the collector refuses"):
+                            c.run_once(cfg)
+                        self.assertEqual(len(r.redirected), 1)
+                        self.assertEqual(r.followed, [])
+                        self.assertFalse(os.path.exists(self.state))
+        finally:
+            r.close()
+
+
+if __name__ == "__main__":
+    unittest.main()
