@@ -1,0 +1,137 @@
+!SAMPLE={"org_key":"ABCD1234","alert_url":"https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A411eedfc-8408-2f9e-59f2-a83dfaae0ec1","id":"411eedfc-8408-2f9e-59f2-a83dfaae0ec1","type":"CB_ANALYTICS","is_updated":false,"detection_timestamp":"2026-10-13T01:15:51.708Z","backend_timestamp":"2026-10-13T01:16:50.960Z","backend_update_timestamp":"2026-10-13T01:16:50.960Z","first_event_timestamp":"2026-10-13T01:15:33.396Z","last_event_timestamp":"2026-10-13T01:15:33.396Z","severity":5,"reason":"A known virus (HackTool: Powerpuff) was detected running.","threat_id":"9e0afc389c1acc43b382b1ba590498d2","primary_event_id":"94953e4524c511ee86284f0541a5184d","workflow":{"change_timestamp":"2026-10-13T01:16:50.960Z","changed_by_type":"SYSTEM","changed_by":"ALERT_CREATION","closure_reason":"NO_REASON","status":"OPEN"},"determination":{"change_timestamp":"2026-10-13T01:16:50.960Z","value":"NONE","changed_by_type":"SYSTEM","changed_by":"ALERT_CREATION"},"alert_notes_present":false,"policy_applied":"NOT_APPLIED","run_state":"RAN","reason_code":"T_REP_VIRUS","sensor_action":"ALLOW","device_target_value":"MISSION_CRITICAL","device_policy_id":112221,"device_policy":"Servers","device_id":6948863,"device_name":"EXAMPLE\\SRV-APP-03","device_os":"WINDOWS","device_os_version":"Windows Server 2022 x64","device_username":"svc.app@example.com","device_location":"ONSITE","device_external_ip":"203.0.113.10","device_internal_ip":"192.0.2.30","ttps":["FILELESS","MALWARE_APP","MITRE_T1059_001_POWERSHELL","RUN_MALWARE_APP"],"attack_tactic":"TA0002","attack_technique":"T1059.001","process_guid":"ABCD1234-006a07ff-00000e10-00000000-1d9b8d24ab16c73","process_pid":3600,"process_name":"c:\\users\\administrator\\appdata\\local\\temp\\powerdump.ps1","process_sha256":"3b463c94b52414cfaad61ecdac64ca84eaea1ab4be69f75834aaa7701ab5e7d0","process_md5":"42a80cc2333b612b63a859f17474c9af","process_reputation":"KNOWN_MALWARE","process_effective_reputation":"KNOWN_MALWARE","process_cmdline":"powershell.exe -ep bypass -File powerdump.ps1","process_username":"EXAMPLE\\Administrator","parent_guid":"ABCD1234-006a07ff-00000fb8-00000000-1d9b8d2494e29ed","parent_pid":4024,"parent_name":"c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe","parent_sha256":"de96a6e69944335375dc1ac238336066889d9ffc7d73628ef4fe1b1b160ab32c","parent_effective_reputation":"TRUSTED_WHITE_LIST","parent_reputation":"TRUSTED_WHITE_LIST","mdr_alert":false,"mdr_alert_notes_present":false,"alert_origin":"ALERT_ORIGIN_UNKNOWN","version":"2.1.0"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"org_key"\s*:\s*"[^"]+".*"type"\s*:\s*"(?:CB_ANALYTICS|WATCHLIST|DEVICE_CONTROL|HOST_BASED_FIREWALL|INTRUSION_DETECTION_SYSTEM|CONTAINER_RUNTIME|NETWORK_TRAFFIC_ANALYSIS)"|"type"\s*:\s*"(?:CB_ANALYTICS|WATCHLIST|DEVICE_CONTROL|HOST_BASED_FIREWALL|INTRUSION_DETECTION_SYSTEM|CONTAINER_RUNTIME|NETWORK_TRAFFIC_ANALYSIS)".*"org_key"\s*:\s*"[^"]+")
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Carbon Black Cloud Data Forwarder alerts (alert schema 2.1.0 and 2.0.0), which the
+# forwarder writes to an Amazon S3 bucket as gzipped JSON lines that a Sophos NG-SIEM S3 Ingest
+# integration reads. Each backend or user update writes another copy of the alert with the same id.
+# Standalone parser for the third-party alert schema: every alert type (CB_ANALYTICS, WATCHLIST,
+# DEVICE_CONTROL, HOST_BASED_FIREWALL, INTRUSION_DETECTION_SYSTEM and the rest). Endpoint event,
+# audit log and other forwarder types stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Carbon Black Cloud"
+vendor$ = "Broadcom"
+provider$ = "Carbon Black Cloud"
+alertType = STRING(json["$.type"])
+subProvider$ = alertType
+alertCategory$ = alertType
+logType$ = "alert"
+alertId$ = json["$.id"]
+reason = STRING(json["$.reason"])
+summary$ = reason
+report = STRING(json["$.report_name"])
+title$ = IF report != "" THEN report ELSE reason
+status$ = json["$.workflow.status"]
+device = STRING(json["$.device_name"])
+targetHostName$ = IF device != "" THEN device ELSE NULL
+hostId$ = IF device != "" THEN device ELSE NULL
+user = STRING(json["$.process_username"])
+user = IF user == "" THEN STRING(json["$.device_username"]) ELSE user
+sourceUserName$ = IF user != "" THEN user ELSE NULL
+
+# severity runs from 1 to 10.
+sev = STRING(json["$.severity"])
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "1" OR sev == "2" OR sev == "3" THEN "LOW" ELSE severity$
+severity$ = IF sev == "4" OR sev == "5" OR sev == "6" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "7" OR sev == "8" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "9" OR sev == "10" THEN "CRITICAL" ELSE severity$
+sensorAction = STRING(json["$.sensor_action"])
+action$ = IF sensorAction == "DENY" OR sensorAction == "TERMINATE" THEN "BLOCKED" ELSE NULL
+
+# Times are ISO 8601 in UTC. The event time is the backend's last update, since every update is
+# forwarded as a new copy.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+created = STRING(json["$.backend_timestamp"])
+updated = STRING(json["$.backend_update_timestamp"])
+updated = IF updated == "" THEN created ELSE updated
+createdTimeUsec$ = IF created != "" THEN DATETIME(created, layout) ELSE NULL
+updatedTimeUsec$ = IF updated != "" THEN DATETIME(updated, layout) ELSE NULL
+firstEvent = STRING(json["$.first_event_timestamp"])
+lastEvent = STRING(json["$.last_event_timestamp"])
+firstEventTimeUsec$ = IF firstEvent != "" THEN DATETIME(firstEvent, layout) ELSE NULL
+lastEventTimeUsec$ = IF lastEvent != "" THEN DATETIME(lastEvent, layout) ELSE NULL
+eventTimeUsec$ = IF updated != "" THEN DATETIME(updated, layout) ELSE eventTimeUsec$
+
+# Network alerts give the device's side (local) and the other side (remote). The reason says
+# Inbound or Outbound for firewall alerts; anything else is read as outbound from the device.
+localIp = STRING(json["$.netconn_local_ip"])
+remoteIp = STRING(json["$.netconn_remote_ip"])
+localPort = STRING(json["$.netconn_local_port"])
+remotePort = STRING(json["$.netconn_remote_port"])
+inbound = CONTAINS(LOWERCASE(reason), "inbound")
+direction$ = NULL
+direction$ = IF localIp != "" AND inbound THEN "INBOUND" ELSE direction$
+direction$ = IF localIp != "" AND NOT inbound THEN "OUTBOUND" ELSE direction$
+srcIp = IF inbound THEN remoteIp ELSE localIp
+dstIp = IF inbound THEN localIp ELSE remoteIp
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+srcPortText = IF inbound THEN remotePort ELSE localPort
+dstPortText = IF inbound THEN localPort ELSE remotePort
+sp = srcPortText|^(?P<n>\d{1,5})$
+dp = dstPortText|^(?P<n>\d{1,5})$
+sourcePort$ = IF sp["n"] != "" THEN INT(sp["n"], 10) ELSE NULL
+destinationPort$ = IF dp["n"] != "" THEN INT(dp["n"], 10) ELSE NULL
+proto = LOWERCASE(STRING(json["$.netconn_protocol"]))
+protocol$ = IF CONTAINS(proto, "tcp") THEN 6 ELSE NULL
+protocol$ = IF CONTAINS(proto, "udp") THEN 17 ELSE protocol$
+protocol$ = IF CONTAINS(proto, "icmp") THEN 1 ELSE protocol$
+
+# Keys with no third-party alert field of their own go to additional_data.
+d1.key$ = "alert_url"
+d1.value$ = STRING(json["$.alert_url"])
+d2.key$ = "device_id"
+d2.value$ = STRING(json["$.device_id"])
+d3.key$ = "run_state"
+d3.value$ = STRING(json["$.run_state"])
+d4.key$ = "sensor_action"
+d4.value$ = sensorAction
+d5.key$ = "is_updated"
+d5.value$ = STRING(json["$.is_updated"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3, d4, d5]
+d6.key$ = "process_name"
+d6.value$ = STRING(json["$.process_name"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "process_sha256"
+d7.value$ = STRING(json["$.process_sha256"])
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "process_cmdline"
+d8.value$ = STRING(json["$.process_cmdline"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "parent_name"
+d9.value$ = STRING(json["$.parent_name"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "reason_code"
+d10.value$ = STRING(json["$.reason_code"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "attack_technique"
+d11.value$ = STRING(json["$.attack_technique"])
+additionalData$.record$ = IF d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "watchlist"
+d12.value$ = STRING(json["$.watchlists[0].name"])
+additionalData$.record$ = IF d12.value$ != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "determination"
+d13.value$ = STRING(json["$.determination.value"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "device_internal_ip"
+d14.value$ = STRING(json["$.device_internal_ip"])
+additionalData$.record$ = IF d14.value$ != "" THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "remote_domain"
+d15.value$ = STRING(json["$.netconn_remote_domain"])
+additionalData$.record$ = IF d15.value$ != "" THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
+d16.key$ = "usb_device"
+d16.value$ = STRING(json["$.external_device_friendly_name"])
+additionalData$.record$ = IF d16.value$ != "" THEN additionalData$.record$ + [d16] ELSE additionalData$.record$
+d17.key$ = "schema_version"
+d17.value$ = STRING(json["$.version"])
+additionalData$.record$ = IF d17.value$ != "" THEN additionalData$.record$ + [d17] ELSE additionalData$.record$

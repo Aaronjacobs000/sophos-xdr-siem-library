@@ -1,0 +1,30 @@
+{
+  "vendor": "Broadcom",
+  "product": "Carbon Black Cloud Data Forwarder alerts",
+  "versions": [],
+  "format": "json",
+  "ship_method": "s3",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://developer.carbonblack.com/reference/carbon-black-cloud/data-forwarder/",
+    "https://developer.carbonblack.com/reference/carbon-black-cloud/data-forwarder/schema/latest/alert-2.1.0/",
+    "https://developer.carbonblack.com/reference/carbon-black-cloud/data-forwarder/schema/deprecated/alert-2.0.0/",
+    "https://developer.carbonblack.com/reference/carbon-black-cloud/data-forwarder/api/latest/data-forwarder-api/"
+  ],
+  "notes": "Set up a Data Forwarder of type alert in Carbon Black Cloud to an Amazon S3 bucket (in the same AWS region as your Carbon Black Cloud org), and read the bucket with a Sophos NG-SIEM S3 Ingest (customer-managed) integration; the forwarder writes gzipped JSON, one alert per line. Every alert type goes to the third-party alert schema, with the type as the category, the report name or reason as the title, severity from the 1 to 10 scale (1 to 3 low, 4 to 6 medium, 7 and 8 high, 9 and 10 critical), and blocked when the sensor action is DENY or TERMINATE. Network alerts give the device's side and the other side; they map to source and destination by Inbound or Outbound in the reason, outbound when it doesn't say. Each backend update and each workflow change forwards another copy of the alert with the same id, so the event time is backend_update_timestamp; use alert_id and updated_time_usec to tell copies apart. Schema 2.0.0 and 2.1.0 both parse. Endpoint event, audit log and watchlist hit forwarders stay generic. Samples are made up in the shapes of Carbon Black's schema examples. Passed Run Test in a lab tenant on 2026-10-14 (162 of 162 fields matched the emulator, in each of 3 runs). No built-in parser claimed these lines, or Carbon Black's own schema examples, in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
