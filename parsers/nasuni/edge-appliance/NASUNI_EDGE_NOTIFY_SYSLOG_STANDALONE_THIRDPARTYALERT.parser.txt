@@ -1,0 +1,59 @@
+!SAMPLE=<137>1 2026-10-12T22:40:14.117693+11:00 nea-syd-01 nasuni.noteman 5019 1764996033 - The Filer has detected a new ransomware attack from user ACME\jlee (192.0.2.61) on volume finance-vol1. Detected known signatures: (*.lockbit). Confidence level at the time of detection was "Low (2)". Visit the Cyber Resilience - Incident Management page for more details.
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s(?:The Filer has detected a new ransomware attack from user |The Filer has enforced the mitigation policy on volume |Antivirus has flagged file\(s\) on volume )
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Nasuni Edge Appliance notifications sent by Syslog Export: plain text after an RFC 5424
+# header. Three security notifications go to the third-party alert schema:
+#   The Filer has detected a new ransomware attack from user <user> (<ip>) on volume <volume>.
+#     Detected known signatures: (<signatures>). Confidence level at the time of detection was "<level>".
+#   The Filer has enforced the mitigation policy on volume <volume> and blocked an IP Address (<ip>).
+#   Antivirus has flagged file(s) on volume <volume>
+# Other notifications, such as health monitor and snapshot messages, aren't claimed.
+
+hdr = originalData$|^(?:<\d{1,3}>)?1\s+(?P<ts>\S+)\s+(?P<host>\S+)\s+(?P<app>\S+)\s+\S+\s+\S+\s+(?:-|\[.*?\])\s+(?P<msg>.*?)\s*$
+msg = hdr["msg"]
+det = msg|^The Filer has detected a new ransomware attack from user (?P<user>.*?) \((?P<ip>[^)]*)\) on volume (?P<vol>.*?)\. Detected known signatures: \((?P<sig>.*?)\)\.(?: Confidence level at the time of detection was "(?P<conf>[^"]*)"\.)?
+mit = msg|^The Filer has enforced the mitigation policy on volume (?P<vol>.*?) and blocked (?P<what>an IP Address|.*?)(?: \((?P<ip>[^)]*)\))?\.(?:\s|$)
+av = msg|^Antivirus has flagged file\(s\) on volume (?P<vol>\S+?)\.?$
+
+sensorType$ = "Nasuni Edge Appliance"
+vendor$ = "Nasuni"
+hostId$ = hdr["host"]
+targetHostName$ = hdr["host"]
+eventTimeUsec$ = DATETIME(hdr["ts"], "2006-01-02T15:04:05.999999999Z07:00")
+summary$ = msg
+
+detected = det["vol"] != NULL AND det["vol"] != ""
+mitigated = mit["vol"] != NULL AND mit["vol"] != ""
+flagged = av["vol"] != NULL AND av["vol"] != ""
+
+alertCategory$ = IF flagged THEN "Antivirus" ELSE "Ransomware"
+title$ = "Nasuni antivirus flagged files"
+title$ = IF detected THEN "Nasuni ransomware attack detected" ELSE title$
+title$ = IF mitigated THEN "Nasuni ransomware mitigation blocked a client" ELSE title$
+severity$ = IF flagged THEN "MEDIUM" ELSE "HIGH"
+action$ = IF mitigated THEN "BLOCKED" ELSE NULL
+
+sourceUserName$ = det["user"]
+sourceAddress$ = IF detected THEN det["ip"] ELSE mit["ip"]
+# The detection's confidence, such as "Low (2)", is Nasuni's own rating of the attack.
+confidence$ = det["conf"]
+
+volume = det["vol"]
+volume = IF mitigated THEN mit["vol"] ELSE volume
+volume = IF flagged THEN av["vol"] ELSE volume
+a1.key$ = "volume"
+a1.value$ = volume
+a2.key$ = "app_name"
+a2.value$ = hdr["app"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "signatures"
+a3.value$ = det["sig"]
+additionalData$.record$ = IF detected THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "blocked"
+a4.value$ = mit["what"]
+additionalData$.record$ = IF mitigated THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
