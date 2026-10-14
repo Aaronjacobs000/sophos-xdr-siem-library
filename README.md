@@ -50,22 +50,23 @@ parsers/eset/eset-protect-on-prem/
 
 The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed on every merge and daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
 
-It has 64 entries with 146 parsers:
+It has 83 entries with 190 parsers:
 
-- Network, firewall and web: Amazon Route 53 Resolver query logs, dnsmasq, DNSFilter, DrayTek Vigor, F5 BIG-IP ASM and APM, HAProxy, ISC DHCP and Kea, MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Squid, Suricata EVE JSON, Trellix Network Security (NX), UniFi gateway firewall logs, Vectra AI Respond UX and Zscaler Private Access.
+- Network, firewall and web: Amazon CloudFront standard logs, Amazon Route 53 Resolver query logs, AWS Network Firewall, dnsmasq, DNSFilter, DrayTek Vigor, F5 BIG-IP ASM and APM, HAProxy, HPE Aruba EdgeConnect SD-WAN, ISC DHCP and Kea, MikroTik RouterOS, nginx and Apache access logs, OpenSSH sshd, OpenVPN, Skyhigh Secure Web Gateway, Snort 3, Squid, Suricata EVE JSON, Trellix Network Security (NX), Trend Micro TippingPoint SMS, UniFi gateway firewall logs, Vectra AI Respond UX and Zscaler Private Access.
 - Email: Barracuda Email Security Gateway and Email Gateway Defense, Cisco Secure Email Gateway, Exchange Server message tracking, FortiMail and Red Sift OnDMARC.
 - Endpoint and application control: Airlock Digital, Bitdefender GravityZone, Carbon Black Cloud, Cortex XDR alerts, ESET PROTECT On-Prem (JSON) and ESET PROTECT Cloud, Kaspersky Security Center, ThreatDown Nebula and OneView, ThreatLocker Detect and Trend Micro Apex Central.
-- Identity and access: 1Password Business, BeyondTrust Privileged Remote Access and Remote Support, Keeper Security, OneLogin, PingFederate and Tenable Identity Exposure.
-- Cloud and security operations: AWS Security Hub CSPM findings, GitHub Enterprise Cloud audit logs and Wazuh alerts.
+- Identity, access and secrets: 1Password Business, Azure Key Vault, BeyondTrust Privileged Remote Access and Remote Support, Bitwarden, HashiCorp Vault, Keeper Security, NordPass Business, OneLogin, PingFederate, RSA SecurID Authentication Manager and Tenable Identity Exposure.
+- Cloud, DevOps and security operations: Atlassian organization audit logs, AWS Security Hub CSPM findings, GitHub Enterprise Cloud audit logs, GitLab audit events, Kubernetes audit logs (AKS and EKS) and Wazuh alerts.
+- Backup, storage and data protection: Commvault, Druva Cloud Platform, Forcepoint DLP, Nasuni Edge Appliance and Veritas NetBackup.
 - MSP tools: Autotask, Auvik, ConnectWise ScreenConnect, Datto RMM, Hudu, Huntress, IT Glue, Kaseya VSA 10 and 9.5, N-able N-central and N-sight RMM, NinjaOne, Splashtop, Syncro and TeamViewer.
 - Devices and AI audit: IBM MaaS360, OpenAI ChatGPT Enterprise compliance logs, OpenAI API Platform audit logs and the Claude Compliance API activity feed.
-- Other: 3CX, Commvault, Synology DSM and VMware ESXi.
+- Other: 3CX, Nutanix Prism Central, Synology DSM and VMware ESXi.
 
 Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
 
 ## Collectors
 
-Some sources only offer a pull API, and some push webhooks that can't add the header HTTP Ingest needs, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs or relay those webhooks, and send each record to a Sophos NG-SIEM HTTP Ingest integration. There are collectors for the OpenAI and Anthropic enterprise compliance logs ([collectors/ai-compliance-logs](collectors/ai-compliance-logs/)), 1Password Business, Datto RMM, ESET PROTECT Cloud (through ESET Connect), IBM MaaS360, IT Glue, Kaseya VSA 10 and 9.5, N-able N-sight RMM, Red Sift OnDMARC, Syncro and TeamViewer. A webhook relay ([collectors/webhook-relay](collectors/webhook-relay/)) covers Huntress, ConnectWise ScreenConnect, Hudu and Autotask. Collectors are tested against the vendors' documented response shapes, not live services.
+Some sources only offer a pull API, and some push webhooks that can't add the header HTTP Ingest needs, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs or relay those webhooks, and send each record to a Sophos NG-SIEM HTTP Ingest integration. There are collectors for the OpenAI and Anthropic enterprise compliance logs ([collectors/ai-compliance-logs](collectors/ai-compliance-logs/)), 1Password Business, Atlassian organization audit logs, Bitwarden, Datto RMM, Druva Cloud Platform, ESET PROTECT Cloud (through ESET Connect), IBM MaaS360, IT Glue, Kaseya VSA 10 and 9.5, N-able N-sight RMM, NordPass Business, Red Sift OnDMARC, Syncro and TeamViewer. A webhook relay ([collectors/webhook-relay](collectors/webhook-relay/)) covers Huntress, ConnectWise ScreenConnect, Hudu and Autotask. Collectors are tested against the vendors' documented response shapes, not live services.
 
 A library entry that needs a collector names it in `meta.json`, for example `"collector": "collectors/ai-compliance-logs"`. Its card in the studio shows a **needs collector** badge, and its page shows the collector's README and Python script, with Copy and Download. Collectors are code that people run, so the maintainer reviews every one before it merges.
 
