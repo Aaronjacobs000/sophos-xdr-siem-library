@@ -1,0 +1,94 @@
+!SAMPLE=<174>Oct 12 22:40:15 exch01.corp.example.com MSExchangeTracking: 2026-10-12T11:40:15.123Z,192.0.2.25,edge01.corp.example.com,192.0.2.21,EXCH01,08DCEB1F2A3B4C5D;2026-10-12T11:40:14.871Z;0,EXCH01\Default Frontend EXCH01,SMTP,RECEIVE,48782238547969,<CAF1a2b3c4d5e6@mail.example.net>,65b0ed59-64ad-42ab-ba15-08db17a2c2d1,jlee@example.com,,41022,1,,,Invoice 4471 for October,billing@example.net,bounces@example.net,0cA:,Incoming,,198.51.100.25,192.0.2.25,S:FromEntity=Internet;S:DeliveryPriority=Normal;S:AccountForest=corp.example.com,Email,79bb9b0f-120c-4e8d-c05f-08db17a2c332,15.02.1544.004
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|\s)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z,(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:ADMIN|AGENT|APPROVAL|BOOTLOADER|DNS|DSN|GATEWAY|MAILBOXRULE|MEETINGMESSAGEPROCESSOR|ORAR|PICKUP|POISONMESSAGE|PUBLICFOLDER|QUEUE|REDUNDANCY|RESOLVER|ROUTING|SAFETYNET|SMTP|STOREDRIVER),[A-Z]+,
+!SCHEMA=scwx.email
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Microsoft Exchange Server 2016, 2019 or Subscription Edition message tracking logs
+# (MSGTRK*.LOG), each CSV row sent unchanged as a syslog message by NXLog (see README.md).
+# Standalone parser for the Email schema. The 30 columns, from Microsoft's message tracking page:
+#   date-time, client-ip, client-hostname, server-ip, server-hostname, source-context,
+#   connector-id, source, event-id, internal-message-id, message-id, network-message-id,
+#   recipient-address, recipient-status, total-bytes, recipient-count, related-recipient-address,
+#   reference, message-subject, sender-address, return-path, message-info, directionality,
+#   tenant-id, original-client-ip, original-server-ip, custom-data, transport-traffic-type,
+#   log-id, schema-version
+
+hdr = originalData$|^(?:<\d{1,3}>)?[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<host>\S+)\s
+m = originalData$|(?:^|\s)(?P<csv>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z,.*?)\s*$
+# SPLIT reads CSV: a quoted column keeps its commas, and "" inside it is one quote.
+f = SPLIT(m["csv"], ",")
+
+sensorType$ = "Microsoft Exchange Server"
+# date-time is UTC, for example 2026-10-12T11:40:15.123Z.
+eventTimeUsec$ = DATETIME(f[0], "2006-01-02T15:04:05.000Z07:00")
+# The server that wrote the log is the syslog host NXLog sets (hostname_fqdn()).
+hostId$ = IF hdr["host"] != "" THEN hdr["host"] ELSE NULL
+
+event = f[8]
+eventType$ = event
+mid = f[10]|^<?(?P<id>[^<>]*)>?$
+messageId$ = IF mid["id"] != "" THEN mid["id"] ELSE NULL
+fromEmailAddress$ = IF f[19] != "" THEN f[19] ELSE NULL
+# recipient-address lists every recipient, separated by ;.
+toEmailAddress$ = IF f[12] != "" THEN SPLIT(f[12], ";") ELSE NULL
+subject$ = IF f[18] != "" THEN f[18] ELSE NULL
+messageSize$ = IF f[14] != "" THEN INT(f[14], 10) ELSE NULL
+
+# The connecting host of a message Exchange received over SMTP, or the original client when a
+# front end or Edge server relayed it.
+received = event == "RECEIVE" AND f[7] == "SMTP"
+senderIp$ = NULL
+senderIp$ = IF received AND f[1] != "" THEN f[1] ELSE senderIp$
+senderIp$ = IF received AND f[24] != "" THEN f[24] ELSE senderIp$
+
+# directionality is Incoming for mail from outside the organization. Originating mail can be
+# internal or outbound, so it gets no direction.
+direction$ = IF f[22] == "Incoming" THEN "INBOUND" ELSE NULL
+
+# DELIVER puts the message in a mailbox. DROP deletes it without a delivery status
+# notification, as a transport rule or the content filter does.
+status$ = NULL
+status$ = IF event == "DELIVER" THEN "DELIVERED" ELSE status$
+status$ = IF event == "DROP" THEN "BLOCKED" ELSE status$
+
+r1.key$ = "source"
+r1.value$ = f[7]
+r2.key$ = "network_message_id"
+r2.value$ = f[11]
+r3.key$ = "internal_message_id"
+r3.value$ = f[9]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+r4.key$ = "directionality"
+r4.value$ = f[22]
+eventMetadata$.record$ = IF f[22] != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "connector_id"
+r5.value$ = f[6]
+eventMetadata$.record$ = IF f[6] != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "recipient_status"
+r6.value$ = f[13]
+eventMetadata$.record$ = IF f[13] != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "client_ip"
+r7.value$ = f[1]
+eventMetadata$.record$ = IF f[1] != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "client_hostname"
+r8.value$ = f[2]
+eventMetadata$.record$ = IF f[2] != "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+r9.key$ = "server_ip"
+r9.value$ = f[3]
+eventMetadata$.record$ = IF f[3] != "" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+r10.key$ = "server_hostname"
+r10.value$ = f[4]
+eventMetadata$.record$ = IF f[4] != "" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
+r11.key$ = "return_path"
+r11.value$ = f[20]
+eventMetadata$.record$ = IF f[20] != "" THEN eventMetadata$.record$ + [r11] ELSE eventMetadata$.record$
+r12.key$ = "original_client_ip"
+r12.value$ = f[24]
+eventMetadata$.record$ = IF f[24] != "" THEN eventMetadata$.record$ + [r12] ELSE eventMetadata$.record$
+# custom-data holds the transport rule that acted on the message, among other things.
+r13.key$ = "custom_data"
+r13.value$ = f[26]
+eventMetadata$.record$ = IF f[26] != "" THEN eventMetadata$.record$ + [r13] ELSE eventMetadata$.record$

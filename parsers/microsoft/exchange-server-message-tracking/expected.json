@@ -1,0 +1,547 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805215123000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "RECEIVE",
+      "message_id": "CAF1a2b3c4d5e6@mail.example.net",
+      "from_email_address": [
+        "billing@example.net"
+      ],
+      "to_email_address": [
+        "jlee@example.com"
+      ],
+      "subject": "Invoice 4471 for October",
+      "message_size": 41022,
+      "sender_ip": "198.51.100.25",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "SMTP"
+          },
+          {
+            "key": "network_message_id",
+            "value": "65b0ed59-64ad-42ab-ba15-08db17a2c2d1"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238547969"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "connector_id",
+            "value": "EXCH01\\Default Frontend EXCH01"
+          },
+          {
+            "key": "client_ip",
+            "value": "192.0.2.25"
+          },
+          {
+            "key": "client_hostname",
+            "value": "edge01.corp.example.com"
+          },
+          {
+            "key": "server_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "bounces@example.net"
+          },
+          {
+            "key": "original_client_ip",
+            "value": "198.51.100.25"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:FromEntity=Internet;S:DeliveryPriority=Normal;S:AccountForest=corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805215611000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "DELIVER",
+      "message_id": "CAF1a2b3c4d5e6@mail.example.net",
+      "from_email_address": [
+        "billing@example.net"
+      ],
+      "to_email_address": [
+        "jlee@example.com"
+      ],
+      "subject": "Invoice 4471 for October",
+      "message_size": 41022,
+      "direction": "INBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "STOREDRIVER"
+          },
+          {
+            "key": "network_message_id",
+            "value": "65b0ed59-64ad-42ab-ba15-08db17a2c2d1"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238547969"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "recipient_status",
+            "value": "250 2.1.5 Recipient OK"
+          },
+          {
+            "key": "client_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "client_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "bounces@example.net"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:Mailbox=9a8b7c6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d;S:DeliveryPriority=Normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805322008000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "SUBMIT",
+      "message_id": "a1b2c3d4e5f60718@exch01.corp.example.com",
+      "from_email_address": [
+        "akim@example.com"
+      ],
+      "to_email_address": [
+        "partner@example.org"
+      ],
+      "subject": "Updated statement of work",
+      "message_size": 18821,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "STOREDRIVER"
+          },
+          {
+            "key": "network_message_id",
+            "value": "2f4e6a8c-0b1d-4e3f-a5c7-9e1b3d5f7a90"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238548112"
+          },
+          {
+            "key": "directionality",
+            "value": "Originating"
+          },
+          {
+            "key": "client_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "client_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "akim@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805323950000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "SEND",
+      "message_id": "a1b2c3d4e5f60718@exch01.corp.example.com",
+      "from_email_address": [
+        "akim@example.com"
+      ],
+      "to_email_address": [
+        "partner@example.org"
+      ],
+      "subject": "Updated statement of work",
+      "message_size": 19410,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "SMTP"
+          },
+          {
+            "key": "network_message_id",
+            "value": "2f4e6a8c-0b1d-4e3f-a5c7-9e1b3d5f7a90"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238548112"
+          },
+          {
+            "key": "directionality",
+            "value": "Originating"
+          },
+          {
+            "key": "connector_id",
+            "value": "Internet Send Connector"
+          },
+          {
+            "key": "recipient_status",
+            "value": "250 2.0.0 OK 1791848523 q7si4471"
+          },
+          {
+            "key": "client_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "client_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "server_ip",
+            "value": "203.0.113.25"
+          },
+          {
+            "key": "server_hostname",
+            "value": "mx.example.org"
+          },
+          {
+            "key": "return_path",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "original_client_ip",
+            "value": "192.0.2.61"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:DeliveryPriority=Normal;S:AccountForest=corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805471270000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "RECEIVE",
+      "message_id": "0f1e2d3c4b5a@mail.example.net",
+      "from_email_address": [
+        "cfo@example.net"
+      ],
+      "to_email_address": [
+        "jlee@example.com",
+        "akim@example.com"
+      ],
+      "subject": "Re: \"Q3 plan\", draft 2",
+      "message_size": 125530,
+      "sender_ip": "203.0.113.40",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "SMTP"
+          },
+          {
+            "key": "network_message_id",
+            "value": "8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238548330"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "connector_id",
+            "value": "EXCH01\\Default Frontend EXCH01"
+          },
+          {
+            "key": "client_ip",
+            "value": "2001:db8::25"
+          },
+          {
+            "key": "client_hostname",
+            "value": "edge02.corp.example.com"
+          },
+          {
+            "key": "server_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "cfo@example.net"
+          },
+          {
+            "key": "original_client_ip",
+            "value": "203.0.113.40"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:FromEntity=Internet;S:DeliveryPriority=Normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805510004000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "FAIL",
+      "message_id": "5d6e7f8091a2@mail.example.net",
+      "from_email_address": [
+        "sales@example.net"
+      ],
+      "to_email_address": [
+        "former.staff@example.com"
+      ],
+      "subject": "Following up",
+      "message_size": 6120,
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "ROUTING"
+          },
+          {
+            "key": "network_message_id",
+            "value": "9b0c1d2e-3f4a-4b5c-8d7e-9f0a1b2c3d4e"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238548401"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "recipient_status",
+            "value": "550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "sales@example.net"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:DeliveryPriority=Normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805560441000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch01.corp.example.com",
+      "event_type": "DROP",
+      "message_id": "77e8f9a0b1c2@bulk.example.org",
+      "from_email_address": [
+        "hr-notice@example.org"
+      ],
+      "to_email_address": [
+        "payroll@example.com"
+      ],
+      "subject": "Payroll update required today",
+      "message_size": 9932,
+      "direction": "INBOUND",
+      "status": "BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "AGENT"
+          },
+          {
+            "key": "network_message_id",
+            "value": "0c1d2e3f-4a5b-4c6d-9e8f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238548577"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "recipient_status",
+            "value": "550 4.3.2 QUEUE.TransportAgent; message deleted by transport agent"
+          },
+          {
+            "key": "client_ip",
+            "value": "192.0.2.25"
+          },
+          {
+            "key": "client_hostname",
+            "value": "edge01.corp.example.com"
+          },
+          {
+            "key": "server_ip",
+            "value": "192.0.2.21"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH01"
+          },
+          {
+            "key": "return_path",
+            "value": "hr-notice@example.org"
+          },
+          {
+            "key": "original_client_ip",
+            "value": "198.51.100.77"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:TRA=ETR|ruleId=4c5d6e7f-8091-4a2b-b3c4-d5e6f7a8b9c0|st=10/12/2026 11:30:00 AM|action=DeleteMessage|sev=1|mode=Enforce"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Microsoft Exchange Server",
+      "event_time_usec": 1791805635204000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "exch02.corp.example.com",
+      "event_type": "HAREDIRECT",
+      "message_id": "CAF1a2b3c4d5e6@mail.example.net",
+      "from_email_address": [
+        "billing@example.net"
+      ],
+      "to_email_address": [
+        "jlee@example.com"
+      ],
+      "subject": "Invoice 4471 for October",
+      "message_size": 41022,
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "SMTP"
+          },
+          {
+            "key": "network_message_id",
+            "value": "65b0ed59-64ad-42ab-ba15-08db17a2c2d1"
+          },
+          {
+            "key": "internal_message_id",
+            "value": "48782238547969"
+          },
+          {
+            "key": "directionality",
+            "value": "Incoming"
+          },
+          {
+            "key": "server_hostname",
+            "value": "EXCH02"
+          },
+          {
+            "key": "return_path",
+            "value": "bounces@example.net"
+          },
+          {
+            "key": "custom_data",
+            "value": "S:DeliveryPriority=Normal;S:AccountForest=corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
