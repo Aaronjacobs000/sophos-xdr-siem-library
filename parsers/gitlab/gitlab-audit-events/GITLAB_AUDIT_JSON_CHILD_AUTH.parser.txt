@@ -1,0 +1,55 @@
+!SAMPLE={"id":"4184","author_id":-1,"entity_id":57,"entity_type":"User","details":{"author_name":"kim.lee","author_class":"Gitlab::Audit::UnauthenticatedAuthor","failed_login":"STANDARD","custom_message":"Failed to login with STANDARD authentication","target_id":57,"target_type":"User","target_details":"kim.lee","ip_address":"198.51.100.44","entity_path":"kim.lee"},"ip_address":"198.51.100.44","author_name":"kim.lee","entity_path":"kim.lee","target_details":"kim.lee","created_at":"2026-10-13T01:11:30.507Z","target_type":"User","target_id":57,"event_type":"login_failed_with_standard_authentication"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GitLab audit event streaming, authentication events: authenticated_with_* (password,
+# two_factor, webauthn, ldap, oauth, group_saml), smartcard_authentication_created,
+# login_failed_with_*_authentication, omniauth_login_failed and user_access_locked.
+# Child of GITLAB_AUDIT_JSON_PARENT: each one to Auth.
+# json, evt, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+authSystem$ = "GitLab"
+sourceAddress$ = json["$.ip_address"]
+status$ = evt
+
+# The account signing in: the User the event is about, else the target user, else the author.
+# A failed sign-in has an unauthenticated author named after the login that was tried.
+entityType = json["$.entity_type"]
+targetUserName$ = IF entityType == "User" THEN json["$.entity_path"] ELSE NULL
+targetUserName$ = IF targetUserName$ == NULL AND json["$.target_type"] == "User" THEN json["$.target_details"] ELSE targetUserName$
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE json["$.author_name"]
+authorId = STRING(json["$.author_id"])
+userDisplayName$ = IF CONTAINS(evt, "authenticated_with_") THEN json["$.author_name"] ELSE NULL
+# Group SAML sign-ins name the group as the entity.
+targetDomainName$ = IF entityType == "Group" THEN json["$.entity_path"] ELSE NULL
+
+failed = CONTAINS(evt, "login_failed") OR evt == "omniauth_login_failed"
+locked = evt == "user_access_locked"
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE "ACCOUNT_LOGON"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+actionResult$ = IF locked THEN NULL ELSE actionResult$
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF evt == "login_failed_with_standard_authentication" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF evt == "login_failed_with_otp_authentication" OR evt == "login_failed_with_webauthn_authentication" THEN "INCORRECT_MFA" ELSE failureCategory$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+mfaUsed$ = IF evt == "authenticated_with_two_factor" OR evt == "authenticated_with_webauthn" OR evt == "login_failed_with_otp_authentication" OR evt == "login_failed_with_webauthn_authentication" THEN TRUE ELSE NULL
+
+m1.key$ = "author_id"
+m1.value$ = authorId
+m2.key$ = "entity_type"
+m2.value$ = entityType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "entity_path"
+m3.value$ = json["$.entity_path"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "author_class"
+m4.value$ = json["$.details.author_class"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$

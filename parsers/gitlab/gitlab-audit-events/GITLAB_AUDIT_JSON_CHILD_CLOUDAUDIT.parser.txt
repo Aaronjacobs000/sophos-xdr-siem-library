@@ -1,0 +1,81 @@
+!SAMPLE={"id":"0f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a","author_id":-3,"entity_id":29,"entity_type":"Project","details":{"author_name":"ci-deploy-key","author_class":"DeployKey","custom_message":{"protocol":"ssh","action":"git-upload-pack","written_bytes":1048576,"received_bytes":2048,"gl_key_type":"deploy_key","gl_key_id":24},"target_id":29,"target_type":"Project","target_details":"web-app","ip_address":"203.0.113.61","entity_path":"acme/web-app"},"ip_address":"203.0.113.61","author_name":"ci-deploy-key","entity_path":"acme/web-app","target_details":"web-app","created_at":"2026-10-13T01:20:03.662Z","target_type":"Project","target_id":29,"event_type":"repository_git_operation"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GitLab audit event streaming, every event that isn't authentication: Git operations,
+# file reads, members, tokens, project and group settings, CI/CD, compliance and streaming changes.
+# Child of GITLAB_AUDIT_JSON_PARENT: each one to CloudAudit, with the event type (such as
+# member_created) as the event name and the entity type (User, Group, Project or
+# Gitlab::Audit::InstanceScope) as the event type.
+# json, evt, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+eventSource$ = "GitLab"
+eventName$ = evt
+entityType = json["$.entity_type"]
+eventType$ = entityType
+userName$ = json["$.author_name"]
+userId$ = STRING(json["$.author_id"])
+sourceAddress$ = json["$.ip_address"]
+targetType = json["$.target_type"]
+targetUserName$ = IF targetType == "User" THEN json["$.target_details"] ELSE NULL
+
+# Git operations and file reads are data events. A fetch or clone (git-upload-pack) reads only.
+gitAction = json["$.details.custom_message.action"]
+dataEvent = evt == "repository_git_operation" OR CONTAINS(evt, "repository_file_accessed")
+managementEvent$ = NOT dataEvent
+readOnly$ = gitAction == "git-upload-pack" OR CONTAINS(evt, "repository_file_accessed")
+
+# Resources: the entity the event is about, and its target when that's something else.
+ent.resourceId$ = json["$.entity_path"]
+ent.resourceType$ = entityType
+ent.resourceAccountId$ = STRING(json["$.entity_id"])
+resources$ = [ent]
+tgt.resourceId$ = json["$.target_details"]
+tgt.resourceType$ = targetType
+tgt.resourceAccountId$ = STRING(json["$.target_id"])
+sameTarget = targetType == entityType AND STRING(json["$.target_id"]) == STRING(json["$.entity_id"])
+resources$ = IF targetType AND NOT sameTarget THEN resources$ + [tgt] ELSE resources$
+
+# custom_message is text for most events and an object for Git operations.
+p1.key$ = "protocol"
+p1.value$ = json["$.details.custom_message.protocol"]
+p2.key$ = "action"
+p2.value$ = gitAction
+msg = json["$.details.custom_message"]
+p3.key$ = "custom_message"
+p3.value$ = msg
+p4.key$ = "change"
+p4.value$ = json["$.details.change"]
+p5.key$ = "from"
+p5.value$ = STRING(json["$.details.from"])
+p6.key$ = "to"
+p6.value$ = STRING(json["$.details.to"])
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF gitAction THEN [p1, p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF msg AND NOT gitAction THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4, p5, p6] ELSE requestParameters$.record$
+
+d1.key$ = "entity_path"
+d1.value$ = json["$.entity_path"]
+d2.key$ = "target_type"
+d2.value$ = targetType
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "author_class"
+d3.value$ = json["$.details.author_class"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "written_bytes"
+d4.value$ = STRING(json["$.details.custom_message.written_bytes"])
+additionalEventData$.record$ = IF json["$.details.custom_message.written_bytes"] THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "received_bytes"
+d5.value$ = STRING(json["$.details.custom_message.received_bytes"])
+additionalEventData$.record$ = IF json["$.details.custom_message.received_bytes"] THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "key_type"
+d6.value$ = json["$.details.custom_message.gl_key_type"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
