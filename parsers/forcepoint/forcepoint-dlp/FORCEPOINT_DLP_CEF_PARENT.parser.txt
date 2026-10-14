@@ -1,0 +1,36 @@
+!SAMPLE=Oct 13 22:58:02 fsm01 CEF:0|Forcepoint|Forcepoint DLP|10.3.0|873421|DLP Syslog|3| act=Blocked duser=partner@example.net fname=payroll-q3.xlsx msg=Q3 payroll summary suser=jlee@example.com cat=PII; Financial Data sourceServiceName=Endpoint Email analyzedBy=ws-0147 loginName=jlee sourceIp=192.0.2.50 severityType=HIGH sourceHost=ws-0147.corp.example.com productVersion=10.3 maxMatches=12 timeStamp=2026-10-13 22:58:01.123 destinationHosts=mail.example.net apVersion=10.3
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*\d+\|(?:Forcepoint|Websense)\|(?:Forcepoint DLP|TRITON AP-DATA)\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Forcepoint DLP syslog in CEF from the Forcepoint Security Manager (Settings > General >
+# Remediation), to the data collector:
+#   CEF:0|Forcepoint|Forcepoint DLP|<version>|<event id>|DLP Syslog|<severity>| act=... suser=...
+# Before 8.4 the header reads Websense or Forcepoint and TRITON AP-DATA.
+# Parent: hands each message to a child by the header name.
+#   DLP Syslog (incidents and incident risk ranking cases)   to the third-party alert child
+#   DLP Audit Log                                            to the Management Event child
+#   DLP System Log stays in the generic schema.
+
+v = CEF(originalData$)
+eventId = STRING(v[4])
+name = STRING(v[5])
+sevText = STRING(v[6])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Forcepoint DLP"
+eventType$ = "other"
+eventType$ = IF name == "DLP Syslog" THEN "incident" ELSE eventType$
+eventType$ = IF name == "DLP Audit Log" THEN "audit" ELSE eventType$
+
+# timeStamp is 2026-10-13 22:58:01.123 on incidents (with the Audit Quality fields) and
+# 13 Oct. 2026, 11:12:30 PM on audit and system messages. Forcepoint doesn't give the time zone,
+# so both are read as UTC.
+ts = STRING(v["timeStamp"])
+iso = ts|^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}
+long = ts|^(?P<d>\d{1,2}) (?P<mon>[A-Z][a-z]{2})\.? (?P<y>\d{4}), (?P<t>\d{1,2}:\d{2}:\d{2} [AP]M)
+longText = long["d"] + " " + long["mon"] + " " + long["y"] + " " + long["t"]
+eventTimeUsec$ = IF iso[0] != "" THEN DATETIME(ts, "2006-01-02 15:04:05.999") ELSE eventTimeUsec$
+eventTimeUsec$ = IF long["t"] != "" THEN DATETIME(longText, "2 Jan 2006 3:04:05 PM") ELSE eventTimeUsec$

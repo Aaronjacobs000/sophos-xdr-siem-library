@@ -1,0 +1,113 @@
+!SAMPLE=Oct 13 22:58:02 fsm01 CEF:0|Forcepoint|Forcepoint DLP|10.3.0|873421|DLP Syslog|3| act=Blocked duser=partner@example.net fname=payroll-q3.xlsx msg=Q3 payroll summary suser=jlee@example.com cat=PII; Financial Data sourceServiceName=Endpoint Email analyzedBy=ws-0147 loginName=jlee sourceIp=192.0.2.50 severityType=HIGH sourceHost=ws-0147.corp.example.com productVersion=10.3 maxMatches=12 timeStamp=2026-10-13 22:58:01.123 destinationHosts=mail.example.net apVersion=10.3
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="incident"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Forcepoint DLP syslog in CEF from the Forcepoint Security Manager.
+# Child of FORCEPOINT_DLP_CEF_PARENT: DLP incidents and incident risk ranking cases to the
+# third-party alert schema.
+# v, eventId, sevText, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+# Websense or Forcepoint, and TRITON AP-DATA or Forcepoint DLP, by version.
+vendor$ = STRING(v[1])
+provider$ = STRING(v[2])
+alertId$ = eventId
+alertCategory$ = "Data loss prevention"
+
+# A risk ranking case summarizes several incidents and carries riskScore instead of act.
+case = STRING(v["caseDescription"])
+isCase = case != ""
+act = STRING(v["act"])
+cat = STRING(v["cat"])
+channel = STRING(v["sourceServiceName"])
+details = STRING(v["msg"])
+caseTitle = "DLP risk ranking case: " + case
+incidentTitle = IF cat != "" THEN "DLP incident: " + cat ELSE "DLP incident"
+title$ = IF isCase THEN caseTitle ELSE incidentTitle
+caseSummary = STRING(v["caseSummary"])
+onChannel = IF channel != "" THEN " on " + channel ELSE ""
+incidentSummary = act + onChannel + ": " + details
+summary$ = IF isCase THEN caseSummary ELSE incidentSummary
+
+# The case's own time when it has no timeStamp: 07 Jul. 2016, 9:33:18 AM.
+caseTime = STRING(v["caseDateAndTime"])
+ct = caseTime|^(?P<d>\d{1,2}) (?P<mon>[A-Z][a-z]{2})\.? (?P<y>\d{4}), (?P<t>\d{1,2}:\d{2}:\d{2} [AP]M)
+ctText = ct["d"] + " " + ct["mon"] + " " + ct["y"] + " " + ct["t"]
+eventTimeUsec$ = IF ct["t"] != "" THEN DATETIME(ctText, "2 Jan 2006 3:04:05 PM") ELSE eventTimeUsec$
+riskText = STRING(v["riskScore"])
+risk = riskText|^(?P<n>\d+(?:\.\d+)?)$
+riskScore$ = IF risk["n"] != "" THEN risk["n"] + 0 ELSE NULL
+
+# severityType (LOW, MEDIUM or HIGH) comes with the Audit Quality fields. Forcepoint doesn't
+# document the scale of the header severity, so it is kept as vendor_severity only.
+sevType = UPPERCASE(STRING(v["severityType"]))
+vendorSeverity$ = IF sevType != "" THEN sevType ELSE sevText
+severity$ = NULL
+severity$ = IF sevType == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF sevType == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF sevType == "HIGH" THEN "HIGH" ELSE severity$
+severity$ = IF sevType == "CRITICAL" THEN "CRITICAL" ELSE severity$
+
+# act is the action plan's result: Permitted, Blocked, Quarantined, Encrypted and others.
+lact = LOWERCASE(act)
+stopped = CONTAINS(lact, "block") OR CONTAINS(lact, "quarantine") OR CONTAINS(lact, "dropped") OR CONTAINS(lact, "denied")
+action$ = IF stopped THEN "BLOCKED" ELSE NULL
+
+# loginName is the account (sAMAccountName); suser is the incident source as the policy saw it.
+login = STRING(v["loginName"])
+suser = STRING(v["suser"])
+sourceUserName$ = IF login != "" THEN login ELSE NULL
+sourceUserName$ = IF login == "" AND suser != "" THEN suser ELSE sourceUserName$
+ip = STRING(v["sourceIp"])
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+shost = STRING(v["sourceHost"])
+sourceHostName$ = IF shost != "" THEN shost ELSE NULL
+# For web channels the details hold the URL.
+web = details|^https?://
+destinationUrl$ = IF web[0] != "" THEN details ELSE NULL
+
+d0.key$ = "header_severity"
+d0.value$ = sevText
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d0]
+d1.key$ = "channel"
+d1.value$ = channel
+additionalData$.record$ = IF channel != "" THEN additionalData$.record$ + [d1] ELSE additionalData$.record$
+d2.key$ = "action"
+d2.value$ = act
+additionalData$.record$ = IF act != "" THEN additionalData$.record$ + [d2] ELSE additionalData$.record$
+d3.key$ = "policy_categories"
+d3.value$ = cat
+additionalData$.record$ = IF cat != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "source"
+d4.value$ = suser
+additionalData$.record$ = IF suser != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "destinations"
+d5.value$ = STRING(v["duser"])
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "attachments"
+d6.value$ = STRING(v["fname"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "details"
+d7.value$ = details
+additionalData$.record$ = IF details != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "analyzed_by"
+d8.value$ = STRING(v["analyzedBy"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "max_matches"
+d9.value$ = STRING(v["maxMatches"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "destination_hosts"
+d10.value$ = STRING(v["destinationHosts"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "case_classification"
+d11.value$ = STRING(v["caseClassification"])
+additionalData$.record$ = IF d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "number_of_incidents"
+d12.value$ = STRING(v["numberOfIncidents"])
+additionalData$.record$ = IF d12.value$ != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "incident_ids"
+d13.value$ = STRING(v["eventIDs"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
