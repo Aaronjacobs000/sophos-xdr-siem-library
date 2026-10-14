@@ -68,6 +68,11 @@ export function lintParsers(parsers, opts = {}) {
       const at = lines.findIndex((l) => l.includes(r));
       if (at !== -1) add('error', 'restricted-syntax', `Sophos Fusion won't save a parser with ${r} anywhere in it, even in a comment or a regex, though Run Test accepts it. In a regex, write the = as [=], as in \\w*[=].`, p.name, at + 1);
     }
+    // Saving a parser with a !PARENT line also fails ("code contains restricted syntax: !PARENT"),
+    // with Override Global Parser on or off, though Run Test accepts it and !PARENT in a comment
+    // saves (checked through the parser API in a lab tenant). The docs add the line in the console
+    // with Set Global Parent in Parser Script turned on, so this is a warning.
+    if (dl.PARENT) add('warning', 'restricted-syntax', 'Sophos Fusion refused to save a parser with a !PARENT line in a lab tenant ("code contains restricted syntax: !PARENT"), though Run Test accepts it. The docs add !PARENT in the console with Set Global Parent in Parser Script turned on, so check the parser saves there.', p.name, dl.PARENT);
     const isLib = p.flags.has('IMPORTONLY');
     const isOff = p.flags.has('DISABLED');
     const parentP = p.parent ? byName.get(p.parent) : null;

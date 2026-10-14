@@ -19,6 +19,24 @@ function unescape(s) {
   return s.replace(/\\(.)/g, (_, c) => (c === 'r' || c === "'" ? `\\${c}` : { n: '\n', t: '\t' }[c] ?? c));
 }
 
+// Inside double quotes the engine reads \", \\, \n, \t and \r, and inside single quotes \', \\, \n
+// and \t. Any other escape, such as \q, \/, \0, \x41 or \u0041, or \" or \r inside single quotes,
+// makes it reject the parser with a syntax error, in a confirm expression too (checked in a lab
+// tenant).
+const ESCAPES = { '"': ['\\"', '\\\\', '\\n', '\\t', '\\r'], "'": ["\\'", '\\\\', '\\n', '\\t'] };
+function checkEscapes(lit, at) {
+  const q = lit[0];
+  for (let i = 1; i < lit.length - 1; i++) {
+    if (lit[i] !== '\\') continue;
+    const esc = `\\${lit[i + 1]}`;
+    if (!ESCAPES[q].includes(esc)) {
+      const ok = ESCAPES[q];
+      throw new SyntaxError2(`${esc} inside ${q === '"' ? 'double' : 'single'} quotes: the engine only reads ${ok.slice(0, -1).join(', ')} and ${ok[ok.length - 1]} there, so it rejects the parser with a syntax error. Write a backslash as \\\\.`, at + i);
+    }
+    i++;
+  }
+}
+
 export function tokenize(src) {
   const out = [];
   TOKEN.lastIndex = 0;
@@ -31,6 +49,7 @@ export function tokenize(src) {
     i = TOKEN.lastIndex;
     if (m[1]) continue;
     if (m[2]) break;
+    if (m[3] || m[4]) checkEscapes(m[3] || m[4], at);
     if (m[3]) out.push({ k: 'str', v: unescape(m[3].slice(1, -1)), at, quote: '"' });
     else if (m[4]) out.push({ k: 'str', v: unescape(m[4].slice(1, -1)), at, quote: "'" });
     else if (m[5]) out.push({ k: 'str', v: m[5].slice(1, -1), at, quote: '`' });
@@ -58,6 +77,14 @@ class ExprParser {
       throw new SyntaxError2(`expected ${v ?? k}, found ${x.k === 'eof' ? 'end of line' : JSON.stringify(x.v)}`, x.at);
     }
     return this.t[this.i++];
+  }
+  // The comma between a call's arguments or a list's items. An unclosed call or list says so,
+  // rather than asking for a comma.
+  separator(close, what) {
+    if (this.peek('op', ',')) return this.take();
+    const x = this.t[this.i];
+    if (x.k === 'eof') throw new SyntaxError2(`${what} is missing its closing ${close}`, x.at);
+    throw new SyntaxError2(`expected "," or "${close}" in ${what}, found ${JSON.stringify(x.v)}`, x.at);
   }
   parse() { const e = this.expr(); this.take('eof'); return e; }
   expr() {
@@ -137,7 +164,7 @@ class ExprParser {
     if (x.k === 'op' && x.v === '[') {
       this.take();
       const items = [];
-      while (!this.peek('op', ']')) { items.push(this.expr()); if (!this.peek('op', ']')) this.take('op', ','); }
+      while (!this.peek('op', ']')) { items.push(this.expr()); if (!this.peek('op', ']')) this.separator(']', 'the list'); }
       this.take('op', ']');
       return { t: 'list', items };
     }
@@ -146,7 +173,7 @@ class ExprParser {
       if (this.peek('op', '(')) {
         this.take();
         const args = [];
-        while (!this.peek('op', ')')) { args.push(this.expr()); if (!this.peek('op', ')')) this.take('op', ','); }
+        while (!this.peek('op', ')')) { args.push(this.expr()); if (!this.peek('op', ')')) this.separator(')', `${x.v}()`); }
         this.take('op', ')');
         return { t: 'call', name: x.v, args, at: x.at };
       }

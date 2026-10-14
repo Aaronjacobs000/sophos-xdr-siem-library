@@ -3,7 +3,7 @@
 // coerced into each type follows what the engine did in a lab tenant; notes point out
 // values that change or fail on the way in.
 
-import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList, hasOwn } from './values.js';
+import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList, hasOwn, wrapJson } from './values.js';
 import { fieldsByParser, schemaInfo, typeKind, enumMembers, enumNumbers, messageType, INT_TYPES } from './schemas.js';
 import { trimPairs, stringOf } from './functions.js';
 import { AUTH0_LOG_TYPES } from './auth0-log-types.js';
@@ -36,24 +36,42 @@ function topLevelString(s, opts, where, notes) {
 
 // With TRIM_ALL on, a record in a top-level string field has each text member trimmed the way
 // TRIM_ALL trims a field: r.c$ = " (y) " is written as "y". So does an object such as a CEF(),
-// LEEF(), SPLIT_NAME_VALUES() or URL_PARSE() value, CEF and LEEF header fields included. A member
-// that is a record or a list, or a record inside a list, isn't trimmed (checked in a lab tenant).
+// LEEF(), SPLIT_NAME_VALUES() or URL_PARSE() value, CEF and LEEF header fields included, and an
+// object part of a JSON value such as json["$.o"]. A member that is a record, an object or a list,
+// or a record inside a list, isn't trimmed (checked in a lab tenant).
 function trimMembers(rec, where, notes) {
   let braces = false;
-  const fields = new Map([...(rec instanceof ObjValue ? rec.map : rec.fields)].map(([k, x]) => {
+  const trim = ([k, x]) => {
     if (typeof x !== 'string') return [k, x];
     const t = trimPairs(x, false);
     if (t !== x.replace(/^[ \t\n]+|[ \t\n]+$/g, '')) braces = true;
     return [k, t];
-  }));
-  if (braces) notes.push({ level: 'warning', code: 'trim-braces', field: where, message: `${where}: TRIM_ALL removed the enclosing brackets or quotes from text members of the ${rec instanceof ObjValue ? 'object' : 'record'} stored here. Add !TRIMALLOFF if they should keep them.` });
-  return rec instanceof ObjValue ? new ObjValue(fields, rec.header) : new RecordValue(fields);
+  };
+  const json = rec instanceof JsonValue;
+  const members = json ? Object.entries(rec.value).map(trim) : [...(rec instanceof ObjValue ? rec.map : rec.fields)].map(trim);
+  if (braces) notes.push({ level: 'warning', code: 'trim-braces', field: where, message: `${where}: TRIM_ALL removed the enclosing brackets or quotes from text members of the ${rec instanceof RecordValue ? 'record' : 'object'} stored here. Add !TRIMALLOFF if they should keep them.` });
+  if (json) return new JsonValue(Object.fromEntries(members));
+  return rec instanceof ObjValue ? new ObjValue(new Map(members), rec.header) : new RecordValue(new Map(members));
 }
 
-// Lists into a string field come out comma-joined without quotes. A record in the list is written
-// the way STRING() writes it: keys sorted and <, > and & escaped (checked in a lab tenant).
+const isJsonObject = (v) => v instanceof JsonValue && !v.doc && v.value !== null && typeof v.value === 'object' && !Array.isArray(v.value);
+
+// Lists into a string field come out comma-joined without quotes. A list inside the list, a JSON
+// array part included, is joined the same way in its place, so [["a","<b>"],"c"] gives a,<b>,c
+// and [["a"],[],"c"] gives a,,c. A record, an object such as a CEF() value, or an object part of a
+// JSON value is written the way STRING() writes it: keys sorted, <, > and & escaped and a NULL
+// member as 0. Nothing in a list is trimmed (checked in a lab tenant).
 function joinList(list) {
-  return list.map((x) => (x === null || x === undefined ? '' : typeof x === 'string' ? x : x instanceof RecordValue ? stringOf(x) : toStr(x instanceof JsonValue ? x : x))).join(',');
+  return list.map(joinItem).join(',');
+}
+
+function joinItem(x) {
+  if (x === null || x === undefined) return '';
+  if (typeof x === 'string') return x;
+  if (isList(x)) return joinList(x);
+  if (x instanceof JsonValue && !x.doc && Array.isArray(x.value)) return joinList(x.value.map(wrapJson));
+  if (x instanceof RecordValue || x instanceof ObjValue || isJsonObject(x)) return stringOf(x);
+  return toStr(x);
 }
 
 // A number is written the way the engine writes a float as text (see goFloatText). The value
@@ -72,9 +90,9 @@ function asString(v, where, notes, opts, top) {
     return toStr(v);
   }
   if (v instanceof JsonValue && v.doc) return '{}';
-  if ((v instanceof RecordValue || v instanceof ObjValue) && top && opts.trim) return stringOf(trimMembers(v, where, notes));
+  if ((v instanceof RecordValue || v instanceof ObjValue || isJsonObject(v)) && top && opts.trim) return stringOf(trimMembers(v, where, notes));
   if (isList(v)) return joinList(v);
-  if (v instanceof JsonValue && Array.isArray(v.value)) return joinList(v.value);
+  if (v instanceof JsonValue && Array.isArray(v.value)) return joinList(v.value.map(wrapJson));
   if (v instanceof JsonValue || v instanceof ObjValue || v instanceof RecordValue) return stringOf(v);
   return toStr(v);
 }

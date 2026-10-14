@@ -94,7 +94,8 @@ function lookup(value, list, short) {
 const fail = (layout, value, why) => new RuntimeError(`DATETIME could not read "${value}" with layout "${layout}": ${why}`, 'datetime');
 
 // Parse value with a Go layout. Returns a TimeValue. Throws RuntimeError on mismatch.
-// opts.handle2DigitYear: when the value carries no year, pick one near opts.now.
+// opts.handle2DigitYear: when the value carries no year, pick one near opts.now, and drop the
+// fractional seconds.
 export function goParse(layout, value, opts = {}) {
   const chunks = layoutChunks(layout);
   let v = String(value);
@@ -244,7 +245,9 @@ export function goParse(layout, value, opts = {}) {
       ms = dt.getTime() - (offset ?? 0) * 60000;
     }
   }
-  const usec = ms * 1000 + Math.floor(nanos / 1000);
+  // With handle2DigitYear the engine drops the fractional seconds, whatever the layout: TRUE turns
+  // 22:21:09.461230 into 22:21:09 (checked in a lab tenant).
+  const usec = ms * 1000 + (opts.handle2DigitYear ? 0 : Math.floor(nanos / 1000));
   return new TimeValue(usec, offset ?? 0, zone ?? (offset ? '' : 'UTC'));
 }
 

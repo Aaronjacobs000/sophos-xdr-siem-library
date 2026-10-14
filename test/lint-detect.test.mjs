@@ -231,3 +231,20 @@ test('lint: a syntax error rejects the parser, which shows as one entry for ever
   assert.deepEqual(errors[1].lines, [1, 2]);
   assert.ok(r.results.every((x) => x.rejected && x.normalized === null));
 });
+
+test('lint: an unclosed call says it is missing its closing ), rather than asking for a comma', () => {
+  const lint = (confirm, line = '') => lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text: `!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=${confirm}\n!SCHEMA=scwx.nids\nmessage$ = "m"\n${line}` }]).problems.filter((p) => p.code === 'syntax').map((p) => [p.line, p.message]);
+  assert.deepEqual(lint('CONTAINS(message, "acme-app"'), [[2, 'confirm expression: CONTAINS() is missing its closing )']]);
+  assert.deepEqual(lint('CONTAINS(message "acme-app")'), [[2, 'confirm expression: expected "," or ")" in CONTAINS(), found "acme-app"']]);
+  assert.deepEqual(lint('CONTAINS(message, "acme-app")', 'x = [1, 2'), [[5, 'the list is missing its closing ]']]);
+});
+
+test('lint: a !PARENT line is a warning, because Sophos Fusion refused to save it, and !PARENT in a comment is fine', () => {
+  // The parser API refused a !PARENT line ("code contains restricted syntax: !PARENT"), with
+  // Override Global Parser on or off, and saved !PARENT in a comment (checked in a lab tenant).
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acmegw\n!SCHEMA=scwx.generic\n';
+  const hit = (text) => lintParsers([{ name: 'ACME_GW', text: head + text }]).problems.filter((p) => p.code === 'restricted-syntax').map((p) => `${p.level}:${p.line}`);
+  assert.deepEqual(hit('!PARENT=Azure_Monitor_Master\nkind = "a"'), ['warning:4']);
+  assert.match(lintParsers([{ name: 'ACME_GW', text: `${head}!PARENT=Azure_Monitor_Master` }]).problems.find((p) => p.code === 'restricted-syntax').message, /refused to save a parser with a !PARENT line/);
+  assert.deepEqual(hit('# extend a global parser with !PARENT in the console\nkind = "a"'), []);
+});
