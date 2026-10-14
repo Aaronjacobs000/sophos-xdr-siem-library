@@ -30,14 +30,37 @@ const LABELS = {
   submission: ['parser-submission', '8250df', 'A parser submitted through the issue form'],
 };
 
+// GitHub sometimes answers a read with a 500, and a merge with 405 "Base branch was modified"
+// when another merge lands first. Both pass on a retry, so the gate tries again a few times.
+const RETRIES = 3;
+const RETRY_MS = Number(process.env.GATE_RETRY_MS ?? 3000);
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function retrying(call, again) {
+  for (let i = 0; ; i++) {
+    try {
+      return await call();
+    } catch (e) {
+      if (i >= RETRIES || !again(e)) throw e;
+      await pause(RETRY_MS * (i + 1));
+    }
+  }
+}
+
 async function gh(method, url, body) {
+  if (method === 'GET') return retrying(() => request(method, url, body), (e) => e.status >= 500);
+  return request(method, url, body);
+}
+
+async function request(method, url, body) {
   const res = await fetch(url.startsWith('https://') ? url : `https://api.github.com${url}`, {
     method,
     headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'parser-studio-gate' },
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { message: text.slice(0, 200) }; }
   if (!res.ok) throw Object.assign(new Error(`${method} ${url}: ${res.status} ${data && data.message}`), { status: res.status, data });
   return data;
 }
@@ -97,7 +120,7 @@ async function merge(pr, sha) {
     return 'Auto-merge is on for this pull request.';
   } catch {
     if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate'))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
-    await gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' });
+    await retrying(() => gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' }), (e) => e.status === 405 && /base branch was modified/i.test(e.message));
     await deleteHeadBranch(p, sha);
     return 'Merged.';
   }

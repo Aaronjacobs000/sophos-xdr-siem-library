@@ -81,6 +81,14 @@ test('the scan lets the EICAR test file name through, and only that name', () =>
   assert.deepEqual(kinds('fetched from deicar.com'), ['hostname']);
 });
 
+test('the scan lets Tenable.ad and Trellix ::~~ line breaks through', () => {
+  assert.deepEqual(kinds('Tenable.ad raised an alert'), []);
+  assert.deepEqual(kinds('cs6=GET /x.php HTTP/1.1::~~Host: www.example.com::~~Accept: */*::~~User-Agent: Mozilla/5.0::~~::~~'), []);
+  // Other .ad names are still internal, and :: without the ~~ is still read as an address.
+  assert.deepEqual(kinds('host=dc01.corp.ad'), ['hostname']);
+  assert.deepEqual(kinds('next hop beef:: via eth0'), ['ip']);
+});
+
 test('the scan reads session IDs and GUIDs as identifiers unless they look like a random token', () => {
   assert.deepEqual(kinds('session_id="q6GJMuPu003642-q6GJMuPv003642" client_ip="192.0.2.4"'), []);
   assert.deepEqual(kinds('{"SessionId":"3fa85f64-5717-4562-b3fc-2c963f66afa6"}'), []);

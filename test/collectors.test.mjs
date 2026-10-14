@@ -78,7 +78,7 @@ test('review rule: collector code and other non-library files always need a revi
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204 } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.' } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const mock = path.join(dir, 'mock-fetch.mjs');
@@ -90,11 +90,14 @@ async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}
   await writeFile(mock, `
 import { appendFileSync } from 'node:fs';
 const files = ${JSON.stringify(files.map((filename) => ({ filename })))};
+let filesErrors = ${filesErrors}, mergeErrors = ${mergeErrors};
 globalThis.fetch = async (url, init = {}) => {
   const method = init.method || 'GET';
   appendFileSync(${JSON.stringify(log)}, method + ' ' + url + '\\n');
   const u = new URL(url);
   let body = {};
+  if (u.pathname === '/repos/o/r/pulls/7/files' && filesErrors > 0) { filesErrors--; return new Response('<html>Server Error</html>', { status: 500 }); }
+  if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: 405 }); }
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
   else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, node_id: 'PR_7', ...${JSON.stringify(pull)}, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})} } };
   else if (u.pathname === '/repos/o/r/pulls/7/files') body = u.searchParams.get('page') === '1' ? files : [];
@@ -108,7 +111,7 @@ globalThis.fetch = async (url, init = {}) => {
 };
 `);
   const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')] : ['merge', '--pr', '7', '--sha', 'abc123'];
-  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
   const stepOutput = await readFile(output, 'utf8');
   await rm(dir, { recursive: true, force: true });
@@ -166,6 +169,23 @@ test('gate: after its own merge it deletes a same-repo head branch, never a fork
   const failed = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, pull: from('library/acme'), deleteStatus: 403 });
   assert.equal(deletes(failed).length, 1);
   assert.equal(failed.stepOutput, 'merged=true\n');
+});
+
+test('gate: it retries a 500 while listing files and a 405 "Base branch was modified" on merge', async () => {
+  const filesCalls = (r) => r.calls.filter((c) => c.startsWith('GET https://api.github.com/repos/o/r/pulls/7/files'));
+  const puts = (r) => r.calls.filter((c) => c === 'PUT https://api.github.com/repos/o/r/pulls/7/merge');
+  const listed = await gateMerge(['parsers/acme/pull-api/meta.json'], { filesErrors: 2 });
+  assert.equal(listed.out, 'Auto-merge is on for this pull request.');
+  assert.equal(filesCalls(listed).length, 3);
+  for (const command of ['pr', 'merge']) {
+    const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, autoMerge: false, mergeErrors: 2 });
+    assert.equal(puts(merged).length, 3, command);
+    assert.equal(merged.stepOutput, 'merged=true\n', command);
+  }
+  // Any other 405, such as a pull request that can't merge, isn't retried.
+  const refused = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, mergeErrors: 1, mergeError: 'Pull Request is not mergeable' });
+  assert.equal(puts(refused).length, 1);
+  assert.equal(refused.stepOutput, '');
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {
