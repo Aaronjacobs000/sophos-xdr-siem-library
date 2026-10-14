@@ -1,0 +1,450 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805211202892,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158840",
+      "event_name": "AUDIT_RENAME",
+      "event_type": "Rename",
+      "read_only": false,
+      "event_source": "CIFS",
+      "user_name": "ACME\\jlee",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1106",
+      "source_address": "192.0.2.61",
+      "object_key": "/Finance/2026/q3-forecast.xlsx",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "newpath",
+            "value": "/Finance/2026/q3-forecast.xlsx.lockbit"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401106"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805212550987,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158841",
+      "event_name": "AUDIT_UNLINK",
+      "event_type": "Delete",
+      "read_only": false,
+      "event_source": "CIFS",
+      "user_name": "ACME\\jlee",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1106",
+      "source_address": "192.0.2.61",
+      "object_key": "/Finance/2026/q3-forecast.xlsx",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401106"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805262118192,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158842",
+      "event_name": "AUDIT_MKNOD",
+      "event_type": "Create",
+      "read_only": false,
+      "event_source": "NFS",
+      "user_name": "root",
+      "user_id": "S-1-22-1-0",
+      "object_key": "/Projects/build/output.tar",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "mode",
+            "value": "33188"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "root"
+          },
+          {
+            "key": "uid",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805335004117,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158843",
+      "event_name": "AUDIT_CHMOD",
+      "event_type": "Security",
+      "read_only": false,
+      "event_source": "CIFS",
+      "user_name": "ACME\\jlee",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1106",
+      "source_address": "192.0.2.61",
+      "object_key": "/Finance/payroll",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          },
+          {
+            "key": "mode",
+            "value": "16895"
+          },
+          {
+            "key": "is_dir",
+            "value": "true"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401106"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805350880412,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158844",
+      "event_name": "AUDIT_SETXATTR",
+      "event_type": "Security",
+      "read_only": false,
+      "event_source": "CIFS",
+      "user_name": "ACME\\jlee",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1106",
+      "source_address": "192.0.2.61",
+      "object_key": "/Finance/payroll/2026-10.csv",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          },
+          {
+            "key": "xattr_name",
+            "value": "user.DOSATTRIB"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401106"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805381311560,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158845",
+      "event_name": "AUDIT_READ",
+      "event_type": "Read",
+      "read_only": true,
+      "event_source": "CIFS",
+      "user_name": "ACME\\svc-backup",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1203",
+      "source_address": "198.51.100.20",
+      "object_key": "/Finance/payroll/2026-10.csv",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401203"
+          },
+          {
+            "key": "filesize",
+            "value": "48211"
+          },
+          {
+            "key": "length",
+            "value": "65536"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NASUNI_EDGE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805420773551,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nea-syd-01",
+      "sensor_event_id": "158846",
+      "event_name": "AUDIT_RMDIR",
+      "event_type": "Delete",
+      "read_only": false,
+      "event_source": "CIFS",
+      "user_name": "ACME\\jlee",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1106",
+      "source_address": "192.0.2.61",
+      "object_key": "/Projects/archive-2019",
+      "status": "0",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6"
+          },
+          {
+            "key": "shares",
+            "value": "Finance, Projects"
+          },
+          {
+            "key": "is_dir",
+            "value": "true"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "groupname",
+            "value": "ACME\\domain users"
+          },
+          {
+            "key": "uid",
+            "value": "401106"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NASUNI_EDGE_NOTIFY_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805214117693,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Nasuni",
+      "host_id": "nea-syd-01",
+      "target_host_name": "nea-syd-01",
+      "summary": "The Filer has detected a new ransomware attack from user ACME\\jlee (192.0.2.61) on volume finance-vol1. Detected known signatures: (*.lockbit). Confidence level at the time of detection was \"Low (2)\". Visit the Cyber Resilience - Incident Management page for more details.",
+      "alert_category": "Ransomware",
+      "title": "Nasuni ransomware attack detected",
+      "severity": "HIGH",
+      "source_user_name": "ACME\\jlee",
+      "source_address": "192.0.2.61",
+      "confidence": "Low (2)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "finance-vol1"
+          },
+          {
+            "key": "app_name",
+            "value": "nasuni.noteman"
+          },
+          {
+            "key": "signatures",
+            "value": "*.lockbit"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NASUNI_EDGE_NOTIFY_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791805244227078,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Nasuni",
+      "host_id": "nea-syd-01",
+      "target_host_name": "nea-syd-01",
+      "summary": "The Filer has enforced the mitigation policy on volume finance-vol1 and blocked an IP Address (192.0.2.61). Visit the following link for recovery information: <a href=\"https://www.example.com/ransomware\" target=\"_blank\" rel=\"noopener noreferrer\">Ransomware Information</a>.",
+      "alert_category": "Ransomware",
+      "title": "Nasuni ransomware mitigation blocked a client",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_address": "192.0.2.61",
+      "additional_data": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "finance-vol1"
+          },
+          {
+            "key": "app_name",
+            "value": "nasuni.noteman"
+          },
+          {
+            "key": "blocked",
+            "value": "an IP Address"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NASUNI_EDGE_NOTIFY_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Nasuni Edge Appliance",
+      "event_time_usec": 1791806733134021,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Nasuni",
+      "host_id": "nea-syd-01",
+      "target_host_name": "nea-syd-01",
+      "summary": "Antivirus has flagged file(s) on volume finance-vol1",
+      "alert_category": "Antivirus",
+      "title": "Nasuni antivirus flagged files",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "volume",
+            "value": "finance-vol1"
+          },
+          {
+            "key": "app_name",
+            "value": "nasuni.noteman"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

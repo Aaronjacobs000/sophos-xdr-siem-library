@@ -1,0 +1,80 @@
+!SAMPLE=<134>1 2026-10-12T22:40:11.203114+11:00 nea-syd-01 nasuni.4f3c2b1a-9e8d-4c7b-a6f5-0 8810 6411120789 - {"to_gid": null, "event_type": "AUDIT_RENAME", "sequence": 158840, "pid": 26425, "groupname": "ACME\\domain users", "result": 0, "uid": 401106, "is_dir": false, "size": null, "timestamp": 1791805211.2028925, "proto": "AUDIT_PROTO_CIFS", "ipaddr": "192.0.2.61", "ts": null, "to": null, "gid": 400513, "filesize": null, "to_uid": null, "sid": "S-1-5-21-1004336348-1177238915-682003330-1106", "tid": 26425, "username": "ACME\\jlee", "path_timestamp": 0.0, "datasync": null, "volume": "4f3c2b1a-9e8d-4c7b-a6f5-0e1d2c3b4a59_6", "offset": null, "path": "/Finance/2026/q3-forecast.xlsx", "newpath": "/Finance/2026/q3-forecast.xlsx.lockbit", "shared_link_key": null, "resource": "Finance, Projects", "name": null, "length": null, "flags": null, "mode": null}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*"event_type"\s*:\s*"AUDIT_[A-Z_]+"\s*,.*"timestamp"\s*:\s*\d+(?:\.\d+)?\s*,.*"proto"\s*:\s*"AUDIT_PROTO_
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Nasuni Edge Appliance file system auditing sent by Syslog Export: one JSON audit event
+# per line (Nasuni's documented JSON output, all 32 keys, null when unused) after an RFC 5424 header.
+# Standalone parser for the CloudAudit schema: the audit type (AUDIT_RENAME, AUDIT_UNLINK and the
+# rest) is the event name, the path is the object key, and the access protocol the event source.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+jsonMatch = originalData$|(\{.*\})\s*$
+json = JSON(jsonMatch[1])
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+)?(?:\d{4}-\d{2}-\d{2}T\S+|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+
+sensorType$ = "Nasuni Edge Appliance"
+hostId$ = hdr["host"]
+# sequence is a rotating event counter, unique within the appliance's volume for a while.
+sensorEventId$ = STRING(json["$.sequence"])
+# timestamp is epoch seconds in UTC with a fraction.
+eventTimeUsec$ = INT(STRING(json["$.timestamp"] * 1000000), 10)
+
+audit = json["$.event_type"]
+eventName$ = audit
+# The NMC's auditing categories, for the audit types Nasuni's docs place in them.
+eventType$ = NULL
+eventType$ = IF audit == "AUDIT_MKNOD" OR audit == "AUDIT_MKDIR" THEN "Create" ELSE eventType$
+eventType$ = IF audit == "AUDIT_UNLINK" OR audit == "AUDIT_RMDIR" THEN "Delete" ELSE eventType$
+eventType$ = IF audit == "AUDIT_RENAME" THEN "Rename" ELSE eventType$
+eventType$ = IF audit == "AUDIT_CHMOD" OR audit == "AUDIT_CHOWN" OR audit == "AUDIT_SETXATTR" THEN "Security" ELSE eventType$
+eventType$ = IF audit == "AUDIT_WRITE" OR audit == "AUDIT_TRUNCATE" THEN "Write" ELSE eventType$
+eventType$ = IF audit == "AUDIT_READ" OR audit == "AUDIT_READDIR" THEN "Read" ELSE eventType$
+eventType$ = IF audit == "AUDIT_CLOSE" THEN "Close" ELSE eventType$
+readOnly$ = audit == "AUDIT_READ" OR audit == "AUDIT_READDIR" OR audit == "AUDIT_GETATTR" OR audit == "AUDIT_GETXATTR" OR audit == "AUDIT_LISTXATTR" OR audit == "AUDIT_READLINK" OR audit == "AUDIT_OPENDIR" OR audit == "AUDIT_STATFS"
+
+# proto is AUDIT_PROTO_CIFS, AUDIT_PROTO_NFS, AUDIT_PROTO_FTP or AUDIT_PROTO_ADMIN.
+eventSource$ = REPLACE(json["$.proto"], "AUDIT_PROTO_", "")
+userName$ = json["$.username"]
+# sid is set for CIFS; NFS and internal operations carry the Unix uid only.
+sid = json["$.sid"]
+userId$ = IF sid THEN sid ELSE STRING(json["$.uid"])
+# ipaddr is empty for NFS and for internal operations such as NMC file browsing.
+sourceAddress$ = json["$.ipaddr"]
+objectKey$ = json["$.path"]
+status$ = STRING(json["$.result"])
+
+p1.key$ = "volume"
+p1.value$ = json["$.volume"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = [p1]
+p2.key$ = "newpath"
+p2.value$ = json["$.newpath"]
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+p3.key$ = "shares"
+p3.value$ = json["$.resource"]
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+p4.key$ = "xattr_name"
+p4.value$ = json["$.name"]
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+p5.key$ = "mode"
+p5.value$ = STRING(json["$.mode"])
+requestParameters$.record$ = IF json["$.mode"] THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+p6.key$ = "is_dir"
+p6.value$ = STRING(json["$.is_dir"])
+requestParameters$.record$ = IF json["$.is_dir"] THEN requestParameters$.record$ + [p6] ELSE requestParameters$.record$
+
+d1.key$ = "groupname"
+d1.value$ = json["$.groupname"]
+d2.key$ = "uid"
+d2.value$ = STRING(json["$.uid"])
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "filesize"
+d3.value$ = STRING(json["$.filesize"])
+additionalEventData$.record$ = IF json["$.filesize"] THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "length"
+d4.value$ = STRING(json["$.length"])
+additionalEventData$.record$ = IF json["$.length"] THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
