@@ -1,0 +1,33 @@
+{
+  "vendor": "Microsoft",
+  "product": "Exchange Server message tracking",
+  "versions": [
+    "2016",
+    "2019",
+    "SE"
+  ],
+  "format": "csv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/exchange/mail-flow/transport-logs/message-tracking",
+    "https://docs.nxlog.co/integrations/mail/microsoft-exchange.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft/IIS/Setup/index.html"
+  ],
+  "notes": "Exchange Server 2016, 2019 and Subscription Edition message tracking logs, read by NXLog and sent row by row as syslog; README.md has the NXLog config. Every row goes to the Email schema: the event (RECEIVE, SEND, DELIVER, FAIL, DROP and the rest) as event_type, sender, recipients, subject, size and message ID, the sending address of mail received over SMTP, INBOUND for Incoming mail, DELIVERED for DELIVER and BLOCKED for DROP. Originating mail can be internal or outbound, so it gets no direction. The source, connector, recipient status, client and server, return path and custom data go to event_metadata. NXLog's own example sends JSON instead, which isn't covered, and neither are Exchange Online or the admin audit log. Samples are made up in the 30-column layout of Microsoft's message tracking page. Passed Run Test in a lab tenant on 2026-10-14 (90 of 90 fields matched the emulator in each of 3 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL",
+      "file": "MS_EXCHANGE_MSGTRK_CSV_STANDALONE_EMAIL.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.email"
+    }
+  ]
+}
