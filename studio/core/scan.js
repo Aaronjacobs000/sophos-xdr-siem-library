@@ -18,6 +18,9 @@ const SYSLOG_SELECTOR = /^(local[0-7]|kern|user|mail|daemon|auth|syslog|lpr|news
 const COMMON_TLD = new Set(['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'info', 'biz', 'me', 'app', 'dev', 'cloud', 'ai', 'xyz', 'online', 'site', 'tech', 'store', 'shop', 'live', 'pro', 'mobi', 'tv', 'cc', 'ly', 'gg', 'eu', 'asia']);
 // The EICAR anti-malware test file is called eicar.com.
 const TEST_FILES = new Set(['eicar.com']);
+// Product names written like a hostname. Tenable.ad is the old name of Tenable Identity Exposure,
+// and .ad is on the internal list above.
+const PRODUCT_NAMES = new Set(['tenable.ad']);
 const FILE_EXT = new Set(['exe', 'dll', 'sys', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'vbs', 'js', 'jse', 'hta', 'msi', 'msp', 'cab', 'scr', 'lnk', 'jar', 'py', 'sh', 'pl', 'rb', 'php', 'asp', 'aspx', 'jsp', 'html', 'htm', 'xml', 'json', 'yml', 'yaml', 'conf', 'cfg', 'ini', 'log', 'txt', 'csv', 'tsv', 'dat', 'tmp', 'bin', 'iso', 'img', 'zip', 'rar', 'gz', 'tgz', 'tar', 'bz2', 'xz', 'doc', 'docx', 'docm', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx', 'pdf', 'rtf', 'odt', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'mp3', 'mp4', 'eml', 'msg', 'md', 'so', 'dylib', 'app', 'pkg', 'dmg', 'deb', 'rpm', 'apk', 'ipa', 'db', 'sql', 'bak', 'old', 'key', 'pem', 'crt', 'cer', 'pfx', 'p12']);
 // Well-known public service domains that turn up in vendor logs and identify no one.
 const PUBLIC_OK = /(^|\.)(microsoft\.com|windows\.com|windowsupdate\.com|office\.com|office365\.com|live\.com|azure\.com|windows\.net|google\.com|googleapis\.com|gstatic\.com|amazonaws\.com|aws\.amazon\.com|cloudflare\.com|akamai\.net|apple\.com|icloud\.com|github\.com|githubusercontent\.com|eset\.com|sophos\.com|mozilla\.org|ubuntu\.com|debian\.org|pool\.ntp\.org|digicert\.com|letsencrypt\.org|w3\.org|ietf\.org|iana\.org|opendns\.com|quad9\.net)$/i;
@@ -129,6 +132,8 @@ export function scanText(text, opts = {}) {
     const cand = m[1];
     if (!cand.includes('::') && cand.split(':').length < 8) continue;
     if (!isIpv6(cand)) continue;
+    // Trellix writes a line break inside a CEF value as ::~~, so HTTP/1.1::~~ isn't an address.
+    if (cand.endsWith('::') && text.startsWith('~~', m.index + cand.length)) continue;
     const why = classifyV6(cand);
     if (why) add('error', 'ip', `${why}. Use 2001:db8::/32 (RFC 3849).`, m.index, cand);
   }
@@ -143,7 +148,7 @@ export function scanText(text, opts = {}) {
   for (const m of text.matchAll(/(?<![\w@.-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24}))(?![\w$-]|\.[a-z0-9])/gi)) {
     const host = m[1].toLowerCase();
     const tld = m[2].toLowerCase();
-    if (RESERVED_DOMAIN.test(host) || PUBLIC_OK.test(host) || TEST_FILES.has(host)) continue;
+    if (RESERVED_DOMAIN.test(host) || PUBLIC_OK.test(host) || TEST_FILES.has(host) || PRODUCT_NAMES.has(host)) continue;
     if (text[m.index - 1] === '@') continue;
     if (INTERNAL_TLD.has(tld)) { add('error', 'hostname', `${m[1]} is an internal hostname. Use a name under example.com, such as host01.corp.example.com.`, m.index, m[1]); continue; }
     if (FILE_EXT.has(tld) && tld !== 'com') continue;
