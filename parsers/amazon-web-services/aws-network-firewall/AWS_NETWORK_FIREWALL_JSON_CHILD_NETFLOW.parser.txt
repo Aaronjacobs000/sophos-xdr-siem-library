@@ -1,0 +1,46 @@
+!SAMPLE={"firewall_name":"egress-fw-01","availability_zone":"ap-southeast-2a","event_timestamp":"1791927900","event":{"tcp":{"tcp_flags":"1b","syn":true,"fin":true,"psh":true,"ack":true},"app_proto":"tls","src_ip":"192.0.2.41","src_port":51874,"netflow":{"pkts":14,"bytes":3412,"start":"2026-10-13T21:44:21.338410+0000","end":"2026-10-13T21:44:58.910271+0000","age":37,"min_ttl":63,"max_ttl":63},"event_type":"netflow","flow_id":1043925713291104,"dest_ip":"198.51.100.25","proto":"TCP","dest_port":443,"tls_inspected":true,"timestamp":"2026-10-13T21:45:00.001522+0000"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="netflow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AWS Network Firewall alert, flow and TLS logs, one JSON record per line, through S3 Ingest.
+# Child of AWS_NETWORK_FIREWALL_JSON_PARENT: flow log events (EVE netflow) to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, protoNumber, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = json["$.event.src_ip"]
+sourcePort$ = json["$.event.src_port"]
+destinationAddress$ = json["$.event.dest_ip"]
+destinationPort$ = json["$.event.dest_port"]
+protocol$ = protoNumber
+applicationName$ = json["$.event.app_proto"]
+
+# A netflow record covers one direction of a connection, so the packets and bytes are what the
+# source sent. The reply direction is a second record with the addresses swapped and the same flow_id.
+txPacketCount$ = json["$.event.netflow.pkts"]
+txByteCount$ = json["$.event.netflow.bytes"]
+startTimestampUsec$ = DATETIME(json["$.event.netflow.start"], "2006-01-02T15:04:05.999999999Z0700")
+endTimestampUsec$ = DATETIME(json["$.event.netflow.end"], "2006-01-02T15:04:05.999999999Z0700")
+
+r1.key$ = "flow_id"
+r1.value$ = STRING(json["$.event.flow_id"])
+r2.key$ = "availability_zone"
+r2.value$ = STRING(json["$.availability_zone"])
+r3.key$ = "age_seconds"
+r3.value$ = STRING(json["$.event.netflow.age"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+r4.key$ = "tcp_flags"
+r4.value$ = STRING(json["$.event.tcp.tcp_flags"])
+eventMetadata$.record$ = IF r4.value$ != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "icmp_type"
+r5.value$ = STRING(json["$.event.icmp_type"])
+eventMetadata$.record$ = IF r5.value$ != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "icmp_code"
+r6.value$ = STRING(json["$.event.icmp_code"])
+eventMetadata$.record$ = IF r6.value$ != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "tls_inspected"
+r7.value$ = STRING(json["$.event.tls_inspected"])
+eventMetadata$.record$ = IF r7.value$ != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$

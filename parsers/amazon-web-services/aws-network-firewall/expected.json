@@ -1,0 +1,379 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927605118204,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "192.0.2.41",
+      "source_port": 51872,
+      "destination_address": "203.0.113.77",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "tls",
+      "signature_id": 1000021,
+      "signature_revision": 3,
+      "priority": 3,
+      "message": "Block TLS to denylisted domain",
+      "action": "blocked",
+      "blocked": 1,
+      "direction": "CLIENT_TO_SERVER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1043925713288416"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2a"
+          },
+          {
+            "key": "rule_group_arn",
+            "value": "arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/egress-domain-denylist"
+          },
+          {
+            "key": "verdict",
+            "value": "drop"
+          },
+          {
+            "key": "tls_sni",
+            "value": "files.example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927677552907,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "192.0.2.58",
+      "source_port": 49733,
+      "destination_address": "198.51.100.120",
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "http",
+      "generator_id": 1,
+      "signature_id": 2045112,
+      "signature_revision": 2,
+      "priority": 2,
+      "message": "ET POLICY Suspicious User-Agent (agentupdater) Outbound",
+      "classification": "Potentially Bad Traffic",
+      "action": "allowed",
+      "blocked": 0,
+      "countermeasure_author": "EMERGING_THREATS",
+      "direction": "CLIENT_TO_SERVER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "2219874310652201"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2b"
+          },
+          {
+            "key": "rule_group_arn",
+            "value": "arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/threat-signatures-policy"
+          },
+          {
+            "key": "http_host",
+            "value": "updates.example.org"
+          },
+          {
+            "key": "http_url",
+            "value": "/agent/latest.bin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927782004471,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "192.0.2.66",
+      "source_port": 40212,
+      "destination_address": "203.0.113.140",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "http2",
+      "signature_id": 7,
+      "signature_revision": 0,
+      "priority": 3,
+      "message": "Network Firewall stateful rule 7",
+      "action": "blocked",
+      "blocked": 1,
+      "direction": "CLIENT_TO_SERVER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "884213577390114"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2a"
+          },
+          {
+            "key": "rule_group_arn",
+            "value": "arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/url-category-filter"
+          },
+          {
+            "key": "verdict",
+            "value": "drop"
+          },
+          {
+            "key": "url_category",
+            "value": "Gambling"
+          },
+          {
+            "key": "http_url",
+            "value": "/"
+          },
+          {
+            "key": "container_association",
+            "value": "payments-svc"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927990771093,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ingress-fw-02",
+      "source_address": "198.51.100.200",
+      "source_port": 80,
+      "destination_address": "192.0.2.12",
+      "destination_port": 51544,
+      "protocol": 6,
+      "application_name": "http",
+      "generator_id": 1,
+      "signature_id": 2046233,
+      "signature_revision": 1,
+      "priority": 1,
+      "message": "ET ATTACK_RESPONSE Possible Loader Config Inbound",
+      "classification": "A Network Trojan was detected",
+      "action": "allowed",
+      "blocked": 0,
+      "countermeasure_author": "EMERGING_THREATS",
+      "direction": "SERVER_TO_CLIENT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "663018827190455"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2c"
+          },
+          {
+            "key": "rule_group_arn",
+            "value": "arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/threat-signatures-malware"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927900001522,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "192.0.2.41",
+      "source_port": 51874,
+      "destination_address": "198.51.100.25",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "tls",
+      "tx_packet_count": 14,
+      "tx_byte_count": 3412,
+      "start_timestamp_usec": 1791927861338410,
+      "end_timestamp_usec": 1791927898910271,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1043925713291104"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2a"
+          },
+          {
+            "key": "age_seconds",
+            "value": "37"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "1b"
+          },
+          {
+            "key": "tls_inspected",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791927900001522,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "198.51.100.25",
+      "source_port": 443,
+      "destination_address": "192.0.2.41",
+      "destination_port": 51874,
+      "protocol": 6,
+      "application_name": "tls",
+      "tx_packet_count": 19,
+      "tx_byte_count": 18233,
+      "start_timestamp_usec": 1791927861351020,
+      "end_timestamp_usec": 1791927898910107,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1043925713291104"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2a"
+          },
+          {
+            "key": "age_seconds",
+            "value": "37"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "1b"
+          },
+          {
+            "key": "tls_inspected",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791928090000913,
+      "event_time_fidelity": "MICRO",
+      "host_id": "egress-fw-01",
+      "source_address": "192.0.2.10",
+      "source_port": 53311,
+      "destination_address": "198.51.100.53",
+      "destination_port": 53,
+      "protocol": 17,
+      "application_name": "dns",
+      "tx_packet_count": 1,
+      "tx_byte_count": 74,
+      "start_timestamp_usec": 1791928059020114,
+      "end_timestamp_usec": 1791928059020114,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "1792241309877113"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2b"
+          },
+          {
+            "key": "age_seconds",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT > AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791928090001377,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ingress-fw-02",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.12",
+      "protocol": 1,
+      "tx_packet_count": 4,
+      "tx_byte_count": 336,
+      "start_timestamp_usec": 1791928050104527,
+      "end_timestamp_usec": 1791928053108811,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "flow_id",
+            "value": "405519266812730"
+          },
+          {
+            "key": "availability_zone",
+            "value": "ap-southeast-2c"
+          },
+          {
+            "key": "age_seconds",
+            "value": "3"
+          },
+          {
+            "key": "icmp_type",
+            "value": "8"
+          },
+          {
+            "key": "icmp_code",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "AWS_NETWORK_FIREWALL_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "AWS Network Firewall",
+      "event_time_usec": 1791928244441824,
+      "host_id": "egress-fw-01"
+    }
+  }
+]

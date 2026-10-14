@@ -1,0 +1,77 @@
+!SAMPLE={"firewall_name":"egress-fw-01","availability_zone":"ap-southeast-2a","event_timestamp":"1791927605","event":{"timestamp":"2026-10-13T21:40:05.118204+0000","flow_id":1043925713288416,"event_type":"alert","src_ip":"192.0.2.41","src_port":51872,"dest_ip":"203.0.113.77","dest_port":443,"proto":"TCP","app_proto":"tls","tx_id":0,"alert":{"action":"blocked","signature_id":1000021,"rev":3,"signature":"Block TLS to denylisted domain","category":"","severity":3},"verdict":{"action":"drop"},"tls":{"sni":"files.example.net","version":"TLS 1.3"},"direction":"to_server","aws_metadata":{"resource_arn":"arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/egress-domain-denylist"}}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AWS Network Firewall alert, flow and TLS logs, one JSON record per line, through S3 Ingest.
+# Child of AWS_NETWORK_FIREWALL_JSON_PARENT: alert events to NIDS. Stateful rules with the DROP,
+# ALERT and REJECT actions write them, and so do the URL and domain category filters.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, protoNumber, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = json["$.event.src_ip"]
+sourcePort$ = json["$.event.src_port"]
+destinationAddress$ = json["$.event.dest_ip"]
+destinationPort$ = json["$.event.dest_port"]
+protocol$ = protoNumber
+applicationName$ = json["$.event.app_proto"]
+
+generatorId$ = json["$.event.alert.gid"]
+signatureId$ = json["$.event.alert.signature_id"]
+signatureRevision$ = json["$.event.alert.rev"]
+priority$ = json["$.event.alert.severity"]
+sid = STRING(json["$.event.alert.signature_id"])
+# Category filter rules log an empty signature; name the rule by its id instead.
+signature = STRING(json["$.event.alert.signature"])
+message$ = IF signature != "" THEN signature ELSE "Network Firewall stateful rule " + sid
+category = STRING(json["$.event.alert.category"])
+classification$ = IF category != "" THEN category ELSE NULL
+
+# alert.action is what the rule did: allowed for ALERT and pass rules, blocked for DROP and REJECT.
+act = STRING(json["$.event.alert.action"])
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF act == "blocked" THEN 1 ELSE 0
+
+# AWS managed threat signature rule groups use Emerging Threats rules ("ET " and "ETPRO ").
+etRule = signature|^(ET|ETPRO)\s
+countermeasureAuthor$ = IF etRule[1] != "" THEN "EMERGING_THREATS" ELSE NULL
+
+# EVE direction says which way the packet that fired the rule was going.
+flowDirection = json["$.event.direction"]
+direction$ = NULL
+direction$ = IF flowDirection == "to_server" THEN "CLIENT_TO_SERVER" ELSE direction$
+direction$ = IF flowDirection == "to_client" THEN "SERVER_TO_CLIENT" ELSE direction$
+
+m1.key$ = "flow_id"
+m1.value$ = STRING(json["$.event.flow_id"])
+m2.key$ = "availability_zone"
+m2.value$ = STRING(json["$.availability_zone"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "rule_group_arn"
+m3.value$ = STRING(json["$.event.aws_metadata.resource_arn"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "verdict"
+m4.value$ = STRING(json["$.event.verdict.action"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+# aws_category is a JSON list written as text, for example ["Search Engines and Portals"].
+m5.key$ = "url_category"
+m5.value$ = REPLACE_REGEX(STRING(json["$.event.aws_category"]), `[\[\]"]`, "")
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "tls_sni"
+m6.value$ = STRING(json["$.event.tls.sni"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "http_host"
+m7.value$ = STRING(json["$.event.http.hostname"])
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "http_url"
+m8.value$ = STRING(json["$.event.http.url"])
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "container_association"
+m9.value$ = STRING(json["$.event.alert.metadata.container_association[0]"])
+eventMetadata$.record$ = IF m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "tls_inspected"
+m10.value$ = STRING(json["$.event.tls_inspected"])
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$

@@ -1,0 +1,44 @@
+{
+  "vendor": "Amazon Web Services",
+  "product": "AWS Network Firewall",
+  "versions": [],
+  "format": "json",
+  "ship_method": "s3",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.aws.amazon.com/network-firewall/latest/developerguide/firewall-logging-contents.html",
+    "https://docs.aws.amazon.com/network-firewall/latest/developerguide/logging-s3.html",
+    "https://docs.aws.amazon.com/athena/latest/ug/querying-network-firewall-logs-sample-netflow-logs-table.html",
+    "https://docs.suricata.io/en/latest/output/eve/eve-json-format.html"
+  ],
+  "notes": "Turn on alert and flow logging for the firewall (and TLS logging if it uses TLS inspection) with an S3 bucket as the destination, and point a Sophos NG-SIEM S3 Ingest (customer-managed) integration at the bucket. Network Firewall writes one JSON record per line: firewall_name, availability_zone, event_timestamp and a Suricata EVE event. Alert events go to NIDS with the signature, severity as priority and the rule's action (blocked for DROP and REJECT rules), and the rule group ARN, verdict, URL category, SNI and HTTP host in event_metadata. URL and domain category rules log an empty signature, so the message names the rule id. Flow events (EVE netflow) go to Netflow. Each record covers one direction, so its packets and bytes are what the source sent; the reply is a second record with the same flow_id. TLS log records (revocation checks and TLS errors) stay generic. The firewall name goes to host_id. Logs sent through CloudWatch Logs or Firehose arrive in another wrapper and aren't covered. Samples are made up in the shapes of the AWS log contents page and the Athena netflow table. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (127 of 127 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (124 of 124 fields). The tenant's built-in suricata_generic parser matches some alert lines and normalizes nothing; the engine picks one parser per line, and in a lab tenant on 2026-10-14 it took two of the four sample alert lines in 12 of 25 Run Tests. Expect some alert lines to keep the built-in mapping.",
+  "parsers": [
+    {
+      "name": "AWS_NETWORK_FIREWALL_JSON_PARENT",
+      "file": "AWS_NETWORK_FIREWALL_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS",
+      "file": "AWS_NETWORK_FIREWALL_JSON_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "AWS_NETWORK_FIREWALL_JSON_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW",
+      "file": "AWS_NETWORK_FIREWALL_JSON_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "AWS_NETWORK_FIREWALL_JSON_PARENT",
+      "schema": "scwx.netflow"
+    }
+  ]
+}
