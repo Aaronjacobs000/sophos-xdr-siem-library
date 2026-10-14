@@ -27,6 +27,7 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 | `parsers/hpe-aruba-networking/edgeconnect-sd-wan` | Splunk Connect for Syslog Silver Peak test data: the syslog header with the year after the time (`Oct 13 22:40:11 2026 <host> <program>[<pid>]:`) | Apache-2.0 |
 | `parsers/trend-micro/tippingpoint-sms` | Microsoft Sentinel Trend Micro TippingPoint parser: the `UnityOne` device product of the ArcSight CEF Format v4.2; [Cortex XSOAR content](https://github.com/demisto/content) Trend Micro TippingPoint pack: the Space delimiter setting for that format | MIT; MIT |
 | `parsers/forcepoint/forcepoint-dlp` | [Google Security Operations](https://docs.cloud.google.com/chronicle/docs/ingestion/default-parsers/forcepoint-dlp) Forcepoint DLP parser docs: `analyzedBy` and `sourceIp` as keys of their own, where Forcepoint's template shows no space before them | CC BY 4.0 |
+| `parsers/nasuni/edge-appliance` | [Microsoft Sentinel](https://github.com/Azure/Azure-Sentinel) Nasuni solution analytics rules (Ransomware Attack Detected, Ransomware Client Blocked): the opening words of the ransomware detection and mitigation notifications, which Nasuni's docs don't quote | MIT |
 
 ## Code
 
