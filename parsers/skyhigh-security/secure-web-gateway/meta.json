@@ -1,0 +1,31 @@
+{
+  "vendor": "Skyhigh Security",
+  "product": "Secure Web Gateway",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://success.skyhighsecurity.com/docs/about-sending-access-log-data-to-a-syslog-server",
+    "https://success.skyhighsecurity.com/docs/configure-syslog-for-your-siem",
+    "https://success.skyhighsecurity.com/docs/secure-web-gateway-header-formats",
+    "https://success.skyhighsecurity.com/docs/configure-log-file-encryption-and-log-field-anonymization",
+    "https://success.skyhighsecurity.com/docs/list-of-block-reason-ids"
+  ],
+  "notes": "Add a rule next to Write access.log that runs the event Syslog (6, User-Defined.logLine), and have the appliance's rsyslog forward daemon.info to the data collector, as Skyhigh's syslog guide shows. The line keeps the default access log format; the log prefix (mwg by default) isn't checked. Every request goes to HTTP: time, client address and user, status, method and URL, bytes each way and the user agent, with blocked set when block_res isn't 0, and the URL categories, reputation, media type, virus name, application and block reason ID in event_metadata (Skyhigh's list of block reason IDs explains the numbers). Older defaults without bytes_from_client and application_name also match; a logging rule edited to write other fields won't. If you can choose the format: in a lab tenant on 2026-10-14 a CEF line with the McAfee Web Gateway header went to the built-in McAfee_WebGateway parser and was normalized to HTTP (Taegis XDR documents that integration). This entry is for gateways that send the default access log, which no built-in parser claimed. Samples are made up in the documented default format. Passed Run Test in a lab tenant on 2026-10-14 (126 of 126 fields matched the emulator, in each of 2 runs). No built-in parser claimed these lines in 8 Run Tests.",
+  "parsers": [
+    {
+      "name": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+      "file": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
+  ]
+}

@@ -1,0 +1,315 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791931801000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.61",
+      "source_username": "jlee",
+      "response_code": 200,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+      "rx_byte_count": 48213,
+      "tx_byte_count": 612,
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_path_raw": "/news/index.html",
+      "uri_path": "/news/index.html",
+      "uri_query_raw": "lang=en",
+      "uri_query": "lang=en",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "0"
+          },
+          {
+            "key": "url_categories",
+            "value": "General News"
+          },
+          {
+            "key": "reputation",
+            "value": "Minimal Risk"
+          },
+          {
+            "key": "media_type",
+            "value": "text/html"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791931809000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.72",
+      "source_username": "akumar",
+      "response_code": 403,
+      "user_agent": "curl/8.5.0",
+      "rx_byte_count": 3920,
+      "tx_byte_count": 388,
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host_raw": "files.example.net",
+      "uri_host": "files.example.net",
+      "uri_path_raw": "/tools/agent.exe",
+      "uri_path": "/tools/agent.exe",
+      "index_of_top_private_domain": 6,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "10"
+          },
+          {
+            "key": "url_categories",
+            "value": "Malicious Sites"
+          },
+          {
+            "key": "reputation",
+            "value": "High Risk"
+          },
+          {
+            "key": "media_type",
+            "value": "application/x-msdownload"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791931874000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.61",
+      "source_username": "jlee",
+      "response_code": 200,
+      "user_agent": "Dropbox/208.4.5824",
+      "rx_byte_count": 0,
+      "tx_byte_count": 1820,
+      "http_method": "CONNECT",
+      "uri_scheme": "http",
+      "uri_host_raw": "sync.example.org:443",
+      "uri_host": "sync.example.org",
+      "uri_port": "443",
+      "index_of_top_private_domain": 5,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "0"
+          },
+          {
+            "key": "url_categories",
+            "value": "Online Shopping, Business"
+          },
+          {
+            "key": "reputation",
+            "value": "Minimal Risk"
+          },
+          {
+            "key": "application_name",
+            "value": "Dropbox"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791931950000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.88",
+      "source_username": "mchen",
+      "response_code": 403,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15",
+      "rx_byte_count": 4512,
+      "tx_byte_count": 401,
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host_raw": "downloads.example.com",
+      "uri_host": "downloads.example.com",
+      "uri_path_raw": "/setup/invoice.zip",
+      "uri_path": "/setup/invoice.zip",
+      "index_of_top_private_domain": 10,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "80"
+          },
+          {
+            "key": "url_categories",
+            "value": "Business"
+          },
+          {
+            "key": "reputation",
+            "value": "Unverified"
+          },
+          {
+            "key": "media_type",
+            "value": "application/zip"
+          },
+          {
+            "key": "virus_name",
+            "value": "EICAR test file"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791931982000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.95",
+      "response_code": 407,
+      "user_agent": "Microsoft-CryptoAPI/10.0",
+      "rx_byte_count": 4197,
+      "tx_byte_count": 179,
+      "http_method": "CONNECT",
+      "uri_scheme": "http",
+      "uri_host_raw": "portal.example.com:443",
+      "uri_host": "portal.example.com",
+      "uri_port": "443",
+      "index_of_top_private_domain": 7,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "81"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "event_time_usec": 1791932080000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.110",
+      "source_username": "CN=Jane Lee,OU=Staff,DC=example,DC=com",
+      "response_code": 200,
+      "user_agent": "python-requests/2.32.3",
+      "rx_byte_count": 1024,
+      "http_method": "POST",
+      "uri_scheme": "http",
+      "uri_host_raw": "api.example.net",
+      "uri_host": "api.example.net",
+      "uri_path_raw": "/v2/upload",
+      "uri_path": "/v2/upload",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "0"
+          },
+          {
+            "key": "url_categories",
+            "value": "Software/Hardware"
+          },
+          {
+            "key": "reputation",
+            "value": "Minimal Risk"
+          },
+          {
+            "key": "media_type",
+            "value": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SKYHIGH_SWG_ACCESS_SYSLOG_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Skyhigh Secure Web Gateway",
+      "sensor_id": "swg02",
+      "event_time_usec": 1791932100000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.72",
+      "source_username": "akumar",
+      "response_code": 302,
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
+      "rx_byte_count": 512,
+      "tx_byte_count": 730,
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host_raw": "www.example.org",
+      "uri_host": "www.example.org",
+      "uri_path_raw": "/login",
+      "uri_path": "/login",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "block_reason_id",
+            "value": "0"
+          },
+          {
+            "key": "url_categories",
+            "value": "Business"
+          },
+          {
+            "key": "reputation",
+            "value": "Minimal Risk"
+          },
+          {
+            "key": "media_type",
+            "value": "text/html"
+          }
+        ]
+      }
+    }
+  }
+]
