@@ -163,19 +163,24 @@ const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
 // extension. Fewer than 6 fields fails the event (checked in a lab tenant).
 //
 // A key is the text between a space and the next =, so it can hold |, a tab or a quote: an 8th
-// field such as 6|a=b gives the key 6|a. Only a space ends a value, not a tab, and a value keeps
-// its leading spaces: cs1= "a b" gives ' "a b"' (checked in a lab tenant).
+// field such as 6|a=b gives the key 6|a. The key can be empty too: =x gives the key "" the value
+// x, and a=1 = 2 gives it " 2". Only a space ends a value, not a tab, and a value keeps its leading
+// spaces: cs1= "a b" gives ' "a b"'. A value that is empty or only spaces and tabs, as in a= or
+// a= b=c, isn't stored, while a="" stores "" (checked in a lab tenant).
 //
 // A value that starts with a quote runs at least to the next unescaped quote, so spaces and
 // key= inside the quotes don't end it. When the value also ends with a quote, the engine drops
 // its first and last quote: cs2="a b" gives a b and cs2="a b" c "d e" gives a b" c "d e, while
 // cs3="a" b keeps its quotes. With no closing quote the value runs to the end (checked in a lab
 // tenant).
+//
+// Text with no CEF: in it fails the event, "" included, with the engine's "message is not in
+// LEEF format" (checked in a lab tenant).
 export function parseCef(line) {
   if (line === null || line === undefined) return null;
   const s = String(line);
   const at = s.indexOf('CEF:');
-  if (at === -1) return null;
+  if (at === -1) throw new RuntimeError('message is not in LEEF format: CEF() found no "CEF:" in the text. Check the value holds the CEF part of the line.', 'cef-header');
   const parts = splitUnescaped(s.slice(at), '|', 8);
   if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: CEF() needs a header of at least 6 fields separated by |, as in CEF:0|Vendor|Product|1.0|100|Name, and this has ${parts.length}`, 'cef-header');
   if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): CEF() needs at least 6 header fields separated by |, and this has ${parts.length}`, 'cef-header');
@@ -184,7 +189,7 @@ export function parseCef(line) {
   const ext = short ? parts[parts.length - 1] : parts.length > 7 ? parts[7] : '';
   const map = new Map();
   const keys = [];
-  const keyRe = /(?:^| )([^ =]+)=/g;
+  const keyRe = /(?:^| )([^ =]*)=/g;
   let m;
   while ((m = keyRe.exec(ext))) {
     const eq = m.index + m[0].length - 1;
@@ -201,6 +206,7 @@ export function parseCef(line) {
   keys.forEach((k, n) => {
     const end = n + 1 < keys.length ? keys[n + 1].from : ext.length;
     let v = ext.slice(k.start, end).trimEnd();
+    if (v === '') return;
     if (k.quoted && k.closed && endsWithQuote(v)) v = v.slice(1, -1);
     map.set(k.key, unescapeCefValue(v));
   });

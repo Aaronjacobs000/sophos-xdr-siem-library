@@ -372,11 +372,36 @@ function confirmVars(p) {
   return out;
 }
 
+// The first syntax error in the set, in a statement or in a confirm expression, or null.
+function firstSyntaxError(compiled) {
+  for (const p of compiled) {
+    const confirmLine = p.script.directiveLines.CONFIRMSTRING ?? null;
+    const errors = p.script.problems.filter((x) => x.code === 'syntax').map((x) => ({ line: x.line, message: x.message }));
+    if (p.confirm && p.confirm.error) errors.push({ line: confirmLine, message: `confirm expression: ${p.confirm.error}` });
+    errors.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+    if (errors.length) return { parser: p.name, ...errors[0] };
+  }
+  return null;
+}
+
 // parsers: [{name, text, parent?, role?}]; samples: [string]; opts: {now}
 export function runParsers(parsers, samples, opts = {}) {
   const now = opts.now || new Date().toISOString();
   const nowUsec = Date.parse(now) * 1000;
   const compiled = parsers.map(compileParser);
+  // A syntax error, in a statement or in the confirm expression, makes Run Test reject the whole
+  // parser: it returns no records for any line, only the error (checked in a lab tenant).
+  const bad = firstSyntaxError(compiled);
+  if (bad) {
+    const where = `${bad.parser}${bad.line ? ` line ${bad.line}` : ''}`;
+    return samples.map((sample, n) => ({
+      line: n + 1, sample, extractor_path: null, schema: GENERIC, normalized: null, notes: [],
+      error: `${where}: syntax error: ${bad.message}`,
+      errorAt: { parser: bad.parser, line: bad.line },
+      result: 'Run Test rejects a parser with a syntax error, so no line gets a record.',
+      rejected: true,
+    }));
+  }
   const byName = new Map(compiled.map((p) => [p.name, p]));
   const active = compiled.filter((p) => !p.flags.has('IMPORTONLY') && !p.flags.has('DISABLED'));
   const childrenOf = new Map();
