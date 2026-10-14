@@ -1,0 +1,70 @@
+!SAMPLE={"nordpass_record":"activity","type":"item_access","action":"item_viewed","timestamp":1791854062,"organization_uuid":"4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c","user":{"uuid":"726163f5-d18e-41cc-8aa4-3fc950835185","email":"pat@example.com"},"metadata":{"item_count":1,"items":[{"item_id":"43d10b30-f5af-11ef-8ecd-cf478c6be690","type":"item"}],"platform":"extension"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NordPass activity log from the example collector: every activity that isn't a sign-in
+# or a master password check. Item access, sharing and deletion, members, invites, roles, groups,
+# organization settings, breach reports, tokens and integrations.
+# Child of NORDPASS_ACTIVITY_JSON_PARENT: each one to CloudAudit, with the action (such as
+# item_viewed) as the event name and the type (such as item_access) as the event type.
+# json, kind, act, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "NordPass"
+eventName$ = act
+eventType$ = kind
+org = json["$.organization_uuid"]
+recipientAccountId$ = org
+# System activities, such as an expired time-limited share, have no user but an initiator.
+email = json["$.user.email"]
+userName$ = IF email THEN email ELSE json["$.initiator"]
+userId$ = json["$.user.uuid"]
+sourceAddress$ = json["$.metadata.ip_address"]
+userAgent$ = json["$.metadata.platform"]
+# The member a share, status change or role change is about.
+targetUserName$ = json["$.metadata.users[0].email"]
+
+dataEvent = kind == "item_access" OR kind == "item_share" OR kind == "item_delete" OR kind == "sharing_hub" OR kind == "password_health"
+managementEvent$ = NOT dataEvent
+readOnly$ = CONTAINS(act, "viewed") OR CONTAINS(act, "copied") OR CONTAINS(act, "autofilled") OR CONTAINS(act, "accessed") OR CONTAINS(act, "revealed") OR CONTAINS(act, "exported") OR act == "viewed"
+
+# Resources: the first two items or shared folders the activity names (item_count has the total).
+i1.resourceId$ = json["$.metadata.items[0].item_id"]
+i1.resourceType$ = json["$.metadata.items[0].type"]
+i1.resourceAccountId$ = org
+i2.resourceId$ = json["$.metadata.items[1].item_id"]
+i2.resourceType$ = json["$.metadata.items[1].type"]
+i2.resourceAccountId$ = org
+resources$ = []
+resources$ = IF i1.resourceId$ THEN resources$ + [i1] ELSE resources$
+resources$ = IF i2.resourceId$ THEN resources$ + [i2] ELSE resources$
+
+p1.key$ = "status"
+p1.value$ = json["$.metadata.status"]
+p2.key$ = "acl"
+p2.value$ = json["$.metadata.users[0].acl"]
+p3.key$ = "duration"
+p3.value$ = json["$.metadata.users[0].duration"]
+p4.key$ = "setting"
+p4.value$ = json["$.metadata.setting.key"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+
+d1.key$ = "item_count"
+d1.value$ = STRING(json["$.metadata.item_count"])
+d2.key$ = "initiator"
+d2.value$ = json["$.initiator"]
+d3.key$ = "users"
+d3.value$ = STRING(LENGTH(json["$.metadata.users"]))
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF json["$.metadata.item_count"] THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF json["$.metadata.users"] THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$

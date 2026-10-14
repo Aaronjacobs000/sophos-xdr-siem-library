@@ -1,0 +1,401 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791853804000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "NordPass",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "status": "user_login_successful",
+      "sub_status": "business_auth",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization_uuid",
+            "value": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+          },
+          {
+            "key": "type",
+            "value": "login"
+          },
+          {
+            "key": "user_uuid",
+            "value": "726163f5-d18e-41cc-8aa4-3fc950835185"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791853890000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "NordPass",
+      "target_user_name": "kim.lee@example.com",
+      "source_address": "198.51.100.44",
+      "status": "user_login_failed",
+      "sub_status": "business_auth",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization_uuid",
+            "value": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+          },
+          {
+            "key": "type",
+            "value": "login"
+          },
+          {
+            "key": "user_uuid",
+            "value": "84c3e123-81af-49fd-827d-0356e475ef7d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791853812000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "NordPass",
+      "target_user_name": "pat@example.com",
+      "logon_application_family": "extension",
+      "status": "master_validated",
+      "auth_category": "ACCOUNT_LOGON",
+      "logon_type": "UNLOCK",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization_uuid",
+            "value": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+          },
+          {
+            "key": "type",
+            "value": "lock"
+          },
+          {
+            "key": "user_uuid",
+            "value": "726163f5-d18e-41cc-8aa4-3fc950835185"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791853918000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "NordPass",
+      "target_user_name": "kim.lee@example.com",
+      "logon_application_family": "webvault",
+      "status": "master_failed",
+      "auth_category": "ACCOUNT_LOGON",
+      "logon_type": "UNLOCK",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization_uuid",
+            "value": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+          },
+          {
+            "key": "type",
+            "value": "lock"
+          },
+          {
+            "key": "user_uuid",
+            "value": "84c3e123-81af-49fd-827d-0356e475ef7d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791854062000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_access",
+      "event_source": "NordPass",
+      "event_name": "item_viewed",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "pat@example.com",
+      "user_id": "726163f5-d18e-41cc-8aa4-3fc950835185",
+      "user_agent": "extension",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "43d10b30-f5af-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "item_count",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791854075000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_access",
+      "event_source": "NordPass",
+      "event_name": "item_copied",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "pat@example.com",
+      "user_id": "726163f5-d18e-41cc-8aa4-3fc950835185",
+      "user_agent": "extension",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "43d10b30-f5af-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "item_count",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791854440000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_share",
+      "event_source": "NordPass",
+      "event_name": "items_shared",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "pat@example.com",
+      "user_id": "726163f5-d18e-41cc-8aa4-3fc950835185",
+      "target_user_name": "jo.nguyen@example.com",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "aaf7f960-f5ad-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "acl",
+            "value": "read"
+          },
+          {
+            "key": "duration",
+            "value": "P30D"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "users",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791854705000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_delete",
+      "event_source": "NordPass",
+      "event_name": "items_deleted",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "kim.lee@example.com",
+      "user_id": "84c3e123-81af-49fd-827d-0356e475ef7d",
+      "user_agent": "webvault",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "b1c2d3e4-f5a6-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        },
+        {
+          "resource_id": "c2d3e4f5-a6b7-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "item_count",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791855010000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "access",
+      "event_source": "NordPass",
+      "event_name": "user_status_updated",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "sam.admin@example.com",
+      "user_id": "271391d5-ff71-4adb-947a-19b657a867af",
+      "target_user_name": "kim.lee@example.com",
+      "management_event": true,
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "status",
+            "value": "suspended"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "users",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791855185000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "global_settings",
+      "event_source": "NordPass",
+      "event_name": "password_policy_toggled",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "sam.admin@example.com",
+      "user_id": "271391d5-ff71-4adb-947a-19b657a867af",
+      "management_event": true,
+      "read_only": false
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791855300000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "integrations",
+      "event_source": "NordPass",
+      "event_name": "activities_token_created",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "sam.admin@example.com",
+      "user_id": "271391d5-ff71-4adb-947a-19b657a867af",
+      "management_event": true,
+      "read_only": false
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "NORDPASS_ACTIVITY_JSON_PARENT > NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "NordPass",
+      "event_time_usec": 1791855620000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_share",
+      "event_source": "NordPass",
+      "event_name": "item_time_limited_share_expired",
+      "recipient_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c",
+      "user_name": "system",
+      "target_user_name": "jo.nguyen@example.com",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "aaf7f960-f5ad-11ef-8ecd-cf478c6be690",
+          "resource_type": "item",
+          "resource_account_id": "4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "initiator",
+            "value": "system"
+          },
+          {
+            "key": "users",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  }
+]
