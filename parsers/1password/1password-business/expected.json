@@ -1,0 +1,515 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791853960203617,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "56YE2TYN2VFYRLNSHKPW5NVT5E",
+      "session_id": "A5K6COGVRVEJXJW3XQZGS7VAMM",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "auth_system": "1Password",
+      "application_name": "1Password Browser Extension 20240",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "success",
+      "sub_status": "credentials_ok",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "target_user_uuid",
+            "value": "IR7VJHJ36JHINBFAD7V2T5MP3E"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "os",
+            "value": "MacOSX 15.6"
+          },
+          {
+            "key": "platform",
+            "value": "Chrome"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854042000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "QK3XG2B7NZFJ5D4WZT6RYVHCPA",
+      "session_id": "B7M2KQX4WTRFLJD3H6ZPCAVNSE",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "198.51.100.44",
+      "auth_system": "1Password",
+      "application_name": "1Password for Windows 81108012",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "credentials_failed",
+      "sub_status": "password_secret_bad",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "target_user_uuid",
+            "value": "IR7VJHJ36JHINBFAD7V2T5MP3E"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "os",
+            "value": "Windows 10.0.26100"
+          },
+          {
+            "key": "platform",
+            "value": "Windows"
+          },
+          {
+            "key": "location",
+            "value": "Melbourne, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854130000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "T4RW2BQ6ZJXNKCV5LH7DMGYEPU",
+      "session_id": "C2PZ7WNXQ4LKT6VJR3HDYBMSFA",
+      "target_user_name": "admin@example.com",
+      "user_display_name": "Sam Admin",
+      "source_address": "198.51.100.61",
+      "auth_system": "1Password",
+      "application_name": "1Password for Web 2154",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "status": "mfa_failed",
+      "sub_status": "totp_bad",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "target_user_uuid",
+            "value": "WZ5QK7NBRT3XJYH2LDCV6MPG4E"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "os",
+            "value": "Linux 6.8"
+          },
+          {
+            "key": "platform",
+            "value": "Firefox"
+          },
+          {
+            "key": "location",
+            "value": "Brisbane, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854171000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "H6JDY3XKQ2WTNB7RZC4LFMPV5A",
+      "session_id": "D4KX6QLZ2WNRHT7VJ5BCYMPGSE",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "192.0.2.77",
+      "auth_system": "1Password",
+      "application_name": "1Password for Web 2154",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "status": "firewall_failed",
+      "sub_status": "country_blocked",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "target_user_uuid",
+            "value": "IR7VJHJ36JHINBFAD7V2T5MP3E"
+          },
+          {
+            "key": "country",
+            "value": "FR"
+          },
+          {
+            "key": "details",
+            "value": "France"
+          },
+          {
+            "key": "os",
+            "value": "Windows 10.0"
+          },
+          {
+            "key": "platform",
+            "value": "Chrome"
+          },
+          {
+            "key": "location",
+            "value": "Paris, France"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854325000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "N2FV7KX5QBZ3WJRTL6HCDYMPGA",
+      "session_id": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA",
+      "target_user_name": "admin@example.com",
+      "user_display_name": "Sam Admin",
+      "source_address": "203.0.113.25",
+      "auth_system": "1Password",
+      "application_name": "1Password for Mac 81108012",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "status": "success",
+      "sub_status": "mfa_ok",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "target_user_uuid",
+            "value": "WZ5QK7NBRT3XJYH2LDCV6MPG4E"
+          },
+          {
+            "key": "country",
+            "value": "AU"
+          },
+          {
+            "key": "os",
+            "value": "MacOSX 15.6"
+          },
+          {
+            "key": "platform",
+            "value": "MacBook Pro"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_ITEMUSAGE",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854403000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_usage",
+      "sensor_event_id": "7Z4QKXW2NBRT6JLV3HDCYMPGSE",
+      "event_source": "1Password",
+      "event_name": "reveal",
+      "user_name": "pat@example.com",
+      "user_id": "IR7VJHJ36JHINBFAD7V2T5MP3E",
+      "source_address": "203.0.113.10",
+      "user_agent": "1Password Browser Extension 20240",
+      "management_event": false,
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault_uuid",
+            "value": "VZSYVT2LGHTBWBQGUJAIZVRABM"
+          },
+          {
+            "key": "item_uuid",
+            "value": "SDGD3I4AJYO6RMHRK8DYVNFIDZ"
+          },
+          {
+            "key": "used_version",
+            "value": "3"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "os",
+            "value": "MacOSX 15.6"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_ITEMUSAGE",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854507000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item_usage",
+      "sensor_event_id": "K3WQ7ZX2NBRT6JLV4HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "export",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "source_address": "198.51.100.61",
+      "user_agent": "1Password CLI 2320000",
+      "management_event": false,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault_uuid",
+            "value": "VZSYVT2LGHTBWBQGUJAIZVRABM"
+          },
+          {
+            "key": "item_uuid",
+            "value": "P2LKD7QX4WNRHT6VJ3BCZYMGSE"
+          },
+          {
+            "key": "used_version",
+            "value": "0"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "os",
+            "value": "Linux 6.8"
+          },
+          {
+            "key": "location",
+            "value": "Brisbane, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854590000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "J8QW2KX5NBRT7ZLV3HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "gm.join",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "gm"
+          },
+          {
+            "key": "object_uuid",
+            "value": "kq4zx7nbrt3wjlv6hdcympgsea"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "aux_id",
+            "value": "9277034"
+          },
+          {
+            "key": "aux_uuid",
+            "value": "IR7VJHJ36JHINBFAD7V2T5MP3E"
+          },
+          {
+            "key": "aux_info",
+            "value": "A"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854752000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "R5NX2KQW7ZBT3JLV6HDCYMPGSE",
+      "event_source": "1Password",
+      "event_name": "user.suspend",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "target_user_name": "contractor@example.net",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "user"
+          },
+          {
+            "key": "object_uuid",
+            "value": "Q7XWN2KZ4BRT6JLV3HDCYMPGSA"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854835000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "W3ZQ6KX2NBRT7JLV4HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "account.disblmfa",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "account"
+          },
+          {
+            "key": "object_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
