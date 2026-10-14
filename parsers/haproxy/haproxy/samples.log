@@ -1,0 +1,11 @@
+<134>Oct 12 22:40:11 haproxy[2201]: 192.0.2.10:51544 [12/Oct/2026:22:40:11.512] http-in static/srv1 10/0/30/69/109 200 2750 - - ---- 1/1/1/1/0 0/0 "GET /index.html HTTP/1.1"
+<134>Oct 12 22:41:02 lb01 haproxy[2201]: 198.51.100.23:40112 [12/Oct/2026:22:41:02.004] http-in http-in/<NOSRV> 0/-1/-1/-1/0 403 192 - - PR-- 3/3/0/0/0 0/0 "GET /wp-login.php HTTP/1.1"
+<134>Oct 12 22:41:40 lb01 haproxy[2201]: 203.0.113.45:52311 [12/Oct/2026:22:41:40.250] https-in~ app/web02 0/0/1/48/49 401 61 - - ---- 4/4/1/1/0 0/0 {app.example.com|curl/8.5.0} {} "POST /api/v1/login?next=%2Fadmin HTTP/2.0" 0/0/0/0/0 app.example.com/TLSv1.3/TLS_AES_256_GCM_SHA384
+<134>Oct 12 22:42:05 lb01 haproxy[2201]: 198.51.100.23:40188 [12/Oct/2026:22:42:05.733] http-in http-in/<NOSRV> -1/-1/-1/-1/0 400 187 - - PR-- 1/1/0/0/0 0/0 "<BADREQ>"
+<134>Oct 12 22:42:31 lb01 haproxy[2201]: 2001:db8::25:61022 [12/Oct/2026:22:42:31.018] https-in~ app/<NOSRV> 0/-1/-1/-1/1 503 217 - - SC-- 2/2/0/0/0 0/0 "GET /healthz HTTP/1.1" 0/0/0/0/1 app.example.com/TLSv1.2/ECDHE-RSA-AES128-GCM-SHA256
+<134>1 2026-10-12T22:43:51.270341+11:00 lb02 haproxy 3110 - - 192.0.2.50:49210 [12/Oct/2026:22:43:51.112] http-in static/srv2 0/0/2/150/158 200 482113 - - ---- 6/6/2/2/0 0/0 "GET /reports/q3.pdf?download=1 HTTP/1.1"
+<134>Oct 12 22:44:10 lb01 haproxy[2201]: 192.0.2.50:49233 [12/Oct/2026:22:44:10.006] http-in static/srv1 0/0/0/-1/30001 504 194 - - sH-- 2/2/1/1/0 0/0 "GET /reports/export HTTP/1.1"
+<134>Oct 12 22:45:33 lb01 haproxy[2201]: 192.0.2.61:55102 [12/Oct/2026:22:45:20.441] mysql-in mysql/db1 0/1/12862 4211 -- 2/1/1/1/0 0/0
+<134>Oct 12 22:46:00 lb01 haproxy[2201]: 198.51.100.40:40022 [12/Oct/2026:22:45:55.003] smtp-in smtp/<NOSRV> -1/-1/5001 0 SC 1/1/0/0/3 0/0
+<134>Oct 12 22:47:15 lb01 haproxy[2201]: 192.0.2.72:51990 [12/Oct/2026:22:46:15.120] ldap-in ldap/dc02 0/0/60004 1830 sD 3/1/1/1/0 0/0
+<129>Oct 12 22:48:00 lb01 haproxy[2201]: Server static/srv2 is DOWN, reason: Layer4 connection problem, info: "Connection refused", check duration: 0ms. 1 active and 0 backup servers left. 0 sessions active, 0 requeued, 0 remaining in queue.

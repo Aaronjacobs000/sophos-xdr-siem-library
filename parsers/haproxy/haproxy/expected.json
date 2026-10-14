@@ -1,0 +1,548 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791844811512000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.10",
+      "source_port": 51544,
+      "response_code": 200,
+      "rx_byte_count": 2750,
+      "request_direction": "INBOUND",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "uri_path_raw": "/index.html",
+      "uri_path": "/index.html",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "http-in"
+          },
+          {
+            "key": "backend",
+            "value": "static"
+          },
+          {
+            "key": "server",
+            "value": "srv1"
+          },
+          {
+            "key": "termination_state",
+            "value": "----"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "10/0/30/69/109"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791844862004000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "198.51.100.23",
+      "source_port": 40112,
+      "response_code": 403,
+      "rx_byte_count": 192,
+      "request_direction": "INBOUND",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "uri_path_raw": "/wp-login.php",
+      "uri_path": "/wp-login.php",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "http-in"
+          },
+          {
+            "key": "backend",
+            "value": "http-in"
+          },
+          {
+            "key": "server",
+            "value": "<NOSRV>"
+          },
+          {
+            "key": "termination_state",
+            "value": "PR--"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "0/-1/-1/-1/0"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791844900250000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "203.0.113.45",
+      "source_port": 52311,
+      "response_code": 401,
+      "rx_byte_count": 61,
+      "request_direction": "INBOUND",
+      "uri_scheme": "https",
+      "uri_host": "app.example.com",
+      "http_method": "POST",
+      "uri_path_raw": "/api/v1/login",
+      "uri_path": "/api/v1/login",
+      "uri_query_raw": "next=%2Fadmin",
+      "uri_query": "next=%2Fadmin",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "https-in"
+          },
+          {
+            "key": "backend",
+            "value": "app"
+          },
+          {
+            "key": "server",
+            "value": "web02"
+          },
+          {
+            "key": "termination_state",
+            "value": "----"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "0/0/1/48/49"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/2.0"
+          },
+          {
+            "key": "captured_request_headers",
+            "value": "app.example.com|curl/8.5.0"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLSv1.3"
+          },
+          {
+            "key": "tls_cipher",
+            "value": "TLS_AES_256_GCM_SHA384"
+          },
+          {
+            "key": "tls_errors_resumed",
+            "value": "0/0/0/0/0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791844925733000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "198.51.100.23",
+      "source_port": 40188,
+      "response_code": 400,
+      "rx_byte_count": 187,
+      "request_direction": "INBOUND",
+      "uri_scheme": "http",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "http-in"
+          },
+          {
+            "key": "backend",
+            "value": "http-in"
+          },
+          {
+            "key": "server",
+            "value": "<NOSRV>"
+          },
+          {
+            "key": "termination_state",
+            "value": "PR--"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "-1/-1/-1/-1/0"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "request",
+            "value": "<BADREQ>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791844951018000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "2001:db8::25",
+      "source_port": 61022,
+      "response_code": 503,
+      "rx_byte_count": 217,
+      "request_direction": "INBOUND",
+      "uri_scheme": "https",
+      "uri_host": "app.example.com",
+      "http_method": "GET",
+      "uri_path_raw": "/healthz",
+      "uri_path": "/healthz",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "https-in"
+          },
+          {
+            "key": "backend",
+            "value": "app"
+          },
+          {
+            "key": "server",
+            "value": "<NOSRV>"
+          },
+          {
+            "key": "termination_state",
+            "value": "SC--"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "0/-1/-1/-1/1"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLSv1.2"
+          },
+          {
+            "key": "tls_cipher",
+            "value": "ECDHE-RSA-AES128-GCM-SHA256"
+          },
+          {
+            "key": "tls_errors_resumed",
+            "value": "0/0/0/0/1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791805431112000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb02",
+      "source_address": "192.0.2.50",
+      "source_port": 49210,
+      "response_code": 200,
+      "rx_byte_count": 482113,
+      "request_direction": "INBOUND",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "uri_path_raw": "/reports/q3.pdf",
+      "uri_path": "/reports/q3.pdf",
+      "uri_query_raw": "download=1",
+      "uri_query": "download=1",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "http-in"
+          },
+          {
+            "key": "backend",
+            "value": "static"
+          },
+          {
+            "key": "server",
+            "value": "srv2"
+          },
+          {
+            "key": "termination_state",
+            "value": "----"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "0/0/2/150/158"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791845050006000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "192.0.2.50",
+      "source_port": 49233,
+      "response_code": 504,
+      "rx_byte_count": 194,
+      "request_direction": "INBOUND",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "uri_path_raw": "/reports/export",
+      "uri_path": "/reports/export",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "http-in"
+          },
+          {
+            "key": "backend",
+            "value": "static"
+          },
+          {
+            "key": "server",
+            "value": "srv1"
+          },
+          {
+            "key": "termination_state",
+            "value": "sH--"
+          },
+          {
+            "key": "timers_TR_Tw_Tc_Tr_Ta",
+            "value": "0/0/0/-1/30001"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791845120441000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "192.0.2.61",
+      "source_port": 55102,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "rx_byte_count": 4211,
+      "start_timestamp_usec": 1791845120441000,
+      "end_timestamp_usec": 1791845133303000,
+      "connection_end_reason": "normal (--)",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "mysql-in"
+          },
+          {
+            "key": "backend",
+            "value": "mysql"
+          },
+          {
+            "key": "server",
+            "value": "db1"
+          },
+          {
+            "key": "timers_Tw_Tc_Tt",
+            "value": "0/1/12862"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791845155003000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "198.51.100.40",
+      "source_port": 40022,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791845155003000,
+      "end_timestamp_usec": 1791845160004000,
+      "connection_end_reason": "server aborted or refused (SC)",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "smtp-in"
+          },
+          {
+            "key": "backend",
+            "value": "smtp"
+          },
+          {
+            "key": "server",
+            "value": "<NOSRV>"
+          },
+          {
+            "key": "timers_Tw_Tc_Tt",
+            "value": "-1/-1/5001"
+          },
+          {
+            "key": "retries",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "HAPROXY_SYSLOG_PARENT > HAPROXY_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HAProxy",
+      "event_time_usec": 1791845175120000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "lb01",
+      "source_address": "192.0.2.72",
+      "source_port": 51990,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "rx_byte_count": 1830,
+      "start_timestamp_usec": 1791845175120000,
+      "end_timestamp_usec": 1791845235124000,
+      "connection_end_reason": "server timeout (sD)",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "frontend",
+            "value": "ldap-in"
+          },
+          {
+            "key": "backend",
+            "value": "ldap"
+          },
+          {
+            "key": "server",
+            "value": "dc02"
+          },
+          {
+            "key": "timers_Tw_Tc_Tt",
+            "value": "0/0/60004"
+          },
+          {
+            "key": "retries",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

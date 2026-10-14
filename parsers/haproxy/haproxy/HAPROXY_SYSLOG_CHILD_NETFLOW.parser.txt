@@ -1,0 +1,57 @@
+!SAMPLE=<134>Oct 12 22:45:33 lb01 haproxy[2201]: 192.0.2.61:55102 [12/Oct/2026:22:45:20.441] mysql-in mysql/db1 0/1/12862 4211 -- 2/1/1/1/0 0/0
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="tcp"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HAProxy traffic logs in the default HTTP, HTTPS and TCP log formats, over syslog to the data collector.
+# Child of HAPROXY_SYSLOG_PARENT: option tcplog lines to Netflow.
+# Setting source_address lets the IP Watchlist detector use these events. The log names the
+# backend server but not its address, so destination_address stays unset.
+# m, tcp, acceptTime, frontend, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = m["cip"]
+sourcePort$ = INT(m["cport"], 10)
+protocol$ = 6
+direction$ = "INBOUND"
+# bytes_read is what HAProxy sent to the client.
+rxByteCount$ = INT(tcp["bytes"], 10)
+
+# Tt is the whole session in milliseconds, or -1 when it never completed.
+startTimestampUsec$ = acceptTime
+tt = INT(tcp["tt"], 10)
+endTimestampUsec$ = IF tt >= 0 THEN acceptTime + tt * 1000 ELSE NULL
+
+# The termination state: who ended the session, then at which stage.
+state = tcp["state"]
+first = state|^(?P<c>.)
+c = first["c"]
+reason = "unknown"
+reason = IF c == "-" THEN "normal" ELSE reason
+reason = IF c == "C" THEN "client aborted" ELSE reason
+reason = IF c == "S" THEN "server aborted or refused" ELSE reason
+reason = IF c == "P" THEN "proxy aborted" ELSE reason
+reason = IF c == "L" THEN "processed locally" ELSE reason
+reason = IF c == "R" THEN "proxy resource exhausted" ELSE reason
+reason = IF c == "I" THEN "proxy internal error" ELSE reason
+reason = IF c == "D" THEN "server down" ELSE reason
+reason = IF c == "U" THEN "active server up" ELSE reason
+reason = IF c == "K" THEN "killed by an admin" ELSE reason
+reason = IF c == "c" THEN "client timeout" ELSE reason
+reason = IF c == "s" THEN "server timeout" ELSE reason
+connectionEndReason$ = reason + " (" + state + ")"
+denied = state|^P[RT]
+flowAction$ = IF denied[0] != "" THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+
+r1.key$ = "frontend"
+r1.value$ = frontend
+r2.key$ = "backend"
+r2.value$ = m["be"]
+r3.key$ = "server"
+r3.value$ = m["srv"]
+r4.key$ = "timers_Tw_Tc_Tt"
+r4.value$ = tcp["tw"] + "/" + tcp["tc"] + "/" + tcp["tt"]
+r5.key$ = "retries"
+r5.value$ = tcp["retries"]
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]

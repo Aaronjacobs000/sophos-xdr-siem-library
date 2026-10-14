@@ -1,0 +1,75 @@
+!SAMPLE=<134>Oct 12 22:41:40 lb01 haproxy[2201]: 203.0.113.45:52311 [12/Oct/2026:22:41:40.250] https-in~ app/web02 0/0/1/48/49 401 61 - - ---- 4/4/1/1/0 0/0 {app.example.com|curl/8.5.0} {} "POST /api/v1/login?next=%2Fadmin HTTP/2.0" 0/0/0/0/0 app.example.com/TLSv1.3/TLS_AES_256_GCM_SHA384
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="http"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HAProxy traffic logs in the default HTTP, HTTPS and TCP log formats, over syslog to the data collector.
+# Child of HAPROXY_SYSLOG_PARENT: option httplog and option httpslog lines to HTTP.
+# m, http, tlsFrontend, frontend, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = m["cip"]
+sourcePort$ = INT(m["cport"], 10)
+responseCode$ = INT(http["status"], 10)
+# bytes_read is what HAProxy sent to the client.
+rxByteCount$ = INT(http["bytes"], 10)
+requestDirection$ = "INBOUND"
+uriScheme$ = IF tlsFrontend["tls"] != "" THEN "https" ELSE "http"
+# With option httpslog, the host name the client asked for in TLS (SNI).
+uriHost$ = http["sni"]
+
+# A request HAProxy couldn't parse is logged as <BADREQ> and has no method.
+req = http["request"]|^(?P<method>[A-Z]+)\s+(?P<path>[^?\s]*)(?:\?(?P<query>\S*))?(?:\s+(?P<version>HTTP/[\d.]+))?$
+httpMethod$ = req["method"]
+# HAProxy logs the path and query as the client sent them, still percent-encoded.
+uriPathRaw$ = req["path"]
+uriPath$ = req["path"]
+uriQueryRaw$ = req["query"]
+uriQuery$ = req["query"]
+
+# The first two characters of the termination state say who ended the request and when.
+# PR is a request the proxy refused (a deny rule or a malformed request) and PT one it tarpitted.
+state = http["state"]
+denied = state|^P[RT]
+sensorTypeActions$ = IF denied[0] != "" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+blocked$ = IF denied[0] != "" THEN 1 ELSE 0
+
+r1.key$ = "frontend"
+r1.value$ = frontend
+r2.key$ = "backend"
+r2.value$ = m["be"]
+r3.key$ = "server"
+r3.value$ = m["srv"]
+r4.key$ = "termination_state"
+r4.value$ = state
+r5.key$ = "timers_TR_Tw_Tc_Tr_Ta"
+r5.value$ = http["tr"] + "/" + http["tw"] + "/" + http["tc"] + "/" + http["trs"] + "/" + http["ta"]
+r6.key$ = "retries"
+r6.value$ = http["retries"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5, r6]
+
+r7.key$ = "http_version"
+r7.value$ = req["version"]
+eventMetadata$.record$ = IF req["version"] != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "request"
+r8.value$ = http["request"]
+eventMetadata$.record$ = IF req["method"] == "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+# Headers captured with "capture request header" and "capture response header", separated by |.
+r9.key$ = "captured_request_headers"
+r9.value$ = http["hreq"]
+eventMetadata$.record$ = IF http["hreq"] != "" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+r10.key$ = "captured_response_headers"
+r10.value$ = http["hres"]
+eventMetadata$.record$ = IF http["hres"] != "" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
+r11.key$ = "tls_version"
+r11.value$ = http["sslv"]
+eventMetadata$.record$ = IF http["sslv"] != "" THEN eventMetadata$.record$ + [r11] ELSE eventMetadata$.record$
+r12.key$ = "tls_cipher"
+r12.value$ = http["sslc"]
+eventMetadata$.record$ = IF http["sslc"] != "" THEN eventMetadata$.record$ + [r12] ELSE eventMetadata$.record$
+# fc_err/ssl_fc_err/ssl_c_err/ssl_c_ca_err/ssl_fc_is_resumed
+r13.key$ = "tls_errors_resumed"
+r13.value$ = http["errs"]
+eventMetadata$.record$ = IF http["errs"] != "" THEN eventMetadata$.record$ + [r13] ELSE eventMetadata$.record$
