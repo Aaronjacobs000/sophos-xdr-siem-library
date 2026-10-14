@@ -1,0 +1,230 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791854527000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "pexample",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust /login",
+      "application_name": "web/login",
+      "logon_application_family": "password",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "login"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791854620000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "pexample",
+      "user_display_name": "Pat Example",
+      "source_address": "198.51.100.44",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust access console",
+      "application_name": "rep_client",
+      "logon_application_family": "password",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "login",
+      "sub_status": "failed"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791854655000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.44",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust /login",
+      "application_name": "web/login",
+      "logon_application_family": "gssapi",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "login",
+      "sub_status": "failed"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791854702000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "lcontractor",
+      "user_display_name": "Lee Contractor",
+      "source_address": "192.0.2.77",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust access console",
+      "application_name": "rep_client",
+      "logon_application_family": "password",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "status": "login",
+      "sub_status": "exceeded failed login attempts"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855115000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "pexample",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust access console",
+      "application_name": "rep_client",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "status": "logout"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855190000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "sadmin",
+      "user_display_name": "Sam Admin",
+      "source_address": "198.51.100.61",
+      "target_host_name": "access.example.com",
+      "auth_system": "BeyondTrust /login",
+      "application_name": "web/login",
+      "logon_application_family": "password",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "status": "change_password",
+      "sub_status": "invalid password"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855621000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "user_added",
+      "operation": "event=user_added;new_account:disabled=0;new_account:email:address=lee.contractor@example.net;new_display_name=Lee Contractor;new_username=lcontractor;site=access.example.com;when=1791855621;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855720000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "setting_changed",
+      "operation": "event=setting_changed;new_api=1;old_api=0;site=access.example.com;when=1791855720;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855930000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "vault_account_password_rotation",
+      "operation": "account=svc-backup;event=vault_account_password_rotation;reason=manual;site=access.example.com;status=failure;when=1791855930;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com",
+      "result": "failure"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791856032000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "user_changed",
+      "operation": "event=user_changed;new_display_name=Ops\\; on-call;old_display_name=Ops;old_username=ops-oncall;site=access.example.com;when=1791856032;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791856200000000
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791856200000000
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

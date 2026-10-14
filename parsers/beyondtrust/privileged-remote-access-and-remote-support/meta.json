@@ -1,0 +1,45 @@
+{
+  "vendor": "BeyondTrust",
+  "product": "Privileged Remote Access and Remote Support",
+  "versions": [],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.beyondtrust.com/pra/docs/message-format",
+    "https://docs.beyondtrust.com/rs/docs/message-format",
+    "https://docs.beyondtrust.com/pra/docs/events",
+    "https://docs.beyondtrust.com/pra/docs/fields",
+    "https://docs.beyondtrust.com/rs/docs/events"
+  ],
+  "notes": "BeyondTrust Privileged Remote Access and Remote Support appliances write the same syslog format: a BG header with a site ID and segment numbers, then field=value pairs separated by semicolons. Send it from /appliance > Security > Appliance Administration > Syslog to the data collector. Logins (with the failure reason), access console logouts and password changes go to Auth; every other event (users, settings, policies, vault accounts and password rotations) goes to ManagementEvent with the whole field list in operation. A line doesn't say whether PRA or RS sent it. Messages over 1 KB arrive as segments and stay in the generic schema. Session activity (session start and end, file transfer, shell) isn't in the appliance syslog; BeyondTrust sends it through its Middleware Engine SIEM Tool plugin, which this entry doesn't cover. Samples follow the examples on BeyondTrust's message format pages with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (116 of 116 fields matched the emulator, including a value with an escaped semicolon and the three header variants), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent. No built-in parser claimed these lines in 9 Run Tests.",
+  "parsers": [
+    {
+      "name": "BEYONDTRUST_SRA_SYSLOG_PARENT",
+      "file": "BEYONDTRUST_SRA_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH",
+      "file": "BEYONDTRUST_SRA_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "BEYONDTRUST_SRA_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+      "file": "BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "BEYONDTRUST_SRA_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
