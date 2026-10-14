@@ -1,0 +1,80 @@
+!SAMPLE={"@timestamp":1791857400000,"_document_id":"Tz6mB1qWv8Hc3nKx5rPd7f","action":"repo.destroy","actor":"sadmin_acme","actor_id":51230001,"actor_ip":"198.51.100.61","actor_location":{"country_code":"AU"},"business":"acme-corp","business_id":4321,"created_at":1791857400000,"operation_type":"remove","org":"acme-eng","org_id":87654321,"repo":"acme-eng/legacy-portal","repo_id":765400001,"visibility":"private","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GitHub Enterprise Cloud audit log stream.
+# Child of GITHUB_AUDIT_JSON_PARENT: every audit event other than user sign-ins, such as git.clone
+# and git.push, repo.*, org.*, business.*, team.*, protected_branch.*, personal_access_token.*,
+# hook.* and secret_scanning_push_protection.bypass, to CloudAudit with the action as the event
+# name. Git and API request events are data events; the rest are management events.
+# json, act, actor, actorIp, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$._document_id"]
+eventSource$ = "GitHub"
+eventName$ = act
+# operation_type is create, access, modify, remove, authentication, transfer or restore. Events
+# without it get the part of the action before the first dot, such as git or repo.
+opType = json["$.operation_type"]
+category = act|^(?P<c>[a-z0-9_]+)\.
+eventType$ = IF opType THEN opType ELSE category["c"]
+userName$ = actor
+userId$ = STRING(json["$.actor_id"])
+targetUserName$ = json["$.user"]
+sourceAddress$ = actorIp
+userAgent$ = json["$.user_agent"]
+dataEvent = category["c"] == "git" OR category["c"] == "api"
+managementEvent$ = NOT dataEvent
+readOnly$ = act == "git.clone" OR act == "git.fetch" OR opType == "access"
+
+d1.key$ = "business"
+d1.value$ = json["$.business"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+d2.key$ = "org"
+d2.value$ = json["$.org"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+repo = json["$.repo"]
+repo = IF repo THEN repo ELSE json["$.repository"]
+d3.key$ = "repo"
+d3.value$ = repo
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "country_code"
+d4.value$ = json["$.actor_location.country_code"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "programmatic_access_type"
+d5.value$ = json["$.programmatic_access_type"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "token_id"
+d6.value$ = STRING(json["$.token_id"])
+additionalEventData$.record$ = IF json["$.token_id"] THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "hashed_token"
+d7.value$ = json["$.hashed_token"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "transport_protocol_name"
+d8.value$ = json["$.transport_protocol_name"]
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "visibility"
+d9.value$ = json["$.visibility"]
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+d10.key$ = "external_identity_nameid"
+d10.value$ = json["$.external_identity_nameid"]
+additionalEventData$.record$ = IF d10.value$ THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$
+d11.key$ = "issuer"
+d11.value$ = json["$.issuer"]
+additionalEventData$.record$ = IF d11.value$ THEN additionalEventData$.record$ + [d11] ELSE additionalEventData$.record$
+d12.key$ = "permission"
+d12.value$ = json["$.permission"]
+additionalEventData$.record$ = IF d12.value$ THEN additionalEventData$.record$ + [d12] ELSE additionalEventData$.record$
+d13.key$ = "user_programmatic_access_name"
+d13.value$ = json["$.user_programmatic_access_name"]
+additionalEventData$.record$ = IF d13.value$ THEN additionalEventData$.record$ + [d13] ELSE additionalEventData$.record$
+d14.key$ = "secret_type"
+d14.value$ = json["$.secret_type"]
+additionalEventData$.record$ = IF d14.value$ THEN additionalEventData$.record$ + [d14] ELSE additionalEventData$.record$
+d15.key$ = "push_protection_bypass_reason"
+d15.value$ = json["$.push_protection_bypass_reason"]
+additionalEventData$.record$ = IF d15.value$ THEN additionalEventData$.record$ + [d15] ELSE additionalEventData$.record$
