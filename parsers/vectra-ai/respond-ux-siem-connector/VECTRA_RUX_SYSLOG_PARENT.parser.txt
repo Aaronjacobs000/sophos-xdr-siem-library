@@ -1,0 +1,35 @@
+!SAMPLE=<14>2026-10-13T02:05:12Z VECTRA-SYSLOG-CONNECTOR: {"id": 28601, "category": "command_and_control", "threat": 80, "certainty": 70, "triaged": false, "detection_type": "Hidden HTTPS Tunnel", "d_type_vname": "Hidden HTTPS Tunnel", "detection_id": 977, "detection_href": "https://000000000000.uw2.portal.example.com/detections/977?detail_id=28601", "entity_id": 412, "entity_type": "host", "type": "host", "entity_href": "https://000000000000.uw2.portal.example.com/hosts/412", "url": "https://000000000000.uw2.portal.example.com/hosts/412", "entity_uid": "ws-fin-041.example.com", "event_timestamp": "2026-10-13T02:04:58Z", "detail": {"dst_ips": ["203.0.113.80"], "dst_ports": [443], "dst_hosts": ["cdn.example.net"], "protocol": "tcp", "bytes_sent": 1840211, "bytes_received": 96233, "first_timestamp": "2026-10-13T01:20:11Z", "last_timestamp": "2026-10-13T02:03:44Z"}, "severity": 8, "entity_name": "ws-fin-041", "mitre": ["T1572"]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=VECTRA-SYSLOG-CONNECTOR:\s*\{\s*"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Vectra AI Respond UX events forwarded by Vectra's SIEM connector (syslog intermediary),
+# which polls the Respond UX API (v3.3 events endpoints) and sends each event as one syslog line:
+#   <14>2026-10-13T00:18:01Z VECTRA-SYSLOG-CONNECTOR: {"id": 1098, "category": ...}
+# The header time is when the connector sent the line; the event time is event_timestamp.
+# Parent: tells the three event types apart by their keys and hands them to the children.
+#   detection        (detection_id)   to the third-party alert child
+#   audit            (event_action)   to the CloudAudit child
+#   entity_scoring   (urgency_score)  stays in the generic schema
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+m = originalData$|VECTRA-SYSLOG-CONNECTOR:\s*(?P<json>\{.*\})\s*$
+json = JSON(m["json"])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Vectra AI Respond UX"
+detectionId = STRING(json["$.detection_id"])
+auditAction = STRING(json["$.event_action"])
+urgency = STRING(json["$.urgency_score"])
+eventType$ = "other"
+eventType$ = IF urgency != "" THEN "entity_scoring" ELSE eventType$
+eventType$ = IF auditAction != "" THEN "audit" ELSE eventType$
+eventType$ = IF detectionId != "" THEN "detection" ELSE eventType$
+
+# event_timestamp is ISO 8601 in UTC.
+ts = STRING(json["$.event_timestamp"])
+iso = ts|^(?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)$
+eventTimeUsec$ = IF iso["t"] != "" THEN DATETIME(iso["t"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$

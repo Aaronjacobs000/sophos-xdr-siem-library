@@ -1,0 +1,67 @@
+!SAMPLE=<14>2026-10-13T02:05:12Z VECTRA-SYSLOG-CONNECTOR: {"id": 28601, "category": "command_and_control", "threat": 80, "certainty": 70, "triaged": false, "detection_type": "Hidden HTTPS Tunnel", "d_type_vname": "Hidden HTTPS Tunnel", "detection_id": 977, "detection_href": "https://000000000000.uw2.portal.example.com/detections/977?detail_id=28601", "entity_id": 412, "entity_type": "host", "type": "host", "entity_href": "https://000000000000.uw2.portal.example.com/hosts/412", "url": "https://000000000000.uw2.portal.example.com/hosts/412", "entity_uid": "ws-fin-041.example.com", "event_timestamp": "2026-10-13T02:04:58Z", "detail": {"dst_ips": ["203.0.113.80"], "dst_ports": [443], "dst_hosts": ["cdn.example.net"], "protocol": "tcp", "bytes_sent": 1840211, "bytes_received": 96233, "first_timestamp": "2026-10-13T01:20:11Z", "last_timestamp": "2026-10-13T02:03:44Z"}, "severity": 8, "entity_name": "ws-fin-041", "mitre": ["T1572"]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="detection"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Vectra AI Respond UX detection events from Vectra's SIEM connector.
+# Child of VECTRA_RUX_SYSLOG_PARENT: host and account detection events to the third-party alert schema.
+# json, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Vectra AI"
+provider$ = "Vectra AI Respond UX"
+logType$ = "detection"
+alertId$ = detectionId
+name = STRING(json["$.d_type_vname"])
+name = IF name == "" THEN STRING(json["$.detection_type"]) ELSE name
+title$ = name
+alertCategory$ = json["$.category"]
+
+# type replaces entity_type, which Vectra is deprecating; both hold host or account.
+entityType = LOWERCASE(STRING(json["$.type"]))
+entityType = IF entityType == "" THEN LOWERCASE(STRING(json["$.entity_type"])) ELSE entityType
+entityName = STRING(json["$.entity_name"])
+summary$ = IF entityName != "" THEN name + " on " + entityType + " " + entityName ELSE name
+targetHostName$ = IF entityType == "host" AND entityName != "" THEN entityName ELSE NULL
+targetUserName$ = IF entityType == "account" AND entityName != "" THEN entityName ELSE NULL
+
+# severity is Vectra's 0 to 10 detection severity, which tracks the threat score (0 to 100).
+sevText = STRING(json["$.severity"])
+sevKey = sevText|^(?P<k>10|[0-9])$
+k = sevKey["k"]
+vendorSeverity$ = sevText
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF k == "0" THEN "INFO" ELSE severity$
+severity$ = IF k == "1" OR k == "2" OR k == "3" THEN "LOW" ELSE severity$
+severity$ = IF k == "4" OR k == "5" OR k == "6" THEN "MEDIUM" ELSE severity$
+severity$ = IF k == "7" OR k == "8" THEN "HIGH" ELSE severity$
+severity$ = IF k == "9" OR k == "10" THEN "CRITICAL" ELSE severity$
+riskScore$ = json["$.threat"]
+confidence$ = STRING(json["$.certainty"])
+status$ = IF STRING(json["$.triaged"]) == "true" THEN "triaged" ELSE "untriaged"
+
+# Account detections on cloud services name the outside address the activity came from.
+sourceAddress$ = json["$.detail.src_external_host.ip"]
+
+d1.key$ = "event_id"
+d1.value$ = STRING(json["$.id"])
+d2.key$ = "entity_type"
+d2.value$ = entityType
+d3.key$ = "entity_id"
+d3.value$ = STRING(json["$.entity_id"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3]
+d4.key$ = "entity_uid"
+d4.value$ = STRING(json["$.entity_uid"])
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "detection_url"
+d5.value$ = STRING(json["$.detection_href"])
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "mitre"
+d6.value$ = STRING(json["$.mitre[0]"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "cloud_operation"
+d7.value$ = STRING(json["$.detail.event_name"])
+d7.value$ = IF d7.value$ == "" THEN STRING(json["$.detail.operation"]) ELSE d7.value$
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$

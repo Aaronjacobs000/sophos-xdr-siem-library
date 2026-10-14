@@ -1,0 +1,383 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791850567000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Vectra AI",
+      "provider": "Vectra AI Respond UX",
+      "log_type": "detection",
+      "alert_id": "128",
+      "title": "AWS Suspect Escalation Reconnaissance",
+      "alert_category": "reconnaissance",
+      "summary": "AWS Suspect Escalation Reconnaissance on account AWS:111122223333/ci-deploy",
+      "target_user_name": "AWS:111122223333/ci-deploy",
+      "vendor_severity": "4",
+      "severity": "MEDIUM",
+      "risk_score": 40,
+      "confidence": "40",
+      "status": "untriaged",
+      "source_address": "198.51.100.77",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "1098"
+          },
+          {
+            "key": "entity_type",
+            "value": "account"
+          },
+          {
+            "key": "entity_id",
+            "value": "31"
+          },
+          {
+            "key": "entity_uid",
+            "value": "AWS:111122223333/ci-deploy"
+          },
+          {
+            "key": "detection_url",
+            "value": "https://000000000000.uw2.portal.example.com/detections/128?detail_id=1098"
+          },
+          {
+            "key": "mitre",
+            "value": "T1087"
+          },
+          {
+            "key": "cloud_operation",
+            "value": "ListAttachedRolePolicies"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791855095000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Vectra AI",
+      "provider": "Vectra AI Respond UX",
+      "log_type": "detection",
+      "alert_id": "959",
+      "title": "Azure AD Redundant Access Creation",
+      "alert_category": "command_and_control",
+      "summary": "Azure AD Redundant Access Creation on account Admin Account",
+      "target_user_name": "Admin Account",
+      "vendor_severity": "5",
+      "severity": "MEDIUM",
+      "risk_score": 50,
+      "confidence": "50",
+      "status": "untriaged",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "28538"
+          },
+          {
+            "key": "entity_type",
+            "value": "account"
+          },
+          {
+            "key": "entity_id",
+            "value": "1"
+          },
+          {
+            "key": "entity_uid",
+            "value": "O365:sync-app@example.com"
+          },
+          {
+            "key": "detection_url",
+            "value": "https://000000000000.uw2.portal.example.com/detections/959?detail_id=28538"
+          },
+          {
+            "key": "mitre",
+            "value": "T1098"
+          },
+          {
+            "key": "cloud_operation",
+            "value": "Add member to role."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791857098000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Vectra AI",
+      "provider": "Vectra AI Respond UX",
+      "log_type": "detection",
+      "alert_id": "977",
+      "title": "Hidden HTTPS Tunnel",
+      "alert_category": "command_and_control",
+      "summary": "Hidden HTTPS Tunnel on host ws-fin-041",
+      "target_host_name": "ws-fin-041",
+      "vendor_severity": "8",
+      "severity": "HIGH",
+      "risk_score": 80,
+      "confidence": "70",
+      "status": "untriaged",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "28601"
+          },
+          {
+            "key": "entity_type",
+            "value": "host"
+          },
+          {
+            "key": "entity_id",
+            "value": "412"
+          },
+          {
+            "key": "entity_uid",
+            "value": "ws-fin-041.example.com"
+          },
+          {
+            "key": "detection_url",
+            "value": "https://000000000000.uw2.portal.example.com/detections/977?detail_id=28601"
+          },
+          {
+            "key": "mitre",
+            "value": "T1572"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791861139000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Vectra AI",
+      "provider": "Vectra AI Respond UX",
+      "log_type": "detection",
+      "alert_id": "981",
+      "title": "Port Scan",
+      "alert_category": "reconnaissance",
+      "summary": "Port Scan on host scanner-02",
+      "target_host_name": "scanner-02",
+      "vendor_severity": "3",
+      "severity": "LOW",
+      "risk_score": 30,
+      "confidence": "50",
+      "status": "triaged",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "28644"
+          },
+          {
+            "key": "entity_type",
+            "value": "host"
+          },
+          {
+            "key": "entity_id",
+            "value": "377"
+          },
+          {
+            "key": "entity_uid",
+            "value": "scanner-02.example.com"
+          },
+          {
+            "key": "detection_url",
+            "value": "https://000000000000.uw2.portal.example.com/detections/981?detail_id=28644"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791862791000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Vectra AI",
+      "provider": "Vectra AI Respond UX",
+      "log_type": "detection",
+      "alert_id": "983",
+      "title": "Novel External Destination Port",
+      "alert_category": "info",
+      "summary": "Novel External Destination Port on host ws-fin-041",
+      "target_host_name": "ws-fin-041",
+      "vendor_severity": "0",
+      "severity": "INFO",
+      "risk_score": 0,
+      "confidence": "0",
+      "status": "untriaged",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "28650"
+          },
+          {
+            "key": "entity_type",
+            "value": "host"
+          },
+          {
+            "key": "entity_id",
+            "value": "412"
+          },
+          {
+            "key": "entity_uid",
+            "value": "ws-fin-041.example.com"
+          },
+          {
+            "key": "detection_url",
+            "value": "https://000000000000.uw2.portal.example.com/detections/983?detail_id=28650"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791865492000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "user_name": "secops.lead@example.com",
+      "user_type": "SAML",
+      "user_id": "24",
+      "event_source": "account_tag",
+      "event_name": "created",
+      "source_address": "203.0.113.25",
+      "status": "success",
+      "sensor_version": "2026.9.1",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Tag watch-closely has been added to linked_accounts with ids [45]"
+          },
+          {
+            "key": "event_id",
+            "value": "16"
+          },
+          {
+            "key": "role",
+            "value": "Admin"
+          },
+          {
+            "key": "event_data",
+            "value": "{\"tag\":{\"entity\":\"linked_account\",\"entity_ids\":[45],\"tag_name\":\"watch-closely\"}}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791868558000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "user_name": "secops.lead@example.com",
+      "user_type": "SAML",
+      "user_id": "24",
+      "event_source": "detection_note",
+      "event_name": "created",
+      "source_address": "203.0.113.25",
+      "status": "success",
+      "sensor_version": "2026.9.1",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "note for detection@977 created Isolated the host pending re..."
+          },
+          {
+            "key": "event_id",
+            "value": "17"
+          },
+          {
+            "key": "role",
+            "value": "Admin"
+          },
+          {
+            "key": "event_data",
+            "value": "{\"detection_note\":{\"detection_id\":\"977\",\"note_id\":16,\"text\":\"Isolated the host pending review of the tunnel destination.\"}}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT > VECTRA_RUX_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791870011000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "user_type": "API_CLIENT",
+      "user_id": "api_client_0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+      "event_source": "triage_rule",
+      "event_name": "deleted",
+      "source_address": "198.51.100.140",
+      "status": "failure",
+      "sensor_version": "2026.9.1",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Triage rule 12 delete denied"
+          },
+          {
+            "key": "event_id",
+            "value": "18"
+          },
+          {
+            "key": "role",
+            "value": "Read-Only"
+          },
+          {
+            "key": "event_data",
+            "value": "{\"triage_rule\":{\"id\":12}}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "VECTRA_RUX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Vectra AI Respond UX",
+      "event_time_usec": 1791871198000000
+    }
+  }
+]
