@@ -1,0 +1,521 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791857640206000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b",
+      "title": "203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718.",
+      "summary": "203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718. Brute force attacks are used to gain unauthorized access to your instance by guessing the SSH password.",
+      "alert_category": "TTPs/Initial Access/UnauthorizedAccess:EC2-SSHBruteForce",
+      "status": "NEW",
+      "vendor": "Amazon",
+      "provider": "GuardDuty",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "risk_score": 40,
+      "created_time_usec": 1791844474146000,
+      "updated_time_usec": 1791857640206000,
+      "first_event_time_usec": 1791843357000000,
+      "last_event_time_usec": 1791856609000000,
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.20",
+      "source_port": 46717,
+      "destination_port": 22,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "target_host_name": "i-0a1b2c3d4e5f60718",
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsEc2Instance"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:ec2:ap-southeast-2:111122223333:instance/i-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "source_url",
+            "value": "https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791861605512000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f",
+      "title": "API ListBuckets was invoked from a known malicious IP address.",
+      "summary": "API ListBuckets, commonly used in reconnaissance attacks, was invoked from IP address 198.51.100.77 on the list of known malicious IP addresses. Unauthorized actors may be using credentials of principal ci-deploy.",
+      "alert_category": "TTPs/Discovery/Recon:IAMUser-MaliciousIPCaller",
+      "status": "NEW",
+      "vendor": "Amazon",
+      "provider": "GuardDuty",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "risk_score": 50,
+      "created_time_usec": 1791861605512000,
+      "updated_time_usec": 1791861605512000,
+      "first_event_time_usec": 1791860531000000,
+      "last_event_time_usec": 1791860980000000,
+      "source_address": "198.51.100.77",
+      "target_user_name": "ci-deploy",
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsIamAccessKey"
+          },
+          {
+            "key": "resource_id",
+            "value": "AWS::IAM::AccessKey:EXAMPLEKEYID"
+          },
+          {
+            "key": "api_call",
+            "value": "s3.amazonaws.com:ListBuckets"
+          },
+          {
+            "key": "source_url",
+            "value": "https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791866462117000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "arn:aws:securityhub:ap-southeast-2:111122223333:security-control/S3.8/finding/3f2a1b0c-9d8e-4f7a-8b6c-5d4e3f2a1b0c",
+      "title": "S3 general purpose buckets should block public access",
+      "summary": "This control checks whether an Amazon S3 general purpose bucket blocks public access at the bucket level.",
+      "alert_category": "Software and Configuration Checks/Industry and Regulatory Standards",
+      "status": "NEW",
+      "vendor": "AWS",
+      "provider": "Security Hub",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "risk_score": 70,
+      "created_time_usec": 1791866462117000,
+      "updated_time_usec": 1791866462117000,
+      "first_event_time_usec": 1791866462117000,
+      "last_event_time_usec": 1791866462117000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "security-control/S3.8"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsS3Bucket"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:s3:::example-reports-bucket"
+          },
+          {
+            "key": "compliance_status",
+            "value": "FAILED"
+          },
+          {
+            "key": "security_control_id",
+            "value": "S3.8"
+          },
+          {
+            "key": "remediation_url",
+            "value": "https://docs.aws.amazon.com/console/securityhub/S3.8/remediation"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791867764003000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "arn:aws:inspector2:ap-southeast-2:111122223333:finding/9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+      "title": "CVE-2026-10001 - openssl",
+      "summary": "A buffer over-read in the example certificate parser can crash a TLS server that processes a crafted certificate.",
+      "alert_category": "Software and Configuration Checks/Vulnerabilities/CVE",
+      "status": "NEW",
+      "vendor": "Amazon",
+      "provider": "Inspector",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "risk_score": 70,
+      "created_time_usec": 1791867764003000,
+      "updated_time_usec": 1791867764003000,
+      "first_event_time_usec": 1791867764003000,
+      "last_event_time_usec": 1791867764003000,
+      "target_host_name": "i-0a1b2c3d4e5f60718",
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "AWSInspector"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsEc2Instance"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:ec2:ap-southeast-2:111122223333:instance/i-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "vulnerability_id",
+            "value": "CVE-2026-10001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791872121038000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d",
+      "title": "The S3 object contains personal information.",
+      "summary": "The object contains personal information such as full names, mailing addresses, or contact information.",
+      "alert_category": "Sensitive Data Identifications/PII/SensitiveData:S3Object-Personal",
+      "status": "NEW",
+      "vendor": "Amazon",
+      "provider": "Macie",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "risk_score": 70,
+      "created_time_usec": 1791872121038000,
+      "updated_time_usec": 1791872121038000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "aws/macie"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsS3Bucket"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:s3:::example-hr-exports"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791876612884000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Custom Action",
+      "alert_id": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b",
+      "title": "203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718.",
+      "summary": "203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718. Brute force attacks are used to gain unauthorized access to your instance by guessing the SSH password.",
+      "alert_category": "TTPs/Initial Access/UnauthorizedAccess:EC2-SSHBruteForce",
+      "status": "NOTIFIED",
+      "vendor": "Amazon",
+      "provider": "GuardDuty",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "risk_score": 40,
+      "created_time_usec": 1791844474146000,
+      "updated_time_usec": 1791876612884000,
+      "first_event_time_usec": 1791843357000000,
+      "last_event_time_usec": 1791856609000000,
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.20",
+      "source_port": 46717,
+      "destination_port": 22,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "target_host_name": "i-0a1b2c3d4e5f60718",
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsEc2Instance"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:ec2:ap-southeast-2:111122223333:instance/i-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "source_url",
+            "value": "https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b"
+          },
+          {
+            "key": "custom_action",
+            "value": "SendToSOC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791879129000000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "acme-ndr-alert-20261013-000482",
+      "title": "Beaconing to a command and control domain from i-0f9e8d7c6b5a40312",
+      "summary": "The host made 412 connections to c2.example.net at a fixed interval over 12 minutes.",
+      "alert_category": "TTPs/Command and Control",
+      "status": "NEW",
+      "vendor": "Acme",
+      "provider": "Acme NDR",
+      "vendor_severity": "CRITICAL",
+      "severity": "CRITICAL",
+      "risk_score": 90,
+      "confidence": "85",
+      "created_time_usec": 1791879129000000,
+      "updated_time_usec": 1791879129000000,
+      "first_event_time_usec": 1791878441000000,
+      "last_event_time_usec": 1791879123000000,
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.50",
+      "source_port": 49812,
+      "destination_port": 443,
+      "protocol": 6,
+      "direction": "OUTBOUND",
+      "target_host_name": "i-0f9e8d7c6b5a40312",
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "acme-ndr-c2-beacon"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsEc2Instance"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:ec2:ap-southeast-2:111122223333:instance/i-0f9e8d7c6b5a40312"
+          },
+          {
+            "key": "malware_name",
+            "value": "ExampleBeacon"
+          },
+          {
+            "key": "destination_domain",
+            "value": "c2.example.net"
+          },
+          {
+            "key": "source_url",
+            "value": "https://ndr.example.com/alerts/000482"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AWS_SECURITYHUB_ASFF_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AWS Security Hub CSPM",
+      "event_time_usec": 1791884670502000,
+      "event_time_fidelity": "MICRO",
+      "log_type": "Security Hub Findings - Imported",
+      "alert_id": "arn:aws:securityhub:ap-southeast-2:111122223333:security-control/S3.8/finding/3f2a1b0c-9d8e-4f7a-8b6c-5d4e3f2a1b0c",
+      "title": "S3 general purpose buckets should block public access",
+      "summary": "This control checks whether an Amazon S3 general purpose bucket blocks public access at the bucket level.",
+      "alert_category": "Software and Configuration Checks/Industry and Regulatory Standards",
+      "status": "RESOLVED",
+      "vendor": "AWS",
+      "provider": "Security Hub",
+      "vendor_severity": "INFORMATIONAL",
+      "severity": "INFO",
+      "risk_score": 0,
+      "created_time_usec": 1791866462117000,
+      "updated_time_usec": 1791884670502000,
+      "first_event_time_usec": 1791866462117000,
+      "last_event_time_usec": 1791884670502000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "aws_account_id",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "generator_id",
+            "value": "security-control/S3.8"
+          },
+          {
+            "key": "record_state",
+            "value": "ACTIVE"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsS3Bucket"
+          },
+          {
+            "key": "resource_id",
+            "value": "arn:aws:s3:::example-reports-bucket"
+          },
+          {
+            "key": "compliance_status",
+            "value": "PASSED"
+          },
+          {
+            "key": "security_control_id",
+            "value": "S3.8"
+          },
+          {
+            "key": "remediation_url",
+            "value": "https://docs.aws.amazon.com/console/securityhub/S3.8/remediation"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 10,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
