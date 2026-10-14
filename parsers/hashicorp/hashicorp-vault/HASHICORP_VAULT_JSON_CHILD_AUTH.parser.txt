@@ -1,0 +1,64 @@
+!SAMPLE={"auth":{"policy_results":{"allowed":true},"token_type":"default"},"error":"invalid username or password","request":{"id":"6d7e8f90-1b2c-4d3e-8f40-516273849506","headers":{"user-agent":["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"]},"mount_accessor":"auth_userpass_1a2b3c4d","mount_class":"auth","mount_point":"auth/userpass/","mount_type":"userpass","namespace":{"id":"root"},"operation":"update","path":"auth/userpass/login/kim","remote_address":"198.51.100.44","remote_port":60211},"response":{"data":{"error":"hmac-sha256:47311cafc783b5c280002c49014ae34b0148d1a9fa54d3692407cbc87aa5f509"},"mount_accessor":"auth_userpass_1a2b3c4d","mount_class":"auth","mount_point":"auth/userpass/","mount_type":"userpass"},"time":"2026-10-13T01:23:45.120044Z","type":"response"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HashiCorp Vault audit devices (syslog or file), response entries for logins.
+# Child of HASHICORP_VAULT_JSON_PARENT: logins to any auth method (auth/<mount>/login,
+# auth/<mount>/login/<name>, and OIDC callbacks) to Auth. A login that returned an error failed.
+# json, path, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.request.id"]
+authSystem$ = "HashiCorp Vault"
+authCategory$ = "ACCOUNT_LOGON"
+# The auth method: userpass, ldap, approle, oidc, jwt, kubernetes, cert and others.
+serviceName$ = json["$.request.mount_type"]
+sourceAddress$ = json["$.request.remote_address"]
+sourcePortNumber$ = json["$.request.remote_port"]
+userAgent$ = json["$.request.headers['user-agent'][0]"]
+targetDomainName$ = json["$.request.namespace.path"]
+
+# The name signed in: the auth method's username, the name in the login path, the AppRole,
+# or the token's display name (OIDC and JWT logins).
+pathUser = path|^auth/.+/login/(?P<u>[^/]+)$
+targetUserName$ = json["$.response.auth.metadata.username"]
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE pathUser["u"]
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE json["$.response.auth.metadata.role_name"]
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE json["$.response.auth.display_name"]
+userDisplayName$ = json["$.response.auth.display_name"]
+# The token accessor ties this login to later requests made with the token. Vault hashes it
+# unless the audit device sets hmac_accessor=false.
+sessionId$ = json["$.response.auth.accessor"]
+
+err = STRING(json["$.error"])
+ok = err == ""
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF CONTAINS(err, "invalid username or password") OR CONTAINS(err, "invalid credentials") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+status$ = IF ok THEN "success" ELSE err
+
+m1.key$ = "mount_point"
+m1.value$ = json["$.request.mount_point"]
+m2.key$ = "mount_accessor"
+m2.value$ = json["$.request.mount_accessor"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "entity_id"
+m3.value$ = json["$.response.auth.entity_id"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "token_type"
+m4.value$ = json["$.response.auth.token_type"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "token_ttl"
+m5.value$ = STRING(json["$.response.auth.token_ttl"])
+eventMetadata$.record$ = IF json["$.response.auth.token_ttl"] THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "role"
+m6.value$ = json["$.response.auth.metadata.role"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "forwarded_from"
+m7.value$ = json["$.forwarded_from"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
