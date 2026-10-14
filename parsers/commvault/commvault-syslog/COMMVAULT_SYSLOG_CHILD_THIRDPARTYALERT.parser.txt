@@ -1,0 +1,68 @@
+!SAMPLE=<108>1 2026-10-12T11:51:02Z commserve01.example.com Commserver 4512 Alert [Alert@14604 AlertId="3104" AlertName="File Activity Anomaly Alert" DetectedTime="12 Oct 2026 22:51:02" JobId="185412" CommcellName="commserve01" CompanyName="Commcell" UTCTimestamp="1791805862"] Detected file activity anomaly in job [185412] for client [fileserver02]. Number of files affected [1320].
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Commvault CommServe syslog forwarding of events, the audit trail and alerts.
+# Child of COMMVAULT_SYSLOG_PARENT: alerts, and the anomaly (ransomware) detections Commvault
+# raises as events, to the third-party alert schema.
+# kind, anomaly, text, alertName, program, eventCode, computer, commcell, company, recordId,
+# jobId, cvSeverity, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Commvault"
+provider$ = "Commvault"
+logType$ = IF kind == "alert" THEN "Alert" ELSE "Event"
+alertId$ = recordId
+createdTimeUsec$ = eventTimeUsec$
+alertCategory$ = IF anomaly THEN "Anomaly detection" ELSE NULL
+
+# Anomaly descriptions are HTML: the visible sentence, then a hidden span with the counts.
+vis = text|^(?:<html>)?\s*(?P<t>[^<]*?)\s*(?:<|$)
+summary$ = vis["t"]
+title$ = IF alertName != "" THEN alertName ELSE vis["t"]
+cl = text|for client \[(?P<c>[^\]]*)\]
+targetHostName$ = IF cl["c"] != "" THEN cl["c"] ELSE computer
+targetHostName$ = IF targetHostName$ == "" THEN NULL ELSE targetHostName$
+
+# Event severity is Information, Minor, Major or Critical. Alerts carry no severity in syslog.
+sev = LOWERCASE(cvSeverity)
+vendorSeverity$ = IF cvSeverity != "" THEN cvSeverity ELSE NULL
+severity$ = NULL
+severity$ = IF sev == "information" THEN "INFO" ELSE severity$
+severity$ = IF sev == "minor" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "major" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+
+span = text|AnomalyType:\[(?P<at>\d+)\];ClientName:\[(?P<client>[^\]]*)\];BackupSetName:\[(?P<bs>[^\]]*)\];SubclientName:\[(?P<sc>[^\]]*)\];SuspiciousFileCount:\[(?P<sus>\d+)\];ModifiedFileCount:\[(?P<mod>\d+)\];RenamedFileCount:\[(?P<ren>\d+)\];CreatedFileCount:\[(?P<cre>\d+)\];DeletedFileCount:\[(?P<del>\d+)\]
+
+a1.key$ = "commcell"
+a1.value$ = commcell
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "job_id"
+a2.value$ = jobId
+additionalData$.record$ = IF jobId != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "program"
+a3.value$ = program
+additionalData$.record$ = IF program != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "event_code"
+a4.value$ = eventCode
+additionalData$.record$ = IF eventCode != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "company"
+a5.value$ = company
+additionalData$.record$ = IF company != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "anomaly_type"
+a6.value$ = span["at"]
+additionalData$.record$ = IF span["at"] != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "suspicious_file_count"
+a7.value$ = span["sus"]
+additionalData$.record$ = IF span["sus"] != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "file_counts_modified_renamed_created_deleted"
+a8.value$ = span["mod"] + "/" + span["ren"] + "/" + span["cre"] + "/" + span["del"]
+additionalData$.record$ = IF span["sus"] != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "subclient"
+a9.value$ = span["bs"] + "/" + span["sc"]
+additionalData$.record$ = IF span["sus"] != "" THEN additionalData$.record$ + [a9] ELSE additionalData$.record$

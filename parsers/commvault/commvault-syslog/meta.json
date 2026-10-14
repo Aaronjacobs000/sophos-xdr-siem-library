@@ -1,0 +1,54 @@
+{
+  "vendor": "Commvault",
+  "product": "Commvault syslog",
+  "versions": [
+    "11.36",
+    "11.42"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://documentation.commvault.com/11.42/software/configuring_syslog_server.html",
+    "https://api.commvault.com/docs/latest/api/cv/AlertOperations/get-log-streaming-connector-templates/",
+    "https://documentation.commvault.com/additionalsetting/buserfc5424formatinsyslog-14652.html",
+    "https://community.commvault.com/saas-metallic-q-a-42/not-able-to-send-audit-trails-and-alerts-using-syslog-server-6413"
+  ],
+  "notes": "CommServe syslog forwarding of events, the audit trail and alerts, over UDP or TLS, which Commvault sends in batches about every eight minutes. Commvault publishes the RFC 5424 form in its log streaming templates; turn it on with the bUseRFC5424FormatInSyslog additional setting (11.36 and later). The parser also reads the default Key = {value} form of events and the audit trail, which Commvault doesn't document; that shape comes from lines on Commvault's community site. No public example of a default-form alert exists, so those aren't covered. Logins, logouts, login failures and lockouts from the audit trail go to Auth. Alerts, and the anomaly (ransomware) detections CvStatAnalysis raises as event code 14:337, go to the third-party alert schema with the file counts from the anomaly description. Other audit records and events go to Management Event, with the Commvault severity as result. The event time comes from Utctimestamp; a record without it has only the CommServe's local time, which is read as UTC. Syslog alerts carry no severity. Samples are made up in these shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (120 of 120 fields matched the emulator in each of 5 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent. No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "COMMVAULT_SYSLOG_PARENT",
+      "file": "COMMVAULT_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "COMMVAULT_SYSLOG_CHILD_AUTH",
+      "file": "COMMVAULT_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "COMMVAULT_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "COMMVAULT_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "COMMVAULT_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "COMMVAULT_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "COMMVAULT_SYSLOG_CHILD_MGMT",
+      "file": "COMMVAULT_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "COMMVAULT_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

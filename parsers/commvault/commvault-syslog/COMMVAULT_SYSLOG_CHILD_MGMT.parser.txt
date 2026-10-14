@@ -1,0 +1,29 @@
+!SAMPLE=AuditTrail: Opid = {119276} Audittime = {12 Oct 2026 22:47:15} Severitylevel = {Low} Username = {jlee} Operation = {Restore Contents} Details = { Restore job [185419] started for client [fileserver02] to destination [fileserver02]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="mgmt"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Commvault CommServe syslog forwarding of events, the audit trail and alerts.
+# Child of COMMVAULT_SYSLOG_PARENT: audit trail records other than logins, and events other
+# than anomaly detections, to Management Event.
+# kind, text, user, operation, program, computer, commcell, recordId, jobId, cvSeverity,
+# eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+audit = kind == "audit"
+channel$ = IF audit THEN "Commvault audit trail" ELSE "Commvault events"
+# An audit record names the operation; an event names the program that raised it.
+operationName$ = IF audit THEN operation ELSE program
+operation$ = IF text != "" THEN text ELSE NULL
+username$ = IF user != "" THEN user ELSE NULL
+targetHostname$ = IF computer != "" THEN computer ELSE commcell
+# The record's severity (Information, Minor, Major or Critical for events; Low, Medium, High or
+# Critical for the audit trail) is the only outcome Commvault gives.
+result$ = IF cvSeverity != "" THEN cvSeverity ELSE NULL
+rid = recordId|^(?P<n>\d+)$
+eventId$ = IF rid["n"] != "" THEN INT(rid["n"], 10) ELSE NULL
+# The job the record belongs to, when there is one.
+job = jobId|^(?P<n>\d+)$
+operationId$ = IF job["n"] != "" THEN INT(job["n"], 10) ELSE NULL

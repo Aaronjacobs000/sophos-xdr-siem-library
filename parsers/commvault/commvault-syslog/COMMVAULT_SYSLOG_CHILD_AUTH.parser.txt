@@ -1,0 +1,66 @@
+!SAMPLE=<14>Oct 12 22:50:43 commserve01 AuditTrail: Opid = {119263} Audittime = {12 Oct 2026 22:45:31} Severitylevel = {Medium} Operation = {Login Failed} Details = { Login failure: username:[CORP\akim], host/ device:[198.51.100.40], login attempted from: [AdminConsole]} Companyname = {Commcell} Utctimestamp = {1791805531}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Commvault CommServe syslog forwarding of events, the audit trail and alerts.
+# Child of COMMVAULT_SYSLOG_PARENT: audit trail logins, logouts, login failures and account
+# lockouts (Command Center, Java console and other CommCell logins) to Auth.
+# text, user, operation, commcell, company, recordId, cvSeverity, eventType$, sensorType$,
+# hostId$ and eventTimeUsec$ come from the parent.
+
+# The account is in Username, or in the details text in one of these forms:
+#   username:[DOMAIN\user]   Login Name: DOMAIN\user   for user [DOMAIN\user]
+d1 = text|username:\[(?P<u>[^\]]*)\]
+d2 = text|Login Name:\s*(?P<u>\S+)
+d3 = text|for user \[(?P<u>[^\]]*)\]
+acct = user
+acct = IF d3["u"] != "" THEN d3["u"] ELSE acct
+acct = IF d2["u"] != "" THEN d2["u"] ELSE acct
+acct = IF d1["u"] != "" THEN d1["u"] ELSE acct
+dom = acct|^(?P<d>[^\\]+)\\(?P<n>.+)$
+targetUserName$ = IF dom["n"] != "" THEN dom["n"] ELSE acct
+targetDomainName$ = IF dom["d"] != "" THEN dom["d"] ELSE NULL
+targetHostName$ = commcell
+authSystem$ = "Commvault CommServe"
+
+src = text|host/\s*device:\[(?P<ip>[^\]]*)\]
+# IS_VALID_IP() fails the event on NULL, which a capture that matched nothing gives.
+sourceAddress$ = IF IS_VALID_IP(STRING(src["ip"])) THEN src["ip"] ELSE NULL
+mach = text|Machine:\s*(?P<m>\S+)
+extraWorkstationname$ = IF mach["m"] != "" THEN mach["m"] ELSE NULL
+app = text|(?:logged in|login attempted) from:\s*\[(?P<a>[^\]]*)\]
+logonApplicationFamily$ = IF app["a"] != "" THEN app["a"] ELSE NULL
+
+op = LOWERCASE(operation)
+failed = CONTAINS(op, "login fail")
+locked = CONTAINS(op, "account locked")
+loggedOut = CONTAINS(op, "logged out")
+action$ = "LOGON"
+action$ = IF loggedOut THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF loggedOut THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+actionResult$ = IF locked THEN NULL ELSE actionResult$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE NULL
+
+r1.key$ = "operation"
+r1.value$ = operation
+r2.key$ = "audit_id"
+r2.value$ = recordId
+r3.key$ = "details"
+r3.value$ = text
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+r4.key$ = "severity"
+r4.value$ = cvSeverity
+eventMetadata$.record$ = IF cvSeverity != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "company"
+r5.value$ = company
+eventMetadata$.record$ = IF company != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
