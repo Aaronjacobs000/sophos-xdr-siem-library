@@ -1,0 +1,136 @@
+!SAMPLE=Oct 13 22:31:13 sms01 CEF:0|TippingPoint|UnityOne|6.1.0.7020|38120|38120: HTTP: Apache Struts OGNL Expression Injection Attempt|4|app=HTTP act=Block c6a1= c6a1Label=Client IPv6 c6a2= c6a2Label=Source IPv6 c6a3= c6a3Label=Destination IPv6 cat=Vulnerabilities cn1=20 cn1Label=VLAN ID cn2=16842752 cn2Label=Taxonomy cn3=1 cn3Label=Packet Trace cs1=Perimeter Profile cs1Label=Profile Name cs2=c6da0827-798b-49ad-85e8-bb8e0ae531b5 cs2Label=Policy UUID cs3=00000001-0001-0001-0001-000000038120 cs3Label=Signature UUID cs4=Untrust-DMZ cs4Label=Zone Names cs5=sms01 cs5Label=SMS Name cs6= cs6Label=Filter Message Parms cnt=1 deviceInboundInterface=3 dhost=portal.example.com dntdom= dpt=80 dst=198.51.100.40 duser= dvchost=tps-perimeter-01 externalId=1100232 proto=TCP request=/struts2-showcase/index.action?redirect:%25{1+1} requestMethod=GET rt=1791930672880 sntdom= sourceTranslatedAddress=203.0.113.150 spt=50012 src=203.0.113.60 suser=
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*\d+\|TippingPoint\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro TippingPoint Security Management System (SMS) remote syslog for events, in the
+# ArcSight CEF Format v4.2, to the data collector:
+#   CEF:0|TippingPoint|UnityOne|<version>|<filter number>|<filter name>|<severity>|app=... act=...
+# Standalone parser for the NIDS schema: every event is an IPS or reputation filter hit.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# The extension keys follow the SMS v4.2 column list: cs1 profile, cs2 policy UUID, cs3 signature
+# UUID, cs4 zones, cs5 SMS name, cs6 filter message parameters, cn1 VLAN, cn2 taxonomy, cn3 packet
+# trace, rt the event time in milliseconds. Keys with no value are left out.
+
+v = CEF(originalData$)
+
+sensorType$ = "Trend Micro TippingPoint"
+device = STRING(v["dvchost"])
+smsName = STRING(v["cs5"])
+hostId$ = IF device != "" THEN device ELSE NULL
+
+# rt is Unix time in milliseconds.
+rtText = STRING(v["rt"])
+rt = rtText|^(?P<ms>\d{10,13})$
+eventTimeUsec$ = IF rt["ms"] != "" THEN INT(rt["ms"], 10) * 1000 ELSE eventTimeUsec$
+
+# IPv4 addresses are in src and dst (the SMS custom template writes srcip); IPv6 ones in c6a2 and c6a3.
+src = STRING(v["src"])
+src = IF src != "" THEN src ELSE STRING(v["srcip"])
+src = IF src != "" THEN src ELSE STRING(v["c6a2"])
+dst = STRING(v["dst"])
+dst = IF dst != "" THEN dst ELSE STRING(v["c6a3"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+
+# protocol takes the IANA number; the SMS logs a name.
+proto = LOWERCASE(STRING(v["proto"]))
+protocol$ = NULL
+protocol$ = IF proto == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF proto == "icmpv6" OR proto == "ipv6-icmp" THEN 58 ELSE protocol$
+app = STRING(v["app"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+
+# The header carries the filter number and name, for example "7202: TCP: SYN Flood".
+sigText = STRING(v[4])
+sig = sigText|^(?P<n>\d{1,9})$
+signatureId$ = IF sig["n"] != "" THEN INT(sig["n"], 10) ELSE NULL
+name = STRING(v[5])
+message$ = IF name != "" THEN name ELSE NULL
+cat = STRING(v["cat"])
+classification$ = IF cat != "" THEN cat ELSE NULL
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+# act is the filter's flow control, for example Block, Permit, Rate Limit or Trust.
+act = STRING(v["act"])
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF CONTAINS(LOWERCASE(act), "block") THEN 1 ELSE 0
+
+vlanText = STRING(v["cn1"])
+vlanNum = vlanText|^(?P<n>\d{1,4})$
+vlan$ = IF vlanNum["n"] != "" THEN INT(vlanNum["n"], 10) ELSE NULL
+suser = STRING(v["suser"])
+sourceUsername$ = IF suser != "" THEN suser ELSE NULL
+duser = STRING(v["duser"])
+destinationUsername$ = IF duser != "" THEN duser ELSE NULL
+
+# The SMS documents two severity scales (0 to 4, and 0, 1, 4, 7, 10 for ArcSight) and not which
+# one this format writes, so the header severity goes to event_metadata rather than priority.
+m1.key$ = "severity"
+m1.value$ = STRING(v[6])
+m2.key$ = "event_id"
+m2.value$ = STRING(v["externalId"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "profile"
+m3.value$ = STRING(v["cs1"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "policy_uuid"
+m4.value$ = STRING(v["cs2"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "signature_uuid"
+m5.value$ = STRING(v["cs3"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "zones"
+m6.value$ = STRING(v["cs4"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "sms_name"
+m7.value$ = smsName
+eventMetadata$.record$ = IF smsName != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+# For reputation filters cs6 holds the address that matched.
+m8.key$ = "filter_message_parameters"
+m8.value$ = STRING(v["cs6"])
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "taxonomy_id"
+m9.value$ = STRING(v["cn2"])
+eventMetadata$.record$ = IF m9.value$ != "" AND m9.value$ != "0" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "hit_count"
+m10.value$ = STRING(v["cnt"])
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "physical_port_in"
+m11.value$ = STRING(v["deviceInboundInterface"])
+eventMetadata$.record$ = IF m11.value$ != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "uri_host"
+m12.value$ = STRING(v["dhost"])
+eventMetadata$.record$ = IF m12.value$ != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "uri"
+m13.value$ = STRING(v["request"])
+eventMetadata$.record$ = IF m13.value$ != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+m14.key$ = "http_method"
+m14.value$ = STRING(v["requestMethod"])
+eventMetadata$.record$ = IF m14.value$ != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$
+# sourceTranslatedAddress and c6a1 carry the TCIP or X-Forwarded-For client address, not NAT.
+client = STRING(v["sourceTranslatedAddress"])
+client = IF client != "" THEN client ELSE STRING(v["c6a1"])
+m15.key$ = "client_ip"
+m15.value$ = client
+eventMetadata$.record$ = IF client != "" THEN eventMetadata$.record$ + [m15] ELSE eventMetadata$.record$
+m16.key$ = "source_user_domain"
+m16.value$ = STRING(v["sntdom"])
+eventMetadata$.record$ = IF m16.value$ != "" THEN eventMetadata$.record$ + [m16] ELSE eventMetadata$.record$
+m17.key$ = "destination_user_domain"
+m17.value$ = STRING(v["dntdom"])
+eventMetadata$.record$ = IF m17.value$ != "" THEN eventMetadata$.record$ + [m17] ELSE eventMetadata$.record$
+m18.key$ = "packet_trace"
+m18.value$ = STRING(v["cn3"])
+eventMetadata$.record$ = IF m18.value$ == "1" THEN eventMetadata$.record$ + [m18] ELSE eventMetadata$.record$

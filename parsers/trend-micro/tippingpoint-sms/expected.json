@@ -1,0 +1,452 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "sensor_id": "sms01",
+      "event_time_usec": 1791930601204000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-perimeter-01",
+      "source_address": "203.0.113.25",
+      "destination_address": "192.0.2.80",
+      "source_port": 51544,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "TCP",
+      "signature_id": 7202,
+      "message": "7202: TCP: SYN Flood",
+      "classification": "Traffic Normalization",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Block",
+      "blocked": 1,
+      "vlan": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "4"
+          },
+          {
+            "key": "event_id",
+            "value": "1100231"
+          },
+          {
+            "key": "profile",
+            "value": "Perimeter Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "c6da0827-798b-49ad-85e8-bb8e0ae531b5"
+          },
+          {
+            "key": "signature_uuid",
+            "value": "00000001-0001-0001-0001-000000007202"
+          },
+          {
+            "key": "zones",
+            "value": "Untrust-Trust"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "filter_message_parameters",
+            "value": "192.0.2.80/32|exceeds|1|3"
+          },
+          {
+            "key": "taxonomy_id",
+            "value": "33620224"
+          },
+          {
+            "key": "hit_count",
+            "value": "12"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "sensor_id": "sms01",
+      "event_time_usec": 1791930672880000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-perimeter-01",
+      "source_address": "203.0.113.60",
+      "destination_address": "198.51.100.40",
+      "source_port": 50012,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "signature_id": 38120,
+      "message": "38120: HTTP: Apache Struts OGNL Expression Injection Attempt",
+      "classification": "Vulnerabilities",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Block",
+      "blocked": 1,
+      "vlan": 20,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "4"
+          },
+          {
+            "key": "event_id",
+            "value": "1100232"
+          },
+          {
+            "key": "profile",
+            "value": "Perimeter Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "c6da0827-798b-49ad-85e8-bb8e0ae531b5"
+          },
+          {
+            "key": "signature_uuid",
+            "value": "00000001-0001-0001-0001-000000038120"
+          },
+          {
+            "key": "zones",
+            "value": "Untrust-DMZ"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "taxonomy_id",
+            "value": "16842752"
+          },
+          {
+            "key": "hit_count",
+            "value": "1"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "3"
+          },
+          {
+            "key": "uri_host",
+            "value": "portal.example.com"
+          },
+          {
+            "key": "uri",
+            "value": "/struts2-showcase/index.action?redirect:%25{1+1}"
+          },
+          {
+            "key": "http_method",
+            "value": "GET"
+          },
+          {
+            "key": "client_ip",
+            "value": "203.0.113.150"
+          },
+          {
+            "key": "packet_trace",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "sensor_id": "sms01",
+      "event_time_usec": 1791930820015000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-core-02",
+      "source_address": "192.0.2.55",
+      "destination_address": "198.51.100.200",
+      "source_port": 49822,
+      "destination_port": 6881,
+      "protocol": 6,
+      "application_name": "BitTorrent",
+      "signature_id": 5302,
+      "message": "5302: P2P: BitTorrent Client Handshake",
+      "classification": "P2P",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Permit",
+      "blocked": 0,
+      "vlan": 0,
+      "source_username": "jlee",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "2"
+          },
+          {
+            "key": "event_id",
+            "value": "1100240"
+          },
+          {
+            "key": "profile",
+            "value": "Internal Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "0b6e4a8d-6f91-4c2e-9b3a-2a7f1d5c0e11"
+          },
+          {
+            "key": "signature_uuid",
+            "value": "00000001-0001-0001-0001-000000005302"
+          },
+          {
+            "key": "zones",
+            "value": "Trust-Untrust"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "taxonomy_id",
+            "value": "83951872"
+          },
+          {
+            "key": "hit_count",
+            "value": "1"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "5"
+          },
+          {
+            "key": "source_user_domain",
+            "value": "CORP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "sensor_id": "sms01",
+      "event_time_usec": 1791930909442000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-perimeter-01",
+      "source_address": "192.0.2.71",
+      "destination_address": "203.0.113.99",
+      "source_port": 61002,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "TCP",
+      "signature_id": 9999,
+      "message": "Reputation: Block known malicious host",
+      "classification": "Reputation",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Block",
+      "blocked": 1,
+      "vlan": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "4"
+          },
+          {
+            "key": "event_id",
+            "value": "1100245"
+          },
+          {
+            "key": "profile",
+            "value": "Perimeter Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "c6da0827-798b-49ad-85e8-bb8e0ae531b5"
+          },
+          {
+            "key": "zones",
+            "value": "Trust-Untrust"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "filter_message_parameters",
+            "value": "203.0.113.99"
+          },
+          {
+            "key": "hit_count",
+            "value": "1"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "sensor_id": "sms01",
+      "event_time_usec": 1791931075310000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-core-02",
+      "source_address": "2001:db8:20::45",
+      "destination_address": "2001:db8:10::20",
+      "source_port": 52011,
+      "destination_port": 445,
+      "protocol": 6,
+      "application_name": "SMB",
+      "signature_id": 30544,
+      "message": "30544: SMB: Microsoft Windows SMBv1 Remote Code Execution Attempt",
+      "classification": "Exploits",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Block",
+      "blocked": 1,
+      "vlan": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "4"
+          },
+          {
+            "key": "event_id",
+            "value": "1100251"
+          },
+          {
+            "key": "profile",
+            "value": "Internal Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "0b6e4a8d-6f91-4c2e-9b3a-2a7f1d5c0e11"
+          },
+          {
+            "key": "signature_uuid",
+            "value": "00000001-0001-0001-0001-000000030544"
+          },
+          {
+            "key": "zones",
+            "value": "Trust-Servers"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "taxonomy_id",
+            "value": "16843008"
+          },
+          {
+            "key": "hit_count",
+            "value": "2"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro TippingPoint",
+      "event_time_usec": 1791931202906000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "tps-core-02",
+      "source_address": "192.0.2.88",
+      "destination_address": "198.51.100.150",
+      "source_port": 50991,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "signature_id": 6411,
+      "message": "6411: HTTP: Streaming Video Download",
+      "classification": "Streaming Media",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "action": "Rate Limit",
+      "blocked": 0,
+      "vlan": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "1"
+          },
+          {
+            "key": "event_id",
+            "value": "1100260"
+          },
+          {
+            "key": "profile",
+            "value": "Internal Profile"
+          },
+          {
+            "key": "policy_uuid",
+            "value": "0b6e4a8d-6f91-4c2e-9b3a-2a7f1d5c0e11"
+          },
+          {
+            "key": "signature_uuid",
+            "value": "00000001-0001-0001-0001-000000006411"
+          },
+          {
+            "key": "zones",
+            "value": "Trust-Untrust"
+          },
+          {
+            "key": "sms_name",
+            "value": "sms01"
+          },
+          {
+            "key": "taxonomy_id",
+            "value": "134283520"
+          },
+          {
+            "key": "hit_count",
+            "value": "40"
+          },
+          {
+            "key": "physical_port_in",
+            "value": "5"
+          },
+          {
+            "key": "uri_host",
+            "value": "video.example.net"
+          },
+          {
+            "key": "uri",
+            "value": "/stream/live/segment-0042.ts"
+          },
+          {
+            "key": "http_method",
+            "value": "GET"
+          }
+        ]
+      }
+    }
+  }
+]
