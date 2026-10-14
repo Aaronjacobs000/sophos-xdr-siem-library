@@ -60,7 +60,8 @@ const isJsonObject = (v) => v instanceof JsonValue && !v.doc && v.value !== null
 // array part included, is joined the same way in its place, so [["a","<b>"],"c"] gives a,<b>,c
 // and [["a"],[],"c"] gives a,,c. A record, an object such as a CEF() value, or an object part of a
 // JSON value is written the way STRING() writes it: keys sorted, <, > and & escaped and a NULL
-// member as 0. Nothing in a list is trimmed (checked in a lab tenant).
+// member as 0. The value JSON() returned is written as {}, whatever it holds, so ["x", JSON("5")]
+// gives x,{}. Nothing in a list is trimmed (checked in a lab tenant).
 function joinList(list) {
   return list.map(joinItem).join(',');
 }
@@ -68,6 +69,7 @@ function joinList(list) {
 function joinItem(x) {
   if (x === null || x === undefined) return '';
   if (typeof x === 'string') return x;
+  if (x instanceof JsonValue && x.doc) return '{}';
   if (isList(x)) return joinList(x);
   if (x instanceof JsonValue && !x.doc && Array.isArray(x.value)) return joinList(x.value.map(wrapJson));
   if (x instanceof RecordValue || x instanceof ObjValue || isJsonObject(x)) return stringOf(x);

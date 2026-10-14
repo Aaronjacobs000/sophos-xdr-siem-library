@@ -1,7 +1,7 @@
 // The examples on the Fusion "Custom parser syntax" page, run through the emulator.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execute } from '../studio/core/engine.js';
+import { execute, rootVars } from '../studio/core/engine.js';
 import { toPlain, formatTime, JsonValue } from '../studio/core/values.js';
 
 const run = (text, vars) => execute(text, vars).vars;
@@ -1434,6 +1434,15 @@ test('CEF(NULL) fails the event, as CEF("") does', () => {
   assert.throws(() => run('j = JSON("{\\"a\\":1}")\nx = CEF(j["$.missing"])'), /message is not in LEEF format/);
 });
 
+test('LEEF(NULL) fails the event, with or without a delimiter', () => {
+  // The engine failed each with "message is not in LEEF format" (checked in a lab tenant).
+  assert.throws(() => run('x = LEEF(NULL)'), /message is not in LEEF format/);
+  assert.throws(() => run('n = NULL\nx = LEEF(n)'), /message is not in LEEF format/);
+  assert.throws(() => run('x = LEEF(NULL, "|")'), /message is not in LEEF format/);
+  assert.throws(() => run('j = JSON("{\\"a\\":1}")\nx = LEEF(j["$.missing"])'), /message is not in LEEF format/);
+  assert.equal(get('x = LEEF("LEEF:1.0|V|P|1|100|a=b\\tc=d")\ny = x["a"] + "," + x[1]', 'y'), 'b,V');
+});
+
 test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', () => {
   // What the engine returned in a lab tenant, in microseconds. TRUE also picks the year.
   const usec = (expr) => toPlain(execute(`t = ${expr}\nx = STRING(t + 0)`, {}, { now: '2026-10-14T20:00:00Z' }).vars.get('x'));
@@ -1456,4 +1465,61 @@ test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', (
     [`DATETIME(${v}, "01/02-15:04:05.999999", "false")`, '-62142428330538768'],
     [`DATETIME(${v}, "01/02-15:04:05.999999", 0)`, '-62142428330538768'],
   ]) assert.equal(usec(expr), want, expr);
+});
+
+test('DATETIME() with TRUE sets the current year, whatever the value holds, or the year before past 48 hours ahead', () => {
+  // What the engine returned in a lab tenant, as Go's time String() and in microseconds. Only the
+  // date, time and offset of the String() form are compared: for a numeric zone Go also repeats the
+  // offset as the zone name, which the emulator leaves out.
+  const at = (now) => (expr) => {
+    const vars = execute(`t = ${expr}\nx = STRING(t)\nu = STRING(t + 0)`, {}, { now }).vars;
+    return `${vars.get('x').slice(0, 25)}|${vars.get('u')}`;
+  };
+  const go = (s) => s.replace(/^(.{25})[^|]*/, '$1');
+  const read = at('2026-10-14T20:46:20Z');
+  for (const [expr, want] of [
+    ['DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("2030/10/13-22:21:09", "2006/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("99/10/13-22:21:09", "06/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("19/10/13-22:21:09", "06/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("0000/10/13-22:21:09", "2006/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("Oct 13 2019 22:21:09", "Jan _2 2006 15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", "yes")', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    // The month, day, time and zone stay as the value has them.
+    ['DATETIME("2019-10-13T22:21:09+11:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2026-10-13 22:21:09 +1100 +1100|1791890469000000'],
+    ['DATETIME("2019-10-13T22:21:09.461230+11:00", "2006-01-02T15:04:05.999999Z07:00", TRUE)', '2026-10-13 22:21:09 +1100 +1100|1791890469000000'],
+    ['DATETIME("2020-01-01T02:00:00+05:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2026-01-01 02:00:00 +0500 +0500|1767214800000000'],
+    ['DATETIME("2019-10-13 22:21:09 AEST", "2006-01-02 15:04:05 MST", TRUE)', '2026-10-13 22:21:09 +0000 AEST|1791930069000000'],
+    // A day of the year is read in the value's year: day 287 of 2024 is Oct 13, and so is day 287
+    // of year 0, which Go reads when the layout has no year.
+    ['DATETIME("2024 287 22:21:09", "2006 002 15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("287 22:21:09", "002 15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    // A day the value's own year doesn't have still fails, so DATETIME gives NULL.
+    ['DATETIME("2025/02/29-10:00:00", "2006/01/02-15:04:05", TRUE)', '|0'],
+    // Feb 29 becomes Mar 1 in a year that has none, with or without a year in the layout.
+    ['DATETIME("2024/02/29-10:00:00", "2006/01/02-15:04:05", TRUE)', '2026-03-01 10:00:00 +0000 UTC|1772359200000000'],
+    ['DATETIME("Feb 29 10:00:00", "Jan _2 15:04:05", TRUE)', '2026-03-01 10:00:00 +0000 UTC|1772359200000000'],
+    // More than 48 hours ahead in the current year means the year before.
+    ['DATETIME("2019/12/31-22:21:09", "2006/01/02-15:04:05", TRUE)', '2025-12-31 22:21:09 +0000 UTC|1767219669000000'],
+    ['DATETIME("Dec 31 22:21:09", "Jan _2 15:04:05", TRUE)', '2025-12-31 22:21:09 +0000 UTC|1767219669000000'],
+    ['DATETIME("2019-12-31T23:30:00-05:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2025-12-31 23:30:00 -0500 -0500|1767241800000000'],
+    ['DATETIME("2019/10/20-22:21:09", "2006/01/02-15:04:05", TRUE)', '2025-10-20 22:21:09 +0000 UTC|1760998869000000'],
+    ['DATETIME("Oct 20 22:21:09", "Jan _2 15:04:05", TRUE)', '2025-10-20 22:21:09 +0000 UTC|1760998869000000'],
+    // Without TRUE the year stays.
+    ['DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", FALSE)', '2019-10-13 22:21:09 +0000 UTC|1571005269000000'],
+  ]) assert.equal(read(expr), go(want), expr);
+  // The 48 hours run from the moment Run Test ran, compared as instants, so the zone counts.
+  const edge = at('2026-10-14T20:49:02Z');
+  for (const [expr, want] of [
+    ['DATETIME("2019-10-16T20:44:02Z", "2006-01-02T15:04:05Z07:00", TRUE)', '2026-10-16 20:44:02 +0000 UTC|1792183442000000'],
+    ['DATETIME("2019-10-16T20:54:02Z", "2006-01-02T15:04:05Z07:00", TRUE)', '2025-10-16 20:54:02 +0000 UTC|1760648042000000'],
+    ['DATETIME("2019-10-17T05:49:02+10:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2026-10-17 05:49:02 +1000 +1000|1792180142000000'],
+    ['DATETIME("2019-10-16T11:49:02-10:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2025-10-16 11:49:02 -1000 -1000|1760651342000000'],
+    ['DATETIME("Oct 17 05:49:02 +1000", "Jan _2 15:04:05 -0700", TRUE)', '2026-10-17 05:49:02 +1000 +1000|1792180142000000'],
+    ['DATETIME("Oct 16 11:49:02 -1000", "Jan _2 15:04:05 -0700", TRUE)', '2025-10-16 11:49:02 -1000 -1000|1760651342000000'],
+  ]) assert.equal(edge(expr), go(want), expr);
+  // The root parser reads a plain BSD syslog header time the same way.
+  const root = (line, now) => new Map(rootVars(line, now)).get('eventTimeUsec$').usec;
+  assert.equal(root('Oct 15 21:48:01 zzhost ZZPROBER9E root', '2026-10-14T20:48:36Z'), 1792100881000000);
+  assert.equal(root('Oct 19 20:48:01 zzhost ZZPROBER9E root', '2026-10-14T20:48:36Z'), 1760906881000000);
 });

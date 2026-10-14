@@ -660,6 +660,22 @@ test('a list in a string field joins a list inside it in its place, and writes a
   ]) assert.equal(run8('', body), want, body);
 });
 
+test('a list in a string field writes the value JSON() returned as {}, whatever it holds', () => {
+  // What the engine stored in a lab tenant.
+  for (const [flags, body, want] of [
+    ['', 'd = JSON("{\\"a\\":\\"<1>\\"}")\nontology$ = ["x", d]', 'x,{}'],
+    ['', 'd = JSON("[1,\\"<2>\\"]")\nontology$ = ["x", d]', 'x,{}'],
+    ['', 'd = JSON("5")\nontology$ = ["x", d]', 'x,{}'],
+    ['', 'd = JSON("\\"s\\"")\nontology$ = ["x", d]', 'x,{}'],
+    ['', 'd = JSON("null")\nontology$ = ["x", d, "y"]', 'x,{},y'],
+    ['', 'd = JSON("{\\"a\\":1}")\nontology$ = [["x", d], "y"]', 'x,{},y'],
+    ['', 'd = JSON("{\\"a\\":1}")\nr.j$ = d\nontology$ = ["x", r]', 'x,{"j$":{}}'],
+    ['', 'd = JSON("{\\"a\\":1}")\nontology$ = [d]', '{}'],
+    ['!TRIMALLOFF', 'd = JSON("{\\"a\\":1}")\nontology$ = ["x", d]', 'x,{}'],
+    ['', 'd = JSON("{\\"o\\":{\\"a\\":1}}")\nontology$ = ["x", d["$.o"], d]', 'x,{"a":1},{}'],
+  ]) assert.equal(run8(flags, body), want, body);
+});
+
 test('a bad escape in a confirm expression rejects the parser', () => {
   // Run Test returned only a parse error (checked in a lab tenant).
   const lines = ['ZZPROBER8E one'];

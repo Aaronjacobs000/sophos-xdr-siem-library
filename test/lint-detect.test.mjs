@@ -21,7 +21,7 @@ test('lint: missing directives, unknown functions, bad enum names, RE2 problems'
   assert.ok(c.includes('info:name'));
 });
 
-test('lint: field checks, sub-fields, DATETIME year, deprecated STRLEN, inferred markers', () => {
+test('lint: field checks, sub-fields, DATETIME year, deprecated STRLEN', () => {
   const t = `!CONFIRMWITH=PATTERN
 !CONFIRMSTRING=acme-firewall
 !SCHEMA=scwx.antivirus
@@ -36,10 +36,26 @@ actionTaken$ = LOWERCASE(originalData$)
 ok = 1 > 0 AND TRUE`;
   const r = lintParsers([{ name: 'ACME_FW_STANDALONE_AV', text: t }]);
   const c = codes(r);
-  for (const want of ['warning:not-a-field', 'error:sub-field', 'warning:datetime-year', 'warning:deprecated', 'warning:enum-raw', 'info:datetime-utc', 'inferred:op->']) {
+  for (const want of ['warning:not-a-field', 'error:sub-field', 'warning:datetime-year', 'warning:deprecated', 'warning:enum-raw', 'info:datetime-utc']) {
     assert.ok(c.includes(want), `expected ${want} in ${c.join(', ')}`);
   }
   assert.equal(r.problems.find((p) => p.code === 'datetime-year').line, 9);
+});
+
+// Run Test in a lab tenant gave what the emulator gives for each of these operators.
+test('lint: <, >, <=, >=, / and % carry no inferred note', () => {
+  const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\na = IF 1 < 2 AND 2 > 1 THEN "y" ELSE "n"\nb = IF 2 <= 2 AND 3 >= 4 THEN "y" ELSE "n"\nc = 3 / 2\nd = 7 % 3';
+  const r = lintParsers([{ name: 'ACME_APP_STANDALONE_AUTH', text: t }]);
+  assert.deepEqual(r.problems.filter((p) => p.level === 'inferred' || /operator/.test(p.message)).map((p) => p.code), []);
+});
+
+test('lint: the DATETIME year warning says what else TRUE does', () => {
+  const r = lintParsers([{ name: 'ACME_FW_STANDALONE_AV', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-firewall\n!SCHEMA=scwx.antivirus\neventTimeUsec$ = DATETIME("Oct  8 09:22:40.5", "Jan _2 15:04:05.0")' }]);
+  const m = r.problems.find((p) => p.code === 'datetime-year').message;
+  assert.match(m, /Pass TRUE as the third argument/);
+  assert.match(m, /drops fractional seconds/);
+  assert.match(m, /replaces any year in the value/);
+  assert.match(m, /the year before when that would put the time more than 48 hours ahead/);
 });
 
 test('lint: INT needs its base, FLATTEN order is noted, and a capture source expression is checked', () => {
