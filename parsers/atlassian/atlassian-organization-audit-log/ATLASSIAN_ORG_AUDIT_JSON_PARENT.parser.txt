@@ -1,0 +1,28 @@
+!SAMPLE={"atlassian_record":"event","orgId":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","id":"9c8b7a6d-5e4f-4321-8abc-000000000001","type":"events","attributes":{"time":"2026-10-13T01:10:04.218Z","processedAt":"2026-10-13T01:10:04.255Z","action":"user_login","actor":{"id":"5b10ac8d82e05b22cc7d4ef5","name":"Pat Example","email":"pat@example.com"},"context":[{"id":"5b10ac8d82e05b22cc7d4ef5","type":"users","attributes":{}}],"container":[{"id":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","type":"organizations","attributes":{}}],"location":{"ip":"203.0.113.10","countryName":"Australia","regionName":"New South Wales","city":"Sydney"}},"actionDisplayName":"Logged in to account","actionGroup":"Atlassian accounts"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"atlassian_record"\s*:\s*"event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Atlassian organization audit log events from the Organizations REST API events stream,
+# pulled by the example collector in collectors/atlassian-org-audit and posted to HTTP Ingest as
+# JSON lines. The collector puts "atlassian_record": "event" first and adds orgId, and the action's
+# display name and group from the event actions list (actionDisplayName, actionGroup).
+# Parent: hands sign-ins and sign-outs to the Auth child, and every other event to the CloudAudit
+# child. Atlassian doesn't publish its action keys, so the routing reads the display names from
+# Atlassian's audit log activities list, and the one key that is public, user_login.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Atlassian"
+act = json["$.attributes.action"]
+display = json["$.actionDisplayName"]
+# time is ISO 8601 in UTC, with milliseconds.
+eventTimeUsec$ = DATETIME(json["$.attributes.time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+authEvent = act == "user_login" OR display == "Logged in to account" OR display == "Logged out of account"
+eventType$ = IF authEvent THEN "auth" ELSE "audit"
