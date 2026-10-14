@@ -1,0 +1,135 @@
+!SAMPLE=Oct 13 22:43:05 2026 edge-mel-02 netflowd[2210]: [NOTICE] Action:allow, Reason:flow end, InputInt:lan0.20, OutputInt:SSE_INET_Primary, StartTime:Tue Oct 13 22:38:51 2026, EndTime:Tue Oct 13 22:43:05 2026, RXPkts:41, TXPkts:58, RXOctets:24733, TXOctets:9120, Flow-ID:88231, ingressVRFID:1, egressVRFID:1, VRFname:Staff, SrcAddr:192.0.2.131, DstAddr:198.51.100.90, SrcPort:59332, DstPort:443, Application:Office365, IPTos:af21 (0x48), Protocol:tcp, TCPFlags:0x1b, Host:edge-mel-02, FromZone:STAFF, ToZone:UNTRUSTED, Tag:inspected, Direction:Outbound, Overlay:SSE, NATSrcIP:203.0.113.20, NATSrcPort:40213, UserName:jlee, UserDevice:ws-0147, SrcRole:employee, DstRole:default
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="firewall"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking EdgeConnect SD-WAN appliance logs (ECOS), sent by the Orchestrator
+# Logging template's remote log receivers to the data collector.
+# Child of ARUBA_EDGECONNECT_SYSLOG_PARENT: firewall policy logs and stateful WAN drop logs, text
+# or JSON, to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# isJson, json, kv, wanDrop, logType, level, appliance, eventType$, sensorType$, hostId$,
+# sensorId$ and eventTimeUsec$ come from the parent.
+
+# Each field has a text key (kv) and a JSON key, for example SrcAddr and srcAddr.
+src = IF isJson THEN STRING(json["$.srcAddr"]) ELSE STRING(kv["SrcAddr"])
+dst = IF isJson THEN STRING(json["$.dstAddr"]) ELSE STRING(kv["DstAddr"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sp = IF isJson THEN STRING(json["$.srcPort"]) ELSE STRING(kv["SrcPort"])
+dp = IF isJson THEN STRING(json["$.dstPort"]) ELSE STRING(kv["DstPort"])
+spn = sp|^(?P<n>\d{1,5})$
+dpn = dp|^(?P<n>\d{1,5})$
+sourcePort$ = IF spn["n"] != "" THEN INT(spn["n"], 10) ELSE NULL
+destinationPort$ = IF dpn["n"] != "" THEN INT(dpn["n"], 10) ELSE NULL
+
+# protocol takes the IANA number; ECOS logs the name in lowercase.
+proto = LOWERCASE(IF isJson THEN STRING(json["$.protocol"]) ELSE STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF proto == "gre" THEN 47 ELSE protocol$
+protocol$ = IF proto == "esp" THEN 50 ELSE protocol$
+protocol$ = IF proto == "icmpv6" THEN 58 ELSE protocol$
+app = IF isJson THEN STRING(json["$.application"]) ELSE STRING(kv["Application"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+
+# Packet and byte counts as ECOS names them: RX received and TX transmitted.
+rp = IF isJson THEN STRING(json["$.rxPkts"]) ELSE STRING(kv["RXPkts"])
+tp = IF isJson THEN STRING(json["$.txPkts"]) ELSE STRING(kv["TXPkts"])
+ro = IF isJson THEN STRING(json["$.rxOctets"]) ELSE STRING(kv["RXOctets"])
+to = IF isJson THEN STRING(json["$.txOctets"]) ELSE STRING(kv["TXOctets"])
+rpn = rp|^(?P<n>\d{1,15})$
+tpn = tp|^(?P<n>\d{1,15})$
+ron = ro|^(?P<n>\d{1,15})$
+ton = to|^(?P<n>\d{1,15})$
+rxPacketCount$ = IF rpn["n"] != "" THEN INT(rpn["n"], 10) ELSE NULL
+txPacketCount$ = IF tpn["n"] != "" THEN INT(tpn["n"], 10) ELSE NULL
+rxByteCount$ = IF ron["n"] != "" THEN INT(ron["n"], 10) ELSE NULL
+txByteCount$ = IF ton["n"] != "" THEN INT(ton["n"], 10) ELSE NULL
+
+# StartTime and EndTime look like Mon Oct  4 05:17:27 2021; EndTime is empty while the flow is open.
+st = IF isJson THEN STRING(json["$.start"]) ELSE STRING(kv["StartTime"])
+et = IF isJson THEN STRING(json["$.end"]) ELSE STRING(kv["EndTime"])
+startTimestampUsec$ = IF st != "" THEN DATETIME(st, "Mon Jan _2 15:04:05 2006") ELSE NULL
+endTimestampUsec$ = IF et != "" THEN DATETIME(et, "Mon Jan _2 15:04:05 2006") ELSE NULL
+
+natIp = STRING(kv["NATSrcIP"])
+natPort = STRING(kv["NATSrcPort"])
+natPortNum = natPort|^(?P<n>\d{1,5})$
+sourceNatAddress$ = IF natIp != "" THEN natIp ELSE NULL
+sourceNatPort$ = IF natPortNum["n"] != "" THEN INT(natPortNum["n"], 10) ELSE NULL
+
+# A WAN drop is traffic the stateful WAN interface dropped on the way in.
+dir = LOWERCASE(IF isJson THEN STRING(json["$.direction"]) ELSE STRING(kv["Direction"]))
+direction$ = NULL
+direction$ = IF dir == "outbound" THEN "OUTBOUND" ELSE direction$
+direction$ = IF dir == "inbound" OR wanDrop THEN "INBOUND" ELSE direction$
+act = LOWERCASE(IF isJson THEN STRING(json["$.action"]) ELSE STRING(kv["Action"]))
+flowAction$ = NULL
+flowAction$ = IF act == "allow" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "deny" OR act == "drop" OR wanDrop THEN "FW_BLOCKED" ELSE flowAction$
+
+r1.key$ = "log_type"
+textType = IF wanDrop THEN "Stateful WAN Drops" ELSE "Zone Based Firewall"
+r1.value$ = IF logType != "" THEN logType ELSE textType
+r2.key$ = "level"
+r2.value$ = level
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+eventMetadata$.record$ = IF level != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "reason"
+r3.value$ = IF isJson THEN STRING(json["$.reason"]) ELSE STRING(kv["Reason"])
+eventMetadata$.record$ = IF r3.value$ != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "from_zone"
+r4.value$ = IF isJson THEN STRING(json["$.fromZone"]) ELSE STRING(kv["FromZone"])
+eventMetadata$.record$ = IF r4.value$ != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "to_zone"
+r5.value$ = IF isJson THEN STRING(json["$.toZone"]) ELSE STRING(kv["ToZone"])
+eventMetadata$.record$ = IF r5.value$ != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "rule_tag"
+r6.value$ = IF isJson THEN STRING(json["$.tag"]) ELSE STRING(kv["Tag"])
+eventMetadata$.record$ = IF r6.value$ != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "overlay"
+r7.value$ = IF isJson THEN STRING(json["$.overlay"]) ELSE STRING(kv["Overlay"])
+eventMetadata$.record$ = IF r7.value$ != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "input_interface"
+r8.value$ = IF isJson THEN STRING(json["$.inputInt"]) ELSE STRING(kv["InputInt"])
+eventMetadata$.record$ = IF r8.value$ != "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+r9.key$ = "output_interface"
+r9.value$ = IF isJson THEN STRING(json["$.outputInt"]) ELSE STRING(kv["OutputInt"])
+eventMetadata$.record$ = IF r9.value$ != "" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+r10.key$ = "vrf"
+r10.value$ = IF isJson THEN STRING(json["$.vrfName"]) ELSE STRING(kv["VRFname"])
+eventMetadata$.record$ = IF r10.value$ != "" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
+r11.key$ = "flow_id"
+r11.value$ = IF isJson THEN STRING(json["$.flowId"]) ELSE STRING(kv["Flow-ID"])
+eventMetadata$.record$ = IF r11.value$ != "" THEN eventMetadata$.record$ + [r11] ELSE eventMetadata$.record$
+r12.key$ = "tcp_flags"
+r12.value$ = IF isJson THEN STRING(json["$.tcpFlags"]) ELSE STRING(kv["TCPFlags"])
+eventMetadata$.record$ = IF r12.value$ != "" THEN eventMetadata$.record$ + [r12] ELSE eventMetadata$.record$
+r13.key$ = "ip_tos"
+r13.value$ = IF isJson THEN STRING(json["$.ipTos"]) ELSE STRING(kv["IPTos"])
+eventMetadata$.record$ = IF r13.value$ != "" THEN eventMetadata$.record$ + [r13] ELSE eventMetadata$.record$
+# NAC fields from ClearPass; ECOS writes unknown when there is no match.
+r14.key$ = "user_name"
+r14.value$ = IF isJson THEN STRING(json["$.userName"]) ELSE STRING(kv["UserName"])
+eventMetadata$.record$ = IF r14.value$ != "" AND r14.value$ != "unknown" THEN eventMetadata$.record$ + [r14] ELSE eventMetadata$.record$
+r15.key$ = "user_device"
+r15.value$ = IF isJson THEN STRING(json["$.userDevice"]) ELSE STRING(kv["UserDevice"])
+eventMetadata$.record$ = IF r15.value$ != "" AND r15.value$ != "unknown" THEN eventMetadata$.record$ + [r15] ELSE eventMetadata$.record$
+r16.key$ = "source_role"
+r16.value$ = IF isJson THEN STRING(json["$.srcRole"]) ELSE STRING(kv["SrcRole"])
+eventMetadata$.record$ = IF r16.value$ != "" THEN eventMetadata$.record$ + [r16] ELSE eventMetadata$.record$
+r17.key$ = "destination_role"
+r17.value$ = IF isJson THEN STRING(json["$.dstRole"]) ELSE STRING(kv["DstRole"])
+eventMetadata$.record$ = IF r17.value$ != "" THEN eventMetadata$.record$ + [r17] ELSE eventMetadata$.record$
+r18.key$ = "description"
+r18.value$ = IF isJson THEN STRING(json["$.description"]) ELSE STRING(kv["Description"])
+eventMetadata$.record$ = IF r18.value$ != "" THEN eventMetadata$.record$ + [r18] ELSE eventMetadata$.record$
+r19.key$ = "packet_length"
+r19.value$ = IF isJson THEN STRING(json["$.len"]) ELSE STRING(kv["Len"])
+eventMetadata$.record$ = IF r19.value$ != "" THEN eventMetadata$.record$ + [r19] ELSE eventMetadata$.record$

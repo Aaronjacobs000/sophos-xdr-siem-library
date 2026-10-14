@@ -1,0 +1,23 @@
+!SAMPLE=Oct 13 22:47:20 2026 edge-syd-01 mgmtd[8463]: admin@192.0.2.5 action SYSTEM configureFirewallZone succeeded params:name=GUEST ,id=12 ,desc=Guest wireless zone
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking EdgeConnect SD-WAN appliance logs (ECOS), sent by the Orchestrator
+# Logging template's remote log receivers to the data collector.
+# Child of ARUBA_EDGECONNECT_SYSLOG_PARENT: appliance audit log lines (mgmtd) to Management Event.
+#   <user>@<address or -> action <category> <operation> <status> params:<name=value ,...>
+# audit, appliance, eventType$, sensorType$, hostId$, sensorId$ and eventTimeUsec$ come from the parent.
+
+channel$ = "EdgeConnect audit log"
+user = STRING(audit["user"])
+username$ = IF user != "" THEN user ELSE NULL
+# The user is Orchestrator, with - for the address, when Orchestrator made the change.
+from = STRING(audit["from"])
+clientHostname$ = IF from != "" AND from != "-" THEN from ELSE NULL
+targetHostname$ = appliance
+operationName$ = audit["op"]
+operation$ = audit["text"]
+result$ = audit["status"]
