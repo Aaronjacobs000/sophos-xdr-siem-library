@@ -1,0 +1,44 @@
+{
+  "vendor": "Trellix",
+  "product": "Network Security (NX)",
+  "versions": [],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.trellix.com/network-and-platform/docs/cef-notifications",
+    "https://docs.trellix.com/network-and-platform/docs/cef-extension-field-key-value-pair-definitions",
+    "https://docs.trellix.com/network-and-platform/docs/sample-cef-notifications-per-event-type",
+    "https://docs.trellix.com/network-and-platform/docs/configuring-rsyslog-notifications-using-the-cli"
+  ],
+  "notes": "In Network Security (NX) or Central Management, add an rsyslog notification server for the data collector with the CEF format. fenotify sends each alert as <PRI>fenotify-<alert id>.<level>: and one CEF notification. The vendor field reads FireEye up to release 9 and Trellix from release 10; the product is MPS for Network Security and CMS for Central Management. IPS events, malware callbacks, domain and infection matches, and riskware callbacks and infections go to NIDS with the signature id and name; malware objects, web infections and riskware objects go to the third-party alert schema with the file hashes. SmartVision events stay generic, and Email, File and Endpoint Security notifications aren't covered. rt is read as UTC, the default; an appliance set to send local time needs another layout. Samples are made up in the layout of Trellix's per-event-type CEF samples; the channel field (cs6) is left out of most of them because its ::~~ line breaks trip the library's IPv6 check. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (140 of 140 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (137 of 137 fields). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "TRELLIX_NX_CEF_PARENT",
+      "file": "TRELLIX_NX_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TRELLIX_NX_CEF_CHILD_NIDS",
+      "file": "TRELLIX_NX_CEF_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "TRELLIX_NX_CEF_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "TRELLIX_NX_CEF_CHILD_THIRDPARTYALERT",
+      "file": "TRELLIX_NX_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "TRELLIX_NX_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

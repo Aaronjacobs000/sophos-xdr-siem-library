@@ -1,0 +1,90 @@
+!SAMPLE=<164>fenotify-32.alert: CEF:0|Trellix|MPS|10.0.1.997401|MO|malware-object|4|rt=Oct 13 2026 02:41:48 UTC src=192.0.2.62 cn3Label=cncPort cn3=53 dpt=80 dst=203.0.113.91 fileHash=0d043e3acbc3af58970d3365b6f91d29 filePath=downloads.example.org/images/miscexes/0d043e3acbc3af58970d3365b6f91d29.exe cs5Label=cncHost cs5=wa3d.example.net dvchost=nx01.example.com cs3Label=osinfo cs3=Microsoft Windows10 64-bit 10.0 22H2 proto=tcp spt=3926 dvc=198.51.100.10 smac=00:50:56:00:00:62 cn1Label=vlan cn1=0 externalId=32 cs4Label=link cs4=https://nx01.example.com/event_stream/events_for_bot?ma_id\=32 act=notified dmac=00:02:b3:00:00:01 cs2Label=anomaly cs2=misc-anomaly cs1Label=sname cs1=Win.Trojan.Bifrose-194 devicePayloadId=d7563e4c-b4b4-433c-92e9-8591a225b1a5 fileType=exe sproc=Windows Explorer fsize=89282 fname=0d043e3acbc3af58970d3365b6f91d29.exe flexString1Label=sha256sum flexString1=9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf start=Oct 13 2026 02:36:18 UTC
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="object"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trellix Network Security CEF notifications.
+# Child of TRELLIX_NX_CEF_PARENT: malware objects, web infections and riskware objects that the
+# MVX engine analyzed, to the third-party alert schema.
+# v, code, evName, sevText, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = STRING(v[1])
+provider$ = "Trellix Network Security"
+alertId$ = STRING(v["externalId"])
+alertCategory$ = evName
+sname = STRING(v["cs1"])
+title$ = IF sname != "" THEN evName + ": " + sname ELSE evName
+fileName = STRING(v["fname"])
+summary$ = IF fileName != "" THEN sname + " in " + fileName ELSE title$
+
+# The header severity runs from 0 to 10.
+vendorSeverity$ = sevText
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sevText == "0" THEN "INFO" ELSE severity$
+severity$ = IF sevText == "1" OR sevText == "2" OR sevText == "3" THEN "LOW" ELSE severity$
+severity$ = IF sevText == "4" OR sevText == "5" OR sevText == "6" THEN "MEDIUM" ELSE severity$
+severity$ = IF sevText == "7" OR sevText == "8" THEN "HIGH" ELSE severity$
+severity$ = IF sevText == "9" OR sevText == "10" THEN "CRITICAL" ELSE severity$
+act = LOWERCASE(STRING(v["act"]))
+action$ = IF act == "blocked" THEN "BLOCKED" ELSE NULL
+
+src = STRING(v["src"])
+dst = STRING(v["dst"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+shost = STRING(v["shost"])
+sourceHostName$ = IF shost != "" THEN shost ELSE NULL
+
+# Web infections carry the page in filePath; objects carry where the file came from in request
+# or filePath.
+url = STRING(v["request"])
+url = IF url == "" AND code == "WI" THEN STRING(v["filePath"]) ELSE url
+destinationUrl$ = IF url != "" THEN url ELSE NULL
+
+d1.key$ = "event_type"
+d1.value$ = code
+d2.key$ = "product"
+d2.value$ = STRING(v[2])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "file_md5"
+d3.value$ = LOWERCASE(STRING(v["fileHash"]))
+additionalData$.record$ = IF d3.value$ != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "file_sha256"
+d4.value$ = LOWERCASE(STRING(v["flexString1"]))
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_name"
+d5.value$ = fileName
+additionalData$.record$ = IF fileName != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "file_type"
+d6.value$ = STRING(v["fileType"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "file_path"
+d7.value$ = STRING(v["filePath"])
+additionalData$.record$ = IF d7.value$ != "" AND code != "WI" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "os_info"
+d8.value$ = STRING(v["cs3"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "anomaly"
+d9.value$ = STRING(v["cs2"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "cnc_host"
+d10.value$ = STRING(v["cs5"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "alert_url"
+d11.value$ = STRING(v["cs4"])
+additionalData$.record$ = IF d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "victim_ipv6"
+d12.value$ = STRING(v["c6a2"])
+additionalData$.record$ = IF d12.value$ != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "attacker_ipv6"
+d13.value$ = STRING(v["c6a3"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$

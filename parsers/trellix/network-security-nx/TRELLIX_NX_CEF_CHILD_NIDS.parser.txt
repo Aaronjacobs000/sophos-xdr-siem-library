@@ -1,0 +1,78 @@
+!SAMPLE=<164>fenotify-12.alert: CEF:0|Trellix|MPS|10.0.1.997401|IE|ips-event|7|externalId=12 rt=Oct 13 2026 01:30:17 UTC proto=tcp src=203.0.113.25 spt=80 smac=00:17:a4:00:00:25 dst=192.0.2.43 dpt=51043 dmac=00:0c:29:00:00:43 cnt=1 cs1Label=sname cs1=Microsoft Internet Explorer XML Processing Memory Corruption act=blocked dvchost=nx01.example.com dvc=198.51.100.10 cn2=85302399 cn2Label=sid cfp1=12 cfp1Label=signature revision cs4=https://nx01.example.com/notification_url/ips_events?ev_id\=12 cs4Label=link flexString2=client flexString2Label=attack mode msg=MVX Correlation Status:N/A cn1=0 cn1Label=vlan
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="network"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trellix Network Security CEF notifications.
+# Child of TRELLIX_NX_CEF_PARENT: IPS events, malware callbacks, domain and infection matches and
+# riskware callbacks and infections to NIDS.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# v, code, evName, sevText, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(v["src"])
+dst = STRING(v["dst"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+proto = LOWERCASE(STRING(v["proto"]))
+protocol$ = IF proto == "tcp" THEN 6 ELSE NULL
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+
+# cs1 is the signature (malware) name, cn2 the signature id and cfp1 its revision.
+message$ = STRING(v["cs1"])
+classification$ = evName
+sidText = STRING(v["cn2"])
+sid = sidText|^(?P<n>\d{1,10})$
+signatureId$ = IF sid["n"] != "" THEN INT(sid["n"], 10) ELSE NULL
+revText = STRING(v["cfp1"])
+rev = revText|^(?P<n>\d{1,9})(?:\.0+)?$
+signatureRevision$ = IF rev["n"] != "" THEN INT(rev["n"], 10) ELSE NULL
+alertIdText = STRING(v["externalId"])
+alertId = alertIdText|^(?P<n>\d{1,10})$
+eventId$ = IF alertId["n"] != "" THEN INT(alertId["n"], 10) ELSE NULL
+vlanRaw = STRING(v["cn1"])
+vlanText = vlanRaw|^(?P<n>\d{1,4})$
+vlan$ = IF vlanText["n"] != "" THEN INT(vlanText["n"], 10) ELSE NULL
+act = LOWERCASE(STRING(v["act"]))
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF act == "blocked" THEN 1 ELSE 0
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+m1.key$ = "event_type"
+m1.value$ = code
+m2.key$ = "severity"
+m2.value$ = sevText
+m3.key$ = "product"
+m3.value$ = STRING(v[2])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "cnc_host"
+m4.value$ = STRING(v["cs5"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "cnc_port"
+m5.value$ = STRING(v["cn3"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "request"
+m6.value$ = STRING(v["request"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "attack_mode"
+m7.value$ = STRING(v["flexString2"])
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "alert_url"
+m8.value$ = STRING(v["cs4"])
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+# Over IPv6, Trellix names the victim and attacker addresses instead of src and dst.
+m9.key$ = "victim_ipv6"
+m9.value$ = STRING(v["c6a2"])
+eventMetadata$.record$ = IF m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "attacker_ipv6"
+m10.value$ = STRING(v["c6a3"])
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
