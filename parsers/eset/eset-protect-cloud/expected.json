@@ -1,0 +1,384 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791850951000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ANTIVIRUS",
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "threat_name": "Win32/Agent.EXAMPLE",
+      "vendor_alert_type": "Trojan",
+      "agent_priority": "MEDIUM",
+      "agent_device_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "user_name": "EXAMPLE\\akim",
+      "process_name": "C:\\Program Files\\WinRAR\\WinRAR.exe",
+      "file_path": "C:\\Users\\akim\\Downloads\\invoice_1013.exe",
+      "threat_type": "FILE",
+      "file_hash": {
+        "sha1": "5b97884a45c6c05f93b22c4059f3d9189e88e8b7"
+      },
+      "threat_category": "TROJAN",
+      "action_taken": "DELETED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "detection_uuid",
+            "value": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d41"
+          },
+          {
+            "key": "circumstances",
+            "value": "Event occurred on a newly created file."
+          },
+          {
+            "key": "response",
+            "value": "Cleaned by deleting"
+          },
+          {
+            "key": "protection",
+            "value": "Real-time file system protection"
+          },
+          {
+            "key": "object_type",
+            "value": "File"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791853512402000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ANTIVIRUS",
+      "host_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "threat_name": "Win32/Example.PUA",
+      "vendor_alert_type": "Potentially unwanted application",
+      "agent_priority": "LOW",
+      "agent_device_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "user_name": "EXAMPLE\\jlee",
+      "process_name": "C:\\Windows\\explorer.exe",
+      "file_path": "C:\\Users\\jlee\\Downloads\\toolbar_setup.exe",
+      "threat_type": "FILE",
+      "file_hash": {
+        "sha1": "0428e6d257d13987dfeeac6daf5cebbb5a5544ba",
+        "sha256": "9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf"
+      },
+      "threat_category": "APPLICATION",
+      "action_taken": "QUARANTINED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "detection_uuid",
+            "value": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d42"
+          },
+          {
+            "key": "circumstances",
+            "value": "Event occurred during an attempt to access the file by the application."
+          },
+          {
+            "key": "response",
+            "value": "Quarantined"
+          },
+          {
+            "key": "protection",
+            "value": "On-demand scanner"
+          },
+          {
+            "key": "object_type",
+            "value": "File"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791856029000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ANTIVIRUS",
+      "host_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "threat_name": "Win64/Filecoder.EXAMPLE",
+      "vendor_alert_type": "Ransomware",
+      "agent_priority": "HIGH",
+      "agent_device_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "user_name": "NT AUTHORITY\\SYSTEM",
+      "process_name": "C:\\Users\\Public\\svc\\updater.exe",
+      "file_path": "C:\\Users\\Public\\svc\\updater.exe",
+      "threat_type": "MEMORY",
+      "threat_category": "RANSOMWARE",
+      "action_taken": "NONE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "detection_uuid",
+            "value": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d43"
+          },
+          {
+            "key": "circumstances",
+            "value": "Event occurred during the execution of the application."
+          },
+          {
+            "key": "object_type",
+            "value": "Memory"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791857695000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "source_address": "203.0.113.60",
+      "destination_address": "192.0.2.41",
+      "source_port": 51544,
+      "destination_port": 3389,
+      "direction": "INBOUND",
+      "protocol": 6,
+      "message": "TCP Port scanning attack",
+      "classification": "TCP Port scanning attack",
+      "application_name": "System",
+      "action": "Blocked",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "detection_uuid",
+            "value": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d44"
+          },
+          {
+            "key": "category",
+            "value": "NETWORK_INTRUSION"
+          },
+          {
+            "key": "eset_severity",
+            "value": "MEDIUM"
+          },
+          {
+            "key": "circumstances",
+            "value": "Network attack detected."
+          },
+          {
+            "key": "protection",
+            "value": "Network attack protection (IDS)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791858700000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "source_address": "192.0.2.57",
+      "destination_address": "203.0.113.80",
+      "source_port": 50112,
+      "destination_port": 4444,
+      "direction": "OUTBOUND",
+      "protocol": 6,
+      "message": "Block outbound 4444",
+      "classification": "Firewall rule",
+      "application_name": "C:\\Users\\jlee\\AppData\\Local\\Temp\\helper.exe",
+      "source_username": "EXAMPLE\\jlee",
+      "action": "Blocked",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "detection_uuid",
+            "value": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d45"
+          },
+          {
+            "key": "category",
+            "value": "FIREWALL_RULE"
+          },
+          {
+            "key": "eset_severity",
+            "value": "LOW"
+          },
+          {
+            "key": "circumstances",
+            "value": "Communication denied by rule."
+          },
+          {
+            "key": "protection",
+            "value": "Firewall"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791860538000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "sub_provider": "Web access protection",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d46",
+      "alert_category": "WEB_ACCESS",
+      "title": "JS/Agent.EXAMPLE",
+      "summary": "JS/Agent.EXAMPLE: Event occurred during an attempt to access the web page.",
+      "target_host_name": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "source_user_name": "EXAMPLE\\mpatel",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "destination_url": "http://cdn.example.net/assets/loader.js",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9"
+          },
+          {
+            "key": "type_name",
+            "value": "Trojan"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "http://cdn.example.net/assets/loader.js"
+          },
+          {
+            "key": "response",
+            "value": "Connection terminated"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791862827000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "sub_provider": "HIPS",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d47",
+      "alert_category": "HIPS",
+      "title": "Suspicious registry modification",
+      "summary": "Suspicious registry modification: Attempt to modify a protected registry key.",
+      "target_host_name": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "source_user_name": "EXAMPLE\\jlee",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          },
+          {
+            "key": "type_name",
+            "value": "HIPS"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Users\\jlee\\AppData\\Roaming\\run32.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+          },
+          {
+            "key": "response",
+            "value": "Blocked"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791864723000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d48",
+      "alert_category": "CORRELATION_RULE",
+      "title": "Credential dumping from LSASS memory",
+      "summary": "Credential dumping from LSASS memory: Process accessed the memory of lsass.exe.",
+      "target_host_name": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "source_user_name": "EXAMPLE\\mpatel",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9"
+          },
+          {
+            "key": "type_name",
+            "value": "Correlation rule"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Users\\Public\\procdump64.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\Users\\Public\\procdump64.exe"
+          },
+          {
+            "key": "file_sha1",
+            "value": "f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791867600000000,
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70"
+    }
+  }
+]

@@ -1,0 +1,41 @@
+!SAMPLE={"eset_connect_record":"detection","uuid":"b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d41","category":"DETECTION_CATEGORY_ANTIVIRUS","context":{"circumstances":"Event occurred on a newly created file.","deviceUuid":"5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70","process":{"path":"C:\\Program Files\\WinRAR\\WinRAR.exe"},"userName":"EXAMPLE\\akim"},"displayName":"Win32/Agent.EXAMPLE","objectHashSha1":"5B97884A45C6C05F93B22C4059F3D9189E88E8B7","objectName":"C:\\Users\\akim\\Downloads\\invoice_1013.exe","objectTypeName":"File","objectUrl":"file:///C:/Users/akim/Downloads/invoice_1013.exe","occurTime":"2026-10-13T00:22:31Z","responses":[{"description":"The file was deleted.","deviceRestartRequired":false,"displayName":"Cleaned by deleting","protectionName":"Real-time file system protection"}],"severityLevel":"SEVERITY_LEVEL_MEDIUM","typeName":"Trojan"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"eset_connect_record"\s*:\s*"detection"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT (cloud) detections from the ESET Connect Incident Management API
+# (GET /v1/detections), pulled by the example collector in collectors/eset-connect and posted to
+# HTTP Ingest as JSON lines. The collector adds "eset_connect_record": "detection".
+# Parent: hands each detection to a child by its category.
+#   ANTIVIRUS                                                     to the Antivirus child
+#   FIREWALL_RULE, NETWORK_INTRUSION                              to the NIDS child
+#   HIPS, HIPS_RULE, WEB_ACCESS, SUSPICIOUS_ACTIVITY,
+#   CORRELATION_RULE (ESET Inspect)                               to the third-party alert child
+#   VULNERABILITY, APPLICATION_PATCH and UNSPECIFIED stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "ESET PROTECT"
+eventType$ = REPLACE(STRING(json["$.category"]), "DETECTION_CATEGORY_", "")
+severityName = REPLACE(STRING(json["$.severityLevel"]), "SEVERITY_LEVEL_", "")
+
+# A detection names its device only by UUID; the device name is in ESET's device management API.
+deviceUuid = STRING(json["$.context.deviceUuid"])
+hostId$ = IF deviceUuid != "" THEN deviceUuid ELSE NULL
+userName = STRING(json["$.context.userName"])
+processPath = STRING(json["$.context.process.path"])
+
+# occurTime is RFC 3339 in UTC, with or without fractional seconds.
+occur = STRING(json["$.occurTime"])
+om = occur|^(?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))$
+eventTimeUsec$ = IF om["t"] != "" THEN DATETIME(om["t"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+# The first response says how ESET handled the detection; a detection with no response is unhandled.
+responseName = STRING(json["$.responses[0].displayName"])
+responseText = LOWERCASE(responseName + " " + STRING(json["$.responses[0].description"]))
+protection = STRING(json["$.responses[0].protectionName"])
