@@ -1,0 +1,45 @@
+{
+  "vendor": "RSA",
+  "product": "SecurID Authentication Manager",
+  "versions": [
+    "8.x"
+  ],
+  "format": "csv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://community.rsa.com/s/article/Understanding-RSA-Authentication-Manager-logging-fields-when-they-are-forwarded-to-syslog",
+    "https://community.rsa.com/s/article/Configure-Logging-58ca49c3",
+    "https://community.rsa.com/s/article/Log-Messages-006683ec"
+  ],
+  "notes": "In the Security Console, go to Setup > System Settings > Logging, pick each instance and send the logs to the internal database and a remote syslog host (the Sophos NG-SIEM data collector). 8.4 and later forward with rsyslog, and 8.8 and later can use TLS. Each line holds comma-separated fields in the fixed positions of RSA's field map (KB 000059083 and its Syslog data explained attachment): runtime audit lines (authentications, sign-outs, lockouts, Operations Console sign-ins) go to Auth, and admin audit lines (users, groups, tokens, roles, policies, agents) and system log lines (configuration, replication, backups) go to CloudAudit, with the action key as the event name. RSA says the Argument fields change meaning by event and are for its engineers, so runtime arguments aren't mapped and system arguments are kept raw as argument1 to argument4; the user's own IP address isn't in the line, so source_address is the client (agent) IP. The time is the server's local time with no zone and is read as UTC: run the appliance on UTC or change the layout. Lockout lines are mapped from the action key but no public example shows their result field. Samples are built field by field from RSA's map and example line, and from the shapes of the public Splunk Connect for Syslog test lines, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (98 of 98 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (98 of 98 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "RSA_AM_CSV_PARENT",
+      "file": "RSA_AM_CSV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "RSA_AM_CSV_CHILD_AUTH",
+      "file": "RSA_AM_CSV_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "RSA_AM_CSV_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "RSA_AM_CSV_CHILD_CLOUDAUDIT",
+      "file": "RSA_AM_CSV_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "RSA_AM_CSV_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

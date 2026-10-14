@@ -1,0 +1,378 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791855687344000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c1d936a2e2e266a219d3d0a5504e8b21",
+      "auth_system": "RSA SecurID",
+      "source_address": "203.0.113.99",
+      "session_id": "b2f1cfbbe2e266a219d365ddeee97c55-r4Tq9WcLm2Vd",
+      "target_user_name": "pat.example",
+      "user_display_name": "Pat Example",
+      "target_host_name": "vpn-gw01.example.com",
+      "status": "AUTHN_METHOD_SUCCESS",
+      "sub_status": "AUTHN_LOGIN_EVENT",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "13002"
+          },
+          {
+            "key": "category",
+            "value": "audit.runtime.com.rsa.ims.authn.impl.AuthenticationBrokerImpl"
+          },
+          {
+            "key": "authn_method",
+            "value": "SecurID_Native"
+          },
+          {
+            "key": "agent_type",
+            "value": "7"
+          },
+          {
+            "key": "agent_address",
+            "value": "203.0.113.99"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          },
+          {
+            "key": "user_id",
+            "value": "fa127b2be2e266a21974b6f5ce9b0d17"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "event_time_usec": 1791855785118000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b7d547b3e2e266a219d3d0a5504f0a11",
+      "auth_system": "RSA SecurID",
+      "source_address": "203.0.113.99",
+      "session_id": "b747d0cce2e266a219d365ddeee98b15-Qm2pZr8KtWs4",
+      "target_user_name": "kim.lee",
+      "user_display_name": "Kim Lee",
+      "target_host_name": "vpn-gw01.example.com",
+      "status": "AUTHN_METHOD_FAILED",
+      "sub_status": "AUTHN_LOGIN_EVENT",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "13002"
+          },
+          {
+            "key": "category",
+            "value": "audit.runtime.com.rsa.ims.authn.impl.AuthenticationBrokerImpl"
+          },
+          {
+            "key": "authn_method",
+            "value": "SecurID_Native"
+          },
+          {
+            "key": "agent_type",
+            "value": "7"
+          },
+          {
+            "key": "agent_address",
+            "value": "203.0.113.99"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          },
+          {
+            "key": "user_id",
+            "value": "df4e8c3ce2e266a21974b6f5ce9cb3db"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791855951902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7b5f6d23339aa00a4d0fe9941370a1c9",
+      "auth_system": "RSA SecurID",
+      "source_address": "203.0.113.77",
+      "target_user_name": "ocadmin",
+      "status": "SUCCESS",
+      "sub_status": "OC_ADMIN_LOGIN_EVENT",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "13006"
+          },
+          {
+            "key": "category",
+            "value": "audit.runtime.sa.ims.web.operationsconsole.action.SecurityAction"
+          },
+          {
+            "key": "agent_type",
+            "value": "0"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791856092354000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "admin",
+      "sensor_event_id": "8a02aaa72e14640a0193cf72fa66c3d9",
+      "event_source": "RSA Authentication Manager",
+      "event_name": "CREATE_PRINCIPAL",
+      "source_address": "203.0.113.77",
+      "user_name": "sam.admin",
+      "user_id": "000000000000000000001000d0021000",
+      "management_event": true,
+      "read_only": false,
+      "status": "SUCCESS",
+      "resources": [
+        {
+          "resource_type": "PRINCIPAL",
+          "resource_id": "jo.nguyen"
+        }
+      ],
+      "target_user_name": "jo.nguyen",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "10051"
+          },
+          {
+            "key": "category",
+            "value": "audit.admin.com.rsa.ims.admin.impl.PrincipalAdministrationImpl"
+          },
+          {
+            "key": "log_level",
+            "value": "INFO"
+          },
+          {
+            "key": "session_id",
+            "value": "8a015e2c2e14640a017bb41dd94570e1-HkT2pQ8vRn3x"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791856233071000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "admin",
+      "sensor_event_id": "ad3f4a09339aa00a3325c4e6e7ef8e62",
+      "event_source": "RSA Authentication Manager",
+      "event_name": "AUTHMGR_FILE_CREATE",
+      "source_address": "203.0.113.77",
+      "user_name": "sam.admin",
+      "user_id": "000000000000000000001000d0021000",
+      "management_event": true,
+      "read_only": false,
+      "status": "SUCCESS",
+      "resources": [
+        {
+          "resource_type": "AM_FILE",
+          "resource_id": "node_secret.zip"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "20081"
+          },
+          {
+            "key": "category",
+            "value": "audit.admin.authmgr.FileDataAdministration"
+          },
+          {
+            "key": "log_level",
+            "value": "INFO"
+          },
+          {
+            "key": "session_id",
+            "value": "8d13e9f4339aa00a17ab4744de7c0b2a-E57wD7+hB6H1"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791856369665000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "system",
+      "sensor_event_id": "89f18b412e14640a02188b5e817f0c57",
+      "event_source": "RSA Authentication Manager",
+      "event_name": "CONF_VALUE_UPDATED",
+      "source_address": "203.0.113.77",
+      "user_name": "sam.admin",
+      "user_id": "000000000000000000001000d0021000",
+      "management_event": true,
+      "read_only": false,
+      "status": "SUCCESS",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "argument1",
+            "value": "ims.logging.system.use_os_logger"
+          },
+          {
+            "key": "argument2",
+            "value": "0000-Global-0000"
+          },
+          {
+            "key": "argument3",
+            "value": "1"
+          },
+          {
+            "key": "argument4",
+            "value": "Log system audit events to OS logger (syslog on UNIX platforms)"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "16256"
+          },
+          {
+            "key": "category",
+            "value": "system.com.rsa.ims.configuration.impl.ConfigurationServiceImpl"
+          },
+          {
+            "key": "log_level",
+            "value": "SYSTEM"
+          },
+          {
+            "key": "session_id",
+            "value": "89f046d22e14640a0237c653a591d2b8-pWm7Zt4Kq9Ls"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "RSA_AM_CSV_PARENT > RSA_AM_CSV_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RSA Authentication Manager",
+      "sensor_id": "am-primary",
+      "event_time_usec": 1791856504485000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "system",
+      "sensor_event_id": "5f0a1b2c339aa00a3325c4e6e7ef3a4b",
+      "event_source": "RSA Authentication Manager",
+      "event_name": "CONF_READ",
+      "source_address": "203.0.113.80",
+      "user_name": "helpdesk01",
+      "user_id": "000000000000000000001000d0031000",
+      "management_event": true,
+      "read_only": true,
+      "status": "FAIL",
+      "error_code": "INSUFFICIENT_PRIVILEGE",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "argument1",
+            "value": "0000-Global-0000"
+          },
+          {
+            "key": "argument2",
+            "value": "auth_manager.dashboard.hide.grpagent"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "16153"
+          },
+          {
+            "key": "category",
+            "value": "system.com.rsa.ims.configuration.impl.AuthorizationEnabledConfigurationServiceImpl"
+          },
+          {
+            "key": "log_level",
+            "value": "ERROR"
+          },
+          {
+            "key": "session_id",
+            "value": "4e9c2d1a339aa00a17ab4744de7d1c3b-fnIz0FpnFNO0"
+          },
+          {
+            "key": "server_ip",
+            "value": "198.51.100.46"
+          }
+        ]
+      }
+    }
+  }
+]

@@ -1,0 +1,34 @@
+!SAMPLE=Oct 13 01:41:27 am-primary 2026-10-13 01:41:27,344, , audit.runtime.com.rsa.ims.authn.impl.AuthenticationBrokerImpl, INFO, c1d936a2e2e266a219d3d0a5504e8b21,5aa0d1b2e2e266a20801cd23efb7319c,203.0.113.99,198.51.100.46,AUTHN_LOGIN_EVENT,13002,SUCCESS,AUTHN_METHOD_SUCCESS,b2f1cfbbe2e266a219d365ddeee97c55-r4Tq9WcLm2Vd,fa127b2be2e266a21974b6f5ce9b0d17,000000000000000000001000d0011000,000000000000000000001000e0011000,pat.example,Pat,Example,4b8da6e7e2e266a21bc6a77ef43a6610,000000000000000000001000e0011000,203.0.113.99,vpn-gw01.example.com,7,000000000000000000002000f1022000,SecurID_Native,,,AUTHN_LOGIN_EVENT,5,1,000000000000000000001000e0011000,SystemDomain,e01b70c3e2e266a21b9dcacfc6c9a2f4,SpED,31c2ab36e2e266a21a69868bc4b67e93,xxxxxxxx2776,,
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3},[^,]*,\s*(?:audit\.(?:runtime|admin)|system)\.[^,]+,\s*[A-Z]+,
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: RSA Authentication Manager 8.x audit and system logs forwarded to a remote syslog
+# host. After the syslog header each line is comma-separated fields in fixed positions, from
+# RSA's field map (KB 000059083, Syslog data explained):
+#   1 IMS server local time, 2 milliseconds, 3 server name (often blank), 4 category (the
+#   logger name), 5 log level, 6 event ID, 7 IMS server instance, 8 client IP, 9 server IP,
+#   10 action key, 11 action ID, 12 result, 13 reason, 14 session ID, then fields that depend
+#   on the category: runtime audit (40 fields), admin audit (32) or system log (27).
+# Parent: splits the fields and hands runtime audit lines (authentication) to the Auth child,
+# and admin audit and system log lines to the CloudAudit child.
+# Position N of RSA's map is f[N - 2] here, since the time and milliseconds come off first.
+
+m = originalData$|(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(?P<rest>.*)$
+f = SPLIT(m["rest"], ",")
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "RSA Authentication Manager"
+category = TRIM(f[2])
+action = TRIM(f[8])
+result = TRIM(f[10])
+reason = TRIM(f[11])
+# The IMS server's local time, with no zone. Read as UTC: run the appliance on UTC or change it.
+eventTimeUsec$ = DATETIME(m["ts"] + "." + TRIM(f[0]), "2006-01-02 15:04:05.000")
+
+kind = category|^(?P<k>audit\.runtime|audit\.admin|system)\.
+eventType$ = "system"
+eventType$ = IF kind["k"] == "audit.runtime" THEN "runtime" ELSE eventType$
+eventType$ = IF kind["k"] == "audit.admin" THEN "admin" ELSE eventType$
