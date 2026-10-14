@@ -1,0 +1,32 @@
+{
+  "vendor": "Trend Micro",
+  "product": "TippingPoint SMS",
+  "versions": [
+    "6"
+  ],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.trendmicro.com/en-us/documentation/article/security-management-system-6-5-1-syslog-log-types",
+    "https://docs.trendmicro.com/en-us/documentation/article/security-management-system-6-5-1-syslog-fields",
+    "https://docs.trendmicro.com/en-us/documentation/article/security-management-system-6-5-1-edit-syslog-settings",
+    "https://servicecentral.trendmicro.com/o-help/tip/sms/v6.1.0/en-us/splunk_getting_started_ug.pdf"
+  ],
+  "notes": "In the SMS, add a remote syslog entry for events (Admin > Server Properties > Syslog > Remote Syslog for Events) with the ArcSight CEF Format v4.2 log type and the delimiter set to Space. Every event, from IPS filters (block, permit, rate limit and trust) and reputation filters, goes to NIDS: the filter number and name, the category as classification, the flow control (act) as action, the VLAN and users, and in event_metadata the profile, policy and signature UUIDs, zones, hit count, URI and the TCIP or X-Forwarded-For client address. The event time is rt, in milliseconds. Trend Micro doesn't publish a populated v4.2 line, so the header (TippingPoint, UnityOne) and the labels follow the CEF template Trend publishes for the SMS, with the keys of the v4.2 column list; the parser reads the keys in any order. The SMS documents two severity scales (0 to 4, and 0, 1, 4, 7, 10 for ArcSight) and not which one v4.2 writes, so the header severity goes to event_metadata, not priority. SMS system and audit logs, logs an IPS device sends directly, and the deprecated formats aren't covered. Samples are made up in that shape. Passed Run Test in a lab tenant on 2026-10-14 (96 of 96 fields matched the emulator, in each of 2 runs). No built-in parser claimed these lines in 8 Run Tests.",
+  "parsers": [
+    {
+      "name": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS",
+      "file": "TRENDMICRO_TIPPINGPOINT_CEF_STANDALONE_NIDS.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.nids"
+    }
+  ]
+}
