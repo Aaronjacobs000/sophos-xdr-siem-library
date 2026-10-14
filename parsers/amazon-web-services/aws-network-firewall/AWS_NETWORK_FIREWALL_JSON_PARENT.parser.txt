@@ -1,0 +1,33 @@
+!SAMPLE={"firewall_name":"egress-fw-01","availability_zone":"ap-southeast-2a","event_timestamp":"1791927605","event":{"timestamp":"2026-10-13T21:40:05.118204+0000","flow_id":1043925713288416,"event_type":"alert","src_ip":"192.0.2.41","src_port":51872,"dest_ip":"203.0.113.77","dest_port":443,"proto":"TCP","app_proto":"tls","tx_id":0,"alert":{"action":"blocked","signature_id":1000021,"rev":3,"signature":"Block TLS to denylisted domain","category":"","severity":3},"verdict":{"action":"drop"},"tls":{"sni":"files.example.net","version":"TLS 1.3"},"direction":"to_server","aws_metadata":{"resource_arn":"arn:aws:network-firewall:ap-southeast-2:111122223333:stateful-rulegroup/egress-domain-denylist"}}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"firewall_name"\s*:\s*"[^"]*"\s*,\s*"availability_zone"\s*:\s*"[^"]*"\s*,\s*"event_timestamp"\s*:
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AWS Network Firewall alert, flow and TLS logs, one JSON record per line, through S3 Ingest.
+# Each record wraps a Suricata EVE event: firewall_name, availability_zone, event_timestamp and event.
+# Parent: recognizes every Network Firewall record and hands the parsed JSON to its children.
+# alert events go to NIDS and netflow events to Netflow; TLS log records stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+eventType$ = json["$.event.event_type"]
+sensorType$ = "AWS Network Firewall"
+hostId$ = json["$.firewall_name"]
+
+# event.timestamp is the EVE time with a zone offset (alert and flow) or a Z (TLS).
+eventTimeUsec$ = DATETIME(json["$.event.timestamp"], "2006-01-02T15:04:05.999999999Z0700")
+
+# protocol takes the IANA number; EVE logs a name.
+proto = UPPERCASE(STRING(json["$.event.proto"]))
+protoNumber = NULL
+protoNumber = IF proto == "TCP" THEN 6 ELSE protoNumber
+protoNumber = IF proto == "UDP" THEN 17 ELSE protoNumber
+protoNumber = IF proto == "ICMP" THEN 1 ELSE protoNumber
+protoNumber = IF proto == "IPV6-ICMP" THEN 58 ELSE protoNumber
+protoNumber = IF proto == "SCTP" THEN 132 ELSE protoNumber
+protoNumber = IF proto == "GRE" THEN 47 ELSE protoNumber
