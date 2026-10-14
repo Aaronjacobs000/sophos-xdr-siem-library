@@ -1,0 +1,78 @@
+!SAMPLE=<30>Oct 13 22:50:09 swg01 mwg: [13/Oct/2026:22:50:09 +0000] "akumar" 192.0.2.72 403 "GET http://files.example.net/tools/agent.exe HTTP/1.1" "Malicious Sites" "High Risk" "application/x-msdownload" 3920 388 "curl/8.5.0" "" "10" ""
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\[\d{2}/[A-Z][a-z]{2}/\d{4}:\d{2}:\d{2}:\d{2} [+-]\d{4}\] "[^"]*" \S+ (?:\d{3}|-) "[^"]*" "[^"]*" "[^"]*" "[^"]*" (?:\d+|-) 
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Skyhigh Secure Web Gateway (formerly McAfee Web Gateway), the default access log line
+# sent to syslog by a Syslog event next to the Write access.log rule (tag mwg, facility daemon).
+# Standalone parser for the HTTP schema. Fields, from the default access log header:
+#   [time_stamp] "auth_user" src_ip status_code "req_line" "categories" "rep_level" "media_type"
+#   bytes_to_client bytes_from_client "user_agent" "virus_name" "block_res" "application_name"
+# Older defaults leave out bytes_from_client and application_name; both are optional here.
+
+m = originalData$|\[(?P<ts>\d{2}/[A-Z][a-z]{2}/\d{4}:\d{2}:\d{2}:\d{2} [+-]\d{4})\] "(?P<user>[^"]*)" (?P<src>\S+) (?P<status>\S+) "(?P<req>[^"]*)" "(?P<cat>[^"]*)" "(?P<rep>[^"]*)" "(?P<mt>[^"]*)" (?P<toClient>\S+)(?: (?P<fromClient>\d+|-))? "(?P<ua>[^"]*)" "(?P<virus>[^"]*)" "?(?P<block>\d+)"?(?: "(?P<app>[^"]*)")?\s*$
+
+sensorType$ = "Skyhigh Secure Web Gateway"
+# time_stamp is the Web Reporter format with the appliance's UTC offset: 08/Aug/2014:15:29:41 +0000.
+eventTimeUsec$ = DATETIME(m["ts"], "02/Jan/2006:15:04:05 -0700")
+
+src = m["src"]
+sourceAddress$ = IF src != "" AND src != "-" THEN src ELSE NULL
+user = m["user"]
+sourceUsername$ = IF user != "" AND user != "-" THEN user ELSE NULL
+status = m["status"]|^(?P<n>\d{3})$
+responseCode$ = IF status["n"] != "" THEN INT(status["n"], 10) ELSE NULL
+ua = m["ua"]
+userAgent$ = IF ua != "" THEN ua ELSE NULL
+
+# bytes_to_client is what the client received and bytes_from_client what it sent.
+toClient = m["toClient"]|^(?P<n>\d+)$
+fromClient = m["fromClient"]|^(?P<n>\d+)$
+rxByteCount$ = IF toClient["n"] != "" THEN INT(toClient["n"], 10) ELSE NULL
+txByteCount$ = IF fromClient["n"] != "" THEN INT(fromClient["n"], 10) ELSE NULL
+
+# The request line: GET http://host/path HTTP/1.1, or CONNECT host:443 HTTP/1.1 for a tunnel.
+req = m["req"]|^(?P<method>\S+) (?P<url>\S+)(?: (?P<version>\S+))?$
+httpMethod$ = req["method"]
+url = URL_PARSE(req["url"], TRUE)
+uriScheme$ = url["scheme"]
+uriHostRaw$ = url["host_raw"]
+uriHost$ = url["host"]
+uriPort$ = url["port"]
+uriPathRaw$ = url["path_raw"]
+uriPath$ = url["path"]
+uriQueryRaw$ = url["query_raw"]
+uriQuery$ = url["query"]
+
+# The docs pair IDX_OF_TLD() with indexOfTopPrivateDomain$.
+tld = IDX_OF_TLD(url["host"])
+indexOfTopPrivateDomain$ = tld
+isTopPrivateDomainParsed$ = tld != -1
+
+# block_res is the ID of the block reason for the request; 0 means it was allowed.
+block = m["block"]
+denied = block != "" AND block != "0"
+sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+blocked$ = IF denied THEN 1 ELSE 0
+
+r1.key$ = "block_reason_id"
+r1.value$ = block
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r2.key$ = "url_categories"
+r2.value$ = m["cat"]
+eventMetadata$.record$ = IF m["cat"] != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "reputation"
+r3.value$ = m["rep"]
+eventMetadata$.record$ = IF m["rep"] != "" AND m["rep"] != "-" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "media_type"
+r4.value$ = m["mt"]
+eventMetadata$.record$ = IF m["mt"] != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "virus_name"
+r5.value$ = m["virus"]
+eventMetadata$.record$ = IF m["virus"] != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "application_name"
+r6.value$ = m["app"]
+eventMetadata$.record$ = IF m["app"] != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
