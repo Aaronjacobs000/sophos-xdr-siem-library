@@ -1,0 +1,299 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOE",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "event_time_usec": 1791936000000000,
+      "event_time_fidelity": "MICRO",
+      "title": "C-PASSWORD-DONT-EXPIRE",
+      "alert_category": "Indicator of Exposure",
+      "log_type": "IoE",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "alert_id": "28",
+      "vendor_severity": "medium",
+      "severity": "MEDIUM",
+      "summary": "C-PASSWORD-DONT-EXPIRE (R-DONT-EXPIRE-SET) on CN=Pat Example,OU=Staff,DC=corp,DC=example,DC=com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "ad_object",
+            "value": "CN=Pat Example,OU=Staff,DC=corp,DC=example,DC=com"
+          },
+          {
+            "key": "reason_codename",
+            "value": "R-DONT-EXPIRE-SET"
+          },
+          {
+            "key": "profile_id",
+            "value": "1"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "1"
+          },
+          {
+            "key": "event_id",
+            "value": "2434"
+          },
+          {
+            "key": "insertion_strings",
+            "value": "\"TrusteeCn\"=\"Pat Example\""
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOE",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "sensor_id": "tie.example.com",
+      "event_time_usec": 1791864690000000,
+      "event_time_fidelity": "MICRO",
+      "title": "C-SLEEPING-ACCOUNTS",
+      "alert_category": "Indicator of Exposure",
+      "log_type": "IoE",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "alert_id": "1413163",
+      "vendor_severity": "low",
+      "severity": "LOW",
+      "summary": "C-SLEEPING-ACCOUNTS (R-SLEEPING-ACCOUNT-NEVER-LOGON) on CN=Old Service,OU=Users,DC=corp,DC=example,DC=com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "ad_object",
+            "value": "CN=Old Service,OU=Users,DC=corp,DC=example,DC=com"
+          },
+          {
+            "key": "reason_codename",
+            "value": "R-SLEEPING-ACCOUNT-NEVER-LOGON"
+          },
+          {
+            "key": "profile_id",
+            "value": "2"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "1"
+          },
+          {
+            "key": "event_id",
+            "value": "1032473"
+          },
+          {
+            "key": "insertion_strings",
+            "value": "\"Cn\"=\"Old Service\" \"WhenCreated\"=\"2024-10-27T05:05:57.0000000Z\" \"PeriodInDays\"=\"365\""
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOE",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "sensor_id": "tie.example.com",
+      "event_time_usec": 1791864765000000,
+      "event_time_fidelity": "MICRO",
+      "title": "C-UNCONST-DELEG",
+      "alert_category": "Indicator of Exposure",
+      "log_type": "IoE",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "alert_id": "24980",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "summary": "C-UNCONST-DELEG (R-UNCONST-DELEG) on CN=APP-SRV-07,OU=Servers,DC=corp,DC=example,DC=com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "ad_object",
+            "value": "CN=APP-SRV-07,OU=Servers,DC=corp,DC=example,DC=com"
+          },
+          {
+            "key": "reason_codename",
+            "value": "R-UNCONST-DELEG"
+          },
+          {
+            "key": "profile_id",
+            "value": "1"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "3"
+          },
+          {
+            "key": "event_id",
+            "value": "40667"
+          },
+          {
+            "key": "insertion_strings",
+            "value": "\"Cn\"=\"APP-SRV-07\" \"useraccountcontrol\"=\"WORKSTATION_TRUST_ACCOUNT \\\"TRUSTED_FOR_DELEGATION\\\"\""
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOA",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "event_time_usec": 1791936000000000,
+      "event_time_fidelity": "MICRO",
+      "title": "DC Sync",
+      "alert_category": "Indicator of Attack",
+      "log_type": "IoA",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "source_host_name": "WS-0042",
+      "source_address": "198.51.100.23",
+      "target_host_name": "DC01",
+      "destination_address": "192.0.2.10",
+      "target_user_name": "pexample",
+      "summary": "DC Sync from WS-0042 (198.51.100.23) against DC01 (192.0.2.10)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "1337"
+          },
+          {
+            "key": "dc_name",
+            "value": "DC01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOA",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "sensor_id": "tie.example.com",
+      "event_time_usec": 1791865330000000,
+      "event_time_fidelity": "MICRO",
+      "title": "Kerberoasting",
+      "alert_category": "Indicator of Attack",
+      "log_type": "IoA",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "source_address": "203.0.113.45",
+      "target_host_name": "DC02",
+      "destination_address": "192.0.2.11",
+      "target_user_name": "svc-scan",
+      "summary": "Kerberoasting from Unknown (203.0.113.45) against DC02 (192.0.2.11)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "1338"
+          },
+          {
+            "key": "dc_name",
+            "value": "DC02"
+          },
+          {
+            "key": "ioa_url",
+            "value": "https://tie.example.com/profile/tenable/indicators-of-attacks/incidents?incident=4412"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT > TENABLE_IE_SYSLOG_CHILD_IOA",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "sensor_id": "tie.example.com",
+      "event_time_usec": 1791865500000000,
+      "event_time_fidelity": "MICRO",
+      "title": "I-PasswordSpraying",
+      "alert_category": "Indicator of Attack",
+      "log_type": "IoA",
+      "vendor": "Tenable",
+      "provider": "Tenable Identity Exposure",
+      "domain_name": "corp.example.com",
+      "vendor_severity": "medium",
+      "severity": "MEDIUM",
+      "source_host_name": "LAPTOP-17",
+      "source_address": "2001:db8::17",
+      "target_host_name": "DC01",
+      "destination_address": "2001:db8::10",
+      "summary": "I-PasswordSpraying from LAPTOP-17 (2001:db8::17) against DC01 (2001:db8::10)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "forest",
+            "value": "Example Forest"
+          },
+          {
+            "key": "tenable_alert_id",
+            "value": "1339"
+          },
+          {
+            "key": "dc_name",
+            "value": "DC01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TENABLE_IE_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Tenable Identity Exposure",
+      "event_time_usec": 1791936000000000
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

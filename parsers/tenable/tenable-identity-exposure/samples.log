@@ -1,0 +1,8 @@
+<116>Oct 13 04:10:00 tie.example.com TenableAD[4]: "0" "1" "Example Forest" "corp.example.com" "C-PASSWORD-DONT-EXPIRE" "medium" "CN=Pat Example,OU=Staff,DC=corp,DC=example,DC=com" "28" "1" "R-DONT-EXPIRE-SET" "2434" "TrusteeCn"="Pat Example"
+Oct 13 04:11:30 tie.example.com TenableAD[4]: "0" "1" "Example Forest" "corp.example.com" "C-SLEEPING-ACCOUNTS" "low" "CN=Old Service,OU=Users,DC=corp,DC=example,DC=com" "1413163" "2" "R-SLEEPING-ACCOUNT-NEVER-LOGON" "1032473" "Cn"="Old Service" "WhenCreated"="2024-10-27T05:05:57.0000000Z" "PeriodInDays"="365"
+Oct 13 04:12:45 tie.example.com TenableAD[4]: "0" "3" "Example Forest" "corp.example.com" "C-UNCONST-DELEG" "critical" "CN=APP-SRV-07,OU=Servers,DC=corp,DC=example,DC=com" "24980" "1" "R-UNCONST-DELEG" "40667" "Cn"="APP-SRV-07" "useraccountcontrol"="WORKSTATION_TRUST_ACCOUNT \"TRUSTED_FOR_DELEGATION\""
+<116>Oct 13 04:20:00 tie.example.com TenableAD[4]: "2" "1337" "Example Forest" "corp.example.com" "DC Sync" "critical" "WS-0042" "198.51.100.23" "DC01" "192.0.2.10" "user"="pexample" "dc_name"="DC01"
+Oct 13 04:22:10 tie.example.com TenableAD[4]: "2" "1338" "Example Forest" "corp.example.com" "Kerberoasting" "high" "Unknown" "203.0.113.45" "DC02" "192.0.2.11" "user"="svc-scan" "dc_name"="DC02" "IOA_url"="https://tie.example.com/profile/tenable/indicators-of-attacks/incidents?incident=4412"
+Oct 13 04:25:00 tie.example.com AlsidForAD[4]: "2" "1339" "Example Forest" "corp.example.com" "I-PasswordSpraying" "medium" "LAPTOP-17" "2001:db8::17" "DC01" "2001:db8::10" "dc_name"="DC01"
+<109>Oct 13 04:30:00 tie.example.com TenableAD[4]: "3" "26" "HC-DOMAIN-DATA-COLLECTION" "SUCCESS" "Example Domain"
+Oct 13 04:31:00 tie.example.com chronyd[612]: Selected source 192.0.2.123

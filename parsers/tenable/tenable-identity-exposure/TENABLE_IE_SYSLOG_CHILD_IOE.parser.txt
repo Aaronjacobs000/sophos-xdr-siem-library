@@ -1,0 +1,48 @@
+!SAMPLE=<116>Oct 13 04:10:00 tie.example.com TenableAD[4]: "0" "1" "Example Forest" "corp.example.com" "C-PASSWORD-DONT-EXPIRE" "medium" "CN=Pat Example,OU=Staff,DC=corp,DC=example,DC=com" "28" "1" "R-DONT-EXPIRE-SET" "2434" "TrusteeCn"="Pat Example"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ioe"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable Identity Exposure syslog alerts.
+# Child of TENABLE_IE_SYSLOG_PARENT: Indicator of Exposure deviances (type 0) to ThirdPartyAlert.
+# After the common fields come the deviant object's distinguished name, the deviance ID, the
+# profile ID, the reason codename and the event ID, then "name"="value" insertion strings.
+# h, f, forest, domain, code, sev, tail, p1 to p4, alertConfigId, eventType$ and sensorType$
+# come from the parent.
+
+title$ = code
+alertCategory$ = "Indicator of Exposure"
+logType$ = "IoE"
+vendor$ = "Tenable"
+provider$ = "Tenable Identity Exposure"
+domainName$ = domain
+alertId$ = p2
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "low" THEN "LOW" ELSE severity$
+severity$ = IF sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+summary$ = code + " (" + p4 + ") on " + p1
+
+e = tail|^\s"(?P<eventid>\d+)"\s*(?P<strings>.*)$
+a1.key$ = "forest"
+a1.value$ = forest
+a2.key$ = "ad_object"
+a2.value$ = p1
+a3.key$ = "reason_codename"
+a3.value$ = p4
+a4.key$ = "profile_id"
+a4.value$ = p3
+a5.key$ = "tenable_alert_id"
+a5.value$ = alertConfigId
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4, a5]
+a6.key$ = "event_id"
+a6.value$ = e["eventid"]
+additionalData$.record$ = IF e["eventid"] != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "insertion_strings"
+a7.value$ = e["strings"]
+additionalData$.record$ = IF e["strings"] != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$

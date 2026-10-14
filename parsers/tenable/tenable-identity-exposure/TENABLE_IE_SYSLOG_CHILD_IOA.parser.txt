@@ -1,0 +1,50 @@
+!SAMPLE=<116>Oct 13 04:20:00 tie.example.com TenableAD[4]: "2" "1337" "Example Forest" "corp.example.com" "DC Sync" "critical" "WS-0042" "198.51.100.23" "DC01" "192.0.2.10" "user"="pexample" "dc_name"="DC01"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ioa"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable Identity Exposure syslog alerts.
+# Child of TENABLE_IE_SYSLOG_PARENT: Indicator of Attack alerts (type 2), such as DC Sync,
+# DCShadow, Golden Ticket, Kerberoasting and password spraying, to ThirdPartyAlert. After the
+# common fields come the source hostname (or Unknown), source IP, destination hostname and
+# destination IP, then "name"="value" pairs such as user, dc_name and IOA_url. The codename is
+# the display name ("DC Sync") or the feed name (I-DCSync).
+# h, f, forest, domain, code, sev, tail, p1 to p4, alertConfigId, eventType$ and sensorType$
+# come from the parent.
+
+title$ = code
+alertCategory$ = "Indicator of Attack"
+logType$ = "IoA"
+vendor$ = "Tenable"
+provider$ = "Tenable Identity Exposure"
+domainName$ = domain
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "low" THEN "LOW" ELSE severity$
+severity$ = IF sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+sourceHostName$ = IF p1 != "" AND p1 != "Unknown" THEN p1 ELSE NULL
+sourceAddress$ = IF p2 != "" THEN p2 ELSE NULL
+targetHostName$ = IF p3 != "" AND p3 != "Unknown" THEN p3 ELSE NULL
+destinationAddress$ = IF p4 != "" THEN p4 ELSE NULL
+u = tail|"user"="(?P<v>(?:[^"\\]|\\.)*)"
+targetUserName$ = IF u["v"] != "" THEN REPLACE(u["v"], `\"`, `"`) ELSE NULL
+dc = tail|"dc_name"="(?P<v>(?:[^"\\]|\\.)*)"
+url = tail|"IOA_url"="(?P<v>(?:[^"\\]|\\.)*)"
+summary$ = code + " from " + p1 + " (" + p2 + ") against " + p3 + " (" + p4 + ")"
+
+a1.key$ = "forest"
+a1.value$ = forest
+a2.key$ = "tenable_alert_id"
+a2.value$ = alertConfigId
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "dc_name"
+a3.value$ = dc["v"]
+additionalData$.record$ = IF dc["v"] != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "ioa_url"
+a4.value$ = url["v"]
+additionalData$.record$ = IF url["v"] != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
