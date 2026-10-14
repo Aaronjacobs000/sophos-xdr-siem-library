@@ -34,6 +34,21 @@ function topLevelString(s, opts, where, notes) {
   return v;
 }
 
+// With TRIM_ALL on, a record in a top-level string field has each text member trimmed the way
+// TRIM_ALL trims a field: r.c$ = " (y) " is written as "y". A member that is a record or a list,
+// or a record inside a list, isn't trimmed (checked in a lab tenant).
+function trimMembers(rec, where, notes) {
+  let braces = false;
+  const fields = new Map([...rec.fields].map(([k, x]) => {
+    if (typeof x !== 'string') return [k, x];
+    const t = trimPairs(x, false);
+    if (t !== x.replace(/^[ \t\n]+|[ \t\n]+$/g, '')) braces = true;
+    return [k, t];
+  }));
+  if (braces) notes.push({ level: 'warning', code: 'trim-braces', field: where, message: `${where}: TRIM_ALL removed the enclosing brackets or quotes from text members of the record stored here. Add !TRIMALLOFF if they should keep them.` });
+  return new RecordValue(fields);
+}
+
 // Lists into a string field come out comma-joined without quotes.
 function joinList(list) {
   return list.map((x) => (x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x instanceof JsonValue ? x : x))).join(',');
@@ -55,6 +70,7 @@ function asString(v, where, notes, opts, top) {
     return toStr(v);
   }
   if (v instanceof JsonValue && v.doc) return '{}';
+  if (v instanceof RecordValue && top && opts.trim) return stringOf(trimMembers(v, where, notes));
   if (isList(v)) return joinList(v);
   if (v instanceof JsonValue && Array.isArray(v.value)) return joinList(v.value);
   if (v instanceof JsonValue || v instanceof ObjValue || v instanceof RecordValue) return stringOf(v);
@@ -152,19 +168,22 @@ function asEnum(v, type, where, notes, opts, top, parserField) {
   throw new RuntimeError(`Field ${parserField} value ${JSON.stringify(toPlain(v))}: not a ${type} name or number (${members.join(', ')}). The engine fails the event.`, 'enum');
 }
 
+// An object such as a CEF() value with sub-fields set on it, as in c.key$ = "k", works like a
+// record: the engine stores the sub-fields and drops its other keys (checked in a lab tenant).
 function asMessage(v, type, where, notes, opts, parserField) {
   const def = messageType(type);
-  if (!(v instanceof RecordValue)) {
+  const members = v instanceof RecordValue ? v.fields : v instanceof ObjValue ? v.map : null;
+  if (!members) {
     notes.push({ level: 'error', code: 'type', field: where, message: `${where}: ${type} needs sub-fields set one by one (for example ${parserField}.<sub>$ = ...)` });
     return undefined;
   }
   if (!def) {
     notes.push({ level: 'info', code: 'opaque-type', field: where, message: `${where}: the ${type} type isn't published, so its sub-fields aren't checked` });
-    return Object.fromEntries([...v.fields].map(([k, x]) => [k.replace(/\$$/, ''), toPlain(x)]));
+    return Object.fromEntries([...members].map(([k, x]) => [k.replace(/\$$/, ''), toPlain(x)]));
   }
   const out = {};
   let stopped = false;
-  for (const [k, x] of v.fields) {
+  for (const [k, x] of members) {
     const sub = def.find((f) => f.parser === k);
     if (!sub) {
       notes.push({ level: 'warning', code: 'sub-field', field: where, message: `${where}.${k} is not a field of ${type} (fields: ${def.map((f) => f.parser).join(', ')}). The engine drops it.` });

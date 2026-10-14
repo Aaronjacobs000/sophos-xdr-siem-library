@@ -502,7 +502,7 @@ test('the generic schema stores sensorVersion$ as sensor_version', () => {
   assert.equal(r.normalized.sensor_version, '1.2.3');
 });
 
-test('a string field stores the value JSON() returned as {}, and an object the way STRING() writes it', () => {
+test('a string field stores the value JSON() returned as {}, and an object the way STRING() writes it, alone or joined to text', () => {
   // What the engine stored for each field in a lab tenant, with and without !TRIMALLOFF.
   const code = `!CONFIRMWITH=PATTERN
 !CONFIRMSTRING=ZZPROBER5C
@@ -523,7 +523,11 @@ providerVersion$ = k
 ontology$ = r
 domainName$ = j["$.c"]
 confidence$ = j["$.e"]
-actionReason$ = "pre-" + j["$.e"]`;
+actionReason$ = "pre-" + j["$.e"]
+logType$ = "pre-" + p
+provider$ = "pre-" + c
+sessionId$ = "pre-" + r
+status$ = "pre-" + j["$.c"]`;
   const line = 'ZZPROBER5C {"b":"<x>&","a":null,"c":[1,null,"y<"],"d":{"z":1,"y":true,"x":null,"w":"q>"},"e":{}} CEF:0|V<|P|1|100|N|5|src=192.0.2.1 msg=a<b>&c act=x';
   const want = {
     title: '{}',
@@ -536,14 +540,35 @@ actionReason$ = "pre-" + j["$.e"]`;
     domain_name: '1,,y<',
     confidence: '{}',
     action_reason: 'pre-{}',
+    log_type: 'pre-{"w":"q\\u003e","x":0,"y":true,"z":1}',
+    provider: 'pre-{"0":"CEF:0","1":"V\\u003c","2":"P","3":"1","4":"100","5":"N","6":"5","act":"x","msg":"a\\u003cb\\u003e\\u0026c","src":"192.0.2.1"}',
+    session_id: 'pre-{"a$":0,"b$":"\\u003cr\\u003e"}',
+    // An array part joined to text adds as a list, so the string field joins its items.
+    status: 'pre-,1,,y<',
   };
   for (const trim of ['!TRIMALLOFF\n', '']) {
     const [r] = runParsers([{ name: 'P', text: trim + code }], [line], { now: NOW });
-    // With TRIM_ALL on, the engine also took the <> off the record's member, which the emulator
-    // doesn't do.
-    const keys = Object.keys(want).filter((k) => trim || k !== 'ontology');
-    assert.deepEqual(Object.fromEntries(keys.map((k) => [k, r.normalized[k]])), Object.fromEntries(keys.map((k) => [k, want[k]])), trim || 'TRIM_ALL on');
+    // With TRIM_ALL on, the engine also took the <> off the member of the record stored in
+    // ontology$. sessionId$ keeps them: it became text before TRIM_ALL ran.
+    const w = trim ? want : { ...want, ontology: '{"a$":0,"b$":"r"}' };
+    assert.deepEqual(Object.fromEntries(Object.keys(w).map((k) => [k, r.normalized[k]])), w, trim || 'TRIM_ALL on');
   }
+});
+
+test('with TRIM_ALL on, a record in a string field has its text members trimmed, and nothing deeper', () => {
+  // What the engine stored in a lab tenant.
+  const run1 = (flags, body) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER6E\n!SCHEMA=scwx.thirdpartyalert\n${flags}\nsummary$ = "ok"\n${body}` }], ['ZZPROBER6E line'], { now: NOW })[0].normalized.ontology;
+  assert.equal(run1('', 'r.a.b$ = " <x> "\nr.c$ = " (y) "\nontology$ = r'), '{"a":{"b$":" \\u003cx\\u003e "},"c$":"y"}');
+  assert.equal(run1('', 'r.l$ = [" <x> "]\nr.n$ = "N/A"\nr.s$ = " s "\nontology$ = r'), '{"l$":[" \\u003cx\\u003e "],"n$":"N/A","s$":"s"}');
+  assert.equal(run1('!TRIMALLOFF', 'r.l$ = [" <x> "]\nr.n$ = "N/A"\nr.s$ = " s "\nontology$ = r'), '{"l$":[" \\u003cx\\u003e "],"n$":"N/A","s$":" s "}');
+});
+
+test('a record list takes a CEF object with the record\'s sub-fields set on it', () => {
+  // The engine stored the key and value and dropped the CEF keys, and r kept them (checked in a
+  // lab tenant).
+  const [r] = runParsers([{ name: 'P', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER5E\n!SCHEMA=scwx.thirdpartyalert\nr = CEF("CEF:0|V|P|1|100|N|5|a=b")\nr.key$ = "k"\nr.value$ = "v"\nadditionalData$.record$ = [r]\ntitle$ = r["a"]' }], ['ZZPROBER5E line'], { now: NOW });
+  assert.deepEqual(r.normalized.additional_data, { record: [{ key: 'k', value: 'v' }] });
+  assert.equal(r.normalized.title, 'b');
 });
 
 test('the event time settles like the engine: the ingest time when missing, a future time moved back or replaced', () => {

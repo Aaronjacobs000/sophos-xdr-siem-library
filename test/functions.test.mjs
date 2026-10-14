@@ -287,7 +287,7 @@ test('capture statements, numbered and named groups', () => {
   assert.equal(v.get('msg'), 'disk almost full');
   assert.throws(() => run('m = s|(a)(b)\nx = m[3]', { s: 'ab' }), /out of range/);
   assert.throws(() => run('m = s|(?P<x>a)\nx = m["y"]', { s: 'a' }), /not in the pattern/);
-  assert.equal(run('m = s|zzz\nx = m[1]', { s: 'ab' }).get('x'), '');
+  assert.equal(run('m = s|zzz\nx = m[1]', { s: 'ab' }).get('x'), null);
 });
 
 test('IF, AND, OR, comparisons, lists and records', () => {
@@ -1185,7 +1185,7 @@ test('UPPERCASE(number) and IS_VALID_IP(NULL) fail the event', () => {
   ['IS_VALID_IP("192.0.2.1")', '[true]'],
   ]);
   assert.throws(() => run('x = UPPERCASE(5)'), /invalid data type for UPPERCASE\(\): NUMBER/);
-  assert.throws(() => run('n = NULL\nx = IS_VALID_IP(n)'), /IS_VALID_IP\(\) expected a string, but received NULL/);
+  assert.throws(() => run('n = NULL\nx = IS_VALID_IP(n)'), /expected a string, but received invalid data type for IS_VALID_IP\(\): NULL/);
 });
 
 test('a - in a name after a dot fails the event; the bracket form works', () => {
@@ -1202,4 +1202,164 @@ test('a field set on a variable holding a capture result fails the event', () =>
   assert.throws(() => run('r = originalData$|^(\\w+)\nr.key$ = "k"', { originalData$: 'abc' }), /variable r is not Object type/);
   assert.throws(() => run('r = originalData$|^nomatch(x)\nr.key$ = "k"', { originalData$: 'abc' }), /variable r is not Object type/);
   assert.deepEqual(toPlain(run('r.key$ = "k"\nr.value$ = "v"').get('r')), { key$: 'k', value$: 'v' });
+});
+
+test('a capture that matched nothing gives NULL, so IS_VALID_IP() fails on its groups', () => {
+  // IS_VALID_IP(c["g"]) failed the event with "received invalid data type for IS_VALID_IP(): NULL"
+  // (checked in a lab tenant).
+  const v = { originalData$: 'ZZPROBER5E abc' };
+  const code = 'm = originalData$|^ZZPROBER5E\\s+(?P<b>\\S+)\nc = m["b"]|^(?P<g>x)$\ng = c["g"]\nn = c[0]';
+  assert.equal(run(code, v).get('g'), null);
+  assert.equal(run(code, v).get('n'), null);
+  assert.equal(get(`${code}\nx = STRING([g])`, 'x', v), '[0]');
+  assert.throws(() => run(`${code}\nx = IS_VALID_IP(g)`, v), /IS_VALID_IP\(\): NULL/);
+});
+
+test('a field can be set on a record or an object, and on any other value it fails the event', () => {
+  // "variable r is not Object type at path element 0" (checked in a lab tenant).
+  const t = 'DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")';
+  for (const init of ['"s"', 'NULL', '5', 'TRUE', '["a"]', 'JSON("{}")', t]) {
+    assert.throws(() => run(`r = ${init}\nr.key$ = "k"`), /variable r is not Object type at path element 0/, init);
+  }
+  // An object gains the key, a nested one included, and a key it has is replaced.
+  const cef = 'r = CEF("CEF:0|V|P|1|100|N|5|a=b")\n';
+  assert.equal(get(`${cef}r.key$ = "k"\nx = STRING(r)`, 'x'), '{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b","key$":"k"}');
+  assert.equal(get(`${cef}r.n.k$ = "v"\nx = STRING(r)`, 'x'), '{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b","n":{"k$":"v"}}');
+  assert.equal(get(`${cef}r.a = "z"\nx = r["a"]`, 'x'), 'z');
+  assert.equal(get('r = URL_PARSE("http://example.com/")\nr.key$ = "k"\nx = STRING(r)', 'x'), '{"fragment":"","host":"example.com","host_raw":"example.com","key$":"k","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://example.com/","scheme":"http","user":""}');
+  assert.equal(get('r = SPLIT_NAME_VALUES("a=1", " ", "=", "\\"")\nr.key$ = "k"\nx = STRING(r)', 'x'), '{"a":"1","key$":"k"}');
+});
+
+test('IS_VALID_IP() and IS_PRIVATE_IP() take text only', () => {
+  engineTable([
+  ['IS_VALID_IP(5)', null],
+  ['IS_VALID_IP(TRUE)', null],
+  ['IS_VALID_IP(["192.0.2.1"])', null],
+  ['IS_PRIVATE_IP(NULL)', null],
+  ['IS_PRIVATE_IP(5)', null],
+  ['IS_PRIVATE_IP(TRUE)', null],
+  ['IS_PRIVATE_IP("")', '[false]'],
+  ['IS_VALID_IP("")', '[false]'],
+  ]);
+  assert.throws(() => run('x = IS_VALID_IP(5)'), /expected a string, but received invalid data type for IS_VALID_IP\(\): NUMBER/);
+  assert.throws(() => run('x = IS_PRIVATE_IP(NULL)'), /expected a string, but received invalid data type for IS_PRIVATE_IP\(\): NULL/);
+  assert.throws(() => run('x = IS_VALID_IP(["192.0.2.1"])'), /IS_VALID_IP\(\): LIST/);
+});
+
+test('UPPERCASE() and LOWERCASE() take text, and NULL gives ""', () => {
+  engineTable([
+  ['LOWERCASE(5)', null],
+  ['UPPERCASE(TRUE)', null],
+  ['LOWERCASE(TRUE)', null],
+  ['UPPERCASE(["a"])', null],
+  ['UPPERCASE(JSON("{\\"o\\":{\\"a\\":\\"b\\"}}")["$.o"])', null],
+  ['UPPERCASE(DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00"))', null],
+  ['UPPERCASE(NULL)', '[""]'],
+  ['LOWERCASE(NULL)', '[""]'],
+  ['LOWERCASE("AbC")', '["abc"]'],
+  ]);
+  assert.throws(() => run('x = LOWERCASE(5)'), /invalid data type for LOWERCASE\(\): NUMBER/);
+  assert.throws(() => run('x = UPPERCASE(TRUE)'), /invalid data type for UPPERCASE\(\): BOOLEAN/);
+  assert.throws(() => run('x = UPPERCASE(["a"])'), /invalid data type for UPPERCASE\(\): LIST/);
+});
+
+test('single-quoted strings work like double-quoted ones', () => {
+  // Run Test accepted each of these with the same values (checked in a lab tenant), so the
+  // emulator does too.
+  engineTable([
+  ["'abc'", '["abc"]'],
+  ['"a" + \'b\'', '["ab"]'],
+  ["'a' + 'b'", '["ab"]'],
+  ["'a\"b'", '["a\\"b"]'],
+  ["'a#b'", '["a#b"]'],
+  ["''", '[""]'],
+  ["IF TRUE THEN 'y' ELSE 'n'", '["y"]'],
+  ["LENGTH('a\\nb')", '[3]'],
+  ["'a' == \"a\"", '[true]'],
+  ["SPLIT('a,b', ',')", '[["a","b"]]'],
+  ]);
+});
+
+test('URL_PARSE() reads the URL as Go does, after turning spaces into +, dropping * and adding http://', () => {
+  // What the engine returned for each URL in a lab tenant.
+  engineTable([
+  ['URL_PARSE("http://us%20er:p%41ss@example.com/a%20b/c%2Fd/../e?q=a+b%20c&r=%26#fr%20ag")', '[{"fragment":"fr ag","host":"example.com","host_raw":"example.com","password":"pAss","path":"/a b/c/e","path_raw":"/a%20b/c%2Fd/../e","port":"","query":"q=a b c\\u0026r=\\u0026","query_raw":"q=a+b%20c\\u0026r=%26","raw":"http://us%20er:p%41ss@example.com/a%20b/c%2Fd/../e?q=a+b%20c\\u0026r=%26#fr%20ag","scheme":"http","user":"us er"}]'],
+  ['URL_PARSE("http://example.com/#a+b%20c")', '[{"fragment":"a+b c","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://example.com/#a+b%20c","scheme":"http","user":""}]'],
+  ['URL_PARSE("urn:isbn:123")', '[{"fragment":"","host":"urn","host_raw":"urn:isbn:123","path":"","path_raw":"","port":"123","query":"","query_raw":"","raw":"urn:isbn:123","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://a:b:123/")', '[{"fragment":"","host":"a","host_raw":"a:b:123","path":"/","path_raw":"/","port":"123","query":"","query_raw":"","raw":"http://a:b:123/","scheme":"http","user":""}]'],
+  ['URL_PARSE("foo:bar")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"foo:bar","scheme":"","user":""}]'],
+  ['URL_PARSE("javascript:alert(1)")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"javascript:alert(1)","scheme":"","user":""}]'],
+  ['URL_PARSE("http://example.com:abc/")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"http://example.com:abc/","scheme":"","user":""}]'],
+  ['URL_PARSE("  http://example.com/  ")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"  http://example.com/  ","scheme":"","user":""}]'],
+  ['URL_PARSE(" http://example.com/")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":" http://example.com/","scheme":"","user":""}]'],
+  ['URL_PARSE("http://example.com/a\\tb")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"http://example.com/a\\tb","scheme":"","user":""}]'],
+  ['URL_PARSE("1http://x/")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"1http://x/","scheme":"","user":""}]'],
+  ['URL_PARSE("mailto:a/b://c")', '[{"fragment":"","host":"","host_raw":"","password":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"mailto:a/b://c","scheme":"","user":""}]'],
+  ['URL_PARSE("http://example.com/  ")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/++","path_raw":"/++","port":"","query":"","query_raw":"","raw":"http://example.com/  ","scheme":"http","user":""}]'],
+  ['URL_PARSE(" example.com/x")', '[{"fragment":"","host":"+example.com","host_raw":"+example.com","path":"/x","path_raw":"/x","port":"","query":"","query_raw":"","raw":" example.com/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("x/y://z")', '[{"fragment":"","host":"x","host_raw":"x","path":"/y:/z","path_raw":"/y://z","port":"","query":"","query_raw":"","raw":"x/y://z","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/%zz")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/zz","path_raw":"/zz","port":"","query":"","query_raw":"","raw":"http://example.com/%zz","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a%2")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a2","path_raw":"/a2","port":"","query":"","query_raw":"","raw":"http://example.com/a%2","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://exa%20mple.com/")', '[{"fragment":"","host":"exa20mple.com","host_raw":"exa20mple.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://exa%20mple.com/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://exa%zzmple.com/")', '[{"fragment":"","host":"exazzmple.com","host_raw":"exazzmple.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://exa%zzmple.com/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://u%zz@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://u%zz@example.com/","scheme":"http","user":"uzz"}]'],
+  ['URL_PARSE("http://example.com/x?q=%zz#f%zz")', '[{"fragment":"fzz","host":"example.com","host_raw":"example.com","path":"/x","path_raw":"/x","port":"","query":"q=zz","query_raw":"q=zz","raw":"http://example.com/x?q=%zz#f%zz","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/%zz%2Fq")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/zz2Fq","path_raw":"/zz2Fq","port":"","query":"","query_raw":"","raw":"http://example.com/%zz%2Fq","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a(b)!*\'")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a(b)!\'","path_raw":"/a(b)!\'","port":"","query":"","query_raw":"","raw":"http://example.com/a(b)!*\'","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a*b?q=*#*")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/ab","path_raw":"/ab","port":"","query":"q=","query_raw":"q=","raw":"http://example.com/a*b?q=*#*","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://ex*ample.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://ex*ample.com/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a%2Fb*c")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a/bc","path_raw":"/a%2Fbc","port":"","query":"","query_raw":"","raw":"http://example.com/a%2Fb*c","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/caf%C3%A9?q=caf%C3%A9#caf%C3%A9")', '[{"fragment":"café","host":"example.com","host_raw":"example.com","path":"/café","path_raw":"/café","port":"","query":"q=café","query_raw":"q=caf%C3%A9","raw":"http://example.com/caf%C3%A9?q=caf%C3%A9#caf%C3%A9","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/%C3x")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/x","path_raw":"/x","port":"","query":"","query_raw":"","raw":"http://example.com/%C3x","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[::1]:8080/x")', '[{"fragment":"","host":"[","host_raw":"[::1]:8080","path":"/x","path_raw":"/x","port":"8080","query":"","query_raw":"","raw":"http://[::1]:8080/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[::1]/x")', '[{"fragment":"","host":"[","host_raw":"[::1]","path":"/x","path_raw":"/x","port":"","query":"","query_raw":"","raw":"http://[::1]/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[2001:db8::1]/x")', '[{"fragment":"","host":"2001:db8::1","host_raw":"[2001:db8::1]","path":"/x","path_raw":"/x","query":"","query_raw":"","raw":"http://[2001:db8::1]/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[fe80::1]:80/")', '[{"fragment":"","host":"fe80::1","host_raw":"[fe80::1]:80","path":"/","path_raw":"/","port":"80","query":"","query_raw":"","raw":"http://[fe80::1]:80/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[2001:DB8::A]:80/")', '[{"fragment":"","host":"2001:db8::a","host_raw":"[2001:DB8::A]:80","path":"/","path_raw":"/","port":"80","query":"","query_raw":"","raw":"http://[2001:DB8::A]:80/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[::ffff:192.0.2.1]:80/")', '[{"fragment":"","host":"[","host_raw":"[::ffff:192.0.2.1]:80","path":"/","path_raw":"/","port":"80","query":"","query_raw":"","raw":"http://[::ffff:192.0.2.1]:80/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://[2001:db8::1%25eth0]:80/")', '[{"fragment":"","host":"[2001","host_raw":"[2001:db8::1%eth0]:80","path":"/","path_raw":"/","port":"80","query":"","query_raw":"","raw":"http://[2001:db8::1%25eth0]:80/","scheme":"http","user":""}]'],
+  ]);
+  engineTable([
+  ['URL_PARSE("http://[2001:db8::1]/x")["port"]', '[0]'],
+  ['LENGTH(URL_PARSE("foo:bar"))', '[12]'],
+  ]);
+});
+
+test('CEF() fails on a header shorter than 6 fields, and a key is any text between a space and =', () => {
+  // What the engine returned for each line in a lab tenant.
+  engineTable([
+  ['CEF("CEF:0")', null],
+  ['CEF("CEF:0|V")', null],
+  ['CEF("CEF:0|V|P")', null],
+  ['CEF("CEF:0|V|P|1")', null],
+  ['CEF("CEF:0|V|P|1|100")', null],
+  ['CEF("CEF:0|V|P|1|a=b")', null],
+  ['CEF("CEF:0|V|P|1|100|")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|6|a=b")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","6|a":"b"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a|b=c d=e")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a|b":"c","d":"e"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=x|y b=c")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"x|y","b":"c"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|k@x=1 k:y=2 k/z=3 k\\"q=4")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","k\\"q":"4","k/z":"3","k:y":"2","k@x":"1"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=b\\tc=d")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b\\tc=d"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=b \\tc=d")', '[{"\\tc":"d","0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b"}]'],
+  ['CEF("CEF:0|V|P|1|x|y|1|cs1=\\"a\\"\\tcs2=x")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a\\"\\tcs2=x"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=\\"q\\"\\t")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"q"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=b\\t")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b"}]'],
+  ['CEF("CEF:0|V|P|1|x|y|1|cs1= \\"a b\\" cs2=x")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":" \\"a b\\"","cs2":"x"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=  b  c=d")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"  b","c":"d"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=\\tb")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"\\tb"}]'],
+  ]);
+  assert.throws(() => run('x = CEF("CEF:0|V")'), /message is not in LEEF format/);
+  assert.throws(() => run('x = CEF("CEF:0|V|P|1|100")'), /message isn't in CEF\/LEEF format \(header too short\)/);
+});
+
+test('an object or a JSON part joined to text is written the way STRING() writes it, and a JSON array part adds as a list', () => {
+  // What the engine returned in a lab tenant.
+  engineTable([
+  ['j["$.c"] + "post"', '[1,0,"y","post"]'],
+  ['j["$.c"] + ["z"]', '[1,0,"y","z"]'],
+  ['j["$.o"] + 5', '{"a":0,"b":"\\u003c"}5'],
+  ['"pre-" + URL_PARSE("http://example.com/<")', 'pre-{"fragment":"","host":"example.com","host_raw":"example.com","path":"/\\u003c","path_raw":"/\\u003c","port":"","query":"","query_raw":"","raw":"http://example.com/\\u003c","scheme":"http","user":""}'],
+  ['"pre-" + CEF("CEF:0|V<|P|1|100|N|5|msg=a<b>&c")', 'pre-{"0":"CEF:0","1":"V\\u003c","2":"P","3":"1","4":"100","5":"N","6":"5","msg":"a\\u003cb\\u003e\\u0026c"}'],
+  ['"pre-" + r', 'pre-{"a$":0,"b$":"\\u003cr\\u003e"}'],
+  ], { wrap: (expr) => `STRING(${expr})`, prelude: 'j = JSON("{\\"c\\":[1,null,\\"y\\"],\\"o\\":{\\"b\\":\\"<\\",\\"a\\":null}}")\nr.b$ = "<r>"\nr.a$ = NULL' });
 });

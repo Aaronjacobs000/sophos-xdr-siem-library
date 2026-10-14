@@ -160,7 +160,11 @@ const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
 // Header fields by number ([0] is "CEF:<version>", [1] vendor, [2] product, ...), extension
 // keys by name, and the labels in LABELLED resolved. A header with 6 or 7 fields, such as
 // CEF:0|V|P|1|100|N, has no extension of its own, so the engine reads its last field as the
-// extension (checked in a lab tenant).
+// extension. Fewer than 6 fields fails the event (checked in a lab tenant).
+//
+// A key is the text between a space and the next =, so it can hold |, a tab or a quote: an 8th
+// field such as 6|a=b gives the key 6|a. Only a space ends a value, not a tab, and a value keeps
+// its leading spaces: cs1= "a b" gives ' "a b"' (checked in a lab tenant).
 //
 // A value that starts with a quote runs at least to the next unescaped quote, so spaces and
 // key= inside the quotes don't end it. When the value also ends with a quote, the engine drops
@@ -173,12 +177,14 @@ export function parseCef(line) {
   const at = s.indexOf('CEF:');
   if (at === -1) return null;
   const parts = splitUnescaped(s.slice(at), '|', 8);
+  if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: CEF() needs a header of at least 6 fields separated by |, as in CEF:0|Vendor|Product|1.0|100|Name, and this has ${parts.length}`, 'cef-header');
+  if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): CEF() needs at least 6 header fields separated by |, and this has ${parts.length}`, 'cef-header');
   const short = parts.length === 6 || parts.length === 7;
   const header = short ? parts.slice(0, -1) : parts.slice(0, 7);
   const ext = short ? parts[parts.length - 1] : parts.length > 7 ? parts[7] : '';
   const map = new Map();
   const keys = [];
-  const keyRe = /(?:^|\s)([A-Za-z0-9_.\-[\]]+)=/g;
+  const keyRe = /(?:^| )([^ =]+)=/g;
   let m;
   while ((m = keyRe.exec(ext))) {
     const eq = m.index + m[0].length - 1;
@@ -194,7 +200,7 @@ export function parseCef(line) {
   }
   keys.forEach((k, n) => {
     const end = n + 1 < keys.length ? keys[n + 1].from : ext.length;
-    let v = ext.slice(k.start, end).trim();
+    let v = ext.slice(k.start, end).trimEnd();
     if (k.quoted && k.closed && endsWithQuote(v)) v = v.slice(1, -1);
     map.set(k.key, unescapeCefValue(v));
   });
@@ -282,37 +288,147 @@ export function splitNameValues(data, delimiter, separator, quoteChar) {
 
 // ---------------------------------------------------------------- URL_PARSE
 
-function decodeOnce(s) {
-  return s.replace(/%([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+// URL_PARSE() reads a URL the way Go's net/url Parse does, after three steps of its own (checked
+// in a lab tenant). Each space becomes + and each * is dropped. A URL whose first / doesn't start
+// a :// gets http:// in front, so mailto:a@b.com has the user mailto and the host b.com, and
+// //host/x has no host and the path_raw //host/x, while " http://x" keeps its leading + and fails.
+// When Go rejects a % escape, as in %zz, %2 or %20 in a host, every % is dropped and the URL read
+// again, so /%zz%2Fq gives /zz2Fq.
+
+class UrlError extends Error {
+  constructor(message, escape = false) { super(message); this.escape = escape; }
 }
 
-// Go's URL unescaping: each %XX is a byte and the bytes are read as UTF-8. With plus, as in a
-// query, + is a space. null when a % isn't followed by two hex digits.
-function unescapeUrl(s, plus = false) {
-  if (/%(?![0-9A-Fa-f]{2})/.test(s)) return null;
-  const t = plus ? s.replace(/\+/g, ' ') : s;
-  return t.replace(/(?:%[0-9A-Fa-f]{2})+/g, (run) => new TextDecoder().decode(Uint8Array.from(run.slice(1).split('%'), (h) => parseInt(h, 16))));
+const isHex = (b) => (b >= 0x30 && b <= 0x39) || (b >= 0x41 && b <= 0x46) || (b >= 0x61 && b <= 0x66);
+const unhex = (b) => (b <= 0x39 ? b - 0x30 : (b | 0x20) - 0x57);
+
+// ASCII a host can hold besides letters and digits; Go rejects any other.
+const HOST_OK = new Set([..."!$&'()*+,;=:[]<>\"-_.~"].map((c) => c.charCodeAt(0)));
+const isAlnum = (b) => (b >= 0x30 && b <= 0x39) || (b >= 0x41 && b <= 0x5a) || (b >= 0x61 && b <= 0x7a);
+
+// Go's unescape: each %XX is a byte. In a host, %XX below %80 other than %25 is an error too.
+function goUnescape(s, host = false) {
+  const b = new TextEncoder().encode(s);
+  const out = [];
+  for (let i = 0; i < b.length;) {
+    if (b[i] === 0x25) {
+      if (i + 2 >= b.length || !isHex(b[i + 1]) || !isHex(b[i + 2])) throw new UrlError('invalid URL escape', true);
+      if (host && unhex(b[i + 1]) < 8 && !(b[i + 1] === 0x32 && b[i + 2] === 0x35)) throw new UrlError('invalid URL escape', true);
+      out.push(unhex(b[i + 1]) * 16 + unhex(b[i + 2]));
+      i += 3;
+      continue;
+    }
+    if (host && b[i] < 0x80 && !isAlnum(b[i]) && !HOST_OK.has(b[i])) throw new UrlError('invalid character in host name');
+    out.push(b[i]);
+    i++;
+  }
+  return Uint8Array.from(out);
 }
 
-// Go's escaping of a URL path: letters, digits and -_.~$&+,/:;=@ stay, every other byte is %XX.
-function escapePath(s) {
+// Bytes back to text. Bytes that aren't valid UTF-8 are dropped, so /%C3x gives /x (checked in a
+// lab tenant).
+function utf8Text(b) {
   let out = '';
-  for (const b of new TextEncoder().encode(s)) {
-    const c = String.fromCharCode(b);
-    out += /[A-Za-z0-9\-_.~$&+,/:;=@]/.test(c) ? c : `%${b.toString(16).toUpperCase().padStart(2, '0')}`;
+  for (let i = 0; i < b.length;) {
+    const c = b[i];
+    if (c < 0x80) { out += String.fromCharCode(c); i++; continue; }
+    const n = c >= 0xc2 && c <= 0xdf ? 2 : c >= 0xe0 && c <= 0xef ? 3 : c >= 0xf0 && c <= 0xf4 ? 4 : 0;
+    const lo = c === 0xe0 ? 0xa0 : c === 0xf0 ? 0x90 : 0x80;
+    const hi = c === 0xed ? 0x9f : c === 0xf4 ? 0x8f : 0xbf;
+    let ok = n > 0 && i + n <= b.length && b[i + 1] >= lo && b[i + 1] <= hi;
+    for (let k = 2; ok && k < n; k++) ok = b[i + k] >= 0x80 && b[i + k] <= 0xbf;
+    if (!ok) { i++; continue; }
+    let cp = c & (0xff >> (n + 1));
+    for (let k = 1; k < n; k++) cp = (cp << 6) | (b[i + k] & 0x3f);
+    out += String.fromCodePoint(cp);
+    i += n;
   }
   return out;
 }
 
-// path_raw is the decoded path, unless escaping that again doesn't give back the original, as
-// with %2F, %7E or a lower-case %2f: then it is the path as written (Go's RawPath).
-function rawPath(p) {
-  const d = unescapeUrl(p);
-  return d !== null && escapePath(d) === p ? d : p;
+const unescapeText = (s, host = false) => utf8Text(goUnescape(s, host));
+
+// Go's escaping of a URL path: letters, digits and -_.~$&+,/:;=@ stay, every other byte is %XX.
+function escapePath(bytes) {
+  let out = '';
+  for (const b of bytes) out += isAlnum(b) || '-_.~$&+,/:;=@'.includes(String.fromCharCode(b)) ? String.fromCharCode(b) : `%${b.toString(16).toUpperCase().padStart(2, '0')}`;
+  return out;
 }
 
-function normPath(p) {
-  const decoded = decodeOnce(p).replace(/\/{2,}/g, '/');
+// A query decoded, with + as a space; as written when it holds a bad escape.
+function queryText(q) {
+  try { return unescapeText(q.replace(/\+/g, ' ')); } catch { return q; }
+}
+
+const validPort = (p) => p === '' || /^:\d*$/.test(p);
+
+function goHost(host) {
+  if (host.startsWith('[')) {
+    const i = host.lastIndexOf(']');
+    if (i === -1) throw new UrlError("missing ']' in host");
+    if (!validPort(host.slice(i + 1))) throw new UrlError('invalid port after host');
+  } else {
+    const i = host.lastIndexOf(':');
+    if (i !== -1 && !validPort(host.slice(i))) throw new UrlError('invalid port after host');
+  }
+  return unescapeText(host, true);
+}
+
+const USERINFO = /^[A-Za-z0-9\-._:~!$&'()*+,;=%@]*$/;
+
+// Go's url.Parse, for the parts URL_PARSE() reports.
+function goParse(raw) {
+  const h = raw.indexOf('#');
+  const u = h === -1 ? raw : raw.slice(0, h);
+  if (/[\x00-\x1f\x7f]/.test(u)) throw new UrlError('invalid control character in URL');
+  const url = { scheme: '', user: null, password: null, host: '', path: '', pathRaw: '', query: '', fragment: '' };
+  let rest = u;
+  for (let i = 0; i < u.length; i++) {
+    const c = u[i];
+    if (/[A-Za-z]/.test(c)) continue;
+    if (/[0-9+\-.]/.test(c)) { if (i === 0) break; continue; }
+    if (c === ':') {
+      if (i === 0) throw new UrlError('missing protocol scheme');
+      url.scheme = u.slice(0, i).toLowerCase();
+      rest = u.slice(i + 1);
+    }
+    break;
+  }
+  if (rest.endsWith('?') && rest.indexOf('?') === rest.length - 1) rest = rest.slice(0, -1);
+  else if (rest.includes('?')) { url.query = rest.slice(rest.indexOf('?') + 1); rest = rest.slice(0, rest.indexOf('?')); }
+  let opaque = false;
+  if (!rest.startsWith('/')) {
+    if (url.scheme) opaque = true;
+    else if (rest.split('/')[0].includes(':')) throw new UrlError('first path segment in URL cannot contain colon');
+  }
+  if (!opaque) {
+    if ((url.scheme || !rest.startsWith('///')) && rest.startsWith('//')) {
+      let authority = rest.slice(2);
+      const slash = authority.indexOf('/');
+      rest = slash === -1 ? '' : authority.slice(slash);
+      if (slash !== -1) authority = authority.slice(0, slash);
+      const at = authority.lastIndexOf('@');
+      url.host = goHost(at === -1 ? authority : authority.slice(at + 1));
+      if (at !== -1) {
+        const ui = authority.slice(0, at);
+        if (!USERINFO.test(ui)) throw new UrlError('invalid userinfo');
+        const c = ui.indexOf(':');
+        url.user = unescapeText(c === -1 ? ui : ui.slice(0, c));
+        if (c !== -1) url.password = unescapeText(ui.slice(c + 1));
+      }
+    }
+    // path_raw is the decoded path, unless escaping that again doesn't give back the path as
+    // written, as with %2F, %7E or a lower-case %2f: then it is the path as written (Go's RawPath).
+    const bytes = goUnescape(rest);
+    url.path = utf8Text(bytes);
+    url.pathRaw = escapePath(bytes) === rest ? url.path : rest;
+  }
+  if (h !== -1) url.fragment = unescapeText(raw.slice(h + 1));
+  return url;
+}
+
+function normPath(decoded) {
+  decoded = decoded.replace(/\/{2,}/g, '/');
   const out = [];
   for (const seg of decoded.split('/')) {
     if (seg === '.') continue;
@@ -326,60 +442,48 @@ function normPath(p) {
 }
 
 // The engine's object has these keys, "" for a part the URL doesn't have, and password only when
-// the URL has one, as in user:pass@ or user:@. raw is the text URL_PARSE was given (checked in a
-// lab tenant).
+// the URL has one, as in user:pass@ or user:@. raw is the text URL_PARSE was given. host is the
+// host up to its first colon, so urn:isbn:123 gives the host urn and the port 123. An IPv6
+// address in brackets comes out whole when it starts with a hex digit and has only hex digits and
+// colons, as with [2001:db8::1]:8080, and then has no port key when the URL has no port. [::1]:80
+// and [::ffff:192.0.2.1] give the host [. A URL Go can't read, such as foo:bar or
+// javascript:alert(1) with their bad port, or one with a tab, gives every key "", password and
+// scheme included (checked in a lab tenant).
 const URL_KEYS = ['scheme', 'user', 'host_raw', 'host', 'port', 'path_raw', 'path', 'query_raw', 'query', 'fragment', 'raw'];
 
-// What the engine does before it reads the URL (checked in a lab tenant): each space becomes +,
-// so a space in the host comes out as +, and a URL that doesn't start with a scheme and :// gets
-// http:// in front. So mailto:a@b.com has the user mailto and the host b.com, and //host/x has
-// no host and the path_raw //host/x. The user and password are decoded, and in query + is a
-// space. It returns an object for any text, "" included.
 export function urlParse(url, silent = false) {
   const empty = () => new ObjValue(new Map(URL_KEYS.map((k) => [k, k === 'scheme' ? 'http' : ''])));
   if (url === null || url === undefined) return silent ? empty() : null;
   const raw = String(url);
-  let s = raw.trim().replace(/ /g, '+');
-  const out = new Map();
-  let scheme = 'http';
-  const sm = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//.exec(s);
-  if (sm) { scheme = sm[1].toLowerCase(); s = s.slice(sm[0].length); }
-  let fragment = null;
-  const h = s.indexOf('#');
-  if (h !== -1) { fragment = s.slice(h + 1); s = s.slice(0, h); }
-  let queryRaw = null;
-  const qi = s.indexOf('?');
-  if (qi !== -1) { queryRaw = s.slice(qi + 1); s = s.slice(0, qi); }
-  const slash = s.indexOf('/');
-  let authority = slash === -1 ? s : s.slice(0, slash);
-  const pathRaw = slash === -1 ? '' : s.slice(slash);
-  let user = '', password = null;
-  const at = authority.lastIndexOf('@');
-  if (at !== -1) {
-    const ui = authority.slice(0, at);
-    authority = authority.slice(at + 1);
-    const c = ui.indexOf(':');
-    user = c === -1 ? ui : ui.slice(0, c);
-    password = c === -1 ? null : ui.slice(c + 1);
-    user = unescapeUrl(user) ?? user;
-    if (password !== null) password = unescapeUrl(password) ?? password;
+  let s = raw.replace(/ /g, '+').replace(/\*/g, '');
+  if (!/^[^/]*:\/\//.test(s)) s = `http://${s}`;
+  let u;
+  try {
+    u = goParse(s);
+  } catch (e) {
+    try {
+      if (!e.escape) throw e;
+      u = goParse(s.replace(/%/g, ''));
+    } catch {
+      return new ObjValue(new Map([...URL_KEYS, 'password'].map((k) => [k, k === 'raw' ? raw : ''])));
+    }
   }
-  let host = authority, port = null;
-  const pm = /^(.*):(\d*)$/.exec(authority);
-  if (pm && !authority.startsWith('[')) { host = pm[1]; port = pm[2]; }
-  const v6 = /^\[([^\]]+)\](?::(\d+))?$/.exec(authority);
-  if (v6) { host = v6[1]; port = v6[2] ?? null; }
-  out.set('scheme', scheme);
-  out.set('user', user);
-  if (password !== null) out.set('password', password);
-  out.set('host_raw', authority);
-  out.set('host', host.toLowerCase());
-  out.set('port', port ?? '');
-  out.set('path_raw', rawPath(pathRaw));
-  out.set('path', pathRaw ? normPath(pathRaw) : '');
-  out.set('query_raw', queryRaw ?? '');
-  out.set('query', queryRaw === null ? '' : unescapeUrl(queryRaw, true) ?? queryRaw);
-  out.set('fragment', fragment ?? '');
+  // The port is the digits after the last colon, as Go's Port() reads it.
+  const colon = u.host.lastIndexOf(':');
+  const port = colon !== -1 && validPort(u.host.slice(colon)) ? u.host.slice(colon + 1) : '';
+  const out = new Map();
+  out.set('scheme', u.scheme);
+  out.set('user', u.user ?? '');
+  if (u.password !== null) out.set('password', u.password);
+  out.set('host_raw', u.host);
+  const v6 = /^\[([0-9A-Fa-f]+:[0-9A-Fa-f:]*)\](:\d*)?$/.exec(u.host);
+  out.set('host', (v6 ? v6[1] : u.host.split(':')[0]).toLowerCase());
+  if (!v6 || v6[2] !== undefined) out.set('port', port);
+  out.set('path_raw', u.pathRaw);
+  out.set('path', u.path ? normPath(u.path) : '');
+  out.set('query_raw', u.query);
+  out.set('query', queryText(u.query));
+  out.set('fragment', u.fragment);
   out.set('raw', raw);
   return new ObjValue(out);
 }
