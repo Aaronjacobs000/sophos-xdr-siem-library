@@ -1,0 +1,575 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805211000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jlee@example.com",
+      "source_address": "203.0.113.10",
+      "auth_system": "Druva Cloud Platform",
+      "status": "Success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "druva_type",
+            "value": "Password Verified"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805262000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jlee@example.com",
+      "source_address": "198.51.100.23",
+      "auth_system": "Druva Cloud Platform",
+      "status": "Failure",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "mfa_used": false,
+      "extra_failurereason": "Invalid credentials",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "druva_type",
+            "value": "Password Verified"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805275000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jlee@example.com",
+      "source_address": "203.0.113.10",
+      "auth_system": "Druva Cloud Platform",
+      "status": "Success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "druva_type",
+            "value": "MFA Verified"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "6"
+          },
+          {
+            "key": "mfa_mode",
+            "value": "TOTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805336000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "pkumar@example.com",
+      "source_address": "192.0.2.44",
+      "auth_system": "Druva Cloud Platform",
+      "status": "Success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "druva_type",
+            "value": "Login With SSO"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805360000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "sadmin@example.com",
+      "user_display_name": "Sam Admin",
+      "source_address": "198.51.100.61",
+      "auth_system": "Druva Cloud Platform",
+      "status": "Failure",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "druva_type",
+            "value": "Admin Login"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "3"
+          },
+          {
+            "key": "location",
+            "value": "Example City, Exampleland"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805502000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Druva",
+      "alert_category": "Alerts And Notifications",
+      "title": "Data Anomalies",
+      "summary": "Data Anomalies: fs-finance-01",
+      "target_host_name": "fs-finance-01",
+      "severity": "HIGH",
+      "vendor_severity": "3",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_type",
+            "value": "Alert"
+          },
+          {
+            "key": "product_id",
+            "value": "12289"
+          },
+          {
+            "key": "resource_type",
+            "value": "File Server"
+          },
+          {
+            "key": "resource_parent",
+            "value": "syd-backup-proxy"
+          },
+          {
+            "key": "uda_type",
+            "value": "[\"Encryption\",\"Modification\"]"
+          },
+          {
+            "key": "encrypted_files",
+            "value": "398"
+          },
+          {
+            "key": "updated_files",
+            "value": "412"
+          },
+          {
+            "key": "deleted_files",
+            "value": "0"
+          },
+          {
+            "key": "encryption_reason",
+            "value": "High entropy in modified files"
+          },
+          {
+            "key": "affected_snapshot",
+            "value": "Mon Oct 12 11:30:00 2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805570000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Druva",
+      "alert_category": "Alerts And Notifications",
+      "title": "Admin Login Event - New Location",
+      "summary": "Admin Login Event - New Location",
+      "severity": "MEDIUM",
+      "vendor_severity": "4",
+      "user_principal_name": "sadmin@example.com",
+      "source_address": "198.51.100.61",
+      "user_location": "Example City, Exampleland",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_type",
+            "value": "Alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805951000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Druva",
+      "alert_category": "Alerts And Notifications",
+      "title": "Data Access Alert - New Location",
+      "summary": "Data Access Alert - New Location: fs-finance-01",
+      "target_host_name": "fs-finance-01",
+      "severity": "MEDIUM",
+      "vendor_severity": "4",
+      "source_user_name": "sadmin@example.com",
+      "destination_address": "198.51.100.61",
+      "device_location": "Example City, Exampleland",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_type",
+            "value": "Alert"
+          },
+          {
+            "key": "data_access_type",
+            "value": "Admin Download"
+          },
+          {
+            "key": "files",
+            "value": "1240"
+          },
+          {
+            "key": "size_bytes",
+            "value": "5368709120"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806011000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Druva",
+      "alert_category": "Threat Watch",
+      "title": "Threat Watch IOC Match Found",
+      "summary": "Threat Watch IOC Match Found: Finance Team Site",
+      "target_host_name": "Finance Team Site",
+      "severity": "HIGH",
+      "vendor_severity": "2",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_type",
+            "value": "Threat Watch IOC Match Found"
+          },
+          {
+            "key": "product_id",
+            "value": "4097"
+          },
+          {
+            "key": "resource_type",
+            "value": "SharePoint"
+          },
+          {
+            "key": "resource_parent",
+            "value": "https://acme.sharepoint.example.com"
+          },
+          {
+            "key": "ioc_found",
+            "value": "M365 ioc"
+          },
+          {
+            "key": "malicious_files_found",
+            "value": "41"
+          },
+          {
+            "key": "resource_auto_quarantined",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791805952000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Data Access",
+      "event_name": "Admin Download",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "sadmin@example.com",
+      "status": "Successful",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "fs-finance-01"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"endTime\":\"2026-10-12T11:52:31Z\",\"files\":1240,\"initiatorName\":\"sadmin@example.com\",\"resourceID\":\"4182\",\"resourceName\":\"fs-finance-01\",\"size\":5368709120,\"startTime\":\"2026-10-12T11:47:00Z\",\"status\":\"Successful\",\"targetIP\":\"198.51.100.61\",\"targetLocation\":\"Example City, Exampleland\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "4"
+          },
+          {
+            "key": "product_id",
+            "value": "12289"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806116000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "API",
+      "event_name": "API Credentials Created",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "sadmin@example.com",
+      "source_address": "198.51.100.61",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "backup-export"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"description\":\"Nightly export\",\"initiatorID\":\"sadmin@example.com\",\"name\":\"backup-export\",\"networkRestriction\":\"\",\"role\":\"Druva Cloud\",\"sourceIP\":\"198.51.100.61\",\"status\":\"Success\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806171000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Admin Event",
+      "event_name": "Administrator Created",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "sadmin@example.com",
+      "target_user_name": "opstemp@example.com",
+      "source_address": "198.51.100.61",
+      "status": "Success",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"adminEmail\":\"opstemp@example.com\",\"adminName\":\"Ops Temp\",\"adminRole\":\"Druva Cloud\",\"initiator\":\"Admin\",\"initiatorID\":\"sadmin@example.com\",\"sourceIP\":\"198.51.100.61\",\"status\":\"Success\",\"timezone\":\"Australia/Sydney\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806233000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Admin Event",
+      "event_name": "Rollback Initiated",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "sadmin@example.com",
+      "source_address": "198.51.100.61",
+      "status": "Success",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"batchID\":\"b-20261012-0042\",\"initiatorID\":\"sadmin@example.com\",\"sourceIP\":\"198.51.100.61\",\"status\":\"Success\",\"workloadTypeID\":\"3\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806316000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Ransomware Recovery",
+      "event_name": "Added To Quarantine Bay",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "jlee@example.com",
+      "source_address": "203.0.113.10",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "fs-finance-01"
+          },
+          {
+            "key": "resource_type",
+            "value": "File Server"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"action\":\"Create Ranges\",\"effectiveDateRanges\":{\"endTime\":\"2026-10-12T12:00:00Z\",\"startTime\":\"2026-10-12T10:00:00Z\"},\"initiatorID\":\"jlee@example.com\",\"ipAddress\":\"203.0.113.10\",\"mode\":\"Admin Portal\",\"note\":\"Encryption spike on fs-finance-01\",\"orgID\":1,\"resourceID\":4182,\"resourceName\":\"fs-finance-01\",\"resourceParent\":\"syd-backup-proxy\",\"resourcePlatform\":\"Windows\",\"resourceType\":\"File Server\",\"state\":\"Success\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "0"
+          },
+          {
+            "key": "product_id",
+            "value": "12289"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT > DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806472000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Admin Event",
+      "event_name": "Malicious File Scan",
+      "event_source": "Druva Cloud Platform",
+      "recipient_account_id": "7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e",
+      "user_name": "jlee@example.com",
+      "status": "Job Completed",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "resource_name",
+            "value": "fs-finance-01"
+          },
+          {
+            "key": "resource_type",
+            "value": "File Server"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"Activity\":\"Job Completed\",\"EndTime\":\"2026-10-12T12:01:12Z\",\"FilesBlocked\":17,\"FilesScanSkipped\":0,\"FilesScanned\":20411,\"FilesSelectedForRestore\":20394,\"JobCreatedBy\":\"jlee@example.com\",\"JobType\":\"Malicious File Scan\",\"ProductJobID\":88214,\"ResourceName\":\"fs-finance-01\",\"ResourceParent\":\"syd-backup-proxy\",\"ResourceType\":\"File Server\",\"ScanJobID\":\"5521\",\"StartTime\":\"2026-10-12T11:55:00Z\"}"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "1"
+          },
+          {
+            "key": "product_id",
+            "value": "12289"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "DRUVA_DCP_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Druva Cloud Platform",
+      "event_time_usec": 1791806701631000
+    }
+  }
+]

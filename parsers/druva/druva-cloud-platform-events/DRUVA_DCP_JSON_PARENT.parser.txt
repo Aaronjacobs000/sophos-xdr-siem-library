@@ -1,0 +1,37 @@
+!SAMPLE={"druva_record":"platform_event","category":"EVENT","details":{"name":"backup-export","description":"Nightly export","networkRestriction":"","role":"Druva Cloud","status":"Success","sourceIP":"198.51.100.61","initiatorID":"sadmin@example.com"},"feature":"API","globalID":"7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e","timeStamp":1791806116,"productID":0,"syslogFacility":23,"syslogSeverity":5,"type":"API Credentials Created"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"druva_record"\s*:\s*"platform_event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by collectors/druva-platform-events,
+# one JSON event per line with "druva_record": "platform_event" in front.
+# Parent: recognizes the events and hands each to a child by its feature and type:
+#   Admin Event logins (Password Verified, MFA Verified, Login With SSO, Admin Login) to Auth.
+#   Alerts And Notifications and Threat Watch to the third-party alert schema.
+#   Other Admin Event, API, Data Access, Data Anomalies and Ransomware Recovery events to CloudAudit.
+# Events of other features, such as backup jobs, stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Druva Cloud Platform"
+feature = json["$.feature"]
+dtype = json["$.type"]
+sev = json["$.syslogSeverity"]
+# timeStamp is epoch seconds; some Druva examples send RFC 3339 text instead.
+tsText = STRING(json["$.timeStamp"])
+secs = tsText|^(?P<s>\d{9,11})$
+eventTimeUsec$ = IF secs["s"] THEN INT(secs["s"], 10) * 1000000 ELSE DATETIME(tsText, "2006-01-02T15:04:05.999999999Z07:00")
+
+login = dtype == "Password Verified" OR dtype == "MFA Verified" OR dtype == "Login With SSO" OR dtype == "Admin Login"
+authEvent = feature == "Admin Event" AND login
+alertEvent = feature == "Alerts And Notifications" OR feature == "Threat Watch"
+auditEvent = feature == "Admin Event" OR feature == "API" OR feature == "Data Access" OR feature == "Data Anomalies" OR feature == "Ransomware Recovery"
+eventType$ = "other"
+eventType$ = IF auditEvent THEN "audit" ELSE eventType$
+eventType$ = IF alertEvent THEN "alert" ELSE eventType$
+eventType$ = IF authEvent THEN "auth" ELSE eventType$
