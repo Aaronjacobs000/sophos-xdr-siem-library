@@ -17,7 +17,8 @@ export class ObjValue {
 
 // A capture result. The engine keeps every match: with one match each group is a string,
 // with several each group is the list of values across matches. A capture that matched
-// nothing still exists; indexing it gives "" (checked in a lab tenant).
+// nothing still exists; indexing it gives NULL, so IS_VALID_IP(m["g"]) fails the event
+// (checked in a lab tenant).
 export class MatchValue {
   constructor(groups, named, count = 1) { this.groups = groups; this.named = named; this.count = count; }
   get nomatch() { return this.count === 0; }

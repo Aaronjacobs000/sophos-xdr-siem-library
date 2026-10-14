@@ -118,8 +118,11 @@ export function analyseLine(line) {
   if (t && !/^(CEF|LEEF)$/.test(t[1])) { tag = { name: t[1], pid: Boolean(t[2]), text: t[0].trimEnd() }; }
   const afterTag = tag ? body.slice(tag.text.length).trimStart() : body;
   const out = { line, header, tag, body, format: 'text', fields: [] };
-  if (/CEF:\d+\|/.test(line)) {
-    const obj = parseCef(line);
+  // CEF() fails on a header shorter than 6 fields, so such a line isn't read as CEF.
+  let cef = null;
+  if (/CEF:\d+\|/.test(line)) { try { cef = parseCef(line); } catch { cef = null; } }
+  if (cef) {
+    const obj = cef;
     out.format = 'cef';
     obj.header.forEach((v, i) => { if (i > 0) out.fields.push({ key: CEF_HEADER[i], index: i, value: v, header: true }); });
     for (const [k, v] of obj.map) if (!/Label$/.test(k) && !obj.map.has(`${k}Label`)) out.fields.push({ key: k, value: v });

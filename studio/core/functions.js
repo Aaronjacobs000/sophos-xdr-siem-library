@@ -175,6 +175,35 @@ function withHeaderKeys(o) {
   return o ? new ObjValue(new Map([...o.header.map((h, i) => [String(i), h]), ...o.map]), o.header) : o;
 }
 
+// The engine's name for a value's type in its "invalid data type" errors (checked in a lab
+// tenant for NULL, NUMBER, BOOLEAN, LIST, OBJECT and TIME).
+function engineType(v) {
+  if (v === null || v === undefined) return 'NULL';
+  if (typeof v === 'string') return 'STRING';
+  if (typeof v === 'number') return 'NUMBER';
+  if (typeof v === 'boolean') return 'BOOLEAN';
+  if (isList(v) || (v instanceof JsonValue && Array.isArray(v.value))) return 'LIST';
+  if (v instanceof TimeValue) return 'TIME';
+  return 'OBJECT';
+}
+
+// IS_VALID_IP() and IS_PRIVATE_IP() take text only. NULL, a number, TRUE or a list fails the
+// event: "expected a string, but received invalid data type for IS_VALID_IP(): NULL" (checked in
+// a lab tenant).
+function ipText(fn, v) {
+  if (typeof v === 'string') return v;
+  throw new RuntimeError(`expected a string, but received invalid data type for ${fn}(): ${engineType(v)}. Check the value is set and use STRING() on anything that isn't text.`, 'type');
+}
+
+// UPPERCASE() and LOWERCASE() take text, and NULL, which gives "". A number, TRUE, a list, an
+// object or a DATETIME value fails the event: "invalid data type for UPPERCASE(): NUMBER"
+// (checked in a lab tenant).
+function caseText(fn, v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'string') return v;
+  throw new RuntimeError(`invalid data type for ${fn}(): ${engineType(v)}. Use STRING() on the value first.`, 'type');
+}
+
 export const FUNCTIONS = {
   // The separator is read as the first character of a CSV separator (see splitCsv).
   SPLIT: [2, 3, (c, [s, d, greedy]) => {
@@ -205,12 +234,8 @@ export const FUNCTIONS = {
       return null;
     }
   }],
-  IS_PRIVATE_IP: [1, 1, (c, [s]) => isRfc1918(str(s) ?? '')],
-  // IS_VALID_IP(NULL) fails the event (checked in a lab tenant).
-  IS_VALID_IP: [1, 1, (c, [s]) => {
-    if (s === null || s === undefined) throw new RuntimeError('IS_VALID_IP() expected a string, but received NULL', 'null-arg');
-    return isValidIp(str(s));
-  }],
+  IS_PRIVATE_IP: [1, 1, (c, [s]) => isRfc1918(ipText('IS_PRIVATE_IP', s))],
+  IS_VALID_IP: [1, 1, (c, [s]) => isValidIp(ipText('IS_VALID_IP', s))],
   REPLACE: [3, 3, (c, [s, a, b]) => (s === null ? null : toStr(s).split(toStr(a) ?? '').join(toStr(b) ?? ''))],
   REPLACE_REGEX: [3, 3, (c, [s, p, b]) => (s === null ? null : goReplaceAll(toStr(s), toStr(p), toStr(b) ?? ''))],
   LENGTH: [1, 2, (c, [v, mode]) => lengthOf(v, mode)],
@@ -219,13 +244,8 @@ export const FUNCTIONS = {
     if (typeof v !== 'string') throw new RuntimeError(`STRLEN takes a STRING, not ${typeName(v)}`);
     return utf8Length(v);
   }],
-  // UPPERCASE(number) fails the event: "invalid data type for UPPERCASE(): NUMBER" (checked in a
-  // lab tenant).
-  UPPERCASE: [1, 1, (c, [s]) => {
-    if (typeof s === 'number') throw new RuntimeError('invalid data type for UPPERCASE(): NUMBER. Use STRING() on the number first.', 'type');
-    return s === null ? null : toStr(s).toUpperCase();
-  }],
-  LOWERCASE: [1, 1, (c, [s]) => (s === null ? null : toStr(s).toLowerCase())],
+  UPPERCASE: [1, 1, (c, [s]) => caseText('UPPERCASE', s).toUpperCase()],
+  LOWERCASE: [1, 1, (c, [s]) => caseText('LOWERCASE', s).toLowerCase()],
   TRIM: [1, 1, (c, [s]) => (s === null ? null : trimPairs(toStr(s), true))],
   SANITIZE_ALL: [0, 0, (c) => { c.sanitizeNow(); return null; }],
   TRIM_ALL: [0, 0, (c) => { c.trimNow(); return null; }],

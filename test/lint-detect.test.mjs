@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { lintParsers, overlaps } from '../studio/core/lint.js';
-import { analyseSample, textTemplate } from '../studio/core/detect.js';
+import { analyseSample, analyseLine, textTemplate } from '../studio/core/detect.js';
 import { suggestMappings, pickSchema, guessEnum } from '../studio/core/mapping.js';
 import { buildPlan, writeParsers, keysFor } from '../studio/app/plan.js';
 import { runParsers } from '../studio/core/engine.js';
@@ -189,4 +189,17 @@ test('editor: NOT is colored as a keyword', async () => {
   } finally {
     delete globalThis.document;
   }
+});
+
+test('detection: a CEF line with a header shorter than 6 fields isn\'t read as CEF, because CEF() fails on it', () => {
+  assert.equal(analyseLine('CEF:0|V|P|1|100|N|5|a=b').format, 'cef');
+  assert.notEqual(analyseLine('CEF:0|V|P|1|100').format, 'cef');
+  assert.notEqual(analyseLine('Oct 14 01:02:03 host CEF:0|V|P').format, 'cef');
+});
+
+test('lint: single-quoted strings are fine, as in Run Test, and two side by side are a syntax error', () => {
+  // The engine ran each good line and rejected 'it''s' as a syntax error (checked in a lab tenant).
+  const lint = (line) => lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.nids\n${line}` }]).problems.filter((p) => p.level === 'error');
+  for (const good of ["x = 'abc'", "x = \"a\" + 'b'", "x = IF TRUE THEN 'y' ELSE 'n'", "x = ['a', 'b']", "x = SPLIT('a,b', ',')"]) assert.deepEqual(lint(good), [], good);
+  assert.deepEqual(lint("x = 'it''s'").map((p) => p.code), ['syntax']);
 });

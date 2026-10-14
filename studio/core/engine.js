@@ -10,7 +10,7 @@ import {
   toStr, toBool, looseEqual, wrapJson, isList, typeName, hasOwn, asNumber, parseGoFloat,
 } from './values.js';
 import { parseScript, parseExpression, walk } from './language.js';
-import { FUNCTIONS, LAZY } from './functions.js';
+import { FUNCTIONS, LAZY, stringOf } from './functions.js';
 import { compileGo } from './goregex.js';
 import { query, isMultiPath } from './jsonpath.js';
 import { rootSplit } from './formats.js';
@@ -42,16 +42,22 @@ class Ctx {
     const parts = target.split('.');
     if (parts.length === 1) { this.vars.set(target, value); return; }
     let rec = this.vars.get(parts[0]);
-    // A field set on a variable that holds a capture result fails the event: "variable r is not
-    // Object type" (checked in a lab tenant).
-    if (rec instanceof MatchValue) throw new RuntimeError(`variable ${parts[0]} is not Object type: it holds a capture result, so ${target} can't set a field on it. Use another name for the record.`, 'not-object');
-    if (!(rec instanceof RecordValue)) { rec = new RecordValue(); this.vars.set(parts[0], rec); }
-    for (const p of parts.slice(1, -1)) {
-      let next = rec.fields.get(p);
-      if (!(next instanceof RecordValue)) { next = new RecordValue(); rec.fields.set(p, next); }
-      rec = next;
+    // A field can be set on a record or on an object such as a CEF(), URL_PARSE() or
+    // SPLIT_NAME_VALUES() value, which gains the key. On a variable that holds anything else, such
+    // as a capture result, text, NULL, a number, TRUE, a list, a DATETIME or a JSON value, it fails
+    // the event: "variable r is not Object type at path element 0" (checked in a lab tenant).
+    if (this.vars.has(parts[0]) && !(rec instanceof RecordValue || rec instanceof ObjValue)) {
+      const holds = rec instanceof MatchValue ? 'a capture result' : `a value of type ${typeName(rec)}`;
+      throw new RuntimeError(`variable ${parts[0]} is not Object type at path element 0: it holds ${holds}, so ${target} can't set a field on it. Use another name for the record.`, 'not-object');
     }
-    rec.fields.set(parts[parts.length - 1], value);
+    if (!rec) { rec = new RecordValue(); this.vars.set(parts[0], rec); }
+    let fields = rec instanceof ObjValue ? rec.map : rec.fields;
+    for (const p of parts.slice(1, -1)) {
+      let next = fields.get(p);
+      if (!(next instanceof RecordValue)) { next = new RecordValue(); fields.set(p, next); }
+      fields = next.fields;
+    }
+    fields.set(parts[parts.length - 1], value);
   }
   sanitizeNow() { this.flagsNow = { ...(this.flagsNow || {}), sanitize: true }; }
   trimNow() { this.flagsNow = { ...(this.flagsNow || {}), trim: true }; }
@@ -60,7 +66,7 @@ class Ctx {
 function index(base, idx) {
   if (base === null || base === undefined) return null;
   if (base instanceof MatchValue) {
-    if (base.nomatch) return '';
+    if (base.nomatch) return null;
     if (typeof idx === 'number') {
       if (idx < 0 || idx >= base.groups.length) throw new RuntimeError(`regex group ${idx} is out of range (the pattern has ${base.groups.length - 1} groups)`, 'group-range');
       return base.groups[idx] ?? '';
@@ -143,6 +149,7 @@ function plus(a, b) {
   noRegex(a); noRegex(b);
   if (a === null || a === undefined) return b ?? null;
   if (b === null || b === undefined) return a;
+  a = jsonList(a); b = jsonList(b);
   if (isList(a)) return [...a, ...(isList(b) ? b : [b])];
   if (isList(b)) return [a, ...b];
   if (a instanceof TimeValue && typeof b === 'number') return a.usec + b;
@@ -164,9 +171,14 @@ function plus(a, b) {
   return joinText(a) + joinText(b);
 }
 
-// The value JSON() returned joins to text as {}, whatever it holds: "a" + JSON("5") is "a{}"
-// (checked in a lab tenant).
-const joinText = (v) => (v instanceof JsonValue && v.doc ? '{}' : toStr(v));
+// The value JSON() returned joins to text as {}, whatever it holds: "a" + JSON("5") is "a{}". An
+// object, such as a CEF() or URL_PARSE() value, a record or an object part of a JSON value, joins
+// as STRING() writes it: keys sorted, <, > and & escaped and NULL as 0 (checked in a lab tenant).
+const joinText = (v) => (v instanceof JsonValue && v.doc ? '{}' : v instanceof JsonValue || v instanceof ObjValue || v instanceof RecordValue ? stringOf(v) : toStr(v));
+
+// An array part of a JSON value adds like a list: "pre-" + json["$.c"] with [1,null,"y"] gives
+// ["pre-",1,NULL,"y"], which a string field stores as pre-,1,,y (checked in a lab tenant).
+const jsonList = (v) => (v instanceof JsonValue && !v.doc && Array.isArray(v.value) ? v.value.map(wrapJson) : v);
 
 // Text added to a DATETIME value counts as a number when all of it reads as one, the way Go's
 // strconv.ParseFloat reads it ("5", "-5", "5.5", "1e3", "1_000", "0x1p4"). Any other text, "",
@@ -326,7 +338,7 @@ function runStatementsInner(p, ctx, byName, depth) {
       const src = st.sourceExpr ? evaluate(ctx, st.sourceExpr) : ctx.get(st.source);
       const match = capture(st.pattern, src === null ? '' : toStr(src));
       ctx.set(st.target, match);
-      if (match.nomatch) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.sourceText || st.source}, so ${st.target}[n] gives ""`);
+      if (match.nomatch) ctx.note('info', 'capture-miss', `${st.target}: the capture pattern matched nothing in ${st.sourceText || st.source}, so ${st.target}[n] gives NULL`);
       continue;
     }
     ctx.set(st.target, evaluate(ctx, st.expr));
