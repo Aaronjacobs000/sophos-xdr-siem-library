@@ -1,0 +1,57 @@
+!SAMPLE={"druva_record":"platform_event","category":"EVENT","details":{"name":"backup-export","description":"Nightly export","networkRestriction":"","role":"Druva Cloud","status":"Success","sourceIP":"198.51.100.61","initiatorID":"sadmin@example.com"},"feature":"API","globalID":"7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e","timeStamp":1791806116,"productID":0,"syslogFacility":23,"syslogSeverity":5,"type":"API Credentials Created"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by collectors/druva-platform-events,
+# one JSON event per line with "druva_record": "platform_event" in front.
+# Child of DRUVA_DCP_JSON_PARENT: administrator and API activity (Admin Event, API, Data Access,
+# Data Anomalies and Ransomware Recovery events other than sign-ins), such as API credential and
+# administrator changes, restores and downloads, quarantine changes, rollback and malware scans,
+# to CloudAudit with the type as the event name and the feature as the event type.
+# json, feature, dtype, sev, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventName$ = dtype
+eventType$ = feature
+eventSource$ = "Druva Cloud Platform"
+recipientAccountId$ = json["$.globalID"]
+
+# Who did it: initiatorID on most events, initiatorName on restores and downloads, JobCreatedBy
+# on malware scans and adminName on the Data Anomalies admin audit trail.
+user = json["$.details.initiatorID"]
+user = IF user THEN user ELSE json["$.details.initiatorName"]
+user = IF user THEN user ELSE json["$.details.JobCreatedBy"]
+user = IF user THEN user ELSE json["$.details.adminName"]
+userName$ = user
+# Administrator events name the administrator they change.
+targetUserName$ = json["$.details.adminEmail"]
+src = json["$.details.sourceIP"]
+sourceAddress$ = IF src THEN src ELSE json["$.details.ipAddress"]
+status = json["$.details.status"]
+status = IF status THEN status ELSE json["$.details.state"]
+status$ = IF status THEN status ELSE json["$.details.Activity"]
+errorMessage$ = json["$.details.errorMessage"]
+
+name = json["$.details.resourceName"]
+name = IF name THEN name ELSE json["$.details.ResourceName"]
+name = IF name THEN name ELSE json["$.details.name"]
+p1.key$ = "resource_name"
+p1.value$ = name
+p2.key$ = "resource_type"
+rtype = json["$.details.resourceType"]
+p2.value$ = IF rtype THEN rtype ELSE json["$.details.ResourceType"]
+requestParameters$.record$ = IF name THEN [p1] ELSE NULL
+requestParameters$.record$ = IF name AND p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+
+# The whole details object goes in as JSON text: its keys differ for each type.
+d1.key$ = "details"
+d1.value$ = STRING(json["$.details"])
+d2.key$ = "syslog_severity"
+d2.value$ = STRING(sev)
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "product_id"
+d3.value$ = STRING(json["$.productID"])
+additionalEventData$.record$ = IF json["$.productID"] THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$

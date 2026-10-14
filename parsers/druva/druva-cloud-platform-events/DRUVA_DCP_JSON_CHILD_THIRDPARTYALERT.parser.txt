@@ -1,0 +1,93 @@
+!SAMPLE={"druva_record":"platform_event","category":"EVENT","details":{"alertName":"Data Anomalies","udaType":["Encryption","Modification"],"alertTime":"2026-10-12T11:45:02Z","resourceID":"4182","resourceName":"fs-finance-01","resourceType":"File Server","resourceParentID":"77","resourceParentName":"syd-backup-proxy","EncryptionReason":"High entropy in modified files","affectedSnapshot":"Mon Oct 12 11:30:00 2026","fileInfo":{"newFiles":3,"updatedFiles":412,"deletedFiles":0,"encryptedFiles":398}},"feature":"Alerts And Notifications","globalID":"7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e","timeStamp":1791805502,"productID":12289,"syslogFacility":23,"syslogSeverity":3,"type":"Alert"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by collectors/druva-platform-events,
+# one JSON event per line with "druva_record": "platform_event" in front.
+# Child of DRUVA_DCP_JSON_PARENT: Alerts And Notifications (Data Anomalies, Admin Login Event - New
+# Location, Data Access Alert - New Location) and Threat Watch IOC matches to the third-party
+# alert schema.
+# json, feature, dtype, sev, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Druva"
+alertCategory$ = feature
+alertName = json["$.details.alertName"]
+title$ = IF alertName THEN alertName ELSE dtype
+resource = json["$.details.resourceName"]
+summary$ = IF resource THEN title$ + ": " + resource ELSE title$
+targetHostName$ = resource
+
+# syslogSeverity is 0 (emergency) to 7 (debug).
+severity$ = "INFO"
+severity$ = IF sev == 5 THEN "LOW" ELSE severity$
+severity$ = IF sev == 4 THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == 2 OR sev == 3 THEN "HIGH" ELSE severity$
+severity$ = IF sev == 0 OR sev == 1 THEN "CRITICAL" ELSE severity$
+vendorSeverity$ = STRING(sev)
+
+# A login from a new location names the administrator; a data access from one, the initiator.
+userPrincipalName$ = json["$.details.adminEmail"]
+sourceUserName$ = json["$.details.initiatorName"]
+sourceAddress$ = json["$.details.adminIPAddress"]
+destinationAddress$ = json["$.details.targetIP"]
+userLocation$ = json["$.details.location"]
+deviceLocation$ = json["$.details.targetLocation"]
+result = json["$.details.loginResult"]
+result = IF result THEN result ELSE json["$.details.status"]
+action$ = NULL
+action$ = IF result == "Success" OR result == "Successful" THEN "SUCCEEDED" ELSE action$
+action$ = IF result == "Failure" OR result == "Failed" THEN "FAILED" ELSE action$
+
+a1.key$ = "alert_type"
+a1.value$ = dtype
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a0.key$ = "product_id"
+a0.value$ = STRING(json["$.productID"])
+additionalData$.record$ = IF json["$.productID"] THEN additionalData$.record$ + [a0] ELSE additionalData$.record$
+a2.key$ = "resource_type"
+a2.value$ = json["$.details.resourceType"]
+additionalData$.record$ = IF a2.value$ THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "resource_parent"
+parent = json["$.details.resourceParentName"]
+a3.value$ = IF parent THEN parent ELSE json["$.details.resourceParent"]
+additionalData$.record$ = IF a3.value$ THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "uda_type"
+a4.value$ = STRING(json["$.details.udaType"])
+additionalData$.record$ = IF json["$.details.udaType[0]"] THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "encrypted_files"
+a5.value$ = STRING(json["$.details.fileInfo.encryptedFiles"])
+additionalData$.record$ = IF json["$.details.fileInfo"] THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "updated_files"
+a6.value$ = STRING(json["$.details.fileInfo.updatedFiles"])
+additionalData$.record$ = IF json["$.details.fileInfo"] THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "deleted_files"
+a7.value$ = STRING(json["$.details.fileInfo.deletedFiles"])
+additionalData$.record$ = IF json["$.details.fileInfo"] THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "encryption_reason"
+a8.value$ = json["$.details.EncryptionReason"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "affected_snapshot"
+a9.value$ = json["$.details.affectedSnapshot"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "ioc_found"
+a10.value$ = json["$.details.iocFound"]
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "malicious_files_found"
+a11.value$ = STRING(json["$.details.maliciousFilesFound"])
+additionalData$.record$ = IF json["$.details.maliciousFilesFound"] THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "resource_auto_quarantined"
+a12.value$ = STRING(json["$.details.resourceAutoQuarantined"])
+additionalData$.record$ = IF json["$.details.iocFound"] THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "data_access_type"
+a13.value$ = json["$.details.dataAccessType"]
+additionalData$.record$ = IF a13.value$ THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "files"
+a14.value$ = STRING(json["$.details.files"])
+additionalData$.record$ = IF json["$.details.files"] THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
+a15.key$ = "size_bytes"
+a15.value$ = STRING(json["$.details.size"])
+additionalData$.record$ = IF json["$.details.size"] THEN additionalData$.record$ + [a15] ELSE additionalData$.record$

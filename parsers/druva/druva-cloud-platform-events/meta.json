@@ -1,0 +1,54 @@
+{
+  "vendor": "Druva",
+  "product": "Druva Cloud Platform events",
+  "versions": [
+    "v3"
+  ],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "collector": "collectors/druva-platform-events",
+  "docs": [
+    "https://developer.druva.com/reference/cybersecurity-events",
+    "https://developer.druva.com/reference/druva-cloud-platform-events-v3",
+    "https://developer.druva.com/reference/listeventsrequest-1",
+    "https://developer.druva.com/docs/events-api-for-cyber-resilience"
+  ],
+  "notes": "Druva offers these events only through the Druva Cloud Platform Events API, so run collectors/druva-platform-events to send them to a Sophos NG-SIEM HTTP Ingest integration; it puts \"druva_record\": \"platform_event\" in front of each event, which the parent's confirm string looks for. Console sign-ins (Password Verified, MFA Verified, Login With SSO, Admin Login) go to Auth with the user, source address and success or failure. Alerts And Notifications (data anomalies, admin login from a new location, data access from a new location) and Threat Watch IOC matches go to the third-party alert schema, with severity from syslogSeverity (0 and 1 critical, 2 and 3 high, 4 medium, 5 low), the affected resource, file counts and IOC details. Other Admin Event, API, Data Access, Data Anomalies and Ransomware Recovery events (API credential and administrator changes, restores and downloads, quarantine changes, rollback, malware scans and the rest) go to CloudAudit with the type as event_name, the feature as event_type, the initiator and source address, the status and the whole details object as JSON text. Events of other features, such as backup jobs, stay in the generic schema. timeStamp is read as epoch seconds, or as RFC 3339 text when an event carries that. Samples follow the fields in Druva's cybersecurity events and Druva Cloud Platform events (v3) references, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (165 of 165 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent. No built-in parser claimed these lines in 6 Run Tests.",
+  "parsers": [
+    {
+      "name": "DRUVA_DCP_JSON_PARENT",
+      "file": "DRUVA_DCP_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "DRUVA_DCP_JSON_CHILD_AUTH",
+      "file": "DRUVA_DCP_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "DRUVA_DCP_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT",
+      "file": "DRUVA_DCP_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "DRUVA_DCP_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "DRUVA_DCP_JSON_CHILD_CLOUDAUDIT",
+      "file": "DRUVA_DCP_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "DRUVA_DCP_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

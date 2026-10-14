@@ -1,0 +1,43 @@
+!SAMPLE={"druva_record":"platform_event","category":"EVENT","details":{"email":"jlee@example.com","status":"Success","sourceIP":"203.0.113.10"},"feature":"Admin Event","globalID":"7b2c4d1e-9f0a-4b3c-8d5e-6f7a8b9c0d1e","timeStamp":1791805211,"productID":0,"syslogFacility":23,"syslogSeverity":6,"type":"Password Verified"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by collectors/druva-platform-events,
+# one JSON event per line with "druva_record": "platform_event" in front.
+# Child of DRUVA_DCP_JSON_PARENT: Druva Cloud Platform Console sign-ins (Password Verified, MFA
+# Verified, Login With SSO and Admin Login) to Auth.
+# json, feature, dtype, sev, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+email = json["$.details.email"]
+targetUserName$ = IF email THEN email ELSE json["$.details.adminEmail"]
+userDisplayName$ = json["$.details.adminName"]
+src = json["$.details.sourceIP"]
+sourceAddress$ = IF src THEN src ELSE json["$.details.adminIPAddress"]
+authSystem$ = "Druva Cloud Platform"
+
+# status (Success or Failure), or loginResult on Admin Login.
+result = json["$.details.status"]
+result = IF result THEN result ELSE json["$.details.loginResult"]
+ok = result == "Success"
+status$ = result
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+mfaUsed$ = dtype == "MFA Verified" AND ok
+extraFailurereason$ = json["$.details.errorMessage"]
+
+r1.key$ = "druva_type"
+r1.value$ = dtype
+r2.key$ = "syslog_severity"
+r2.value$ = STRING(sev)
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "mfa_mode"
+r3.value$ = json["$.details.mfaMode"]
+eventMetadata$.record$ = IF r3.value$ THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "location"
+r4.value$ = json["$.details.location"]
+eventMetadata$.record$ = IF r4.value$ THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
