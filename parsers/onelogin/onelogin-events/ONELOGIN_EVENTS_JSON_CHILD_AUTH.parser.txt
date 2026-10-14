@@ -1,0 +1,82 @@
+!SAMPLE={"create":{"_id":"7a2d3c4b-0e9f-4a8b-c7d6-1e2f3a4b5c6d"},"event_timestamp":"2026-10-13 03:02:41 UTC","actor_user_id":41239876,"user_name":"Lee Contractor","actor_system":"","uuid":"7a2d3c4b-0e9f-4a8b-c7d6-1e2f3a4b5c6d","actor_user_name":"Lee Contractor","account_id":54321,"ipaddr":"198.51.100.44","notes":"Authentication method: password (invalid password).","event_type_id":6,"user_id":41239876,"risk_score":72,"risk_reasons":["New IP address","Unusual location"],"user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OneLogin events from the Event Broadcaster webhook (SIEM NDJSON) or the Events API.
+# Child of ONELOGIN_EVENTS_JSON_PARENT, by event_type_id:
+#   5 USER_LOGGED_INTO_ONELOGIN, 6 USER_FAILED_ONELOGIN_LOGIN, 7 USER_LOGGED_OUT_OF_ONELOGIN,
+#   8 USER_LOGGED_INTO_APP, 9 USER_FAILED_APP_LOGIN, 29 USER_LOGGED_OUT_OF_APP, 19 USER_LOCKED,
+#   10 USER_REQUESTED_NEW_PASSWORD, 11 USER_CHANGED_PASSWORD, 106 USER_CHANGE_PASSWORD_FAILED,
+#   1002 USER_LOGIN_CHALLENGE_FAILED and 950 OL_OTP_PUSH_REJECT.
+# json, tid, eventId, userName, actorName, ip, eventType$, sensorType$ and eventTimeUsec$ come
+# from the parent.
+
+sensorEventId$ = eventId
+login = json["$.login_name"]
+targetUserName$ = IF login THEN login ELSE userName
+userDisplayName$ = userName
+sourceAddress$ = ip
+userAgent$ = json["$.user_agent"]
+app = json["$.app_name"]
+applicationName$ = app
+authSystem$ = IF app THEN "OneLogin app" ELSE "OneLogin"
+
+name = "USER_LOGGED_INTO_ONELOGIN"
+name = IF tid == 6 THEN "USER_FAILED_ONELOGIN_LOGIN" ELSE name
+name = IF tid == 7 THEN "USER_LOGGED_OUT_OF_ONELOGIN" ELSE name
+name = IF tid == 8 THEN "USER_LOGGED_INTO_APP" ELSE name
+name = IF tid == 9 THEN "USER_FAILED_APP_LOGIN" ELSE name
+name = IF tid == 29 THEN "USER_LOGGED_OUT_OF_APP" ELSE name
+name = IF tid == 19 THEN "USER_LOCKED" ELSE name
+name = IF tid == 10 THEN "USER_REQUESTED_NEW_PASSWORD" ELSE name
+name = IF tid == 11 THEN "USER_CHANGED_PASSWORD" ELSE name
+name = IF tid == 106 THEN "USER_CHANGE_PASSWORD_FAILED" ELSE name
+name = IF tid == 1002 THEN "USER_LOGIN_CHALLENGE_FAILED" ELSE name
+name = IF tid == 950 THEN "OL_OTP_PUSH_REJECT" ELSE name
+status$ = name
+
+failed = tid == 6 OR tid == 9 OR tid == 106 OR tid == 1002 OR tid == 950
+logoff = tid == 7 OR tid == 29
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF tid == 19 THEN "ACCOUNT_LOCK" ELSE authCategory$
+authCategory$ = IF tid == 10 THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+authCategory$ = IF tid == 11 OR tid == 106 THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+action$ = IF tid == 19 OR tid == 10 OR tid == 11 OR tid == 106 THEN "ACCOUNT" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+notes = LOWERCASE(STRING(json["$.notes"]))
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND CONTAINS(notes, "invalid password") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF tid == 1002 OR tid == 950 THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF tid == 1002 OR tid == 950 THEN TRUE ELSE NULL
+subStatus$ = json["$.error_description"]
+
+m1.key$ = "event_type_id"
+m1.value$ = STRING(tid)
+m2.key$ = "account_id"
+m2.value$ = STRING(json["$.account_id"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "notes"
+m3.value$ = json["$.notes"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "risk_score"
+m4.value$ = STRING(json["$.risk_score"])
+eventMetadata$.record$ = IF json["$.risk_score"] THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+# risk_reasons is a list of strings, or null.
+reasons = json["$.risk_reasons"]
+m5.key$ = "risk_reasons"
+m5.value$ = STRING(reasons)
+eventMetadata$.record$ = IF reasons != NULL AND LENGTH(reasons) != 0 THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "otp_device_name"
+m6.value$ = json["$.otp_device_name"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "actor_user_name"
+m7.value$ = actorName
+eventMetadata$.record$ = IF actorName AND actorName != userName THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

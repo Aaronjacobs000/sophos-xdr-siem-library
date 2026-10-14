@@ -1,0 +1,36 @@
+!SAMPLE={"create":{"_id":"8b3e4d5c-1f0a-4b9c-d8e7-2f3a4b5c6d7e"},"event_timestamp":"2026-10-13 03:05:12 UTC","actor_user_id":41234567,"user_name":"Pat Example","app_id":1234567,"app_name":"Payroll Portal","actor_system":"","uuid":"8b3e4d5c-1f0a-4b9c-d8e7-2f3a4b5c6d7e","actor_user_name":"Pat Example","account_id":54321,"ipaddr":"203.0.113.10","event_type_id":8,"user_id":41234567,"user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"event_type_id"\s*:\s*\d+.*"account_id"\s*:\s*\d+|"account_id"\s*:\s*\d+.*"event_type_id"\s*:\s*\d+)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OneLogin events from an Event Webhook for Log Management (Event Broadcaster) posting to
+# Sophos NG-SIEM HTTP Ingest with format SIEM (NDJSON), one event object per line, and the HTTP
+# Ingest key in a custom Authorization: Bearer header. The JSON Array format puts a whole batch on
+# one line, which HTTP Ingest reads as one record, so array lines stay unclaimed.
+# Webhook events carry uuid and event_timestamp ("2026-10-13 03:00:05 UTC"); records from the
+# Events API carry id and created_at (RFC 3339). Both are read.
+# Parent: hands sign-ins, sign-outs, failed sign-ins, OTP failures, lockouts and password changes
+# to Auth, and every other event type (users, roles, apps, policies, impersonation) to CloudAudit.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "OneLogin"
+tid = INT(STRING(json["$.event_type_id"]), 10)
+eventId = json["$.uuid"]
+eventId = IF eventId THEN eventId ELSE STRING(json["$.id"])
+ts = json["$.event_timestamp"]
+created = json["$.created_at"]
+eventTimeUsec$ = IF created THEN DATETIME(created, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF ts THEN DATETIME(REPLACE(ts, " UTC", ""), "2006-01-02 15:04:05") ELSE eventTimeUsec$
+userName = json["$.user_name"]
+actorName = json["$.actor_user_name"]
+ip = json["$.ipaddr"]
+
+# Event type ids from OneLogin's event types list (GET /api/1/events/types).
+authEvent = tid == 5 OR tid == 6 OR tid == 7 OR tid == 8 OR tid == 9 OR tid == 29 OR tid == 19 OR tid == 10 OR tid == 11 OR tid == 106 OR tid == 1002 OR tid == 950
+eventType$ = IF authEvent THEN "auth" ELSE "audit"
