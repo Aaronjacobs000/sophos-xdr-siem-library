@@ -9,7 +9,7 @@ import {
 import { query } from './jsonpath.js';
 import { goParse, goParseAuto } from './gotime.js';
 import { goReplaceAll } from './goregex.js';
-import { parseCef, parseLeef, splitNameValues, urlParse, idxOfTld, isValidIp, isRfc1918 } from './formats.js';
+import { parseCef, parseLeef, splitCsv, splitNameValues, urlParse, idxOfTld, isValidIp, isRfc1918 } from './formats.js';
 
 const str = (v) => (v === null || v === undefined ? null : toStr(v));
 
@@ -113,7 +113,9 @@ export function trimPairs(s, repeat) {
 // (checked in a lab tenant): ["a","b"] with no spaces, object keys sorted, <, > and & escaped, a
 // NULL item or member written as 0 and a DATETIME one as {}. A NULL inside the value JSON()
 // returned stays null (see JsonValue), but that value inside a list or a record is written as {}.
-// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b". A number becomes an
+// TRIM_ALL then takes the brackets off a top-level field, leaving "a","b". STRING() of the value
+// JSON() returned writes it as JSON whatever it holds, so JSON("\"s<\"") gives "s\u003c" with
+// its quotes, JSON("5") gives 5 and JSON("null") gives null. A number becomes an
 // int64 first: the whole part in full, or -9223372036854775808 when it doesn't fit, as with
 // (3 / 2) * 9223372036854775807 and 9223372036854775807 itself, which is the float 2^63.
 const INT64_LIMIT = 2 ** 63;
@@ -121,7 +123,8 @@ function stringOf(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'number') { const t = Math.trunc(v); return t < INT64_LIMIT && t >= -INT64_LIMIT ? BigInt(t).toString() : '-9223372036854775808'; }
   if (isList(v)) return goJsonList(v);
-  if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJsonPlain(v.value, v.doc ? 'null' : '0');
+  if (v instanceof JsonValue && v.doc) return goJsonPlain(v.value, 'null');
+  if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return goJsonPlain(v.value, '0');
   if (v instanceof ObjValue || v instanceof RecordValue) return goJson(v);
   return toStr(v);
 }
@@ -165,10 +168,18 @@ function goJsonObject(entries, write = goJson) {
   return `{${entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => `${goQuote(k)}:${write(x)}`).join(',')}}`;
 }
 
+// CEF() and LEEF() objects also hold their header fields under the keys "0", "1" and on, so
+// STRING() writes them, LENGTH() and OBJKEYS() count them and values["0"] reads one. An extension
+// with the same key, such as 0=x, takes its place (checked in a lab tenant).
+function withHeaderKeys(o) {
+  return o ? new ObjValue(new Map([...o.header.map((h, i) => [String(i), h]), ...o.map]), o.header) : o;
+}
+
 export const FUNCTIONS = {
+  // The separator is read as the first character of a CSV separator (see splitCsv).
   SPLIT: [2, 3, (c, [s, d, greedy]) => {
     if (s === null) return null;
-    const parts = toStr(s).split(toStr(d));
+    const parts = splitCsv(toStr(s), toStr(d) ?? '');
     return truthy(greedy) ? parts.filter((p) => p !== '') : parts;
   }],
   // The quote character is required: the engine rejects a parser that calls SPLIT_NAME_VALUES
@@ -179,8 +190,8 @@ export const FUNCTIONS = {
     if (s instanceof JsonValue) return s;
     try { return new JsonValue(JSON.parse(toStr(s)), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
   }],
-  CEF: [1, 1, (c, [s]) => parseCef(str(s))],
-  LEEF: [1, 2, (c, [s, d]) => parseLeef(str(s), d === undefined ? null : str(d))],
+  CEF: [1, 1, (c, [s]) => withHeaderKeys(parseCef(str(s)))],
+  LEEF: [1, 2, (c, [s, d]) => withHeaderKeys(parseLeef(str(s), d === undefined ? null : str(d)))],
   DATETIME: [1, 3, (c, [s, layout, two]) => {
     if (s === null) return null;
     if (s instanceof TimeValue) return s;

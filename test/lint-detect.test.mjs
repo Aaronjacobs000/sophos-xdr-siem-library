@@ -64,6 +64,17 @@ test('lint: SPLIT_NAME_VALUES needs its quote character, and numbers must be who
   for (const good of ['l = [1, 2]', 'l = [-1]', 'l = -1', 'l = [TRUE, 7, "q"]', 'l = "1.5"', 'l = 3 / 2', 'l = [3 / 2]']) assert.deepEqual(lint(good), [], good);
 });
 
+// The engine rejected each parser marked bad and ran the others (checked in a lab tenant).
+test('lint: a minus sign only works as part of a number, and NOT is a keyword', () => {
+  const lint = (line) => lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.nids\nx0 = 5\n${line}` }]).problems.filter((p) => p.level === 'error');
+  for (const bad of ['l = [-(3 / 2)]', 'l = -(3)', 'l = -x0', 'l = -LENGTH("a")', 'l = - 5', 'l = --5', 'l = 3-1', 'l = 3 -1', 'l = -TRUE', 'l = -"5"', 'l = [- 1]', 'l = 1 - - 1', 'l = x0-1', 'l = x0 -1', 'l = !TRUE']) {
+    assert.deepEqual(lint(bad).map((p) => p.code), ['syntax'], bad);
+  }
+  assert.match(lint('l = x0-1')[0].message, /^-1: a minus sign right before a digit makes a negative number/);
+  assert.match(lint('l = -x0')[0].message, /^a minus sign only works as part of a number/);
+  for (const good of ['l = 3 - -1', 'l = (-1)', 'l = -0', 'l = x0 - 1', 'l = x0 * -1', 'l = NOT TRUE', 'l = 5 + NOT TRUE', 'l = not TRUE', 'l = NOT(FALSE)']) assert.deepEqual(lint(good), [], good);
+});
+
 test('lint: parent and child structure', () => {
   const parent = { name: 'A_PARENT', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\nkind$ = "x"' };
   const child = { name: 'A_CHILD', parent: 'A_PARENT', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=missing$=="y"\n!SCHEMA=scwx.auth' };

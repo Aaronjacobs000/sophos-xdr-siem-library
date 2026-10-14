@@ -457,11 +457,13 @@ whole = 4 / 2`, { d: '{"f":1.5,"n":5}' });
 });
 
 // Each table holds an expression and what the engine gave for STRING([expression]) in a lab
-// tenant, or null when the engine failed the event.
-function engineTable(rows) {
+// tenant, or null when the engine failed the event. wrap changes what is stored, and prelude
+// sets variables the expressions read.
+function engineTable(rows, { wrap = (expr) => `STRING([${expr}])`, prelude = '' } = {}) {
   for (const [expr, want] of rows) {
-    if (want === null) assert.throws(() => run(`x = STRING([${expr}])`), undefined, expr);
-    else assert.equal(get(`x = STRING([${expr}])`, 'x'), want, expr);
+    const text = `${prelude}\nx = ${wrap(expr)}`;
+    if (want === null) assert.throws(() => run(text), undefined, expr);
+    else assert.equal(get(text, 'x'), want, expr);
   }
 }
 
@@ -744,6 +746,268 @@ d = STRING(9007199254740993 + 2)
 e = STRING(-9223372036854775807 - 1)
 f = STRING((1 / 2) * 9223372036854775807)`);
   assert.deepEqual(['a', 'b', 'c', 'd', 'e', 'f'].map((k) => v.get(k)), ['-9223372036854775808', '9223372030926248960', '4611686014132420608', '9007199254740994', '-9223372036854775808', '4611686018427387904']);
+});
+
+test('SPLIT() reads its text as CSV, with the first character of the separator', () => {
+  engineTable([
+  ['SPLIT("a::b::c", "::")', '[["a","","b","","c"]]'],
+  ['SPLIT("a,b;c", ",;")', '[["a","b;c"]]'],
+  ['SPLIT("abc", "")', null], // fails: invalid field or comment delimiter
+  ['SPLIT("a,\\"b,c\\",d", ",")', '[["a","b,c","d"]]'],
+  ['SPLIT("a b \\"c d\\" e", " ")', '[["a","b","c d","e"]]'],
+  ['SPLIT("a,b\\nc,d", ",")', '[["a","b","c","d"]]'],
+  ['SPLIT("aébéc", "é")', '[["a","b","c"]]'],
+  ['SPLIT("a→b→c", "→x")', '[["a","b","c"]]'],
+  ['SPLIT("a::b::c", "::", TRUE)', '[["a","b","c"]]'],
+  ['SPLIT(" a , b ", ",")', '[[" a "," b "]]'],
+  ['SPLIT("a\\"b,c", ",")', '[["a\\"b","c"]]'],
+  ['SPLIT("", ",")', '[[]]'],
+  ['SPLIT("a,b,", ",")', '[["a","b",""]]'],
+  ['SPLIT("a|b", "|")', '[["a","b"]]'],
+  ['SPLIT("a\\tb", "\\t")', '[["a","b"]]'],
+  ['SPLIT("a\\nb", "\\n")', null], // fails: invalid field or comment delimiter
+  ['SPLIT("a\\"b\\"c", "\\"")', null], // fails: invalid field or comment delimiter
+  ['SPLIT(12345, "3")', '[["12","45"]]'],
+  ['SPLIT("a,,b", ",", TRUE)', '[["a","b"]]'],
+  ['SPLIT("\\"a,b\\"", ",")', '[["a,b"]]'],
+  ['SPLIT("x;y", ";;")', '[["x","y"]]'],
+  ['SPLIT("aXbxc", "x")', '[["aXb","c"]]'],
+  ['SPLIT("a,b", NULL)', null], // fails: invalid field or comment delimiter
+  ['SPLIT("a,b", ",", FALSE)', '[["a","b"]]'],
+  ['SPLIT("a😀b😀c", "😀")', '[["a","b","c"]]'],
+  ['SPLIT("ab", "")', null], // fails: invalid field or comment delimiter
+  ['SPLIT("a", ",")', '[["a"]]'],
+  ['SPLIT("a,b", 5)', '[["a,b"]]'],
+  ['SPLIT("a5b", 5)', '[["a","b"]]'],
+  ['SPLIT("a b  c", " ")', '[["a","b","","c"]]'],
+  ['SPLIT("a b  c", " ", TRUE)', '[["a","b","c"]]'],
+  ['SPLIT("a::b", ":::")', '[["a","","b"]]'],
+  ['SPLIT("é", "")', null], // fails: invalid field or comment delimiter
+  ['SPLIT("a😀b", "😀x")', '[["a","b"]]'],
+  ['SPLIT("a\\\\b", "\\\\")', '[["a","b"]]'],
+  ['SPLIT("a,b\\nc", ",")', null], // fails: wrong number of fields
+  ['SPLIT("a\\n\\nb", ",")', '[["a","b"]]'],
+  ['SPLIT("\\"a\\"\\"b\\",c", ",")', '[["a\\"b","c"]]'],
+  ['SPLIT("\\"a\\"b,c", ",")', '[["a\\"b,c"]]'],
+  ['SPLIT("\\"a,b", ",")', '[["a,b"]]'],
+  ['SPLIT("x\\"a\\"", ",")', '[["x\\"a\\""]]'],
+  ['SPLIT("\\"a\\nb\\",c", ",")', '[["a\\nb","c"]]'],
+  ['SPLIT(" \\"a,b\\"", ",")', '[[" \\"a","b\\""]]'],
+  ['SPLIT("\\"\\"", ",")', '[[""]]'],
+  ['SPLIT(",", ",")', '[["",""]]'],
+  ['SPLIT("\\n", ",")', '[[]]'],
+  ['SPLIT("a\\n", ",")', '[["a"]]'],
+  ['SPLIT("a,b\\nc,d,e", ",")', null], // fails: wrong number of fields
+  ['SPLIT("\\"a\\" ,b", ",")', '[["a\\" ,b"]]'],
+  ['SPLIT("\\"a\\"x\\"y\\",b", ",")', '[["a\\"x\\"y","b"]]'],
+  ['SPLIT("a b", " ", "yes")', '[["a","b"]]'],
+  ['SPLIT(" ", ",")', '[[" "]]'],
+  ['SPLIT("a,b", ",", 1)', '[["a","b"]]'],
+  ['SPLIT("a;b", ";")', '[["a","b"]]'],
+  ['SPLIT("a,\\"\\",b", ",")', '[["a","","b"]]'],
+  ['SPLIT("\\"a\\"", ",", TRUE)', '[["a"]]'],
+  ['SPLIT("a\\n\\"b\\nc\\"", ",")', '[["a","b\\nc"]]'],
+  ['SPLIT("\\"a\\"\\"", ",")', '[["a\\""]]'],
+  ['SPLIT("a\\nb,c", ",")', null], // fails: wrong number of fields
+  ]);
+});
+
+test('STRING() writes the value JSON() returned as JSON whatever it holds', () => {
+  engineTable([
+  ['JSON("\\"s<\\"")', '"s\\u003c"'],
+  ['JSON("5")', '5'],
+  ['JSON("1.5")', '1.5'],
+  ['JSON("true")', 'true'],
+  ['JSON("null")', 'null'],
+  ['JSON("\\"a\\\\u00e9\\\\n\\"")', '"aé\\n"'],
+  ['JSON("1e21")', '1e+21'],
+  ['JSON("-0")', '-0'],
+  ['JSON("{\\"a\\":\\"s<\\"}")["$.a"]', 's<'],
+  ['JSON("[\\"s<\\"]")["$[0]"]', 's<'],
+  ['JSON("\\"\\"")', '""'],
+  ['JSON(" \\"x\\" ")', '"x"'],
+  ['JSON("12345678901234567890")', '12345678901234567000'],
+  ['JSON("\\"a&b\\"")', '"a\\u0026b"'],
+  ['JSON("false")', 'false'],
+  ['JSON("\\"a\\\\\\"b\\"")', '"a\\"b"'],
+  ['JSON("\\"s<\\"")["$"]', 's<'],
+  ['JSON("1e-7")', '1e-7'],
+  ['JSON("{\\"a\\":\\"s<\\"}")["a"]', 's<'],
+  ['JSON("\\"\\\\u2028\\"")', '"\\u2028"'],
+  ['LENGTH(STRING(JSON("\\"abc\\"")))', '5'],
+  ], { wrap: (expr) => `STRING(${expr})` });
+});
+
+test('URL_PARSE() has raw, password only when the URL has one, and "" for a missing part', () => {
+  engineTable([
+  ['URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag")', '[{"fragment":"frag","host":"example.com","host_raw":"example.com:8443","password":"pass","path":"/a/b","path_raw":"/a/b","port":"8443","query":"x=1\\u0026y=2","query_raw":"x=1\\u0026y=2","raw":"https://user:pass@example.com:8443/a/b?x=1\\u0026y=2#frag","scheme":"https","user":"user"}]'],
+  ['URL_PARSE("https://user@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"https://user@example.com/","scheme":"https","user":"user"}]'],
+  ['URL_PARSE("http://example.com")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"http://example.com","scheme":"http","user":""}]'],
+  ['URL_PARSE("example.com/p")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/p","path_raw":"/p","port":"","query":"","query_raw":"","raw":"example.com/p","scheme":"http","user":""}]'],
+  ['URL_PARSE("https://example.com/p?q=1#")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/p","path_raw":"/p","port":"","query":"q=1","query_raw":"q=1","raw":"https://example.com/p?q=1#","scheme":"https","user":""}]'],
+  ['URL_PARSE("https://example.com:443")', '[{"fragment":"","host":"example.com","host_raw":"example.com:443","path":"","path_raw":"","port":"443","query":"","query_raw":"","raw":"https://example.com:443","scheme":"https","user":""}]'],
+  ['URL_PARSE("https://[2001:db8::1]:8080/x")', '[{"fragment":"","host":"2001:db8::1","host_raw":"[2001:db8::1]:8080","path":"/x","path_raw":"/x","port":"8080","query":"","query_raw":"","raw":"https://[2001:db8::1]:8080/x","scheme":"https","user":""}]'],
+  ['URL_PARSE("", TRUE)', '[{"fragment":"","host":"","host_raw":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"","scheme":"http","user":""}]'],
+  ['URL_PARSE("https://user:@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","password":"","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"https://user:@example.com/","scheme":"https","user":"user"}]'],
+  ['URL_PARSE("https://:pass@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","password":"pass","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"https://:pass@example.com/","scheme":"https","user":""}]'],
+  ['URL_PARSE(NULL, TRUE)', '[{"fragment":"","host":"","host_raw":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"","scheme":"http","user":""}]'],
+  ['URL_PARSE("HTTPS://EXAMPLE.COM/A?B=C")', '[{"fragment":"","host":"example.com","host_raw":"EXAMPLE.COM","path":"/A","path_raw":"/A","port":"","query":"B=C","query_raw":"B=C","raw":"HTTPS://EXAMPLE.COM/A?B=C","scheme":"https","user":""}]'],
+  ['URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag")["user"]', '["user"]'],
+  ['URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag")["password"]', '["pass"]'],
+  ['URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag")["raw_query"]', '[0]'],
+  ['URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag")["raw"]', '["https://user:pass@example.com:8443/a/b?x=1\\u0026y=2#frag"]'],
+  ['URL_PARSE("http://example.com")["port"]', '[""]'],
+  ['URL_PARSE("http://example.com")["user"]', '[""]'],
+  ['URL_PARSE("http://example.com")["fragment"]', '[""]'],
+  ['URL_PARSE("http://example.com")["query"]', '[""]'],
+  ['URL_PARSE("http://example.com")["path"]', '[""]'],
+  ['LENGTH(URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag"))', '[12]'],
+  ['OBJKEYS(URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag"))', '[["fragment","host","host_raw","password","path","path_raw","port","query","query_raw","raw","scheme","user"]]'],
+  ['IF URL_PARSE("http://example.com")["port"] == NULL THEN "eqnull" ELSE "ne"', '["eqnull"]'],
+  ['URL_PARSE("http://example.com")["raw_query"] == NULL', '[true]'],
+  ['OBJVALUES(URL_PARSE("http://example.com"))', '[["","example.com","example.com","","","","","","http://example.com","http",""]]'],
+  ['URL_PARSE("http://example.com")["path_raw"]', '[""]'],
+  ['LENGTH(URL_PARSE("http://example.com")["port"])', '[0]'],
+  ['OBJVALUES(URL_PARSE("https://user:pass@example.com:8443/a/b?x=1&y=2#frag"))', '[["frag","example.com","example.com:8443","pass","/a/b","/a/b","8443","x=1\\u0026y=2","x=1\\u0026y=2","https://user:pass@example.com:8443/a/b?x=1\\u0026y=2#frag","https","user"]]'],
+  ]);
+});
+
+test('CEF() and LEEF() hold their header fields under the keys "0" and on', () => {
+  engineTable([
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")', '[{"0":"CEF:0","1":"Vend","2":"Prod","3":"1.0","4":"100","5":"Name\\u003cx\\u003e","6":"5","act":"b\\u003cx\\u003e","dst":"10.0.0.2","src":"10.0.0.1"}]'],
+  ['CEF("Nov 6 07:49:03 192.0.2.1 %hello: CEF:0|Check Point|VPN \\\\| x|R81|Log|Spoof|Unknown|act=Drop cs3Label=Protection Type cs3=IPS")', '[{"0":"CEF:0","1":"Check Point","2":"VPN \\\\| x","3":"R81","4":"Log","5":"Spoof","6":"Unknown","Protection Type":"IPS","act":"Drop","cs3":"IPS","cs3Label":"Protection Type"}]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")[0]', '["CEF:0"]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")["0"]', '["CEF:0"]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")[6]', '["5"]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")["6"]', '["5"]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")["7"]', '[0]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")[7]', '[0]'],
+  ['LENGTH(CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2"))', '[10]'],
+  ['OBJKEYS(CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2"))', '[["0","1","2","3","4","5","6","act","dst","src"]]'],
+  ['OBJVALUES(CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2"))', '[["CEF:0","Vend","Prod","1.0","100","Name\\u003cx\\u003e","5","b\\u003cx\\u003e","10.0.0.2","10.0.0.1"]]'],
+  ['CEF("Nov 6 07:49:03 192.0.2.1 %hello: CEF:0|Check Point|VPN \\\\| x|R81|Log|Spoof|Unknown|act=Drop cs3Label=Protection Type cs3=IPS")["Protection Type"]', '["IPS"]'],
+  ['CEF("Nov 6 07:49:03 192.0.2.1 %hello: CEF:0|Check Point|VPN \\\\| x|R81|Log|Spoof|Unknown|act=Drop cs3Label=Protection Type cs3=IPS")["2"]', '["VPN \\\\| x"]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|0=x 1=y")', '[{"0":"x","1":"y","2":"P","3":"1","4":"100","5":"N","6":"5"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|0=x 1=y")[0]', '["x"]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5"}]'],
+  ['LENGTH(CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2"), "keys")', '[10]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")["-1"]', '[0]'],
+  ['CEF("CEF:0|Vend|Prod|1.0|100|Name<x>|5|src=10.0.0.1 act=b<x> dst=10.0.0.2")[-1]', '[0]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|0=x 1=y")["0"]', '["x"]'],
+  ['LEEF("LEEF:1.0|Vend|Prod|1.0|Evt1|src=1.2.3.4\\tdst=5.6.7.8")', '[{"0":"LEEF:1.0","1":"Vend","2":"Prod","3":"1.0","4":"Evt1","dst":"5.6.7.8","src":"1.2.3.4"}]'],
+  ['LEEF("LEEF:2.0|Vend|Prod|1.0|Evt2|^|src=1.2.3.4^dst=5.6.7.8")', '[{"0":"LEEF:2.0","1":"Vend","2":"Prod","3":"1.0","4":"Evt2","5":"^","dst":"5.6.7.8","src":"1.2.3.4"}]'],
+  ['LEEF("LEEF:1.0|Vend|Prod|1.0|Evt1|src=1.2.3.4\\tdst=5.6.7.8")["0"]', '["LEEF:1.0"]'],
+  ['LEEF("LEEF:1.0|Vend|Prod|1.0|Evt1|src=1.2.3.4\\tdst=5.6.7.8")[0]', '["LEEF:1.0"]'],
+  ['LENGTH(LEEF("LEEF:1.0|Vend|Prod|1.0|Evt1|src=1.2.3.4\\tdst=5.6.7.8"))', '[7]'],
+  ['OBJKEYS(LEEF("LEEF:2.0|Vend|Prod|1.0|Evt2|^|src=1.2.3.4^dst=5.6.7.8"))', '[["0","1","2","3","4","5","dst","src"]]'],
+  ]);
+});
+
+test('NOT binds looser than + and tighter than comparisons, and follows the engine\'s truth rules', () => {
+  engineTable([
+  ['NOT TRUE', '[false]'],
+  ['NOT FALSE', '[true]'],
+  ['NOT ""', '[true]'],
+  ['NOT "false"', '[true]'],
+  ['NOT "abc"', '[false]'],
+  ['NOT 0', '[true]'],
+  ['NOT 1', '[false]'],
+  ['NOT NULL', '[true]'],
+  ['NOT []', '[true]'],
+  ['NOT [1]', '[false]'],
+  ['NOT [1, 2]', null], // fails: cannot convert list to bool
+  ['NOT 1 == 2', '[false]'],
+  ['NOT TRUE AND FALSE', '[false]'],
+  ['NOT FALSE AND FALSE', '[false]'],
+  ['NOT TRUE OR TRUE', '[true]'],
+  ['NOT 0 > 1', '[false]'],
+  ['NOT "a" + "b"', '[false]'],
+  ['NOT NOT TRUE', '[true]'],
+  ['NOT(FALSE)', '[true]'],
+  ['IF NOT FALSE THEN "y" ELSE "n"', '["y"]'],
+  ['TRUE AND NOT FALSE', '[true]'],
+  ['NOT (1 / 2)', '[false]'],
+  ['NOT " "', '[false]'],
+  ['NOT "0"', '[false]'],
+  ['NOT "FALSE"', '[true]'],
+  ['NOT JSON("[]")', null], // fails: cannot convert json to bool
+  ['NOT SPLIT("a", ",")', '[false]'],
+  ['NOT 1 + 1', '[false]'],
+  ['NOT "False"', '[true]'],
+  ['NOT [0]', '[true]'],
+  ['NOT JSON("{}")', null], // fails: cannot convert json to bool
+  ['NOT [""]', '[true]'],
+  ['NOT "true"', '[false]'],
+  ['NOT -1', '[false]'],
+  ['NOT FALSE == FALSE', '[false]'],
+  ['FALSE OR NOT FALSE AND FALSE', '[false]'],
+  ['NOT JSON("{\\"a\\":0}")["$.a"]', '[true]'],
+  ['NOT JSON("null")', null], // fails: cannot convert json to bool
+  ['NOT DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")', '[false]'],
+  ['NOT JSON("[1,2]")', null], // fails: cannot convert json to bool
+  ['NOT [NULL]', '[true]'],
+  ['NOT URL_PARSE("http://a.com")', '[false]'],
+  ['IF " " THEN "y" ELSE "n"', '["y"]'],
+  ['IF JSON("[]") THEN "y" ELSE "n"', null], // fails: cannot convert json to bool
+  ['IF JSON("{}") THEN "y" ELSE "n"', null], // fails: cannot convert json to bool
+  ['IF j["$.o"] THEN "y" ELSE "n"', '["y"]'],
+  ['IF j["$.e"] THEN "y" ELSE "n"', '["n"]'],
+  ['IF j["$.a0"] THEN "y" ELSE "n"', '["n"]'],
+  ['IF j["$.a1"] THEN "y" ELSE "n"', '["n"]'],
+  ['IF j["$.s"] THEN "y" ELSE "n"', '["y"]'],
+  ['IF " false " THEN "y" ELSE "n"', '["y"]'],
+  ['IF JSON("null") THEN "y" ELSE "n"', null], // fails: cannot convert json to bool
+  ['IF JSON("0") THEN "y" ELSE "n"', null], // fails: cannot convert json to bool
+  ['NOT j["$.o"]', '[false]'],
+  ['NOT j["$.e"]', '[true]'],
+  ['NOT j["$.a2"]', null], // fails: cannot convert list to bool
+  ['NOT j["$.a0"]', '[true]'],
+  ['NOT j["$.a1"]', '[true]'],
+  ['NOT j["$.s"]', '[false]'],
+  ['NOT " false "', '[false]'],
+  ['NOT JSON("0")', null], // fails: cannot convert json to bool
+  ['NOT "\\tx"', '[false]'],
+  ['NOT j', null], // fails: cannot convert json to bool
+  ['TRUE AND " "', '[true]'],
+  ['" " OR FALSE', '[true]'],
+  ['NOT 5 * 0', '[true]'],
+  ['NOT 1 - 1', '[true]'],
+  ['5 + NOT TRUE', '[5]'],
+  ['5 + NOT TRUE + 1', '[5]'],
+  ['NOT TRUE + 1', '[false]'],
+  ['[NOT FALSE, NOT TRUE]', '[[true,false]]'],
+  ['STRING(NOT FALSE)', '["true"]'],
+  ['NOT IF TRUE THEN FALSE ELSE TRUE', '[true]'],
+  ['NOT 1 != 2', '[true]'],
+  ['NOT CEF("CEF:0|V|P|1|100|N|5|a=b")', '[false]'],
+  ['NOT SPLIT_NAME_VALUES("a=1", " ", "=", "\\"")', '[false]'],
+  ['NOT r', '[false]'],
+  ['NOT "\\n"', '[false]'],
+  ['NOT [" "]', '[false]'],
+  ['IF [" "] THEN "y" ELSE "n"', '["y"]'],
+  ['NOT "fAlSe"', '[false]'],
+  ['NOT [JSON("{}")]', null], // fails: cannot convert json to bool
+  ['IF [""] THEN "y" ELSE "n"', '["n"]'],
+  ['NOT ["false"]', '[true]'],
+  ['NOT [" false "]', '[false]'],
+  ['NOT [TRUE]', '[false]'],
+  ['NOT "f"', '[false]'],
+  ['NOT "F"', '[false]'],
+  ['NOT "fALSE"', '[false]'],
+  ['NOT "falsE"', '[false]'],
+  ['NOT "False "', '[false]'],
+  ['NOT "no"', '[false]'],
+  ['NOT "off"', '[false]'],
+  ['NOT "nil"', '[false]'],
+  ['NOT "null"', '[false]'],
+  ['NOT "FaLsE"', '[false]'],
+  ['NOT "0.0"', '[false]'],
+  ['NOT "false\\n"', '[false]'],
+  ['IF "fAlSe" THEN "y" ELSE "n"', '["y"]'],
+  ['NOT [[1, 2]]', null], // fails: cannot convert list to bool
+  ['NOT [[]]', '[true]'],
+  ['NOT [[0]]', '[true]'],
+  ], { prelude: 'j = JSON("{\\"o\\":{\\"k\\":1},\\"e\\":{},\\"a2\\":[1,2],\\"a0\\":[],\\"a1\\":[0],\\"z\\":0,\\"s\\":\\" \\"}")' + '\nr.k$ = 1' });
 });
 
 test('a path that can select several nodes but selects one gives that node', () => {

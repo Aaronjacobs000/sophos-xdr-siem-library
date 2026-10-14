@@ -192,14 +192,23 @@ export function truthy(v) {
   return true;
 }
 
-// IF, AND and OR read their operands like truthy(), except for lists (checked in a lab tenant):
-// an empty list is false, a list of one counts as its item, and a list of two or more fails
-// the event with "cannot convert list to bool". A JSON array counts as a list.
+// IF, AND, OR and NOT read their operands like truthy(), except for these (checked in a lab
+// tenant). Text is false only when it is "", "false", "False" or "FALSE", so " ", " false " and
+// "fAlSe" are true. An empty list is false, a list of one counts as its item, and a list of two
+// or more fails the event with "cannot convert list to bool". A part of a JSON value counts as a
+// list when it is an array, and an empty object is false. The value JSON() returned fails the
+// event, whatever it holds.
+const FALSE_TEXT = new Set(['', 'false', 'False', 'FALSE']);
 export function toBool(v) {
+  if (v instanceof JsonValue && v.doc) throw new RuntimeError('cannot convert json to bool: the value JSON() returned can\'t be a condition. Test a part of it, such as json["$.field"].', 'json-bool');
   const list = isList(v) ? v : v instanceof JsonValue && Array.isArray(v.value) ? v.value.map(wrapJson) : null;
-  if (!list) return truthy(v);
+  if (!list) {
+    if (typeof v === 'string') return !FALSE_TEXT.has(v);
+    if (v instanceof JsonValue && v.value !== null && typeof v.value === 'object') return Object.keys(v.value).length > 0;
+    return truthy(v);
+  }
   if (list.length > 1) throw new RuntimeError(`cannot convert list to bool: the condition is a list of ${list.length}. Test LENGTH(list) > 0 or one item instead.`, 'list-bool');
-  return list.length === 1 && truthy(list[0]);
+  return list.length === 1 && toBool(list[0]);
 }
 
 // NULL equals "" as well as NULL (checked in a lab tenant). When both sides are numbers, TRUE or
