@@ -1,0 +1,83 @@
+!SAMPLE=<132>Oct 12 22:44:10 wazuh-mgr01 ossec: {"timestamp":"2026-10-12T22:44:10.006+0000","rule":{"level":7,"description":"Integrity checksum changed.","id":"550","mitre":{"id":["T1565.001"],"tactic":["Impact"],"technique":["Stored Data Manipulation"]},"firedtimes":1,"mail":false,"groups":["ossec","syscheck","syscheck_entry_modified","syscheck_file"],"pci_dss":["11.5"]},"agent":{"id":"003","name":"web01","ip":"192.0.2.10"},"manager":{"name":"wazuh-mgr01"},"id":"1791845050.30721","full_log":"File '/etc/ssh/sshd_config' modified\nMode: realtime\nChanged attributes: size,mtime,sha256\nSize changed from '3254' to '3290'\n","syscheck":{"path":"/etc/ssh/sshd_config","mode":"realtime","size_before":"3254","size_after":"3290","perm_after":"rw-r--r--","uid_after":"0","gid_after":"0","sha256_before":"5c1e2b7f0d9a8e4c3b6a1f2d7e9c0b8a4f3e2d1c6b5a9f8e7d0c3b2a1f4e5d6c","sha256_after":"9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b","uname_after":"root","gname_after":"root","mtime_before":"2026-10-01T09:12:44","mtime_after":"2026-10-12T22:44:09","inode_after":1442051,"changed_attributes":["size","mtime","sha256"],"event":"modified"},"decoder":{"name":"syscheck_integrity_changed"},"location":"syscheck"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Wazuh 4.x manager alerts, syslog_output with <format>json</format>, to the data collector.
+# Child of WAZUH_ALERT_JSON_PARENT: every alert that isn't a single logon (file integrity,
+# rootcheck, web attacks, brute force and the rest) to the third-party alert schema.
+# json, jsonMatch, groups, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+# !TRIMALLOFF keeps full_log as Wazuh wrote it.
+
+vendor$ = "Wazuh"
+provider$ = "Wazuh"
+title$ = json["$.rule.description"]
+alertId$ = json["$.id"]
+summary$ = json["$.full_log"]
+alertCategory$ = groups
+logType$ = json["$.decoder.name"]
+createdTimeUsec$ = eventTimeUsec$
+
+# rule.level runs 0 to 16. The bands follow Wazuh's rule classification table: 3 and below
+# are successful or low priority events, 4 to 7 low relevance, 8 to 11 warnings and repeated
+# errors, 12 to 14 high importance events and 15 and up severe attacks.
+level = json["$.rule.level"]
+vendorSeverity$ = STRING(level)
+severity$ = "INFO"
+severity$ = IF level >= 4 THEN "LOW" ELSE severity$
+severity$ = IF level >= 8 THEN "MEDIUM" ELSE severity$
+severity$ = IF level >= 12 THEN "HIGH" ELSE severity$
+severity$ = IF level >= 15 THEN "CRITICAL" ELSE severity$
+
+sourceAddress$ = json["$.data.srcip"]
+srcPort = json["$.data.srcport"]
+sourcePort$ = IF srcPort != NULL THEN INT(srcPort, 10) ELSE NULL
+destinationAddress$ = json["$.data.dstip"]
+dstPort = json["$.data.dstport"]
+destinationPort$ = IF dstPort != NULL THEN INT(dstPort, 10) ELSE NULL
+sourceUserName$ = json["$.data.srcuser"]
+targetUserName$ = json["$.data.dstuser"]
+targetHostName$ = json["$.agent.name"]
+destinationUrl$ = json["$.data.url"]
+
+# MITRE ATT&CK technique IDs, as text, for example T1110.001,T1021.004.
+mm = jsonMatch[1]|"mitre"\s*:\s*\{\s*"id"\s*:\s*\[(?P<ids>[^\]]*)\]
+mitre = REPLACE(mm["ids"], "\"", "")
+
+a1.key$ = "rule_id"
+a1.value$ = json["$.rule.id"]
+a2.key$ = "agent_id"
+a2.value$ = json["$.agent.id"]
+a3.key$ = "manager"
+a3.value$ = json["$.manager.name"]
+a4.key$ = "location"
+a4.value$ = json["$.location"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3, a4]
+
+a5.key$ = "agent_ip"
+a5.value$ = json["$.agent.ip"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "mitre_ids"
+a6.value$ = mitre
+additionalData$.record$ = IF mitre != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+# File integrity monitoring: the file, what happened to it and its new SHA-256.
+a7.key$ = "syscheck_path"
+a7.value$ = json["$.syscheck.path"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "syscheck_event"
+a8.value$ = json["$.syscheck.event"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "syscheck_sha256_after"
+a9.value$ = json["$.syscheck.sha256_after"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+# Rootcheck: the finding and the file.
+a10.key$ = "rootcheck_file"
+a10.value$ = json["$.data.file"]
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "cve"
+a11.value$ = json["$.rule.info"]
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$

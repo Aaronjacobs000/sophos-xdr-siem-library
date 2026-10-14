@@ -1,0 +1,86 @@
+!SAMPLE=<132>Oct 12 22:42:31 wazuh-mgr01 ossec: {"timestamp":"2026-10-12T22:42:31.018+0000","rule":{"level":5,"description":"Logon Failure - Unknown user or bad password","id":"60122","mitre":{"id":["T1078"],"tactic":["Defense Evasion","Persistence","Privilege Escalation","Initial Access"],"technique":["Valid Accounts"]},"firedtimes":1,"mail":false,"groups":["windows","windows_security","authentication_failed"],"pci_dss":["10.2.4","10.2.5"]},"agent":{"id":"005","name":"dc01","ip":"192.0.2.20"},"manager":{"name":"wazuh-mgr01"},"id":"1791844951.20480","decoder":{"name":"windows_eventchannel"},"data":{"win":{"system":{"providerName":"Microsoft-Windows-Security-Auditing","providerGuid":"{54849625-5478-4994-a5ba-3e3b0328c30d}","eventID":"4625","version":"0","level":"0","task":"12544","opcode":"0","keywords":"0x8010000000000000","systemTime":"2026-10-12T22:42:30.9921384Z","eventRecordID":"882231","processID":"716","threadID":"5120","channel":"Security","computer":"dc01.corp.example.com","severityValue":"AUDIT_FAILURE","message":"\"An account failed to log on.\""},"eventdata":{"subjectUserSid":"S-1-0-0","subjectLogonId":"0x0","targetUserName":"jlee","targetDomainName":"CORP","status":"0xc000006d","failureReason":"%%2313","subStatus":"0xc000006a","logonType":"3","logonProcessName":"NtLmSsp","authenticationPackageName":"NTLM","workstationName":"WS-041","ipAddress":"198.51.100.40","ipPort":"51990","processId":"0x0"}}},"location":"EventChannel"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Wazuh 4.x manager alerts, syslog_output with <format>json</format>, to the data collector.
+# Child of WAZUH_ALERT_JSON_PARENT: alerts in the authentication_success or authentication_failed
+# rule groups (sshd, Windows Security logons and the other decoders) to Auth.
+# json, groups, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+ok = CONTAINS(groups, "authentication_success")
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+authCategory$ = "ACCOUNT_LOGON"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+
+# Linux decoders put the account in dstuser, or in srcuser for a user that doesn't exist.
+# Windows Security events keep it in data.win.eventdata.
+targetUserName$ = json["$.data.dstuser"]
+targetUserName$ = IF targetUserName$ == NULL THEN json["$.data.srcuser"] ELSE targetUserName$
+targetUserName$ = IF targetUserName$ == NULL THEN json["$.data.win.eventdata.targetUserName"] ELSE targetUserName$
+targetDomainName$ = json["$.data.win.eventdata.targetDomainName"]
+targetHostName$ = json["$.agent.name"]
+targetAddress$ = json["$.agent.ip"]
+
+sourceAddress$ = json["$.data.srcip"]
+sourceAddress$ = IF sourceAddress$ == NULL THEN json["$.data.win.eventdata.ipAddress"] ELSE sourceAddress$
+srcPort = json["$.data.srcport"]
+srcPort = IF srcPort == NULL THEN json["$.data.win.eventdata.ipPort"] ELSE srcPort
+sourcePort$ = srcPort
+sourcePortNumber$ = IF srcPort != NULL THEN INT(srcPort, 10) ELSE NULL
+
+authSystem$ = json["$.predecoder.program_name"]
+authSystem$ = IF authSystem$ == NULL THEN json["$.decoder.name"] ELSE authSystem$
+
+# Windows logon types have the same numbers as the logon_type enum names.
+lt = json["$.data.win.eventdata.logonType"]
+logonType$ = NULL
+logonType$ = IF lt == "2" THEN "INTERACTIVE" ELSE logonType$
+logonType$ = IF lt == "3" THEN "NETWORK" ELSE logonType$
+logonType$ = IF lt == "4" THEN "BATCH" ELSE logonType$
+logonType$ = IF lt == "5" THEN "SERVICE" ELSE logonType$
+logonType$ = IF lt == "7" THEN "UNLOCK" ELSE logonType$
+logonType$ = IF lt == "8" THEN "NETWORKCLEARTEXT" ELSE logonType$
+logonType$ = IF lt == "9" THEN "NEWCREDENTIALS" ELSE logonType$
+logonType$ = IF lt == "10" THEN "REMOTEINTERACTIVE" ELSE logonType$
+logonType$ = IF lt == "11" THEN "CACHEDINTERACTIVE" ELSE logonType$
+logonType$ = IF lt == "12" THEN "CACHEDREMOTEINTERACTIVE" ELSE logonType$
+logonType$ = IF lt == "13" THEN "CACHEDUNLOCKED" ELSE logonType$
+winEventId$ = json["$.data.win.system.eventID"]
+status$ = json["$.data.win.eventdata.status"]
+subStatus$ = json["$.data.win.eventdata.subStatus"]
+extraWorkstationname$ = json["$.data.win.eventdata.workstationName"]
+extraLogonprocessname$ = json["$.data.win.eventdata.logonProcessName"]
+extraAuthenticationpackagename$ = json["$.data.win.eventdata.authenticationPackageName"]
+
+# A failed logon is a wrong user or password unless Wazuh or Windows says otherwise.
+code = LOWERCASE(STRING(json["$.data.win.eventdata.subStatus"]))
+code = IF code == "" OR code == "0x0" OR code == "null" THEN LOWERCASE(STRING(json["$.data.win.eventdata.status"])) ELSE code
+fc = IF ok THEN NULL ELSE "INCORRECT_USER_OR_PASSWORD"
+fc = IF NOT ok AND CONTAINS(groups, "invalid_login") THEN "INVALID_ACCOUNT" ELSE fc
+fc = IF NOT ok AND code == "0xc0000064" THEN "INVALID_ACCOUNT" ELSE fc
+fc = IF NOT ok AND code == "0xc0000234" THEN "ACCOUNT_LOCKED_OUT" ELSE fc
+fc = IF NOT ok AND code == "0xc0000072" THEN "ACCOUNT_DISABLED" ELSE fc
+fc = IF NOT ok AND (code == "0xc0000071" OR code == "0xc0000193") THEN "EXPIRED_PASSWORD" ELSE fc
+fc = IF NOT ok AND code == "0xc0000224" THEN "OVERDUE_PASSWORD_CHANGE" ELSE fc
+fc = IF NOT ok AND code == "0xc000006f" THEN "OUTSIDE_PERMISSIBLE_HOURS" ELSE fc
+failureCategory$ = fc
+
+r1.key$ = "rule_id"
+r1.value$ = json["$.rule.id"]
+r2.key$ = "rule_level"
+r2.value$ = STRING(json["$.rule.level"])
+r3.key$ = "rule_description"
+r3.value$ = json["$.rule.description"]
+r4.key$ = "rule_groups"
+r4.value$ = groups
+r5.key$ = "agent_id"
+r5.value$ = json["$.agent.id"]
+r6.key$ = "alert_id"
+r6.value$ = json["$.id"]
+r7.key$ = "location"
+r7.value$ = json["$.location"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5, r6, r7]

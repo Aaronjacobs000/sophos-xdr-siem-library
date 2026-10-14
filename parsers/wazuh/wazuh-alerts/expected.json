@@ -1,0 +1,554 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791844814123000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "root",
+      "target_host_name": "web01",
+      "target_address": "192.0.2.10",
+      "source_address": "198.51.100.7",
+      "auth_system": "sshd",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "2502"
+          },
+          {
+            "key": "rule_level",
+            "value": "10"
+          },
+          {
+            "key": "rule_description",
+            "value": "syslog: User missed the password more than one time"
+          },
+          {
+            "key": "rule_groups",
+            "value": "syslog,access_control,authentication_failed"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "alert_id",
+            "value": "1791844814.10241"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/auth.log"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791844862004000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "deploy",
+      "target_host_name": "web01",
+      "target_address": "192.0.2.10",
+      "auth_system": "sshd",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "5501"
+          },
+          {
+            "key": "rule_level",
+            "value": "3"
+          },
+          {
+            "key": "rule_description",
+            "value": "PAM: Login session opened."
+          },
+          {
+            "key": "rule_groups",
+            "value": "pam,syslog,authentication_success"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "alert_id",
+            "value": "1791844862.11032"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/auth.log"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791844900250000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "admin",
+      "target_host_name": "web01",
+      "target_address": "192.0.2.10",
+      "source_address": "198.51.100.23",
+      "source_port": "40188",
+      "source_port_number": 40188,
+      "auth_system": "sshd",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "5710"
+          },
+          {
+            "key": "rule_level",
+            "value": "5"
+          },
+          {
+            "key": "rule_description",
+            "value": "sshd: Attempt to login using a non-existent user"
+          },
+          {
+            "key": "rule_groups",
+            "value": "syslog,sshd,authentication_failed,invalid_login"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "alert_id",
+            "value": "1791844900.11587"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/auth.log"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791844951018000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dc01",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "jlee",
+      "target_domain_name": "CORP",
+      "target_host_name": "dc01",
+      "target_address": "192.0.2.20",
+      "source_address": "198.51.100.40",
+      "source_port": "51990",
+      "source_port_number": 51990,
+      "auth_system": "windows_eventchannel",
+      "logon_type": "NETWORK",
+      "win_event_id": "4625",
+      "status": "0xc000006d",
+      "sub_status": "0xc000006a",
+      "extra_workstationname": "WS-041",
+      "extra_logonprocessname": "NtLmSsp",
+      "extra_authenticationpackagename": "NTLM",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "60122"
+          },
+          {
+            "key": "rule_level",
+            "value": "5"
+          },
+          {
+            "key": "rule_description",
+            "value": "Logon Failure - Unknown user or bad password"
+          },
+          {
+            "key": "rule_groups",
+            "value": "windows,windows_security,authentication_failed"
+          },
+          {
+            "key": "agent_id",
+            "value": "005"
+          },
+          {
+            "key": "alert_id",
+            "value": "1791844951.20480"
+          },
+          {
+            "key": "location",
+            "value": "EventChannel"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791844985733000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dc01",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "akim",
+      "target_domain_name": "CORP",
+      "target_host_name": "dc01",
+      "target_address": "192.0.2.20",
+      "source_address": "192.0.2.61",
+      "source_port": "0",
+      "source_port_number": 0,
+      "auth_system": "windows_eventchannel",
+      "logon_type": "REMOTEINTERACTIVE",
+      "win_event_id": "4624",
+      "extra_workstationname": "DC01",
+      "extra_logonprocessname": "User32",
+      "extra_authenticationpackagename": "Negotiate",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "60106"
+          },
+          {
+            "key": "rule_level",
+            "value": "3"
+          },
+          {
+            "key": "rule_description",
+            "value": "Windows Logon Success"
+          },
+          {
+            "key": "rule_groups",
+            "value": "windows,windows_security,authentication_success"
+          },
+          {
+            "key": "agent_id",
+            "value": "005"
+          },
+          {
+            "key": "alert_id",
+            "value": "1791844985.20911"
+          },
+          {
+            "key": "location",
+            "value": "EventChannel"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791845031270000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "vendor": "Wazuh",
+      "provider": "Wazuh",
+      "title": "sshd: brute force trying to get access to the system. Non existent user.",
+      "alert_id": "1791845031.12904",
+      "summary": "Oct 12 22:43:50 web01 sshd[2290]: Invalid user oracle from 198.51.100.23 port 40210",
+      "alert_category": "syslog,sshd,authentication_failures",
+      "log_type": "sshd",
+      "created_time_usec": 1791845031270000,
+      "vendor_severity": "10",
+      "severity": "MEDIUM",
+      "source_address": "198.51.100.23",
+      "source_port": 40210,
+      "source_user_name": "oracle",
+      "target_host_name": "web01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "5712"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "manager",
+            "value": "wazuh-mgr01"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/auth.log"
+          },
+          {
+            "key": "agent_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "mitre_ids",
+            "value": "T1110"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791845050006000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "vendor": "Wazuh",
+      "provider": "Wazuh",
+      "title": "Integrity checksum changed.",
+      "alert_id": "1791845050.30721",
+      "summary": "File '/etc/ssh/sshd_config' modified\nMode: realtime\nChanged attributes: size,mtime,sha256\nSize changed from '3254' to '3290'\n",
+      "alert_category": "ossec,syscheck,syscheck_entry_modified,syscheck_file",
+      "log_type": "syscheck_integrity_changed",
+      "created_time_usec": 1791845050006000,
+      "vendor_severity": "7",
+      "severity": "LOW",
+      "target_host_name": "web01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "550"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "manager",
+            "value": "wazuh-mgr01"
+          },
+          {
+            "key": "location",
+            "value": "syscheck"
+          },
+          {
+            "key": "agent_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "mitre_ids",
+            "value": "T1565.001"
+          },
+          {
+            "key": "syscheck_path",
+            "value": "/etc/ssh/sshd_config"
+          },
+          {
+            "key": "syscheck_event",
+            "value": "modified"
+          },
+          {
+            "key": "syscheck_sha256_after",
+            "value": "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791845134517000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "vendor": "Wazuh",
+      "provider": "Wazuh",
+      "title": "SQL injection attempt.",
+      "alert_id": "1791845134.13377",
+      "summary": "203.0.113.80 - - [12/Oct/2026:22:45:33 +0000] \"GET /search?q=1%27%20OR%20%271%27%3D%271 HTTP/1.1\" 200 1290 \"-\" \"sqlmap/1.8\"",
+      "alert_category": "web,accesslog,attack,sql_injection",
+      "log_type": "web-accesslog",
+      "created_time_usec": 1791845134517000,
+      "vendor_severity": "7",
+      "severity": "LOW",
+      "source_address": "203.0.113.80",
+      "target_host_name": "web01",
+      "destination_url": "/search?q=1%27%20OR%20%271%27%3D%271",
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "31103"
+          },
+          {
+            "key": "agent_id",
+            "value": "003"
+          },
+          {
+            "key": "manager",
+            "value": "wazuh-mgr01"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/nginx/access.log"
+          },
+          {
+            "key": "agent_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "mitre_ids",
+            "value": "T1190"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791845180940000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "app02",
+      "vendor": "Wazuh",
+      "provider": "Wazuh",
+      "title": "Host-based anomaly detection event (rootcheck).",
+      "alert_id": "1791845180.14200",
+      "summary": "Trojaned version of file '/usr/bin/passwd' detected. Signature used: 'bash|proc.h' (Generic).",
+      "alert_category": "ossec,rootcheck",
+      "log_type": "rootcheck",
+      "created_time_usec": 1791845180940000,
+      "vendor_severity": "7",
+      "severity": "LOW",
+      "target_host_name": "app02",
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "510"
+          },
+          {
+            "key": "agent_id",
+            "value": "006"
+          },
+          {
+            "key": "manager",
+            "value": "wazuh-mgr01"
+          },
+          {
+            "key": "location",
+            "value": "rootcheck"
+          },
+          {
+            "key": "agent_ip",
+            "value": "192.0.2.31"
+          },
+          {
+            "key": "rootcheck_file",
+            "value": "/usr/bin/passwd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "WAZUH_ALERT_JSON_PARENT > WAZUH_ALERT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Wazuh",
+      "event_time_usec": 1791845235112000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "wazuh-mgr02",
+      "vendor": "Wazuh",
+      "provider": "Wazuh",
+      "title": "Shellshock attack detected",
+      "alert_id": "1791845235.6448",
+      "summary": "198.51.100.40 - - [13/Oct/2026:09:47:14 +1100] \"GET /cgi-bin/status HTTP/1.1\" 404 153 \"-\" \"() { :; }; /bin/cat /etc/passwd\"",
+      "alert_category": "web,accesslog,attack",
+      "log_type": "web-accesslog",
+      "created_time_usec": 1791845235112000,
+      "vendor_severity": "15",
+      "severity": "CRITICAL",
+      "source_address": "198.51.100.40",
+      "target_host_name": "wazuh-mgr02",
+      "destination_url": "/cgi-bin/status",
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "31168"
+          },
+          {
+            "key": "agent_id",
+            "value": "000"
+          },
+          {
+            "key": "manager",
+            "value": "wazuh-mgr02"
+          },
+          {
+            "key": "location",
+            "value": "/var/log/apache2/access.log"
+          },
+          {
+            "key": "mitre_ids",
+            "value": "T1068,T1190"
+          },
+          {
+            "key": "cve",
+            "value": "CVE-2014-6271"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
