@@ -1,0 +1,37 @@
+!SAMPLE=<14>2026-10-13T04:24:55Z VECTRA-SYSLOG-CONNECTOR: {"id": 16, "user_id": 24, "username": "secops.lead@example.com", "user_type": "SAML", "api_client_id": null, "role": "Admin", "version": "2026.9.1", "source_ip": "203.0.113.25", "event_timestamp": "2026-10-13T04:24:52Z", "message": "Tag watch-closely has been added to linked_accounts with ids [45]", "result_status": "success", "event_data": {"tag": {"tag_name": "watch-closely", "entity": "linked_account", "entity_ids": [45]}}, "event_object": "account_tag", "event_action": "created"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Vectra AI Respond UX audit events from Vectra's SIEM connector.
+# Child of VECTRA_RUX_SYSLOG_PARENT: user and API client actions in Respond UX to CloudAudit.
+# json, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+userName$ = json["$.username"]
+userType$ = json["$.user_type"]
+uid = STRING(json["$.user_id"])
+userId$ = IF uid != "" THEN uid ELSE STRING(json["$.api_client_id"])
+eventSource$ = json["$.event_object"]
+eventName$ = json["$.event_action"]
+sourceAddress$ = json["$.source_ip"]
+status$ = json["$.result_status"]
+sensorVersion$ = json["$.version"]
+
+# Vectra's table names the role field role; its examples name it user_role.
+role = STRING(json["$.role"])
+role = IF role == "" THEN STRING(json["$.user_role"]) ELSE role
+
+a1.key$ = "message"
+a1.value$ = STRING(json["$.message"])
+a2.key$ = "event_id"
+a2.value$ = STRING(json["$.id"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [a1, a2]
+a3.key$ = "role"
+a3.value$ = role
+additionalEventData$.record$ = IF role != "" THEN additionalEventData$.record$ + [a3] ELSE additionalEventData$.record$
+a4.key$ = "event_data"
+a4.value$ = STRING(json["$.event_data"])
+additionalEventData$.record$ = IF a4.value$ != "" THEN additionalEventData$.record$ + [a4] ELSE additionalEventData$.record$

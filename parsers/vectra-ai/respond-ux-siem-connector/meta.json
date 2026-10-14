@@ -1,0 +1,42 @@
+{
+  "vendor": "Vectra AI",
+  "product": "Respond UX SIEM connector",
+  "versions": [],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.vectra.ai/deployment/getting-started/respond-ux-deployment/siem-connector-syslog-intermediary",
+    "https://docs.vectra.ai/configuration/access/api-rux/v33-api-guide-rux"
+  ],
+  "notes": "Respond UX has no syslog export of its own, so run Vectra's SIEM connector (a Docker container that polls the Respond UX API v3.3) and point its syslog server at the data collector over UDP or TCP. Each line is a <14> priority, the send time and VECTRA-SYSLOG-CONNECTOR, then one JSON event. Detection events go to the third-party alert schema: severity follows Vectra's 0 to 10 detection severity (0 info, 1 to 3 low, 4 to 6 medium, 7 and 8 high, 9 and 10 critical), the threat score is the risk score and certainty the confidence. Audit events go to CloudAudit. Entity scoring events stay generic. Sophos Fusion's own Vectra integration supports Quadrant UX, not Respond UX. The event time is event_timestamp, not the header time. Vectra describes a detection's detail object only as specific to its detection type, so the host detections' detail values are made up; the rest of the samples follow the connector page's example and the API guide's event fields, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (117 of 117 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (115 of 115 fields). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "VECTRA_RUX_SYSLOG_PARENT",
+      "file": "VECTRA_RUX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "VECTRA_RUX_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "VECTRA_RUX_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "VECTRA_RUX_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "VECTRA_RUX_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "VECTRA_RUX_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
