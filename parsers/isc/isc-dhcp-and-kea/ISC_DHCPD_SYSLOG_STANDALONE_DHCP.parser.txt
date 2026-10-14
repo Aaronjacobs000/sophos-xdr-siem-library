@@ -1,0 +1,46 @@
+!SAMPLE=<30>Oct 12 22:40:12 dhcp01 dhcpd[1201]: DHCPACK on 192.0.2.100 to 00:00:5e:00:53:01 (ws-041) via eth0
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdhcpd(?:\[\d+\])?:\s+(?:DHCP4o6\s+)?(?:DHCPDISCOVER\s+from|DHCP(?:OFFER|ACK)\s+on\s+\S+\s+to|DHCPREQUEST\s+for|DHCPRELEASE\s+of\s+\S+\s+from)\s+\S+\s.*\bvia\s+\S
+!SCHEMA=scwx.dhcp
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ISC DHCP server (dhcpd 4.x), plain text over syslog to the data collector.
+# Standalone parser for the DHCP schema. dhcpd has no log format reference, so the line shapes
+# come from the format strings in ISC's server/dhcp.c and ISC's knowledge base:
+#   DHCPDISCOVER from <mac> [(<hostname>)] via <interface or relay>
+#   DHCPOFFER on <ip> to <mac> [(<hostname>)] via <interface or relay>
+#   DHCPREQUEST for <ip> [(<server>)] from <mac> [(<hostname>)] via <interface or relay>
+#   DHCPACK on <ip> to <mac> [(<hostname>)] via <interface or relay>
+#   DHCPRELEASE of <ip> from <mac> [(<hostname>)] via <interface or relay> (found)
+# DHCPNAK, DHCPDECLINE, DHCPINFORM and the DHCPACK that answers DHCPINFORM stay in the generic schema.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s+(?P<host5>\S+)|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+))\s
+d = originalData$|\sdhcpd(?:\[\d+\])?:\s+(?:DHCP4o6\s+)?(?:(?P<m1>DHCPDISCOVER)\s+from|(?P<m2>DHCPOFFER|DHCPACK)\s+on\s+(?P<ip2>\S+)\s+to|(?P<m3>DHCPREQUEST)\s+for\s+(?P<ip3>\S+)\s+(?:\((?P<sid>[^)]*)\)\s+)?from|(?P<m4>DHCPRELEASE)\s+of\s+(?P<ip4>\S+)\s+from)\s+(?P<mac>\S+)\s+(?:\((?P<name>[^)]*)\)\s+)?via\s+(?P<via>[^\s:]+)
+
+sensorType$ = "ISC DHCP"
+host = IF hdr["host"] != "" THEN hdr["host"] ELSE hdr["host5"]
+hostId$ = host
+serverHostname$ = host
+
+# An RFC 5424 header carries the year and zone. The BSD time has neither: DATETIME picks the
+# year (TRUE) and reads UTC.
+eventTimeUsec$ = IF hdr["bsd"] != "" THEN DATETIME(hdr["bsd"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventTimeUsec$ = IF hdr["iso"] != "" THEN DATETIME(hdr["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+# Only one message group and one address group match on each line.
+msg = d["m1"] + d["m2"] + d["m3"] + d["m4"]
+action$ = NULL
+action$ = IF msg == "DHCPDISCOVER" THEN "DISCOVER" ELSE action$
+action$ = IF msg == "DHCPOFFER" THEN "OFFER" ELSE action$
+action$ = IF msg == "DHCPREQUEST" THEN "REQUEST" ELSE action$
+action$ = IF msg == "DHCPACK" THEN "ACK" ELSE action$
+action$ = IF msg == "DHCPRELEASE" THEN "RELEASE" ELSE action$
+
+# The offered, acknowledged, requested or released address.
+ip = d["ip2"] + d["ip3"] + d["ip4"]
+clientAddress$ = IF ip != "" THEN ip ELSE NULL
+clientMac$ = d["mac"]
+clientHostname$ = IF d["name"] != "" THEN d["name"] ELSE NULL
+# DHCPREQUEST names the server the client chose, when the client sent one.
+serverAddress$ = IF d["sid"] != "" THEN d["sid"] ELSE NULL

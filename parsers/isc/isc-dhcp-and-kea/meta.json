@@ -1,0 +1,39 @@
+{
+  "vendor": "ISC",
+  "product": "ISC DHCP and Kea",
+  "versions": [
+    "4.4",
+    "2.6"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-13T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://kea.readthedocs.io/en/latest/kea-messages.html",
+    "https://kea.readthedocs.io/en/latest/arm/logging.html",
+    "https://kb.isc.org/docs/isc-dhcp-logging-compared-to-kea",
+    "https://github.com/isc-projects/dhcp/blob/master/server/dhcp.c"
+  ],
+  "notes": "Two standalone parsers send DHCP lease activity to the DHCP schema, which ties a client address to a MAC address and host name. ISC DHCP (dhcpd 4.x): forward its syslog lines. ISC publishes no log format reference for dhcpd, so the parser covers only the DHCPDISCOVER, DHCPOFFER, DHCPREQUEST, DHCPACK and DHCPRELEASE lines, in the shapes the format strings in ISC's server/dhcp.c write and ISC's knowledge base shows. DHCPNAK, DHCPDECLINE and DHCPINFORM lines stay in generic. Kea: log the kea-dhcp4 and kea-dhcp6 loggers to syslog and forward them, or ship Kea's log file. Lease allocations, offers, reuses, releases, declines and INIT-REBOOT requests are read by message ID, and from Kea 2.6, where they log at INFO, so are the DHCPv4 packet received and sent messages, which include DHCPNAK. An allocated lease gets its expiry time. The DHCP schema has no field for the interface, relay, client ID or transaction ID. BSD syslog times and Kea's file times have no zone and are read as UTC; an RFC 5424 header's zone is used when there is one. Samples are made up in the documented shapes. Passed Run Test in a lab tenant on 2026-10-14 (138 of 138 fields matched the emulator in each of 4 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+      "file": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.dhcp"
+    },
+    {
+      "name": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+      "file": "ISC_KEA_SYSLOG_STANDALONE_DHCP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.dhcp"
+    }
+  ]
+}

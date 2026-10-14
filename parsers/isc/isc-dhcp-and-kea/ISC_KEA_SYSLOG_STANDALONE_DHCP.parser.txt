@@ -1,0 +1,66 @@
+!SAMPLE=<134>Oct 12 22:45:01 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.leases.140234567890] DHCP4_LEASE_ALLOC [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x6f3b8a4c: lease 198.51.100.50 has been allocated for 3600 seconds
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\[kea-dhcp[46][\w.-]*(?:/[^\]]*)?\]\s+(?:DHCP4_(?:LEASE_(?:ALLOC|OFFER|ADVERT|REUSE)|RELEASE(?:_EXPIRED|_DELETED)?|DECLINE_LEASE|INIT_REBOOT|PACKET_(?:RECEIVED|SEND))|DHCP6_(?:LEASE_(?:ALLOC|ADVERT|REUSE)|RELEASE_NA(?:_EXPIRED|_DELETED)?))\s
+!SCHEMA=scwx.dhcp
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ISC Kea DHCPv4 and DHCPv6 servers, log messages over syslog or read from Kea's log file.
+# Standalone parser for the DHCP schema. Kea logs each event by message ID (Kea Messages Manual):
+#   <severity> [<logger>...] <MESSAGE_ID> <client label>: <text>
+# The client label reads [hwtype=1 <mac>], cid=[<client id>], tid=0x<id>; DHCPv6 adds duid=[...].
+# Lease allocations, offers, reuses, releases, declines and INIT-REBOOT requests are covered, and
+# with Kea 2.6 or later (where they log at INFO) the DHCPv4 packet received and sent messages.
+# Other messages, such as allocation failures and server start, stay in the generic schema.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s+(?P<host5>\S+)|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+))\s
+# Kea's own log file starts each line with its local time, which has no zone.
+kd = originalData$|(?P<d>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+[A-Z]+\s+\[kea-
+k = originalData$|\[kea-dhcp(?P<v>[46])[\w.-]*(?:/[^\]]*)?\]\s+(?P<id>DHCP[46]_[A-Z0-9_]+)\s+(?P<text>.*?)\s*$
+
+sensorType$ = "ISC Kea"
+host = IF hdr["host"] != "" THEN hdr["host"] ELSE hdr["host5"]
+hostId$ = IF host != "" THEN host ELSE NULL
+serverHostname$ = hostId$
+
+# An RFC 5424 header has the year and zone. Kea's file time and the BSD syslog time have no
+# zone and are read as UTC (the BSD time has no year either, so DATETIME picks it).
+eventTimeUsec$ = IF hdr["bsd"] != "" THEN DATETIME(hdr["bsd"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventTimeUsec$ = IF kd["d"] != "" THEN DATETIME(kd["d"], "2006-01-02 15:04:05.000") ELSE eventTimeUsec$
+eventTimeUsec$ = IF hdr["iso"] != "" THEN DATETIME(hdr["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+id = k["id"]
+text = k["text"]
+lbl = text|\[hwtype=\d+\s+(?P<mac>[0-9A-Fa-f:]+)\]
+clientMac$ = IF lbl["mac"] != "" THEN lbl["mac"] ELSE NULL
+
+# The lease address: "lease <ip>", "lease for address <ip>", "address <ip>" or "addr <ip>".
+addr = text|(?:\blease(?:\s+for\s+address)?|\baddress|\baddr)\s+(?P<ip>\d+\.\d+\.\d+\.\d+|[0-9A-Fa-f]*:[0-9A-Fa-f:]+)(?:\s|\.?$)
+clientAddress$ = IF addr["ip"] != "" THEN addr["ip"] ELSE NULL
+
+# DHCPv4 packet messages name the packet and the addresses it went between.
+pkt = text|:\s+(?:trying to send packet\s+)?(?P<name>DHCP[A-Z]+)\s+\(type\s+\d+\)\s+(?:received from\s+(?P<rfrom>\S+)\s+to\s+(?P<rto>\S+)|from\s+(?P<sfrom>[^\s:]+):\d+\s+to\s+(?P<sto>[^\s:]+):(?P<stoport>\d+))
+serverAddress$ = IF pkt["sfrom"] != "" THEN pkt["sfrom"] ELSE NULL
+# A reply sent to port 68 goes straight to the client; one sent to port 67 goes to a relay.
+clientAddress$ = IF pkt["stoport"] == "68" AND pkt["sto"] != "255.255.255.255" THEN pkt["sto"] ELSE clientAddress$
+
+name = pkt["name"]
+action$ = NULL
+# A lease Kea allocates or reuses is the one it acknowledges.
+action$ = IF CONTAINS(id, "_LEASE_ALLOC") OR CONTAINS(id, "_LEASE_REUSE") THEN "ACK" ELSE action$
+action$ = IF CONTAINS(id, "_LEASE_OFFER") OR CONTAINS(id, "_LEASE_ADVERT") THEN "OFFER" ELSE action$
+action$ = IF CONTAINS(id, "_RELEASE") THEN "RELEASE" ELSE action$
+action$ = IF id == "DHCP4_DECLINE_LEASE" THEN "DECLINE" ELSE action$
+action$ = IF id == "DHCP4_INIT_REBOOT" THEN "REQUEST" ELSE action$
+action$ = IF name == "DHCPDISCOVER" THEN "DISCOVER" ELSE action$
+action$ = IF name == "DHCPOFFER" THEN "OFFER" ELSE action$
+action$ = IF name == "DHCPREQUEST" THEN "REQUEST" ELSE action$
+action$ = IF name == "DHCPINFORM" THEN "INFORM" ELSE action$
+action$ = IF name == "DHCPACK" THEN "ACK" ELSE action$
+action$ = IF name == "DHCPNAK" THEN "NACK" ELSE action$
+action$ = IF name == "DHCPDECLINE" THEN "DECLINE" ELSE action$
+action$ = IF name == "DHCPRELEASE" THEN "RELEASE" ELSE action$
+
+# An allocated or reused lease runs out after the seconds Kea logs ("infinity" never does).
+secs = text|has been (?:allocated|reused) for (?P<s>\d+) seconds
+expirationTimeUsec$ = IF secs["s"] != "" THEN eventTimeUsec$ + INT(secs["s"], 10) * 1000000 ELSE NULL
