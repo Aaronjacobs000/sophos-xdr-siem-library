@@ -1,0 +1,37 @@
+!SAMPLE=<116>Oct 13 04:10:00 tie.example.com TenableAD[4]: "0" "1" "Example Forest" "corp.example.com" "C-PASSWORD-DONT-EXPIRE" "medium" "CN=Pat Example,OU=Staff,DC=corp,DC=example,DC=com" "28" "1" "R-DONT-EXPIRE-SET" "2434" "TrusteeCn"="Pat Example"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=[A-Za-z][\w.-]*\[\d+\]:\s"[0-3]"\s"\d+"\s"
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable Identity Exposure (formerly Tenable AD, and before that Alsid) syslog alerts. Tenable's docs
+# call the format CEF, but it is an RFC 3164 header and then space-separated quoted fields:
+#   <PRI><time> <host> <product>[4]: "<type>" "<alert id>" "<forest>" "<domain>" "<codename>" "<severity>" ...
+# The product name varies by version (TenableAD, AlsidForAD before 3.1, and others), so the parent
+# matches the field layout after it. type is 0 for an
+# Indicator of Exposure (IoE) deviance, 1 for an AD change, 2 for an Indicator of Attack (IoA)
+# and 3 for a health check. Inner double quotes are escaped as \".
+# Parent: hands IoE deviances and IoA attacks to their ThirdPartyAlert children. AD changes and
+# health checks stay in the generic schema.
+
+h = originalData$|\[\d+\]:\s"(?P<type>[0-3])"\s"(?P<alertid>\d+)"\s(?P<rest>.*)$
+rest = h["rest"]
+f = rest|^"(?P<forest>(?:[^"\\]|\\.)*)"\s"(?P<domain>(?:[^"\\]|\\.)*)"\s"(?P<code>(?:[^"\\]|\\.)*)"\s"(?P<sev>(?:[^"\\]|\\.)*)"\s"(?P<p1>(?:[^"\\]|\\.)*)"\s"(?P<p2>(?:[^"\\]|\\.)*)"\s"(?P<p3>(?:[^"\\]|\\.)*)"\s"(?P<p4>(?:[^"\\]|\\.)*)"(?P<tail>.*)$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Tenable Identity Exposure"
+alertConfigId = h["alertid"]
+forest = REPLACE(f["forest"], `\"`, `"`)
+domain = REPLACE(f["domain"], `\"`, `"`)
+code = REPLACE(f["code"], `\"`, `"`)
+sev = LOWERCASE(f["sev"])
+tail = f["tail"]
+p1 = REPLACE(f["p1"], `\"`, `"`)
+p2 = f["p2"]
+p3 = REPLACE(f["p3"], `\"`, `"`)
+p4 = f["p4"]
+
+eventType$ = "other"
+eventType$ = IF h["type"] == "0" AND code != "" THEN "ioe" ELSE eventType$
+eventType$ = IF h["type"] == "2" AND code != "" THEN "ioa" ELSE eventType$
