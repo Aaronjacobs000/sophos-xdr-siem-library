@@ -1,0 +1,46 @@
+!SAMPLE={"bitwarden_record":"event","organizationId":"6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01","object":"event","type":1005,"itemId":null,"collectionId":null,"groupId":null,"policyId":null,"memberId":null,"actingUserId":"b3650a8a-b820-4fca-a345-fc8358444a05","installationId":null,"date":"2026-10-13T01:11:30.5070000Z","device":2,"ipAddress":"198.51.100.44","secretId":null,"projectId":null,"serviceAccountId":null,"actingUserEmail":"kim.lee@example.com","actingUserName":"Kim Lee"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitwarden event logs from the example collector: User_LoggedIn (1000),
+# User_FailedLogIn (1005, wrong master password), User_FailedLogIn2fa (1006, wrong two-step
+# login) and OrganizationUser_FirstSsoLogin (1510).
+# Child of BITWARDEN_EVENTS_JSON_PARENT: each one to Auth.
+# json, t, evName, devName, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Bitwarden"
+email = json["$.actingUserEmail"]
+targetUserName$ = IF email THEN email ELSE json["$.actingUserId"]
+userDisplayName$ = json["$.actingUserName"]
+sourceAddress$ = json["$.ipAddress"]
+# The Bitwarden app the user signed in with, such as ChromeExtension or WindowsDesktop.
+logonApplicationFamily$ = devName
+status$ = evName
+
+ok = t == "1000" OR t == "1510"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF t == "1005" THEN "INCORRECT_USER_OR_PASSWORD" ELSE NULL
+failureCategory$ = IF t == "1006" THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF t == "1006" THEN TRUE ELSE NULL
+
+m1.key$ = "event_type"
+m1.value$ = t
+m2.key$ = "organization_id"
+m2.value$ = json["$.organizationId"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "acting_user_id"
+m3.value$ = json["$.actingUserId"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "member_id"
+m4.value$ = json["$.memberId"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "device"
+m5.value$ = dev
+eventMetadata$.record$ = IF dev != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$

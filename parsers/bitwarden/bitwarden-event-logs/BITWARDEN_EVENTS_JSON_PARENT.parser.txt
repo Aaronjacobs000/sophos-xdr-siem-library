@@ -1,0 +1,230 @@
+!SAMPLE={"bitwarden_record":"event","organizationId":"6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01","object":"event","type":1000,"itemId":null,"collectionId":null,"groupId":null,"policyId":null,"memberId":null,"actingUserId":"a2549f79-a71f-4eb9-9234-eb7247333f94","installationId":null,"date":"2026-10-13T01:10:04.218Z","device":9,"ipAddress":"203.0.113.10","secretId":null,"projectId":null,"serviceAccountId":null,"actingUserEmail":"pat@example.com","actingUserName":"Pat Example"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"bitwarden_record"\s*:\s*"event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitwarden organization event logs from the Public API (GET /public/events), pulled by
+# the example collector in collectors/bitwarden-events and posted to HTTP Ingest as JSON lines. The
+# collector puts "bitwarden_record": "event" first and adds organizationId, and the email and name
+# of the acting user (actingUserEmail, actingUserName) and of the member (memberEmail, memberName).
+# Parent: names each event from its type code and hands sign-ins and failed sign-ins to the Auth
+# child, and every other event to the CloudAudit child.
+# Event and device names are the enum names in Bitwarden's Public API OpenAPI document. A code
+# newer than that list keeps the name event_<code>.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Bitwarden"
+# date is ISO 8601 in UTC, with up to 7 fractional digits.
+eventTimeUsec$ = DATETIME(json["$.date"], "2006-01-02T15:04:05.999999999Z07:00")
+t = STRING(json["$.type"])
+dev = STRING(json["$.device"])
+
+evName = "event_" + t
+evName = IF t == "1000" THEN "User_LoggedIn" ELSE evName
+evName = IF t == "1001" THEN "User_ChangedPassword" ELSE evName
+evName = IF t == "1002" THEN "User_Updated2fa" ELSE evName
+evName = IF t == "1003" THEN "User_Disabled2fa" ELSE evName
+evName = IF t == "1004" THEN "User_Recovered2fa" ELSE evName
+evName = IF t == "1005" THEN "User_FailedLogIn" ELSE evName
+evName = IF t == "1006" THEN "User_FailedLogIn2fa" ELSE evName
+evName = IF t == "1007" THEN "User_ClientExportedVault" ELSE evName
+evName = IF t == "1008" THEN "User_UpdatedTempPassword" ELSE evName
+evName = IF t == "1009" THEN "User_MigratedKeyToKeyConnector" ELSE evName
+evName = IF t == "1010" THEN "User_RequestedDeviceApproval" ELSE evName
+evName = IF t == "1011" THEN "User_TdeOffboardingPasswordSet" ELSE evName
+evName = IF t == "1100" THEN "Cipher_Created" ELSE evName
+evName = IF t == "1101" THEN "Cipher_Updated" ELSE evName
+evName = IF t == "1102" THEN "Cipher_Deleted" ELSE evName
+evName = IF t == "1103" THEN "Cipher_AttachmentCreated" ELSE evName
+evName = IF t == "1104" THEN "Cipher_AttachmentDeleted" ELSE evName
+evName = IF t == "1105" THEN "Cipher_Shared" ELSE evName
+evName = IF t == "1106" THEN "Cipher_UpdatedCollections" ELSE evName
+evName = IF t == "1107" THEN "Cipher_ClientViewed" ELSE evName
+evName = IF t == "1108" THEN "Cipher_ClientToggledPasswordVisible" ELSE evName
+evName = IF t == "1109" THEN "Cipher_ClientToggledHiddenFieldVisible" ELSE evName
+evName = IF t == "1110" THEN "Cipher_ClientToggledCardCodeVisible" ELSE evName
+evName = IF t == "1111" THEN "Cipher_ClientCopiedPassword" ELSE evName
+evName = IF t == "1112" THEN "Cipher_ClientCopiedHiddenField" ELSE evName
+evName = IF t == "1113" THEN "Cipher_ClientCopiedCardCode" ELSE evName
+evName = IF t == "1114" THEN "Cipher_ClientAutofilled" ELSE evName
+evName = IF t == "1115" THEN "Cipher_SoftDeleted" ELSE evName
+evName = IF t == "1116" THEN "Cipher_Restored" ELSE evName
+evName = IF t == "1117" THEN "Cipher_ClientToggledCardNumberVisible" ELSE evName
+evName = IF t == "1118" THEN "Cipher_ClientToggledTOTPSeedVisible" ELSE evName
+evName = IF t == "1119" THEN "Cipher_ClientCopiedBankAccountNumber" ELSE evName
+evName = IF t == "1120" THEN "Cipher_ClientCopiedBankAccountPin" ELSE evName
+evName = IF t == "1121" THEN "Cipher_ClientToggledBankAccountNumberVisible" ELSE evName
+evName = IF t == "1122" THEN "Cipher_ClientToggledBankAccountPinVisible" ELSE evName
+evName = IF t == "1123" THEN "Cipher_ClientCopiedLicenseNumber" ELSE evName
+evName = IF t == "1124" THEN "Cipher_ClientToggledLicenseNumberVisible" ELSE evName
+evName = IF t == "1125" THEN "Cipher_ClientCopiedPassportNumber" ELSE evName
+evName = IF t == "1126" THEN "Cipher_ClientToggledPassportNumberVisible" ELSE evName
+evName = IF t == "1127" THEN "Cipher_ClientCopiedSwiftCode" ELSE evName
+evName = IF t == "1128" THEN "Cipher_ClientToggledSwiftCodeVisible" ELSE evName
+evName = IF t == "1129" THEN "Cipher_ClientCopiedIban" ELSE evName
+evName = IF t == "1130" THEN "Cipher_ClientToggledIbanVisible" ELSE evName
+evName = IF t == "1131" THEN "Cipher_ClientCopiedNationalIdentificationNumber" ELSE evName
+evName = IF t == "1132" THEN "Cipher_ClientToggledNationalIdentificationNumberVisible" ELSE evName
+evName = IF t == "1300" THEN "Collection_Created" ELSE evName
+evName = IF t == "1301" THEN "Collection_Updated" ELSE evName
+evName = IF t == "1302" THEN "Collection_Deleted" ELSE evName
+evName = IF t == "1400" THEN "Group_Created" ELSE evName
+evName = IF t == "1401" THEN "Group_Updated" ELSE evName
+evName = IF t == "1402" THEN "Group_Deleted" ELSE evName
+evName = IF t == "1500" THEN "OrganizationUser_Invited" ELSE evName
+evName = IF t == "1501" THEN "OrganizationUser_Confirmed" ELSE evName
+evName = IF t == "1502" THEN "OrganizationUser_Updated" ELSE evName
+evName = IF t == "1503" THEN "OrganizationUser_Removed" ELSE evName
+evName = IF t == "1504" THEN "OrganizationUser_UpdatedGroups" ELSE evName
+evName = IF t == "1505" THEN "OrganizationUser_UnlinkedSso" ELSE evName
+evName = IF t == "1506" THEN "OrganizationUser_ResetPassword_Enroll" ELSE evName
+evName = IF t == "1507" THEN "OrganizationUser_ResetPassword_Withdraw" ELSE evName
+evName = IF t == "1508" THEN "OrganizationUser_AdminResetPassword" ELSE evName
+evName = IF t == "1509" THEN "OrganizationUser_ResetSsoLink" ELSE evName
+evName = IF t == "1510" THEN "OrganizationUser_FirstSsoLogin" ELSE evName
+evName = IF t == "1511" THEN "OrganizationUser_Revoked" ELSE evName
+evName = IF t == "1512" THEN "OrganizationUser_Restored" ELSE evName
+evName = IF t == "1513" THEN "OrganizationUser_ApprovedAuthRequest" ELSE evName
+evName = IF t == "1514" THEN "OrganizationUser_RejectedAuthRequest" ELSE evName
+evName = IF t == "1515" THEN "OrganizationUser_Deleted" ELSE evName
+evName = IF t == "1516" THEN "OrganizationUser_Left" ELSE evName
+evName = IF t == "1517" THEN "OrganizationUser_AutomaticallyConfirmed" ELSE evName
+evName = IF t == "1518" THEN "OrganizationUser_SelfRevoked" ELSE evName
+evName = IF t == "1519" THEN "OrganizationUser_AdminResetTwoFactor" ELSE evName
+evName = IF t == "1520" THEN "OrganizationUser_Revoked_TwoFactorNonCompliance" ELSE evName
+evName = IF t == "1521" THEN "OrganizationUser_Revoked_SingleOrganizationNonCompliance" ELSE evName
+evName = IF t == "1522" THEN "OrganizationUser_NotificationBannerActionClicked" ELSE evName
+evName = IF t == "1523" THEN "OrganizationUser_Staged" ELSE evName
+evName = IF t == "1524" THEN "OrganizationUser_InviteLinkAccepted" ELSE evName
+evName = IF t == "1525" THEN "OrganizationUser_AdminChangedEmail" ELSE evName
+evName = IF t == "1526" THEN "OrganizationUser_InviteLinkConfirmed" ELSE evName
+evName = IF t == "1600" THEN "Organization_Updated" ELSE evName
+evName = IF t == "1601" THEN "Organization_PurgedVault" ELSE evName
+evName = IF t == "1602" THEN "Organization_ClientExportedVault" ELSE evName
+evName = IF t == "1603" THEN "Organization_VaultAccessed" ELSE evName
+evName = IF t == "1604" THEN "Organization_EnabledSso" ELSE evName
+evName = IF t == "1605" THEN "Organization_DisabledSso" ELSE evName
+evName = IF t == "1606" THEN "Organization_EnabledKeyConnector" ELSE evName
+evName = IF t == "1607" THEN "Organization_DisabledKeyConnector" ELSE evName
+evName = IF t == "1608" THEN "Organization_SponsorshipsSynced" ELSE evName
+evName = IF t == "1609" THEN "Organization_CollectionManagement_Updated" ELSE evName
+evName = IF t == "1610" THEN "Organization_CollectionManagement_LimitCollectionCreationEnabled" ELSE evName
+evName = IF t == "1611" THEN "Organization_CollectionManagement_LimitCollectionCreationDisabled" ELSE evName
+evName = IF t == "1612" THEN "Organization_CollectionManagement_LimitCollectionDeletionEnabled" ELSE evName
+evName = IF t == "1613" THEN "Organization_CollectionManagement_LimitCollectionDeletionDisabled" ELSE evName
+evName = IF t == "1614" THEN "Organization_CollectionManagement_LimitItemDeletionEnabled" ELSE evName
+evName = IF t == "1615" THEN "Organization_CollectionManagement_LimitItemDeletionDisabled" ELSE evName
+evName = IF t == "1616" THEN "Organization_CollectionManagement_AllowAdminAccessToAllCollectionItemsEnabled" ELSE evName
+evName = IF t == "1617" THEN "Organization_CollectionManagement_AllowAdminAccessToAllCollectionItemsDisabled" ELSE evName
+evName = IF t == "1618" THEN "Organization_ItemOrganization_Accepted" ELSE evName
+evName = IF t == "1619" THEN "Organization_ItemOrganization_Declined" ELSE evName
+evName = IF t == "1620" THEN "Organization_AutoConfirmEnabled_Admin" ELSE evName
+evName = IF t == "1621" THEN "Organization_AutoConfirmDisabled_Admin" ELSE evName
+evName = IF t == "1622" THEN "Organization_AutoConfirmEnabled_Portal" ELSE evName
+evName = IF t == "1623" THEN "Organization_AutoConfirmDisabled_Portal" ELSE evName
+evName = IF t == "1624" THEN "Organization_InviteLinkCreated" ELSE evName
+evName = IF t == "1625" THEN "Organization_InviteLinkDomainsEdited" ELSE evName
+evName = IF t == "1626" THEN "Organization_InviteLinkDeleted" ELSE evName
+evName = IF t == "1627" THEN "Organization_InviteLinkClientCopied" ELSE evName
+evName = IF t == "1628" THEN "Organization_InviteLinkRefreshed" ELSE evName
+evName = IF t == "1629" THEN "Organization_InviteLinkConfirmEnabled" ELSE evName
+evName = IF t == "1630" THEN "Organization_InviteLinkConfirmDisabled" ELSE evName
+evName = IF t == "1700" THEN "Policy_Updated" ELSE evName
+evName = IF t == "1800" THEN "ProviderUser_Invited" ELSE evName
+evName = IF t == "1801" THEN "ProviderUser_Confirmed" ELSE evName
+evName = IF t == "1802" THEN "ProviderUser_Updated" ELSE evName
+evName = IF t == "1803" THEN "ProviderUser_Removed" ELSE evName
+evName = IF t == "1900" THEN "ProviderOrganization_Created" ELSE evName
+evName = IF t == "1901" THEN "ProviderOrganization_Added" ELSE evName
+evName = IF t == "1902" THEN "ProviderOrganization_Removed" ELSE evName
+evName = IF t == "1903" THEN "ProviderOrganization_VaultAccessed" ELSE evName
+evName = IF t == "2000" THEN "OrganizationDomain_Added" ELSE evName
+evName = IF t == "2001" THEN "OrganizationDomain_Removed" ELSE evName
+evName = IF t == "2002" THEN "OrganizationDomain_Verified" ELSE evName
+evName = IF t == "2003" THEN "OrganizationDomain_NotVerified" ELSE evName
+evName = IF t == "2100" THEN "Secret_Retrieved" ELSE evName
+evName = IF t == "2101" THEN "Secret_Created" ELSE evName
+evName = IF t == "2102" THEN "Secret_Edited" ELSE evName
+evName = IF t == "2103" THEN "Secret_Deleted" ELSE evName
+evName = IF t == "2104" THEN "Secret_Permanently_Deleted" ELSE evName
+evName = IF t == "2105" THEN "Secret_Restored" ELSE evName
+evName = IF t == "2200" THEN "Project_Retrieved" ELSE evName
+evName = IF t == "2201" THEN "Project_Created" ELSE evName
+evName = IF t == "2202" THEN "Project_Edited" ELSE evName
+evName = IF t == "2203" THEN "Project_Deleted" ELSE evName
+evName = IF t == "2300" THEN "ServiceAccount_UserAdded" ELSE evName
+evName = IF t == "2301" THEN "ServiceAccount_UserRemoved" ELSE evName
+evName = IF t == "2302" THEN "ServiceAccount_GroupAdded" ELSE evName
+evName = IF t == "2303" THEN "ServiceAccount_GroupRemoved" ELSE evName
+evName = IF t == "2304" THEN "ServiceAccount_Created" ELSE evName
+evName = IF t == "2305" THEN "ServiceAccount_Deleted" ELSE evName
+evName = IF t == "2400" THEN "PhishingBlocker_SiteAccessed" ELSE evName
+evName = IF t == "2401" THEN "PhishingBlocker_SiteExited" ELSE evName
+evName = IF t == "2402" THEN "PhishingBlocker_Bypassed" ELSE evName
+evName = IF t == "2500" THEN "Send_Created_Text" ELSE evName
+evName = IF t == "2501" THEN "Send_Created_Text_WithEmailVerification" ELSE evName
+evName = IF t == "2502" THEN "Send_Created_Text_WithPasswordProtection" ELSE evName
+evName = IF t == "2503" THEN "Send_Created_File" ELSE evName
+evName = IF t == "2504" THEN "Send_Created_File_WithEmailVerification" ELSE evName
+evName = IF t == "2505" THEN "Send_Created_File_WithPasswordProtection" ELSE evName
+evName = IF t == "2506" THEN "Send_Edited_Text" ELSE evName
+evName = IF t == "2507" THEN "Send_Edited_File" ELSE evName
+evName = IF t == "2508" THEN "Send_Deleted_Text" ELSE evName
+evName = IF t == "2509" THEN "Send_Deleted_File" ELSE evName
+evName = IF t == "2510" THEN "Send_Accessed_Text" ELSE evName
+evName = IF t == "2511" THEN "Send_Accessed_File" ELSE evName
+
+devName = NULL
+devName = IF dev == "0" THEN "Android" ELSE devName
+devName = IF dev == "1" THEN "iOS" ELSE devName
+devName = IF dev == "2" THEN "ChromeExtension" ELSE devName
+devName = IF dev == "3" THEN "FirefoxExtension" ELSE devName
+devName = IF dev == "4" THEN "OperaExtension" ELSE devName
+devName = IF dev == "5" THEN "EdgeExtension" ELSE devName
+devName = IF dev == "6" THEN "WindowsDesktop" ELSE devName
+devName = IF dev == "7" THEN "MacOsDesktop" ELSE devName
+devName = IF dev == "8" THEN "LinuxDesktop" ELSE devName
+devName = IF dev == "9" THEN "ChromeBrowser" ELSE devName
+devName = IF dev == "10" THEN "FirefoxBrowser" ELSE devName
+devName = IF dev == "11" THEN "OperaBrowser" ELSE devName
+devName = IF dev == "12" THEN "EdgeBrowser" ELSE devName
+devName = IF dev == "13" THEN "IEBrowser" ELSE devName
+devName = IF dev == "14" THEN "UnknownBrowser" ELSE devName
+devName = IF dev == "15" THEN "AndroidAmazon" ELSE devName
+devName = IF dev == "16" THEN "UWP" ELSE devName
+devName = IF dev == "17" THEN "SafariBrowser" ELSE devName
+devName = IF dev == "18" THEN "VivaldiBrowser" ELSE devName
+devName = IF dev == "19" THEN "VivaldiExtension" ELSE devName
+devName = IF dev == "20" THEN "SafariExtension" ELSE devName
+devName = IF dev == "21" THEN "SDK" ELSE devName
+devName = IF dev == "22" THEN "Server" ELSE devName
+devName = IF dev == "23" THEN "WindowsCLI" ELSE devName
+devName = IF dev == "24" THEN "MacOsCLI" ELSE devName
+devName = IF dev == "25" THEN "LinuxCLI" ELSE devName
+devName = IF dev == "26" THEN "DuckDuckGoBrowser" ELSE devName
+
+pfx = t|^(?P<p>\d\d)
+category = "other"
+category = IF pfx["p"] == "10" THEN "user" ELSE category
+category = IF pfx["p"] == "11" THEN "item" ELSE category
+category = IF pfx["p"] == "13" THEN "collection" ELSE category
+category = IF pfx["p"] == "14" THEN "group" ELSE category
+category = IF pfx["p"] == "15" THEN "member" ELSE category
+category = IF pfx["p"] == "16" THEN "organization" ELSE category
+category = IF pfx["p"] == "17" THEN "policy" ELSE category
+category = IF pfx["p"] == "18" THEN "provider_user" ELSE category
+category = IF pfx["p"] == "19" THEN "provider_organization" ELSE category
+category = IF pfx["p"] == "20" THEN "domain" ELSE category
+category = IF pfx["p"] == "21" THEN "secret" ELSE category
+category = IF pfx["p"] == "22" THEN "project" ELSE category
+category = IF pfx["p"] == "23" THEN "machine_account" ELSE category
+category = IF pfx["p"] == "24" THEN "phishing_blocker" ELSE category
+category = IF pfx["p"] == "25" THEN "send" ELSE category
+
+eventType$ = IF t == "1000" OR t == "1005" OR t == "1006" OR t == "1510" THEN "auth" ELSE "audit"
