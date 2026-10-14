@@ -1,0 +1,28 @@
+!SAMPLE=<180>1 2026-10-13T00:41:14.608731Z cortexxdr - - - - CEF:0|Palo Alto Networks|Cortex XDR|Cortex XDR 3.14|XDR Agent|Behavioral Threat Protection|8|end=1791852071102 shost=WS-FIN-041 deviceFacility=None cat=Malware externalId=2412 request=https:\/\/cortex.example.com\/alerts\/2412 cs1=winword.exe cs1Label=Initiated by cs2="C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE" \/n "C:\\Users\\jdoe\\Downloads\\invoice_1013.docm" cs2Label=Initiator CMD cs3=SIGNATURE_SIGNED-Microsoft Windows cs3Label=Signature cs4=winword.exe cs4Label=CGO name cs5="C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE" cs5Label=CGO CMD cs6=SIGNATURE_SIGNED-Microsoft Windows cs6Label=CGO Signature fileHash=5b1e2a3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8 filePath=C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.dll targetprocesssignature=SIGNATURE_UNSIGNED- tenantname=Example tenantCDLid=123456 CSPaccountname=1234 initiatorSha256=a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90 initiatorPath=C:\\Program Files\\Microsoft Office\\root\\Office16\\winword.exe osParentName=explorer.exe osParentCmd=C:\\Windows\\Explorer.EXE osParentSha256=0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0 osParentSignature=SIGNATURE_SIGNED osParentSigner=Microsoft Windows incident=118 act=Prevented (Blocked) suser=EXAMPLE\\jdoe
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|Palo Alto Networks\|Cortex XDR(?: Agent)?\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Palo Alto Networks Cortex XDR notifications forwarded to a syslog receiver (the data
+# collector), CEF with an RFC 5424 header from the host cortexxdr:
+#   <180>1 2026-10-13T00:41:14.608731Z cortexxdr - - - - CEF:0|Palo Alto Networks|Cortex XDR|...
+# Parent: hands alerts (agent, analytics, BIOC, IOC, correlation and other sources) to the child.
+# Management audit and agent audit logs stay in the generic schema.
+
+v = CEF(originalData$)
+source = STRING(v[4])
+
+# Variables and $ fields set here are visible to the child.
+sensorType$ = "Palo Alto Networks Cortex XDR"
+eventType$ = "alert"
+eventType$ = IF source == "Management Audit Logs" THEN "management_audit" ELSE eventType$
+eventType$ = IF source == "Agent Audit Logs" THEN "agent_audit" ELSE eventType$
+host = STRING(v["shost"])
+hostId$ = IF host != "" THEN host ELSE NULL
+
+# end is the alert time in epoch milliseconds; the syslog header time is when Cortex sent it.
+endText = STRING(v["end"])
+endMs = endText|^(?P<n>\d{13})$
+eventTimeUsec$ = IF endMs["n"] != "" THEN INT(endMs["n"], 10) * 1000 ELSE eventTimeUsec$
