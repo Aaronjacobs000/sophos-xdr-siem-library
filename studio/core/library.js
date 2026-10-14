@@ -64,6 +64,14 @@ export function withBridgeKey(meta) {
   return out;
 }
 
+// The text the library search matches: vendor, product, author, format, parser names and schemas,
+// and, for an entry that needs a bridge, "needs a bridge" and the bridge's path.
+export function searchText(meta) {
+  const m = meta && typeof meta === 'object' ? meta : {};
+  const bridge = bridgeOf(m);
+  return JSON.stringify([m.vendor, m.product, m.author, m.format, (Array.isArray(m.parsers) ? m.parsers : []).map((p) => [p && p.name, p && p.schema]), bridge ? ['needs a bridge', bridge] : []]).toLowerCase();
+}
+
 // The scripts a bridge folder offers: its .py files, leaving out tests unless that's all.
 export function bridgeScripts(fileNames) {
   const py = (fileNames || []).filter((f) => /^[A-Za-z0-9_.-]+\.py$/.test(f)).sort();
@@ -197,8 +205,10 @@ export function validateEntry(entry, opts = {}) {
   const files = entry.files || entryFiles(entry);
   const fileNames = files.map((f) => f.path.split('/').pop());
   problems.push(...validateMeta(entry.meta, fileNames, { bridges: opts.bridges }));
+  // Share to the library writes an entry to the folder its vendor and product make, so a folder
+  // that doesn't match would split the entry in two.
   if (entry.meta && entry.meta.vendor && entry.meta.product && entry.id && entry.id !== entryId(entry.meta)) {
-    problems.push({ level: 'warning', code: 'folder', message: `the folder is ${entry.id}; from vendor and product it would be ${entryId(entry.meta)}`, file: 'meta.json' });
+    problems.push({ level: 'error', code: 'folder', message: `the folder is parsers/${entry.id}, but vendor and product make it parsers/${entryId(entry.meta)}. Move the files there or change vendor and product.`, file: 'meta.json' });
   }
   if (!entry.samples.length) problems.push({ level: 'error', code: 'samples', message: 'samples.log has no lines', file: 'samples.log' });
   if (entry.samples.length > LIMITS.samples) problems.push({ level: 'error', code: 'samples', message: `samples.log has ${entry.samples.length} lines; the limit is ${LIMITS.samples}`, file: 'samples.log' });

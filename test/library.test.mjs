@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug } from '../studio/core/library.js';
+import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug, searchText, hasBridge } from '../studio/core/library.js';
 import { scanText } from '../studio/core/scan.js';
 import { loadLibrary, loadEntryFromDir, listBridges } from '../tools/lib/fs-library.mjs';
 import { runParsers } from '../studio/core/engine.js';
@@ -97,6 +97,47 @@ test('the scan reads session IDs and GUIDs as identifiers unless they look like 
   assert.deepEqual(kinds('session_token=abc123def456'), ['secret']);
   assert.deepEqual(kinds('api_key=3fa85f64-5717-4562-b3fc-2c963f66afa6'), ['secret']);
   assert.deepEqual(kinds('session_id=Q5bXrT9kLm2Vn8Pz4Wc7Yd1Hf6Jg3Ks0Ab'), ['secret']);
+});
+
+test('the scan lets service domains, .id properties and versions in URL-encoded user agents through', () => {
+  assert.deepEqual(kinds('"apiGroup":"rbac.authorization.k8s.io","apiVersion":"audit.k8s.io/v1"'), []);
+  assert.deepEqual(kinds('"requestUri":"https://kv-example-prod.vault.azure.net/secrets/db/?api-version=7.4"'), []);
+  assert.deepEqual(kinds('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'), []);
+  assert.deepEqual(kinds('host=d111111abcdef8.cloudfront.net'), []);
+  assert.deepEqual(kinds('# Block.ID names the block\n# event_metadata gets properties.id'), []);
+  assert.deepEqual(kinds('ua=Mozilla/5.0%20(Windows%20NT%2010.0;%20Win64;%20x64)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/125.0.0.0%20Safari/537.36'), []);
+  // A name under an Indonesian second-level domain is still a hostname, and an address that isn't
+  // public is still blocked after an encoded browser token.
+  assert.deepEqual(kinds('see mail.realcorp.co.id'), ['hostname']);
+  assert.deepEqual(kinds('ua=x%20Chrome/192.168.1.1'), ['ip']);
+  assert.deepEqual(kinds('ua=x%20Client/125.0.0.0'), ['ip']);
+});
+
+test('CI: an entry whose folder doesn\'t match its vendor and product fails', async () => {
+  const lib = await loadLibrary(ROOT);
+  const e = lib.find((x) => x.id === 'dnsmasq/dnsmasq');
+  const v = validateEntry({ ...e, id: 'dnsmasq/dns-masq' }, { library: lib.filter((x) => x.id !== e.id) });
+  assert.deepEqual(v.problems.filter((p) => p.code === 'folder').map((p) => [p.level, p.message]), [['error', 'the folder is parsers/dnsmasq/dns-masq, but vendor and product make it parsers/dnsmasq/dnsmasq. Move the files there or change vendor and product.']]);
+  const { code, report } = await ciRun(async (pr) => {
+    await cp(path.join(pr, 'parsers/dnsmasq/dnsmasq'), path.join(pr, 'parsers/dnsmasq/dns-masq'), { recursive: true });
+    await rm(path.join(pr, 'parsers/dnsmasq/dnsmasq'), { recursive: true });
+    return ['parsers/dnsmasq/dnsmasq/meta.json', 'parsers/dnsmasq/dns-masq/meta.json'];
+  }, 'Aaronjacobs000');
+  assert.equal(code, 1);
+  assert.ok(report.entries.find((x) => x.id === 'dnsmasq/dns-masq').problems.some((p) => p.level === 'error' && p.code === 'folder'));
+});
+
+test('library search finds the entries that need a bridge when you search for "bridge"', async () => {
+  const meta = { vendor: 'OpenAI', product: 'API Platform audit logs', author: 'octocat', format: 'json', parsers: [{ name: 'OPENAI_AUDIT_JSON_STANDALONE', schema: 'scwx.cloudaudit' }] };
+  assert.ok(searchText({ ...meta, bridge: 'bridges/ai-compliance-logs' }).includes('bridge'));
+  assert.ok(searchText({ ...meta, bridge: 'bridges/ai-compliance-logs' }).includes('ai-compliance'));
+  assert.ok(searchText({ ...meta, collector: 'collectors/ai-compliance-logs' }).includes('needs a bridge'));
+  assert.equal(searchText(meta).includes('bridge'), false);
+  assert.ok(searchText(meta).includes('scwx.cloudaudit') && searchText(meta).includes('octocat'));
+  const lib = await loadLibrary(ROOT);
+  const found = lib.filter((e) => searchText(e.meta).includes('bridge')).map((e) => e.id);
+  assert.ok(found.length >= 10);
+  assert.deepEqual(found, lib.filter((e) => hasBridge(e.meta)).map((e) => e.id));
 });
 
 test('the issue-form bundle round-trips through an issue body', async () => {

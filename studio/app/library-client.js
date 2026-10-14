@@ -4,7 +4,7 @@
 // Only GET requests to api.github.com and raw.githubusercontent.com; nothing is sent.
 
 import { REPO, BRANCH } from '../core/version.js';
-import { parseSamples, entryId, BRIDGE_PATH, bridgeScripts } from '../core/library.js';
+import { parseSamples, entryId, BRIDGE_PATH, bridgeScripts, bridgeOf } from '../core/library.js';
 
 const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 const CACHE_KEY = 'parser-studio:library-cache:v3';
@@ -139,6 +139,17 @@ export function bridgeFolders(tree) {
     else if (!dirs.has(path)) out.push({ path, dir, files: names.sort() });
   }
   return out;
+}
+
+// The folder in the repo that holds an entry's bridge, for links: bridges/<name>, or collectors/<name>
+// in a fork made before the rename. With no folder listed, an entry that still names
+// collectors/<name> under the old "collector" key points there.
+export function bridgeFolder(bridges, meta) {
+  const path = bridgeOf(meta);
+  const known = (bridges || []).find((b) => b && b.path === path);
+  if (known) return known.dir || known.path;
+  const legacy = meta && (meta.bridge === undefined || meta.bridge === null) && typeof meta.collector === 'string' && /^collectors\//.test(meta.collector);
+  return legacy ? meta.collector : path;
 }
 
 // A bridge's README and scripts, read at the same commit as the library. When GitHub can't

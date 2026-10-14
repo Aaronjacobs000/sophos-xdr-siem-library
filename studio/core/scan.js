@@ -18,12 +18,15 @@ const SYSLOG_SELECTOR = /^(local[0-7]|kern|user|mail|daemon|auth|syslog|lpr|news
 const COMMON_TLD = new Set(['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'info', 'biz', 'me', 'app', 'dev', 'cloud', 'ai', 'xyz', 'online', 'site', 'tech', 'store', 'shop', 'live', 'pro', 'mobi', 'tv', 'cc', 'ly', 'gg', 'eu', 'asia']);
 // The EICAR anti-malware test file is called eicar.com.
 const TEST_FILES = new Set(['eicar.com']);
+// .id is nearly always a property in logs and parsers, such as properties.id or Block.ID, so a name
+// ending in .id only reads as a hostname under an Indonesian second-level domain, such as co.id.
+const ID_SLD = /\.(?:ac|biz|co|desa|go|mil|my|net|or|ponpes|sch|web)\.id$/i;
 // Product names written like a hostname. Tenable.ad is the old name of Tenable Identity Exposure,
 // and .ad is on the internal list above.
 const PRODUCT_NAMES = new Set(['tenable.ad']);
 const FILE_EXT = new Set(['exe', 'dll', 'sys', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'vbs', 'js', 'jse', 'hta', 'msi', 'msp', 'cab', 'scr', 'lnk', 'jar', 'py', 'sh', 'pl', 'rb', 'php', 'asp', 'aspx', 'jsp', 'html', 'htm', 'xml', 'json', 'yml', 'yaml', 'conf', 'cfg', 'ini', 'log', 'txt', 'csv', 'tsv', 'dat', 'tmp', 'bin', 'iso', 'img', 'zip', 'rar', 'gz', 'tgz', 'tar', 'bz2', 'xz', 'doc', 'docx', 'docm', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx', 'pdf', 'rtf', 'odt', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'mp3', 'mp4', 'eml', 'msg', 'md', 'so', 'dylib', 'app', 'pkg', 'dmg', 'deb', 'rpm', 'apk', 'ipa', 'db', 'sql', 'bak', 'old', 'key', 'pem', 'crt', 'cer', 'pfx', 'p12']);
 // Well-known public service domains that turn up in vendor logs and identify no one.
-const PUBLIC_OK = /(^|\.)(microsoft\.com|windows\.com|windowsupdate\.com|office\.com|office365\.com|live\.com|azure\.com|windows\.net|google\.com|googleapis\.com|gstatic\.com|amazonaws\.com|aws\.amazon\.com|cloudflare\.com|akamai\.net|apple\.com|icloud\.com|github\.com|githubusercontent\.com|eset\.com|sophos\.com|mozilla\.org|ubuntu\.com|debian\.org|pool\.ntp\.org|digicert\.com|letsencrypt\.org|w3\.org|ietf\.org|iana\.org|opendns\.com|quad9\.net)$/i;
+const PUBLIC_OK = /(^|\.)(microsoft\.com|windows\.com|windowsupdate\.com|office\.com|office365\.com|live\.com|azure\.com|azure\.net|windows\.net|google\.com|googleapis\.com|gstatic\.com|amazonaws\.com|aws\.amazon\.com|cloudfront\.net|cloudflare\.com|akamai\.net|apple\.com|icloud\.com|github\.com|githubusercontent\.com|eset\.com|sophos\.com|mozilla\.org|ubuntu\.com|debian\.org|pool\.ntp\.org|digicert\.com|letsencrypt\.org|w3\.org|xmlsoap\.org|ietf\.org|iana\.org|opendns\.com|quad9\.net|k8s\.io)$/i;
 const FICTIONAL = /\b(acme|example|contoso|fabrikam|northwind|tailspin|woodgrove|litware|adventure works|wingtip|initech|globex|hooli|vandelay|wide world importers|proseware|fourth coffee)\b/i;
 const COMPANY = /\b([A-Z][A-Za-z0-9&'.-]*(?:\s+[A-Z][A-Za-z0-9&'.-]*){0,3})\s+(Pty\.?\s+Ltd|Pty\.?\s+Limited|Ltd|Limited|Inc|Incorporated|LLC|L\.L\.C\.|GmbH|PLC|S\.A\.|S\.p\.A\.|B\.V\.|N\.V\.|Corp|Corporation|Holdings|AG|K\.K\.|Sdn\.?\s+Bhd)\b\.?/g;
 const PLACEHOLDER = /^(\*+|x+|X+|redacted|<[^>]*>|\[redacted\]|example[\w-]*|placeholder|changeme|none|null|nil|n\/a|true|false|bearer|basic|ntlm|kerberos|negotiate|password|secret|token|\d{1,6})$/i;
@@ -45,9 +48,10 @@ const SECRET_KEYS = /(?:^|[^A-Za-z0-9])["']?((?:client[_-]?)?secret|pass(?:word|
 // secret when it looks like a random token (see highEntropy).
 const SESSION_ID_KEY = /^session[_-]?id$/i;
 // A version under a key such as agent_version or browserVersion, or after a browser token such
-// as Chrome/ or "Chrome ", has the shape of an IPv4 address.
+// as Chrome/ or "Chrome ", has the shape of an IPv4 address. In a URL-encoded user agent the token
+// follows an escape such as %20, as in %20Chrome/125.0.0.0.
 const VERSION_WORDS = new Set(['version', 'ver', 'build', 'release']);
-const UA_PRODUCT = /(?:^|[^\w.])(?:Chrome|Chromium|CriOS|Firefox|FxiOS|Safari|Version|Edge|Edg|EdgA|EdgiOS|Opera|OPR|MSIE|Trident|SamsungBrowser|YaBrowser|Vivaldi|Brave|Electron)[/ ]$/;
+const UA_PRODUCT = /(?:^|[^\w.]|%[0-9A-Fa-f]{2})(?:Chrome|Chromium|CriOS|Firefox|FxiOS|Safari|Version|Edge|Edg|EdgA|EdgiOS|Opera|OPR|MSIE|Trident|SamsungBrowser|YaBrowser|Vivaldi|Brave|Electron)[/ ]$/;
 
 function lineOf(text, index) {
   let n = 1;
@@ -150,6 +154,7 @@ export function scanText(text, opts = {}) {
     const tld = m[2].toLowerCase();
     if (RESERVED_DOMAIN.test(host) || PUBLIC_OK.test(host) || TEST_FILES.has(host) || PRODUCT_NAMES.has(host)) continue;
     if (text[m.index - 1] === '@') continue;
+    if (tld === 'id' && !ID_SLD.test(host)) continue;
     if (INTERNAL_TLD.has(tld)) { add('error', 'hostname', `${m[1]} is an internal hostname. Use a name under example.com, such as host01.corp.example.com.`, m.index, m[1]); continue; }
     if (FILE_EXT.has(tld) && tld !== 'com') continue;
     if (!(COMMON_TLD.has(tld) || COMMON_CC.has(tld))) continue;

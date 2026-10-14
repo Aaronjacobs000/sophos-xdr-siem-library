@@ -1,8 +1,8 @@
 import { h, clear, pill, ext, copyText, toast, download } from '../dom.js';
 import { state } from '../store.js';
 import { go } from '../nav.js';
-import { loadEntry, loadBridge, engineParsers, githubUrl } from '../library-client.js';
-import { hasBridge, bridgeOf } from '../../core/library.js';
+import { loadEntry, loadBridge, engineParsers, githubUrl, bridgeFolder } from '../library-client.js';
+import { hasBridge, bridgeOf, searchText } from '../../core/library.js';
 import { renderMarkdown } from '../markdown.js';
 import { highlightSample, highlightScript } from '../highlight.js';
 import { call } from '../emulator-client.js';
@@ -29,13 +29,13 @@ export function renderLibrary(root) {
     h('div', {}, h('h1', { text: 'Community parser library' }), h('p', { class: 'sub', text: 'Parsers people have shared, each with synthetic samples and the emulator\'s expected output. Open one to read it, test it against your own line, or fork it.' })),
     h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl('/tree/main/parsers'), target: '_blank', rel: 'noopener noreferrer', text: 'Browse on GitHub' }), h('a', { class: 'btn primary', href: '#/build/sample', text: 'Build a parser' })));
   root.append(head, sourceLine());
-  const search = h('input', { class: 'input', type: 'search', placeholder: 'Search vendor, product, schema or author', 'aria-label': 'Search the library', value: state.libQuery || '' });
+  const search = h('input', { class: 'input', type: 'search', placeholder: 'Search vendor, product, schema, author or bridge', 'aria-label': 'Search the library', value: state.libQuery || '' });
   const cards = h('div', { class: 'cards' });
   root.append(h('div', { class: 'libtools' }, search), cards);
   const draw = () => {
     clear(cards);
     const q = (state.libQuery || '').toLowerCase().trim();
-    const list = state.library.entries.filter((e) => !q || JSON.stringify([e.meta.vendor, e.meta.product, e.meta.author, e.meta.format, (e.meta.parsers || []).map((p) => [p.name, p.schema])]).toLowerCase().includes(q));
+    const list = state.library.entries.filter((e) => !q || searchText(e.meta).includes(q));
     if (!list.length) { cards.append(h('p', { class: 'empty', text: state.library.status === 'ready' ? 'No entries match.' : 'Loading…' })); return; }
     for (const e of list) cards.append(card(e));
   };
@@ -183,7 +183,7 @@ function bridgeSection(e) {
   sec.append(body);
   loadBridge(state.library.bridges, path, e.ref)
     .then((b) => { clear(body); drawBridge(body, b); })
-    .catch((err) => { clear(body); body.append(h('div', { class: 'callout' }, h('span', {}, `Couldn't load ${path}: ${err.message}. `, ext(githubUrl(`/tree/main/${path}`), 'Open it on GitHub')))); });
+    .catch((err) => { clear(body); body.append(h('div', { class: 'callout' }, h('span', {}, `Couldn't load ${path}: ${err.message}. `, ext(githubUrl(`/tree/main/${bridgeFolder(state.library.bridges, e.meta)}`), 'Open it on GitHub')))); });
   return sec;
 }
 
