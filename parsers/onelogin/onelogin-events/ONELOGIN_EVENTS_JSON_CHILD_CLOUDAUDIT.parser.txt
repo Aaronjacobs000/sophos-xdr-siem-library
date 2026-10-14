@@ -1,0 +1,90 @@
+!SAMPLE={"create":{"_id":"cf728b90-5d4e-4f30-b2c1-6d7e8f901234"},"event_timestamp":"2026-10-13 03:11:20 UTC","actor_user_id":41230001,"user_name":"Jo Newstarter","role_id":445566,"role_name":"Finance Admins","actor_system":"","uuid":"cf728b90-5d4e-4f30-b2c1-6d7e8f901234","actor_user_name":"Sam Admin","account_id":54321,"ipaddr":"198.51.100.61","event_type_id":4,"user_id":41235555}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OneLogin events from the Event Broadcaster webhook (SIEM NDJSON) or the Events API.
+# Child of ONELOGIN_EVENTS_JSON_PARENT: every event type the Auth child doesn't take, such as user
+# created, updated, suspended or deleted, roles assigned, users assumed by an administrator, apps,
+# policies, groups, API credentials and broadcaster changes, to CloudAudit. The event name is the
+# event type's name from OneLogin's event types list for the common ones, and
+# event_type_id_<id> for the rest.
+# json, tid, eventId, userName, actorName, ip, eventType$, sensorType$ and eventTimeUsec$ come
+# from the parent.
+
+sensorEventId$ = eventId
+eventSource$ = "OneLogin"
+name = "event_type_id_" + STRING(tid)
+name = IF tid == 1 THEN "APP_ADDED_TO_ROLE" ELSE name
+name = IF tid == 2 THEN "APP_REMOVED_FROM_ROLE" ELSE name
+name = IF tid == 3 THEN "USER_ASSUMED_USER" ELSE name
+name = IF tid == 4 THEN "USER_ASSIGNED_ROLE" ELSE name
+name = IF tid == 12 THEN "UNLOCKED_USER" ELSE name
+name = IF tid == 13 THEN "CREATED_USER" ELSE name
+name = IF tid == 14 THEN "UPDATED_USER" ELSE name
+name = IF tid == 15 THEN "DEACTIVATED_USER" ELSE name
+name = IF tid == 16 THEN "ACTIVATED_USER" ELSE name
+name = IF tid == 17 THEN "DELETED_USER" ELSE name
+name = IF tid == 21 THEN "SUSPENDED_USER" ELSE name
+name = IF tid == 22 THEN "USER_ADDED_OTP_DEVICE" ELSE name
+name = IF tid == 24 THEN "USER_REMOVED_OTP_DEVICE" ELSE name
+name = IF tid == 115 THEN "USER_INVITED" ELSE name
+name = IF tid == 147 THEN "USER_MANUALLY_ADDED_TO_ROLE" ELSE name
+name = IF tid == 148 THEN "USER_MANUALLY_REMOVED_FROM_ROLE" ELSE name
+name = IF tid == 156 THEN "POLICY_CREATED" ELSE name
+name = IF tid == 157 THEN "POLICY_UPDATED" ELSE name
+name = IF tid == 158 THEN "POLICY_DELETED" ELSE name
+name = IF tid == 179 THEN "API_CREDENTIAL_CREATED" ELSE name
+name = IF tid == 180 THEN "API_CREDENTIAL_DELETED" ELSE name
+name = IF tid == 211 THEN "ADMIN_CHANGED_USER_PASSWORD" ELSE name
+name = IF tid == 240 THEN "USER_REVEALED_PASSWORD" ELSE name
+name = IF tid == 413 THEN "BROADCASTER_DISABLED" ELSE name
+name = IF tid == 555 THEN "EXTERNAL_ASSUME_USER" ELSE name
+name = IF tid == 600 THEN "APP_CREATED_BY_USER" ELSE name
+name = IF tid == 601 THEN "APP_UPDATED_BY_USER" ELSE name
+name = IF tid == 602 THEN "APP_DELETED_BY_USER" ELSE name
+name = IF tid == 1801 THEN "ROLE_CREATED" ELSE name
+name = IF tid == 1802 THEN "ROLE_DELETED" ELSE name
+eventName$ = name
+userName$ = actorName
+userName$ = IF userName$ THEN userName$ ELSE json["$.actor_system"]
+userId$ = STRING(json["$.actor_user_id"])
+userId$ = IF json["$.actor_user_id"] THEN userId$ ELSE NULL
+targetUserName$ = userName
+sourceAddress$ = ip
+userAgent$ = json["$.user_agent"]
+managementEvent$ = TRUE
+
+d1.key$ = "event_type_id"
+d1.value$ = STRING(tid)
+d2.key$ = "account_id"
+d2.value$ = STRING(json["$.account_id"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "user_id"
+d3.value$ = STRING(json["$.user_id"])
+additionalEventData$.record$ = IF json["$.user_id"] THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "notes"
+d4.value$ = json["$.notes"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "app_name"
+d5.value$ = json["$.app_name"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "role_name"
+d6.value$ = json["$.role_name"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "group_name"
+d7.value$ = json["$.group_name"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "policy_name"
+d8.value$ = json["$.policy_name"]
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "api_credential_name"
+d9.value$ = json["$.api_credential_name"]
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+d10.key$ = "custom_message"
+d10.value$ = json["$.custom_message"]
+additionalEventData$.record$ = IF d10.value$ THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$

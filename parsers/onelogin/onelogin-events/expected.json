@@ -1,0 +1,337 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791860405000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1c2b3a-9d8e-4f7a-b6c5-0d1e2f3a4b5c",
+      "target_user_name": "Pat Example",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "auth_system": "OneLogin",
+      "status": "USER_LOGGED_INTO_ONELOGIN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "5"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "notes",
+            "value": "Authentication method: password."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791860561000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a2d3c4b-0e9f-4a8b-c7d6-1e2f3a4b5c6d",
+      "target_user_name": "Lee Contractor",
+      "user_display_name": "Lee Contractor",
+      "source_address": "198.51.100.44",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0",
+      "auth_system": "OneLogin",
+      "status": "USER_FAILED_ONELOGIN_LOGIN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "6"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "notes",
+            "value": "Authentication method: password (invalid password)."
+          },
+          {
+            "key": "risk_score",
+            "value": "72"
+          },
+          {
+            "key": "risk_reasons",
+            "value": "[\"New IP address\",\"Unusual location\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791860712000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "8b3e4d5c-1f0a-4b9c-d8e7-2f3a4b5c6d7e",
+      "target_user_name": "Pat Example",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "application_name": "Payroll Portal",
+      "auth_system": "OneLogin app",
+      "status": "USER_LOGGED_INTO_APP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "8"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791860790000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4f5e6d-2a1b-4c0d-e9f8-3a4b5c6d7e8f",
+      "target_user_name": "Lee Contractor",
+      "user_display_name": "Lee Contractor",
+      "source_address": "198.51.100.44",
+      "auth_system": "OneLogin",
+      "status": "USER_LOGIN_CHALLENGE_FAILED",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1002"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "otp_device_name",
+            "value": "OneLogin Protect"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791860822000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "ad506f7e-3b2c-4d1e-f0a9-4b5c6d7e8f90",
+      "target_user_name": "Lee Contractor",
+      "user_display_name": "Lee Contractor",
+      "source_address": "198.51.100.44",
+      "auth_system": "OneLogin",
+      "status": "USER_LOCKED",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "19"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791861045000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "be617a8f-4c3d-4e2f-a1b0-5c6d7e8f9012",
+      "event_source": "OneLogin",
+      "event_name": "CREATED_USER",
+      "user_name": "Sam Admin",
+      "user_id": "41230001",
+      "target_user_name": "Jo Newstarter",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "13"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "user_id",
+            "value": "41235555"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791861080000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "cf728b90-5d4e-4f30-b2c1-6d7e8f901234",
+      "event_source": "OneLogin",
+      "event_name": "USER_ASSIGNED_ROLE",
+      "user_name": "Sam Admin",
+      "user_id": "41230001",
+      "target_user_name": "Jo Newstarter",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "4"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "user_id",
+            "value": "41235555"
+          },
+          {
+            "key": "role_name",
+            "value": "Finance Admins"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791861248000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "d0839ca1-6e5f-4041-c3d2-7e8f90123456",
+      "event_source": "OneLogin",
+      "event_name": "USER_ASSUMED_USER",
+      "user_name": "Sam Admin",
+      "user_id": "41230001",
+      "target_user_name": "Pat Example",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "3"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "user_id",
+            "value": "41234567"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791861600120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "99000000001",
+      "target_user_name": "Pat Example",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "auth_system": "OneLogin",
+      "status": "USER_LOGGED_OUT_OF_ONELOGIN",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "7"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
