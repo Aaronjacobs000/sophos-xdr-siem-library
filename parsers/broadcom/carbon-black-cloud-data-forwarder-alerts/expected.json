@@ -1,0 +1,591 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791854210960000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "CB_ANALYTICS",
+      "alert_category": "CB_ANALYTICS",
+      "log_type": "alert",
+      "alert_id": "411eedfc-8408-2f9e-59f2-a83dfaae0ec1",
+      "summary": "A known virus (HackTool: Powerpuff) was detected running.",
+      "title": "A known virus (HackTool: Powerpuff) was detected running.",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\SRV-APP-03",
+      "host_id": "EXAMPLE\\SRV-APP-03",
+      "source_user_name": "EXAMPLE\\Administrator",
+      "vendor_severity": "5",
+      "severity": "MEDIUM",
+      "created_time_usec": 1791854210960000,
+      "updated_time_usec": 1791854210960000,
+      "first_event_time_usec": 1791854133396000,
+      "last_event_time_usec": 1791854133396000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A411eedfc-8408-2f9e-59f2-a83dfaae0ec1"
+          },
+          {
+            "key": "device_id",
+            "value": "6948863"
+          },
+          {
+            "key": "run_state",
+            "value": "RAN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "process_name",
+            "value": "c:\\users\\administrator\\appdata\\local\\temp\\powerdump.ps1"
+          },
+          {
+            "key": "process_sha256",
+            "value": "3b463c94b52414cfaad61ecdac64ca84eaea1ab4be69f75834aaa7701ab5e7d0"
+          },
+          {
+            "key": "process_cmdline",
+            "value": "powershell.exe -ep bypass -File powerdump.ps1"
+          },
+          {
+            "key": "parent_name",
+            "value": "c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "reason_code",
+            "value": "T_REP_VIRUS"
+          },
+          {
+            "key": "attack_technique",
+            "value": "T1059.001"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "device_internal_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791857020004000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "CB_ANALYTICS",
+      "alert_category": "CB_ANALYTICS",
+      "log_type": "alert",
+      "alert_id": "6c2f0a1b-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
+      "summary": "The application vssadmin.exe attempted to delete volume shadow copies. A Terminate policy action was applied.",
+      "title": "The application vssadmin.exe attempted to delete volume shadow copies. A Terminate policy action was applied.",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\WS-FIN-041",
+      "host_id": "EXAMPLE\\WS-FIN-041",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "vendor_severity": "9",
+      "severity": "CRITICAL",
+      "action": "BLOCKED",
+      "created_time_usec": 1791857020004000,
+      "updated_time_usec": 1791857020004000,
+      "first_event_time_usec": 1791856989880000,
+      "last_event_time_usec": 1791856991120000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A6c2f0a1b-3d4e-4f5a-8b6c-7d8e9f0a1b2c"
+          },
+          {
+            "key": "device_id",
+            "value": "5890528"
+          },
+          {
+            "key": "run_state",
+            "value": "DID_NOT_RUN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "TERMINATE"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "process_name",
+            "value": "c:\\windows\\system32\\vssadmin.exe"
+          },
+          {
+            "key": "process_sha256",
+            "value": "c9f4a8d5b8e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b"
+          },
+          {
+            "key": "process_cmdline",
+            "value": "vssadmin.exe delete shadows /all /quiet"
+          },
+          {
+            "key": "parent_name",
+            "value": "c:\\users\\jdoe\\appdata\\local\\temp\\lock.exe"
+          },
+          {
+            "key": "reason_code",
+            "value": "R_SHADOW_DELETE"
+          },
+          {
+            "key": "attack_technique",
+            "value": "T1490"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "device_internal_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791861694063000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "WATCHLIST",
+      "alert_category": "WATCHLIST",
+      "log_type": "alert",
+      "alert_id": "3d80bd8b-7770-40a7-8d6b-8268fb15c59f",
+      "summary": "Process powershell.exe was detected by the report \"Credential Access - AMSI - Suspect Kerberos Ticket Request Behavior\" in watchlist \"AMSI Threat Intelligence\"",
+      "title": "Credential Access - AMSI - Suspect Kerberos Ticket Request Behavior",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\WS-OPS-057",
+      "host_id": "EXAMPLE\\WS-OPS-057",
+      "source_user_name": "EXAMPLE\\amy",
+      "vendor_severity": "10",
+      "severity": "CRITICAL",
+      "created_time_usec": 1791861694063000,
+      "updated_time_usec": 1791861694063000,
+      "first_event_time_usec": 1791861540412000,
+      "last_event_time_usec": 1791861540412000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A3d80bd8b-7770-40a7-8d6b-8268fb15c59f"
+          },
+          {
+            "key": "device_id",
+            "value": "5890530"
+          },
+          {
+            "key": "run_state",
+            "value": "RAN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "process_name",
+            "value": "c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "process_sha256",
+            "value": "de96a6e69944335375dc1ac238336066889d9ffc7d73628ef4fe1b1b160ab32c"
+          },
+          {
+            "key": "process_cmdline",
+            "value": "powershell.exe -nop -c \"Add-Type -AssemblyName System.IdentityModel\""
+          },
+          {
+            "key": "reason_code",
+            "value": "cf4e6de7-4aa8-3188-8034-6a54fdea940c:e17d957d-b504-3462-816c-f182fe1d80ab"
+          },
+          {
+            "key": "watchlist",
+            "value": "AMSI Threat Intelligence"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "device_internal_ip",
+            "value": "192.0.2.57"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791864523716000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "HOST_BASED_FIREWALL",
+      "alert_category": "HOST_BASED_FIREWALL",
+      "log_type": "alert",
+      "alert_id": "94992bd4-b072-3158-aa7b-36bea9f54e15",
+      "summary": "Inbound TCP connection blocked by firewall rule group block rdp",
+      "title": "Inbound TCP connection blocked by firewall rule group block rdp",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\WS-HR-012",
+      "host_id": "EXAMPLE\\WS-HR-012",
+      "source_user_name": "NT AUTHORITY\\SYSTEM",
+      "vendor_severity": "4",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "created_time_usec": 1791864523716000,
+      "updated_time_usec": 1791864523716000,
+      "first_event_time_usec": 1791864438070000,
+      "last_event_time_usec": 1791864438070000,
+      "direction": "INBOUND",
+      "source_address": "198.51.100.66",
+      "destination_address": "192.0.2.12",
+      "source_port": 51322,
+      "destination_port": 3389,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A94992bd4-b072-3158-aa7b-36bea9f54e15"
+          },
+          {
+            "key": "device_id",
+            "value": "18118170"
+          },
+          {
+            "key": "run_state",
+            "value": "DID_NOT_RUN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "DENY"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "process_name",
+            "value": "SYSTEM"
+          },
+          {
+            "key": "process_sha256",
+            "value": "644d15ea6a0cb7ac2014c15187306ebf790e936c86a94dd87754e2a9622c64a7"
+          },
+          {
+            "key": "reason_code",
+            "value": "DD71F364-4A8C-4B14-89F6-7041CC6BEDEA:CE7A4C0E-0F7D-449B-B816-615C66AEB91D"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791869253007000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "INTRUSION_DETECTION_SYSTEM",
+      "alert_category": "INTRUSION_DETECTION_SYSTEM",
+      "log_type": "alert",
+      "alert_id": "ca316d99-a808-3779-8aab-62b2b6d9541c",
+      "summary": "HTTP traffic from asset WS-DEV-07 matched IDS signature for threat SQL injection attempt",
+      "title": "HTTP traffic from asset WS-DEV-07 matched IDS signature for threat SQL injection attempt",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\WS-DEV-07",
+      "host_id": "EXAMPLE\\WS-DEV-07",
+      "source_user_name": "EXAMPLE\\dev.user",
+      "vendor_severity": "6",
+      "severity": "MEDIUM",
+      "created_time_usec": 1791869253007000,
+      "updated_time_usec": 1791869253007000,
+      "first_event_time_usec": 1791868923945000,
+      "last_event_time_usec": 1791868923945000,
+      "direction": "OUTBOUND",
+      "source_address": "192.0.2.77",
+      "destination_address": "203.0.113.120",
+      "source_port": 50912,
+      "destination_port": 80,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3Aca316d99-a808-3779-8aab-62b2b6d9541c"
+          },
+          {
+            "key": "device_id",
+            "value": "17482451"
+          },
+          {
+            "key": "run_state",
+            "value": "RAN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "process_name",
+            "value": "c:\\windows\\system32\\curl.exe"
+          },
+          {
+            "key": "process_sha256",
+            "value": "d76d08c04dfa434de033ca220456b5b87e6b3f0108667bd61304142c54addbe4"
+          },
+          {
+            "key": "process_cmdline",
+            "value": "curl http://shop.example.net/item?id=1"
+          },
+          {
+            "key": "reason_code",
+            "value": "DC68DDD6-4B82-4AAF-9321-B4EBB32F5C2D:B5974D4D-265E-4FAF-8F71-2F76AAD67857"
+          },
+          {
+            "key": "attack_technique",
+            "value": "T1190"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "device_internal_ip",
+            "value": "192.0.2.77"
+          },
+          {
+            "key": "remote_domain",
+            "value": "shop.example.net"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791871704157000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "DEVICE_CONTROL",
+      "alert_category": "DEVICE_CONTROL",
+      "log_type": "alert",
+      "alert_id": "a90debb9-788b-4268-8926-1412c45bae19",
+      "summary": "Access attempted on unapproved USB device Example USB Flash Drive USB Device (SN: EX0000000001). A Deny Policy Action was applied.",
+      "title": "Access attempted on unapproved USB device Example USB Flash Drive USB Device (SN: EX0000000001). A Deny Policy Action was applied.",
+      "status": "OPEN",
+      "target_host_name": "EXAMPLE\\WS-HR-014",
+      "host_id": "EXAMPLE\\WS-HR-014",
+      "source_user_name": "kim@example.com",
+      "vendor_severity": "3",
+      "severity": "LOW",
+      "action": "BLOCKED",
+      "created_time_usec": 1791871704157000,
+      "updated_time_usec": 1791871704157000,
+      "first_event_time_usec": 1791871638188000,
+      "last_event_time_usec": 1791871638188000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3Aa90debb9-788b-4268-8926-1412c45bae19"
+          },
+          {
+            "key": "device_id",
+            "value": "18118172"
+          },
+          {
+            "key": "run_state",
+            "value": "DID_NOT_RUN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "DENY"
+          },
+          {
+            "key": "is_updated",
+            "value": "false"
+          },
+          {
+            "key": "reason_code",
+            "value": "6D578342-9DE5-4353-9C25-1D3D857BFC5B:DCAEB1FA-513C-4026-9AB6-37A935873FBC"
+          },
+          {
+            "key": "determination",
+            "value": "NONE"
+          },
+          {
+            "key": "usb_device",
+            "value": "Example USB Flash Drive USB Device"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.1.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CARBONBLACK_CLOUD_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Carbon Black Cloud",
+      "event_time_usec": 1791854283397000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Carbon Black Cloud",
+      "sub_provider": "CB_ANALYTICS",
+      "alert_category": "CB_ANALYTICS",
+      "log_type": "alert",
+      "alert_id": "411eedfc-8408-2f9e-59f2-a83dfaae0ec1",
+      "summary": "A known virus (HackTool: Powerpuff) was detected running.",
+      "title": "A known virus (HackTool: Powerpuff) was detected running.",
+      "status": "IN_PROGRESS",
+      "target_host_name": "EXAMPLE\\SRV-APP-03",
+      "host_id": "EXAMPLE\\SRV-APP-03",
+      "source_user_name": "EXAMPLE\\Administrator",
+      "vendor_severity": "6",
+      "severity": "MEDIUM",
+      "created_time_usec": 1791854210960000,
+      "updated_time_usec": 1791854283397000,
+      "first_event_time_usec": 1791854133396000,
+      "last_event_time_usec": 1791854260112000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alert_url",
+            "value": "https://defense.example.com/alerts?orgKey=ABCD1234&s%5Bc%5D%5Bquery_string%5D=id%3A411eedfc-8408-2f9e-59f2-a83dfaae0ec1"
+          },
+          {
+            "key": "device_id",
+            "value": "6948863"
+          },
+          {
+            "key": "run_state",
+            "value": "RAN"
+          },
+          {
+            "key": "sensor_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "is_updated",
+            "value": "true"
+          },
+          {
+            "key": "process_name",
+            "value": "c:\\users\\administrator\\appdata\\local\\temp\\powerdump.ps1"
+          },
+          {
+            "key": "process_sha256",
+            "value": "3b463c94b52414cfaad61ecdac64ca84eaea1ab4be69f75834aaa7701ab5e7d0"
+          },
+          {
+            "key": "reason_code",
+            "value": "T_REP_VIRUS"
+          },
+          {
+            "key": "attack_technique",
+            "value": "T1059.001"
+          },
+          {
+            "key": "determination",
+            "value": "TRUE_POSITIVE"
+          },
+          {
+            "key": "device_internal_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "schema_version",
+            "value": "2.0.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
