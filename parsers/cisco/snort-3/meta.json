@@ -1,0 +1,30 @@
+{
+  "vendor": "Cisco",
+  "product": "Snort 3",
+  "versions": [
+    "3"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.snort.org/start/alert_logging",
+    "https://github.com/snort3/snort3/blob/master/src/loggers/alert_json.cc"
+  ],
+  "notes": "Snort 3 writes alert_json to stdout or to alert_json.txt, not to syslog, so have a forwarder send each line to the data collector with a syslog header, for example rsyslog imfile on alert_json.txt with the tag snort. alert_json fields are configurable. Use this fields line so each event carries what the NIDS schema holds: alert_json = { file = true, fields = 'seconds timestamp action msg class priority gid sid rev proto service dir src_addr src_port dst_addr dst_port pkt_num pkt_len pkt_gen iface vlan ttl tos ip_id tcp_flags tcp_seq tcp_ack tcp_win tcp_len icmp_type icmp_code' }. Lines on the default fields (src_ap, dst_ap and rule, with no message or classification) also normalize. The event time is seconds plus the microseconds in timestamp; without seconds the timestamp is read as UTC, so run Snort with -U. action is what Snort did with the packet: block, drop and reset set blocked, while would_drop and would_block are what an inline rule would have done on a passive sensor. ICMP over IPv6 gets protocol 58. alert_csv, alert_fast, alert_syslog, unified2 and Snort 2 output aren't covered. Samples are made up in the format alert_json writes, from the Snort 3 alert logging page and the logger's source. Passed Run Test in a lab tenant on 2026-10-14 (168 of 168 fields matched the emulator, in each of 2 runs). No built-in parser claimed these lines in 9 Run Tests.",
+  "parsers": [
+    {
+      "name": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+      "file": "SNORT3_ALERT_JSON_STANDALONE_NIDS.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.nids"
+    }
+  ]
+}

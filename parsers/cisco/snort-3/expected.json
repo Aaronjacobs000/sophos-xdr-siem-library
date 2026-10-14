@@ -1,0 +1,367 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929111118204,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000101,
+      "signature_revision": 3,
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.30",
+      "source_port": 50284,
+      "destination_port": 80,
+      "protocol": 6,
+      "message": "SERVER-WEBAPP Log4j JNDI lookup in HTTP header attempt",
+      "classification": "Attempted User Privilege Gain",
+      "priority": 1,
+      "application_name": "http",
+      "action": "would_drop",
+      "blocked": 0,
+      "direction": "CLIENT_TO_SERVER",
+      "vlan": 0,
+      "ttl": 52,
+      "tos": "0",
+      "packet_id": 48211,
+      "dgm_len": 312,
+      "flags": "***AP***",
+      "sequence": "2849112031",
+      "ack": "1301937465",
+      "window": "502",
+      "tcp_len": 32,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "5"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "stream_tcp"
+          },
+          {
+            "key": "iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929262552907,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000214,
+      "signature_revision": 1,
+      "source_address": "198.51.100.120",
+      "destination_address": "192.0.2.58",
+      "source_port": 80,
+      "destination_port": 49733,
+      "protocol": 6,
+      "message": "MALWARE-CNC Win.Trojan.Agent beacon check-in",
+      "classification": "A Network Trojan was detected",
+      "priority": 1,
+      "application_name": "http",
+      "action": "block",
+      "blocked": 1,
+      "direction": "SERVER_TO_CLIENT",
+      "vlan": 20,
+      "ttl": 57,
+      "tos": "0",
+      "packet_id": 3021,
+      "dgm_len": 640,
+      "flags": "***AP***",
+      "sequence": "611029384",
+      "ack": "3920115702",
+      "window": "1024",
+      "tcp_len": 20,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "9"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "stream_tcp"
+          },
+          {
+            "key": "iface",
+            "value": "eth1:eth2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929343004471,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000377,
+      "signature_revision": 2,
+      "source_address": "192.0.2.66",
+      "destination_address": "198.51.100.53",
+      "source_port": 53122,
+      "destination_port": 53,
+      "protocol": 17,
+      "message": "PROTOCOL-DNS TXT query for a long random label",
+      "classification": "Potentially Bad Traffic",
+      "priority": 2,
+      "application_name": "dns",
+      "action": "allow",
+      "blocked": 0,
+      "direction": "CLIENT_TO_SERVER",
+      "vlan": 0,
+      "ttl": 64,
+      "tos": "0",
+      "packet_id": 17788,
+      "dgm_len": 98,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "1"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "raw"
+          },
+          {
+            "key": "iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929547771093,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000480,
+      "signature_revision": 1,
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.12",
+      "protocol": 1,
+      "message": "PROTOCOL-ICMP Large ICMP echo request",
+      "classification": "Misc activity",
+      "priority": 3,
+      "action": "allow",
+      "blocked": 0,
+      "vlan": 0,
+      "ttl": 49,
+      "tos": "0",
+      "packet_id": 0,
+      "dgm_len": 1500,
+      "icmp_type": 8,
+      "icmp_code": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "1"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "raw"
+          },
+          {
+            "key": "iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929750320188,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 119,
+      "signature_id": 11,
+      "signature_revision": 1,
+      "source_address": "192.0.2.71",
+      "destination_address": "198.51.100.80",
+      "source_port": 61022,
+      "destination_port": 8080,
+      "protocol": 6,
+      "message": "(http_inspect) URI path contains consecutive slash characters",
+      "priority": 3,
+      "application_name": "http",
+      "action": "would_drop",
+      "blocked": 0,
+      "direction": "CLIENT_TO_SERVER",
+      "vlan": 0,
+      "ttl": 64,
+      "tos": "0",
+      "packet_id": 50117,
+      "dgm_len": 401,
+      "flags": "***AP***",
+      "sequence": "104432918",
+      "ack": "2209193470",
+      "window": "501",
+      "tcp_len": 32,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "4"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "stream_tcp"
+          },
+          {
+            "key": "iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791929916009412,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000522,
+      "signature_revision": 4,
+      "source_address": "2001:db8:2::45",
+      "destination_address": "2001:db8:1::22",
+      "source_port": 40122,
+      "destination_port": 22,
+      "protocol": 6,
+      "message": "SERVER-OTHER SSH brute force login attempt",
+      "classification": "Attempted Administrator Privilege Gain",
+      "priority": 1,
+      "application_name": "ssh",
+      "action": "reset",
+      "blocked": 1,
+      "direction": "CLIENT_TO_SERVER",
+      "vlan": 0,
+      "ttl": 61,
+      "tos": "0",
+      "dgm_len": 104,
+      "flags": "***AP***",
+      "sequence": "3301920144",
+      "ack": "1172200815",
+      "window": "249",
+      "tcp_len": 32,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "3"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "stream_tcp"
+          },
+          {
+            "key": "iface",
+            "value": "eth1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids02",
+      "event_time_usec": 1791930069461230,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000214,
+      "signature_revision": 1,
+      "source_address": "192.0.2.58",
+      "destination_address": "198.51.100.120",
+      "source_port": 49740,
+      "destination_port": 80,
+      "protocol": 6,
+      "action": "allow",
+      "blocked": 0,
+      "direction": "CLIENT_TO_SERVER",
+      "dgm_len": 97,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "12"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "stream_tcp"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "SNORT3_ALERT_JSON_STANDALONE_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Snort",
+      "sensor_id": "ids03",
+      "event_time_usec": 1791930220118734,
+      "event_time_fidelity": "MICRO",
+      "generator_id": 1,
+      "signature_id": 1000481,
+      "signature_revision": 1,
+      "source_address": "2001:db8:2::45",
+      "destination_address": "2001:db8:1::22",
+      "protocol": 58,
+      "action": "would_drop",
+      "blocked": 0,
+      "dgm_len": 1280,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pkt_num",
+            "value": "1"
+          },
+          {
+            "key": "pkt_gen",
+            "value": "raw"
+          }
+        ]
+      }
+    }
+  }
+]
