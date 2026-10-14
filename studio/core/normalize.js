@@ -5,7 +5,7 @@
 
 import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList, hasOwn } from './values.js';
 import { fieldsByParser, schemaInfo, typeKind, enumMembers, enumNumbers, messageType, INT_TYPES } from './schemas.js';
-import { trimPairs } from './functions.js';
+import { trimPairs, stringOf } from './functions.js';
 import { AUTH0_LOG_TYPES } from './auth0-log-types.js';
 
 // SANITIZE_ALL turns these into NULL, after trimming whitespace. Case-sensitive. "(null)" is
@@ -39,17 +39,25 @@ function joinList(list) {
   return list.map((x) => (x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x instanceof JsonValue ? x : x))).join(',');
 }
 
-// A number is written the way the engine writes a float as text (see goFloatText).
+// A number is written the way the engine writes a float as text (see goFloatText). The value
+// JSON() returned is written as {} whatever it holds, and an object, such as a CEF() value, a
+// part of a JSON value or a record, as STRING() writes it: keys sorted, <, > and & escaped and a
+// NULL member as 0 (checked in a lab tenant).
 function asString(v, where, notes, opts, top) {
   if (typeof v === 'string') return top ? topLevelString(v, opts, where, notes) : v;
   if (typeof v === 'number' || typeof v === 'boolean') return toStr(v);
+  // A DATETIME value in a top-level string field, alone or in a list, fails the whole parser in
+  // the engine with "cannot convert time to string", so Run Test returns no events at all
+  // (checked in a lab tenant).
+  if (v instanceof TimeValue && (top || opts.topList)) throw new RuntimeError(`Field ${where}: cannot convert time to string. The engine fails the whole parser on this, not just the event. Use STRING() on the DATETIME value first.`, 'time-string');
   if (v instanceof TimeValue) {
     notes.push({ level: 'warning', code: 'type', field: where, message: `${where}: a DATETIME value in a string field comes out in Go's time format` });
     return toStr(v);
   }
+  if (v instanceof JsonValue && v.doc) return '{}';
   if (isList(v)) return joinList(v);
   if (v instanceof JsonValue && Array.isArray(v.value)) return joinList(v.value);
-  if (v instanceof JsonValue || v instanceof ObjValue) return JSON.stringify(toPlain(v));
+  if (v instanceof JsonValue || v instanceof ObjValue || v instanceof RecordValue) return stringOf(v);
   return toStr(v);
 }
 
@@ -183,13 +191,17 @@ export function coerce(v, field, where, notes, opts, top = true, parserField = f
   if (field.repeated) {
     let list = v;
     if (v instanceof JsonValue && Array.isArray(v.value)) list = v.value.map((x) => (x !== null && typeof x === 'object' ? new JsonValue(x) : x));
-    if (!isList(list)) {
+    // A single value goes through SANITIZE_ALL and TRIM_ALL like any top-level field, so
+    // fromEmailAddress$ = "" stores nothing. The items of a list don't (checked in a lab tenant).
+    const single = !isList(list);
+    if (single) {
       notes.push({ level: 'info', code: 'repeated-single', field: where, message: `${where}: a single value in a repeated field becomes a list of one` });
       list = [list];
     }
     const items = [];
+    const itemOpts = top && !single ? { ...opts, topList: true } : opts;
     list.forEach((x, i) => {
-      const val = coerce(x, { ...field, repeated: false }, `${where}[${i}]`, notes, opts, false, parserField);
+      const val = coerce(x, { ...field, repeated: false }, `${where}[${i}]`, notes, itemOpts, top && single, parserField);
       if (val !== undefined && val !== null) items.push(val);
     });
     return items.length ? items : null;

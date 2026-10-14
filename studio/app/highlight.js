@@ -32,7 +32,7 @@ const EXPR_RULES = [
   [/'(?:\\.|[^'\\])*'/y, 'tk-s'],
   [/`[^`]*`/y, 'tk-s'],
   [/#.*/y, 'tk-c'],
-  [/\b(?:IF|THEN|ELSE|AND|OR|TRUE|FALSE|NULL)\b/y, 'tk-kw'],
+  [/\b(?:IF|THEN|ELSE|AND|OR|NOT|TRUE|FALSE|NULL)\b/y, 'tk-kw'],
   [/[A-Z_][A-Z0-9_]*(?=\()/y, 'tk-f'],
   [/[A-Za-z_][A-Za-z0-9_]*\$/y, 'tk-v'],
   [/\b\d+(?:\.\d+)?\b/y, 'tk-n'],

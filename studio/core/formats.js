@@ -130,10 +130,26 @@ function splitUnescaped(s, sep, limit) {
   return out;
 }
 
-// The engine unescapes \= and \\ in extension values and leaves \n, \r, \t and \| as two
+// The engine unescapes \=, \\ and \" in extension values and leaves \n, \r, \t and \| as two
 // characters (checked in a lab tenant).
 function unescapeCefValue(v) {
-  return v.replace(/\\([=\\])/g, '$1');
+  return v.replace(/\\([=\\"])/g, '$1');
+}
+
+// Index of the quote that closes a value opened with a quote at i, or -1.
+function closingQuote(s, i) {
+  for (let j = i + 1; j < s.length; j++) {
+    if (s[j] === '\\') j++;
+    else if (s[j] === '"') return j;
+  }
+  return -1;
+}
+
+function endsWithQuote(v) {
+  if (v.length < 2 || !v.endsWith('"')) return false;
+  let n = 0;
+  for (let j = v.length - 2; j >= 0 && v[j] === '\\'; j--) n++;
+  return n % 2 === 0;
 }
 
 // Extension keys whose <key>Label the engine resolves, so values["<label text>"] works (docs
@@ -142,15 +158,24 @@ function unescapeCefValue(v) {
 const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
 
 // Header fields by number ([0] is "CEF:<version>", [1] vendor, [2] product, ...), extension
-// keys by name, and the labels in LABELLED resolved.
+// keys by name, and the labels in LABELLED resolved. A header with 6 or 7 fields, such as
+// CEF:0|V|P|1|100|N, has no extension of its own, so the engine reads its last field as the
+// extension (checked in a lab tenant).
+//
+// A value that starts with a quote runs at least to the next unescaped quote, so spaces and
+// key= inside the quotes don't end it. When the value also ends with a quote, the engine drops
+// its first and last quote: cs2="a b" gives a b and cs2="a b" c "d e" gives a b" c "d e, while
+// cs3="a" b keeps its quotes. With no closing quote the value runs to the end (checked in a lab
+// tenant).
 export function parseCef(line) {
   if (line === null || line === undefined) return null;
   const s = String(line);
   const at = s.indexOf('CEF:');
   if (at === -1) return null;
   const parts = splitUnescaped(s.slice(at), '|', 8);
-  const header = parts.slice(0, 7);
-  const ext = parts.length > 7 ? parts[7] : '';
+  const short = parts.length === 6 || parts.length === 7;
+  const header = short ? parts.slice(0, -1) : parts.slice(0, 7);
+  const ext = short ? parts[parts.length - 1] : parts.length > 7 ? parts[7] : '';
   const map = new Map();
   const keys = [];
   const keyRe = /(?:^|\s)([A-Za-z0-9_.\-[\]]+)=/g;
@@ -158,11 +183,20 @@ export function parseCef(line) {
   while ((m = keyRe.exec(ext))) {
     const eq = m.index + m[0].length - 1;
     if (eq > 0 && ext[eq - 1] === '\\') continue;
-    keys.push({ key: m[1], start: m.index + m[0].length, from: m.index });
+    const start = m.index + m[0].length;
+    const k = { key: m[1], start, from: m.index, quoted: ext[start] === '"' };
+    keys.push(k);
+    if (k.quoted) {
+      const close = closingQuote(ext, start);
+      k.closed = close !== -1;
+      keyRe.lastIndex = k.closed ? close + 1 : ext.length;
+    }
   }
   keys.forEach((k, n) => {
     const end = n + 1 < keys.length ? keys[n + 1].from : ext.length;
-    map.set(k.key, unescapeCefValue(ext.slice(k.start, end).trim()));
+    let v = ext.slice(k.start, end).trim();
+    if (k.quoted && k.closed && endsWithQuote(v)) v = v.slice(1, -1);
+    map.set(k.key, unescapeCefValue(v));
   });
   for (const [k, v] of [...map]) {
     if (k.endsWith('Label')) {
@@ -252,6 +286,31 @@ function decodeOnce(s) {
   return s.replace(/%([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
 }
 
+// Go's URL unescaping: each %XX is a byte and the bytes are read as UTF-8. With plus, as in a
+// query, + is a space. null when a % isn't followed by two hex digits.
+function unescapeUrl(s, plus = false) {
+  if (/%(?![0-9A-Fa-f]{2})/.test(s)) return null;
+  const t = plus ? s.replace(/\+/g, ' ') : s;
+  return t.replace(/(?:%[0-9A-Fa-f]{2})+/g, (run) => new TextDecoder().decode(Uint8Array.from(run.slice(1).split('%'), (h) => parseInt(h, 16))));
+}
+
+// Go's escaping of a URL path: letters, digits and -_.~$&+,/:;=@ stay, every other byte is %XX.
+function escapePath(s) {
+  let out = '';
+  for (const b of new TextEncoder().encode(s)) {
+    const c = String.fromCharCode(b);
+    out += /[A-Za-z0-9\-_.~$&+,/:;=@]/.test(c) ? c : `%${b.toString(16).toUpperCase().padStart(2, '0')}`;
+  }
+  return out;
+}
+
+// path_raw is the decoded path, unless escaping that again doesn't give back the original, as
+// with %2F, %7E or a lower-case %2f: then it is the path as written (Go's RawPath).
+function rawPath(p) {
+  const d = unescapeUrl(p);
+  return d !== null && escapePath(d) === p ? d : p;
+}
+
 function normPath(p) {
   const decoded = decodeOnce(p).replace(/\/{2,}/g, '/');
   const out = [];
@@ -271,15 +330,20 @@ function normPath(p) {
 // lab tenant).
 const URL_KEYS = ['scheme', 'user', 'host_raw', 'host', 'port', 'path_raw', 'path', 'query_raw', 'query', 'fragment', 'raw'];
 
+// What the engine does before it reads the URL (checked in a lab tenant): each space becomes +,
+// so a space in the host comes out as +, and a URL that doesn't start with a scheme and :// gets
+// http:// in front. So mailto:a@b.com has the user mailto and the host b.com, and //host/x has
+// no host and the path_raw //host/x. The user and password are decoded, and in query + is a
+// space. It returns an object for any text, "" included.
 export function urlParse(url, silent = false) {
   const empty = () => new ObjValue(new Map(URL_KEYS.map((k) => [k, k === 'scheme' ? 'http' : ''])));
   if (url === null || url === undefined) return silent ? empty() : null;
   const raw = String(url);
-  let s = raw.trim();
+  let s = raw.trim().replace(/ /g, '+');
   const out = new Map();
   let scheme = 'http';
-  const sm = /^([A-Za-z][A-Za-z0-9+.-]*):(\/\/)?/.exec(s);
-  if (sm && (sm[2] || !/^\d/.test(s.slice(sm[0].length)))) { scheme = sm[1].toLowerCase(); s = s.slice(sm[0].length); }
+  const sm = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//.exec(s);
+  if (sm) { scheme = sm[1].toLowerCase(); s = s.slice(sm[0].length); }
   let fragment = null;
   const h = s.indexOf('#');
   if (h !== -1) { fragment = s.slice(h + 1); s = s.slice(0, h); }
@@ -297,26 +361,24 @@ export function urlParse(url, silent = false) {
     const c = ui.indexOf(':');
     user = c === -1 ? ui : ui.slice(0, c);
     password = c === -1 ? null : ui.slice(c + 1);
+    user = unescapeUrl(user) ?? user;
+    if (password !== null) password = unescapeUrl(password) ?? password;
   }
   let host = authority, port = null;
-  const pm = /^(.*):(\d+)$/.exec(authority);
+  const pm = /^(.*):(\d*)$/.exec(authority);
   if (pm && !authority.startsWith('[')) { host = pm[1]; port = pm[2]; }
   const v6 = /^\[([^\]]+)\](?::(\d+))?$/.exec(authority);
   if (v6) { host = v6[1]; port = v6[2] ?? null; }
-  if (!host && !silent) return null;
-  const query = queryRaw === null ? null : queryRaw.split('&').map((pair) => {
-    try { return decodeURIComponent(pair.replace(/\+/g, '%2B')); } catch { return pair; }
-  }).join('&');
   out.set('scheme', scheme);
   out.set('user', user);
   if (password !== null) out.set('password', password);
   out.set('host_raw', authority);
   out.set('host', host.toLowerCase());
   out.set('port', port ?? '');
-  out.set('path_raw', pathRaw);
+  out.set('path_raw', rawPath(pathRaw));
   out.set('path', pathRaw ? normPath(pathRaw) : '');
   out.set('query_raw', queryRaw ?? '');
-  out.set('query', query ?? '');
+  out.set('query', queryRaw === null ? '' : unescapeUrl(queryRaw, true) ?? queryRaw);
   out.set('fragment', fragment ?? '');
   out.set('raw', raw);
   return new ObjValue(out);
@@ -325,6 +387,9 @@ export function urlParse(url, silent = false) {
 // ---------------------------------------------------------------- domains and IPs
 
 const SECOND_LEVEL = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'id', 'asn', 'ltd', 'plc', 'sch', 'nhs', 'or', 'ne', 'go', 'gob', 'mil']);
+// Reverse DNS names: the engine reads in-addr.arpa and ip6.arpa as suffixes, so
+// 80.113.0.203.in-addr.arpa gives 9 (checked in a lab tenant).
+const ARPA_SUFFIX = /\.(?:in-addr|ip6)\.arpa$/i;
 
 // IDX_OF_TLD: index in the string where the registrable (top private) domain starts, or -1.
 // INFERRED: the docs give three examples and no algorithm; this uses a small public-suffix
@@ -339,6 +404,7 @@ export function idxOfTld(s) {
   if (labels.length < 2) return -1;
   let keep = 2;
   if (labels.length >= 3 && labels[labels.length - 1].length === 2 && SECOND_LEVEL.has(labels[labels.length - 2].toLowerCase())) keep = 3;
+  if (labels.length >= 3 && ARPA_SUFFIX.test(host)) keep = 3;
   const start = labels.slice(0, labels.length - keep).join('.');
   const idx = start ? start.length + 1 : 0;
   // The docs examples return 0 for "aaa http://example.com" and "http://example.com".

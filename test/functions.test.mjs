@@ -1049,3 +1049,157 @@ test('a capture source can be an expression, but not a function call', () => {
   const w = run('a = "x" + "|"\nb = REPLACE(p, "|", "/")\nj = JSON(d)\nc = j["$[\'p|q\']"]', { p: 'a|b', d: '{"p|q":"pq"}' });
   assert.deepEqual([w.get('a'), w.get('b'), w.get('c')], ['x|', 'a/b', 'pq']);
 });
+
+test('NULL reads as "" in <, >, <= and >=', () => {
+  engineTable([
+  ['NULL < 1', '[true]'],
+  ['NULL > 1', '[false]'],
+  ['NULL < "a"', '[true]'],
+  ['NULL <= NULL', '[true]'],
+  ['NULL < NULL', '[false]'],
+  ['0 > NULL', '[true]'],
+  ['NULL >= 0', '[false]'],
+  ['NULL > -1', '[false]'],
+  ['"" < 1', '[true]'],
+  ['NULL < " "', '[true]'],
+  ['NULL >= ""', '[true]'],
+  ['1 > NULL', '[true]'],
+  ['NULL <= -1', '[true]'],
+  ]);
+});
+
+test('URL_PARSE() puts http:// in front, turns spaces into +, and decodes the user, path_raw and query', () => {
+  engineTable([
+  ['URL_PARSE("mailto:a@b.com")', '[{"fragment":"","host":"b.com","host_raw":"b.com","password":"a","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"mailto:a@b.com","scheme":"http","user":"mailto"}]'],
+  ['URL_PARSE("//host/x")', '[{"fragment":"","host":"","host_raw":"","path":"/host/x","path_raw":"//host/x","port":"","query":"","query_raw":"","raw":"//host/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("")', '[{"fragment":"","host":"","host_raw":"","path":"","path_raw":"","port":"","query":"","query_raw":"","raw":"","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://exa mple.com/x y?q=c d#e f")', '[{"fragment":"e+f","host":"exa+mple.com","host_raw":"exa+mple.com","path":"/x+y","path_raw":"/x+y","port":"","query":"q=c d","query_raw":"q=c+d","raw":"http://exa mple.com/x y?q=c d#e f","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a+b?x=1+2")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a+b","path_raw":"/a+b","port":"","query":"x=1 2","query_raw":"x=1+2","raw":"http://example.com/a+b?x=1+2","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://a b@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://a b@example.com/","scheme":"http","user":"a+b"}]'],
+  ['URL_PARSE("http://example.com/a%2Fb")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a/b","path_raw":"/a%2Fb","port":"","query":"","query_raw":"","raw":"http://example.com/a%2Fb","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://Ex ample.COM:80/")', '[{"fragment":"","host":"ex+ample.com","host_raw":"Ex+ample.COM:80","path":"/","path_raw":"/","port":"80","query":"","query_raw":"","raw":"http://Ex ample.COM:80/","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com?q=%zz")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"","path_raw":"","port":"","query":"q=%zz","query_raw":"q=%zz","raw":"http://example.com?q=%zz","scheme":"http","user":""}]'],
+  ['URL_PARSE("///x")', '[{"fragment":"","host":"","host_raw":"","path":"/x","path_raw":"///x","port":"","query":"","query_raw":"","raw":"///x","scheme":"http","user":""}]'],
+  ['URL_PARSE("/path/only?q=1")', '[{"fragment":"","host":"","host_raw":"","path":"/path/only","path_raw":"/path/only","port":"","query":"q=1","query_raw":"q=1","raw":"/path/only?q=1","scheme":"http","user":""}]'],
+  ['URL_PARSE("http:/x")', '[{"fragment":"","host":"http","host_raw":"http:","path":"/x","path_raw":"/x","port":"","query":"","query_raw":"","raw":"http:/x","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a%20b")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a b","path_raw":"/a b","port":"","query":"","query_raw":"","raw":"http://example.com/a%20b","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/%7Euser")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/~user","path_raw":"/%7Euser","port":"","query":"","query_raw":"","raw":"http://example.com/%7Euser","scheme":"http","user":""}]'],
+  ['URL_PARSE("example.com/a%20b/c")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a b/c","path_raw":"/a b/c","port":"","query":"","query_raw":"","raw":"example.com/a%20b/c","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://us%2Ber+x@example.com/")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/","path_raw":"/","port":"","query":"","query_raw":"","raw":"http://us%2Ber+x@example.com/","scheme":"http","user":"us+er+x"}]'],
+  ['URL_PARSE("http://example.com/a%28b%29")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a(b)","path_raw":"/a(b)","port":"","query":"","query_raw":"","raw":"http://example.com/a%28b%29","scheme":"http","user":""}]'],
+  ['URL_PARSE("foo/bar?x=http://y")', '[{"fragment":"","host":"foo","host_raw":"foo","path":"/bar","path_raw":"/bar","port":"","query":"x=http://y","query_raw":"x=http://y","raw":"foo/bar?x=http://y","scheme":"http","user":""}]'],
+  ['URL_PARSE("http://example.com/a/?q=x%2By+z&w=%E2%82%AC")', '[{"fragment":"","host":"example.com","host_raw":"example.com","path":"/a/","path_raw":"/a/","port":"","query":"q=x+y z\\u0026w=€","query_raw":"q=x%2By+z\\u0026w=%E2%82%AC","raw":"http://example.com/a/?q=x%2By+z\\u0026w=%E2%82%AC","scheme":"http","user":""}]'],
+  ]);
+  const u = 'URL_PARSE("http://us%20er:p%41ss@example.com/a%20b/c%2Fd/../e?q=a+b%20c&r=%26#top")';
+  engineTable([
+  [`${u}["user"]`, '["us er"]'],
+  [`${u}["password"]`, '["pAss"]'],
+  [`${u}["path_raw"]`, '["/a%20b/c%2Fd/../e"]'],
+  [`${u}["path"]`, '["/a b/c/e"]'],
+  [`${u}["query"]`, '["q=a b c\\u0026r=\\u0026"]'],
+  ]);
+});
+
+test('\\r in a string stays a backslash and an r, and \\n and \\t are a newline and a tab', () => {
+  engineTable([
+  ['LENGTH("a\\rb")', '[4]'],
+  ['LENGTH("a\\nb")', '[3]'],
+  ['LENGTH("a\\tb")', '[3]'],
+  ['LENGTH("a\\\\b")', '[3]'],
+  ['LENGTH("a\\"b")', '[3]'],
+  ['SPLIT("x\\ry", "\\r")', '[["x","ry"]]'],
+  ['SPLIT("x\\\\y", "\\r")', '[["x","y"]]'],
+  ]);
+  assert.equal(get('e = "a\\rb"', 'e'), 'a\\rb');
+});
+
+test('IDX_OF_TLD reads in-addr.arpa and ip6.arpa as suffixes', () => {
+  engineTable([
+  ['IDX_OF_TLD("80.113.0.203.in-addr.arpa")', '[9]'],
+  ['IDX_OF_TLD("1.0.0.0.ip6.arpa")', '[6]'],
+  ['IDX_OF_TLD("www.example.co.uk")', '[4]'],
+  ['IDX_OF_TLD("ec2.ap-southeast-2.amazonaws.com")', '[19]'],
+  ['IDX_OF_TLD("a.b.example.com.au")', '[4]'],
+  ['IDX_OF_TLD("x.y.github.io")', '[4]'],
+  ]);
+});
+
+test('CEF() reads the last field of a 6 or 7 field header as the extension', () => {
+  engineTable([
+  ['CEF("CEF:0|V|P|1|100|N")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|a=b c=d")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","a":"b","c":"d"}]'],
+  ['CEF("CEF:0|V|P|1|100|a=b")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","a":"b"}]'],
+  ['CEF("CEF:0|V|P|1|100|")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100"}]'],
+  ['CEF("CEF:0|V|P|1|100|N|5|")', '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5"}]'],
+  ['LENGTH(CEF("CEF:0|V|P|1|100|N"))', '[5]'],
+  ]);
+});
+
+test('CEF() drops the quotes around a quoted value, which can hold spaces and keys', () => {
+  const cef = (ext) => `CEF("CEF:0|V|P|1|x|y|1|${ext.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`;
+  engineTable([
+  [cef('cs1="quoted value" cs2="a b" c "d e" cs3="a" b cs4=a "b"'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"quoted value","cs2":"a b\\" c \\"d e","cs3":"\\"a\\" b","cs4":"a \\"b\\""}]'],
+  [cef('cs1=""a"" cs2="a cs3=a" cs4="" cs5=" x " cs6=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a\\"","cs2":"a cs3=a","cs4":"","cs5":" x ","cs6":"x"}]'],
+  [cef('cs1="C:\\\\a.exe" cs2="a\\"b" cs3="a\\=b" cs4=\'single\' cs5="a b"c'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"C:\\\\a.exe","cs2":"a\\"b","cs3":"a=b","cs4":"\'single\'","cs5":"\\"a b\\"c"}]'],
+  [cef('cs2="a b" cs2Label="My Label" act="x"'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","My Label":"a b","act":"x","cs2":"a b","cs2Label":"My Label"}]'],
+  [cef('msg="unterminated value'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","msg":"\\"unterminated value"}]'],
+  [cef('cs1=" cs2="'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":" cs2="}]'],
+  [cef('cs1=a"b cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"a\\"b","cs2":"x"}]'],
+  [cef('cs1=a\\"b cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"a\\"b","cs2":"x"}]'],
+  [cef('cs1="a b"cs2=x cs3=y'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a b\\"cs2=x","cs3":"y"}]'],
+  [cef('cs1="a" cs2="b'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"a","cs2":"\\"b"}]'],
+  [cef('cs1="a" b "c cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a\\" b \\"c","cs2":"x"}]'],
+  [cef('cs1="a\\\\" cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"a\\\\","cs2":"x"}]'],
+  [cef('cs1="a cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a cs2=x"}]'],
+  [cef('cs1="a"   cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"a","cs2":"x"}]'],
+  [cef('cs1="a\\" cs2=x'), '[{"0":"CEF:0","1":"V","2":"P","3":"1","4":"x","5":"y","6":"1","cs1":"\\"a\\" cs2=x"}]'],
+  ]);
+});
+
+test('text added to a DATETIME value reads like ParseFloat, hex floats and underscores included', () => {
+  const t = 'DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")';
+  engineTable([
+  [`${t} + "0x1p4"`, '1791939723000016'],
+  [`${t} + "1_000"`, '1791939723001000'],
+  [`"0x1p4" + ${t}`, '1791939723000016'],
+  [`${t} + ".5"`, '1791939723000000'],
+  [`${t} + "5."`, '1791939723000005'],
+  [`${t} + "+5"`, '1791939723000005'],
+  [`${t} + "0X1P-2"`, '1791939723000000'],
+  [`${t} + "1_000.5"`, '1791939723001000'],
+  [`${t} + "1__0"`, null],
+  [`${t} + "0x10"`, null],
+  [`${t} + "1e400"`, null],
+  ], { wrap: (expr) => `STRING(${expr})` });
+});
+
+test('UPPERCASE(number) and IS_VALID_IP(NULL) fail the event', () => {
+  engineTable([
+  ['UPPERCASE(5)', null],
+  ['UPPERCASE(3 / 2)', null],
+  ['UPPERCASE(INT("5", 10))', null],
+  ['UPPERCASE("ab")', '["AB"]'],
+  ['IS_VALID_IP(NULL)', null],
+  ['IS_VALID_IP("")', '[false]'],
+  ['IS_VALID_IP("192.0.2.1")', '[true]'],
+  ]);
+  assert.throws(() => run('x = UPPERCASE(5)'), /invalid data type for UPPERCASE\(\): NUMBER/);
+  assert.throws(() => run('n = NULL\nx = IS_VALID_IP(n)'), /IS_VALID_IP\(\) expected a string, but received NULL/);
+});
+
+test('a - in a name after a dot fails the event; the bracket form works', () => {
+  const d = { d: '{"detail-type":"x","a":{"detail-type":"y"}}' };
+  assert.throws(() => run('j = JSON(d)\nx = j["$.detail-type"]', d), /parse error at 9 in \$\.detail-type/);
+  assert.throws(() => run('j = JSON(d)\np = "$.detail" + "-type"\nx = j[p]', d), /parse error at 9/);
+  assert.throws(() => run('j = JSON(d)\nx = j["$.a.detail-type"]', d), /parse error at 11/);
+  assert.throws(() => run('j = JSON(d)\nx = j["$..detail-type"]', d), /parse error at 10/);
+  assert.equal(get('j = JSON(d)\nx = j["$[\'detail-type\']"]', 'x', d), 'x');
+  assert.equal(get('j = JSON(d)\nx = j["$.a[\'detail-type\']"]', 'x', d), 'y');
+});
+
+test('a field set on a variable holding a capture result fails the event', () => {
+  assert.throws(() => run('r = originalData$|^(\\w+)\nr.key$ = "k"', { originalData$: 'abc' }), /variable r is not Object type/);
+  assert.throws(() => run('r = originalData$|^nomatch(x)\nr.key$ = "k"', { originalData$: 'abc' }), /variable r is not Object type/);
+  assert.deepEqual(toPlain(run('r.key$ = "k"\nr.value$ = "v"').get('r')), { key$: 'k', value$: 'v' });
+});

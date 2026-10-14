@@ -167,3 +167,26 @@ test('text templates fall back to value-like tokens for a single line', () => {
   const ev = analyseSample(['Oct  7 22:00:00 h app[1]: user jdoe logged in from 192.0.2.4']).events;
   assert.equal(textTemplate(ev, 'app', true), 'app\\[\\d+\\]:\\s+user\\s+jdoe\\s+logged\\s+in\\s+from\\s+(?P<src>\\S+)');
 });
+
+test('lint: *= anywhere in the code is an error, because Sophos Fusion won\'t save it', () => {
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acmegw\n!SCHEMA=scwx.generic\n';
+  const hit = (text) => lintParsers([{ name: 'ACME_GW', text: head + text }]).problems.filter((p) => p.code === 'restricted-syntax').map((p) => `${p.level}:${p.line}`);
+  assert.deepEqual(hit('# doubles x *= 2'), ['error:4']);
+  assert.deepEqual(hit('m = originalData$|(?P<k>\\w*=)'), ['error:4']);
+  assert.deepEqual(hit('x = "a*=b"'), ['error:4']);
+  assert.deepEqual(hit('m = originalData$|(?P<k>\\w*[=])\n# x += 1, x -= 1, x /= 2 and x %= 2 save'), []);
+});
+
+test('editor: NOT is colored as a keyword', async () => {
+  // A stand-in for the few DOM calls the highlighter makes.
+  const node = (cls, text) => ({ className: cls, textContent: text, kids: [], append(...k) { this.kids.push(...k); } });
+  globalThis.document = { createDocumentFragment: () => node(null, ''), createElement: () => node('', ''), createTextNode: (t) => node(null, t) };
+  try {
+    const { highlightScriptLine } = await import('../studio/app/highlight.js');
+    const kw = (line) => highlightScriptLine(line).kids.filter((k) => k.className === 'tk-kw').map((k) => k.textContent);
+    assert.deepEqual(kw('ok$ = IF NOT x AND y THEN TRUE ELSE NULL'), ['IF', 'NOT', 'AND', 'THEN', 'TRUE', 'ELSE', 'NULL']);
+    assert.deepEqual(kw('note = NOTE'), []);
+  } finally {
+    delete globalThis.document;
+  }
+});

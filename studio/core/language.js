@@ -13,8 +13,10 @@ export class SyntaxError2 extends Error {
 // token, so 3-1 and x -1 are two values side by side (checked in a lab tenant).
 const TOKEN = /(\s+)|(#.*)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(`[^`]*`)|(-?\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*\$?)|(==|!=|<=|>=|[-+*/%()[\],.<>])/y;
 
+// \n is a newline and \t a tab, but \r stays a backslash and an r, so SPLIT(x, "\r") splits on
+// the backslash (checked in a lab tenant).
 function unescape(s) {
-  return s.replace(/\\(.)/g, (_, c) => ({ n: '\n', t: '\t', r: '\r' }[c] ?? c));
+  return s.replace(/\\(.)/g, (_, c) => (c === 'r' ? '\\r' : { n: '\n', t: '\t' }[c] ?? c));
 }
 
 export function tokenize(src) {

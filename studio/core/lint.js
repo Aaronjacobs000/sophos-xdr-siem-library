@@ -15,6 +15,10 @@ const NAME_RE = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
 // Set by the engine's root parser before custom parsers run.
 const ROOT_VARS = new Set(['originalData$', 'message', 'sensorType$', 'sensorId$', 'eventTimeUsec$', 'eventTimeFidelity$']);
 const LEVEL_ORDER = { error: 0, warning: 1, inferred: 2, info: 3 };
+// Sophos Fusion refuses to save a parser whose code holds *= anywhere, in a comment or a regex
+// too ("code contains restricted syntax: *="), though Run Test accepts it. +=, -=, /= and %=
+// save (checked in a lab tenant).
+const RESTRICTED = ['*='];
 
 function literalStrings(e) {
   // Values an expression can produce when it's a literal or an IF chain of them.
@@ -59,6 +63,11 @@ export function lintParsers(parsers, opts = {}) {
     const d = p.script.directives;
     const dl = p.script.directiveLines;
     for (const pr of p.script.problems) add(pr.level, pr.code, pr.message, p.name, pr.line);
+    const lines = String(p.text ?? '').split(/\r\n?|\n/);
+    for (const r of RESTRICTED) {
+      const at = lines.findIndex((l) => l.includes(r));
+      if (at !== -1) add('error', 'restricted-syntax', `Sophos Fusion won't save a parser with ${r} anywhere in it, even in a comment or a regex, though Run Test accepts it. In a regex, write the = as [=], as in \\w*[=].`, p.name, at + 1);
+    }
     const isLib = p.flags.has('IMPORTONLY');
     const isOff = p.flags.has('DISABLED');
     const parentP = p.parent ? byName.get(p.parent) : null;

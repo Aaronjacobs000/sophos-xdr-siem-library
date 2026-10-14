@@ -42,6 +42,9 @@ class Ctx {
     const parts = target.split('.');
     if (parts.length === 1) { this.vars.set(target, value); return; }
     let rec = this.vars.get(parts[0]);
+    // A field set on a variable that holds a capture result fails the event: "variable r is not
+    // Object type" (checked in a lab tenant).
+    if (rec instanceof MatchValue) throw new RuntimeError(`variable ${parts[0]} is not Object type: it holds a capture result, so ${target} can't set a field on it. Use another name for the record.`, 'not-object');
     if (!(rec instanceof RecordValue)) { rec = new RecordValue(); this.vars.set(parts[0], rec); }
     for (const p of parts.slice(1, -1)) {
       let next = rec.fields.get(p);
@@ -98,9 +101,11 @@ function index(base, idx) {
 
 // <, >, <= and >= compare as floats when both sides are numbers, TRUE or FALSE, or text that
 // reads as a number, so "10" > "9". Anything else compares as text: " 10" > 9 is false and
-// "abc" > 5 is true (checked in a lab tenant).
+// "abc" > 5 is true. NULL reads as "", so NULL < 1 is true and NULL >= 0 is false (checked in a
+// lab tenant).
 function compare(op, a, b) {
-  if (a === null || b === null) return false;
+  if (a === null || a === undefined) a = '';
+  if (b === null || b === undefined) b = '';
   if (a instanceof TimeValue && b instanceof TimeValue) return cmp(op, a.usec, b.usec);
   const x = asNumber(a), y = asNumber(b);
   if (x !== null && y !== null) return cmp(op, x, y);
@@ -156,15 +161,20 @@ function plus(a, b) {
     const x = asNumber(a), y = asNumber(b);
     if (x !== null && y !== null) return x + y;
   }
-  return toStr(a) + toStr(b);
+  return joinText(a) + joinText(b);
 }
 
+// The value JSON() returned joins to text as {}, whatever it holds: "a" + JSON("5") is "a{}"
+// (checked in a lab tenant).
+const joinText = (v) => (v instanceof JsonValue && v.doc ? '{}' : toStr(v));
+
 // Text added to a DATETIME value counts as a number when all of it reads as one, the way Go's
-// strconv.ParseFloat reads it ("5", "-5", "5.5", "1e3"). Any other text, "" and " 5" included,
-// fails the event with "unable to add: cannot convert time to string" (checked in a lab tenant).
-const FLOAT_TEXT = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+// strconv.ParseFloat reads it ("5", "-5", "5.5", "1e3", "1_000", "0x1p4"). Any other text, "",
+// " 5", "1__0", "0x10" and "1e400" included, fails the event with "unable to add: cannot
+// convert time to string" (checked in a lab tenant).
 function timeAddend(s) {
-  if (FLOAT_TEXT.test(s)) return Number(s);
+  const n = parseGoFloat(s);
+  if (n !== null) return n;
   throw new RuntimeError('unable to add: cannot convert time to string. To join a DATETIME value to text, use STRING() on it first', 'time-add');
 }
 
