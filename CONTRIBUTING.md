@@ -29,7 +29,7 @@ Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/s
 
 Every pull request that touches `parsers/` and every issue-form submission is checked with the code on the main branch:
 
-- `meta.json` has the required fields, and the folder holds only the allowed files.
+- `meta.json` has the required fields, the folder holds only the allowed files, and its path is `parsers/<vendor>/<product>/` from the vendor and product in `meta.json`.
 - The parsers lint without errors.
 - The emulator's output for `samples.log` matches `expected.json`.
 - Samples, parsers and metadata contain no secrets or keys, no private or real IP addresses, no real email addresses or hostnames, and no company names that could be customers.

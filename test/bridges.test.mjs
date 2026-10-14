@@ -8,7 +8,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { validateMeta, bridgeScripts, hasBridge, bridgeOf, withBridgeKey } from '../studio/core/library.js';
-import { bridgeFolders } from '../studio/app/library-client.js';
+import { bridgeFolders, bridgeFolder } from '../studio/app/library-client.js';
 import { listBridges, loadBridges } from '../tools/lib/fs-library.mjs';
 import { reviewReasons } from '../tools/lib/merge-rules.mjs';
 import { parseMarkdown, parseInline, linkTarget } from '../studio/app/markdown.js';
@@ -94,6 +94,17 @@ test('the page lists bridge folders, and a fork from before the rename still sho
   // An older fork keeps collectors/<name>: it lists as bridges/<name>, read from its real folder.
   assert.deepEqual(bridgeFolders([blob('collectors/acme-pull/acme_pull.py')]), [{ path: 'bridges/acme-pull', dir: 'collectors/acme-pull', files: ['acme_pull.py'] }]);
   assert.deepEqual(bridgeFolders([blob('collectors/acme-pull/old.py'), blob('bridges/acme-pull/new.py')]), [{ path: 'bridges/acme-pull', files: ['new.py'] }]);
+});
+
+test('a bridge link points at the folder that holds the bridge, collectors/<name> in a fork made before the rename', () => {
+  const blob = (p) => ({ path: p, type: 'blob' });
+  const old = bridgeFolders([blob('collectors/acme-pull/acme_pull.py')]);
+  assert.equal(bridgeFolder(old, { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
+  assert.equal(bridgeFolder(old, { bridge: 'bridges/acme-pull' }), 'collectors/acme-pull');
+  assert.equal(bridgeFolder(bridgeFolders([blob('bridges/acme-pull/acme_pull.py')]), { collector: 'collectors/acme-pull' }), 'bridges/acme-pull');
+  // With no folder listed, the entry's own path.
+  assert.equal(bridgeFolder([], { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
+  assert.equal(bridgeFolder(undefined, { bridge: 'bridges/acme-pull' }), 'bridges/acme-pull');
 });
 
 test('the site build copies the bridges into the snapshot and every entry names its bridge with "bridge"', async () => {
