@@ -39,9 +39,10 @@ function joinList(list) {
   return list.map((x) => (x === null || x === undefined ? '' : typeof x === 'string' ? x : toStr(x instanceof JsonValue ? x : x))).join(',');
 }
 
+// A number is written the way the engine writes a float as text (see goFloatText).
 function asString(v, where, notes, opts, top) {
   if (typeof v === 'string') return top ? topLevelString(v, opts, where, notes) : v;
-  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (typeof v === 'number' || typeof v === 'boolean') return toStr(v);
   if (v instanceof TimeValue) {
     notes.push({ level: 'warning', code: 'type', field: where, message: `${where}: a DATETIME value in a string field comes out in Go's time format` });
     return toStr(v);

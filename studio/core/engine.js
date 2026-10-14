@@ -7,7 +7,7 @@
 
 import {
   JsonValue, ObjValue, MatchValue, RecordValue, TimeValue, RuntimeError, ParseErrorSignal,
-  toStr, toBool, looseEqual, wrapJson, isList, typeName, hasOwn,
+  toStr, toBool, looseEqual, wrapJson, isList, typeName, hasOwn, asNumber, parseGoFloat,
 } from './values.js';
 import { parseScript, parseExpression, walk } from './language.js';
 import { FUNCTIONS, LAZY } from './functions.js';
@@ -95,12 +95,14 @@ function index(base, idx) {
   return null;
 }
 
+// <, >, <= and >= compare as floats when both sides are numbers, TRUE or FALSE, or text that
+// reads as a number, so "10" > "9". Anything else compares as text: " 10" > 9 is false and
+// "abc" > 5 is true (checked in a lab tenant).
 function compare(op, a, b) {
   if (a === null || b === null) return false;
-  const na = typeof a === 'number' ? a : Number(a);
-  const nb = typeof b === 'number' ? b : Number(b);
   if (a instanceof TimeValue && b instanceof TimeValue) return cmp(op, a.usec, b.usec);
-  if (!Number.isNaN(na) && !Number.isNaN(nb) && a !== '' && b !== '') return cmp(op, na, nb);
+  const x = asNumber(a), y = asNumber(b);
+  if (x !== null && y !== null) return cmp(op, x, y);
   return cmp(op, toStr(a), toStr(b));
 }
 const cmp = (op, a, b) => (op === '<' ? a < b : op === '>' ? a > b : op === '<=' ? a <= b : a >= b);
@@ -128,39 +130,31 @@ function noRegex(v) {
   return v;
 }
 
-// int64 arithmetic: a time value counts as its microseconds, and results wrap like Go's int64
-// (checked in a lab tenant: d * 1000000 overflows).
-function int64(n) {
-  if (!Number.isInteger(n) || Number.isSafeInteger(n)) return n;
-  return Number(BigInt.asIntN(64, BigInt(Math.trunc(n))));
-}
-// Multiplication runs in float64 and converts to int64, so an overflow gives the minimum
-// int64 value (a time times 1000000 came out as -9223372036854775808 in a lab tenant).
-const INT64_MIN = -9223372036854775808;
-function mulInt(a, b) {
-  const r = a * b;
-  if (Number.isInteger(a) && Number.isInteger(b) && (r >= 9223372036854775808 || r < INT64_MIN)) return INT64_MIN;
-  return r;
-}
-
+// Arithmetic runs in float64, the engine's only number type: a time value counts as its
+// microseconds, and nothing wraps. 9223372036854775807 + 1 and 1000000000000 * 1000000000 stay
+// floats (checked in a lab tenant). STRING() and % convert to int64 (see functions.js and %).
 function plus(a, b) {
   noRegex(a); noRegex(b);
   if (a === null || a === undefined) return b ?? null;
   if (b === null || b === undefined) return a;
   if (isList(a)) return [...a, ...(isList(b) ? b : [b])];
   if (isList(b)) return [a, ...b];
-  if (a instanceof TimeValue && typeof b === 'number') return int64(a.usec + b);
-  if (typeof a === 'number' && b instanceof TimeValue) return int64(a + b.usec);
-  if (a instanceof TimeValue && typeof b === 'string') return int64(a.usec + timeAddend(b));
-  if (typeof a === 'string' && b instanceof TimeValue) return int64(timeAddend(a) + b.usec);
+  if (a instanceof TimeValue && typeof b === 'number') return a.usec + b;
+  if (typeof a === 'number' && b instanceof TimeValue) return a + b.usec;
+  if (a instanceof TimeValue && typeof b === 'string') return a.usec + timeAddend(b);
+  if (typeof a === 'string' && b instanceof TimeValue) return timeAddend(a) + b.usec;
   // Two DATETIME values add as microseconds, and TRUE counts as 1 and FALSE as 0 (checked in a
   // lab tenant).
-  if (a instanceof TimeValue && (b instanceof TimeValue || typeof b === 'boolean')) return int64(a.usec + num(b, '+'));
-  if (typeof a === 'boolean' && b instanceof TimeValue) return int64(Number(a) + b.usec);
-  if (typeof a === 'number' && typeof b === 'number') return int64(a + b);
-  // A number and TRUE or FALSE add the same way, and so do two of them: 5 + TRUE is 6 and
-  // TRUE + TRUE is 2 (checked in a lab tenant).
-  if ((typeof a === 'number' || typeof a === 'boolean') && (typeof b === 'number' || typeof b === 'boolean')) return Number(a) + Number(b);
+  if (a instanceof TimeValue && (b instanceof TimeValue || typeof b === 'boolean')) return a.usec + num(b, '+');
+  if (typeof a === 'boolean' && b instanceof TimeValue) return Number(a) + b.usec;
+  // Numbers, TRUE and FALSE, and text that reads as a number add as numbers when at least one side
+  // isn't text: 5 + TRUE is 6, "5" + 5 is 10 and "1e3" + TRUE is 1001. Two texts join, so
+  // "5" + "5" is "55", and so does text that isn't a number: "abc" + 5 is "abc5" and " 5" + 5 is
+  // " 55" (checked in a lab tenant).
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    const x = asNumber(a), y = asNumber(b);
+    if (x !== null && y !== null) return x + y;
+  }
   return toStr(a) + toStr(b);
 }
 
@@ -173,12 +167,26 @@ function timeAddend(s) {
   throw new RuntimeError('unable to add: cannot convert time to string. To join a DATETIME value to text, use STRING() on it first', 'time-add');
 }
 
+// -, *, / and % read text the way strconv.ParseFloat does, and fail the event on text it can't
+// read, such as " 5", "" or "abc" (checked in a lab tenant).
 function num(v, op) {
   if (typeof v === 'number') return v;
   if (v instanceof TimeValue) return v.usec;
+  if (typeof v === 'boolean') return Number(v);
+  if (typeof v === 'string') {
+    const n = parseGoFloat(v);
+    if (n === null) throw new RuntimeError(`"${op}" needs numbers, and ${JSON.stringify(v)} doesn't read as one`);
+    return n;
+  }
   const n = Number(v);
   if (v === null || Number.isNaN(n)) throw new RuntimeError(`"${op}" needs numbers, got ${typeName(v)}`);
   return n;
+}
+
+// Go's float64 to int64 conversion: the whole part, or the minimum int64 when it doesn't fit.
+function toInt64(n) {
+  const t = Math.trunc(n);
+  return t < 2 ** 63 && t >= -(2 ** 63) ? BigInt(t) : -(2n ** 63n);
 }
 
 export function evaluate(ctx, e) {
@@ -230,13 +238,19 @@ export function evaluate(ctx, e) {
         case '!=': return !equal(a, b);
         case '<': case '>': case '<=': case '>=': return compare(e.op, a, b);
         case '+': return plus(a, b);
-        case '-': return int64(num(a, '-') - num(b, '-'));
-        case '*': return mulInt(num(a, '*'), num(b, '*'));
+        case '-': return num(a, '-') - num(b, '-');
+        case '*': return num(a, '*') * num(b, '*');
         // Division always gives a float: 3 / 2 is 1.5, -3 / 2 is -1.5 and 4 / 2 is 2. Dividing by
-        // zero fails the event. % takes the whole part of each side first, so (7 / 2) % 2 is 1
-        // (checked in a lab tenant).
+        // zero fails the event (checked in a lab tenant).
         case '/': { const d = num(b, '/'); if (d === 0) throw new RuntimeError('division by zero'); return num(a, '/') / d; }
-        case '%': { const r = Math.trunc(num(a, '%')) % Math.trunc(num(b, '%')); return r === 0 ? 0 : r; }
+        // % converts each side to int64 first, so (7 / 2) % 2 is 1 and 9223372036854775807 % 10
+        // is -8, because that literal is the float 2^63, which doesn't fit. A right side that
+        // converts to 0 fails the event (checked in a lab tenant).
+        case '%': {
+          const d = toInt64(num(b, '%'));
+          if (d === 0n) throw new RuntimeError('modulo by zero');
+          return Number(toInt64(num(a, '%')) % d);
+        }
         default: throw new RuntimeError(`unknown operator ${e.op}`);
       }
     }
