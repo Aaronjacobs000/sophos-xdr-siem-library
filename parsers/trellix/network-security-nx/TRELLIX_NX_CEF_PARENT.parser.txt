@@ -1,0 +1,36 @@
+!SAMPLE=<164>fenotify-88.alert: CEF:0|Trellix|MPS|10.0.1.997401|MC|malware-callback|7|rt=Oct 13 2026 00:46:29 UTC src=192.0.2.57 cn3Label=cncPort cn3=443 cn2Label=sid cn2=86112670 proto=tcp spt=49193 dst=203.0.113.80 cs5Label=cncHost cs5=203.0.113.80 dvchost=nx01.example.com dvc=198.51.100.10 smac=00:50:56:00:00:57 cn1Label=vlan cn1=20 dpt=443 externalId=88 cs4Label=link cs4=https://nx01.example.com/event_stream/events_for_bot?ev_id\=88 act=notified cs6Label=channel cs6= requestMethod=POST request=hxxp://203.0.113.80/gate.php dmac=00:50:56:00:00:01 cs1Label=sname cs1=Trojan.Gootkit devicePayloadId=37031d85-101b-460f-9e30-6e0117c089f6 start=Oct 13 2026 00:46:29 UTC
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|(?:Trellix|FireEye|trellix)\|(?:MPS|CMS)\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trellix Network Security (NX, formerly FireEye NX) and Central Management CEF
+# notifications (fenotify rsyslog, format cef) to the data collector:
+#   <164>fenotify-88.alert: CEF:0|Trellix|MPS|10.0.1.997401|MC|malware-callback|7|...
+# The vendor field is FireEye up to release 9 and Trellix from release 10. The product is MPS for
+# Network Security and CMS for Central Management.
+# Parent: hands each notification to a child by its event type code (the signature id field).
+#   IE ips-event, MC malware-callback, DM domain-match, IM infection-match,
+#   RC riskware-callback, RI riskware-infection                        to the NIDS child
+#   MO malware-object, WI web-infection, RO riskware-object            to the third-party alert child
+#   SmartVision and other types stay in the generic schema.
+
+v = CEF(originalData$)
+code = UPPERCASE(STRING(v[4]))
+evName = STRING(v[5])
+sevText = STRING(v[6])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Trellix Network Security"
+eventType$ = "other"
+eventType$ = IF code == "IE" OR code == "MC" OR code == "DM" OR code == "IM" OR code == "RC" OR code == "RI" THEN "network" ELSE eventType$
+eventType$ = IF code == "MO" OR code == "WI" OR code == "RO" THEN "object" ELSE eventType$
+appliance = STRING(v["dvchost"])
+hostId$ = IF appliance != "" THEN appliance ELSE NULL
+
+# rt is the alert time, for example "Oct 16 2020 14:36:16 UTC". Trellix sends UTC unless the
+# appliance is set to local time, which this parser doesn't cover.
+rt = STRING(v["rt"])
+rtm = rt|^(?P<t>[A-Z][a-z]{2} +\d{1,2} \d{4} \d{2}:\d{2}:\d{2})(?: (?:UTC|GMT))?$
+eventTimeUsec$ = IF rtm["t"] != "" THEN DATETIME(rtm["t"], "Jan _2 2006 15:04:05") ELSE eventTimeUsec$

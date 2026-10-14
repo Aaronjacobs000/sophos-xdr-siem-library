@@ -1,0 +1,492 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791851776000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx01.example.com",
+      "source_address": "192.0.2.41",
+      "source_port": 1070,
+      "protocol": 17,
+      "message": "Trojan.Ramnit.SNK.DNS",
+      "classification": "domain-match",
+      "signature_id": 80461038,
+      "event_id": 85,
+      "vlan": 0,
+      "action": "notified",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "DM"
+          },
+          {
+            "key": "severity",
+            "value": "1"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "cnc_host",
+            "value": "bad-domain.example.net"
+          },
+          {
+            "key": "cnc_port",
+            "value": "53"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx01.example.com/event_stream/events_for_bot?ev_id=85"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791852389000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx01.example.com",
+      "source_address": "192.0.2.57",
+      "destination_address": "203.0.113.80",
+      "source_port": 49193,
+      "destination_port": 443,
+      "protocol": 6,
+      "message": "Trojan.Gootkit",
+      "classification": "malware-callback",
+      "signature_id": 86112670,
+      "event_id": 88,
+      "vlan": 20,
+      "action": "notified",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "MC"
+          },
+          {
+            "key": "severity",
+            "value": "7"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "cnc_host",
+            "value": "203.0.113.80"
+          },
+          {
+            "key": "cnc_port",
+            "value": "443"
+          },
+          {
+            "key": "request",
+            "value": "hxxp://203.0.113.80/gate.php"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx01.example.com/event_stream/events_for_bot?ev_id=88"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791853572000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx02.example.com",
+      "source_address": "192.0.2.62",
+      "destination_address": "203.0.113.90",
+      "source_port": 1058,
+      "destination_port": 80,
+      "protocol": 6,
+      "message": "Worm.Ramnit",
+      "classification": "infection-match",
+      "signature_id": 84400123,
+      "event_id": 84,
+      "vlan": 0,
+      "action": "notified",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "IM"
+          },
+          {
+            "key": "severity",
+            "value": "1"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "cnc_host",
+            "value": "update.example.org"
+          },
+          {
+            "key": "cnc_port",
+            "value": "80"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx02.example.com/event_stream/events_for_bot?ev_id=84"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791855017000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx01.example.com",
+      "source_address": "203.0.113.25",
+      "destination_address": "192.0.2.43",
+      "source_port": 80,
+      "destination_port": 51043,
+      "protocol": 6,
+      "message": "Microsoft Internet Explorer XML Processing Memory Corruption",
+      "classification": "ips-event",
+      "signature_id": 85302399,
+      "signature_revision": 12,
+      "event_id": 12,
+      "vlan": 0,
+      "action": "blocked",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "IE"
+          },
+          {
+            "key": "severity",
+            "value": "7"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "attack_mode",
+            "value": "client"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx01.example.com/notification_url/ips_events?ev_id=12"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791858961000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cms01.example.com",
+      "source_address": "198.51.100.70",
+      "destination_address": "192.0.2.20",
+      "source_port": 4455,
+      "destination_port": 445,
+      "protocol": 6,
+      "message": "Microsoft Windows SMB Remote Code Execution Attempt",
+      "classification": "ips-event",
+      "signature_id": 85311119,
+      "signature_revision": 8,
+      "event_id": 15,
+      "vlan": 0,
+      "action": "notified",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "IE"
+          },
+          {
+            "key": "severity",
+            "value": "7"
+          },
+          {
+            "key": "product",
+            "value": "CMS"
+          },
+          {
+            "key": "attack_mode",
+            "value": "server"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cms01.example.com/notification_url/ips_events?ev_id=15"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791859308000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx01.example.com",
+      "vendor": "Trellix",
+      "provider": "Trellix Network Security",
+      "alert_id": "32",
+      "alert_category": "malware-object",
+      "title": "malware-object: Win.Trojan.Bifrose-194",
+      "summary": "Win.Trojan.Bifrose-194 in 0d043e3acbc3af58970d3365b6f91d29.exe",
+      "vendor_severity": "4",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.62",
+      "destination_address": "203.0.113.91",
+      "source_port": 3926,
+      "destination_port": 80,
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "MO"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "file_md5",
+            "value": "0d043e3acbc3af58970d3365b6f91d29"
+          },
+          {
+            "key": "file_sha256",
+            "value": "9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf"
+          },
+          {
+            "key": "file_name",
+            "value": "0d043e3acbc3af58970d3365b6f91d29.exe"
+          },
+          {
+            "key": "file_type",
+            "value": "exe"
+          },
+          {
+            "key": "file_path",
+            "value": "downloads.example.org/images/miscexes/0d043e3acbc3af58970d3365b6f91d29.exe"
+          },
+          {
+            "key": "os_info",
+            "value": "Microsoft Windows10 64-bit 10.0 22H2"
+          },
+          {
+            "key": "anomaly",
+            "value": "misc-anomaly"
+          },
+          {
+            "key": "cnc_host",
+            "value": "wa3d.example.net"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx01.example.com/event_stream/events_for_bot?ma_id=32"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791862903000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx02.example.com",
+      "vendor": "FireEye",
+      "provider": "Trellix Network Security",
+      "alert_id": "4079",
+      "alert_category": "web-infection",
+      "title": "web-infection: HTML.Infector.Ramnit",
+      "summary": "web-infection: HTML.Infector.Ramnit",
+      "vendor_severity": "4",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.63",
+      "destination_address": "203.0.113.92",
+      "source_port": 1058,
+      "destination_port": 80,
+      "source_host_name": "ws-063.example.com",
+      "destination_url": "shop.example.org/goods_list/14_25_0",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "WI"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "os_info",
+            "value": "Microsoft Windows10 64-bit 10.0 22H2"
+          },
+          {
+            "key": "anomaly",
+            "value": "datatheft-anomaly"
+          },
+          {
+            "key": "cnc_host",
+            "value": "bad-domain.example.net"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://nx02.example.com/event_stream/events_for_bot?inc_id=4079"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791866949000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nx01.example.com",
+      "source_address": "192.0.2.71",
+      "destination_address": "203.0.113.95",
+      "source_port": 1076,
+      "destination_port": 80,
+      "message": "Adware.SoftPulse",
+      "classification": "riskware-callback",
+      "event_id": 41,
+      "vlan": 0,
+      "action": "notified",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "RC"
+          },
+          {
+            "key": "severity",
+            "value": "1"
+          },
+          {
+            "key": "product",
+            "value": "MPS"
+          },
+          {
+            "key": "request",
+            "value": "http://ads.example.net/__dmp__/"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT > TRELLIX_NX_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791870227000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cms01.example.com",
+      "vendor": "Trellix",
+      "provider": "Trellix Network Security",
+      "alert_id": "29",
+      "alert_category": "riskware-object",
+      "title": "riskware-object: FE_Adware_Searchbar",
+      "summary": "FE_Adware_Searchbar in 30dbe64027e570ada595c1e7b89664db.zip",
+      "vendor_severity": "1",
+      "severity": "LOW",
+      "destination_url": "files.example.net/30dbe64027e570ada595c1e7b89664db.zip",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "RO"
+          },
+          {
+            "key": "product",
+            "value": "CMS"
+          },
+          {
+            "key": "file_md5",
+            "value": "30dbe64027e570ada595c1e7b89664db"
+          },
+          {
+            "key": "file_name",
+            "value": "30dbe64027e570ada595c1e7b89664db.zip"
+          },
+          {
+            "key": "file_type",
+            "value": "zip"
+          },
+          {
+            "key": "victim_ipv6",
+            "value": "2001:db8::4d84:9b6e"
+          },
+          {
+            "key": "attacker_ipv6",
+            "value": "2001:db8:1::13f5:7d67"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TRELLIX_NX_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Trellix Network Security",
+      "event_time_usec": 1791873726000000,
+      "host_id": "nx01.example.com"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
