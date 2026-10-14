@@ -17,6 +17,13 @@
 
 Every sample in `parsers/` is synthetic. Each entry's `meta.json` links the public vendor documentation its log format follows.
 
+Where a vendor's docs leave a line's shape open, some entries also follow open-source format references. Nothing else from these projects is copied.
+
+| Entry | Reference | License |
+| --- | --- | --- |
+| `parsers/beyondtrust/privileged-remote-access-and-remote-support` | [Splunk Connect for Syslog](https://github.com/splunk/splunk-connect-for-syslog) BeyondTrust SRA test data: the `BG[<pid>]: ` header with a space before the site ID | Apache-2.0 |
+| `parsers/tenable/tenable-identity-exposure` | Splunk Connect for Syslog Tenable test data: the reason codename and insertion strings of the sleeping accounts sample; [Microsoft Sentinel](https://github.com/Azure/Azure-Sentinel) Tenable connector: the product name AlsidForAD before 3.1 | Apache-2.0; MIT |
+
 ## Code
 
 Parser Studio has no runtime or build dependencies. The emulator, the Go regex and time layout handling, the JSONPath reader and the ZIP writer are written for this project.
