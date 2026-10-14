@@ -1,0 +1,138 @@
+!SAMPLE={"version":"1.100000","account_id":"111122223333","region":"ap-southeast-2","vpc_id":"vpc-0a1b2c3d4e5f60718","query_timestamp":"2026-10-12T22:40:11Z","query_name":"update.example.com.","query_type":"A","query_class":"IN","rcode":"NOERROR","answers":[{"Rdata":"203.0.113.80","Type":"A","Class":"IN"}],"srcaddr":"192.0.2.50","srcport":"53122","transport":"UDP","srcids":{"instance":"i-0e1f2a3b4c5d6e7f8"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"query_timestamp"\s*:\s*"[^"]*".*"query_name"\s*:|"query_name"\s*:.*"query_timestamp"\s*:\s*"[^"]*")
+!SCHEMA=scwx.dnsquery
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Route 53 VPC Resolver query logs, one JSON record per line, through S3 Ingest.
+# Standalone parser for the DNS schema. AWS writes the keys in no fixed order, so the confirm
+# string accepts query_timestamp and query_name either way round.
+# Setting query_name lets the Domain Generation Algorithms and Domain Watchlist detectors use these events.
+# !TRIMALLOFF stops TRIM_ALL() stripping quotes from TXT answers.
+
+json = JSON(originalData$)
+
+sensorType$ = "Amazon Route 53 Resolver"
+# query_timestamp is ISO 8601 in UTC, for example 2021-02-04T17:51:55Z.
+eventTimeUsec$ = DATETIME(json["$.query_timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+sourceAddress$ = json["$.srcaddr"]
+# srcids names the instance that asked, or the inbound endpoint a query from your network came through.
+hostId$ = json["$.srcids.instance"]
+hostId$ = IF hostId$ == NULL THEN json["$.srcids.resolver_endpoint"] ELSE hostId$
+
+# AWS writes the name fully qualified, with a trailing dot. Drop it so names match watchlists.
+qn = json["$.query_name"]|^(?P<name>.*?)\.?$
+qname = qn["name"]
+queryName$ = qname
+# Reverse lookups (in-addr.arpa and ip6.arpa names) have no private domain to mark.
+rev = qname|\.arpa$
+tld = IDX_OF_TLD(qname)
+indexOfTopPrivateDomain$ = IF rev[0] == "" THEN tld ELSE NULL
+isTopPrivateDomainParsed$ = IF rev[0] == "" THEN tld != -1 ELSE NULL
+
+# query_type, query_class and response_code take the DNS numbers (IANA); AWS logs the names.
+qt = UPPERCASE(json["$.query_type"])
+queryType$ = NULL
+queryType$ = IF qt == "A" THEN 1 ELSE queryType$
+queryType$ = IF qt == "NS" THEN 2 ELSE queryType$
+queryType$ = IF qt == "CNAME" THEN 5 ELSE queryType$
+queryType$ = IF qt == "SOA" THEN 6 ELSE queryType$
+queryType$ = IF qt == "PTR" THEN 12 ELSE queryType$
+queryType$ = IF qt == "MX" THEN 15 ELSE queryType$
+queryType$ = IF qt == "TXT" THEN 16 ELSE queryType$
+queryType$ = IF qt == "AAAA" THEN 28 ELSE queryType$
+queryType$ = IF qt == "SRV" THEN 33 ELSE queryType$
+queryType$ = IF qt == "NAPTR" THEN 35 ELSE queryType$
+queryType$ = IF qt == "DS" THEN 43 ELSE queryType$
+queryType$ = IF qt == "SVCB" THEN 64 ELSE queryType$
+queryType$ = IF qt == "HTTPS" THEN 65 ELSE queryType$
+queryType$ = IF qt == "SPF" THEN 99 ELSE queryType$
+queryType$ = IF qt == "ANY" THEN 255 ELSE queryType$
+queryType$ = IF qt == "CAA" THEN 257 ELSE queryType$
+
+qc = UPPERCASE(json["$.query_class"])
+queryClass$ = NULL
+queryClass$ = IF qc == "IN" THEN 1 ELSE queryClass$
+queryClass$ = IF qc == "CH" THEN 3 ELSE queryClass$
+queryClass$ = IF qc == "HS" THEN 4 ELSE queryClass$
+queryClass$ = IF qc == "ANY" THEN 255 ELSE queryClass$
+
+rc = UPPERCASE(json["$.rcode"])
+responseCode$ = NULL
+responseCode$ = IF rc == "NOERROR" THEN 0 ELSE responseCode$
+responseCode$ = IF rc == "FORMERR" THEN 1 ELSE responseCode$
+responseCode$ = IF rc == "SERVFAIL" THEN 2 ELSE responseCode$
+responseCode$ = IF rc == "NXDOMAIN" THEN 3 ELSE responseCode$
+responseCode$ = IF rc == "NOTIMP" THEN 4 ELSE responseCode$
+responseCode$ = IF rc == "REFUSED" THEN 5 ELSE responseCode$
+responseCode$ = IF rc == "YXDOMAIN" THEN 6 ELSE responseCode$
+responseCode$ = IF rc == "YXRRSET" THEN 7 ELSE responseCode$
+responseCode$ = IF rc == "NXRRSET" THEN 8 ELSE responseCode$
+responseCode$ = IF rc == "NOTAUTH" THEN 9 ELSE responseCode$
+responseCode$ = IF rc == "NOTZONE" THEN 10 ELSE responseCode$
+
+# The first four answers go to responses. Each record takes the type number and the data.
+a1.responseData$ = json["$.answers[0].Rdata"]
+t1 = UPPERCASE(json["$.answers[0].Type"])
+a1.responseType$ = NULL
+a1.responseType$ = IF t1 == "A" THEN 1 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "NS" THEN 2 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "CNAME" THEN 5 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SOA" THEN 6 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "PTR" THEN 12 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "MX" THEN 15 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "TXT" THEN 16 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "AAAA" THEN 28 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SRV" THEN 33 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "HTTPS" THEN 65 ELSE a1.responseType$
+
+a2.responseData$ = json["$.answers[1].Rdata"]
+t2 = UPPERCASE(json["$.answers[1].Type"])
+a2.responseType$ = NULL
+a2.responseType$ = IF t2 == "A" THEN 1 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "NS" THEN 2 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "CNAME" THEN 5 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SOA" THEN 6 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "PTR" THEN 12 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "MX" THEN 15 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "TXT" THEN 16 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "AAAA" THEN 28 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SRV" THEN 33 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "HTTPS" THEN 65 ELSE a2.responseType$
+
+a3.responseData$ = json["$.answers[2].Rdata"]
+t3 = UPPERCASE(json["$.answers[2].Type"])
+a3.responseType$ = NULL
+a3.responseType$ = IF t3 == "A" THEN 1 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "NS" THEN 2 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "CNAME" THEN 5 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SOA" THEN 6 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "PTR" THEN 12 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "MX" THEN 15 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "TXT" THEN 16 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "AAAA" THEN 28 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SRV" THEN 33 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "HTTPS" THEN 65 ELSE a3.responseType$
+
+a4.responseData$ = json["$.answers[3].Rdata"]
+t4 = UPPERCASE(json["$.answers[3].Type"])
+a4.responseType$ = NULL
+a4.responseType$ = IF t4 == "A" THEN 1 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "NS" THEN 2 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "CNAME" THEN 5 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SOA" THEN 6 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "PTR" THEN 12 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "MX" THEN 15 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "TXT" THEN 16 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "AAAA" THEN 28 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SRV" THEN 33 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "HTTPS" THEN 65 ELSE a4.responseType$
+
+# Assign the list before reading it: reading responses$.records$ before it is set fails the event.
+responses$.records$ = []
+responses$.records$ = IF a1.responseData$ THEN responses$.records$ + [a1] ELSE responses$.records$
+responses$.records$ = IF a2.responseData$ THEN responses$.records$ + [a2] ELSE responses$.records$
+responses$.records$ = IF a3.responseData$ THEN responses$.records$ + [a3] ELSE responses$.records$
+responses$.records$ = IF a4.responseData$ THEN responses$.records$ + [a4] ELSE responses$.records$
