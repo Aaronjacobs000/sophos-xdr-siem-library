@@ -219,7 +219,11 @@ export const FUNCTIONS = {
     if (s instanceof JsonValue) return s;
     try { return new JsonValue(JSON.parse(toStr(s)), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
   }],
-  CEF: [1, 1, (c, [s]) => withHeaderKeys(parseCef(str(s)))],
+  // CEF(NULL) fails the event the way CEF("") does (checked in a lab tenant).
+  CEF: [1, 1, (c, [s]) => {
+    if (s === null || s === undefined) throw new RuntimeError('message is not in LEEF format: CEF() got NULL. Check the value is set before you read it as CEF.', 'cef-header');
+    return withHeaderKeys(parseCef(str(s)));
+  }],
   LEEF: [1, 2, (c, [s, d]) => withHeaderKeys(parseLeef(str(s), d === undefined ? null : str(d)))],
   DATETIME: [1, 3, (c, [s, layout, two]) => {
     if (s === null) return null;

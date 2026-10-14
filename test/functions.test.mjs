@@ -1401,3 +1401,59 @@ test('CEF() fails on text with no CEF:, keeps an empty key and stores no empty u
   ]);
   assert.throws(() => run('x = CEF("no cef here")'), /message is not in LEEF format/);
 });
+
+test('inside double quotes only \\", \\\\, \\n, \\t and \\r work, and inside single quotes \\\', \\\\, \\n and \\t', () => {
+  // The engine rejected each parser with a bad escape as a syntax error, and ran the others with
+  // these lengths (checked in a lab tenant).
+  const bad = [
+    String.raw`"a\'b"`, String.raw`"a\qb"`, String.raw`"a\/b"`, String.raw`"a\0b"`, String.raw`"a\x41b"`, String.raw`"a\u0041b"`,
+    String.raw`"a\U00000041b"`, String.raw`"a\ab"`, String.raw`"a\bb"`, String.raw`"a\fb"`, String.raw`"a\vb"`, String.raw`"a\ b"`,
+    String.raw`'a\"b'`, String.raw`'a\qb'`, String.raw`'a\rb'`, String.raw`'a\/b'`, String.raw`'a\0b'`, String.raw`'a\x41b'`,
+    String.raw`'a\u0041b'`, String.raw`'a\ab'`, String.raw`'a\bb'`, String.raw`'a\fb'`, String.raw`'a\vb'`,
+  ];
+  for (const lit of bad) assert.throws(() => run(`x = ${lit}`), /inside (double|single) quotes: the engine only reads/, lit);
+  assert.throws(() => run(String.raw`x = "a\qb"`), /\\q inside double quotes: the engine only reads \\", \\\\, \\n, \\t and \\r there/);
+  assert.throws(() => run(String.raw`x = 'a\rb'`), /\\r inside single quotes: the engine only reads \\', \\\\, \\n and \\t there/);
+  engineTable([
+  [String.raw`LENGTH("a\"b")`, '[3]'],
+  [String.raw`LENGTH("a\\b")`, '[3]'],
+  [String.raw`LENGTH("a\nb")`, '[3]'],
+  [String.raw`LENGTH("a\tb")`, '[3]'],
+  [String.raw`LENGTH("a\rb")`, '[4]'],
+  [String.raw`LENGTH('a\\b')`, '[3]'],
+  [String.raw`LENGTH('a\'b')`, '[4]'],
+  [String.raw`LENGTH('a\nb')`, '[3]'],
+  [String.raw`LENGTH('a\tb')`, '[3]'],
+  ]);
+});
+
+test('CEF(NULL) fails the event, as CEF("") does', () => {
+  // The engine failed each with "message is not in LEEF format" (checked in a lab tenant).
+  assert.throws(() => run('x = CEF(NULL)'), /message is not in LEEF format/);
+  assert.throws(() => run('n = NULL\nx = CEF(n)'), /message is not in LEEF format/);
+  assert.throws(() => run('j = JSON("{\\"a\\":1}")\nx = CEF(j["$.missing"])'), /message is not in LEEF format/);
+});
+
+test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', () => {
+  // What the engine returned in a lab tenant, in microseconds. TRUE also picks the year.
+  const usec = (expr) => toPlain(execute(`t = ${expr}\nx = STRING(t + 0)`, {}, { now: '2026-10-14T20:00:00Z' }).vars.get('x'));
+  const v = '"10/13-22:21:09.461230"';
+  for (const [expr, want] of [
+    [`DATETIME(${v}, "01/02-15:04:05.999999", TRUE)`, '1791930069000000'],
+    [`DATETIME(${v}, "01/02-15:04:05.000000", TRUE)`, '1791930069000000'],
+    ['DATETIME("2026/10/13-22:21:09.461230", "2006/01/02-15:04:05.999999", TRUE)', '1791930069000000'],
+    ['DATETIME("2026-10-13T22:21:09.461230Z", "2006-01-02T15:04:05Z07:00", TRUE)', '1791930069000000'],
+    ['DATETIME("Oct 13 22:21:09.461230", "Jan _2 15:04:05", TRUE)', '1791930069000000'],
+    ['DATETIME("Oct 13 22:21:09.461230", "Jan _2 15:04:05.999999", TRUE)', '1791930069000000'],
+    ['DATETIME("Oct 13 22:21:09.461230 +1100", "Jan _2 15:04:05.999999 -0700", TRUE)', '1791890469000000'],
+    ['DATETIME("Oct 13 22:21:09.461230", "Jan _2 15:04:05.999999", "yes")', '1791930069000000'],
+    ['DATETIME("Oct 13 22:21:09.461230", "Jan _2 15:04:05.999999", 1)', '1791930069000000'],
+    // Without TRUE, or with a value that isn't true, the fraction stays.
+    ['DATETIME("2026/10/13-22:21:09.461230", "2006/01/02-15:04:05.999999")', '1791930069461230'],
+    [`DATETIME(${v}, "01/02-15:04:05.999999")`, '-62142428330538768'],
+    [`DATETIME(${v}, "01/02-15:04:05.000000")`, '-62142428330538768'],
+    [`DATETIME(${v}, "01/02-15:04:05.999999", FALSE)`, '-62142428330538768'],
+    [`DATETIME(${v}, "01/02-15:04:05.999999", "false")`, '-62142428330538768'],
+    [`DATETIME(${v}, "01/02-15:04:05.999999", 0)`, '-62142428330538768'],
+  ]) assert.equal(usec(expr), want, expr);
+});

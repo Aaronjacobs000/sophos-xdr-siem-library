@@ -621,3 +621,50 @@ test('a syntax error makes Run Test reject the whole parser, so no line gets a r
   const child = { name: 'CHILD', parent: 'PARENT', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=kind == "a"\n!SCHEMA=scwx.thirdpartyalert\ntitle$ = 1.5' };
   assert.ok(runParsers([parent, child], lines, { now: NOW }).every((r) => r.rejected && r.normalized === null && /^CHILD line 4: syntax error: /.test(r.error)));
 });
+
+// A parser string literal holding text, for the JSON() tests below.
+const lit = (s) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+const run8 = (flags, body) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER8E\n!SCHEMA=scwx.thirdpartyalert\n${flags}\nsummary$ = "ok"\n${body}` }], ['ZZPROBER8E line'], { now: NOW })[0].normalized.ontology;
+const DOC8 = `j = JSON(${lit(JSON.stringify({
+  o: { a: ' (x) ', b: '<y>', n: { c: ' (z) ' }, l: [' (w) ', '[v]'], num: 5, nul: null, t: true, e: '<&>', q: '"k"', s: '  plain  ' },
+  arr: [' (p) ', '<q>', null, 1, { k: ' (m) ' }],
+  nest: [['a', '<b>'], 'c', { k: '<', z: null }, [], [['d']]],
+}))})\n`;
+
+test('with TRIM_ALL on, an object part of a JSON value in a string field has its text members trimmed, and nothing deeper', () => {
+  // What the engine stored in a lab tenant.
+  assert.equal(run8('', `${DOC8}ontology$ = j["$.o"]`), '{"a":"x","b":"y","e":"\\u0026","l":[" (w) ","[v]"],"n":{"c":" (z) "},"nul":0,"num":5,"q":"k","s":"plain","t":true}');
+  assert.equal(run8('!TRIMALLOFF', `${DOC8}ontology$ = j["$.o"]`), '{"a":" (x) ","b":"\\u003cy\\u003e","e":"\\u003c\\u0026\\u003e","l":[" (w) ","[v]"],"n":{"c":" (z) "},"nul":0,"num":5,"q":"\\"k\\"","s":"  plain  ","t":true}');
+  assert.equal(run8('', `${DOC8}ontology$ = j["$.o.n"]`), '{"c":"z"}');
+  // An array part isn't trimmed, as before.
+  assert.equal(run8('', `${DOC8}ontology$ = j["$.arr"]`), ' (p) ,<q>,,1,{"k":" (m) "}');
+});
+
+test('a list in a string field joins a list inside it in its place, and writes an object the way STRING() does', () => {
+  // What the engine stored in a lab tenant, with TRIM_ALL on.
+  const cef = 'c = CEF("CEF:0|V|P|1|100|N|5|a=<b> s= (y) ")\n';
+  const head = '"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5"';
+  for (const [body, want] of [
+    [`${cef}ontology$ = ["x", c, "<y>"]`, `x,{${head},"a":"\\u003cb\\u003e","s":" (y)"},<y>`],
+    [`${DOC8}ontology$ = ["x", j["$.o"], "y"]`, 'x,{"a":" (x) ","b":"\\u003cy\\u003e","e":"\\u003c\\u0026\\u003e","l":[" (w) ","[v]"],"n":{"c":" (z) "},"nul":0,"num":5,"q":"\\"k\\"","s":"  plain  ","t":true},y'],
+    ['ontology$ = [["a", "<b>"], "c"]', 'a,<b>,c'],
+    ['ontology$ = [[["a"], ["b", "c"]], "d", [[["e"]]]]', 'a,b,c,d,e'],
+    ['ontology$ = [["a", NULL, 5, TRUE], [], "c"]', 'a,,5,true,,c'],
+    [`${cef}ontology$ = [[c, "z"], "y"]`, `{${head},"a":"\\u003cb\\u003e","s":" (y)"},z,y`],
+    ['r.s$ = "<x>"\nr.n$ = NULL\nontology$ = [[r], "y"]', '{"n$":0,"s$":"\\u003cx\\u003e"},y'],
+    [`${DOC8}ontology$ = ["x", j["$.arr"]]`, 'x, (p) ,<q>,,1,{"k":" (m) "}'],
+    [`${DOC8}ontology$ = j["$.nest"]`, 'a,<b>,c,{"k":"\\u003c","z":0},,d'],
+    [`${DOC8}ontology$ = ["x", j["$.nest"]]`, 'x,a,<b>,c,{"k":"\\u003c","z":0},,d'],
+    ['l = LEEF("LEEF:1.0|V|P|1|100|a=<b>\\tc=d")\nontology$ = ["x", l]', 'x,{"0":"LEEF:1.0","1":"V","2":"P","3":"1","4":"100","a":"\\u003cb\\u003e","c":"d"}'],
+    ['o = SPLIT_NAME_VALUES("b=<1> a=2", " ", "=", "\\"")\nontology$ = [o, "z"]', '{"a":"2","b":"\\u003c1\\u003e"},z'],
+  ]) assert.equal(run8('', body), want, body);
+});
+
+test('a bad escape in a confirm expression rejects the parser', () => {
+  // Run Test returned only a parse error (checked in a lab tenant).
+  const lines = ['ZZPROBER8E one'];
+  const bad = runParsers([{ name: 'P', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=CONTAINS(message, "ZZPROBER8E\\q")\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"' }], lines, { now: NOW });
+  assert.ok(bad.every((r) => r.rejected && /^P line 2: syntax error: confirm expression: \\q inside double quotes/.test(r.error)), bad[0].error);
+  const good = runParsers([{ name: 'P', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=CONTAINS(message, "ZZPROBER8E")\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"' }], lines, { now: NOW });
+  assert.equal(good[0].normalized.summary, 'ok');
+});
