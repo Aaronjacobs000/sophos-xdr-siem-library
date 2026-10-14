@@ -1,0 +1,485 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-syd-01",
+      "event_time_usec": 1791931211000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "source_address": "192.0.2.27",
+      "destination_address": "198.51.100.53",
+      "source_port": 49546,
+      "destination_port": 53,
+      "protocol": 17,
+      "application_name": "Dns",
+      "rx_packet_count": 2,
+      "tx_packet_count": 2,
+      "rx_byte_count": 108,
+      "tx_byte_count": 258,
+      "start_timestamp_usec": 1791931210000000,
+      "source_nat_address": "203.0.113.10",
+      "source_nat_port": 49546,
+      "direction": "OUTBOUND",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Zone Based Firewall"
+          },
+          {
+            "key": "level",
+            "value": "NOTICE"
+          },
+          {
+            "key": "reason",
+            "value": "flow create"
+          },
+          {
+            "key": "from_zone",
+            "value": "LAN"
+          },
+          {
+            "key": "to_zone",
+            "value": "INTERNET"
+          },
+          {
+            "key": "rule_tag",
+            "value": "LAN_INTERNET_1030"
+          },
+          {
+            "key": "overlay",
+            "value": "DefaultOverlay"
+          },
+          {
+            "key": "input_interface",
+            "value": "lan0"
+          },
+          {
+            "key": "output_interface",
+            "value": "Passthrough_INET1_DefaultOverlay"
+          },
+          {
+            "key": "vrf",
+            "value": "Default"
+          },
+          {
+            "key": "flow_id",
+            "value": "145899"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "0x0"
+          },
+          {
+            "key": "ip_tos",
+            "value": "be (0x0)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-syd-01",
+      "event_time_usec": 1791931297000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "source_address": "203.0.113.77",
+      "destination_address": "192.0.2.40",
+      "source_port": 51544,
+      "destination_port": 3389,
+      "protocol": 6,
+      "application_name": "Rdp",
+      "rx_packet_count": 1,
+      "tx_packet_count": 0,
+      "rx_byte_count": 60,
+      "tx_byte_count": 0,
+      "start_timestamp_usec": 1791931297000000,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Zone Based Firewall"
+          },
+          {
+            "key": "level",
+            "value": "ALERT"
+          },
+          {
+            "key": "reason",
+            "value": "implicitly deny"
+          },
+          {
+            "key": "from_zone",
+            "value": "INTERNET"
+          },
+          {
+            "key": "to_zone",
+            "value": "LAN"
+          },
+          {
+            "key": "rule_tag",
+            "value": "INTERNET_LAN_DEFAULT"
+          },
+          {
+            "key": "overlay",
+            "value": "DefaultOverlay"
+          },
+          {
+            "key": "input_interface",
+            "value": "wan0"
+          },
+          {
+            "key": "output_interface",
+            "value": "lan0"
+          },
+          {
+            "key": "vrf",
+            "value": "Default"
+          },
+          {
+            "key": "flow_id",
+            "value": "146022"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "0x2"
+          },
+          {
+            "key": "ip_tos",
+            "value": "be (0x0)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-mel-02",
+      "event_time_usec": 1791931385000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-mel-02",
+      "source_address": "192.0.2.131",
+      "destination_address": "198.51.100.90",
+      "source_port": 59332,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Office365",
+      "rx_packet_count": 41,
+      "tx_packet_count": 58,
+      "rx_byte_count": 24733,
+      "tx_byte_count": 9120,
+      "start_timestamp_usec": 1791931131000000,
+      "end_timestamp_usec": 1791931385000000,
+      "source_nat_address": "203.0.113.20",
+      "source_nat_port": 40213,
+      "direction": "OUTBOUND",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Zone Based Firewall"
+          },
+          {
+            "key": "level",
+            "value": "NOTICE"
+          },
+          {
+            "key": "reason",
+            "value": "flow end"
+          },
+          {
+            "key": "from_zone",
+            "value": "STAFF"
+          },
+          {
+            "key": "to_zone",
+            "value": "UNTRUSTED"
+          },
+          {
+            "key": "rule_tag",
+            "value": "inspected"
+          },
+          {
+            "key": "overlay",
+            "value": "SSE"
+          },
+          {
+            "key": "input_interface",
+            "value": "lan0.20"
+          },
+          {
+            "key": "output_interface",
+            "value": "SSE_INET_Primary"
+          },
+          {
+            "key": "vrf",
+            "value": "Staff"
+          },
+          {
+            "key": "flow_id",
+            "value": "88231"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "0x1b"
+          },
+          {
+            "key": "ip_tos",
+            "value": "af21 (0x48)"
+          },
+          {
+            "key": "user_name",
+            "value": "jlee"
+          },
+          {
+            "key": "user_device",
+            "value": "ws-0147"
+          },
+          {
+            "key": "source_role",
+            "value": "employee"
+          },
+          {
+            "key": "destination_role",
+            "value": "default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-mel-02",
+      "event_time_usec": 1791931470000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-mel-02",
+      "source_address": "192.0.2.140",
+      "destination_address": "198.51.100.17",
+      "source_port": 50211,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Dropbox",
+      "rx_packet_count": 14,
+      "tx_packet_count": 18,
+      "rx_byte_count": 1711,
+      "tx_byte_count": 5833,
+      "start_timestamp_usec": 1791931322000000,
+      "end_timestamp_usec": 1791931470000000,
+      "direction": "OUTBOUND",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Zone Based Firewall"
+          },
+          {
+            "key": "level",
+            "value": "NOTICE"
+          },
+          {
+            "key": "reason",
+            "value": "flowend"
+          },
+          {
+            "key": "from_zone",
+            "value": "TRUSTED"
+          },
+          {
+            "key": "to_zone",
+            "value": "UNTRUSTED"
+          },
+          {
+            "key": "rule_tag",
+            "value": "inspected"
+          },
+          {
+            "key": "overlay",
+            "value": "SSE"
+          },
+          {
+            "key": "input_interface",
+            "value": "lan0"
+          },
+          {
+            "key": "output_interface",
+            "value": "SSE_INET_Primary"
+          },
+          {
+            "key": "vrf",
+            "value": "Default"
+          },
+          {
+            "key": "flow_id",
+            "value": "198453"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "0x1b"
+          },
+          {
+            "key": "ip_tos",
+            "value": "be (0x0)"
+          },
+          {
+            "key": "source_role",
+            "value": "default"
+          },
+          {
+            "key": "destination_role",
+            "value": "default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-syd-01",
+      "event_time_usec": 1791931512000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "source_address": "203.0.113.91",
+      "destination_address": "198.51.100.2",
+      "source_port": 52112,
+      "destination_port": 23,
+      "protocol": 6,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Stateful WAN Drops"
+          },
+          {
+            "key": "level",
+            "value": "NOTICE"
+          },
+          {
+            "key": "input_interface",
+            "value": "wan0"
+          },
+          {
+            "key": "description",
+            "value": "tcp Inbound drop on stateful wan interface"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-mel-02",
+      "event_time_usec": 1791931561000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-mel-02",
+      "source_address": "203.0.113.140",
+      "destination_address": "198.51.100.3",
+      "source_port": 40125,
+      "destination_port": 161,
+      "protocol": 17,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "Stateful WAN Drops"
+          },
+          {
+            "key": "level",
+            "value": "NOTICE"
+          },
+          {
+            "key": "input_interface",
+            "value": "wan1"
+          },
+          {
+            "key": "description",
+            "value": "Inbound drop on stateful wan interface"
+          },
+          {
+            "key": "packet_length",
+            "value": "78"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-syd-01",
+      "event_time_usec": 1791931640000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "channel": "EdgeConnect audit log",
+      "username": "admin",
+      "client_hostname": "192.0.2.5",
+      "target_hostname": "edge-syd-01",
+      "operation_name": "configureFirewallZone",
+      "operation": "SYSTEM configureFirewallZone succeeded params:name=GUEST ,id=12 ,desc=Guest wireless zone",
+      "result": "succeeded"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ARUBA_EDGECONNECT_SYSLOG_PARENT > ARUBA_EDGECONNECT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba EdgeConnect",
+      "sensor_id": "edge-syd-01",
+      "event_time_usec": 1791931682000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "channel": "EdgeConnect audit log",
+      "username": "Orchestrator",
+      "target_hostname": "edge-syd-01",
+      "operation_name": "setFeatureToken",
+      "operation": "SYSTEM setFeatureToken succeeded params:feature=ecMini ,name=ecMini ,enable=false ,desc=EC Mini License - 50Mbps bandwidth limit ,tokens=bandwidthLimit",
+      "result": "succeeded"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
