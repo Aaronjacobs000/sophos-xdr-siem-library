@@ -1,0 +1,167 @@
+!SAMPLE={"version":"0","id":"4f1e2d3c-5b6a-4789-8a0b-1c2d3e4f5a61","detail-type":"Security Hub Findings - Imported","source":"aws.securityhub","account":"111122223333","time":"2026-10-13T02:14:03Z","region":"ap-southeast-2","resources":["arn:aws:securityhub:ap-southeast-2::product/aws/guardduty/arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b"],"detail":{"findings":[{"SchemaVersion":"2018-10-08","Id":"arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b","ProductArn":"arn:aws:securityhub:ap-southeast-2::product/aws/guardduty","ProductName":"GuardDuty","CompanyName":"Amazon","Region":"ap-southeast-2","GeneratorId":"arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0","AwsAccountId":"111122223333","Types":["TTPs/Initial Access/UnauthorizedAccess:EC2-SSHBruteForce"],"FirstObservedAt":"2026-10-12T22:15:57Z","LastObservedAt":"2026-10-13T01:56:49Z","CreatedAt":"2026-10-12T22:34:34.146Z","UpdatedAt":"2026-10-13T02:14:00.206Z","Severity":{"Product":2,"Label":"MEDIUM","Normalized":40},"Title":"203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718.","Description":"203.0.113.45 is performing SSH brute force attacks against i-0a1b2c3d4e5f60718. Brute force attacks are used to gain unauthorized access to your instance by guessing the SSH password.","SourceUrl":"https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b","ProductFields":{"aws/guardduty/service/action/networkConnectionAction/remotePortDetails/portName":"Unknown","aws/guardduty/service/archived":"false","aws/guardduty/service/action/networkConnectionAction/remoteIpDetails/ipAddressV4":"203.0.113.45","aws/guardduty/service/action/networkConnectionAction/blocked":"false","aws/guardduty/service/action/networkConnectionAction/remotePortDetails/port":"46717","aws/guardduty/service/action/networkConnectionAction/remoteIpDetails/country/countryName":"Exampleland","aws/guardduty/service/serviceName":"guardduty","aws/guardduty/service/action/networkConnectionAction/localIpDetails/ipAddressV4":"192.0.2.20","aws/guardduty/service/detectorId":"12abc34d567e8fa901bc2d34e56789f0","aws/guardduty/service/action/networkConnectionAction/connectionDirection":"INBOUND","aws/guardduty/service/eventFirstSeen":"2026-10-12T22:15:57Z","aws/guardduty/service/eventLastSeen":"2026-10-13T01:56:49Z","aws/guardduty/service/action/networkConnectionAction/localPortDetails/portName":"SSH","aws/guardduty/service/action/actionType":"NETWORK_CONNECTION","aws/guardduty/service/resourceRole":"TARGET","aws/guardduty/service/action/networkConnectionAction/localPortDetails/port":"22","aws/guardduty/service/action/networkConnectionAction/protocol":"TCP","aws/guardduty/service/count":"74","aws/securityhub/FindingId":"arn:aws:securityhub:ap-southeast-2::product/aws/guardduty/arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/7ec6b1f2a3d44e5f8a9b0c1d2e3f4a5b","aws/securityhub/ProductName":"GuardDuty","aws/securityhub/CompanyName":"Amazon"},"Resources":[{"Type":"AwsEc2Instance","Id":"arn:aws:ec2:ap-southeast-2:111122223333:instance/i-0a1b2c3d4e5f60718","Partition":"aws","Region":"ap-southeast-2","Tags":{"Name":"bastion-01"},"Details":{"AwsEc2Instance":{"Type":"t3.micro","ImageId":"ami-0abcdef1234567890","IpV4Addresses":["198.51.100.20","192.0.2.20"],"VpcId":"vpc-0a1b2c3d","SubnetId":"subnet-0a1b2c3d","LaunchedAt":"2026-09-30T23:21:57Z"}}}],"WorkflowState":"NEW","Workflow":{"Status":"NEW"},"RecordState":"ACTIVE"}]}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*"detail-type"\s*:\s*"Security Hub Findings - (?:Imported|Custom Action)".*"findings"\s*:\s*\[\s*\{
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AWS Security Hub CSPM findings in the AWS Security Finding Format (ASFF), as the
+# EventBridge events Security Hub CSPM sends ("Security Hub Findings - Imported" and
+# "Security Hub Findings - Custom Action"), written by Amazon Data Firehose to an S3 bucket that a
+# Sophos NG-SIEM S3 Ingest integration reads, one event per line. Each event holds one finding.
+# Standalone parser for the third-party alert schema. Insight Results events and the newer
+# Security Hub's OCSF findings ("Findings Imported V2") stay in the generic schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+f = "$.detail.findings[0]."
+
+sensorType$ = "AWS Security Hub CSPM"
+# The engine's JSONPath reads a key with a hyphen only in brackets.
+logType$ = json["$['detail-type']"]
+alertId$ = json[f + "Id"]
+title$ = json[f + "Title"]
+summary$ = json[f + "Description"]
+alertCategory$ = json[f + "Types[0]"]
+status$ = json[f + "Workflow.Status"]
+
+# Older findings carry the company and product names only in ProductFields.
+company = json[f + "CompanyName"]
+company = IF company == NULL THEN json[f + "ProductFields['aws/securityhub/CompanyName']"] ELSE company
+vendor$ = company
+product = json[f + "ProductName"]
+product = IF product == NULL THEN json[f + "ProductFields['aws/securityhub/ProductName']"] ELSE product
+provider$ = product
+
+# Severity.Label is INFORMATIONAL, LOW, MEDIUM, HIGH or CRITICAL; Normalized runs from 0 to 100.
+label = UPPERCASE(STRING(json[f + "Severity.Label"]))
+vendorSeverity$ = json[f + "Severity.Label"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF label == "INFORMATIONAL" THEN "INFO" ELSE severity$
+severity$ = IF label == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF label == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF label == "HIGH" THEN "HIGH" ELSE severity$
+severity$ = IF label == "CRITICAL" THEN "CRITICAL" ELSE severity$
+riskScore$ = json[f + "Severity.Normalized"]
+conf = json[f + "Confidence"]
+confidence$ = IF conf != NULL THEN STRING(conf) ELSE NULL
+
+# ASFF times are ISO 8601 in UTC. Each event is a new or updated finding, so the event time is
+# UpdatedAt.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+created = json[f + "CreatedAt"]
+updated = json[f + "UpdatedAt"]
+updated = IF updated == NULL THEN json["$.time"] ELSE updated
+createdTimeUsec$ = DATETIME(created, layout)
+updatedTimeUsec$ = DATETIME(updated, layout)
+firstEventTimeUsec$ = DATETIME(json[f + "FirstObservedAt"], layout)
+lastEventTimeUsec$ = DATETIME(json[f + "LastObservedAt"], layout)
+eventTimeUsec$ = DATETIME(updated, layout)
+
+# Network details come from the ASFF Network object or, for GuardDuty, from ProductFields.
+gd = f + "ProductFields['aws/guardduty/service/action/"
+ncDir = UPPERCASE(STRING(json[gd + "networkConnectionAction/connectionDirection']"]))
+remoteIp = json[gd + "networkConnectionAction/remoteIpDetails/ipAddressV4']"]
+localIp = json[gd + "networkConnectionAction/localIpDetails/ipAddressV4']"]
+remotePort = STRING(json[gd + "networkConnectionAction/remotePortDetails/port']"])
+localPort = STRING(json[gd + "networkConnectionAction/localPortDetails/port']"])
+apiIp = json[gd + "awsApiCallAction/remoteIpDetails/ipAddressV4']"]
+inbound = ncDir == "INBOUND"
+outbound = ncDir == "OUTBOUND"
+
+src = json[f + "Network.SourceIpV4"]
+src = IF src == NULL THEN json[f + "Network.SourceIpV6"] ELSE src
+src = IF src == NULL AND inbound THEN remoteIp ELSE src
+src = IF src == NULL AND outbound THEN localIp ELSE src
+src = IF src == NULL THEN apiIp ELSE src
+sourceAddress$ = src
+dst = json[f + "Network.DestinationIpV4"]
+dst = IF dst == NULL THEN json[f + "Network.DestinationIpV6"] ELSE dst
+dst = IF dst == NULL AND inbound THEN localIp ELSE dst
+dst = IF dst == NULL AND outbound THEN remoteIp ELSE dst
+destinationAddress$ = dst
+
+sport = STRING(json[f + "Network.SourcePort"])
+sport = IF sport == "" AND inbound THEN remotePort ELSE sport
+sport = IF sport == "" AND outbound THEN localPort ELSE sport
+dport = STRING(json[f + "Network.DestinationPort"])
+dport = IF dport == "" AND inbound THEN localPort ELSE dport
+dport = IF dport == "" AND outbound THEN remotePort ELSE dport
+sp = sport|^(?P<n>\d{1,5})$
+dp = dport|^(?P<n>\d{1,5})$
+sourcePort$ = IF sp["n"] != "" THEN INT(sp["n"], 10) ELSE NULL
+destinationPort$ = IF dp["n"] != "" THEN INT(dp["n"], 10) ELSE NULL
+
+proto = UPPERCASE(STRING(json[f + "Network.Protocol"]))
+proto = IF proto == "" THEN UPPERCASE(STRING(json[gd + "networkConnectionAction/protocol']"])) ELSE proto
+protocol$ = IF proto == "TCP" THEN 6 ELSE NULL
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+
+netDir = UPPERCASE(STRING(json[f + "Network.Direction"]))
+direction$ = NULL
+direction$ = IF netDir == "IN" OR inbound THEN "INBOUND" ELSE direction$
+direction$ = IF netDir == "OUT" OR outbound THEN "OUTBOUND" ELSE direction$
+blocked = STRING(json[gd + "networkConnectionAction/blocked']"])
+action$ = IF blocked == "true" THEN "BLOCKED" ELSE NULL
+
+# The first resource names the EC2 instance or the IAM principal the finding is about.
+resType = json[f + "Resources[0].Type"]
+resId = json[f + "Resources[0].Id"]
+resText = STRING(resId)
+inst = resText|instance/(?P<id>i-[0-9a-f]+)$
+targetHostName$ = IF inst["id"] != "" THEN inst["id"] ELSE NULL
+principal = json[f + "Resources[0].Details.AwsIamAccessKey.PrincipalName"]
+principal = IF principal == NULL THEN json[f + "Resources[0].Details.AwsIamAccessKey.UserName"] ELSE principal
+principal = IF principal == NULL THEN json[f + "Resources[0].Details.AwsIamUser.UserName"] ELSE principal
+targetUserName$ = principal
+
+# Keys with no third-party alert field of their own go to additional_data.
+d1.key$ = "aws_account_id"
+d1.value$ = STRING(json[f + "AwsAccountId"])
+d2.key$ = "region"
+d2.value$ = json[f + "Region"]
+d2.value$ = IF d2.value$ == NULL THEN json["$.region"] ELSE d2.value$
+d3.key$ = "generator_id"
+d3.value$ = json[f + "GeneratorId"]
+d4.key$ = "record_state"
+d4.value$ = json[f + "RecordState"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3, d4]
+
+d5.key$ = "resource_type"
+d5.value$ = resType
+additionalData$.record$ = IF d5.value$ THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "resource_id"
+d6.value$ = resId
+additionalData$.record$ = IF d6.value$ THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "compliance_status"
+d7.value$ = json[f + "Compliance.Status"]
+additionalData$.record$ = IF d7.value$ THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "security_control_id"
+d8.value$ = json[f + "Compliance.SecurityControlId"]
+additionalData$.record$ = IF d8.value$ THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "vulnerability_id"
+d9.value$ = json[f + "Vulnerabilities[0].Id"]
+additionalData$.record$ = IF d9.value$ THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "malware_name"
+d10.value$ = json[f + "Malware[0].Name"]
+additionalData$.record$ = IF d10.value$ THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "destination_domain"
+d11.value$ = json[f + "Network.DestinationDomain"]
+d11.value$ = IF d11.value$ == NULL THEN json[gd + "dnsRequestAction/domain']"] ELSE d11.value$
+additionalData$.record$ = IF d11.value$ THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+api = json[gd + "awsApiCallAction/api']"]
+d12.key$ = "api_call"
+d12.value$ = IF api != NULL THEN STRING(json[gd + "awsApiCallAction/serviceName']"]) + ":" + api ELSE NULL
+additionalData$.record$ = IF d12.value$ THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "source_url"
+d13.value$ = json[f + "SourceUrl"]
+additionalData$.record$ = IF d13.value$ THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "remediation_url"
+d14.value$ = json[f + "Remediation.Recommendation.Url"]
+additionalData$.record$ = IF d14.value$ THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "custom_action"
+d15.value$ = json["$.detail.actionName"]
+additionalData$.record$ = IF d15.value$ THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
