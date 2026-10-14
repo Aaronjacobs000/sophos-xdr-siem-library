@@ -1363,3 +1363,41 @@ test('an object or a JSON part joined to text is written the way STRING() writes
   ['"pre-" + r', 'pre-{"a$":0,"b$":"\\u003cr\\u003e"}'],
   ], { wrap: (expr) => `STRING(${expr})`, prelude: 'j = JSON("{\\"c\\":[1,null,\\"y\\"],\\"o\\":{\\"b\\":\\"<\\",\\"a\\":null}}")\nr.b$ = "<r>"\nr.a$ = NULL' });
 });
+
+test('\\\' keeps its backslash inside a string, and \\\\, \\n and \\t don\'t', () => {
+  // What the engine returned for each single-quoted literal in a lab tenant.
+  engineTable([
+  ["'a\\'b'", '["a\\\\\'b"]'],
+  ["'a\\''", '["a\\\\\'"]'],
+  ["'a\\\\b'", '["a\\\\b"]'],
+  ["LENGTH('a\\tb')", '[3]'],
+  ["LENGTH('a\\nb')", '[3]'],
+  ]);
+  assert.equal(get("x = 'a\\'b'", 'x'), "a\\'b");
+});
+
+test('CEF() fails on text with no CEF:, keeps an empty key and stores no empty unquoted value', () => {
+  // What the engine returned for each line in a lab tenant.
+  const head = '"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5"';
+  engineTable([
+  ['CEF("no cef here")', null],
+  ['CEF("")', null],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=")', `[{${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a= ")', `[{${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=   ")', `[{${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=\\t")', `[{${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a= b=c")', `[{${head},"b":"c"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|b=c a=")', `[{${head},"b":"c"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=x b= c=d")', `[{${head},"a":"x","c":"d"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=\\"\\" b=c")', `[{${head},"a":"","b":"c"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|=x a=b")', `[{"":"x",${head},"a":"b"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=b =c")', `[{"":"c",${head},"a":"b"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=b  =c")', `[{"":"c",${head},"a":"b"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|msg=1 = 2 b=c")', `[{"":" 2",${head},"b":"c","msg":"1"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|=x =y")', `[{"":"y",${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|=")', `[{${head}}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|= a=b")', `[{${head},"a":"b"}]`],
+  ['CEF("CEF:0|V|P|1|100|N|5|a=x = ")', `[{${head},"a":"x"}]`],
+  ]);
+  assert.throws(() => run('x = CEF("no cef here")'), /message is not in LEEF format/);
+});

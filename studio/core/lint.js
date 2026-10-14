@@ -17,7 +17,7 @@ const ROOT_VARS = new Set(['originalData$', 'message', 'sensorType$', 'sensorId$
 const LEVEL_ORDER = { error: 0, warning: 1, inferred: 2, info: 3 };
 // Sophos Fusion refuses to save a parser whose code holds *= anywhere, in a comment or a regex
 // too ("code contains restricted syntax: *="), though Run Test accepts it. +=, -=, /= and %=
-// save (checked in a lab tenant).
+// save, and so do single-quoted strings (checked in a lab tenant).
 const RESTRICTED = ['*='];
 
 function literalStrings(e) {
@@ -213,9 +213,13 @@ export function lintParsers(parsers, opts = {}) {
   let results = null;
   if (opts.samples && opts.samples.length) {
     results = runParsers(parsers, opts.samples, { now: opts.now });
+    // A syntax error rejects the whole parser, so every line fails the same way: one entry, next to
+    // the syntax error it points at, rather than one per line.
+    const rejected = results.filter((r) => r.rejected);
+    if (rejected.length) problems.push({ level: 'error', code: 'rejected', message: 'Run Test rejects the whole parser over this syntax error, so no sample line gets a record.', parser: rejected[0].errorAt.parser, line: rejected[0].errorAt.line, lines: rejected.map((r) => r.line) });
     const seen = new Map();
     for (const r of results) {
-      if (r.error) add('error', 'runtime', `line ${r.line}: ${r.error}`, null);
+      if (r.error && !r.rejected) add('error', 'runtime', `line ${r.line}: ${r.error}`, null);
       for (const n of r.notes) {
         const key = `${n.code}:${n.field || ''}:${n.message}`;
         if (seen.has(key)) { seen.get(key).lines.push(r.line); continue; }

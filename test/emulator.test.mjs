@@ -586,3 +586,38 @@ test('the event time settles like the engine: the ingest time when missing, a fu
   const [hdr] = runParsers([{ name: 'A_B', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=pss\n!SCHEMA=scwx.auth\ntargetUserName$ = "u"' }], ['Oct 14 23:30:00 h01 app: pss'], { now: NOW });
   assert.equal(hdr.normalized.event_time_usec, Date.UTC(2026, 9, 13, 23, 30) * 1000);
 });
+
+test('with TRIM_ALL on, an object in a string field has its text members trimmed, header fields included', () => {
+  // What the engine stored in a lab tenant.
+  const run1 = (flags, body) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER7E\n!SCHEMA=scwx.thirdpartyalert\n${flags}\nsummary$ = "ok"\n${body}` }], ['ZZPROBER7E line'], { now: NOW })[0].normalized.ontology;
+  const cef = 'c = CEF("CEF:0|<V>|P|1|100|N|5|a=<b> s= (y) ")\nontology$ = c';
+  assert.equal(run1('', cef), '{"0":"CEF:0","1":"V","2":"P","3":"1","4":"100","5":"N","6":"5","a":"b","s":"y"}');
+  assert.equal(run1('!TRIMALLOFF', cef), '{"0":"CEF:0","1":"\\u003cV\\u003e","2":"P","3":"1","4":"100","5":"N","6":"5","a":"\\u003cb\\u003e","s":" (y)"}');
+  assert.equal(run1('', 'l = LEEF("LEEF:1.0|<V>|P|1|100|a=<b>\\tc= (d) ")\nontology$ = l'), '{"0":"LEEF:1.0","1":"V","2":"P","3":"1","4":"100","a":"b","c":"d"}');
+  assert.equal(run1('', 'o = SPLIT_NAME_VALUES("a=<b> c=(d)", " ", "=", "\\"")\nontology$ = o'), '{"a":"b","c":"d"}');
+  assert.equal(run1('', 'u = URL_PARSE("http://example.com/x#<f>")\nontology$ = u'), '{"fragment":"f","host":"example.com","host_raw":"example.com","path":"/x","path_raw":"/x","port":"","query":"","query_raw":"","raw":"http://example.com/x#\\u003cf\\u003e","scheme":"http","user":""}');
+});
+
+test('a record inside a list in a string field is written the way STRING() writes it', () => {
+  // What the engine stored in a lab tenant, with TRIM_ALL on: the record's members aren't trimmed.
+  const run1 = (body) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER7E\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"\n${body}` }], ['ZZPROBER7E line'], { now: NOW })[0].normalized.ontology;
+  assert.equal(run1('r.s$ = "<x>"\nontology$ = [r]'), '{"s$":"\\u003cx\\u003e"}');
+  assert.equal(run1('r.s$ = "<x>"\nr.n$ = 5\nr.a.b$ = "&"\nr.l$ = ["<y>"]\nontology$ = ["a", r, 5, TRUE]'), 'a,{"a":{"b$":"\\u0026"},"l$":["\\u003cy\\u003e"],"n$":5,"s$":"\\u003cx\\u003e"},5,true');
+});
+
+test('a syntax error makes Run Test reject the whole parser, so no line gets a record', () => {
+  // Run Test returned only the error, for a statement and for a confirm expression (checked in a
+  // lab tenant).
+  const lines = ['ZZPROBER7X one', 'ZZPROBER7X two'];
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER7X\n!SCHEMA=scwx.thirdpartyalert\n';
+  const statement = runParsers([{ name: 'P', text: `${head}title$ = "t"\nx = 'it''s'\nsummary$ = "ok"` }], lines, { now: NOW });
+  assert.deepEqual(statement.map(expectedShape), lines.map((_, i) => ({ line: i + 1, extractor_path: null, schema: 'scwx.generic', normalized: null, error: true })));
+  assert.match(statement[0].error, /^P line 5: syntax error: /);
+  assert.ok(statement.every((r) => r.rejected));
+  const confirm = runParsers([{ name: 'P', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=CONTAINS(originalData$, "ZZPROBER7X"\n!SCHEMA=scwx.thirdpartyalert\ntitle$ = "confirmed"\nsummary$ = "ok"' }], lines, { now: NOW });
+  assert.ok(confirm.every((r) => r.rejected && r.normalized === null && /^P line 2: syntax error: confirm expression: /.test(r.error)));
+  // A child's syntax error rejects the set too.
+  const parent = { name: 'PARENT', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER7X\n!SCHEMA=scwx.generic\nkind = "a"` };
+  const child = { name: 'CHILD', parent: 'PARENT', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=kind == "a"\n!SCHEMA=scwx.thirdpartyalert\ntitle$ = 1.5' };
+  assert.ok(runParsers([parent, child], lines, { now: NOW }).every((r) => r.rejected && r.normalized === null && /^CHILD line 4: syntax error: /.test(r.error)));
+});

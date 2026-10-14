@@ -106,8 +106,10 @@ export function mappingLines(m, read, sampleValues = []) {
   const field = m.field;
   switch (t.kind) {
     case 'int': return [`${field} = INT(${src}, 10)`];
-    case 'lower': return [`${field} = LOWERCASE(${src})`];
-    case 'upper': return [`${field} = UPPERCASE(${src})`];
+    // LOWERCASE() and UPPERCASE() fail the event on a number, TRUE or FALSE, so the value goes
+    // through STRING() first, which gives "" for a missing value (checked in a lab tenant).
+    case 'lower': return [`${field} = LOWERCASE(STRING(${src}))`];
+    case 'upper': return [`${field} = UPPERCASE(STRING(${src}))`];
     case 'string': return [`${field} = STRING(${src})`];
     case 'replace': return [`${field} = REPLACE(${src}, ${q(t.from ?? '')}, ${q(t.to ?? '')})`];
     case 'bool': return [`${field} = LOWERCASE(STRING(${src})) == "true"`];

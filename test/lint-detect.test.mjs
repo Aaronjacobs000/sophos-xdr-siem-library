@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { lintParsers, overlaps } from '../studio/core/lint.js';
 import { analyseSample, analyseLine, textTemplate } from '../studio/core/detect.js';
 import { suggestMappings, pickSchema, guessEnum } from '../studio/core/mapping.js';
-import { buildPlan, writeParsers, keysFor } from '../studio/app/plan.js';
+import { buildPlan, writeParsers, keysFor, remap, setUnitSchema } from '../studio/app/plan.js';
 import { runParsers } from '../studio/core/engine.js';
 
 const codes = (r) => r.problems.map((p) => `${p.level}:${p.code}`);
@@ -163,6 +163,24 @@ test('generated parsers run clean on the samples they came from', () => {
   }
 });
 
+test('a lowercase or uppercase mapping works on a number, TRUE, FALSE or a missing value', () => {
+  // LOWERCASE() and UPPERCASE() fail the event on a number or TRUE, so the Map step writes
+  // LOWERCASE(STRING(value)). The engine ran this generated parser on these lines and stored the
+  // same fields (checked in a lab tenant).
+  const lines = ['{"app":"zzprober7g","alert":"Malware Found","count":5,"blocked":true}', '{"app":"zzprober7g","alert":"Script Blocked","count":12,"blocked":false}', '{"app":"zzprober7g","alert":"Login"}'];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'EDR', shipMethod: 'syslog' });
+  const unit = plan.units[0];
+  setUnitSchema(plan, a, unit, 'scwx.thirdpartyalert');
+  unit.mappings = [['alert', 'title$', 'none'], ['count', 'logType$', 'lower'], ['blocked', 'provider$', 'upper']].map(([k, f, kind]) => ({ ...remap(unit, k, f), transform: { kind } }));
+  const ps = writeParsers(plan, lines);
+  assert.match(ps[0].text, /^logType\$ = LOWERCASE\(STRING\(json\["\$\.count"\]\)\)$/m);
+  assert.match(ps[0].text, /^provider\$ = UPPERCASE\(STRING\(json\["\$\.blocked"\]\)\)$/m);
+  const results = runParsers(ps, lines);
+  assert.deepEqual(results.map((r) => r.error ?? null), [null, null, null]);
+  assert.deepEqual(results.map(({ normalized: n }) => [n.title, n.log_type, n.provider]), [['Malware Found', '5', 'TRUE'], ['Script Blocked', '12', 'FALSE'], ['Login', undefined, undefined]]);
+});
+
 test('text templates fall back to value-like tokens for a single line', () => {
   const ev = analyseSample(['Oct  7 22:00:00 h app[1]: user jdoe logged in from 192.0.2.4']).events;
   assert.equal(textTemplate(ev, 'app', true), 'app\\[\\d+\\]:\\s+user\\s+jdoe\\s+logged\\s+in\\s+from\\s+(?P<src>\\S+)');
@@ -197,9 +215,19 @@ test('detection: a CEF line with a header shorter than 6 fields isn\'t read as C
   assert.notEqual(analyseLine('Oct 14 01:02:03 host CEF:0|V|P').format, 'cef');
 });
 
-test('lint: single-quoted strings are fine, as in Run Test, and two side by side are a syntax error', () => {
-  // The engine ran each good line and rejected 'it''s' as a syntax error (checked in a lab tenant).
+test('lint: single-quoted strings are fine, as in Run Test and on save, and two side by side are a syntax error', () => {
+  // The engine ran each good line and rejected 'it''s' as a syntax error, and Sophos Fusion saved a
+  // parser with x = 'abc' and SPLIT('a,b', ',') as written (checked in a lab tenant).
   const lint = (line) => lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.nids\n${line}` }]).problems.filter((p) => p.level === 'error');
   for (const good of ["x = 'abc'", "x = \"a\" + 'b'", "x = IF TRUE THEN 'y' ELSE 'n'", "x = ['a', 'b']", "x = SPLIT('a,b', ',')"]) assert.deepEqual(lint(good), [], good);
   assert.deepEqual(lint("x = 'it''s'").map((p) => p.code), ['syntax']);
+});
+
+test('lint: a syntax error rejects the parser, which shows as one entry for every sample line', () => {
+  const text = "!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.nids\nmessage$ = \"m\"\nx = 'it''s'";
+  const r = lintParsers([{ name: 'ACME_APP_STANDALONE_NIDS', text }], { samples: ['acme-app one', 'acme-app two'] });
+  const errors = r.problems.filter((p) => p.level === 'error');
+  assert.deepEqual(errors.map((p) => [p.code, p.parser, p.line]), [['syntax', 'ACME_APP_STANDALONE_NIDS', 5], ['rejected', 'ACME_APP_STANDALONE_NIDS', 5]]);
+  assert.deepEqual(errors[1].lines, [1, 2]);
+  assert.ok(r.results.every((x) => x.rejected && x.normalized === null));
 });
