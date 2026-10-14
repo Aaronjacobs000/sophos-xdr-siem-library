@@ -1,0 +1,480 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791853804218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4183",
+      "auth_system": "GitLab",
+      "source_address": "203.0.113.10",
+      "status": "authenticated_with_password",
+      "target_user_name": "pexample",
+      "user_display_name": "Pat Example",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "author_id",
+            "value": "42"
+          },
+          {
+            "key": "entity_type",
+            "value": "User"
+          },
+          {
+            "key": "entity_path",
+            "value": "pexample"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791853890507000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4184",
+      "auth_system": "GitLab",
+      "source_address": "198.51.100.44",
+      "status": "login_failed_with_standard_authentication",
+      "target_user_name": "kim.lee",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "author_id",
+            "value": "-1"
+          },
+          {
+            "key": "entity_type",
+            "value": "User"
+          },
+          {
+            "key": "entity_path",
+            "value": "kim.lee"
+          },
+          {
+            "key": "author_class",
+            "value": "Gitlab::Audit::UnauthenticatedAuthor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791853918020000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4185",
+      "auth_system": "GitLab",
+      "source_address": "198.51.100.44",
+      "status": "login_failed_with_otp_authentication",
+      "target_user_name": "kim.lee",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "author_id",
+            "value": "-1"
+          },
+          {
+            "key": "entity_type",
+            "value": "User"
+          },
+          {
+            "key": "entity_path",
+            "value": "kim.lee"
+          },
+          {
+            "key": "author_class",
+            "value": "Gitlab::Audit::UnauthenticatedAuthor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791853961733000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4186",
+      "auth_system": "GitLab",
+      "source_address": "203.0.113.77",
+      "status": "authenticated_with_group_saml",
+      "target_user_name": "sadmin",
+      "user_display_name": "Sam Admin",
+      "target_domain_name": "acme",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "author_id",
+            "value": "64"
+          },
+          {
+            "key": "entity_type",
+            "value": "Group"
+          },
+          {
+            "key": "entity_path",
+            "value": "acme"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791853985114000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4187",
+      "auth_system": "GitLab",
+      "source_address": "198.51.100.44",
+      "status": "user_access_locked",
+      "target_user_name": "kim.lee",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "author_id",
+            "value": "-1"
+          },
+          {
+            "key": "entity_type",
+            "value": "User"
+          },
+          {
+            "key": "entity_path",
+            "value": "kim.lee"
+          },
+          {
+            "key": "author_class",
+            "value": "Gitlab::Audit::UnauthenticatedAuthor"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791854403662000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Project",
+      "sensor_event_id": "0f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a",
+      "event_source": "GitLab",
+      "event_name": "repository_git_operation",
+      "user_name": "ci-deploy-key",
+      "user_id": "-3",
+      "source_address": "203.0.113.61",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "acme/web-app",
+          "resource_type": "Project",
+          "resource_account_id": "29"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "protocol",
+            "value": "ssh"
+          },
+          {
+            "key": "action",
+            "value": "git-upload-pack"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_path",
+            "value": "acme/web-app"
+          },
+          {
+            "key": "target_type",
+            "value": "Project"
+          },
+          {
+            "key": "author_class",
+            "value": "DeployKey"
+          },
+          {
+            "key": "written_bytes",
+            "value": "1048576"
+          },
+          {
+            "key": "received_bytes",
+            "value": "2048"
+          },
+          {
+            "key": "key_type",
+            "value": "deploy_key"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791854659380000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Group",
+      "sensor_event_id": "4190",
+      "event_source": "GitLab",
+      "event_name": "member_created",
+      "user_name": "Sam Admin",
+      "user_id": "64",
+      "source_address": "203.0.113.77",
+      "target_user_name": "jo.nguyen",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "acme",
+          "resource_type": "Group",
+          "resource_account_id": "12"
+        },
+        {
+          "resource_id": "jo.nguyen",
+          "resource_type": "User",
+          "resource_account_id": "88"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_path",
+            "value": "acme"
+          },
+          {
+            "key": "target_type",
+            "value": "User"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791854807902000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "User",
+      "sensor_event_id": "4191",
+      "event_source": "GitLab",
+      "event_name": "personal_access_token_created",
+      "user_name": "Pat Example",
+      "user_id": "42",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "pexample",
+          "resource_type": "User",
+          "resource_account_id": "42"
+        },
+        {
+          "resource_id": "ci-pipeline-token",
+          "resource_type": "PersonalAccessToken",
+          "resource_account_id": "311"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "custom_message",
+            "value": "Created personal access token with id 311"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_path",
+            "value": "pexample"
+          },
+          {
+            "key": "target_type",
+            "value": "PersonalAccessToken"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791855072455000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Project",
+      "sensor_event_id": "4192",
+      "event_source": "GitLab",
+      "event_name": "project_visibility_level_updated",
+      "user_name": "Sam Admin",
+      "user_id": "64",
+      "source_address": "203.0.113.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "acme/web-app",
+          "resource_type": "Project",
+          "resource_account_id": "29"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "change",
+            "value": "visibility_level"
+          },
+          {
+            "key": "from",
+            "value": "Private"
+          },
+          {
+            "key": "to",
+            "value": "Public"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_path",
+            "value": "acme/web-app"
+          },
+          {
+            "key": "target_type",
+            "value": "Project"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "GITLAB_AUDIT_JSON_PARENT > GITLAB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitLab",
+      "event_time_usec": 1791855344764000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Gitlab::Audit::InstanceScope",
+      "sensor_event_id": "4193",
+      "event_source": "GitLab",
+      "event_name": "audit_events_streaming_instance_headers_create",
+      "user_name": "Administrator",
+      "user_id": "1",
+      "source_address": "203.0.113.5",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "gitlab_instance",
+          "resource_type": "Gitlab::Audit::InstanceScope",
+          "resource_account_id": "1"
+        },
+        {
+          "resource_id": "unknown",
+          "resource_type": "AuditEvents::Streaming::InstanceHeader",
+          "resource_account_id": "32"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "custom_message",
+            "value": "Created custom HTTP header with key X-arg."
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_path",
+            "value": "gitlab_instance"
+          },
+          {
+            "key": "target_type",
+            "value": "AuditEvents::Streaming::InstanceHeader"
+          },
+          {
+            "key": "author_class",
+            "value": "User"
+          }
+        ]
+      }
+    }
+  }
+]
