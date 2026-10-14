@@ -1,0 +1,214 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.50",
+      "host_id": "i-0e1f2a3b4c5d6e7f8",
+      "query_name": "update.example.com",
+      "index_of_top_private_domain": 7,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "203.0.113.80",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844814000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.61",
+      "host_id": "i-0a9b8c7d6e5f4a3b2",
+      "query_name": "www.example.org",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "query_type": 28,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "cdn.example.net.",
+            "response_type": 5
+          },
+          {
+            "response_data": "2001:db8::25",
+            "response_type": 28
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.61",
+      "host_id": "i-0a9b8c7d6e5f4a3b2",
+      "query_name": "xk2jq9vz7c1m4t.example.net",
+      "index_of_top_private_domain": 15,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844900000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.72",
+      "host_id": "i-0c1d2e3f4a5b6c7d8",
+      "query_name": "login-verify.example.net",
+      "index_of_top_private_domain": 13,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844925000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.23",
+      "host_id": "rslvr-in-0123456789abcdef0",
+      "query_name": "example.com",
+      "index_of_top_private_domain": 0,
+      "is_top_private_domain_parsed": true,
+      "query_type": 16,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "\"v=spf1 -all\"",
+            "response_type": 16
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791844951000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.14",
+      "host_id": "i-0f9e8d7c6b5a4f3e2",
+      "query_name": "example.net",
+      "index_of_top_private_domain": 0,
+      "is_top_private_domain_parsed": true,
+      "query_type": 15,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "10 mail.example.net.",
+            "response_type": 15
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791845031000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.50",
+      "host_id": "i-0e1f2a3b4c5d6e7f8",
+      "query_name": "api.example.com",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "api.cdn.example.com.",
+            "response_type": 5
+          },
+          {
+            "response_data": "203.0.113.10",
+            "response_type": 1
+          },
+          {
+            "response_data": "203.0.113.11",
+            "response_type": 1
+          },
+          {
+            "response_data": "203.0.113.12",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AWS_ROUTE53_RESOLVER_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Route 53 Resolver",
+      "event_time_usec": 1791845050000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.50",
+      "host_id": "i-0e1f2a3b4c5d6e7f8",
+      "query_name": "5.2.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa",
+      "query_type": 12,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "web01.example.com.",
+            "response_type": 12
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
