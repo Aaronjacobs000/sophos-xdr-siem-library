@@ -1,0 +1,74 @@
+!SAMPLE=Oct 13 01:26:30 vault-01 vault[2211]: {"auth":{"accessor":"hmac-sha256:c8ccdc68a6f7d9709da33db212858c151144330b333609d6e472cba69bfa67fc","display_name":"userpass-pat","entity_id":"a1b2c3d4-0000-4111-8222-333344445555","metadata":{"username":"pat"},"policies":["app-read","default"],"policy_results":{"allowed":true,"granting_policies":[{"name":"app-read","namespace_id":"root","type":"acl"}]},"token_policies":["app-read","default"],"token_issue_time":"2026-10-13T01:22:10Z","token_ttl":2764800,"token_type":"service"},"request":{"client_id":"a1b2c3d4-0000-4111-8222-333344445555","client_token_accessor":"hmac-sha256:c8ccdc68a6f7d9709da33db212858c151144330b333609d6e472cba69bfa67fc","id":"8f900112-3d4e-4f50-a162-738495061728","headers":{"user-agent":["vault-cli/1.20.4"]},"mount_accessor":"kv_3c4d5e6f","mount_class":"secret","mount_point":"secret/","mount_type":"kv","mount_running_version":"v0.25.0+builtin","namespace":{"id":"root"},"operation":"read","path":"secret/data/app/db","remote_address":"203.0.113.30","remote_port":51522},"response":{"data":{"data":{"db_host":"hmac-sha256:4eaf98da4a1e35e5b7f3593eed7423b34960bbcb58ea0f15a3af84dc489a1f1c","db_user":"hmac-sha256:8075c696b344f3d788d4d0ec5d787d0fa85664834375a78124cf08403fc4afa4"},"metadata":{"created_time":"hmac-sha256:bb7f37e31dd421672c9bf2c8e30a150e59756eb8386e42468e8551e9c054dcb3","version":3}},"mount_accessor":"kv_3c4d5e6f","mount_class":"secret","mount_point":"secret/","mount_type":"kv"},"time":"2026-10-13T01:26:30.004512Z","type":"response"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="api"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HashiCorp Vault audit devices (syslog or file), response entries for every API call
+# that isn't a login: secret reads and writes, encryption, policies, mounts, auth methods,
+# audit devices and tokens.
+# Child of HASHICORP_VAULT_JSON_PARENT: each call to CloudAudit. The event name is the operation
+# (create, read, update, delete, list), the event type is the mount type (kv, transit, pki,
+# system, token and others) and the resource is the API path.
+# json, path, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.request.id"]
+eventSource$ = "HashiCorp Vault"
+op = json["$.request.operation"]
+eventName$ = op
+mountType = json["$.request.mount_type"]
+eventType$ = mountType
+userName$ = json["$.auth.display_name"]
+userId$ = json["$.auth.entity_id"]
+# The token accessor. Vault hashes it unless the audit device sets hmac_accessor=false.
+accessKey$ = json["$.request.client_token_accessor"]
+sourceAddress$ = json["$.request.remote_address"]
+userAgent$ = json["$.request.headers['user-agent'][0]"]
+objectKey$ = path
+readOnly$ = op == "read" OR op == "list"
+# sys/ (policies, mounts, audit devices, seal) and auth method calls change Vault itself.
+managementEvent$ = mountType == "system" OR json["$.request.mount_class"] == "auth"
+
+ns = json["$.request.namespace.path"]
+ns = IF ns THEN ns ELSE json["$.request.namespace.id"]
+res.resourceId$ = path
+res.resourceType$ = mountType
+res.resourceAccountId$ = ns
+resources$ = [res]
+
+# Vault reports errors such as "1 error occurred: * permission denied" across lines.
+err = STRING(json["$.error"])
+errLine = err|\*\s*(?P<m>[^\n]+)
+status$ = IF err == "" THEN "success" ELSE "error"
+errorMessage$ = IF errLine["m"] THEN errLine["m"] ELSE NULL
+errorMessage$ = IF err != "" AND errorMessage$ == NULL THEN err ELSE errorMessage$
+
+p1.key$ = "operation"
+p1.value$ = op
+p2.key$ = "path"
+p2.value$ = path
+p3.key$ = "mount_point"
+p3.value$ = json["$.request.mount_point"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = [p1, p2, p3]
+
+d1.key$ = "namespace"
+d1.value$ = ns
+d2.key$ = "mount_accessor"
+d2.value$ = json["$.request.mount_accessor"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "token_type"
+d3.value$ = json["$.auth.token_type"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "granting_policy"
+d4.value$ = json["$.auth.policy_results.granting_policies[0].name"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "remote_port"
+d5.value$ = STRING(json["$.request.remote_port"])
+additionalEventData$.record$ = IF json["$.request.remote_port"] THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "forwarded_from"
+d6.value$ = json["$.forwarded_from"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

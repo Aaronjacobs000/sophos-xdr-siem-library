@@ -1,0 +1,542 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "sensor_id": "vault-01",
+      "event_time_usec": 1791854530481926,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5c6d7e8f-0a1b-4c2d-9e3f-405162738495",
+      "auth_system": "HashiCorp Vault",
+      "auth_category": "ACCOUNT_LOGON",
+      "service_name": "userpass",
+      "source_address": "203.0.113.30",
+      "source_port_number": 51514,
+      "user_agent": "vault-cli/1.20.4",
+      "target_user_name": "pat",
+      "user_display_name": "userpass-pat",
+      "session_id": "hmac-sha256:a610a2d771988800a763b355317165be41f6468e60bef1183d6825740781a56b",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "mount_point",
+            "value": "auth/userpass/"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "auth_userpass_1a2b3c4d"
+          },
+          {
+            "key": "entity_id",
+            "value": "a1b2c3d4-0000-4111-8222-333344445555"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "token_ttl",
+            "value": "2764800"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "event_time_usec": 1791854625120044,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6d7e8f90-1b2c-4d3e-8f40-516273849506",
+      "auth_system": "HashiCorp Vault",
+      "auth_category": "ACCOUNT_LOGON",
+      "service_name": "userpass",
+      "source_address": "198.51.100.44",
+      "source_port_number": 60211,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "target_user_name": "kim",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "invalid username or password",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "mount_point",
+            "value": "auth/userpass/"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "auth_userpass_1a2b3c4d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "sensor_id": "vault-01",
+      "event_time_usec": 1791854702775310,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7e8f9001-2c3d-4e4f-9051-627384950617",
+      "auth_system": "HashiCorp Vault",
+      "auth_category": "ACCOUNT_LOGON",
+      "service_name": "approle",
+      "source_address": "203.0.113.61",
+      "source_port_number": 44120,
+      "user_agent": "Go-http-client/1.1",
+      "target_user_name": "ci-deploy",
+      "user_display_name": "approle",
+      "session_id": "hmac-sha256:42146f92e039b8c99022a766cdafeee4b955010f0ac08b6d8a22c2924ff86075",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "mount_point",
+            "value": "auth/approle/"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "auth_approle_2b3c4d5e"
+          },
+          {
+            "key": "entity_id",
+            "value": "b2c3d4e5-1111-4222-9333-444455556666"
+          },
+          {
+            "key": "token_type",
+            "value": "batch"
+          },
+          {
+            "key": "token_ttl",
+            "value": "1200"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "sensor_id": "vault-01",
+      "event_time_usec": 1791854790004512,
+      "event_time_fidelity": "MICRO",
+      "event_type": "kv",
+      "sensor_event_id": "8f900112-3d4e-4f50-a162-738495061728",
+      "event_source": "HashiCorp Vault",
+      "event_name": "read",
+      "user_name": "userpass-pat",
+      "user_id": "a1b2c3d4-0000-4111-8222-333344445555",
+      "access_key": "hmac-sha256:c8ccdc68a6f7d9709da33db212858c151144330b333609d6e472cba69bfa67fc",
+      "source_address": "203.0.113.30",
+      "user_agent": "vault-cli/1.20.4",
+      "object_key": "secret/data/app/db",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "secret/data/app/db",
+          "resource_type": "kv",
+          "resource_account_id": "root"
+        }
+      ],
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "read"
+          },
+          {
+            "key": "path",
+            "value": "secret/data/app/db"
+          },
+          {
+            "key": "mount_point",
+            "value": "secret/"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "namespace",
+            "value": "root"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "kv_3c4d5e6f"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "granting_policy",
+            "value": "app-read"
+          },
+          {
+            "key": "remote_port",
+            "value": "51522"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "event_time_usec": 1791855067661208,
+      "event_time_fidelity": "MICRO",
+      "event_type": "kv",
+      "sensor_event_id": "90011223-4e5f-4061-b273-849506172839",
+      "event_source": "HashiCorp Vault",
+      "event_name": "read",
+      "user_name": "ldap-kim",
+      "user_id": "c3d4e5f6-2222-4333-a444-555566667777",
+      "access_key": "hmac-sha256:b4edb38e47d5d92f54bfc3528ba1eea725685326e7b96e5b8114d6b8dd0d6a1a",
+      "source_address": "198.51.100.44",
+      "user_agent": "vault-cli/1.20.4",
+      "object_key": "secret/data/finance/payroll",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "secret/data/finance/payroll",
+          "resource_type": "kv",
+          "resource_account_id": "root"
+        }
+      ],
+      "status": "error",
+      "error_message": "permission denied",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "read"
+          },
+          {
+            "key": "path",
+            "value": "secret/data/finance/payroll"
+          },
+          {
+            "key": "mount_point",
+            "value": "secret/"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "namespace",
+            "value": "root"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "kv_3c4d5e6f"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "remote_port",
+            "value": "60288"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "sensor_id": "vault-01",
+      "event_time_usec": 1791855319208733,
+      "event_time_fidelity": "MICRO",
+      "event_type": "system",
+      "sensor_event_id": "a1122334-5f60-4172-8384-950617283940",
+      "event_source": "HashiCorp Vault",
+      "event_name": "update",
+      "user_name": "oidc-sam@example.com",
+      "user_id": "d4e5f6a7-3333-4444-b555-666677778888",
+      "access_key": "hmac-sha256:89211ed9f7d4766be0f125075f703e1bb7997744ab75af4c5f3d6a9e07b186f3",
+      "source_address": "203.0.113.77",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "object_key": "sys/policies/acl/app-admin",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "sys/policies/acl/app-admin",
+          "resource_type": "system",
+          "resource_account_id": "root"
+        }
+      ],
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "update"
+          },
+          {
+            "key": "path",
+            "value": "sys/policies/acl/app-admin"
+          },
+          {
+            "key": "mount_point",
+            "value": "sys/"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "namespace",
+            "value": "root"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "system_4d5e6f70"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "granting_policy",
+            "value": "vault-admin"
+          },
+          {
+            "key": "remote_port",
+            "value": "55002"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "event_time_usec": 1791855412917455,
+      "event_time_fidelity": "MICRO",
+      "event_type": "system",
+      "sensor_event_id": "b2233445-6071-4283-9495-061728394051",
+      "event_source": "HashiCorp Vault",
+      "event_name": "delete",
+      "user_name": "oidc-sam@example.com",
+      "user_id": "d4e5f6a7-3333-4444-b555-666677778888",
+      "access_key": "hmac-sha256:89211ed9f7d4766be0f125075f703e1bb7997744ab75af4c5f3d6a9e07b186f3",
+      "source_address": "203.0.113.77",
+      "user_agent": "vault-cli/1.20.4",
+      "object_key": "sys/audit/file-backup",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "sys/audit/file-backup",
+          "resource_type": "system",
+          "resource_account_id": "root"
+        }
+      ],
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "delete"
+          },
+          {
+            "key": "path",
+            "value": "sys/audit/file-backup"
+          },
+          {
+            "key": "mount_point",
+            "value": "sys/"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "namespace",
+            "value": "root"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "system_4d5e6f70"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "granting_policy",
+            "value": "vault-admin"
+          },
+          {
+            "key": "remote_port",
+            "value": "55010"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "sensor_id": "vault-01",
+      "event_time_usec": 1791854790003871
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "event_time_usec": 1791855603118206,
+      "event_time_fidelity": "MICRO",
+      "event_type": "transit",
+      "sensor_event_id": "c3344556-7182-4394-a5a6-172839405162",
+      "event_source": "HashiCorp Vault",
+      "event_name": "update",
+      "user_name": "kubernetes-payments-api",
+      "user_id": "e5f6a7b8-4444-4555-8666-777788889999",
+      "access_key": "hmac-sha256:f7429cc967ad74ddbc12e2a7a57733a76a69526a7b93a1d9b382e50656818bcb",
+      "source_address": "198.51.100.90",
+      "user_agent": "Go-http-client/2.0",
+      "object_key": "transit/encrypt/payments",
+      "read_only": false,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "transit/encrypt/payments",
+          "resource_type": "transit",
+          "resource_account_id": "team-a/"
+        }
+      ],
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "update"
+          },
+          {
+            "key": "path",
+            "value": "transit/encrypt/payments"
+          },
+          {
+            "key": "mount_point",
+            "value": "transit/"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "namespace",
+            "value": "team-a/"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "transit_5e6f7081"
+          },
+          {
+            "key": "token_type",
+            "value": "batch"
+          },
+          {
+            "key": "remote_port",
+            "value": "38812"
+          },
+          {
+            "key": "forwarded_from",
+            "value": "vault-02.example.com:8200"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "HASHICORP_VAULT_JSON_PARENT > HASHICORP_VAULT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HashiCorp Vault",
+      "event_time_usec": 1791855220552917,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "d4455667-8293-44a5-b6b7-283940516273",
+      "auth_system": "HashiCorp Vault",
+      "auth_category": "ACCOUNT_LOGON",
+      "service_name": "oidc",
+      "source_address": "203.0.113.77",
+      "source_port_number": 54998,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "target_user_name": "oidc-sam@example.com",
+      "user_display_name": "oidc-sam@example.com",
+      "session_id": "hmac-sha256:9d4f3e7d12fe0a2157cf4446d10d05129849cb4126bacb2e1f2f4cd5865d8a00",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "mount_point",
+            "value": "auth/oidc/"
+          },
+          {
+            "key": "mount_accessor",
+            "value": "auth_oidc_6f708192"
+          },
+          {
+            "key": "entity_id",
+            "value": "d4e5f6a7-3333-4444-b555-666677778888"
+          },
+          {
+            "key": "token_type",
+            "value": "service"
+          },
+          {
+            "key": "token_ttl",
+            "value": "3600"
+          },
+          {
+            "key": "role",
+            "value": "admin"
+          }
+        ]
+      }
+    }
+  }
+]

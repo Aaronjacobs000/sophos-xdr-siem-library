@@ -1,0 +1,32 @@
+!SAMPLE=Oct 13 01:22:10 vault-01 vault[2211]: {"auth":{"accessor":"hmac-sha256:a610a2d771988800a763b355317165be41f6468e60bef1183d6825740781a56b","display_name":"userpass-pat","entity_id":"a1b2c3d4-0000-4111-8222-333344445555","metadata":{"username":"pat"},"policies":["app-read","default"],"token_policies":["app-read","default"],"token_issue_time":"2026-10-13T01:22:10Z","token_ttl":2764800,"token_type":"service"},"request":{"client_id":"a1b2c3d4-0000-4111-8222-333344445555","id":"5c6d7e8f-0a1b-4c2d-9e3f-405162738495","headers":{"user-agent":["vault-cli/1.20.4"]},"mount_accessor":"auth_userpass_1a2b3c4d","mount_class":"auth","mount_point":"auth/userpass/","mount_type":"userpass","mount_running_version":"v1.20.4+builtin.vault","namespace":{"id":"root"},"operation":"update","path":"auth/userpass/login/pat","remote_address":"203.0.113.30","remote_port":51514},"response":{"auth":{"accessor":"hmac-sha256:a610a2d771988800a763b355317165be41f6468e60bef1183d6825740781a56b","display_name":"userpass-pat","entity_id":"a1b2c3d4-0000-4111-8222-333344445555","metadata":{"username":"pat"},"policies":["app-read","default"],"token_policies":["app-read","default"],"token_issue_time":"2026-10-13T01:22:10Z","token_ttl":2764800,"token_type":"service"},"mount_accessor":"auth_userpass_1a2b3c4d","mount_class":"auth","mount_point":"auth/userpass/","mount_running_plugin_version":"v1.20.4+builtin.vault","mount_type":"userpass"},"time":"2026-10-13T01:22:10.481926Z","type":"response"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"type"\s*:\s*"(?:request|response)".*"request"\s*:\s*\{.*"path"\s*:|"request"\s*:\s*\{.*"path"\s*:.*"type"\s*:\s*"(?:request|response)")
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HashiCorp Vault audit devices. Vault writes one JSON object per line for each API
+# request ("type": "request") and again for its response ("type": "response"). The syslog
+# device sends each one to the local syslog agent (tag vault); the file device writes them to a
+# file a forwarder reads. Either way, the JSON object ends the line.
+# Parent: hands response entries to the children. A response entry repeats the request and adds
+# the outcome, so request entries stay in the generic schema to avoid counting each call twice.
+#   Logins (auth/<mount>/login, OIDC callbacks) go to Auth.
+#   Every other API call (secrets, policies, mounts, audit devices, tokens) goes to CloudAudit.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+# Cut the JSON object off the end of the line (after a syslog header or an audit prefix).
+jsonMatch = originalData$|(\{.*})$
+json = JSON(jsonMatch[1])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "HashiCorp Vault"
+entryType = json["$.type"]
+path = json["$.request.path"]
+# time is RFC 3339 in UTC, with up to nanoseconds.
+eventTimeUsec$ = DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+login = path|^auth/.+/(?P<k>login|oidc/callback)(?:/[^/]+)?$
+eventType$ = IF entryType == "response" THEN "api" ELSE "request"
+eventType$ = IF entryType == "response" AND login["k"] THEN "login" ELSE eventType$
