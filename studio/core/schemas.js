@@ -7,12 +7,14 @@ export const GENERIC = 'scwx.generic';
 export const SCALARS = new Set(['string', 'bool', 'uint32', 'uint64', 'int32', 'int64', 'sint32', 'sint64', 'float', 'double', 'bytes']);
 export const INT_TYPES = new Set(['uint32', 'uint64', 'int32', 'int64', 'sint32', 'sint64']);
 
-// The generic schema has no page of its own; the overview lists its common fields.
+// The generic schema has no page of its own; the overview lists its common fields. The engine
+// also stores sensorVersion$ as sensor_version (checked in a lab tenant).
 const GENERIC_FIELDS = [
   { name: 'sensor_type', type: 'string', parser: 'sensorType$' },
   { name: 'sensor_id', type: 'string', parser: 'sensorId$' },
   { name: 'host_id', type: 'string', parser: 'hostId$' },
   { name: 'event_time_usec', type: 'uint64', parser: 'eventTimeUsec$' },
+  { name: 'sensor_version', type: 'string', parser: 'sensorVersion$', engineOnly: true },
 ];
 
 export const SCHEMA_IDS = [GENERIC, ...Object.keys(data.schemas)];

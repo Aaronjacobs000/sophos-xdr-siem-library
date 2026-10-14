@@ -467,6 +467,85 @@ test('the engine stores a few fields the docs\' tables leave out, only in their 
   assert.equal(auth.normalized.event_type, undefined);
 });
 
+test('a DATETIME value in a top-level string field fails the parser', () => {
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER5E\n!SCHEMA=scwx.thirdpartyalert\n\nt = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")\nsummary$ = "ok"\n';
+  const [bad] = runParsers([{ name: 'P', text: `${head}title$ = t` }], ['ZZPROBER5E line'], { now: NOW });
+  assert.match(bad.error, /title: cannot convert time to string/);
+  assert.equal(bad.normalized, null);
+  const [ok] = runParsers([{ name: 'P', text: `${head}title$ = STRING(t)` }], ['ZZPROBER5E line'], { now: NOW });
+  assert.equal(ok.normalized.title, '2026-10-14 01:02:03 +0000 UTC');
+  // The same goes for a repeated string field, with the value alone or in a list.
+  const email = head.replace('scwx.thirdpartyalert', 'scwx.email').replace('summary$', 'subject$');
+  for (const set of ['fromEmailAddress$ = t', 'fromEmailAddress$ = [t]']) {
+    assert.match(runParsers([{ name: 'P', text: email + set }], ['ZZPROBER5E line'], { now: NOW })[0].error, /from_email_address(\[0\])?: cannot convert time to string/, set);
+  }
+});
+
+test('a single value in a repeated field goes through SANITIZE_ALL and TRIM_ALL; list items don\'t', () => {
+  // What the engine stored in a lab tenant for each set of flags.
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER5E\n!SCHEMA=scwx.email\n';
+  const run1 = (flags, body) => {
+    const r = runParsers([{ name: 'P', text: `${head}${flags}\nsubject$ = "s"\n${body}` }], ['ZZPROBER5E line'], { now: NOW })[0].normalized;
+    return Object.fromEntries(Object.entries(r).filter(([k]) => k.endsWith('_email_address')));
+  };
+  const empty = 'fromEmailAddress$ = ""\ntoEmailAddress$ = ["a@example.com", "", "b@example.com"]\nccEmailAddress$ = [""]\nbccEmailAddress$ = "N/A"';
+  assert.deepEqual(run1('', empty), { to_email_address: ['a@example.com', '', 'b@example.com'], cc_email_address: [''] });
+  assert.deepEqual(run1('!SANITIZEALLOFF', empty), { from_email_address: [''], to_email_address: ['a@example.com', '', 'b@example.com'], cc_email_address: [''], bcc_email_address: ['N/A'] });
+  const brackets = 'fromEmailAddress$ = "<a@example.com>"\ntoEmailAddress$ = ["<b@example.com>"]\nccEmailAddress$ = " c@example.com "\nbccEmailAddress$ = [" d@example.com "]';
+  assert.deepEqual(run1('', brackets), { from_email_address: ['a@example.com'], to_email_address: ['<b@example.com>'], cc_email_address: ['c@example.com'], bcc_email_address: [' d@example.com '] });
+  assert.deepEqual(run1('!TRIMALLOFF', brackets), { from_email_address: ['<a@example.com>'], to_email_address: ['<b@example.com>'], cc_email_address: [' c@example.com '], bcc_email_address: [' d@example.com '] });
+});
+
+test('the generic schema stores sensorVersion$ as sensor_version', () => {
+  const [r] = runParsers([{ name: 'REPRO_GENERIC', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZREPRO\n!SCHEMA=scwx.generic\n\nsensorType$ = "Repro"\nsensorVersion$ = "1.2.3"' }], ['ZZREPRO generic sensor version'], { now: NOW });
+  assert.equal(r.normalized.sensor_type, 'Repro');
+  assert.equal(r.normalized.sensor_version, '1.2.3');
+});
+
+test('a string field stores the value JSON() returned as {}, and an object the way STRING() writes it', () => {
+  // What the engine stored for each field in a lab tenant, with and without !TRIMALLOFF.
+  const code = `!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=ZZPROBER5C
+!SCHEMA=scwx.thirdpartyalert
+m = originalData$|^ZZPROBER5C (?P<j>\\{.*\\}) (?P<c>CEF:.*)$
+j = JSON(m["j"])
+p = j["$.d"]
+c = CEF(m["c"])
+k = JSON("5")
+r.b$ = "<r>"
+r.a$ = NULL
+title$ = j
+summary$ = "pre-" + j
+alertCategory$ = p
+vendor$ = c
+subProvider$ = "pre-" + k
+providerVersion$ = k
+ontology$ = r
+domainName$ = j["$.c"]
+confidence$ = j["$.e"]
+actionReason$ = "pre-" + j["$.e"]`;
+  const line = 'ZZPROBER5C {"b":"<x>&","a":null,"c":[1,null,"y<"],"d":{"z":1,"y":true,"x":null,"w":"q>"},"e":{}} CEF:0|V<|P|1|100|N|5|src=192.0.2.1 msg=a<b>&c act=x';
+  const want = {
+    title: '{}',
+    summary: 'pre-{}',
+    alert_category: '{"w":"q\\u003e","x":0,"y":true,"z":1}',
+    vendor: '{"0":"CEF:0","1":"V\\u003c","2":"P","3":"1","4":"100","5":"N","6":"5","act":"x","msg":"a\\u003cb\\u003e\\u0026c","src":"192.0.2.1"}',
+    sub_provider: 'pre-{}',
+    provider_version: '{}',
+    ontology: '{"a$":0,"b$":"\\u003cr\\u003e"}',
+    domain_name: '1,,y<',
+    confidence: '{}',
+    action_reason: 'pre-{}',
+  };
+  for (const trim of ['!TRIMALLOFF\n', '']) {
+    const [r] = runParsers([{ name: 'P', text: trim + code }], [line], { now: NOW });
+    // With TRIM_ALL on, the engine also took the <> off the record's member, which the emulator
+    // doesn't do.
+    const keys = Object.keys(want).filter((k) => trim || k !== 'ontology');
+    assert.deepEqual(Object.fromEntries(keys.map((k) => [k, r.normalized[k]])), Object.fromEntries(keys.map((k) => [k, want[k]])), trim || 'TRIM_ALL on');
+  }
+});
+
 test('the event time settles like the engine: the ingest time when missing, a future time moved back or replaced', () => {
   const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=pss\n!SCHEMA=scwx.auth\njson = JSON(originalData$)\neventTimeUsec$ = DATETIME(json["$.ts"], "2006-01-02T15:04:05Z07:00")\ntargetUserName$ = "u"';
   const N = Date.parse(NOW) * 1000;

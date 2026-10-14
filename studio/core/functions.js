@@ -119,7 +119,7 @@ export function trimPairs(s, repeat) {
 // int64 first: the whole part in full, or -9223372036854775808 when it doesn't fit, as with
 // (3 / 2) * 9223372036854775807 and 9223372036854775807 itself, which is the float 2^63.
 const INT64_LIMIT = 2 ** 63;
-function stringOf(v) {
+export function stringOf(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'number') { const t = Math.trunc(v); return t < INT64_LIMIT && t >= -INT64_LIMIT ? BigInt(t).toString() : '-9223372036854775808'; }
   if (isList(v)) return goJsonList(v);
@@ -206,7 +206,11 @@ export const FUNCTIONS = {
     }
   }],
   IS_PRIVATE_IP: [1, 1, (c, [s]) => isRfc1918(str(s) ?? '')],
-  IS_VALID_IP: [1, 1, (c, [s]) => isValidIp(str(s) ?? '')],
+  // IS_VALID_IP(NULL) fails the event (checked in a lab tenant).
+  IS_VALID_IP: [1, 1, (c, [s]) => {
+    if (s === null || s === undefined) throw new RuntimeError('IS_VALID_IP() expected a string, but received NULL', 'null-arg');
+    return isValidIp(str(s));
+  }],
   REPLACE: [3, 3, (c, [s, a, b]) => (s === null ? null : toStr(s).split(toStr(a) ?? '').join(toStr(b) ?? ''))],
   REPLACE_REGEX: [3, 3, (c, [s, p, b]) => (s === null ? null : goReplaceAll(toStr(s), toStr(p), toStr(b) ?? ''))],
   LENGTH: [1, 2, (c, [v, mode]) => lengthOf(v, mode)],
@@ -215,7 +219,12 @@ export const FUNCTIONS = {
     if (typeof v !== 'string') throw new RuntimeError(`STRLEN takes a STRING, not ${typeName(v)}`);
     return utf8Length(v);
   }],
-  UPPERCASE: [1, 1, (c, [s]) => (s === null ? null : toStr(s).toUpperCase())],
+  // UPPERCASE(number) fails the event: "invalid data type for UPPERCASE(): NUMBER" (checked in a
+  // lab tenant).
+  UPPERCASE: [1, 1, (c, [s]) => {
+    if (typeof s === 'number') throw new RuntimeError('invalid data type for UPPERCASE(): NUMBER. Use STRING() on the number first.', 'type');
+    return s === null ? null : toStr(s).toUpperCase();
+  }],
   LOWERCASE: [1, 1, (c, [s]) => (s === null ? null : toStr(s).toLowerCase())],
   TRIM: [1, 1, (c, [s]) => (s === null ? null : trimPairs(toStr(s), true))],
   SANITIZE_ALL: [0, 0, (c) => { c.sanitizeNow(); return null; }],

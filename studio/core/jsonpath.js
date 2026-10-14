@@ -4,6 +4,14 @@
 
 import { RuntimeError, hasOwn } from './values.js';
 
+// A - in a name after a dot fails the event: $.detail-type gives "parse error at 9", while
+// $['detail-type'] works (checked in a lab tenant).
+function dotName(path, i, name) {
+  const dash = name.indexOf('-');
+  if (dash !== -1) throw new RuntimeError(`parse error at ${i + dash + 1} in ${path}: a name after a dot can't have a -. Put it in brackets, as in $['${name}']`, 'jsonpath');
+  return name;
+}
+
 function parsePath(path) {
   if (!path.startsWith('$')) throw new RuntimeError(`JSONPath must start with $: ${path}`);
   const steps = [];
@@ -17,7 +25,7 @@ function parsePath(path) {
       if (path[i] === '*') { steps.push({ kind: 'descent' }, { kind: 'wild' }); i++; continue; }
       const m = nameRe.exec(path.slice(i));
       if (!m) throw new RuntimeError(`bad JSONPath at "${r}"`);
-      steps.push({ kind: 'descent' }, { kind: 'key', key: m[0] });
+      steps.push({ kind: 'descent' }, { kind: 'key', key: dotName(path, i, m[0]) });
       i += m[0].length;
       continue;
     }
@@ -26,7 +34,7 @@ function parsePath(path) {
       if (path[i] === '*') { steps.push({ kind: 'wild' }); i++; continue; }
       const m = nameRe.exec(path.slice(i));
       if (!m) throw new RuntimeError(`bad JSONPath at "${r}"`);
-      steps.push({ kind: 'key', key: m[0] });
+      steps.push({ kind: 'key', key: dotName(path, i, m[0]) });
       i += m[0].length;
       continue;
     }
