@@ -1,0 +1,29 @@
+{
+  "vendor": "Amazon Web Services",
+  "product": "CloudFront standard logs",
+  "versions": [],
+  "format": "csv",
+  "ship_method": "s3",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html",
+    "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging-legacy-s3.html",
+    "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html"
+  ],
+  "notes": "Turn on standard logging for the distribution with an S3 bucket as the destination (legacy logging, or v2 with the W3C output format and the default fields in the default order), and point a Sophos NG-SIEM S3 Ingest (customer-managed) integration at the bucket. CloudFront writes gzip files of tab-separated lines; the #Version and #Fields header lines stay unparsed. Each request goes to the HTTP schema: the viewer address and port, the first x-forwarded-for address as true_source_address, the Host header the viewer sent as uri_host, the path and query as CloudFront logged them (URL-encoded), the status, the user agent decoded, and bytes each way. A request refused by a geographic restriction or as a blocked request is marked blocked. The distribution's domain name goes to host_id and the request ID to sensor_event_id; the edge location, result types, time taken, protocol version, TLS details and content type go to event_metadata. Cookies stay in original_data only. v2 logs with other fields or field order, the JSON, plain and Parquet formats, and real-time logs through Kinesis aren't covered. Samples follow the field list and example file in the CloudFront logging reference with made-up values; the distribution domain is written under example.net because the repo's sample scan blocks other domains. Passed Run Test in a lab tenant on 2026-10-14 (139 of 139 fields matched the emulator in each of 3 runs), and no built-in parser claimed these lines in 6 Run Tests.",
+  "parsers": [
+    {
+      "name": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+      "file": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    }
+  ]
+}
