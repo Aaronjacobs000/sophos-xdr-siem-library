@@ -7,13 +7,13 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ChatGPT Enterprise Compliance Logs Platform, CONVERSATION_MESSAGE records, one JSON
-# object per HTTP Ingest record (the API is pull only, so a collector downloads the files).
+# object per HTTP Ingest record (the API is pull only, so a bridge downloads the files).
 # Standalone parser for the CloudAudit schema: who sent or received a message, when, with
 # which model, client, GPT or Project. Each record is one message snapshot.
 # Privacy: these records carry prompt and response text. This parser maps metadata only.
 # Message text, quotes, custom instructions, conversation titles, file names and GPT or
 # Project names never go into a normalized field. original_data keeps whatever the
-# collector sent, so redact content before it leaves the collector.
+# bridge sent, so redact content before it leaves the bridge.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
 
 json = JSON(originalData$)

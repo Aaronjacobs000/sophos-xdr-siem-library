@@ -4,10 +4,10 @@
 // Only GET requests to api.github.com and raw.githubusercontent.com; nothing is sent.
 
 import { REPO, BRANCH } from '../core/version.js';
-import { parseSamples, entryId, COLLECTOR_PATH, collectorScripts } from '../core/library.js';
+import { parseSamples, entryId, BRIDGE_PATH, bridgeScripts } from '../core/library.js';
 
 const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
-const CACHE_KEY = 'parser-studio:library-cache:v2';
+const CACHE_KEY = 'parser-studio:library-cache:v3';
 
 export function repo() {
   try {
@@ -21,11 +21,11 @@ export function repo() {
 const raw = (path, ref = BRANCH) => `https://raw.githubusercontent.com/${repo()}/${ref}/${path.split('/').map(encodeURIComponent).join('/')}`;
 export const githubUrl = (path = '') => `https://github.com/${repo()}${path}`;
 
-// A cache written before collectors were listed is ignored, so the next load lists them.
+// A cache written before bridges were listed is ignored, so the next load lists them.
 function readCache() {
   try {
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    return c && Array.isArray(c.collectors) ? c : null;
+    return c && Array.isArray(c.bridges) ? c : null;
   } catch { return null; }
 }
 function writeCache(v) {
@@ -57,8 +57,8 @@ async function loadSnapshot() {
   return res.json();
 }
 
-// Returns {entries, collectors, source: 'github'|'snapshot', at, sha?, error?}. collectors lists
-// each collectors/<name> folder with its file names; snapshot copies also carry the text.
+// Returns {entries, bridges, source: 'github'|'snapshot', at, sha?, error?}. bridges lists each
+// bridges/<name> folder with its file names; snapshot copies also carry the text.
 // Two API calls when the library changed (the head commit, then its tree) and one when it
 // didn't; an unchanged head answers 304, which doesn't count against GitHub's rate limit.
 export async function loadLibrary({ force = false } = {}) {
@@ -69,12 +69,12 @@ export async function loadLibrary({ force = false } = {}) {
     const headHeaders = { Accept: 'application/vnd.github.sha' };
     if (cache && cache.repo === repo() && cache.headEtag && !force) headHeaders['If-None-Match'] = cache.headEtag;
     const head = await api(`/commits/${BRANCH}`, headHeaders);
-    if (head.status === 304 && cache) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), collectors: cache.collectors, source: 'github', at: cache.at, sha: cache.sha };
+    if (head.status === 304 && cache) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, sha: cache.sha };
     if (!head.ok) throw fail(head);
     const sha = (await head.text()).trim();
     if (cache && cache.repo === repo() && cache.sha === sha && !force) {
       writeCache({ ...cache, headEtag: head.headers.get('ETag') });
-      return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), collectors: cache.collectors, source: 'github', at: cache.at, sha };
+      return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, sha };
     }
     const res = await api(`/git/trees/${sha}?recursive=1`);
     if (!res.ok) throw fail(res);
@@ -85,12 +85,7 @@ export async function loadLibrary({ force = false } = {}) {
       const m = /^parsers\/([^/]+\/[^/]+)\/([^/]+)$/.exec(t.path);
       if (m && t.type === 'blob') (files.get(m[1]) || files.set(m[1], []).get(m[1])).push(m[2]);
     }
-    const folders = new Map();
-    for (const t of tree.tree) {
-      const m = /^(collectors\/[^/]+)\/([^/]+)$/.exec(t.path);
-      if (m && t.type === 'blob') (folders.get(m[1]) || folders.set(m[1], []).get(m[1])).push(m[2]);
-    }
-    const collectors = [...folders].map(([path, names]) => ({ path, files: names.sort() }));
+    const bridges = bridgeFolders(tree.tree);
     const entries = (await pool(metas, 6, async (t) => {
       const id = t.path.split('/').slice(1, 3).join('/');
       try {
@@ -101,15 +96,15 @@ export async function loadLibrary({ force = false } = {}) {
       }
     })).filter(Boolean);
     const at = new Date().toISOString();
-    writeCache({ repo: repo(), headEtag: head.headers.get('ETag'), at, sha, entries: entries.map(({ loaded, texts, samples, expected, ...rest }) => rest), collectors });
-    return { entries, collectors, source: 'github', at, sha };
+    writeCache({ repo: repo(), headEtag: head.headers.get('ETag'), at, sha, entries: entries.map(({ loaded, texts, samples, expected, ...rest }) => rest), bridges });
+    return { entries, bridges, source: 'github', at, sha };
   } catch (err) {
     try {
       const snap = await loadSnapshot();
-      return { entries: fromSnapshot(snap), collectors: (snap.collectors || []).map((c) => ({ ...c, loaded: true })), source: 'snapshot', at: snap.generated, error: err.message };
+      return { entries: fromSnapshot(snap), bridges: (snap.bridges || []).map((b) => ({ ...b, loaded: true })), source: 'snapshot', at: snap.generated, error: err.message };
     } catch {
-      if (cache && cache.entries) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), collectors: cache.collectors, source: 'github', at: cache.at, error: err.message };
-      return { entries: [], collectors: [], source: 'none', at: null, error: err.message };
+      if (cache && cache.entries) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, error: err.message };
+      return { entries: [], bridges: [], source: 'none', at: null, error: err.message };
     }
   }
 }
@@ -128,33 +123,52 @@ export async function loadEntry(entry) {
   return entry;
 }
 
-// A collector's README and scripts, read at the same commit as the library. When GitHub can't
-// serve them, the copy bundled with the page is used. Returns {path, files, readme,
+// Every bridge folder in a repo tree, with the names of the files directly in it. A fork made
+// before bridges were renamed keeps them under collectors/<name>: each lists as bridges/<name>,
+// the path its entries resolve to, with dir naming the folder that holds the files.
+export function bridgeFolders(tree) {
+  const dirs = new Map();
+  for (const t of tree || []) {
+    const m = t && t.type === 'blob' ? /^((?:bridges|collectors)\/[^/]+)\/([^/]+)$/.exec(t.path) : null;
+    if (m) (dirs.get(m[1]) || dirs.set(m[1], []).get(m[1])).push(m[2]);
+  }
+  const out = [];
+  for (const [dir, names] of dirs) {
+    const path = dir.replace(/^collectors\//, 'bridges/');
+    if (path === dir) out.push({ path, files: names.sort() });
+    else if (!dirs.has(path)) out.push({ path, dir, files: names.sort() });
+  }
+  return out;
+}
+
+// A bridge's README and scripts, read at the same commit as the library. When GitHub can't
+// serve them, the copy bundled with the page is used. Returns {path, dir?, files, readme,
 // scripts: [{name, text}], fallback?}.
-const collectorCache = new Map();
-export function loadCollector(collectors, path, ref = BRANCH) {
-  if (typeof path !== 'string' || !COLLECTOR_PATH.test(path)) return Promise.reject(new Error('not a collector path'));
-  const known = (collectors || []).find((c) => c.path === path);
+const bridgeCache = new Map();
+export function loadBridge(bridges, path, ref = BRANCH) {
+  if (typeof path !== 'string' || !BRIDGE_PATH.test(path)) return Promise.reject(new Error('not a bridge path'));
+  const known = (bridges || []).find((b) => b.path === path);
   if (known && known.loaded) return Promise.resolve(known);
   const key = `${repo()}@${ref}:${path}`;
-  if (!collectorCache.has(key)) {
-    collectorCache.set(key, fetchCollector(known, path, ref).catch(async (err) => {
-      collectorCache.delete(key);
+  if (!bridgeCache.has(key)) {
+    bridgeCache.set(key, fetchBridge(known, path, ref).catch(async (err) => {
+      bridgeCache.delete(key);
       let copy = null;
-      try { copy = ((await loadSnapshot()).collectors || []).find((c) => c.path === path); } catch { /* no bundled copy */ }
+      try { copy = ((await loadSnapshot()).bridges || []).find((b) => b.path === path); } catch { /* no bundled copy */ }
       if (copy) return { ...copy, fallback: true, error: err.message };
       throw err;
     }));
   }
-  return collectorCache.get(key);
+  return bridgeCache.get(key);
 }
 
-async function fetchCollector(known, path, ref) {
+async function fetchBridge(known, path, ref) {
   if (!known) throw new Error(`${path} is not in the repo`);
-  const names = collectorScripts(known.files);
-  const readme = known.files.includes('README.md') ? await fetchText(raw(`${path}/README.md`, ref)) : '';
-  const texts = await pool(names, 3, (n) => fetchText(raw(`${path}/${n}`, ref)));
-  return { path, files: known.files, readme, scripts: names.map((name, i) => ({ name, text: texts[i] })) };
+  const dir = known.dir || path;
+  const names = bridgeScripts(known.files);
+  const readme = known.files.includes('README.md') ? await fetchText(raw(`${dir}/README.md`, ref)) : '';
+  const texts = await pool(names, 3, (n) => fetchText(raw(`${dir}/${n}`, ref)));
+  return { path, ...(known.dir ? { dir } : {}), files: known.files, readme, scripts: names.map((name, i) => ({ name, text: texts[i] })) };
 }
 
 // Entries in the shape the lint's overlap check takes.

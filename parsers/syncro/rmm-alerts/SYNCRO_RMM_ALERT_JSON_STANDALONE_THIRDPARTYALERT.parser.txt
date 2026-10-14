@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Syncro RMM alerts (GET /api/v1/rmm_alerts), sent to a Sophos NG-SIEM HTTP Ingest
-# integration one JSON record per line by the collector in collectors/syncro-rmm-alerts.
+# integration one JSON record per line by the bridge in bridges/syncro-rmm-alerts.
 # Standalone parser for the third-party alert schema: one record per alert, with the device,
 # the alert description and output, the ticket it opened and whether it is resolved. Fields
 # follow the RmmAlert example in Syncro's public API spec. Syncro gives no severity.

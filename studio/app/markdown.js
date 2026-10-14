@@ -1,4 +1,4 @@
-// A small markdown reader for collector READMEs. parseMarkdown turns the text into plain
+// A small markdown reader for bridge READMEs. parseMarkdown turns the text into plain
 // blocks; renderMarkdown builds DOM nodes from them with textContent only, so HTML in a README
 // shows as text and never runs. It covers headings, paragraphs, lists, fenced code, tables,
 // block quotes, inline code, bold and links. Links keep only https targets.

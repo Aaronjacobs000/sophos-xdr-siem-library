@@ -4,7 +4,7 @@
   "versions": [],
   "format": "json",
   "ship_method": "http-ingest",
-  "collector": "collectors/n-able-n-sight-failing-checks",
+  "bridge": "bridges/n-able-n-sight-failing-checks",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
@@ -18,7 +18,7 @@
     "https://developer.n-able.com/n-sight/docs/getting-started-with-the-n-sight-api",
     "https://developer.n-able.com/n-sight/docs/determine-server-for-api-query"
   ],
-  "notes": "N-sight RMM has no syslog, webhook or audit log export, and its Data Extraction API has no technician activity log. collectors/n-able-n-sight-failing-checks polls list_failing_checks and posts a JSON record when a check starts failing or clears; each goes to the third-party alert schema with the device, the check description and output, client and site. Security-relevant checks (antivirus, event log, Windows service, backup) show up this way; logins, remote sessions and script runs don't, because N-sight doesn't expose them. The record keys are the collector's, holding the fields of N-able's documented XML; N-sight gives no severity, and the event time is when the collector saw the change. Check types, descriptions and outputs in the samples are made up. Passed Run Test in a lab tenant on 2026-10-13 (52 of 52 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "notes": "N-sight RMM has no syslog, webhook or audit log export, and its Data Extraction API has no technician activity log. bridges/n-able-n-sight-failing-checks polls list_failing_checks and posts a JSON record when a check starts failing or clears; each goes to the third-party alert schema with the device, the check description and output, client and site. Security-relevant checks (antivirus, event log, Windows service, backup) show up this way; logins, remote sessions and script runs don't, because N-sight doesn't expose them. The record keys are the bridge's, holding the fields of N-able's documented XML; N-sight gives no severity, and the event time is when the bridge saw the change. Check types, descriptions and outputs in the samples are made up. Passed Run Test in a lab tenant on 2026-10-13 (52 of 52 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
   "parsers": [
     {
       "name": "NSIGHT_FAILING_CHECK_JSON_STANDALONE_THIRDPARTYALERT",

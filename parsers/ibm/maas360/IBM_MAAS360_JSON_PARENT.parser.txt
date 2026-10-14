@@ -6,9 +6,9 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: IBM MaaS360 portal administrator reports, pulled by the example collector in
-# collectors/ibm-maas360 and posted to HTTP Ingest as JSON lines. MaaS360 has no syslog or webhook
-# for these reports, so the collector names each record in "maas360_record":
+# Source: IBM MaaS360 portal administrator reports, pulled by the example bridge in
+# bridges/ibm-maas360 and posted to HTTP Ingest as JSON lines. MaaS360 has no syslog or webhook
+# for these reports, so the bridge names each record in "maas360_record":
 #   admin_login   a record from the administrator login report (getAdminLoginReports)
 #   admin_change  a record from the administrator changes audit (getAdminChangesAudit)
 # Parent: hands logins to the Auth child and administrator changes to the ManagementEvent child.

@@ -7,7 +7,7 @@ import { state } from '../store.js';
 import { call } from '../emulator-client.js';
 import { libraryForLint, enginePayload } from './test.js';
 import { problemRow, SHIP_LABELS, FORMAT_LABELS } from './common.js';
-import { entryId, entryFiles, packBundle, expectedFrom, FORMATS, LICENSES } from '../../core/library.js';
+import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, FORMATS, LICENSES } from '../../core/library.js';
 import { makeZip } from '../../core/zip.js';
 import { TOOL_VERSION, BRANCH } from '../../core/version.js';
 import { githubUrl } from '../library-client.js';
@@ -24,7 +24,7 @@ export function draftEntry(results) {
     versions: state.source.version ? [state.source.version] : origin ? origin.versions || [] : [],
     format: plan ? FORMAT_FROM_ANALYSIS[plan.format] || 'other' : origin ? origin.format : 'other',
     ship_method: state.source.shipMethod || (origin && origin.ship_method) || 'syslog',
-    ...(origin && origin.collector ? { collector: origin.collector } : {}),
+    ...(bridgeOf(origin) ? { bridge: bridgeOf(origin) } : {}),
     author: state.shareAuthor || '',
     license: 'MIT',
     sample_source: 'synthetic',

@@ -5,7 +5,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: IBM MaaS360 administrator changes audit records from the example collector.
+# Source: IBM MaaS360 administrator changes audit records from the example bridge.
 # Child of IBM_MAAS360_JSON_PARENT: changes to MaaS360 Portal administrator accounts (roles added
 # or removed, account status) to ManagementEvent.
 # json, eventType$ and sensorType$ come from the parent.

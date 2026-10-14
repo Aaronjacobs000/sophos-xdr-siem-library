@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Claude Compliance API Activity Feed (GET /v1/compliance/activities), one Activity
-# from data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# from data[] per HTTP Ingest record. The API is pull only, so a bridge reads it and sends it.
 # Standalone parser for the Authentication schema: SSO, magic link and social sign-ins
 # (started, succeeded, failed), sign-outs, and step-up identity checks.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.

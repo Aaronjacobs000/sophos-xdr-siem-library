@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: NordPass Enterprise activity log from the Activity Logs API (POST /activities/query),
-# pulled by the example collector in collectors/nordpass-activity-logs and posted to HTTP Ingest
+# pulled by the example bridge in bridges/nordpass-activity-logs and posted to HTTP Ingest
 # as JSON lines with "nordpass_record": "activity" first. Each activity has a type (the category,
 # such as login or item_access), an action, a Unix timestamp, the organization, the user and
 # action-specific metadata.

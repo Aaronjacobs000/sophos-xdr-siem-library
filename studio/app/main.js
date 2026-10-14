@@ -35,7 +35,7 @@ export async function refreshLibrary(force = false) {
   state.library.status = 'loading';
   emit('library');
   const r = await loadLibrary({ force });
-  Object.assign(state.library, { status: 'ready', entries: r.entries, collectors: r.collectors || [], source: r.source, at: r.at, error: r.error || null });
+  Object.assign(state.library, { status: 'ready', entries: r.entries, bridges: r.bridges || [], source: r.source, at: r.at, error: r.error || null });
   emit('library');
 }
 

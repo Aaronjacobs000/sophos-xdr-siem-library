@@ -1,8 +1,8 @@
 import { h, clear, pill, ext, copyText, toast, download } from '../dom.js';
 import { state } from '../store.js';
 import { go } from '../nav.js';
-import { loadEntry, loadCollector, engineParsers, githubUrl } from '../library-client.js';
-import { hasCollector } from '../../core/library.js';
+import { loadEntry, loadBridge, engineParsers, githubUrl } from '../library-client.js';
+import { hasBridge, bridgeOf } from '../../core/library.js';
 import { renderMarkdown } from '../markdown.js';
 import { highlightSample, highlightScript } from '../highlight.js';
 import { call } from '../emulator-client.js';
@@ -50,7 +50,7 @@ function legend() {
   return h('div', { class: 'legend' }, h('h3', { text: 'What the badges mean' }),
     row(pill('tenant-tested YYYY-MM-DD', 'green'), 'The parsers passed Run Test on the real NG-SIEM engine in a Sophos Fusion tenant on that date, using the entry\'s synthetic samples. Your own logs, and the built-in parsers in your tenant, can still behave differently. The entry\'s notes say what ran and where a built-in parser took some lines.'),
     row(pill('emulator only', 'amber'), 'The parsers passed the Parser Studio emulator and the repo checks but haven\'t run in a tenant yet.'),
-    row(pill('needs collector', 'cyan'), 'The logs need a collector to reach Sophos NG-SIEM: a script that pulls them from the vendor\'s API, or a relay that takes the vendor\'s webhooks and adds the header HTTP Ingest needs. The entry page has the Python code to copy or download.'));
+    row(pill('needs a bridge', 'cyan'), 'The logs need a bridge to reach Sophos NG-SIEM: a small script you run that pulls them from the vendor\'s API, or a relay that takes the vendor\'s webhooks and adds the header HTTP Ingest needs. The entry page has the Python code to copy or download.'));
 }
 
 function card(e) {
@@ -59,7 +59,7 @@ function card(e) {
   const a = h('a', { class: 'card', href: `#/library/${e.id}` });
   a.append(h('span', { class: 'vendor', text: m.vendor }), h('h2', { text: m.product }));
   const pills = h('span', { class: 'pills' }, pill(FORMAT_LABELS[m.format] || m.format, 'grey'), pill(SHIP_LABELS[m.ship_method] || m.ship_method, 'grey'));
-  if (hasCollector(m)) pills.append(pill('needs collector', 'cyan'));
+  if (hasBridge(m)) pills.append(pill('needs a bridge', 'cyan'));
   for (const s of schemas) pills.append(pill(s, 'blue'));
   a.append(pills);
   a.append(h('span', { class: 'sub', text: `${(m.parsers || []).length} parser${(m.parsers || []).length === 1 ? '' : 's'}${m.versions && m.versions.length ? ` · versions ${m.versions.join(', ')}` : ''}` }));
@@ -88,7 +88,7 @@ function drawEntry(root, e) {
       h('button', { class: 'btn quiet', onclick: () => openInStudio(e, 'library'), text: 'Open in the studio' }),
       h('button', { class: 'btn primary', onclick: () => openInStudio(e, 'fork'), text: 'Fork it' })));
   root.append(head);
-  if (hasCollector(m)) root.append(collectorSection(e));
+  if (hasBridge(m)) root.append(bridgeSection(e));
   const grid = h('div', { class: 'grid g-entry' });
   root.append(grid);
   const left = h('section', { class: 'panel' });
@@ -173,45 +173,46 @@ function drawEntry(root, e) {
   right.append(h('div', { class: 'callout blue' }, pill('Emulator', 'blue'), h('span', { text: 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on.' })));
 }
 
-// Sources that need a collector: its README and script, from the same commit as the entry.
-function collectorSection(e) {
-  const path = e.meta.collector;
-  const sec = h('section', { class: 'panel collect', 'aria-labelledby': 'collect-h' },
-    h('div', { class: 'collecthead' }, h('h2', { id: 'collect-h', text: 'Collect the logs' }), pill('needs collector', 'cyan')),
-    h('p', { class: 'sub', text: 'These parsers need a collector to get this source\'s logs. The collector below polls the vendor\'s API or relays its webhooks, and sends each record to an HTTP Ingest integration in Sophos Fusion. The maintainer reviews every collector before it merges. Read the code and run it with --dry-run first.' }));
-  const body = h('div', {}, h('p', { class: 'empty', text: 'Loading the collector…' }));
+// Sources that need a bridge: its README and script, from the same commit as the entry.
+function bridgeSection(e) {
+  const path = bridgeOf(e.meta);
+  const sec = h('section', { class: 'panel bridge', 'aria-labelledby': 'bridge-h' },
+    h('div', { class: 'bridgehead' }, h('h2', { id: 'bridge-h', text: 'Get the logs to Sophos NG-SIEM' }), pill('needs a bridge', 'cyan')),
+    h('p', { class: 'sub', text: 'These parsers need a bridge to get this source\'s logs. The bridge below polls the vendor\'s API or relays its webhooks, and sends each record to an HTTP Ingest integration in Sophos Fusion. You run it yourself; it isn\'t part of Sophos. The maintainer reviews every bridge before it merges. Read the code and run it with --dry-run first.' }));
+  const body = h('div', {}, h('p', { class: 'empty', text: 'Loading the bridge…' }));
   sec.append(body);
-  loadCollector(state.library.collectors, path, e.ref)
-    .then((c) => { clear(body); drawCollector(body, c); })
+  loadBridge(state.library.bridges, path, e.ref)
+    .then((b) => { clear(body); drawBridge(body, b); })
     .catch((err) => { clear(body); body.append(h('div', { class: 'callout' }, h('span', {}, `Couldn't load ${path}: ${err.message}. `, ext(githubUrl(`/tree/main/${path}`), 'Open it on GitHub')))); });
   return sec;
 }
 
-function drawCollector(root, c) {
-  const folder = githubUrl(`/tree/main/${c.path}`);
-  root.append(h('p', { class: 'sub' }, ext(folder, `${c.path} on GitHub`), c.fallback ? ` (GitHub couldn't be reached, so this is the copy bundled with the page)` : ''));
-  const grid = h('div', { class: 'grid g-collect' });
+function drawBridge(root, b) {
+  const dir = b.dir || b.path;
+  const folder = githubUrl(`/tree/main/${dir}`);
+  root.append(h('p', { class: 'sub' }, ext(folder, `${dir} on GitHub`), b.fallback ? ` (GitHub couldn't be reached, so this is the copy bundled with the page)` : ''));
+  const grid = h('div', { class: 'grid g-bridge' });
   root.append(grid);
-  grid.append(h('div', { class: 'collectcol' }, h('h3', { text: 'README' }),
-    h('div', { class: 'mdview' }, c.readme ? renderMarkdown(c.readme, { base: githubUrl(`/blob/main/${c.path}/`) }) : h('p', { class: 'empty', text: 'This collector has no README.' }))));
-  const col = h('div', { class: 'collectcol' }, h('h3', { text: 'Script' }));
+  grid.append(h('div', { class: 'bridgecol' }, h('h3', { text: 'README' }),
+    h('div', { class: 'mdview' }, b.readme ? renderMarkdown(b.readme, { base: githubUrl(`/blob/main/${dir}/`) }) : h('p', { class: 'empty', text: 'This bridge has no README.' }))));
+  const col = h('div', { class: 'bridgecol' }, h('h3', { text: 'Script' }));
   grid.append(col);
-  if (!c.scripts.length) { col.append(h('p', { class: 'empty', text: 'This collector has no script.' })); return; }
+  if (!b.scripts.length) { col.append(h('p', { class: 'empty', text: 'This bridge has no script.' })); return; }
   let cur = 0;
   const tabs = h('div', { class: 'tabs', role: 'tablist' });
   const name = h('span', { class: 'fname' });
-  const code = h('pre', { class: 'code codeview pyview', tabindex: '0', 'aria-label': 'Collector script' });
+  const code = h('pre', { class: 'code codeview pyview', tabindex: '0', 'aria-label': 'Bridge script' });
   const show = () => {
     clear(tabs);
-    c.scripts.forEach((s, i) => tabs.append(h('button', { class: `tab${i === cur ? ' on' : ''}`, onclick: () => { cur = i; show(); }, text: s.name })));
-    name.textContent = c.scripts[cur].name;
-    code.textContent = c.scripts[cur].text;
+    b.scripts.forEach((s, i) => tabs.append(h('button', { class: `tab${i === cur ? ' on' : ''}`, onclick: () => { cur = i; show(); }, text: s.name })));
+    name.textContent = b.scripts[cur].name;
+    code.textContent = b.scripts[cur].text;
   };
   show();
-  if (c.scripts.length > 1) col.append(tabs);
+  if (b.scripts.length > 1) col.append(tabs);
   col.append(h('div', { class: 'editortools' }, name, h('span', { class: 'btnrow' },
-    h('button', { class: 'btn quiet small', onclick: () => copyText(c.scripts[cur].text, `Copied ${c.scripts[cur].name}`), text: 'Copy' }),
-    h('button', { class: 'btn quiet small', onclick: () => { download(c.scripts[cur].name, c.scripts[cur].text, 'text/x-python'); toast(`Downloaded ${c.scripts[cur].name}`); }, text: 'Download' }))), code);
+    h('button', { class: 'btn quiet small', onclick: () => copyText(b.scripts[cur].text, `Copied ${b.scripts[cur].name}`), text: 'Copy' }),
+    h('button', { class: 'btn quiet small', onclick: () => { download(b.scripts[cur].name, b.scripts[cur].text, 'text/x-python'); toast(`Downloaded ${b.scripts[cur].name}`); }, text: 'Download' }))), code);
 }
 
 function openInStudio(e, kind) {

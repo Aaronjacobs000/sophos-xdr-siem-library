@@ -10,7 +10,7 @@
 // Auto-merge happens only when the repo setting "Allow auto-merge" is on, every check passed,
 // the pull request touches nothing outside parsers/, and each entry it changes is new or
 // already belongs to the person who opened it. Right before merging, the pull request's own
-// file list is checked again, so a change to collectors/ or anything else outside parsers/
+// file list is checked again, so a change to bridges/ or anything else outside parsers/
 // never merges without review, whichever route opened it. When it merges, pr and merge write
 // merged=true to $GITHUB_OUTPUT and delete the pull request's branch if it is in this repo.
 

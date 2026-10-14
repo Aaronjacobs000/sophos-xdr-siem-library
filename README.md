@@ -64,11 +64,13 @@ It has 83 entries with 190 parsers:
 
 Every sample is synthetic. Library parsers have passed the emulator and the repo's checks, and an entry is marked tenant tested only when someone reports a passing Run Test.
 
-## Collectors
+## Bridges
 
-Some sources only offer a pull API, and some push webhooks that can't add the header HTTP Ingest needs, so a parser alone can't get their logs into Sophos NG-SIEM. The `collectors/` folder holds small scripts that poll those APIs or relay those webhooks, and send each record to a Sophos NG-SIEM HTTP Ingest integration. There are collectors for the OpenAI and Anthropic enterprise compliance logs ([collectors/ai-compliance-logs](collectors/ai-compliance-logs/)), 1Password Business, Atlassian organization audit logs, Bitwarden, Datto RMM, Druva Cloud Platform, ESET PROTECT Cloud (through ESET Connect), IBM MaaS360, IT Glue, Kaseya VSA 10 and 9.5, N-able N-sight RMM, NordPass Business, Red Sift OnDMARC, Syncro and TeamViewer. A webhook relay ([collectors/webhook-relay](collectors/webhook-relay/)) covers Huntress, ConnectWise ScreenConnect, Hudu and Autotask. Collectors are tested against the vendors' documented response shapes, not live services.
+Some sources only offer a pull API, and some push webhooks that can't add the header HTTP Ingest needs, so a parser alone can't get their logs into Sophos NG-SIEM. The `bridges/` folder holds small scripts that poll those APIs or relay those webhooks, and send each record to a Sophos NG-SIEM HTTP Ingest integration. There are bridges for the OpenAI and Anthropic enterprise compliance logs ([bridges/ai-compliance-logs](bridges/ai-compliance-logs/)), 1Password Business, Atlassian organization audit logs, Bitwarden, Datto RMM, Druva Cloud Platform, ESET PROTECT Cloud (through ESET Connect), IBM MaaS360, IT Glue, Kaseya VSA 10 and 9.5, N-able N-sight RMM, NordPass Business, Red Sift OnDMARC, Syncro and TeamViewer. A webhook relay ([bridges/webhook-relay](bridges/webhook-relay/)) covers Huntress, ConnectWise ScreenConnect, Hudu and Autotask. Bridges are tested against the vendors' documented response shapes, not live services.
 
-A library entry that needs a collector names it in `meta.json`, for example `"collector": "collectors/ai-compliance-logs"`. Its card in the studio shows a **needs collector** badge, and its page shows the collector's README and Python script, with Copy and Download. Collectors are code that people run, so the maintainer reviews every one before it merges.
+A library entry that needs a bridge names it in `meta.json`, for example `"bridge": "bridges/ai-compliance-logs"`. Its card in the studio shows a **needs a bridge** badge, and its page shows the bridge's README and Python script, with Copy and Download. Bridges are code that people run, so the maintainer reviews every one before it merges.
+
+Bridges were called collectors until October 2026, when they were renamed so nobody mistakes them for the Sophos data collector. The old `"collector"` key and `COLLECTOR_*` settings still work.
 
 ## Contributing
 
@@ -102,7 +104,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | --- | --- |
 | `studio/` | The static site. `studio/core/` is the emulator, lint, detection, mapping and library code, shared by the page and the Node tools. `studio/app/` is the interface. |
 | `parsers/` | The community library. |
-| `collectors/` | Example collectors for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
+| `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
 | `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, and the Pages deploy. |

@@ -6,7 +6,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: Bitwarden event logs from the example collector: User_LoggedIn (1000),
+# Source: Bitwarden event logs from the example bridge: User_LoggedIn (1000),
 # User_FailedLogIn (1005, wrong master password), User_FailedLogIn2fa (1006, wrong two-step
 # login) and OrganizationUser_FirstSsoLogin (1510).
 # Child of BITWARDEN_EVENTS_JSON_PARENT: each one to Auth.

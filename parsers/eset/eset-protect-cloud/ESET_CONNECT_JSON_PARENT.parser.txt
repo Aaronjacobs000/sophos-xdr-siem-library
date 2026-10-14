@@ -7,8 +7,8 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ESET PROTECT (cloud) detections from the ESET Connect Incident Management API
-# (GET /v1/detections), pulled by the example collector in collectors/eset-connect and posted to
-# HTTP Ingest as JSON lines. The collector adds "eset_connect_record": "detection".
+# (GET /v1/detections), pulled by the example bridge in bridges/eset-connect and posted to
+# HTTP Ingest as JSON lines. The bridge adds "eset_connect_record": "detection".
 # Parent: hands each detection to a child by its category.
 #   ANTIVIRUS                                                     to the Antivirus child
 #   FIREWALL_RULE, NETWORK_INTRUSION                              to the NIDS child

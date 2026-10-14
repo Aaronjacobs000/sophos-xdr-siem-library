@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: IT Glue activity logs (GET /logs, JSON:API), sent to a Sophos NG-SIEM HTTP Ingest
-# integration one JSON record per line by the collector in collectors/it-glue-activity-logs.
+# integration one JSON record per line by the bridge in bridges/it-glue-activity-logs.
 # Standalone parser for CloudAudit: every activity record (creates, updates, deletes and the
 # level 1 records, which change no data), with the event name built from resource type and
 # action, the user ID, the address and the user agent. Fields follow the example in the IT

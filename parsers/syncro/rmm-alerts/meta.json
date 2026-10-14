@@ -4,7 +4,7 @@
   "versions": [],
   "format": "json",
   "ship_method": "http-ingest",
-  "collector": "collectors/syncro-rmm-alerts",
+  "bridge": "bridges/syncro-rmm-alerts",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
@@ -18,7 +18,7 @@
     "https://api-docs.syncromsp.com/swagger.json",
     "https://docs.syncrosecure.com/administration/create-notification-sets"
   ],
-  "notes": "Syncro has no syslog export, and its notification set webhook doesn't document a payload, so collectors/syncro-rmm-alerts pulls RMM alerts from GET /api/v1/rmm_alerts and posts each one unchanged to a Sophos NG-SIEM HTTP Ingest integration. Every alert goes to the third-party alert schema with the device, description, output, trigger, ticket and resolved state. Syncro gives no severity, so none is set. The collector picks up new alerts; a later change to an alert, such as resolving it, isn't sent again. Syncro's API has no account audit log, so technician logins and script runs aren't covered. Fields follow the RmmAlert example in Syncro's public API spec; the property names and all values in the samples are made up. Passed Run Test in a lab tenant on 2026-10-13 (56 of 56 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "notes": "Syncro has no syslog export, and its notification set webhook doesn't document a payload, so bridges/syncro-rmm-alerts pulls RMM alerts from GET /api/v1/rmm_alerts and posts each one unchanged to a Sophos NG-SIEM HTTP Ingest integration. Every alert goes to the third-party alert schema with the device, description, output, trigger, ticket and resolved state. Syncro gives no severity, so none is set. The bridge picks up new alerts; a later change to an alert, such as resolving it, isn't sent again. Syncro's API has no account audit log, so technician logins and script runs aren't covered. Fields follow the RmmAlert example in Syncro's public API spec; the property names and all values in the samples are made up. Passed Run Test in a lab tenant on 2026-10-13 (56 of 56 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
   "parsers": [
     {
       "name": "SYNCRO_RMM_ALERT_JSON_STANDALONE_THIRDPARTYALERT",

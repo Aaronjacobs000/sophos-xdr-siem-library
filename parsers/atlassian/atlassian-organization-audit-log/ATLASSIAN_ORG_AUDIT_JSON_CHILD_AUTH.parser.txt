@@ -6,7 +6,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: Atlassian organization audit log events from the example collector: Logged in to
+# Source: Atlassian organization audit log events from the example bridge: Logged in to
 # account (user_login) and Logged out of account. Atlassian's activities list has no failed
 # sign-in.
 # Child of ATLASSIAN_ORG_AUDIT_JSON_PARENT: each one to Auth.

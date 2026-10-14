@@ -2,7 +2,7 @@
 # request number, which it checks against the head commit. It validates again with the
 # default branch's code, labels the pull request, posts the report, and merges when the repo
 # allows auto-merge and the pull request only adds or updates its author's own entries.
-# Collector code, and any other file outside parsers/, always waits for a maintainer: see
+# Bridge code, and any other file outside parsers/, always waits for a maintainer: see
 # tools/lib/merge-rules.mjs, which github-gate.mjs checks against the real file list.
 name: Parser labels and merge
 

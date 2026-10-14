@@ -1,6 +1,6 @@
 # ConnectWise ScreenConnect to Sophos NG-SIEM
 
-ScreenConnect has no syslog export. Its automations (Administration > Automations) can send a web request when an event happens. The web request has no header field, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so point the automations at the [webhook relay](../../../collectors/webhook-relay/) in this repo, which forwards the body to the HTTP Ingest URL with that header.
+ScreenConnect has no syslog export. Its automations (Administration > Automations) can send a web request when an event happens. The web request has no header field, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so point the automations at the [webhook relay](../../../bridges/webhook-relay/) in this repo, which forwards the body to the HTTP Ingest URL with that header.
 
 ScreenConnect puts values into the body as they are, without escaping, so these templates are pipe-delimited text rather than JSON. Keep the keys and their order: the parsers read them by name, and Data must stay last.
 

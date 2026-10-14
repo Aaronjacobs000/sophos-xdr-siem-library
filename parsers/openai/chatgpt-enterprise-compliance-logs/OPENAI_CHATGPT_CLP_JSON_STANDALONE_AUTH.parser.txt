@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ChatGPT Enterprise Compliance Logs Platform, AUTH_LOG records, one JSON object per
-# HTTP Ingest record (the API is pull only, so a collector downloads the files and sends them).
+# HTTP Ingest record (the API is pull only, so a bridge downloads the files and sends them).
 # Standalone parser for the Authentication schema: sign-ins, sign-outs, failed passwords,
 # blocked sign-ins, password resets and OAuth tokens issued to apps.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.

@@ -5,9 +5,9 @@ Two record types, each with its own parser:
 | Records | How they get to Sophos NG-SIEM | Parser | Schema |
 | --- | --- | --- | --- |
 | Monitor alerts, raised and resolved | Datto RMM Global Webhooks push to HTTP Ingest | `DATTO_RMM_WEBHOOK_JSON_STANDALONE_THIRDPARTYALERT` | Third-party alert |
-| Activity Log (logins, jobs, remote sessions, file transfers, device and user changes) | Pulled from the API by `collectors/datto-rmm-activity-logs` and posted to HTTP Ingest | `DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT` | CloudAudit |
+| Activity Log (logins, jobs, remote sessions, file transfers, device and user changes) | Pulled from the API by `bridges/datto-rmm-activity-logs` and posted to HTTP Ingest | `DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT` | CloudAudit |
 
-Datto RMM only pushes alerts. The Activity Log, which is where an attacker's remote sessions and script runs show up, is API only, so it needs the collector.
+Datto RMM only pushes alerts. The Activity Log, which is where an attacker's remote sessions and script runs show up, is API only, so it needs the bridge.
 
 ## Alerts: Global Webhooks
 
@@ -26,9 +26,9 @@ In Sophos Fusion, add an HTTP Ingest integration (Security Operations > Integrat
 
 Keep `"source":"Datto RMM"` and `"event"` as the first two keys: the parser's confirm string looks for them. Turning on Global Webhooks turns off webhooks set on single monitors.
 
-## Activity Log: collector
+## Activity Log: bridge
 
-See `collectors/datto-rmm-activity-logs`. It posts each Activity Log record unchanged, one JSON object per line.
+See `bridges/datto-rmm-activity-logs`. It posts each Activity Log record unchanged, one JSON object per line.
 
 ## Not checked against a live account
 
