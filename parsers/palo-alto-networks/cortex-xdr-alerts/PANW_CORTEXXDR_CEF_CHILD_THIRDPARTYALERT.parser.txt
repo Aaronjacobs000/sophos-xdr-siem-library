@@ -1,0 +1,92 @@
+!SAMPLE=<180>1 2026-10-13T00:41:14.608731Z cortexxdr - - - - CEF:0|Palo Alto Networks|Cortex XDR|Cortex XDR 3.14|XDR Agent|Behavioral Threat Protection|8|end=1791852071102 shost=WS-FIN-041 deviceFacility=None cat=Malware externalId=2412 request=https:\/\/cortex.example.com\/alerts\/2412 cs1=winword.exe cs1Label=Initiated by cs2="C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE" \/n "C:\\Users\\jdoe\\Downloads\\invoice_1013.docm" cs2Label=Initiator CMD cs3=SIGNATURE_SIGNED-Microsoft Windows cs3Label=Signature cs4=winword.exe cs4Label=CGO name cs5="C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE" cs5Label=CGO CMD cs6=SIGNATURE_SIGNED-Microsoft Windows cs6Label=CGO Signature fileHash=5b1e2a3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8 filePath=C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.dll targetprocesssignature=SIGNATURE_UNSIGNED- tenantname=Example tenantCDLid=123456 CSPaccountname=1234 initiatorSha256=a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90 initiatorPath=C:\\Program Files\\Microsoft Office\\root\\Office16\\winword.exe osParentName=explorer.exe osParentCmd=C:\\Windows\\Explorer.EXE osParentSha256=0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0 osParentSignature=SIGNATURE_SIGNED osParentSigner=Microsoft Windows incident=118 act=Prevented (Blocked) suser=EXAMPLE\\jdoe
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Palo Alto Networks Cortex XDR alert notifications to a syslog receiver, CEF.
+# Child of PANW_CORTEXXDR_CEF_PARENT: alerts to the third-party alert schema.
+# v, source, host, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Palo Alto Networks"
+provider$ = "Cortex XDR"
+subProvider$ = IF source != "" THEN source ELSE NULL
+providerVersion$ = STRING(v[3])
+alertId$ = STRING(v["externalId"])
+name = STRING(v[5])
+title$ = name
+alertCategory$ = STRING(v["cat"])
+description = STRING(v["msg"])
+summary$ = IF description != "" THEN description ELSE name
+summary$ = IF description == "" AND host != "" THEN name + " on " + host ELSE summary$
+targetHostName$ = IF host != "" THEN host ELSE NULL
+
+# Cortex documents the header severity as 0 (unknown), 6 (low), 8 (medium) and 9 (high); older
+# releases sent the name. Critical has no documented number, so 10 is read as critical.
+sev = LOWERCASE(STRING(v[6]))
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "informational" THEN "INFO" ELSE severity$
+severity$ = IF sev == "1" OR sev == "2" OR sev == "3" OR sev == "4" OR sev == "5" OR sev == "6" OR sev == "low" THEN "LOW" ELSE severity$
+severity$ = IF sev == "7" OR sev == "8" OR sev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "9" OR sev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "10" OR sev == "critical" THEN "CRITICAL" ELSE severity$
+
+act = STRING(v["act"])
+a = LOWERCASE(act)
+action$ = IF CONTAINS(a, "prevent") OR CONTAINS(a, "block") THEN "BLOCKED" ELSE NULL
+
+src = STRING(v["src"])
+dst = STRING(v["dst"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+
+# suser is the actor's effective user name; some releases write it as a list, such as ['root'].
+user = REPLACE(STRING(v["suser"]), "\\/", "/")
+userList = user|^\['(?P<u>[^']*)'\]$
+user = IF userList["u"] != "" THEN userList["u"] ELSE user
+sourceUserName$ = IF user != "" THEN user ELSE NULL
+
+# Cortex escapes / as \/ in values, which CEF() leaves as it is.
+d1.key$ = "incident_id"
+d1.value$ = STRING(v["incident"])
+d2.key$ = "alert_url"
+d2.value$ = REPLACE(STRING(v["request"]), "\\/", "/")
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "action"
+d3.value$ = act
+additionalData$.record$ = IF act != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "initiated_by"
+d4.value$ = REPLACE(STRING(v["cs1"]), "\\/", "/")
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+# The engine's CEF() drops the quotes around a value that starts and ends with one, such as a
+# quoted command line; doing it here as well gives the same text either way.
+cmd = REPLACE(STRING(v["cs2"]), "\\/", "/")
+cmdQuoted = cmd|^"(?P<inner>.*)"$
+cmd = IF cmdQuoted["inner"] != "" THEN cmdQuoted["inner"] ELSE cmd
+d5.key$ = "initiator_cmd"
+d5.value$ = cmd
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "initiator_sha256"
+d6.value$ = LOWERCASE(STRING(v["initiatorSha256"]))
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "cgo_name"
+d7.value$ = REPLACE(STRING(v["cs4"]), "\\/", "/")
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "file_sha256"
+d8.value$ = LOWERCASE(STRING(v["fileHash"]))
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "file_path"
+d9.value$ = REPLACE(STRING(v["filePath"]), "\\/", "/")
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "parent_process"
+d10.value$ = REPLACE(STRING(v["osParentName"]), "\\/", "/")
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$

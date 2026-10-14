@@ -1,0 +1,37 @@
+{
+  "vendor": "Palo Alto Networks",
+  "product": "Cortex XDR alerts",
+  "versions": [],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://cortex-docs.paloaltonetworks.com/cortex-xdr-3.x/cortex-xdr-3.x-documentation/onboard-and-configure-cortex-xdr/post-deployment-steps/set-up-your-environment/log-forwarding/log-notification-formats/alert-notification-format",
+    "https://cortex-docs.paloaltonetworks.com/cortex-xdr-5.x/onboard-cortex-xdr/post-deployment-steps/set-up-your-environment/data-and-log-forwarding/forward-logs-and-data-from-cortex-xdr-to-external-services/configure-external-applications-for-forwarding/integrate-a-syslog-receiver",
+    "https://cortex-docs.paloaltonetworks.com/cortex-xdr-5.x/onboard-cortex-xdr/post-deployment-steps/set-up-your-environment/data-and-log-forwarding/data-and-log-notification-formats/management-audit-log-notification-format",
+    "https://cortex-docs.paloaltonetworks.com/cortex-xdr-5.x/onboard-cortex-xdr/post-deployment-steps/set-up-your-environment/data-and-log-forwarding/data-and-log-notification-formats/agent-audit-log-notification-format"
+  ],
+  "notes": "Cortex XDR sends notifications from its cloud tenant, so the syslog receiver must be reachable from the internet: Cortex refuses an internal address, so expose a data collector or a relay at a public address and allow only the Cortex egress addresses for your region, which the syslog receiver page lists. Add the receiver under Settings > Configurations > Integrations > External Applications (TCP, UDP or TCP + SSL) and forward alerts to it with a notification forwarding rule. Each notification is CEF behind an RFC 5424 header from the host cortexxdr. Alerts from the agent, analytics, BIOC, IOC and correlation rules go to the third-party alert schema, with the event time from end (epoch milliseconds) and severity from the header (6 low, 8 medium, 9 high; Cortex documents no number for critical, so 10 is read as critical). Management audit and agent audit logs stay generic. Cortex escapes / as \\/ in values, and the parser undoes it. Samples are made up in the layout of the alert, management audit and agent audit notification formats. The child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (95 of 95 fields matched the emulator), and also as a separate parser under its parent (90 of 90 fields). The tenant's built-in PaloAlto_CEF_Master parser matches the same lines and stores them in the generic schema; the engine picks one parser per line, and in a lab tenant on 2026-10-14 the built-in parser took the alert lines in 7 of 15 Run Tests and the audit log lines in 8 of 11. Expect some lines to keep the built-in mapping.",
+  "parsers": [
+    {
+      "name": "PANW_CORTEXXDR_CEF_PARENT",
+      "file": "PANW_CORTEXXDR_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+      "file": "PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "PANW_CORTEXXDR_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT > PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791852071102000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-FIN-041",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex XDR",
+      "sub_provider": "XDR Agent",
+      "provider_version": "Cortex XDR 3.14",
+      "alert_id": "2412",
+      "title": "Behavioral Threat Protection",
+      "alert_category": "Malware",
+      "summary": "Behavioral Threat Protection on WS-FIN-041",
+      "target_host_name": "WS-FIN-041",
+      "vendor_severity": "8",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "incident_id",
+            "value": "118"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cortex.example.com/alerts/2412"
+          },
+          {
+            "key": "action",
+            "value": "Prevented (Blocked)"
+          },
+          {
+            "key": "initiated_by",
+            "value": "winword.exe"
+          },
+          {
+            "key": "initiator_cmd",
+            "value": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" /n \"C:\\Users\\jdoe\\Downloads\\invoice_1013.docm"
+          },
+          {
+            "key": "initiator_sha256",
+            "value": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+          },
+          {
+            "key": "cgo_name",
+            "value": "winword.exe"
+          },
+          {
+            "key": "file_sha256",
+            "value": "5b1e2a3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.dll"
+          },
+          {
+            "key": "parent_process",
+            "value": "explorer.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT > PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791853570694000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "build-02",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex XDR",
+      "sub_provider": "XDR Analytics",
+      "provider_version": "Cortex XDR 3.14",
+      "alert_id": "2415",
+      "title": "High Connection Rate",
+      "alert_category": "Discovery",
+      "summary": "High Connection Rate on build-02",
+      "target_host_name": "build-02",
+      "vendor_severity": "6",
+      "severity": "LOW",
+      "source_address": "192.0.2.140",
+      "destination_address": "192.0.2.37",
+      "source_port": 58003,
+      "destination_port": 8000,
+      "source_user_name": "root",
+      "additional_data": {
+        "record": [
+          {
+            "key": "incident_id",
+            "value": "119"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cortex.example.com/alerts/2415"
+          },
+          {
+            "key": "action",
+            "value": "Detected"
+          },
+          {
+            "key": "initiated_by",
+            "value": "nmap"
+          },
+          {
+            "key": "initiator_cmd",
+            "value": "nmap -sS 192.0.2.0/24"
+          },
+          {
+            "key": "initiator_sha256",
+            "value": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00"
+          },
+          {
+            "key": "cgo_name",
+            "value": "bash"
+          },
+          {
+            "key": "parent_process",
+            "value": "bash"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT > PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791857727000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-OPS-057",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex XDR",
+      "sub_provider": "XDR BIOC",
+      "provider_version": "Cortex XDR 3.14",
+      "alert_id": "2420",
+      "title": "Suspicious PowerShell Command Line",
+      "alert_category": "Execution",
+      "summary": "Suspicious PowerShell Command Line on WS-OPS-057",
+      "target_host_name": "WS-OPS-057",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "source_user_name": "EXAMPLE\\amy",
+      "additional_data": {
+        "record": [
+          {
+            "key": "incident_id",
+            "value": "120"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cortex.example.com/alerts/2420"
+          },
+          {
+            "key": "action",
+            "value": "Detected"
+          },
+          {
+            "key": "initiated_by",
+            "value": "powershell.exe"
+          },
+          {
+            "key": "initiator_cmd",
+            "value": "powershell.exe -nop -w hidden -enc ZQBjAGgAbwAgAGgAaQA="
+          },
+          {
+            "key": "initiator_sha256",
+            "value": "9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3"
+          },
+          {
+            "key": "cgo_name",
+            "value": "cmd.exe"
+          },
+          {
+            "key": "parent_process",
+            "value": "cmd.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT > PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791860529000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-HR-012",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex XDR",
+      "sub_provider": "XDR Agent",
+      "provider_version": "Cortex XDR 3.14",
+      "alert_id": "2431",
+      "title": "WildFire Malware",
+      "alert_category": "Malware",
+      "summary": "WildFire Malware on WS-HR-012",
+      "target_host_name": "WS-HR-012",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\pchen",
+      "additional_data": {
+        "record": [
+          {
+            "key": "incident_id",
+            "value": "121"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cortex.example.com/alerts/2431"
+          },
+          {
+            "key": "action",
+            "value": "Prevented (Blocked)"
+          },
+          {
+            "key": "initiated_by",
+            "value": "chrome.exe"
+          },
+          {
+            "key": "initiator_cmd",
+            "value": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          },
+          {
+            "key": "initiator_sha256",
+            "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "key": "cgo_name",
+            "value": "chrome.exe"
+          },
+          {
+            "key": "file_sha256",
+            "value": "7d3c1b2a0f9e8d7c6b5a493827160514f3e2d1c0b9a8f7e6d5c4b3a291807f6e"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\pchen\\Downloads\\setup_viewer.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT > PANW_CORTEXXDR_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791862798000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "FS-01",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex XDR",
+      "sub_provider": "Correlation",
+      "provider_version": "Cortex XDR 3.14",
+      "alert_id": "2433",
+      "title": "Possible lateral movement over SMB",
+      "alert_category": "Lateral Movement",
+      "summary": "Possible lateral movement over SMB on FS-01",
+      "target_host_name": "FS-01",
+      "vendor_severity": "8",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.41",
+      "destination_address": "192.0.2.20",
+      "source_port": 50211,
+      "destination_port": 445,
+      "source_user_name": "EXAMPLE\\svc_backup",
+      "additional_data": {
+        "record": [
+          {
+            "key": "incident_id",
+            "value": "121"
+          },
+          {
+            "key": "alert_url",
+            "value": "https://cortex.example.com/alerts/2433"
+          },
+          {
+            "key": "action",
+            "value": "Detected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791864317501000
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "PANW_CORTEXXDR_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Palo Alto Networks Cortex XDR",
+      "event_time_usec": 1791866473102000,
+      "host_id": "WS-FIN-041"
+    }
+  }
+]
