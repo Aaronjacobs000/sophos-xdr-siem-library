@@ -1,0 +1,65 @@
+!SAMPLE=<134>Oct 13 01:43:05 am-primary 2026-10-13 01:43:05,118, am-primary.example.com, audit.runtime.com.rsa.ims.authn.impl.AuthenticationBrokerImpl, INFO, b7d547b3e2e266a219d3d0a5504f0a11,5aa0d1b2e2e266a20801cd23efb7319c,203.0.113.99,198.51.100.46,AUTHN_LOGIN_EVENT,13002,FAIL,AUTHN_METHOD_FAILED,b747d0cce2e266a219d365ddeee98b15-Qm2pZr8KtWs4,df4e8c3ce2e266a21974b6f5ce9cb3db,000000000000000000001000d0011000,000000000000000000001000e0011000,kim.lee,Kim,Lee,4b8da6e7e2e266a21bc6a77ef43a6610,000000000000000000001000e0011000,203.0.113.99,vpn-gw01.example.com,7,000000000000000000002000f1022000,SecurID_Native,,,AUTHN_LOGIN_EVENT,5,1,000000000000000000001000e0011000,SystemDomain,e94881d4e2e266a21b9dcacfc6c9de89,SpED,357abc47e2e266a21a69868bc4b6c919,xxxxxxxx5130,,
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="runtime"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: RSA Authentication Manager 8.x runtime audit lines (category audit.runtime.*):
+# authentications (AUTHN_LOGIN_EVENT 13002), sign-outs, lockouts, Operations Console sign-ins
+# and the other authentication events.
+# Child of RSA_AM_CSV_PARENT: each one to Auth. Runtime positions from RSA's field map: 15 user
+# ID, 18 login name, 19 and 20 first and last name, 21 agent ID, 23 agent address, 24 agent
+# name, 25 agent type, 27 policy method name. Arguments 1 to 10 (30 to 39) change meaning by
+# event, so they aren't mapped.
+# f, action, result, reason, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = TRIM(f[4])
+authSystem$ = "RSA SecurID"
+sourceAddress$ = TRIM(f[6])
+sessionId$ = TRIM(f[12])
+targetUserName$ = TRIM(f[16])
+first = TRIM(f[17])
+last = TRIM(f[18])
+userDisplayName$ = IF first != "" AND last != "" THEN first + " " + last ELSE NULL
+# The agent is the protected resource that asked Authentication Manager to authenticate the user.
+targetHostName$ = TRIM(f[22])
+status$ = IF reason != "" THEN reason ELSE result
+subStatus$ = action
+
+ok = result == "SUCCESS"
+logout = action == "AUTHN_LOGOUT_EVENT" OR action == "OC_ADMIN_LOGOUT_EVENT"
+lockout = action == "AUTHN_LOCKOUT_EVENT"
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF lockout THEN "ACCOUNT_LOCK" ELSE authCategory$
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF lockout THEN "ACCOUNT" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+actionResult$ = IF lockout THEN NULL ELSE actionResult$
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF reason == "AUTHN_METHOD_FAILED" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF lockout THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+
+m1.key$ = "action_id"
+m1.value$ = TRIM(f[9])
+m2.key$ = "category"
+m2.value$ = category
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "authn_method"
+m3.value$ = TRIM(f[25])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "agent_type"
+m4.value$ = TRIM(f[23])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "agent_address"
+m5.value$ = TRIM(f[21])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "server_ip"
+m6.value$ = TRIM(f[7])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "user_id"
+m7.value$ = TRIM(f[13])
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

@@ -1,0 +1,80 @@
+!SAMPLE=Oct 13 01:48:12 am-primary 2026-10-13 01:48:12,354, am-primary.example.com, audit.admin.com.rsa.ims.admin.impl.PrincipalAdministrationImpl, INFO, 8a02aaa72e14640a0193cf72fa66c3d9,5aa0d1b2e2e266a20801cd23efb7319c,203.0.113.77,198.51.100.46,CREATE_PRINCIPAL,10051,SUCCESS,,8a015e2c2e14640a017bb41dd94570e1-HkT2pQ8vRn3x,,000000000000000000001000d0021000,000000000000000000001000d0011000,000000000000000000001000e0011000,sam.admin,Sam,Admin,PRINCIPAL,8a02aa412e14640a01935fb15aa0d4a6,000000000000000000001000d0011000,000000000000000000001000e0011000,jo.nguyen,,,,,,
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin" OR eventType$=="system"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: RSA Authentication Manager 8.x admin audit lines (category audit.admin.*: users,
+# groups, tokens, roles, policies, agents) and system log lines (category system.*:
+# configuration, replication, backups).
+# Child of RSA_AM_CSV_PARENT: each one to CloudAudit, with the action key (such as
+# CREATE_PRINCIPAL) as the event name. Positions from RSA's field map:
+#   admin audit: 15 batch ID, 16 user ID, 19 login name, 22 to 26 and 27 to 31 the two domain
+#   objects (type, ID, identity source ID, security domain ID, name).
+#   system log: 15 user ID, 18 login name, 21 to 26 arguments 1 to 6, 27 cause. The arguments
+#   change meaning by event, so they're kept as argument1 to argument6.
+# f, action, result, reason, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+admin = eventType$ == "admin"
+sensorEventId$ = TRIM(f[4])
+eventSource$ = "RSA Authentication Manager"
+eventName$ = action
+sourceAddress$ = TRIM(f[6])
+userName$ = IF admin THEN TRIM(f[17]) ELSE TRIM(f[16])
+userId$ = IF admin THEN TRIM(f[14]) ELSE TRIM(f[13])
+managementEvent$ = TRUE
+ro = action|(?:^|_)(?P<r>READ|VIEW|LIST|SEARCH|LOOKUP|GET)(?:_|$)
+readOnly$ = IF ro["r"] THEN TRUE ELSE FALSE
+status$ = result
+errorCode$ = IF result != "SUCCESS" AND reason != "" THEN reason ELSE NULL
+
+# Admin audit domain objects: the objects the administrator acted on.
+o1Type = IF admin THEN TRIM(f[20]) ELSE ""
+o1Name = IF admin THEN TRIM(f[24]) ELSE ""
+o1Id = IF admin THEN TRIM(f[21]) ELSE ""
+o2Type = IF admin THEN TRIM(f[25]) ELSE ""
+o2Name = IF admin THEN TRIM(f[29]) ELSE ""
+o2Id = IF admin THEN TRIM(f[26]) ELSE ""
+r1.resourceType$ = o1Type
+r1.resourceId$ = IF o1Name != "" THEN o1Name ELSE o1Id
+r2.resourceType$ = o2Type
+r2.resourceId$ = IF o2Name != "" THEN o2Name ELSE o2Id
+resources$ = []
+resources$ = IF o1Type != "" THEN resources$ + [r1] ELSE resources$
+resources$ = IF o2Type != "" THEN resources$ + [r2] ELSE resources$
+targetUserName$ = IF o1Type == "PRINCIPAL" AND o1Name != "" THEN o1Name ELSE NULL
+
+# System log arguments, kept as they are.
+a1.key$ = "argument1"
+a1.value$ = IF admin THEN "" ELSE TRIM(f[19])
+a2.key$ = "argument2"
+a2.value$ = IF admin THEN "" ELSE TRIM(f[20])
+a3.key$ = "argument3"
+a3.value$ = IF admin THEN "" ELSE TRIM(f[21])
+a4.key$ = "argument4"
+a4.value$ = IF admin THEN "" ELSE TRIM(f[22])
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF a1.value$ != "" THEN requestParameters$.record$ + [a1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF a2.value$ != "" THEN requestParameters$.record$ + [a2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF a3.value$ != "" THEN requestParameters$.record$ + [a3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF a4.value$ != "" THEN requestParameters$.record$ + [a4] ELSE requestParameters$.record$
+
+d1.key$ = "action_id"
+d1.value$ = TRIM(f[9])
+d2.key$ = "category"
+d2.value$ = category
+d3.key$ = "log_level"
+d3.value$ = TRIM(f[3])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3]
+d4.key$ = "session_id"
+d4.value$ = TRIM(f[12])
+additionalEventData$.record$ = IF d4.value$ != "" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "server_ip"
+d5.value$ = TRIM(f[7])
+additionalEventData$.record$ = IF d5.value$ != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "cause"
+d6.value$ = IF admin THEN "" ELSE TRIM(f[25])
+additionalEventData$.record$ = IF d6.value$ != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
