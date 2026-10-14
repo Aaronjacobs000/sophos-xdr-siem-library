@@ -23,6 +23,7 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 | --- | --- | --- |
 | `parsers/beyondtrust/privileged-remote-access-and-remote-support` | [Splunk Connect for Syslog](https://github.com/splunk/splunk-connect-for-syslog) BeyondTrust SRA test data: the `BG[<pid>]: ` header with a space before the site ID | Apache-2.0 |
 | `parsers/tenable/tenable-identity-exposure` | Splunk Connect for Syslog Tenable test data: the reason codename and insertion strings of the sleeping accounts sample; [Microsoft Sentinel](https://github.com/Azure/Azure-Sentinel) Tenable connector: the product name AlsidForAD before 3.1 | Apache-2.0; MIT |
+| `parsers/kaspersky/security-center` | Splunk Connect for Syslog Kaspersky CEF source docs and test data, and Microsoft Sentinel sample data `Sample Data/CEF/KasperskySC.csv`: the CEF header and the csN labels (VirusName, ProductName, ProductVersion, ObjectName, DetectionType, GroupName, TaskName), which Kaspersky ships in `siem_conversion_rules.xml` but doesn't publish | Apache-2.0; MIT |
 
 ## Code
 
