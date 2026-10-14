@@ -1,0 +1,32 @@
+!SAMPLE={"nordpass_record":"activity","type":"login","action":"user_login_successful","timestamp":1791853804,"organization_uuid":"4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c","user":{"uuid":"726163f5-d18e-41cc-8aa4-3fc950835185","email":"pat@example.com"},"metadata":{"ip_address":"203.0.113.10","provider":"business_auth"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"nordpass_record"\s*:\s*"activity"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NordPass Enterprise activity log from the Activity Logs API (POST /activities/query),
+# pulled by the example collector in collectors/nordpass-activity-logs and posted to HTTP Ingest
+# as JSON lines with "nordpass_record": "activity" first. Each activity has a type (the category,
+# such as login or item_access), an action, a Unix timestamp, the organization, the user and
+# action-specific metadata.
+# Parent: hands sign-ins and master password checks to the Auth child, and every other activity
+# to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "NordPass"
+kind = json["$.type"]
+act = json["$.action"]
+# timestamp is a Unix time in seconds. Read 13 digits as milliseconds, in case NordPass sends them.
+ts = STRING(json["$.timestamp"])
+ms = ts|^(?P<v>\d{13})$
+eventTimeUsec$ = IF ms["v"] THEN INT(ts, 10) * 1000 ELSE INT(ts, 10) * 1000000
+
+authEvent = kind == "login"
+authEvent = IF kind == "lock" AND act == "master_validated" THEN TRUE ELSE authEvent
+authEvent = IF kind == "lock" AND act == "master_failed" THEN TRUE ELSE authEvent
+eventType$ = IF authEvent THEN "auth" ELSE "audit"

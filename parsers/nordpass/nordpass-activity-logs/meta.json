@@ -1,0 +1,44 @@
+{
+  "vendor": "NordPass",
+  "product": "NordPass activity logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://support.nordpass.com/hc/en-us/articles/23485641117329-Activity-Logs-API",
+    "https://support.nordpass.com/hc/en-us/articles/4418022658705-How-to-use-the-Activity-Log",
+    "https://support.nordpass.com/hc/en-us/articles/28596887810065-How-to-manage-NordPass-Tokens"
+  ],
+  "notes": "NordPass Enterprise offers its activity log to other tools only through the Activity Logs API, so these parsers read activities pulled by the example collector in collectors/nordpass-activity-logs and posted to HTTP Ingest with \"nordpass_record\": \"activity\" first. Owners and Admins create the token under Integrations > Events reporting > Custom in the Admin Panel. Sign-ins (type login) and master password checks that unlock the vault (type lock: master_validated, master_failed, with logon type UNLOCK) go to Auth. Every other activity goes to CloudAudit with the action as the event name and the type as the event type: item access, sharing, deletion and the sharing hub are data events, and views, copies, autofills, reveals and exports are read-only. The first two items an activity names become resources. NordPass documents the record fields but not their values: the action names, the Unix-seconds timestamp and the metadata shapes (ip_address and provider on sign-ins, platform, items, users, status) come from the sample data and workbook in Microsoft Sentinel's NordPass solution. Only sign-ins carry an IP address. Samples follow those shapes with made-up values, tagged the way the collector tags them. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (133 of 133 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (133 of 133 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "NORDPASS_ACTIVITY_JSON_PARENT",
+      "file": "NORDPASS_ACTIVITY_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NORDPASS_ACTIVITY_JSON_CHILD_AUTH",
+      "file": "NORDPASS_ACTIVITY_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NORDPASS_ACTIVITY_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+      "file": "NORDPASS_ACTIVITY_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "NORDPASS_ACTIVITY_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "collector": "collectors/nordpass-activity-logs"
+}

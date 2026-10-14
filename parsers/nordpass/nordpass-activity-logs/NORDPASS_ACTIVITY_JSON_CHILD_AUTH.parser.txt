@@ -1,0 +1,40 @@
+!SAMPLE={"nordpass_record":"activity","type":"login","action":"user_login_failed","timestamp":1791853890,"organization_uuid":"4c1e7a2b-9d3f-4e6a-8b5c-2f1d0e9a8b7c","user":{"uuid":"84c3e123-81af-49fd-827d-0356e475ef7d","email":"kim.lee@example.com"},"metadata":{"ip_address":"198.51.100.44","provider":"business_auth"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NordPass activity log from the example collector: sign-ins (type login:
+# user_login_successful, user_login_failed) and master password checks that unlock the vault
+# (type lock: master_validated, master_failed).
+# Child of NORDPASS_ACTIVITY_JSON_PARENT: each one to Auth. A vault unlock has logon type UNLOCK.
+# json, kind, act, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "NordPass"
+email = json["$.user.email"]
+targetUserName$ = IF email THEN email ELSE json["$.user.uuid"]
+# Only sign-ins carry the IP address.
+sourceAddress$ = json["$.metadata.ip_address"]
+logonApplicationFamily$ = json["$.metadata.platform"]
+status$ = act
+subStatus$ = json["$.metadata.provider"]
+
+ok = act == "user_login_successful" OR act == "master_validated"
+authCategory$ = "ACCOUNT_LOGON"
+logonType$ = IF kind == "lock" THEN "UNLOCK" ELSE NULL
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF act == "master_failed" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+m1.key$ = "organization_uuid"
+m1.value$ = json["$.organization_uuid"]
+m2.key$ = "type"
+m2.value$ = kind
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "user_uuid"
+m3.value$ = json["$.user.uuid"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
