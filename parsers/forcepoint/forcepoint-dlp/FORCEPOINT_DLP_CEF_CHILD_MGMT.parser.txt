@@ -1,0 +1,26 @@
+!SAMPLE=<134>Oct 13 23:12:31 fsm01 CEF:0|Forcepoint|Forcepoint DLP|10.3.0|18657|DLP Audit Log|6|act=Rule 'Block PII to removable media': Updated msg=Before: DISABLED | After: ENABLED timeStamp=13 Oct. 2026, 11:12:30 PM suser=admin role=Super Administrator cat=POLICY_MNG modifiedItm=458964
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Forcepoint DLP syslog in CEF from the Forcepoint Security Manager.
+# Child of FORCEPOINT_DLP_CEF_PARENT: audit log messages (Forcepoint DLP 10.2 and later) to
+# Management Event.
+#   act=<action performed> msg=<details> timeStamp=<time> suser=<administrator> role=<role>
+#   cat=<topic> modifiedItm=<modified item>
+# v, eventId, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+channel$ = "Forcepoint DLP audit log"
+admin = STRING(v["suser"])
+username$ = IF admin != "" THEN admin ELSE NULL
+# The topic, for example POLICY_MNG, names the kind of change; act and msg say what changed.
+topic = STRING(v["cat"])
+operationName$ = IF topic != "" THEN topic ELSE NULL
+act = STRING(v["act"])
+details = STRING(v["msg"])
+withDetails = act + " (" + details + ")"
+operation$ = IF details != "" THEN withDetails ELSE act
+idNum = eventId|^(?P<n>\d{1,15})$
+eventId$ = IF idNum["n"] != "" THEN INT(idNum["n"], 10) ELSE NULL

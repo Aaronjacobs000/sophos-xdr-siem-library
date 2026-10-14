@@ -1,0 +1,340 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm01",
+      "event_time_usec": 1791932281123000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Forcepoint",
+      "provider": "Forcepoint DLP",
+      "alert_id": "873421",
+      "alert_category": "Data loss prevention",
+      "title": "DLP incident: PII; Financial Data",
+      "summary": "Blocked on Endpoint Email: Q3 payroll summary",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "jlee",
+      "source_address": "192.0.2.50",
+      "source_host_name": "ws-0147.corp.example.com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "header_severity",
+            "value": "3"
+          },
+          {
+            "key": "channel",
+            "value": "Endpoint Email"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "policy_categories",
+            "value": "PII; Financial Data"
+          },
+          {
+            "key": "source",
+            "value": "jlee@example.com"
+          },
+          {
+            "key": "destinations",
+            "value": "partner@example.net"
+          },
+          {
+            "key": "attachments",
+            "value": "payroll-q3.xlsx"
+          },
+          {
+            "key": "details",
+            "value": "Q3 payroll summary"
+          },
+          {
+            "key": "analyzed_by",
+            "value": "ws-0147"
+          },
+          {
+            "key": "max_matches",
+            "value": "12"
+          },
+          {
+            "key": "destination_hosts",
+            "value": "mail.example.net"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm01",
+      "event_time_usec": 1791932474507000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Forcepoint",
+      "provider": "Forcepoint DLP",
+      "alert_id": "873435",
+      "alert_category": "Data loss prevention",
+      "title": "DLP incident: Customer Records",
+      "summary": "Permitted on Endpoint HTTPS: https://files.example.org/upload",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "source_user_name": "akumar",
+      "source_address": "192.0.2.61",
+      "source_host_name": "ws-0212.corp.example.com",
+      "destination_url": "https://files.example.org/upload",
+      "additional_data": {
+        "record": [
+          {
+            "key": "header_severity",
+            "value": "2"
+          },
+          {
+            "key": "channel",
+            "value": "Endpoint HTTPS"
+          },
+          {
+            "key": "action",
+            "value": "Permitted"
+          },
+          {
+            "key": "policy_categories",
+            "value": "Customer Records"
+          },
+          {
+            "key": "source",
+            "value": "akumar"
+          },
+          {
+            "key": "destinations",
+            "value": "https://files.example.org/upload"
+          },
+          {
+            "key": "attachments",
+            "value": "customers.csv"
+          },
+          {
+            "key": "details",
+            "value": "https://files.example.org/upload"
+          },
+          {
+            "key": "analyzed_by",
+            "value": "ws-0212"
+          },
+          {
+            "key": "max_matches",
+            "value": "4"
+          },
+          {
+            "key": "destination_hosts",
+            "value": "files.example.org"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm01",
+      "event_time_usec": 1791932679020000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Forcepoint",
+      "provider": "Forcepoint DLP",
+      "alert_id": "873442",
+      "alert_category": "Data loss prevention",
+      "title": "DLP incident: Confidential Pricing",
+      "summary": "Quarantined on Network Email: Updated price list",
+      "vendor_severity": "LOW",
+      "severity": "LOW",
+      "action": "BLOCKED",
+      "source_user_name": "mchen",
+      "source_address": "192.0.2.88",
+      "source_host_name": "192.0.2.88",
+      "additional_data": {
+        "record": [
+          {
+            "key": "header_severity",
+            "value": "1"
+          },
+          {
+            "key": "channel",
+            "value": "Network Email"
+          },
+          {
+            "key": "action",
+            "value": "Quarantined"
+          },
+          {
+            "key": "policy_categories",
+            "value": "Confidential Pricing"
+          },
+          {
+            "key": "source",
+            "value": "mchen@example.com"
+          },
+          {
+            "key": "destinations",
+            "value": "buyer@example.org; sales@example.org"
+          },
+          {
+            "key": "attachments",
+            "value": "price-list.pdf"
+          },
+          {
+            "key": "details",
+            "value": "Updated price list"
+          },
+          {
+            "key": "analyzed_by",
+            "value": "Protector pr01"
+          },
+          {
+            "key": "max_matches",
+            "value": "2"
+          },
+          {
+            "key": "destination_hosts",
+            "value": "mx.example.org"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm-legacy",
+      "event_time_usec": 1791932772000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Websense",
+      "provider": "TRITON AP-DATA",
+      "alert_id": "651002",
+      "alert_category": "Data loss prevention",
+      "title": "DLP incident: Intellectual Property",
+      "summary": "Blocked on Endpoint Removable Media: Removable media copy",
+      "vendor_severity": "2",
+      "action": "BLOCKED",
+      "source_user_name": "jdoe",
+      "source_address": "192.0.2.120",
+      "additional_data": {
+        "record": [
+          {
+            "key": "header_severity",
+            "value": "2"
+          },
+          {
+            "key": "channel",
+            "value": "Endpoint Removable Media"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "policy_categories",
+            "value": "Intellectual Property"
+          },
+          {
+            "key": "source",
+            "value": "CORP\\jdoe"
+          },
+          {
+            "key": "destinations",
+            "value": "USB Drive"
+          },
+          {
+            "key": "attachments",
+            "value": "design-spec.docx"
+          },
+          {
+            "key": "details",
+            "value": "Removable media copy"
+          },
+          {
+            "key": "analyzed_by",
+            "value": "ws-0333"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm01",
+      "event_time_usec": 1791932998000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Forcepoint",
+      "provider": "Forcepoint DLP",
+      "alert_id": "983645",
+      "alert_category": "Data loss prevention",
+      "title": "DLP risk ranking case: High-severity breach content sent to an unusual destination",
+      "summary": "High risk content;Number of files in case (3);Destination is unusual;PII breach (2 matches)",
+      "risk_score": 7.4,
+      "vendor_severity": "1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "header_severity",
+            "value": "1"
+          },
+          {
+            "key": "case_classification",
+            "value": "Data Theft"
+          },
+          {
+            "key": "number_of_incidents",
+            "value": "3"
+          },
+          {
+            "key": "incident_ids",
+            "value": "873421,873435,873442"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT > FORCEPOINT_DLP_CEF_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "event_time_usec": 1791933150000000,
+      "event_time_fidelity": "MICRO",
+      "channel": "Forcepoint DLP audit log",
+      "username": "admin",
+      "operation_name": "POLICY_MNG",
+      "operation": "Rule 'Block PII to removable media': Updated (Before: DISABLED | After: ENABLED)",
+      "event_id": 18657
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORCEPOINT_DLP_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Forcepoint DLP",
+      "sensor_id": "fsm01",
+      "event_time_usec": 1791933244000000
+    }
+  }
+]
