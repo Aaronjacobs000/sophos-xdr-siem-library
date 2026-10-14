@@ -1,0 +1,52 @@
+!SAMPLE=Oct 13 01:22:07 pra01.example.com BG[24117]:3021:01:01:event=login;site=access.example.com;status=success;target=web/login;when=1791854527;who=Pat Example(pexample) using password;who_ip=203.0.113.10
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sBG(?:\[\d+\])?:\s?\d{1,5}:\d{2}:\d{2}:
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: BeyondTrust Privileged Remote Access (PRA) and Remote Support (RS) appliance syslog. Both
+# products write the same format, and nothing in a line says which one sent it:
+#   <time> <host> BG[<pid>]:<site id>:<segment>:<segments>:field1=value1;field2=value2;...
+# BeyondTrust's examples also show "BG:" with no process id and a space after the colon.
+# Values escape =, ; and \ with a backslash. Messages over 1 KB are split into segments.
+# Parent: reads the header and the fields and hands each one-segment message to a child.
+#   login, logout and change_password go to Auth.
+#   Every other event (users, settings, policies, vault accounts and rotations) goes to ManagementEvent.
+# Segments of a split message stay in the generic schema, since no one line holds the whole event.
+
+h = originalData$|\sBG(?:\[\d+\])?:\s?(?P<siteid>\d{1,5}):(?P<seg>\d{2}):(?P<total>\d{2}):(?P<payload>.*)$
+payload = h["payload"]
+
+# Swap the escaped characters out before splitting on ; and =, and back when a value is read.
+p = REPLACE(payload, `\\`, "%5C")
+p = REPLACE(p, `\;`, "%3B")
+p = REPLACE(p, `\=`, "%3D")
+kv = SPLIT_NAME_VALUES(p, ";", "=", `"`)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "BeyondTrust Secure Remote Access"
+ev = kv["event"]
+site = kv["site"]
+whoIp = kv["who_ip"]
+status = kv["status"]
+reason = REPLACE(REPLACE(REPLACE(kv["reason"], "%3B", ";"), "%3D", "="), "%5C", `\`)
+target = kv["target"]
+
+# who is "Display Name(username)", often followed by " using <method>" (password, gssapi).
+who = REPLACE(REPLACE(REPLACE(kv["who"], "%3B", ";"), "%3D", "="), "%5C", `\`)
+who = IF who THEN who ELSE ""
+w = who|^(?P<name>.*?)\s?\((?P<user>[^()]*)\)(?:\s+using\s+(?P<method>.+))?$
+user = w["user"]
+displayName = w["name"]
+method = w["method"]
+
+# when is the event time in Unix seconds (UTC). The header time is the appliance's local time.
+when = kv["when"]
+eventTimeUsec$ = IF when THEN INT(when, 10) * 1000000 ELSE eventTimeUsec$
+
+single = h["seg"] == "01" AND h["total"] == "01"
+authEvent = ev == "login" OR ev == "logout" OR ev == "change_password"
+eventType$ = "segment"
+eventType$ = IF single AND authEvent THEN "auth" ELSE eventType$
+eventType$ = IF single AND NOT authEvent THEN "mgmt" ELSE eventType$

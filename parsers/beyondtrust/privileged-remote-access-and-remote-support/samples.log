@@ -1,0 +1,13 @@
+Oct 13 01:22:07 pra01.example.com BG[24117]:3021:01:01:event=login;site=access.example.com;status=success;target=web/login;when=1791854527;who=Pat Example(pexample) using password;who_ip=203.0.113.10
+Oct 13 01:23:40 pra01.example.com BG[24117]:3021:01:01:event=login;reason=failed;site=access.example.com;status=failure;target=rep_client;when=1791854620;who=Pat Example(pexample) using password;who_ip=198.51.100.44
+Oct 13 01:24:15 pra01.example.com BG[24117]:3021:01:01:event=login;reason=failed;site=access.example.com;status=failure;target=web/login;when=1791854655;who=unknown () using gssapi;who_ip=198.51.100.44
+Oct 13 01:25:02 pra01.example.com BG[24117]:3021:01:01:event=login;reason=exceeded failed login attempts;site=access.example.com;status=failure;target=rep_client;when=1791854702;who=Lee Contractor(lcontractor) using password;who_ip=192.0.2.77
+Oct 13 01:31:55 pra01.example.com BG[24117]: 3021:01:01:event=logout;site=access.example.com;target=rep_client;when=1791855115;who=Pat Example(pexample);who_ip=203.0.113.10
+Oct 13 01:33:10 pra01.example.com BG: 3021:01:01:event=change_password;reason=invalid password;site=access.example.com;status=failure;target=web/login;when=1791855190;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:40:21 pra01.example.com BG[24117]:3021:01:01:event=user_added;new_account:disabled=0;new_account:email:address=lee.contractor@example.net;new_display_name=Lee Contractor;new_username=lcontractor;site=access.example.com;when=1791855621;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:42:00 pra01.example.com BG[24117]:3021:01:01:event=setting_changed;new_api=1;old_api=0;site=access.example.com;when=1791855720;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:45:30 pra01.example.com BG[24117]:3021:01:01:account=svc-backup;event=vault_account_password_rotation;reason=manual;site=access.example.com;status=failure;when=1791855930;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:47:12 pra01.example.com BG[24117]:3021:01:01:event=user_changed;new_display_name=Ops\; on-call;old_display_name=Ops;old_username=ops-oncall;site=access.example.com;when=1791856032;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:50:00 pra01.example.com BG[24117]:3021:01:02:site=access.example.com;event=user_changed;old_username=pexample;old_display_name=Pat Example;old_permissions:suppor
+Oct 13 01:50:00 pra01.example.com BG[24117]:3021:02:02:t=1;old_permissions:support:canned_messages=1;new_display_name=Pat B. Example;when=1791856200;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:51:00 pra01.example.com ntpd[811]: clock step +0.21 s

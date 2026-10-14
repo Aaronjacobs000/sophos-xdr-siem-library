@@ -1,0 +1,21 @@
+!SAMPLE=Oct 13 01:40:21 pra01.example.com BG[24117]:3021:01:01:event=user_added;new_account:disabled=0;new_account:email:address=lee.contractor@example.net;new_display_name=Lee Contractor;new_username=lcontractor;site=access.example.com;when=1791855621;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="mgmt"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: BeyondTrust PRA and RS appliance syslog.
+# Child of BEYONDTRUST_SRA_SYSLOG_PARENT: every one-segment event other than login, logout and
+# change_password, such as user_added, user_changed, setting_changed, group_policy_changed,
+# api_account_added, vault account changes and vault_account_password_rotation, to
+# ManagementEvent. Changes list the old settings as old_<field> and the new ones as new_<field>;
+# the whole field list is kept in operation.
+# kv, ev, site, whoIp, status, user, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+operationName$ = ev
+operation$ = payload
+username$ = IF user != "" THEN user ELSE NULL
+sourceAddress$ = whoIp
+targetHostname$ = site
+result$ = status

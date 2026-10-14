@@ -1,0 +1,50 @@
+!SAMPLE=Oct 13 01:23:40 pra01.example.com BG[24117]:3021:01:01:event=login;reason=failed;site=access.example.com;status=failure;target=rep_client;when=1791854620;who=Pat Example(pexample) using password;who_ip=198.51.100.44
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: BeyondTrust PRA and RS appliance syslog.
+# Child of BEYONDTRUST_SRA_SYSLOG_PARENT: login attempts (event=login, status success or failure),
+# logouts from the access console, and password changes (event=change_password).
+# target is the interface: web/login (/login), web/appliance (/appliance), web/api or rep_client
+# (the access console).
+# kv, ev, site, whoIp, status, reason, target, user, displayName, method, eventType$, sensorType$
+# and eventTimeUsec$ come from the parent.
+
+targetUserName$ = IF user != "" THEN user ELSE NULL
+userDisplayName$ = IF displayName != "" AND displayName != "unknown" THEN displayName ELSE NULL
+sourceAddress$ = whoIp
+targetHostName$ = site
+authSystem$ = "BeyondTrust"
+authSystem$ = IF target == "web/login" THEN "BeyondTrust /login" ELSE authSystem$
+authSystem$ = IF target == "web/appliance" THEN "BeyondTrust /appliance" ELSE authSystem$
+authSystem$ = IF target == "web/api" THEN "BeyondTrust API" ELSE authSystem$
+authSystem$ = IF target == "rep_client" THEN "BeyondTrust access console" ELSE authSystem$
+applicationName$ = target
+logonApplicationFamily$ = IF method != "" THEN method ELSE NULL
+
+ok = status == "success"
+failed = status == "failure"
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF ev == "logout" THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF ev == "change_password" THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF ev == "login" AND ok THEN "LOGON" ELSE NULL
+action$ = IF ev == "login" AND failed THEN "FAILURE" ELSE action$
+action$ = IF ev == "logout" THEN "LOGOFF" ELSE action$
+action$ = IF ev == "change_password" THEN "ACCOUNT" ELSE action$
+# A logout has no status; it always took effect.
+actionResult$ = IF ok OR ev == "logout" THEN "SUCCESS" ELSE NULL
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+
+# reason appears only on failures: failed, account disabled, account expired, exceeded failed
+# login attempts, change password (a reset is due), or invalid password for change_password.
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND reason == "failed" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF failed AND reason == "account disabled" THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF failed AND reason == "account expired" THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF failed AND reason == "exceeded failed login attempts" THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+failureCategory$ = IF failed AND (reason == "change password" OR reason == "change_password") THEN "OVERDUE_PASSWORD_CHANGE" ELSE failureCategory$
+status$ = ev
+subStatus$ = reason
