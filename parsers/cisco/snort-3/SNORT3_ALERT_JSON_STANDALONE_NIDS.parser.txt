@@ -1,0 +1,122 @@
+!SAMPLE=Oct 13 22:05:11 ids02 snort: { "seconds" : 1791929111, "timestamp" : "10/13-22:05:11.118204", "action" : "would_drop", "msg" : "SERVER-WEBAPP Log4j JNDI lookup in HTTP header attempt", "class" : "Attempted User Privilege Gain", "priority" : 1, "gid" : 1, "sid" : 1000101, "rev" : 3, "proto" : "TCP", "service" : "http", "dir" : "C2S", "src_addr" : "203.0.113.45", "src_port" : 50284, "dst_addr" : "192.0.2.30", "dst_port" : 80, "pkt_num" : 5, "pkt_len" : 312, "pkt_gen" : "stream_tcp", "iface" : "eth1", "vlan" : 0, "ttl" : 52, "tos" : 0, "ip_id" : 48211, "tcp_flags" : "***AP***", "tcp_seq" : 2849112031, "tcp_ack" : 1301937465, "tcp_win" : 502, "tcp_len" : 32 }
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{ "[a-z_]+" : .*"(?:sid" : \d+|rule" : "\d+:\d+:\d+")
+!SCHEMA=scwx.nids
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Snort 3 alert_json events, one JSON object per line, sent to the data collector by a syslog
+# forwarder that reads alert_json.txt (for example rsyslog imfile with the tag snort).
+# Standalone parser for the NIDS schema. alert_json writes { "key" : value, ... } with the fields
+# set in alert_json.fields, in that order. This parser reads the recommended fields line in the
+# entry's notes, and also the default fields (src_ap, dst_ap and rule instead of the address,
+# port and id fields), so a sensor left on the defaults still normalizes.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from the JSON.
+
+jsonMatch = originalData$|(\{ ".*})\s*$
+json = JSON(jsonMatch[1])
+
+sensorType$ = "Snort"
+
+# seconds is Unix time in UTC; timestamp adds the microseconds, as MM/DD-HH:MM:SS.uuuuuu (or
+# YY/MM/DD-... when Snort runs with -y). Without seconds the timestamp is read as UTC (snort -U).
+# The engine's DATETIME() drops the fraction when it fills in the year, so the microseconds are
+# added separately.
+ts = STRING(json["$.timestamp"])
+tsm = ts|^(?P<base>(?:\d{2}/)?\d{2}/\d{2}-\d{2}:\d{2}:\d{2})\.(?P<us>\d{6})$
+usec = IF tsm["us"] != "" THEN INT(tsm["us"], 10) ELSE 0
+yearForm = ts|^\d{2}/\d{2}/\d{2}-
+tsTime = IF yearForm[0] != "" THEN DATETIME(tsm["base"], "06/01/02-15:04:05") ELSE DATETIME(tsm["base"], "01/02-15:04:05", TRUE)
+tsUsec = IF tsm["base"] != "" THEN tsTime + usec ELSE NULL
+secs = json["$.seconds"]
+eventTimeUsec$ = IF secs != NULL THEN secs * 1000000 + usec ELSE tsUsec
+
+# The default fields give gid:sid:rev as rule and address:port pairs as src_ap and dst_ap.
+rule = STRING(json["$.rule"])
+rm = rule|^(?P<gid>\d+):(?P<sid>\d+):(?P<rev>\d+)$
+gid = json["$.gid"]
+sid = json["$.sid"]
+rev = json["$.rev"]
+generatorId$ = IF gid != NULL THEN gid ELSE INT(rm["gid"], 10)
+signatureId$ = IF sid != NULL THEN sid ELSE INT(rm["sid"], 10)
+signatureRevision$ = IF rev != NULL THEN rev ELSE INT(rm["rev"], 10)
+
+srcAp = STRING(json["$.src_ap"])
+sap = srcAp|^(?P<ip>.+):(?P<port>\d+)$
+dstAp = STRING(json["$.dst_ap"])
+dap = dstAp|^(?P<ip>.+):(?P<port>\d+)$
+srcAddr = STRING(json["$.src_addr"])
+dstAddr = STRING(json["$.dst_addr"])
+srcAddr = IF srcAddr != "" THEN srcAddr ELSE sap["ip"]
+dstAddr = IF dstAddr != "" THEN dstAddr ELSE dap["ip"]
+sourceAddress$ = IF srcAddr != "" THEN srcAddr ELSE NULL
+destinationAddress$ = IF dstAddr != "" THEN dstAddr ELSE NULL
+# src_ap and dst_ap write port 0 for traffic with no ports, such as ICMP.
+sport = json["$.src_port"]
+dport = json["$.dst_port"]
+sapPort = IF sap["port"] != "" AND sap["port"] != "0" THEN INT(sap["port"], 10) ELSE NULL
+dapPort = IF dap["port"] != "" AND dap["port"] != "0" THEN INT(dap["port"], 10) ELSE NULL
+sourcePort$ = IF sport != NULL THEN sport ELSE sapPort
+destinationPort$ = IF dport != NULL THEN dport ELSE dapPort
+
+# protocol takes the IANA number; Snort logs IP, TCP, UDP or ICMP (for IPv4 and IPv6 alike).
+proto = UPPERCASE(STRING(json["$.proto"]))
+v6 = CONTAINS(srcAddr, ":")
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" AND NOT v6 THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMP" AND v6 THEN 58 ELSE protocol$
+
+msg = STRING(json["$.msg"])
+message$ = IF msg != "" THEN msg ELSE NULL
+cls = STRING(json["$.class"])
+classification$ = IF cls != "" AND cls != "none" THEN cls ELSE NULL
+priority$ = json["$.priority"]
+svc = STRING(json["$.service"])
+applicationName$ = IF svc != "" AND svc != "unknown" THEN svc ELSE NULL
+
+# action is what Snort did with the packet: allow, block, drop and reset act on it, would_drop and
+# would_block are what an inline rule would have done on a passive sensor, cant_ means it couldn't.
+act = STRING(json["$.action"])
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = 0
+blocked$ = IF act == "block" OR act == "drop" OR act == "reset" OR act == "force_block" OR act == "force_drop" OR act == "force_reset" THEN 1 ELSE blocked$
+
+dir = STRING(json["$.dir"])
+direction$ = NULL
+direction$ = IF dir == "C2S" THEN "CLIENT_TO_SERVER" ELSE direction$
+direction$ = IF dir == "S2C" THEN "SERVER_TO_CLIENT" ELSE direction$
+
+# Packet header fields, when the fields line includes them.
+vlan$ = json["$.vlan"]
+mplsLabel$ = json["$.mpls"]
+ttl$ = json["$.ttl"]
+tosText = STRING(json["$.tos"])
+tos$ = IF tosText != "" THEN tosText ELSE NULL
+packetId$ = json["$.ip_id"]
+# pkt_len is the IP datagram length (the packet length when there is no IP layer).
+dgmLen$ = json["$.pkt_len"]
+flagText = STRING(json["$.tcp_flags"])
+flags$ = IF flagText != "" THEN flagText ELSE NULL
+seqText = STRING(json["$.tcp_seq"])
+sequence$ = IF seqText != "" THEN seqText ELSE NULL
+ackText = STRING(json["$.tcp_ack"])
+ack$ = IF ackText != "" THEN ackText ELSE NULL
+winText = STRING(json["$.tcp_win"])
+window$ = IF winText != "" THEN winText ELSE NULL
+tcpLen$ = json["$.tcp_len"]
+icmpType$ = json["$.icmp_type"]
+icmpCode$ = json["$.icmp_code"]
+
+r1.key$ = "pkt_num"
+r1.value$ = STRING(json["$.pkt_num"])
+r2.key$ = "pkt_gen"
+r2.value$ = STRING(json["$.pkt_gen"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "iface"
+r3.value$ = STRING(json["$.iface"])
+eventMetadata$.record$ = IF r3.value$ != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
