@@ -122,7 +122,9 @@ function exampleLoader(left, right) {
       toast(`Couldn't load ${e.id}: ${err.message}`);
     }
   }, { class: 'input', 'aria-label': 'Load samples from a library entry' }));
+  // Sized to its longest entry, but never wider than the page, so a phone doesn't scroll sideways.
   box.lastChild.style.width = 'auto';
+  box.lastChild.style.maxWidth = '100%';
   return box;
 }
 
