@@ -1,0 +1,33 @@
+!SAMPLE=<14>Oct 12 22:41:02 nbu-primary nbaudit@nbu-primary.corp.example.com:application[NetBackup]: DESCRIPTION: Settings of Schedule 'Full' of Policy 'fin-db-daily' were modified | TIMESTAMP: 1791805262774 | DATETIME: 2026-10-12T22:41:02.000+11:00 | USER: root@nbu-primary.corp.example.com | CATEGORY: POLICY | ACTION: MODIFY | REASON:  | DETAILS: 2 attribute(s) ATTR_1: BackupWindow (Sun) OLDV: 000:00:00 - 000:00:00 NEWV: 000:00:00 - 167:00:00 ATTR_2: Policy Generation OLDV: 1 NEWV: 2
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=DESCRIPTION:\s.*\s\|\s+TIMESTAMP:\s*\d+\s+\|\s.*USER:\s.*\s\|\s+CATEGORY:\s*[A-Z_]+\s+\|\s+ACTION:\s*[A-Z_]+\s+\|\s+REASON:
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Veritas NetBackup audit events sent to the primary server's system log (Send the audit
+# events to the system logs, or SYSLOG_AUDIT_CATEGORIES in bp.conf) in the native format, then
+# forwarded to the data collector by the host's syslog daemon:
+#   DESCRIPTION: <text> | TIMESTAMP: <epoch> | DATETIME: <ISO 8601> | USER: <user> | CATEGORY: <category>
+#   | ACTION: <action> | REASON: <reason> | DETAILS: <n> attribute(s) ATTR_1: <name> OLDV: <old> NEWV: <new> ...
+# Parent: recognizes the audit events and hands logon attempts (LOGIN) to the Auth child and every
+# other category to the CloudAudit child.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:\d{4}-\d{2}-\d{2}T\S+|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+nb = originalData$|DESCRIPTION:\s*(?P<desc>.*?)\s+\|\s+TIMESTAMP:\s*(?P<ts>\d+)\s+\|\s+(?:DATETIME:\s*(?P<dt>\S+)\s+\|\s+)?USER:\s*(?P<user>.*?)\s+\|\s+CATEGORY:\s*(?P<cat>[A-Z_]+)\s+\|\s+ACTION:\s*(?P<act>[A-Z_]+)\s+\|\s+REASON:\s*(?P<reason>.*?)\s*\|\s+DETAILS:\s*(?P<details>.*?)\s*$
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Veritas NetBackup"
+hostId$ = hdr["host"]
+desc = nb["desc"]
+user = nb["user"]
+category = nb["cat"]
+action = nb["act"]
+reason = nb["reason"]
+details = nb["details"]
+
+# TIMESTAMP is epoch milliseconds in the system log; NetBackup's report docs describe seconds.
+ts = nb["ts"]
+eventTimeUsec$ = IF LENGTH(ts) > 11 THEN INT(ts, 10) * 1000 ELSE INT(ts, 10) * 1000000
+
+eventType$ = IF category == "LOGIN" THEN "login" ELSE "audit"

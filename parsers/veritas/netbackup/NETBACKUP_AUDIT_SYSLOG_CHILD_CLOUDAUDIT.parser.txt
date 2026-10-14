@@ -1,0 +1,31 @@
+!SAMPLE=<14>Oct 12 22:41:02 nbu-primary nbaudit@nbu-primary.corp.example.com:application[NetBackup]: DESCRIPTION: Settings of Schedule 'Full' of Policy 'fin-db-daily' were modified | TIMESTAMP: 1791805262774 | DATETIME: 2026-10-12T22:41:02.000+11:00 | USER: root@nbu-primary.corp.example.com | CATEGORY: POLICY | ACTION: MODIFY | REASON:  | DETAILS: 2 attribute(s) ATTR_1: BackupWindow (Sun) OLDV: 000:00:00 - 000:00:00 NEWV: 000:00:00 - 167:00:00 ATTR_2: Policy Generation OLDV: 1 NEWV: 2
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Veritas NetBackup audit events in the system log.
+# Child of NETBACKUP_AUDIT_SYSLOG_PARENT: every category other than LOGIN, such as POLICY, JOB,
+# USER, CERT, TOKEN, HOLD, STU, SEC_CONFIG, ANOMALY and the MALWARE_ categories, to CloudAudit with
+# the category as the event type and the action (CREATE, MODIFY, DELETE, START, STOP, CANCEL,
+# RESUME, ACCESS, ENROLL, GENERAL) as the event name.
+# desc, user, category, action, reason, details, eventType$, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+eventType$ = category
+eventName$ = action
+eventSource$ = "NetBackup"
+userName$ = user
+readOnly$ = action == "ACCESS"
+
+d1.key$ = "description"
+d1.value$ = desc
+# DETAILS lists each changed attribute as ATTR_<n>: <name> OLDV: <old value> NEWV: <new value>.
+d2.key$ = "details"
+d2.value$ = details
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "reason"
+d3.value$ = reason
+additionalEventData$.record$ = IF reason != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$

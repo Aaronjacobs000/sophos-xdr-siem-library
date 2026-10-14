@@ -1,0 +1,209 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805211351000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "target_user_name": "root@nbu-primary.corp.example.com",
+      "target_host_name": "nbu-primary.corp.example.com",
+      "source_address": "192.0.2.89",
+      "auth_system": "NetBackup API",
+      "status": "Successful",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User 'root' authenticated successfully"
+          },
+          {
+            "key": "audit_action",
+            "value": "ACCESS"
+          },
+          {
+            "key": "host_type",
+            "value": "Primary Server"
+          },
+          {
+            "key": "origin_host",
+            "value": "192.0.2.89"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805262697000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "POLICY",
+      "event_name": "MODIFY",
+      "event_source": "NetBackup",
+      "user_name": "root@nbu-primary.corp.example.com",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User 'root' is modifying policy 'fin-db-daily' of type 'Standard'."
+          },
+          {
+            "key": "details",
+            "value": "0 attribute(s)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805262774000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "POLICY",
+      "event_name": "MODIFY",
+      "event_source": "NetBackup",
+      "user_name": "root@nbu-primary.corp.example.com",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Settings of Schedule 'Full' of Policy 'fin-db-daily' were modified"
+          },
+          {
+            "key": "details",
+            "value": "2 attribute(s) ATTR_1: BackupWindow (Sun) OLDV: 000:00:00 - 000:00:00 NEWV: 000:00:00 - 167:00:00 ATTR_2: Policy Generation OLDV: 1 NEWV: 2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805335118000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "POLICY",
+      "event_name": "MODIFY",
+      "event_source": "NetBackup",
+      "user_name": "root@nbu-primary.corp.example.com",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Attributes of Policy 'fin-db-daily' were modified"
+          },
+          {
+            "key": "details",
+            "value": "2 attribute(s) ATTR_1: Residence OLDV: stu-disk-01 NEWV: *NULL* ATTR_2: Policy Generation OLDV: 2 NEWV: 3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805410880000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "POLICY",
+      "event_name": "DELETE",
+      "event_source": "NetBackup",
+      "user_name": "admin@nbu-primary.corp.example.com",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Policy 'legacy-fs' was deleted"
+          },
+          {
+            "key": "details",
+            "value": "1 attribute(s) ATTR_1: Policy Type OLDV: Standard NEWV:"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805445311000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "HOLD",
+      "event_name": "CREATE",
+      "event_source": "NetBackup",
+      "user_name": "root@nbu-primary.corp.example.com",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Hold with hold name legal-hold-2026 for report1 is created"
+          },
+          {
+            "key": "details",
+            "value": "1 attribute(s) ATTR_1: On-hold image list OLDV: NEWV: client01_1791805445"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NETBACKUP_AUDIT_SYSLOG_PARENT > NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Veritas NetBackup",
+      "event_time_usec": 1791805520100000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nbu-primary",
+      "event_type": "AUDITSVC",
+      "event_name": "START",
+      "event_source": "NetBackup",
+      "user_name": "sys@nbu-primary",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "The nbaudit service on primary server 'nbu-primary' was started"
+          },
+          {
+            "key": "details",
+            "value": "0 attribute(s)"
+          }
+        ]
+      }
+    }
+  }
+]
