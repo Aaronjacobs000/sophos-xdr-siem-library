@@ -1,7 +1,7 @@
-// Splitters and helpers behind CEF(), LEEF(), SPLIT_NAME_VALUES(), URL_PARSE() and the
+// Splitters and helpers behind SPLIT(), CEF(), LEEF(), SPLIT_NAME_VALUES(), URL_PARSE() and the
 // syslog header the root parser removes before custom parsers see `message`.
 
-import { ObjValue } from './values.js';
+import { ObjValue, RuntimeError } from './values.js';
 
 // ---------------------------------------------------------------- syslog header
 
@@ -46,6 +46,72 @@ export function rootSplit(line) {
   const inner = BSD_ONLY.exec(rest);
   if (inner) { rest = rest.slice(inner[0].length); time = inner[1]; host = inner[2]; }
   return { message: rest, host, time };
+}
+
+// ---------------------------------------------------------------- SPLIT
+
+// SPLIT() reads its text the way Go's encoding/csv does with LazyQuotes on (checked in a lab
+// tenant). The separator is the first character of the second argument, so "::" splits on ":"
+// and ",;" on ",". A field that starts with a quote runs to the closing quote, separators and
+// newlines included, and "" inside it is one quote; any other quote is kept. Each line is a
+// record and the fields of every record come back in one list; an empty line is skipped, so ""
+// gives []. Every record needs as many fields as the first, or the event fails. An empty
+// separator, a quote or a newline as the separator fails the event too.
+export function splitCsv(text, sep) {
+  const comma = sep ? String.fromCodePoint(sep.codePointAt(0)) : '';
+  if (!comma || /^["\r\n\0�]$/.test(comma) || /^[\uD800-\uDFFF]$/.test(comma)) throw new RuntimeError('csv: invalid field or comment delimiter. SPLIT needs a separator that isn\'t empty, a quote or a newline', 'split-separator');
+  let pos = 0, lineNo = 0;
+  const readLine = () => {
+    if (pos >= text.length) return null;
+    const nl = text.indexOf('\n', pos);
+    let line = nl === -1 ? text.slice(pos) : text.slice(pos, nl + 1);
+    pos = nl === -1 ? text.length : nl + 1;
+    lineNo++;
+    if (nl === -1 && line.endsWith('\r')) line = line.slice(0, -1);
+    if (line.endsWith('\r\n')) line = `${line.slice(0, -2)}\n`;
+    return line;
+  };
+  const nlLen = (l) => (l.endsWith('\n') ? 1 : 0);
+  const out = [];
+  let perRecord = null;
+  for (;;) {
+    let line = readLine();
+    while (line !== null && line.length === nlLen(line)) line = readLine();
+    if (line === null) return out;
+    const recLine = lineNo;
+    const fields = [];
+    parse: for (;;) {
+      if (!line.startsWith('"')) {
+        const i = line.indexOf(comma);
+        fields.push(i >= 0 ? line.slice(0, i) : line.slice(0, line.length - nlLen(line)));
+        if (i < 0) break;
+        line = line.slice(i + comma.length);
+        continue;
+      }
+      line = line.slice(1);
+      let field = '';
+      for (;;) {
+        const q = line.indexOf('"');
+        if (q >= 0) {
+          field += line.slice(0, q);
+          line = line.slice(q + 1);
+          if (line.startsWith('"')) { field += '"'; line = line.slice(1); }
+          else if (line.startsWith(comma)) { line = line.slice(comma.length); fields.push(field); continue parse; }
+          else if (line.length === nlLen(line)) { fields.push(field); break parse; }
+          else field += '"';
+        } else if (line.length) {
+          field += line;
+          line = readLine() ?? '';
+        } else {
+          fields.push(field);
+          break parse;
+        }
+      }
+    }
+    if (perRecord === null) perRecord = fields.length;
+    else if (fields.length !== perRecord) throw new RuntimeError(`record on line ${recLine}: wrong number of fields. SPLIT reads each line as a record, and every record needs as many fields as the first`, 'split-fields');
+    out.push(...fields);
+  }
 }
 
 // ---------------------------------------------------------------- CEF
@@ -200,11 +266,16 @@ function normPath(p) {
   return r || (decoded.startsWith('/') ? '/' : '');
 }
 
+// The engine's object has these keys, "" for a part the URL doesn't have, and password only when
+// the URL has one, as in user:pass@ or user:@. raw is the text URL_PARSE was given (checked in a
+// lab tenant).
+const URL_KEYS = ['scheme', 'user', 'host_raw', 'host', 'port', 'path_raw', 'path', 'query_raw', 'query', 'fragment', 'raw'];
+
 export function urlParse(url, silent = false) {
-  const keys = ['scheme', 'user', 'password', 'host_raw', 'host', 'port', 'path_raw', 'path', 'query_raw', 'query', 'raw_query', 'fragment'];
-  const empty = () => new ObjValue(new Map(keys.map((k) => [k, null])));
+  const empty = () => new ObjValue(new Map(URL_KEYS.map((k) => [k, k === 'scheme' ? 'http' : ''])));
   if (url === null || url === undefined) return silent ? empty() : null;
-  let s = String(url).trim();
+  const raw = String(url);
+  let s = raw.trim();
   const out = new Map();
   let scheme = 'http';
   const sm = /^([A-Za-z][A-Za-z0-9+.-]*):(\/\/)?/.exec(s);
@@ -218,7 +289,7 @@ export function urlParse(url, silent = false) {
   const slash = s.indexOf('/');
   let authority = slash === -1 ? s : s.slice(0, slash);
   const pathRaw = slash === -1 ? '' : s.slice(slash);
-  let user = null, password = null;
+  let user = '', password = null;
   const at = authority.lastIndexOf('@');
   if (at !== -1) {
     const ui = authority.slice(0, at);
@@ -238,16 +309,16 @@ export function urlParse(url, silent = false) {
   }).join('&');
   out.set('scheme', scheme);
   out.set('user', user);
-  out.set('password', password);
-  out.set('host_raw', authority || null);
-  out.set('host', host ? host.toLowerCase() : null);
-  out.set('port', port);
-  out.set('path_raw', pathRaw || null);
-  out.set('path', pathRaw ? normPath(pathRaw) : null);
-  out.set('query_raw', queryRaw);
-  out.set('query', query);
-  out.set('raw_query', queryRaw);
-  out.set('fragment', fragment);
+  if (password !== null) out.set('password', password);
+  out.set('host_raw', authority);
+  out.set('host', host.toLowerCase());
+  out.set('port', port ?? '');
+  out.set('path_raw', pathRaw);
+  out.set('path', pathRaw ? normPath(pathRaw) : '');
+  out.set('query_raw', queryRaw ?? '');
+  out.set('query', query ?? '');
+  out.set('fragment', fragment ?? '');
+  out.set('raw', raw);
   return new ObjValue(out);
 }
 

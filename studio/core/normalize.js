@@ -155,16 +155,26 @@ function asMessage(v, type, where, notes, opts, parserField) {
     return Object.fromEntries([...v.fields].map(([k, x]) => [k.replace(/\$$/, ''), toPlain(x)]));
   }
   const out = {};
+  let stopped = false;
   for (const [k, x] of v.fields) {
     const sub = def.find((f) => f.parser === k);
     if (!sub) {
       notes.push({ level: 'warning', code: 'sub-field', field: where, message: `${where}.${k} is not a field of ${type} (fields: ${def.map((f) => f.parser).join(', ')}). The engine drops it.` });
       continue;
     }
+    // An event_metadata key or value set to a DATETIME value, alone or in a list, stops the
+    // engine reading that record: the member is unset, and so is a member set after it. The
+    // record stays in the list, empty if nothing came before (checked in a lab tenant; once in
+    // nine runs the engine also dropped the member set before it).
+    if (type === 'KeyValueRecordIndexed' && (x instanceof TimeValue || (isList(x) && x.some((i) => i instanceof TimeValue)))) {
+      notes.push({ level: 'warning', code: 'time-in-record', field: `${where}.${sub.name}`, message: `${where}.${sub.name}: the engine leaves a DATETIME value in a record unset, and the record's members set after it too. Use STRING() on it to store the time as text.` });
+      stopped = true;
+      break;
+    }
     const val = coerce(x, sub, `${where}.${sub.name}`, notes, opts, false, `${parserField}.${k}`);
     if (val !== undefined && val !== null && !(typeof val === 'string' && val === '')) out[sub.name] = val;
   }
-  return Object.keys(out).length ? out : null;
+  return Object.keys(out).length || stopped ? out : null;
 }
 
 export function coerce(v, field, where, notes, opts, top = true, parserField = field.parser) {

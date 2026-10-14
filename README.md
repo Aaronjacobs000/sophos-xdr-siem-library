@@ -28,7 +28,7 @@ There is no public Sophos parser engine or parser API, so the emulator follows t
 
 The emulator handles the syslog header the way Run Test does: it takes a plain BSD header such as `Oct 14 01:02:03 host` off `message`. A line that starts with a `<PRI>` such as `<134>`, an RFC 5424 header or an ISO time keeps its header: `message` is the whole line, there is no `sensor_id`, and the event time is the ingest time. `eventTimeUsec$` already holds it, in microseconds, when the parser starts. Whether ingest takes the `<PRI>` off first hasn't been checked.
 
-Numbers work the way the engine's do. Every number is a 64-bit float, so a whole number past 9007199254740992 rounds: `9007199254740993` is `9007199254740992`. Text that reads as a number adds to a number or `TRUE`, so `"5" + 5` is `10`, but two texts still join: `"5" + "5"` is `"55"`.
+Numbers work the way the engine's do. Every number is a 64-bit float, so a whole number past 9007199254740992 rounds: `9007199254740993` is `9007199254740992`. Text that reads as a number adds to a number or `TRUE`, so `"5" + 5` is `10`, but two texts still join: `"5" + "5"` is `"55"`. A minus sign only works as part of a number such as `-5`. The engine rejects `-x`, `-(3 / 2)` and `x-1`, so write `0 - x` and put spaces around a minus: `x - 1`.
 
 The emulator has been validated against 10 real event types.
 

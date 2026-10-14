@@ -382,6 +382,38 @@ test('a number joined to text or stored in a string field is written like Go\'s 
   rows.forEach(([expr, want], i) => assert.equal(got.get(`k${i}`), want, expr));
 });
 
+// What Run Test stored in a lab tenant. A record whose DATETIME member comes first is empty;
+// once in nine runs the engine also dropped the member set before it, so that case isn't here.
+test('a DATETIME key or value in a record stops the engine reading that record', () => {
+  const t = `!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=zq4
+!SCHEMA=scwx.nids
+t = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")
+r0.key$ = "val"
+r0.value$ = t
+r1.key$ = "list"
+r1.value$ = [t, "x"]
+r2.key$ = t
+r2.value$ = "keyt"
+r3.key$ = "str"
+r3.value$ = STRING(t)
+r4.key$ = "listone"
+r4.value$ = [t]
+r5.value$ = t
+r5.key$ = "k3"
+r6.key$ = "plus"
+r6.value$ = t + 0
+r7.key$ = "after"
+r7.value$ = "after"
+eventMetadata$.record$ = [r0, r1, r2, r3, r4, r5, r6, r7]`;
+  const [r] = runParsers([{ name: 'A_B', text: t }], ['zq4 a']);
+  assert.deepEqual(r.normalized.event_metadata.record, [
+    { key: 'val' }, { key: 'list' }, {}, { key: 'str', value: '2026-10-14 01:02:03 +0000 UTC' }, { key: 'listone' }, {},
+    { key: 'plus', value: '1791939723000000' }, { key: 'after', value: 'after' },
+  ]);
+  assert.equal(r.notes.filter((n) => n.code === 'time-in-record').length, 5);
+});
+
 test('Go regex translation and RE2 checks', () => {
   assert.equal(compileGo('(?P<user>\\w+)@').exec('jdoe@example.com').groups.user, 'jdoe');
   assert.ok(compileGo('(?i)error').test('ERROR'));

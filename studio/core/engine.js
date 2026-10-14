@@ -84,7 +84,8 @@ function index(base, idx) {
     return null;
   }
   if (base instanceof ObjValue) {
-    if (typeof idx === 'number') return base.header && idx >= 0 && idx < base.header.length ? base.header[idx] : null;
+    // A number reads a CEF or LEEF header field by its key, "0" and on (see withHeaderKeys).
+    if (typeof idx === 'number') return base.header ? base.get(String(idx)) : null;
     return base.get(toStr(idx));
   }
   if (isList(base)) {
@@ -195,7 +196,7 @@ export function evaluate(ctx, e) {
     case 'var': return ctx.get(e.name);
     case 'list': return e.items.map((x) => evaluate(ctx, x));
     case 'if': return toBool(evaluate(ctx, e.c)) ? evaluate(ctx, e.a) : evaluate(ctx, e.b);
-    case 'neg': return -num(evaluate(ctx, e.e), '-');
+    case 'not': return !toBool(evaluate(ctx, e.e));
     case 'member': {
       // Reading x.field$ before it was assigned fails the event, like any unset variable. That
       // includes the docs' append pattern eventMetadata$.record$ = eventMetadata$.record$ + [r]
