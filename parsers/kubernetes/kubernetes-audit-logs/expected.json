@@ -1,0 +1,473 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791844811702537,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4c9f2a1e-7b3d-4e5f-9a8b-1c2d3e4f5a6b",
+      "event_name": "get",
+      "read_only": true,
+      "event_type": "secrets",
+      "event_source": "core",
+      "user_name": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee",
+      "user_id": "aws-iam-authenticator:111122223333:AROAEXAMPLEROLEID",
+      "user_type": "User",
+      "source_address": "203.0.113.10",
+      "user_agent": "kubectl/v1.31.2 (darwin/arm64) kubernetes/5864a46",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/namespaces/payments/secrets/db-credentials"
+          },
+          {
+            "key": "namespace",
+            "value": "payments"
+          },
+          {
+            "key": "name",
+            "value": "db-credentials"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:authenticated\"]"
+          },
+          {
+            "key": "iam_arn",
+            "value": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791844862118301,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9e8d7c6b-5a49-4382-b1a0-f9e8d7c6b5a4",
+      "event_name": "create",
+      "read_only": false,
+      "event_type": "pods/exec",
+      "event_source": "core",
+      "user_name": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee",
+      "user_id": "aws-iam-authenticator:111122223333:AROAEXAMPLEROLEID",
+      "user_type": "User",
+      "source_address": "203.0.113.10",
+      "user_agent": "kubectl/v1.31.2 (darwin/arm64) kubernetes/5864a46",
+      "status": "101",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/namespaces/payments/pods/api-7d9f8c6b5-x2kqp/exec?command=%2Fbin%2Fsh&container=api&stdin=true&stdout=true&tty=true"
+          },
+          {
+            "key": "namespace",
+            "value": "payments"
+          },
+          {
+            "key": "name",
+            "value": "api-7d9f8c6b5-x2kqp"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Request"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseStarted"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:authenticated\"]"
+          },
+          {
+            "key": "iam_arn",
+            "value": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791844900551002,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2b3c4d5e-6f70-4812-93a4-b5c6d7e8f901",
+      "event_name": "list",
+      "read_only": true,
+      "event_type": "secrets",
+      "event_source": "core",
+      "user_name": "system:serviceaccount:ci:build-bot",
+      "user_id": "5f0e1d2c-3b4a-4596-8778-695a4b3c2d1e",
+      "user_type": "ServiceAccount",
+      "source_address": "198.51.100.23",
+      "user_agent": "python-requests/2.32.3",
+      "status": "403",
+      "error_code": "Forbidden",
+      "error_message": "secrets is forbidden: User \"system:serviceaccount:ci:build-bot\" cannot list resource \"secrets\" in API group \"\" at the cluster scope",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/secrets?limit=500"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:serviceaccounts\",\"system:serviceaccounts:ci\",\"system:authenticated\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791844935004118,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7a6b5c4d-3e2f-4109-8a7b-6c5d4e3f2a10",
+      "event_name": "get",
+      "read_only": true,
+      "user_name": "system:anonymous",
+      "user_type": "Anonymous",
+      "source_address": "203.0.113.45",
+      "user_agent": "curl/8.5.0",
+      "status": "403",
+      "error_code": "Forbidden",
+      "error_message": "forbidden: User \"system:anonymous\" cannot get path \"/api\"",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:unauthenticated\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791845010880412,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+      "event_name": "delete",
+      "read_only": false,
+      "event_type": "deployments",
+      "event_source": "apps",
+      "user_name": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee",
+      "user_id": "aws-iam-authenticator:111122223333:AROAEXAMPLEROLEID",
+      "target_user_name": "ops-oncall",
+      "user_type": "User",
+      "source_address": "198.51.100.77",
+      "user_agent": "kubectl/v1.31.2 (linux/amd64) kubernetes/5864a46",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/apis/apps/v1/namespaces/web/deployments/frontend"
+          },
+          {
+            "key": "namespace",
+            "value": "web"
+          },
+          {
+            "key": "name",
+            "value": "frontend"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "RequestResponse"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:authenticated\"]"
+          },
+          {
+            "key": "iam_arn",
+            "value": "arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee"
+          },
+          {
+            "key": "impersonated_groups",
+            "value": "[\"system:authenticated\",\"ops\"]"
+          },
+          {
+            "key": "source_ips",
+            "value": "[\"198.51.100.77\",\"192.0.2.10\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kubernetes",
+      "event_time_usec": 1791845045311940,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e5f6a7b8-c9d0-41e2-93f4-a5b6c7d8e9f0",
+      "event_name": "patch",
+      "read_only": false,
+      "event_type": "configmaps",
+      "event_source": "core",
+      "user_name": "kubernetes-admin",
+      "user_type": "User",
+      "source_address": "192.0.2.50",
+      "user_agent": "kubectl/v1.31.2 (linux/amd64) kubernetes/5864a46",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/namespaces/kube-system/configmaps/coredns"
+          },
+          {
+            "key": "namespace",
+            "value": "kube-system"
+          },
+          {
+            "key": "name",
+            "value": "coredns"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"kubeadm:cluster-admins\",\"system:authenticated\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Kubernetes Service",
+      "event_time_usec": 1791845120100211,
+      "event_time_fidelity": "MICRO",
+      "host_id": "AKS-PROD-01",
+      "sensor_event_id": "0f1e2d3c-4b5a-4697-8877-665544332211",
+      "event_name": "get",
+      "read_only": true,
+      "event_type": "secrets",
+      "event_source": "core",
+      "user_name": "jlee@example.com",
+      "user_type": "User",
+      "source_address": "203.0.113.10",
+      "user_agent": "kubectl/v1.30.4 (windows/amd64) kubernetes/a51b3b7",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/namespaces/payments/secrets/stripe-webhook"
+          },
+          {
+            "key": "namespace",
+            "value": "payments"
+          },
+          {
+            "key": "name",
+            "value": "stripe-webhook"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"7d3f2a1b-0c9e-4d8f-a7b6-5c4d3e2f1a0b\",\"system:authenticated\"]"
+          },
+          {
+            "key": "aks_category",
+            "value": "kube-audit"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "KUBERNETES_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Kubernetes Service",
+      "event_time_usec": 1791845211774003,
+      "event_time_fidelity": "MICRO",
+      "host_id": "AKS-PROD-01",
+      "sensor_event_id": "88776655-4433-4221-9100-ffeeddccbbaa",
+      "event_name": "delete",
+      "read_only": false,
+      "event_type": "namespaces",
+      "event_source": "core",
+      "user_name": "masterclient",
+      "user_type": "User",
+      "source_address": "198.51.100.61",
+      "user_agent": "kubectl/v1.30.4 (linux/amd64) kubernetes/a51b3b7",
+      "status": "200",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "/api/v1/namespaces/staging"
+          },
+          {
+            "key": "namespace",
+            "value": "staging"
+          },
+          {
+            "key": "name",
+            "value": "staging"
+          },
+          {
+            "key": "api_version",
+            "value": "v1"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_level",
+            "value": "Metadata"
+          },
+          {
+            "key": "stage",
+            "value": "ResponseComplete"
+          },
+          {
+            "key": "user_groups",
+            "value": "[\"system:masters\",\"system:authenticated\"]"
+          },
+          {
+            "key": "aks_category",
+            "value": "kube-audit-admin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

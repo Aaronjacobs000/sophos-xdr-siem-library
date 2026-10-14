@@ -1,0 +1,111 @@
+!SAMPLE={"kind":"Event","level":"Metadata","auditID":"4c9f2a1e-7b3d-4e5f-9a8b-1c2d3e4f5a6b","stage":"ResponseComplete","requestURI":"/api/v1/namespaces/payments/secrets/db-credentials","verb":"get","user":{"username":"arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee","uid":"aws-iam-authenticator:111122223333:AROAEXAMPLEROLEID","groups":["system:authenticated"],"extra":{"accessKeyId":["ASIAEXAMPLEKEYID"],"arn":["arn:aws:sts::111122223333:assumed-role/EKSAdmin/jlee"],"canonicalArn":["arn:aws:iam::111122223333:role/EKSAdmin"],"principalId":["AROAEXAMPLEROLEID"],"sessionName":["jlee"]}},"sourceIPs":["203.0.113.10"],"userAgent":"kubectl/v1.31.2 (darwin/arm64) kubernetes/5864a46","objectRef":{"resource":"secrets","namespace":"payments","name":"db-credentials","apiVersion":"v1"},"responseStatus":{"metadata":{},"code":200},"requestReceivedTimestamp":"2026-10-12T22:40:11.702537Z","stageTimestamp":"2026-10-12T22:40:11.707337Z"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"auditID"\s*:\s*"[^"]+"\s*,\s*"stage"\s*:\s*"[A-Za-z]+"|"category"\s*:\s*"kube-audit(?:-admin)?")
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kubernetes API server audit events (Event objects from the audit API, one per line):
+#   AKS: kube-audit or kube-audit-admin diagnostic records streamed to an Azure event hub, one
+#     record per line with the audit event as a JSON string in properties.log.
+#   EKS: the cluster's audit log group in CloudWatch Logs, sent by a subscription filter to
+#     Firehose with decompression and message extraction on, then to S3, so each line is the
+#     audit event itself.
+#   Self-managed: the API server's audit log file, one event per line, with or without a syslog
+#     header in front.
+# Standalone parser for the CloudAudit schema: the verb is the event name, the resource (with
+# its subresource, such as pods/exec) the event type and the API group the event source.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and quotes from JSON values.
+
+jsonMatch = originalData$|(\{.*\})\s*$
+outer = JSON(jsonMatch[1])
+# An AKS diagnostic record carries the audit event as text; anything else is the event itself.
+aksLog = outer["$.properties.log"]
+eventText = IF aksLog THEN aksLog ELSE jsonMatch[1]
+ev = JSON(eventText)
+
+aks = aksLog != NULL
+sensorType$ = IF aks THEN "Azure Kubernetes Service" ELSE "Kubernetes"
+cluster = outer["$.resourceId"]|/MANAGEDCLUSTERS/(?P<name>[^/]+)$
+hostId$ = cluster["name"]
+
+# The same auditID repeats when one request logs more than one stage.
+sensorEventId$ = ev["$.auditID"]
+# requestReceivedTimestamp is RFC 3339 in UTC with microseconds.
+eventTimeUsec$ = DATETIME(ev["$.requestReceivedTimestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+verb = ev["$.verb"]
+eventName$ = verb
+readOnly$ = verb == "get" OR verb == "list" OR verb == "watch"
+# Requests for a path such as /healthz or /api have no objectRef, so no resource or API group.
+resource = ev["$.objectRef.resource"]
+sub = ev["$.objectRef.subresource"]
+eventType$ = IF sub THEN resource + "/" + sub ELSE resource
+group = ev["$.objectRef.apiGroup"]
+core = IF resource THEN "core" ELSE NULL
+eventSource$ = IF group THEN group ELSE core
+
+userName$ = ev["$.user.username"]
+userId$ = ev["$.user.uid"]
+targetUserName$ = ev["$.impersonatedUser.username"]
+un = ev["$.user.username"]
+kind = un|^system:(?P<k>serviceaccount|node|anonymous)?
+userType$ = IF un THEN "User" ELSE NULL
+userType$ = IF kind[0] != "" THEN "System" ELSE userType$
+userType$ = IF kind["k"] == "serviceaccount" THEN "ServiceAccount" ELSE userType$
+userType$ = IF kind["k"] == "node" THEN "Node" ELSE userType$
+userType$ = IF kind["k"] == "anonymous" THEN "Anonymous" ELSE userType$
+
+# sourceIPs lists X-Forwarded-For addresses first and the connection's address last.
+sourceAddress$ = ev["$.sourceIPs[0]"]
+userAgent$ = ev["$.userAgent"]
+code = ev["$.responseStatus.code"]
+status$ = IF code THEN STRING(code) ELSE NULL
+errorCode$ = ev["$.responseStatus.reason"]
+errorMessage$ = ev["$.responseStatus.message"]
+
+p1.key$ = "request_uri"
+p1.value$ = ev["$.requestURI"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = [p1]
+p2.key$ = "namespace"
+p2.value$ = ev["$.objectRef.namespace"]
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+p3.key$ = "name"
+p3.value$ = ev["$.objectRef.name"]
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+p4.key$ = "api_version"
+p4.value$ = ev["$.objectRef.apiVersion"]
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+
+d1.key$ = "audit_level"
+d1.value$ = ev["$.level"]
+d2.key$ = "stage"
+d2.value$ = ev["$.stage"]
+d3.key$ = "user_groups"
+d3.value$ = STRING(ev["$.user.groups"])
+additionalEventData$.record$ = [d1, d2, d3]
+# The authorization annotations say whether RBAC (or another authorizer) allowed the request and
+# why. The key is built in pieces so its domain-like name isn't written out in full here.
+dot = "."
+annot = "$.annotations['authorization" + dot + "k8s" + dot + "io/"
+d4.key$ = "authorization_decision"
+d4.value$ = ev[annot + "decision']"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "authorization_reason"
+d5.value$ = ev[annot + "reason']"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+# EKS adds the IAM principal's ARN for users that authenticate with IAM.
+d6.key$ = "iam_arn"
+d6.value$ = ev["$.user.extra.arn[0]"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "impersonated_groups"
+d7.value$ = STRING(ev["$.impersonatedUser.groups"])
+additionalEventData$.record$ = IF targetUserName$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "source_ips"
+d8.value$ = STRING(ev["$.sourceIPs"])
+additionalEventData$.record$ = IF ev["$.sourceIPs[1]"] THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "aks_category"
+d9.value$ = outer["$.category"]
+additionalEventData$.record$ = IF aks THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
