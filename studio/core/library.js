@@ -3,7 +3,7 @@
 //
 // parsers/<vendor-slug>/<product-slug>/
 //   meta.json            vendor, product, versions, format, ship method, author, license, parsers,
-//                        and an optional collector (collectors/<name>) for pull-only sources
+//                        and an optional bridge (bridges/<name>) for pull-only sources
 //                        and webhooks that need a relay
 //   <NAME>.parser.txt    one file per parser
 //   samples.log          synthetic sample lines, one event per line
@@ -22,10 +22,13 @@ export const SAMPLE_SOURCES = ['synthetic', 'vendor-docs'];
 export const ROLES = ['standalone', 'parent', 'child'];
 export const ALLOWED_FILES = /^(meta\.json|samples\.log|expected\.json|README\.md|[A-Z0-9_]+\.parser\.txt)$/;
 export const LIMITS = { samples: 200, lineBytes: 16384, parserBytes: 65536, parsers: 20 };
-// An entry's optional "collector": the repo path of a folder under collectors/ that pulls the
-// source's logs from an API or relays its webhooks. Collectors are code, so they are reviewed and
+// An entry's optional "bridge": the repo path of a folder under bridges/ that pulls the
+// source's logs from an API or relays its webhooks. Bridges are code, so they are reviewed and
 // merged on their own.
-export const COLLECTOR_PATH = /^collectors\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const BRIDGE_PATH = /^bridges\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Bridges used to be called collectors and lived under collectors/. An entry from then has a
+// "collector" key with a collectors/<name> path, which still works and reads as bridges/<name>.
+const LEGACY_PATH = /^collectors\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const NAME = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
 
@@ -34,12 +37,35 @@ export function slug(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
 
-export function hasCollector(meta) {
-  return Boolean(meta) && typeof meta.collector === 'string' && meta.collector.length <= 80 && COLLECTOR_PATH.test(meta.collector);
+// The entry's bridge path, from "bridge" or the legacy "collector" key, or null when it names
+// none or the value isn't a bridge folder path. "bridge" wins when both are set.
+export function bridgeOf(meta) {
+  if (!meta || typeof meta !== 'object') return null;
+  const legacy = meta.bridge === undefined || meta.bridge === null;
+  const value = legacy ? meta.collector : meta.bridge;
+  if (typeof value !== 'string' || value.length > 80) return null;
+  if (BRIDGE_PATH.test(value)) return value;
+  const m = legacy ? LEGACY_PATH.exec(value) : null;
+  return m ? `bridges/${m[1]}` : null;
 }
 
-// The scripts a collector folder offers: its .py files, leaving out tests unless that's all.
-export function collectorScripts(fileNames) {
+export function hasBridge(meta) {
+  return bridgeOf(meta) !== null;
+}
+
+// The metadata with a legacy "collector" key carried as "bridge", for copies of the library
+// that the page reads, such as the snapshot.
+export function withBridgeKey(meta) {
+  if (!meta || typeof meta !== 'object' || !('collector' in meta)) return meta;
+  const path = bridgeOf(meta);
+  const out = { ...meta };
+  delete out.collector;
+  if (path) out.bridge = path;
+  return out;
+}
+
+// The scripts a bridge folder offers: its .py files, leaving out tests unless that's all.
+export function bridgeScripts(fileNames) {
   const py = (fileNames || []).filter((f) => /^[A-Za-z0-9_.-]+\.py$/.test(f)).sort();
   const main = py.filter((f) => !/^test_|_test\.py$/.test(f));
   return main.length ? main : py;
@@ -58,8 +84,8 @@ export function blankMeta() {
 }
 
 // problems: [{level, code, message, file?}]
-// opts.collectors: [{path, files}] for the collectors on the base branch. Without it, only the
-// form of "collector" is checked.
+// opts.bridges: [{path, files}] for the bridges on the base branch. Without it, only the form of
+// "bridge" is checked.
 export function validateMeta(meta, fileNames = null, opts = {}) {
   const out = [];
   const err = (code, message) => out.push({ level: 'error', code, message, file: 'meta.json' });
@@ -77,19 +103,26 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
   else if (meta.tested.tenant !== null && meta.tested.tenant !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(meta.tested.tenant)) err('meta', 'tested.tenant must be null or the date (YYYY-MM-DD) the parsers passed Run Test in a tenant');
   if (meta.docs !== undefined && (!Array.isArray(meta.docs) || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u)))) err('meta', 'docs must be a list of https links to the vendor\'s public log format docs');
   if (meta.notes !== undefined && (typeof meta.notes !== 'string' || meta.notes.length > 2000)) err('meta', 'notes must be text up to 2000 characters');
-  if (meta.collector !== undefined && meta.collector !== null) {
-    if (!hasCollector(meta)) err('collector', 'collector must be the path of a folder under collectors/, in lowercase with hyphens, for example "collectors/ai-compliance-logs"');
-    else if (Array.isArray(opts.collectors)) {
-      const c = opts.collectors.find((x) => x && x.path === meta.collector);
-      if (!c) err('collector', `collector ${meta.collector} is not on the main branch. Collectors are code, so a maintainer reviews and merges each one before an entry can point at it.`);
+  const named = (k) => meta[k] !== undefined && meta[k] !== null;
+  if (named('collector')) {
+    warn('bridge', named('bridge')
+      ? '"collector" is the old name for "bridge". This entry has both, so "collector" is ignored: remove it.'
+      : '"collector" is the old name for "bridge". It still works, but rename it to "bridge", with a path under bridges/.');
+  }
+  if (named('bridge') || named('collector')) {
+    const path = bridgeOf(meta);
+    if (!path) err('bridge', 'bridge must be the path of a folder under bridges/, in lowercase with hyphens, for example "bridges/ai-compliance-logs"');
+    else if (Array.isArray(opts.bridges)) {
+      const b = opts.bridges.find((x) => x && x.path === path);
+      if (!b) err('bridge', `bridge ${path} is not on the main branch. Bridges are code, so a maintainer reviews and merges each one before an entry can point at it.`);
       else {
-        const files = Array.isArray(c.files) ? c.files : [];
-        if (!files.includes('README.md')) err('collector', `collector ${meta.collector} has no README.md`);
-        if (!files.some((f) => /\.py$/.test(f))) err('collector', `collector ${meta.collector} has no .py file`);
+        const files = Array.isArray(b.files) ? b.files : [];
+        if (!files.includes('README.md')) err('bridge', `bridge ${path} has no README.md`);
+        if (!files.some((f) => /\.py$/.test(f))) err('bridge', `bridge ${path} has no .py file`);
       }
     }
   } else if (meta.ship_method === 'http-ingest') {
-    warn('collector', 'ship_method is http-ingest but there is no collector. A pull-only source, or a webhook that can\'t add the Authorization header, needs "collector" set to its folder under collectors/; a source that sends to HTTP Ingest with the header itself needs none.');
+    warn('bridge', 'ship_method is http-ingest but there is no bridge. A pull-only source, or a webhook that can\'t add the Authorization header, needs "bridge" set to its folder under bridges/; a source that sends to HTTP Ingest with the header itself needs none.');
   }
   if (!Array.isArray(meta.parsers) || !meta.parsers.length) { err('meta', 'parsers must list at least one parser'); return out; }
   if (meta.parsers.length > LIMITS.parsers) err('meta', `at most ${LIMITS.parsers} parsers per entry`);
@@ -157,13 +190,13 @@ export function toEngineParsers(meta, texts) {
 }
 
 // entry: {id, meta, texts: {NAME: text}, samples: [lines], expected, files: [{path, content}]}
-// opts.library: other entries, for the overlap check. opts.collectors: see validateMeta.
+// opts.library: other entries, for the overlap check. opts.bridges: see validateMeta.
 // Returns {ok, problems, results}.
 export function validateEntry(entry, opts = {}) {
   const problems = [];
   const files = entry.files || entryFiles(entry);
   const fileNames = files.map((f) => f.path.split('/').pop());
-  problems.push(...validateMeta(entry.meta, fileNames, { collectors: opts.collectors }));
+  problems.push(...validateMeta(entry.meta, fileNames, { bridges: opts.bridges }));
   if (entry.meta && entry.meta.vendor && entry.meta.product && entry.id && entry.id !== entryId(entry.meta)) {
     problems.push({ level: 'warning', code: 'folder', message: `the folder is ${entry.id}; from vendor and product it would be ${entryId(entry.meta)}`, file: 'meta.json' });
   }

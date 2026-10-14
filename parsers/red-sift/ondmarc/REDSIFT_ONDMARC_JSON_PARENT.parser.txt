@@ -6,9 +6,9 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: Red Sift OnDMARC API v2 records, pulled by the example collector in
-# collectors/red-sift-ondmarc and posted to HTTP Ingest as JSON lines. OnDMARC has no syslog
-# or documented push format, so the collector names each record in "ondmarc_record":
+# Source: Red Sift OnDMARC API v2 records, pulled by the example bridge in
+# bridges/red-sift-ondmarc and posted to HTTP Ingest as JSON lines. OnDMARC has no syslog
+# or documented push format, so the bridge names each record in "ondmarc_record":
 #   dmarc_guardian_issue  an issue from GET /dmarc-guardian
 #   dns_history           a DNS record change from GET /dns-history
 #   aggregate_record      a DMARC aggregate report row from GET /reports/aggregate/analyst

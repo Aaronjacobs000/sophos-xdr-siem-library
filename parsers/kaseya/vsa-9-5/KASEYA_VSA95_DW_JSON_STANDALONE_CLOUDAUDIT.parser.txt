@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Kaseya VSA 9.5 Data Warehouse API records, sent to a Sophos NG-SIEM HTTP Ingest
-# integration one JSON record per line by the collector in collectors/kaseya-vsa95-data-warehouse,
+# integration one JSON record per line by the bridge in bridges/kaseya-vsa95-data-warehouse,
 # which adds the dataset name as the first key, "Dataset".
 # Standalone parser for CloudAudit, for five datasets (fields from the Data Warehouse API reference):
 #   RemoteControlSessions, RemoteControlFileTransferSessions, AgentLiveConnectAuditLogs,

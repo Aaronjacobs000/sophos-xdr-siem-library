@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: TeamViewer event log (POST /api/v2/EventLogging, AuditEvents), sent to a Sophos NG-SIEM
-# HTTP Ingest integration one JSON event per line by the collector in collectors/teamviewer-event-logs.
+# HTTP Ingest integration one JSON event per line by the bridge in bridges/teamviewer-event-logs.
 # Standalone parser for CloudAudit: remote session events (started, joined, ended, files sent and
 # received, recordings, black screen and remote input) and user, role, policy, script token,
 # SSO, conditional access, TFA and device management changes. Event names and types come from

@@ -4,7 +4,7 @@
   "versions": [],
   "format": "json",
   "ship_method": "http-ingest",
-  "collector": "collectors/teamviewer-event-logs",
+  "bridge": "bridges/teamviewer-event-logs",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
@@ -17,7 +17,7 @@
     "https://webapi.teamviewer.com/api/v1/docs/index",
     "https://www.teamviewer.com/en-us/global/support/knowledge-base/teamviewer-tensor/security/auditability-event-log/"
   ],
-  "notes": "TeamViewer has no syslog or push export. Its event log (Tensor license, turned on by a company admin) is only available from POST /api/v2/EventLogging, so collectors/teamviewer-event-logs pulls it and posts each event unchanged to a Sophos NG-SIEM HTTP Ingest integration. Every event goes to CloudAudit: the event name and type, the author's email and name, the affected item, and the first three EventDetails as property name and new value (plus the first old value). Session events aren't marked as management events. Event names and types come from TeamViewer's Web API spec; the spec doesn't document EventDetails property names or the affected item for each event, so those sample values are made up, as are all others. Passed Run Test in a lab tenant on 2026-10-13 (55 of 55 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "notes": "TeamViewer has no syslog or push export. Its event log (Tensor license, turned on by a company admin) is only available from POST /api/v2/EventLogging, so bridges/teamviewer-event-logs pulls it and posts each event unchanged to a Sophos NG-SIEM HTTP Ingest integration. Every event goes to CloudAudit: the event name and type, the author's email and name, the affected item, and the first three EventDetails as property name and new value (plus the first old value). Session events aren't marked as management events. Event names and types come from TeamViewer's Web API spec; the spec doesn't document EventDetails property names or the affected item for each event, so those sample values are made up, as are all others. Passed Run Test in a lab tenant on 2026-10-13 (55 of 55 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
   "parsers": [
     {
       "name": "TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT",

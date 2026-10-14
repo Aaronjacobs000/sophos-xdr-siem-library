@@ -60,8 +60,8 @@ main:focus, main:focus-visible { outline: none; }
 .g-map { grid-template-columns: minmax(0, 1fr) 390px; }
 .g-test { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
 .g-entry { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-.g-collect { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); padding-top: 4px; }
-@media (max-width: 1200px) { .g-collect { grid-template-columns: minmax(0, 1fr); } }
+.g-bridge { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); padding-top: 4px; }
+@media (max-width: 1200px) { .g-bridge { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 1100px) { .g-map { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 960px) { .g-sample, .g-test, .g-entry { grid-template-columns: minmax(0, 1fr); } }
 
@@ -225,11 +225,11 @@ table.rec td:last-child { font-family: var(--mono); overflow-wrap: anywhere; whi
 .card .foot2 { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; margin-top: auto; flex-wrap: wrap; }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
 
-/* collector on an entry page */
-.collect { margin-top: 12px; }
-.collecthead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.collectcol { min-width: 0; }
-.collectcol .tabs { margin: 0; padding: 0; }
+/* bridge on an entry page */
+.bridge { margin-top: 12px; }
+.bridgehead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bridgecol { min-width: 0; }
+.bridgecol .tabs { margin: 0; padding: 0; }
 .fname { font-family: var(--mono); font-size: 12.5px; color: var(--charcoal); overflow-wrap: anywhere; min-width: 0; }
 .btnrow { display: flex; gap: 6px; }
 .pyview { white-space: pre; margin: 0; }

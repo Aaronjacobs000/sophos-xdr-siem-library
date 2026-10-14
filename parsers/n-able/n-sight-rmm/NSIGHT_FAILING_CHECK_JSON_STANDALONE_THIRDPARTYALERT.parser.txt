@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: N-able N-sight RMM failing checks, sent to a Sophos NG-SIEM HTTP Ingest integration one
-# JSON record per line by the collector in collectors/n-able-n-sight-failing-checks. The collector
+# JSON record per line by the bridge in bridges/n-able-n-sight-failing-checks. The bridge
 # polls the Data Extraction API service list_failing_checks and writes a record when a check
 # starts failing (State failing) or clears (State cleared), with the fields of the API's XML.
 # Standalone parser for the third-party alert schema. N-sight gives no severity.
@@ -32,7 +32,7 @@ summary$ = IF out != "" AND out != NULL THEN out ELSE json["$.Description"]
 alertCategory$ = "Check type " + json["$.CheckType"]
 logType$ = "failing_check"
 
-# ObservedAt is when the collector saw the change, in UTC.
+# ObservedAt is when the bridge saw the change, in UTC.
 eventTimeUsec$ = DATETIME(json["$.ObservedAt"], "2006-01-02T15:04:05Z07:00")
 
 a1.key$ = "client_name"

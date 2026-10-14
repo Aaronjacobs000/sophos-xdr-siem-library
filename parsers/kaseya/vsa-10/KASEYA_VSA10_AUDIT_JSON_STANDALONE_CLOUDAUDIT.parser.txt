@@ -7,8 +7,8 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Kaseya VSA 10 audit log records (GET /api/v3/auditlogs), sent to a Sophos NG-SIEM
-# HTTP Ingest integration one JSON record per line by the collector in
-# collectors/kaseya-vsa10-audit-logs. Pulseway's audit log API returns the same records.
+# HTTP Ingest integration one JSON record per line by the bridge in
+# bridges/kaseya-vsa10-audit-logs. Pulseway's audit log API returns the same records.
 # Standalone parser for CloudAudit: script runs (User Command), remote control, file transfers,
 # API token changes and the other audit categories, with the technician, the address the
 # request came from and the device. CategoryId and EventTypeId names come from the API docs.

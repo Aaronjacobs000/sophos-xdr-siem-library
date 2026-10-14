@@ -6,7 +6,7 @@
   ],
   "format": "json",
   "ship_method": "http-ingest",
-  "collector": "collectors/kaseya-vsa10-audit-logs",
+  "bridge": "bridges/kaseya-vsa10-audit-logs",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
@@ -21,7 +21,7 @@
     "https://help.vsa10.kaseya.com/help/Content/2-Administration/configuration/api.htm",
     "https://api.pulseway.com/"
   ],
-  "notes": "Two record types. Notifications (alerts) are pushed by a notification webhook created with POST /api/v3/notifications/webhooks, with Headers set to Authorization: Bearer <integration key> and the Url set to a Sophos NG-SIEM HTTP Ingest integration; they go to the third-party alert schema. The webhook body has a device identifier but no device name. The audit log (script runs, remote control, file transfers, API token and account changes) is only available from GET /api/v3/auditlogs, so collectors/kaseya-vsa10-audit-logs pulls it and posts each record unchanged; those go to CloudAudit, with category and event type names from the API docs. Pulseway's API docs describe the same webhook and audit log, so these parsers should read Pulseway too; that hasn't been tested. VSA 9.5 is a different product with a different API. The audit samples follow the API's example record; the event descriptions other than its ad-hoc script example are made up, as are all values. Both parsers passed Run Test in a lab tenant on 2026-10-13 (83 of 83 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
+  "notes": "Two record types. Notifications (alerts) are pushed by a notification webhook created with POST /api/v3/notifications/webhooks, with Headers set to Authorization: Bearer <integration key> and the Url set to a Sophos NG-SIEM HTTP Ingest integration; they go to the third-party alert schema. The webhook body has a device identifier but no device name. The audit log (script runs, remote control, file transfers, API token and account changes) is only available from GET /api/v3/auditlogs, so bridges/kaseya-vsa10-audit-logs pulls it and posts each record unchanged; those go to CloudAudit, with category and event type names from the API docs. Pulseway's API docs describe the same webhook and audit log, so these parsers should read Pulseway too; that hasn't been tested. VSA 9.5 is a different product with a different API. The audit samples follow the API's example record; the event descriptions other than its ad-hoc script example are made up, as are all values. Both parsers passed Run Test in a lab tenant on 2026-10-13 (83 of 83 fields matched the emulator). No built-in parser claimed these lines in 5 Run Tests.",
   "parsers": [
     {
       "name": "KASEYA_VSA10_NOTIFICATION_JSON_STANDALONE_THIRDPARTYALERT",

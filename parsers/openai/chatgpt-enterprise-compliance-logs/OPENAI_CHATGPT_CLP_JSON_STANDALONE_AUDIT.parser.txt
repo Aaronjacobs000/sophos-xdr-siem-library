@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ChatGPT Enterprise Compliance Logs Platform, AUDIT_LOG records, one JSON object per
-# HTTP Ingest record (the API is pull only, so a collector downloads the files and sends them).
+# HTTP Ingest record (the API is pull only, so a bridge downloads the files and sends them).
 # Standalone parser for the ManagementEvent schema: workspace settings, SSO and SCIM, roles,
 # groups, invites, keys, sharing and Compliance API calls, by admins and by users.
 # action_data varies by action and can hold free text (custom and system instructions), so

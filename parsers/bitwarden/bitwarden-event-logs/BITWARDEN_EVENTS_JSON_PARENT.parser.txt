@@ -7,8 +7,8 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Bitwarden organization event logs from the Public API (GET /public/events), pulled by
-# the example collector in collectors/bitwarden-events and posted to HTTP Ingest as JSON lines. The
-# collector puts "bitwarden_record": "event" first and adds organizationId, and the email and name
+# the example bridge in bridges/bitwarden-events and posted to HTTP Ingest as JSON lines. The
+# bridge puts "bitwarden_record": "event" first and adds organizationId, and the email and name
 # of the acting user (actingUserEmail, actingUserName) and of the member (memberEmail, memberName).
 # Parent: names each event from its type code and hands sign-ins and failed sign-ins to the Auth
 # child, and every other event to the CloudAudit child.

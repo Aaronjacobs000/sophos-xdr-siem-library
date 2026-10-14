@@ -8,13 +8,13 @@
 //
 // --all checks every entry. --changed-files checks the entries a pull request touches and
 // decides whether it can merge without review. Exit code 1 when any checked entry fails.
-// An entry's "collector" must name a folder under collectors/ in --base when it is given (the
-// base branch), otherwise in --root.
+// An entry's "bridge" must name a folder under bridges/ in --base when it is given (the base
+// branch), otherwise in --root. The legacy "collector" key still works, with a warning.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { loadLibrary, loadEntryFromDir, listCollectors } from './lib/fs-library.mjs';
+import { loadLibrary, loadEntryFromDir, listBridges } from './lib/fs-library.mjs';
 import { reviewReasons } from './lib/merge-rules.mjs';
 import { validateEntry } from '../studio/core/library.js';
 
@@ -27,7 +27,7 @@ const all = args.includes('--all');
 const changedFile = opt('--changed-files');
 
 const library = await loadLibrary(root);
-const collectors = await listCollectors(baseRoot || root);
+const bridges = await listBridges(baseRoot || root);
 const report = { passed: true, eligible: false, reasons: [], outside: [], entries: [] };
 
 let targets = library;
@@ -64,7 +64,7 @@ for (const entry of targets) {
     }
   }
   const others = library.filter((e) => e.id !== entry.id);
-  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others, collectors });
+  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others, bridges });
   report.entries.push({
     id: entry.id, status, baseAuthor, author: entry.meta && entry.meta.author, ok: v.ok,
     problems: v.problems.map((p) => ({ level: p.level, code: p.code, file: p.file || null, line: p.line || null, message: p.message })),
@@ -74,8 +74,8 @@ for (const entry of targets) {
 }
 
 // Merge without review only when the PR touches nothing but library entries, every entry
-// passes, and each changed entry already belongs to the PR author. Collector code never
-// merges without review.
+// passes, and each changed entry already belongs to the PR author. Bridge code never merges
+// without review.
 if (changedFile) {
   const reasons = reviewReasons(changed);
   if (!report.entries.length) reasons.push('changes no library entries');

@@ -6,7 +6,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: NordPass activity log from the example collector: every activity that isn't a sign-in
+# Source: NordPass activity log from the example bridge: every activity that isn't a sign-in
 # or a master password check. Item access, sharing and deletion, members, invites, roles, groups,
 # organization settings, breach reports, tokens and integrations.
 # Child of NORDPASS_ACTIVITY_JSON_PARENT: each one to CloudAudit, with the action (such as

@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Datto RMM Activity Log records (GET /v2/activity-logs), sent to a Sophos NG-SIEM HTTP
-# Ingest integration one JSON record per line by the collector in collectors/datto-rmm-activity-logs.
+# Ingest integration one JSON record per line by the bridge in bridges/datto-rmm-activity-logs.
 # Standalone parser for CloudAudit: every activity (logins, jobs and components run, remote
 # takeover and Web Remote sessions, file transfers, device and user changes), with the event
 # name built from category and action. Fields follow the ActivityLog schema in the Datto RMM

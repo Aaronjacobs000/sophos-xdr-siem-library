@@ -20,7 +20,7 @@
     "https://docs.redsift.com/authentication/",
     "https://docs.redsift.com/ondmarc/guides/getting-started/"
   ],
-  "notes": "OnDMARC has no syslog export, and the record format of Red Sift's Event Hub push isn't published, so these parsers read records pulled from the public OnDMARC API v2 by the example collector in collectors/red-sift-ondmarc and posted to HTTP Ingest. The collector names each record in ondmarc_record. DMARC Guardian issues (dangling DNS records, SPF subdomain takeover risks) and DNS record changes go to the third-party alert schema. DMARC aggregate report rows, an optional source that needs OnDMARC's DMARC Analyst feature, go to Email: each row covers one sending source and header From domain for one day, so from_email_address holds the domain and the message count is email_volume in event_metadata, and rows that fail DMARC get a threat record. The API has no forensic report endpoint. Samples are made up in the shapes of Red Sift's OpenAPI specification. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same records there. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent. No built-in parser in that tenant matched these records.",
+  "notes": "OnDMARC has no syslog export, and the record format of Red Sift's Event Hub push isn't published, so these parsers read records pulled from the public OnDMARC API v2 by the example bridge in bridges/red-sift-ondmarc and posted to HTTP Ingest. The bridge names each record in ondmarc_record. DMARC Guardian issues (dangling DNS records, SPF subdomain takeover risks) and DNS record changes go to the third-party alert schema. DMARC aggregate report rows, an optional source that needs OnDMARC's DMARC Analyst feature, go to Email: each row covers one sending source and header From domain for one day, so from_email_address holds the domain and the message count is email_volume in event_metadata, and rows that fail DMARC get a threat record. The API has no forensic report endpoint. Samples are made up in the shapes of Red Sift's OpenAPI specification. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-13, and the parent's confirm string picked the same records there. On 2026-10-14 each child also passed Run Test in a lab tenant as a separate parser under its parent. No built-in parser in that tenant matched these records.",
   "parsers": [
     {
       "name": "REDSIFT_ONDMARC_JSON_PARENT",
@@ -43,5 +43,5 @@
       "schema": "scwx.email"
     }
   ],
-  "collector": "collectors/red-sift-ondmarc"
+  "bridge": "bridges/red-sift-ondmarc"
 }

@@ -5,7 +5,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: ESET PROTECT (cloud) detections from ESET Connect, via collectors/eset-connect.
+# Source: ESET PROTECT (cloud) detections from ESET Connect, via bridges/eset-connect.
 # Child of ESET_CONNECT_JSON_PARENT: antivirus detections to the Antivirus schema.
 # json, eventType$, sensorType$, hostId$, eventTimeUsec$, severityName, deviceUuid, userName,
 # processPath, responseName, responseText and protection come from the parent.

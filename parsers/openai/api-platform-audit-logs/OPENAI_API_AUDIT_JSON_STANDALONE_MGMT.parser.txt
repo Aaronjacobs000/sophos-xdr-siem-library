@@ -7,7 +7,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: OpenAI API Platform audit logs (GET /v1/organization/audit_logs), one object from
-# data[] per HTTP Ingest record. The API is pull only, so a collector reads it and sends it.
+# data[] per HTTP Ingest record. The API is pull only, so a bridge reads it and sends it.
 # Standalone parser for the ManagementEvent schema: every event type in OpenAI's list except
 # login and logout (API keys, projects, users, invites, roles, groups, service accounts,
 # rate limits, IP allowlists, SCIM, certificates, organization and tenant settings).

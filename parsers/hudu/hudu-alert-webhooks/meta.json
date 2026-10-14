@@ -4,7 +4,7 @@
   "versions": [],
   "format": "json",
   "ship_method": "http-ingest",
-  "collector": "collectors/webhook-relay",
+  "bridge": "bridges/webhook-relay",
   "author": "Aaronjacobs000",
   "license": "MIT",
   "sample_source": "synthetic",
@@ -17,7 +17,7 @@
     "https://support.hudu.com/hc/en-us/articles/9613883219991-Understanding-WebHooks",
     "https://support.hudu.com/hc/en-us/articles/8775931101207-Alerts"
   ],
-  "notes": "Hudu alert webhooks for Record created/updated/deleted and One-time shared password reveal, with the payloads in README.md built from Hudu's documented webhook variables. A Hudu webhook has no header setting, so post it to collectors/webhook-relay in this repo, which forwards the body to a Sophos NG-SIEM HTTP Ingest integration with Authorization: Bearer <integration key>. Both alert types go to CloudAudit: record changes with the record type and action, the user and the company, and guest reveals of one-time shared passwords with the guest's address. Hudu sends no event time, so the event time is the ingest time. Hudu's full activity log is API only, with the reference inside each instance, so it isn't covered. Samples are made up in the README payloads. Passed Run Test in a lab tenant on 2026-10-13: 29 of 29 fields matched the emulator, and the engine set the event time to the ingest time as expected. No built-in parser claimed these lines in 5 Run Tests.",
+  "notes": "Hudu alert webhooks for Record created/updated/deleted and One-time shared password reveal, with the payloads in README.md built from Hudu's documented webhook variables. A Hudu webhook has no header setting, so post it to bridges/webhook-relay in this repo, which forwards the body to a Sophos NG-SIEM HTTP Ingest integration with Authorization: Bearer <integration key>. Both alert types go to CloudAudit: record changes with the record type and action, the user and the company, and guest reveals of one-time shared passwords with the guest's address. Hudu sends no event time, so the event time is the ingest time. Hudu's full activity log is API only, with the reference inside each instance, so it isn't covered. Samples are made up in the README payloads. Passed Run Test in a lab tenant on 2026-10-13: 29 of 29 fields matched the emulator, and the engine set the event time to the ingest time as expected. No built-in parser claimed these lines in 5 Run Tests.",
   "parsers": [
     {
       "name": "HUDU_WEBHOOK_JSON_STANDALONE_CLOUDAUDIT",

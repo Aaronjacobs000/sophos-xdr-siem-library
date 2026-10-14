@@ -5,7 +5,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: Red Sift OnDMARC API v2 records from the example collector.
+# Source: Red Sift OnDMARC API v2 records from the example bridge.
 # Child of REDSIFT_ONDMARC_JSON_PARENT: DMARC aggregate report rows (one sending source, header
 # From domain and result for one day, with a message count) to Email. Rows that fail DMARC get a
 # threat record. The analyst endpoint needs OnDMARC's DMARC Analyst feature.

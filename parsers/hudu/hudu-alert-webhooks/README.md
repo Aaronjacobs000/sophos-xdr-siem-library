@@ -1,6 +1,6 @@
 # Hudu alert webhooks to Sophos NG-SIEM
 
-Hudu has no syslog export. Its alerts can send a webhook with a JSON payload you write from Hudu webhook variables. A Hudu webhook takes only a URL and a payload, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so send the webhooks to the [webhook relay](../../../collectors/webhook-relay/) in this repo, which forwards the body to the HTTP Ingest URL with that header.
+Hudu has no syslog export. Its alerts can send a webhook with a JSON payload you write from Hudu webhook variables. A Hudu webhook takes only a URL and a payload, and Sophos NG-SIEM HTTP Ingest needs `Authorization: Bearer <integration key>`, so send the webhooks to the [webhook relay](../../../bridges/webhook-relay/) in this repo, which forwards the body to the HTTP Ingest URL with that header.
 
 In Hudu, go to the admin area > Alerts > + New Alert, pick the alert type and companies, and under Configure Webhook enter the relay URL and the payload for that type. Keep `"source":"Hudu"` and `"alert"` as the first two keys: the parser's confirm string looks for them.
 

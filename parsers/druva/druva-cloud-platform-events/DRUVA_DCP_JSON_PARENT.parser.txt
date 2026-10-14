@@ -6,7 +6,7 @@
 
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
-# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by collectors/druva-platform-events,
+# Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by bridges/druva-platform-events,
 # one JSON event per line with "druva_record": "platform_event" in front.
 # Parent: recognizes the events and hands each to a child by its feature and type:
 #   Admin Event logins (Password Verified, MFA Verified, Login With SSO, Admin Login) to Auth.

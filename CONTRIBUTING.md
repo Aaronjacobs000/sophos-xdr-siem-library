@@ -34,7 +34,7 @@ Every pull request that touches `parsers/` and every issue-form submission is ch
 - The emulator's output for `samples.log` matches `expected.json`.
 - Samples, parsers and metadata contain no secrets or keys, no private or real IP addresses, no real email addresses or hostnames, and no company names that could be customers.
 - No top-level parser's confirm string matches another entry's samples.
-- `collector`, when set, names a folder under `collectors/` that is already on the main branch and holds a `README.md` and a `.py` file. An entry shipped by HTTP Ingest without one gets a warning, since a source that sends to HTTP Ingest with the `Authorization` header itself needs none.
+- `bridge`, when set, names a folder under `bridges/` that is already on the main branch and holds a `README.md` and a `.py` file. An entry shipped by HTTP Ingest without one gets a warning, since a source that sends to HTTP Ingest with the `Authorization` header itself needs none.
 
 ## Samples must be synthetic
 
@@ -49,30 +49,30 @@ The repo merges a pull request on its own when all of these hold:
 - The pull request changes nothing outside `parsers/`.
 - Each entry it changes is new, or its `meta.json` already names the person who opened the pull request as `author`.
 
-Anything else, such as a change to someone else's entry, a deletion, a collector, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
+Anything else, such as a change to someone else's entry, a deletion, a bridge, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
 
 ## Mark an entry tenant tested
 
 When the parsers pass Run Test in a Sophos NG-SIEM tenant, set `tested.tenant` in `meta.json` to that date (`YYYY-MM-DD`) in a pull request. Only do this after a real Run Test.
 
-## Collectors
+## Bridges
 
-A collector is a small script that gets a source's logs to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize them. Most poll a vendor API that only offers pull access and send each record as one JSON line. [collectors/webhook-relay](collectors/webhook-relay/) relays pushed webhooks instead, for vendors whose webhooks can't add the `Authorization: Bearer` header HTTP Ingest needs. Each one is a folder under `collectors/`, in lowercase with hyphens, named for the source it serves (`collectors/ibm-maas360/`) or, when it serves several, for what it does (`collectors/webhook-relay/`). It holds:
+A bridge is a small script that gets a source's logs to a Sophos NG-SIEM HTTP Ingest integration, where the library parsers normalize them. Most poll a vendor API that only offers pull access and send each record as one JSON line. [bridges/webhook-relay](bridges/webhook-relay/) relays pushed webhooks instead, for vendors whose webhooks can't add the `Authorization: Bearer` header HTTP Ingest needs. Each one is a folder under `bridges/`, in lowercase with hyphens, named for the source it serves (`bridges/ibm-maas360/`) or, when it serves several, for what it does (`bridges/webhook-relay/`). It holds:
 
 - `<name>.py`: Python 3, standard library only.
 - `README.md`: what to set up on both sides, every setting, and what the script sends.
-- `test_<name>.py`: unit tests against a local mock of the vendor's documented API or webhooks. CI runs every `collectors/*/test_*.py`.
+- `test_<name>.py`: unit tests against a local mock of the vendor's documented API or webhooks. CI runs every `bridges/*/test_*.py`.
 
-Follow [collectors/ai-compliance-logs](collectors/ai-compliance-logs/):
+Follow [bridges/ai-compliance-logs](bridges/ai-compliance-logs/):
 
-- Every setting comes from an environment variable, keys included: `NGSIEM_INGEST_URL` and `NGSIEM_INGEST_KEY` for HTTP Ingest, `COLLECTOR_*` for the collector's own behavior, and a vendor prefix for the vendor's keys and options.
-- `--dry-run` (or `COLLECTOR_DRY_RUN=1`) prints each record it would send, one per line, and sends and saves nothing.
+- Every setting comes from an environment variable, keys included: `NGSIEM_INGEST_URL` and `NGSIEM_INGEST_KEY` for HTTP Ingest, `BRIDGE_*` for the bridge's own behavior, and a vendor prefix for the vendor's keys and options.
+- `--dry-run` (or `BRIDGE_DRY_RUN=1`) prints each record it would send, one per line, and sends and saves nothing.
 - A request that carries a key or token doesn't follow redirects. A redirect fails the request with an error that says it was refused, so the key only goes to the URL it was set up for.
 - Keys, the HTTP Ingest URL path and signed download URLs never reach the log.
 
-To show a collector on an entry's page, set `"collector": "collectors/<name>"` in the entry's `meta.json`. The collector has to be on the main branch first, so it merges before the entry that points at it.
+To show a bridge on an entry's page, set `"bridge": "bridges/<name>"` in the entry's `meta.json`. The bridge has to be on the main branch first, so it merges before the entry that points at it.
 
-Collectors are code that people download and run, so the maintainer reviews every collector before it merges. You can propose one in a pull request, but it won't merge automatically.
+Bridges are code that people download and run, so the maintainer reviews every bridge before it merges. You can propose one in a pull request, but it won't merge automatically.
 
 ## Changes to the studio
 
