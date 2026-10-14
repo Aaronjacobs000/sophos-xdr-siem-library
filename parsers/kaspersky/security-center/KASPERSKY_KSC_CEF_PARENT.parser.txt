@@ -1,0 +1,42 @@
+!SAMPLE=<29>1 2026-10-13T00:22:40.000Z ksc01.example.com CEF:0|KasperskyLab|SecurityCenter|14.2.0.26967|GNRL_EV_VIRUS_FOUND|Malicious object detected|4|rt=1791850951000 cs9=Finance cs9Label=GroupName dhost=WS-FIN-041 dst=192.0.2.41 duser=EXAMPLE\\akim cs1=Trojan.Win32.Agent.example cs1Label=VirusName cs2=KES cs2Label=ProductName cs3=12.6.0.438 cs3Label=ProductVersion cs4=9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf cs4Label=SHA256 cs5=C:\\Users\\akim\\Downloads\\invoice_1013.exe cs5Label=ObjectName cs6=61 cs6Label=DetectionType cs10=File Threat Protection cs10Label=TaskName filePath=C:\\Users\\akim\\Downloads\\invoice_1013.exe msg=Event type: Malicious object detected\r\nUser: EXAMPLE\\akim (Active user)\r\nComponent: File Threat Protection\r\nObject: C:\\Users\\akim\\Downloads\\invoice_1013.exe\r\n
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|KasperskyLab\|SecurityCenter\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaspersky Security Center event export to a SIEM system in CEF, over syslog to the data
+# collector:
+#   CEF:0|KasperskyLab|SecurityCenter|<KSC version>|<event type>|<event name>|<severity>|...
+# Kaspersky sets the extension keys in siem_conversion_rules.xml and doesn't publish the full
+# mapping, and the csN slot can change between events, so values are read by their csNLabel.
+# Parent: hands detections to the Antivirus child and network attacks, blocked applications,
+# Adaptive Anomaly Control and Device Control blocks to the third-party alert child. Task,
+# Administration Server and Network Agent events stay in the generic schema.
+
+v = CEF(originalData$)
+eventId = STRING(v[4])
+eventName = STRING(v[5])
+sevText = STRING(v[6])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Kaspersky Security Center"
+eventType$ = "other"
+eventType$ = IF eventId == "GNRL_EV_VIRUS_FOUND" OR eventId == "GNRL_EV_VIRUS_FOUND_BY_KSN" OR eventId == "GNRL_EV_SUSPICIOUS_OBJECT_FOUND" OR eventId == "GNRL_EV_OBJECT_CURED" OR eventId == "GNRL_EV_OBJECT_DELETED" OR eventId == "GNRL_EV_OBJECT_QUARANTINED" OR eventId == "GNRL_EV_OBJECT_NOTCURED" OR eventId == "GNRL_EV_OBJECT_BLOCKED" OR eventId == "GNRL_EV_OBJECT_REPORTED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_BLOCKED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_REPORTED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_PASSED" THEN "detection" ELSE eventType$
+eventType$ = IF eventId == "GNRL_EV_ATTACK_DETECTED" OR eventId == "GNRL_EV_APPLICATION_LAUNCH_DENIED" OR eventId == "GNRL_EV_ADSEC_DETECT" OR eventId == "GNRL_EV_DEVCTRL_DEV_PLUG_DENIED" THEN "alert" ELSE eventType$
+host = STRING(v["dhost"])
+hostId$ = IF host != "" THEN host ELSE NULL
+
+# rt is the event time in epoch milliseconds (some exports use seconds).
+rt = STRING(v["rt"])
+rtMs = rt|^(?P<n>\d{13})$
+rtS = rt|^(?P<n>\d{10})$
+eventTimeUsec$ = IF rtMs["n"] != "" THEN INT(rtMs["n"], 10) * 1000 ELSE eventTimeUsec$
+eventTimeUsec$ = IF rtS["n"] != "" THEN INT(rtS["n"], 10) * 1000000 ELSE eventTimeUsec$
+
+# Kaspersky's event severity: 1 Info, 2 Warning, 3 Error, 4 Critical.
+severityName = "Unknown"
+severityName = IF sevText == "1" THEN "Info" ELSE severityName
+severityName = IF sevText == "2" THEN "Warning" ELSE severityName
+severityName = IF sevText == "3" THEN "Error" ELSE severityName
+severityName = IF sevText == "4" THEN "Critical" ELSE severityName

@@ -1,0 +1,77 @@
+!SAMPLE=<29>1 2026-10-13T00:22:40.000Z ksc01.example.com CEF:0|KasperskyLab|SecurityCenter|14.2.0.26967|GNRL_EV_VIRUS_FOUND|Malicious object detected|4|rt=1791850951000 cs9=Finance cs9Label=GroupName dhost=WS-FIN-041 dst=192.0.2.41 duser=EXAMPLE\\akim cs1=Trojan.Win32.Agent.example cs1Label=VirusName cs2=KES cs2Label=ProductName cs3=12.6.0.438 cs3Label=ProductVersion cs4=9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf cs4Label=SHA256 cs5=C:\\Users\\akim\\Downloads\\invoice_1013.exe cs5Label=ObjectName cs6=61 cs6Label=DetectionType cs10=File Threat Protection cs10Label=TaskName filePath=C:\\Users\\akim\\Downloads\\invoice_1013.exe msg=Event type: Malicious object detected\r\nUser: EXAMPLE\\akim (Active user)\r\nComponent: File Threat Protection\r\nObject: C:\\Users\\akim\\Downloads\\invoice_1013.exe\r\n
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="detection"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaspersky Security Center event export, CEF.
+# Child of KASPERSKY_KSC_CEF_PARENT: detected, quarantined, deleted, cured and blocked objects and
+# dangerous links to the Antivirus schema.
+# v, eventId, eventName, sevText, severityName, host, eventType$, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+# The routing value from the parent is replaced with the Kaspersky event type.
+eventType$ = eventId
+threatName$ = STRING(v["VirusName"])
+vendorAlertType$ = eventName
+agentPriority$ = severityName
+computerName$ = IF host != "" THEN host ELSE NULL
+user = STRING(v["duser"])
+userName$ = IF user != "" THEN user ELSE NULL
+version = STRING(v["ProductVersion"])
+agentVersion$ = IF version != "" THEN version ELSE NULL
+
+objectName = STRING(v["ObjectName"])
+path = STRING(v["filePath"])
+path = IF path == "" THEN objectName ELSE path
+web = path|^(?P<u>https?://.+)$
+urlString$ = IF web["u"] != "" THEN web["u"] ELSE NULL
+filePath$ = IF web["u"] == "" AND path != "" THEN path ELSE NULL
+threatType$ = IF web["u"] == "" AND path != "" THEN "FILE" ELSE "UNKNOWN_THREATTYPE"
+
+# Kaspersky documents GNRL_EA_PARAM_1 of GNRL_EV_VIRUS_FOUND as cs4 with the label SHA256.
+sha = STRING(v["SHA256"])
+shaHex = sha|^(?P<h>[0-9A-Fa-f]{64})$
+fileHash$.sha256$ = IF shaHex["h"] != "" THEN LOWERCASE(shaHex["h"]) ELSE NULL
+
+# The event type says what happened to the object.
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF eventId == "GNRL_EV_VIRUS_FOUND" OR eventId == "GNRL_EV_VIRUS_FOUND_BY_KSN" OR eventId == "GNRL_EV_SUSPICIOUS_OBJECT_FOUND" OR eventId == "GNRL_EV_OBJECT_REPORTED" THEN "ALERT" ELSE actionTaken$
+actionTaken$ = IF eventId == "GNRL_EV_OBJECT_DELETED" THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF eventId == "GNRL_EV_OBJECT_QUARANTINED" THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF eventId == "GNRL_EV_OBJECT_BLOCKED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_BLOCKED" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF eventId == "GNRL_EV_OBJECT_NOTCURED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_REPORTED" OR eventId == "GNRL_EV_VIRUS_FOUND_AND_PASSED" THEN "NONE" ELSE actionTaken$
+
+# DetectionType is Kaspersky's threat type: 60 virus, 61 trojan, 62 malware, 63 backdoor,
+# 64 worm, 65 riskware, 66 adware, 67 pornware, 69 behavioral, 70 phishing, 71 malicious link.
+# Names that start with not-a-virus are legitimate software that can be misused.
+dt = STRING(v["DetectionType"])
+threatCategory$ = "UNKNOWN_THREATCATEGORY"
+threatCategory$ = IF dt == "60" THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF dt == "61" THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF dt == "62" OR dt == "64" THEN "MALWARE" ELSE threatCategory$
+threatCategory$ = IF dt == "63" THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF dt == "65" OR dt == "66" OR dt == "67" THEN "APPLICATION" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(LOWERCASE(threatName$), "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(LOWERCASE(threatName$), "not-a-virus") THEN "APPLICATION" ELSE threatCategory$
+
+m2.key$ = "kaspersky_severity"
+m2.value$ = severityName
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m2]
+m3.key$ = "product"
+m3.value$ = STRING(v["ProductName"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "component"
+m4.value$ = STRING(v["TaskName"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "group"
+m5.value$ = STRING(v["GroupName"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "host_ip"
+m6.value$ = STRING(v["dst"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "detection_type"
+m7.value$ = dt
+eventMetadata$.record$ = IF dt != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

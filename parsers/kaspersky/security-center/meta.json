@@ -1,0 +1,49 @@
+{
+  "vendor": "Kaspersky",
+  "product": "Security Center",
+  "versions": [
+    "14.2",
+    "15.1"
+  ],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://support.kaspersky.com/ksc/14.2/151345_1",
+    "https://support.kaspersky.com/ksc/14.2/298793",
+    "https://support.kaspersky.com/ksc/14.2/151328",
+    "https://github.com/splunk/splunk-connect-for-syslog/blob/main/docs/sources/vendor/Kaspersky/es_cef.md",
+    "https://github.com/Azure/Azure-Sentinel/blob/master/Sample%20Data/CEF/KasperskySC.csv",
+    "https://www.protectivesecurity.gov.au/publications-library/direction-002-2025-kaspersky-lab-inc-products-and-web-services"
+  ],
+  "notes": "Kaspersky products are barred from Australian Government systems: PSPF Direction 002-2025 requires Australian Government entities to prevent their installation and remove existing instances. In Kaspersky Security Center, set up event export to a SIEM system in the ArcSight (CEF) format over TCP or UDP to the data collector; KSC then exports its general events in CEF. Kaspersky defines the CEF keys in siem_conversion_rules.xml, which ships with KSC, and publishes only part of that mapping, so the key labels (VirusName, ProductName, ProductVersion, SHA256, ObjectName, DetectionType, GroupName, TaskName) follow the public Splunk SC4S and Microsoft Sentinel samples, and values are read by label because the csN slot can change between events. Detected, suspicious, quarantined, deleted, cured and blocked objects and dangerous links go to Antivirus; network attacks, blocked application startups, Adaptive Anomaly Control and Device Control blocks go to the third-party alert schema; task, Administration Server and Network Agent events stay generic. The header severity is Kaspersky's 1 to 4 scale (Info, Warning, Error, Critical). Kaspersky publishes no full CEF line, so the samples are made up in the structure of those public samples, and the syslog header in front of the CEF may differ on your server. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (106 of 106 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (103 of 103 fields). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "KASPERSKY_KSC_CEF_PARENT",
+      "file": "KASPERSKY_KSC_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+      "file": "KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "KASPERSKY_KSC_CEF_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "KASPERSKY_KSC_CEF_CHILD_THIRDPARTYALERT",
+      "file": "KASPERSKY_KSC_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "KASPERSKY_KSC_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

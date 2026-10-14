@@ -1,0 +1,326 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791850951000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "GNRL_EV_VIRUS_FOUND",
+      "host_id": "WS-FIN-041",
+      "threat_name": "Trojan.Win32.Agent.example",
+      "vendor_alert_type": "Malicious object detected",
+      "agent_priority": "Critical",
+      "computer_name": "WS-FIN-041",
+      "user_name": "EXAMPLE\\akim",
+      "agent_version": "12.6.0.438",
+      "file_path": "C:\\Users\\akim\\Downloads\\invoice_1013.exe",
+      "threat_type": "FILE",
+      "file_hash": {
+        "sha256": "9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf"
+      },
+      "action_taken": "ALERT",
+      "threat_category": "TROJAN",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "kaspersky_severity",
+            "value": "Critical"
+          },
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "component",
+            "value": "File Threat Protection"
+          },
+          {
+            "key": "group",
+            "value": "Finance"
+          },
+          {
+            "key": "host_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "detection_type",
+            "value": "61"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791850952000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "GNRL_EV_OBJECT_QUARANTINED",
+      "host_id": "WS-FIN-041",
+      "threat_name": "Trojan.Win32.Agent.example",
+      "vendor_alert_type": "Object quarantined",
+      "agent_priority": "Warning",
+      "computer_name": "WS-FIN-041",
+      "user_name": "EXAMPLE\\akim",
+      "agent_version": "12.6.0.438",
+      "file_path": "C:\\Users\\akim\\Downloads\\invoice_1013.exe",
+      "threat_type": "FILE",
+      "action_taken": "QUARANTINED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "kaspersky_severity",
+            "value": "Warning"
+          },
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "component",
+            "value": "File Threat Protection"
+          },
+          {
+            "key": "group",
+            "value": "Finance"
+          },
+          {
+            "key": "host_ip",
+            "value": "192.0.2.41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791853512000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "GNRL_EV_OBJECT_DELETED",
+      "host_id": "WS-OPS-057",
+      "threat_name": "HEUR:Trojan-Ransom.Win32.Generic",
+      "vendor_alert_type": "Object deleted",
+      "agent_priority": "Warning",
+      "computer_name": "WS-OPS-057",
+      "user_name": "EXAMPLE\\jlee",
+      "agent_version": "12.6.0.438",
+      "file_path": "C:\\Users\\Public\\svc\\lock.exe",
+      "threat_type": "FILE",
+      "action_taken": "DELETED",
+      "threat_category": "RANSOMWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "kaspersky_severity",
+            "value": "Warning"
+          },
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "component",
+            "value": "Behavior Detection"
+          },
+          {
+            "key": "group",
+            "value": "Operations"
+          },
+          {
+            "key": "host_ip",
+            "value": "192.0.2.57"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791856820000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "GNRL_EV_SUSPICIOUS_OBJECT_FOUND",
+      "host_id": "SRV-APP-03",
+      "threat_name": "not-a-virus:HEUR:AdWare.Win32.Example.gen",
+      "vendor_alert_type": "Probably infected object detected",
+      "agent_priority": "Critical",
+      "computer_name": "SRV-APP-03",
+      "user_name": "EXAMPLE\\svc_backup",
+      "agent_version": "12.6.0.438",
+      "file_path": "C:\\Program Files (x86)\\ExampleToolbar\\updater.exe",
+      "threat_type": "FILE",
+      "action_taken": "ALERT",
+      "threat_category": "APPLICATION",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "kaspersky_severity",
+            "value": "Critical"
+          },
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "group",
+            "value": "Servers"
+          },
+          {
+            "key": "host_ip",
+            "value": "192.0.2.30"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791858605000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "GNRL_EV_VIRUS_FOUND_AND_BLOCKED",
+      "host_id": "WS-FIN-044",
+      "threat_name": "https://downloads.example.net/invoice.zip",
+      "vendor_alert_type": "Dangerous link blocked",
+      "agent_priority": "Critical",
+      "computer_name": "WS-FIN-044",
+      "user_name": "EXAMPLE\\mpatel",
+      "agent_version": "12.6.0.438",
+      "url_string": "https://downloads.example.net/invoice.zip",
+      "action_taken": "BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "kaspersky_severity",
+            "value": "Critical"
+          },
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "component",
+            "value": "Web Threat Protection"
+          },
+          {
+            "key": "group",
+            "value": "Finance"
+          },
+          {
+            "key": "host_ip",
+            "value": "192.0.2.44"
+          },
+          {
+            "key": "detection_type",
+            "value": "71"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791859900000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "SRV-APP-03",
+      "vendor": "Kaspersky",
+      "provider": "Kaspersky Security Center",
+      "sub_provider": "Network Threat Protection",
+      "alert_category": "GNRL_EV_ATTACK_DETECTED",
+      "title": "Network attack detected: Intrusion.Win.MS17-010.o",
+      "summary": "Network attack detected: Intrusion.Win.MS17-010.o on SRV-APP-03",
+      "target_host_name": "SRV-APP-03",
+      "destination_address": "192.0.2.30",
+      "vendor_severity": "Critical",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "group",
+            "value": "Servers"
+          },
+          {
+            "key": "message",
+            "value": "Event type: Network attack detected\\r\\nComponent: Network Threat Protection\\r\\nAttack name: Intrusion.Win.MS17-010.o\\r\\nProtocol: TCP\\r\\nAttacking IP address: 203.0.113.60\\r\\nPort: 445\\r\\n"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT > KASPERSKY_KSC_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791860538000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-OPS-057",
+      "vendor": "Kaspersky",
+      "provider": "Kaspersky Security Center",
+      "sub_provider": "Application Control",
+      "alert_category": "GNRL_EV_APPLICATION_LAUNCH_DENIED",
+      "title": "Application startup prohibited",
+      "summary": "Application startup prohibited on WS-OPS-057",
+      "target_host_name": "WS-OPS-057",
+      "target_user_name": "EXAMPLE\\jlee",
+      "destination_address": "192.0.2.57",
+      "vendor_severity": "Critical",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "KES"
+          },
+          {
+            "key": "group",
+            "value": "Operations"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\jlee\\AppData\\Local\\Temp\\anydesk.exe"
+          },
+          {
+            "key": "message",
+            "value": "Event type: Application startup prohibited\\r\\nApplication: anydesk.exe\\r\\nUser: EXAMPLE\\jlee (Active user)\\r\\nComponent: Application Control\\r\\nRule: Block remote access tools\\r\\n"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "KASPERSKY_KSC_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Kaspersky Security Center",
+      "event_time_usec": 1791862827000000,
+      "host_id": "SRV-APP-03"
+    }
+  }
+]
