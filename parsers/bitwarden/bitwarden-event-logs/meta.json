@@ -1,0 +1,45 @@
+{
+  "vendor": "Bitwarden",
+  "product": "Bitwarden event logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://bitwarden.com/help/public-api/",
+    "https://bitwarden.com/help/api/",
+    "https://bitwarden.com/help/event-logs/",
+    "https://bitwarden.com/help/providers/"
+  ],
+  "notes": "Bitwarden offers organization event logs to other tools only through the Public API (Teams and Enterprise), so these parsers read events pulled by the example collector in collectors/bitwarden-events and posted to HTTP Ingest. The collector puts \"bitwarden_record\": \"event\" first and adds organizationId, and the email and name of the acting user and of the member from the member list, since an event names them only by ID. MSPs run one collector per client organization. Sign-ins (User_LoggedIn), wrong master passwords (User_FailedLogIn), wrong two-step login codes (User_FailedLogIn2fa) and first SSO sign-ins go to Auth, with the Bitwarden app as the logon application. Every other event goes to CloudAudit with the event name as the event name, its category (item, collection, group, member, organization, policy, secret, send and others) as the event type, and every ID it carries as a resource; item, secret and Send events and vault exports are data events, and views, copies, autofills, retrievals and exports are read-only. Event and device names are the enum names in Bitwarden's Public API OpenAPI document; a newer code keeps the name event_<code>. Most events come from Bitwarden's apps, which send them about every 60 seconds with the device's time, and Bitwarden notes a modified client could suppress them. Samples follow the EventResponseModel in Bitwarden's OpenAPI document with made-up values, tagged by the collector's own code. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (162 of 162 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (162 of 162 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "BITWARDEN_EVENTS_JSON_PARENT",
+      "file": "BITWARDEN_EVENTS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "BITWARDEN_EVENTS_JSON_CHILD_AUTH",
+      "file": "BITWARDEN_EVENTS_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "BITWARDEN_EVENTS_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+      "file": "BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "BITWARDEN_EVENTS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "collector": "collectors/bitwarden-events"
+}

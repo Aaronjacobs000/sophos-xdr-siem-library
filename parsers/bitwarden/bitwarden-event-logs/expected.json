@@ -1,0 +1,515 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791853804218000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Bitwarden",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "logon_application_family": "ChromeBrowser",
+      "status": "User_LoggedIn",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1000"
+          },
+          {
+            "key": "organization_id",
+            "value": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+          },
+          {
+            "key": "acting_user_id",
+            "value": "a2549f79-a71f-4eb9-9234-eb7247333f94"
+          },
+          {
+            "key": "device",
+            "value": "9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791853890507000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Bitwarden",
+      "target_user_name": "kim.lee@example.com",
+      "user_display_name": "Kim Lee",
+      "source_address": "198.51.100.44",
+      "logon_application_family": "ChromeExtension",
+      "status": "User_FailedLogIn",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1005"
+          },
+          {
+            "key": "organization_id",
+            "value": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+          },
+          {
+            "key": "acting_user_id",
+            "value": "b3650a8a-b820-4fca-a345-fc8358444a05"
+          },
+          {
+            "key": "device",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791853918020331,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Bitwarden",
+      "target_user_name": "kim.lee@example.com",
+      "user_display_name": "Kim Lee",
+      "source_address": "198.51.100.44",
+      "logon_application_family": "ChromeExtension",
+      "status": "User_FailedLogIn2fa",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1006"
+          },
+          {
+            "key": "organization_id",
+            "value": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+          },
+          {
+            "key": "acting_user_id",
+            "value": "b3650a8a-b820-4fca-a345-fc8358444a05"
+          },
+          {
+            "key": "device",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854062604000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item",
+      "event_source": "Bitwarden",
+      "event_name": "Cipher_ClientViewed",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "pat@example.com",
+      "user_id": "a2549f79-a71f-4eb9-9234-eb7247333f94",
+      "user_type": "user",
+      "source_address": "203.0.113.10",
+      "user_agent": "ChromeExtension",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "3767a302-8208-4dc6-b842-030428a1cfad",
+          "resource_type": "item",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1107"
+          },
+          {
+            "key": "device",
+            "value": "2"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Pat Example"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854071001000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item",
+      "event_source": "Bitwarden",
+      "event_name": "Cipher_ClientCopiedPassword",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "pat@example.com",
+      "user_id": "a2549f79-a71f-4eb9-9234-eb7247333f94",
+      "user_type": "user",
+      "source_address": "203.0.113.10",
+      "user_agent": "ChromeExtension",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "3767a302-8208-4dc6-b842-030428a1cfad",
+          "resource_type": "item",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1111"
+          },
+          {
+            "key": "device",
+            "value": "2"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Pat Example"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854447350000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "organization",
+      "event_source": "Bitwarden",
+      "event_name": "Organization_ClientExportedVault",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "sam.admin@example.com",
+      "user_id": "c4761b9b-c931-40db-b456-0d9469555b16",
+      "user_type": "user",
+      "source_address": "203.0.113.77",
+      "user_agent": "WindowsDesktop",
+      "management_event": false,
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1602"
+          },
+          {
+            "key": "device",
+            "value": "6"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Sam Admin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854525881000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "member",
+      "event_source": "Bitwarden",
+      "event_name": "OrganizationUser_Invited",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "sam.admin@example.com",
+      "user_id": "c4761b9b-c931-40db-b456-0d9469555b16",
+      "user_type": "user",
+      "target_user_name": "jo.nguyen@example.com",
+      "source_address": "203.0.113.77",
+      "user_agent": "ChromeBrowser",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "1b9eb95c-b81e-4c5c-85f3-eb7797209ed7",
+          "resource_type": "member",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1500"
+          },
+          {
+            "key": "device",
+            "value": "9"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Sam Admin"
+          },
+          {
+            "key": "member_name",
+            "value": "Jo Nguyen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854680120000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "policy",
+      "event_source": "Bitwarden",
+      "event_name": "Policy_Updated",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "sam.admin@example.com",
+      "user_id": "c4761b9b-c931-40db-b456-0d9469555b16",
+      "user_type": "user",
+      "source_address": "203.0.113.77",
+      "user_agent": "ChromeBrowser",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "f29a2515-91d2-4452-b49b-5e8040e6b0f4",
+          "resource_type": "policy",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1700"
+          },
+          {
+            "key": "device",
+            "value": "9"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Sam Admin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791854833444000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "organization",
+      "event_source": "Bitwarden",
+      "event_name": "Organization_VaultAccessed",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "e8a95fdf-0b65-4c1f-98aa-41d8bd9a8f30",
+      "user_id": "e8a95fdf-0b65-4c1f-98aa-41d8bd9a8f30",
+      "user_type": "user",
+      "source_address": "198.51.100.120",
+      "user_agent": "ChromeBrowser",
+      "management_event": true,
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1603"
+          },
+          {
+            "key": "device",
+            "value": "9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791855000999000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "secret",
+      "event_source": "Bitwarden",
+      "event_name": "Secret_Retrieved",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "7f8091a2-b3c4-4d5e-9f60-718293a4b5c6",
+      "user_id": "7f8091a2-b3c4-4d5e-9f60-718293a4b5c6",
+      "user_type": "machine_account",
+      "source_address": "203.0.113.140",
+      "user_agent": "SDK",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "2c1fd5e1-7a53-4b4a-9d6c-0e1f2a3b4c5d",
+          "resource_type": "secret",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        },
+        {
+          "resource_id": "6e7f8091-a2b3-4c4d-8e5f-60718293a4b5",
+          "resource_type": "project",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        },
+        {
+          "resource_id": "7f8091a2-b3c4-4d5e-9f60-718293a4b5c6",
+          "resource_type": "machine_account",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "2100"
+          },
+          {
+            "key": "device",
+            "value": "21"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791855196250000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Bitwarden",
+      "target_user_name": "jo.nguyen@example.com",
+      "user_display_name": "Jo Nguyen",
+      "source_address": "203.0.113.91",
+      "logon_application_family": "MacOsDesktop",
+      "status": "OrganizationUser_FirstSsoLogin",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1510"
+          },
+          {
+            "key": "organization_id",
+            "value": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+          },
+          {
+            "key": "acting_user_id",
+            "value": "d5872cac-da42-41ec-8567-1ea57a666c27"
+          },
+          {
+            "key": "member_id",
+            "value": "1b9eb95c-b81e-4c5c-85f3-eb7797209ed7"
+          },
+          {
+            "key": "device",
+            "value": "7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "BITWARDEN_EVENTS_JSON_PARENT > BITWARDEN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Bitwarden",
+      "event_time_usec": 1791855352040000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "item",
+      "event_source": "Bitwarden",
+      "event_name": "Cipher_Deleted",
+      "recipient_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01",
+      "user_name": "kim.lee@example.com",
+      "user_id": "b3650a8a-b820-4fca-a345-fc8358444a05",
+      "user_type": "user",
+      "source_address": "198.51.100.44",
+      "user_agent": "FirefoxBrowser",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "4878b413-9319-4ed7-a953-141539b2d0be",
+          "resource_type": "item",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        },
+        {
+          "resource_id": "bce212a4-25f3-4888-8a0a-4c5736d851e0",
+          "resource_type": "collection",
+          "resource_account_id": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "1102"
+          },
+          {
+            "key": "device",
+            "value": "10"
+          },
+          {
+            "key": "acting_user_name",
+            "value": "Kim Lee"
+          }
+        ]
+      }
+    }
+  }
+]

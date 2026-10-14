@@ -1,0 +1,90 @@
+!SAMPLE={"bitwarden_record":"event","organizationId":"6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01","object":"event","type":1107,"itemId":"3767a302-8208-4dc6-b842-030428a1cfad","collectionId":null,"groupId":null,"policyId":null,"memberId":null,"actingUserId":"a2549f79-a71f-4eb9-9234-eb7247333f94","installationId":null,"date":"2026-10-13T01:14:22.6040000Z","device":2,"ipAddress":"203.0.113.10","secretId":null,"projectId":null,"serviceAccountId":null,"actingUserEmail":"pat@example.com","actingUserName":"Pat Example"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Bitwarden event logs from the example collector: every event that isn't a sign-in.
+# Items (viewed, copied, autofilled, edited, deleted), collections, groups, members, organization
+# settings and exports, policies, provider access, domains, Secrets Manager and Send.
+# Child of BITWARDEN_EVENTS_JSON_PARENT: each one to CloudAudit, with the event name (such as
+# Cipher_ClientViewed) as the event name and its category (item, member, organization and others)
+# as the event type.
+# json, t, evName, devName, category, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Bitwarden"
+eventName$ = evName
+eventType$ = category
+org = json["$.organizationId"]
+recipientAccountId$ = org
+actor = json["$.actingUserId"]
+email = json["$.actingUserEmail"]
+machine = json["$.serviceAccountId"]
+userName$ = IF email THEN email ELSE actor
+userName$ = IF userName$ THEN userName$ ELSE machine
+userId$ = IF actor THEN actor ELSE machine
+userType$ = IF actor THEN "user" ELSE NULL
+userType$ = IF userType$ == NULL AND machine THEN "machine_account" ELSE userType$
+memberEmail = json["$.memberEmail"]
+targetUserName$ = IF memberEmail THEN memberEmail ELSE json["$.memberId"]
+sourceAddress$ = json["$.ipAddress"]
+userAgent$ = devName
+
+# Item, secret and Send events and vault exports touch vault data; the rest change the organization.
+dataEvent = category == "item" OR category == "secret" OR category == "send" OR CONTAINS(evName, "ExportedVault")
+managementEvent$ = NOT dataEvent
+readOnly$ = CONTAINS(evName, "Viewed") OR CONTAINS(evName, "Copied") OR CONTAINS(evName, "Toggled") OR CONTAINS(evName, "Autofilled") OR CONTAINS(evName, "Retrieved") OR CONTAINS(evName, "Accessed") OR CONTAINS(evName, "ExportedVault")
+
+# Resources: every ID the event carries. Assign the list first, then add the ones that are present.
+resources$ = []
+item.resourceId$ = json["$.itemId"]
+item.resourceType$ = "item"
+item.resourceAccountId$ = org
+resources$ = IF item.resourceId$ THEN resources$ + [item] ELSE resources$
+coll.resourceId$ = json["$.collectionId"]
+coll.resourceType$ = "collection"
+coll.resourceAccountId$ = org
+resources$ = IF coll.resourceId$ THEN resources$ + [coll] ELSE resources$
+grp.resourceId$ = json["$.groupId"]
+grp.resourceType$ = "group"
+grp.resourceAccountId$ = org
+resources$ = IF grp.resourceId$ THEN resources$ + [grp] ELSE resources$
+pol.resourceId$ = json["$.policyId"]
+pol.resourceType$ = "policy"
+pol.resourceAccountId$ = org
+resources$ = IF pol.resourceId$ THEN resources$ + [pol] ELSE resources$
+mem.resourceId$ = json["$.memberId"]
+mem.resourceType$ = "member"
+mem.resourceAccountId$ = org
+resources$ = IF mem.resourceId$ THEN resources$ + [mem] ELSE resources$
+sec.resourceId$ = json["$.secretId"]
+sec.resourceType$ = "secret"
+sec.resourceAccountId$ = org
+resources$ = IF sec.resourceId$ THEN resources$ + [sec] ELSE resources$
+proj.resourceId$ = json["$.projectId"]
+proj.resourceType$ = "project"
+proj.resourceAccountId$ = org
+resources$ = IF proj.resourceId$ THEN resources$ + [proj] ELSE resources$
+sa.resourceId$ = json["$.serviceAccountId"]
+sa.resourceType$ = "machine_account"
+sa.resourceAccountId$ = org
+resources$ = IF sa.resourceId$ THEN resources$ + [sa] ELSE resources$
+
+d1.key$ = "event_type"
+d1.value$ = t
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+d2.key$ = "device"
+d2.value$ = dev
+additionalEventData$.record$ = IF dev != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "acting_user_name"
+d3.value$ = json["$.actingUserName"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "member_name"
+d4.value$ = json["$.memberName"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "installation_id"
+d5.value$ = json["$.installationId"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
