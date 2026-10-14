@@ -1,0 +1,51 @@
+{
+  "vendor": "ESET",
+  "product": "ESET PROTECT Cloud",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "collector": "collectors/eset-connect",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://help.eset.com/eset_connect/en-US/incident_management_v1_detections_get.html",
+    "https://help.eset.com/eset_connect/en-US/incident_management.html",
+    "https://help.eset.com/eset_connect/en-US/create_api_user_account.html"
+  ],
+  "notes": "ESET PROTECT (cloud) has no syslog export, so run the example collector in collectors/eset-connect: it reads detections from the ESET Connect API (GET /v1/detections) as an API user and posts them to a Sophos NG-SIEM HTTP Ingest integration with eset_connect_record set to detection. Antivirus detections go to Antivirus; network attack protection and firewall rule detections go to NIDS; HIPS, web access, suspicious activity and ESET Inspect correlation rule detections go to the third-party alert schema; vulnerability and patch detections stay generic. A detection names its device only by UUID, kept as host_id, because the device name is in ESET's device management API. ESET doesn't list the values of typeName or of the response names, so the threat category and the action are matched by keyword. ESET publishes only placeholder examples, so the samples are made up in the shape of the API reference's detection schema. For ESET PROTECT On-Prem, use the eset-protect-on-prem entry. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (130 of 130 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (127 of 127 fields). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "ESET_CONNECT_JSON_PARENT",
+      "file": "ESET_CONNECT_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ESET_CONNECT_JSON_CHILD_ANTIVIRUS",
+      "file": "ESET_CONNECT_JSON_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "ESET_CONNECT_JSON_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "ESET_CONNECT_JSON_CHILD_NIDS",
+      "file": "ESET_CONNECT_JSON_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "ESET_CONNECT_JSON_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+      "file": "ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "ESET_CONNECT_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

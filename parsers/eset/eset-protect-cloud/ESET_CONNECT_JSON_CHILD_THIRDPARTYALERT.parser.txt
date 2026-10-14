@@ -1,0 +1,63 @@
+!SAMPLE={"eset_connect_record":"detection","uuid":"b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d47","category":"DETECTION_CATEGORY_HIPS","context":{"circumstances":"Attempt to modify a protected registry key.","deviceUuid":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","process":{"path":"C:\\Users\\jlee\\AppData\\Roaming\\run32.exe"},"userName":"EXAMPLE\\jlee"},"displayName":"Suspicious registry modification","objectName":"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run","objectTypeName":"Registry key","occurTime":"2026-10-13T03:40:27Z","responses":[{"description":"The operation was blocked.","deviceRestartRequired":false,"displayName":"Blocked","protectionName":"HIPS"}],"severityLevel":"SEVERITY_LEVEL_HIGH","typeName":"HIPS"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="HIPS" OR eventType$=="HIPS_RULE" OR eventType$=="WEB_ACCESS" OR eventType$=="SUSPICIOUS_ACTIVITY" OR eventType$=="CORRELATION_RULE"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT (cloud) detections from ESET Connect, via collectors/eset-connect.
+# Child of ESET_CONNECT_JSON_PARENT: HIPS, web access, suspicious activity and ESET Inspect
+# correlation rule detections to the third-party alert schema.
+# json, eventType$, sensorType$, hostId$, eventTimeUsec$, severityName, deviceUuid, userName,
+# processPath, responseName, responseText and protection come from the parent.
+
+vendor$ = "ESET"
+provider$ = "ESET PROTECT"
+subProvider$ = IF protection != "" THEN protection ELSE NULL
+alertId$ = STRING(json["$.uuid"])
+alertCategory$ = eventType$
+name = STRING(json["$.displayName"])
+title$ = name
+circumstances = STRING(json["$.context.circumstances"])
+summary$ = IF circumstances != "" THEN name + ": " + circumstances ELSE name
+targetHostName$ = IF deviceUuid != "" THEN deviceUuid ELSE NULL
+sourceUserName$ = IF userName != "" THEN userName ELSE NULL
+
+# ESET's severity levels: DIAGNOSTIC, INFORMATIONAL, LOW (warning), MEDIUM (error or threat), HIGH (critical).
+vendorSeverity$ = IF severityName != "" THEN severityName ELSE NULL
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF severityName == "DIAGNOSTIC" OR severityName == "INFORMATIONAL" THEN "INFO" ELSE severity$
+severity$ = IF severityName == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF severityName == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF severityName == "HIGH" THEN "HIGH" ELSE severity$
+action$ = IF CONTAINS(responseText, "block") OR CONTAINS(responseText, "terminat") OR CONTAINS(responseText, "denied") THEN "BLOCKED" ELSE NULL
+
+objUrl = STRING(json["$.objectUrl"])
+web = objUrl|^(?P<u>https?://.+)$
+destinationUrl$ = IF web["u"] != "" THEN web["u"] ELSE NULL
+localIp = STRING(json["$.networkCommunication.localIpAddress"])
+remoteIp = STRING(json["$.networkCommunication.remoteIpAddress"])
+outbound = STRING(json["$.networkCommunication.direction"]) == "NETWORK_COMMUNICATION_DIRECTION_OUTBOUND"
+srcIp = IF outbound THEN localIp ELSE remoteIp
+dstIp = IF outbound THEN remoteIp ELSE localIp
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+
+d1.key$ = "device_uuid"
+d1.value$ = deviceUuid
+d2.key$ = "type_name"
+d2.value$ = STRING(json["$.typeName"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "process_path"
+d3.value$ = processPath
+additionalData$.record$ = IF processPath != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "object_name"
+d4.value$ = STRING(json["$.objectName"])
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_sha1"
+d5.value$ = LOWERCASE(STRING(json["$.objectHashSha1"]))
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "response"
+d6.value$ = responseName
+additionalData$.record$ = IF responseName != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$

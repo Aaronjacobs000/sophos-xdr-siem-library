@@ -1,0 +1,69 @@
+!SAMPLE={"eset_connect_record":"detection","uuid":"b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d41","category":"DETECTION_CATEGORY_ANTIVIRUS","context":{"circumstances":"Event occurred on a newly created file.","deviceUuid":"5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70","process":{"path":"C:\\Program Files\\WinRAR\\WinRAR.exe"},"userName":"EXAMPLE\\akim"},"displayName":"Win32/Agent.EXAMPLE","objectHashSha1":"5B97884A45C6C05F93B22C4059F3D9189E88E8B7","objectName":"C:\\Users\\akim\\Downloads\\invoice_1013.exe","objectTypeName":"File","objectUrl":"file:///C:/Users/akim/Downloads/invoice_1013.exe","occurTime":"2026-10-13T00:22:31Z","responses":[{"description":"The file was deleted.","deviceRestartRequired":false,"displayName":"Cleaned by deleting","protectionName":"Real-time file system protection"}],"severityLevel":"SEVERITY_LEVEL_MEDIUM","typeName":"Trojan"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ANTIVIRUS"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT (cloud) detections from ESET Connect, via collectors/eset-connect.
+# Child of ESET_CONNECT_JSON_PARENT: antivirus detections to the Antivirus schema.
+# json, eventType$, sensorType$, hostId$, eventTimeUsec$, severityName, deviceUuid, userName,
+# processPath, responseName, responseText and protection come from the parent.
+
+threatName$ = json["$.displayName"]
+vendorAlertType$ = json["$.typeName"]
+agentPriority$ = IF severityName != "" THEN severityName ELSE NULL
+agentDeviceId$ = IF deviceUuid != "" THEN deviceUuid ELSE NULL
+userName$ = IF userName != "" THEN userName ELSE NULL
+processName$ = IF processPath != "" THEN processPath ELSE NULL
+
+objType = LOWERCASE(STRING(json["$.objectTypeName"]))
+objName = STRING(json["$.objectName"])
+objUrl = STRING(json["$.objectUrl"])
+web = objUrl|^(?P<u>https?://.+)$
+urlString$ = IF web["u"] != "" THEN web["u"] ELSE NULL
+filePath$ = IF (objType == "file" OR objType == "memory") AND objName != "" THEN objName ELSE NULL
+threatType$ = "UNKNOWN_THREATTYPE"
+threatType$ = IF objType == "file" THEN "FILE" ELSE threatType$
+threatType$ = IF objType == "memory" THEN "MEMORY" ELSE threatType$
+
+sha1Text = STRING(json["$.objectHashSha1"])
+sha1 = sha1Text|^(?P<h>[0-9A-Fa-f]{40})$
+fileHash$.sha1$ = IF sha1["h"] != "" THEN LOWERCASE(sha1["h"]) ELSE NULL
+sha256Text = STRING(json["$.objectHashSha256"])
+sha256 = sha256Text|^(?P<h>[0-9A-Fa-f]{64})$
+fileHash$.sha256$ = IF sha256["h"] != "" THEN LOWERCASE(sha256["h"]) ELSE NULL
+
+# ESET's typeName is free text, so anything unrecognized falls to the UNKNOWN_ member.
+category = LOWERCASE(STRING(json["$.typeName"]))
+threatCategory$ = "UNKNOWN_THREATCATEGORY"
+threatCategory$ = IF CONTAINS(category, "virus") THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "backdoor") THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "exploit") THEN "EXPLOIT" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "miner") THEN "MINER" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(category, "potentially unwanted") OR CONTAINS(category, "potentially unsafe") THEN "APPLICATION" ELSE threatCategory$
+
+# ESET doesn't list its response names, so they are matched by keyword.
+actionTaken$ = IF responseName == "" THEN "NONE" ELSE "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF CONTAINS(responseText, "delet") THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(responseText, "quarantin") THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(responseText, "block") THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(responseText, "terminat") THEN "TERMINATED" ELSE actionTaken$
+
+m1.key$ = "detection_uuid"
+m1.value$ = STRING(json["$.uuid"])
+m2.key$ = "circumstances"
+m2.value$ = STRING(json["$.context.circumstances"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "response"
+m3.value$ = responseName
+eventMetadata$.record$ = IF responseName != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "protection"
+m4.value$ = protection
+eventMetadata$.record$ = IF protection != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "object_type"
+m5.value$ = STRING(json["$.objectTypeName"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$

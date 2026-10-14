@@ -1,0 +1,62 @@
+!SAMPLE={"eset_connect_record":"detection","uuid":"b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d44","category":"DETECTION_CATEGORY_NETWORK_INTRUSION","context":{"circumstances":"Network attack detected.","deviceUuid":"5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70","process":{"path":"System"},"userName":""},"displayName":"TCP Port scanning attack","networkCommunication":{"direction":"NETWORK_COMMUNICATION_DIRECTION_INBOUND","localIpAddress":"192.0.2.41","localPort":3389,"protocolName":"TCP","remoteIpAddress":"203.0.113.60","remotePort":51544},"objectName":"203.0.113.60","objectTypeName":"Network traffic","occurTime":"2026-10-13T02:14:55Z","responses":[{"description":"The connection was blocked.","deviceRestartRequired":false,"displayName":"Blocked","protectionName":"Network attack protection (IDS)"}],"severityLevel":"SEVERITY_LEVEL_MEDIUM","typeName":"TCP Port scanning attack"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="NETWORK_INTRUSION" OR eventType$=="FIREWALL_RULE"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ESET PROTECT (cloud) detections from ESET Connect, via collectors/eset-connect.
+# Child of ESET_CONNECT_JSON_PARENT: network attack protection and firewall rule detections to NIDS.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# json, eventType$, sensorType$, hostId$, eventTimeUsec$, severityName, deviceUuid, userName,
+# processPath, responseName, responseText and protection come from the parent.
+
+# ESET reports the device's side as local and the other side as remote, with the direction.
+dir = STRING(json["$.networkCommunication.direction"])
+outbound = dir == "NETWORK_COMMUNICATION_DIRECTION_OUTBOUND"
+localIp = STRING(json["$.networkCommunication.localIpAddress"])
+remoteIp = STRING(json["$.networkCommunication.remoteIpAddress"])
+# Ports are int64, which can arrive as numbers or as text.
+localPortText = STRING(json["$.networkCommunication.localPort"])
+remotePortText = STRING(json["$.networkCommunication.remotePort"])
+lp = localPortText|^(?P<n>\d{1,5})$
+rp = remotePortText|^(?P<n>\d{1,5})$
+srcIp = IF outbound THEN localIp ELSE remoteIp
+dstIp = IF outbound THEN remoteIp ELSE localIp
+srcPort = IF outbound THEN lp["n"] ELSE rp["n"]
+dstPort = IF outbound THEN rp["n"] ELSE lp["n"]
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+sourcePort$ = IF srcPort != "" THEN INT(srcPort, 10) ELSE NULL
+destinationPort$ = IF dstPort != "" THEN INT(dstPort, 10) ELSE NULL
+direction$ = "UNKNOWN"
+direction$ = IF dir == "NETWORK_COMMUNICATION_DIRECTION_INBOUND" THEN "INBOUND" ELSE direction$
+direction$ = IF outbound THEN "OUTBOUND" ELSE direction$
+
+proto = UPPERCASE(STRING(json["$.networkCommunication.protocolName"]))
+protocol$ = IF proto == "TCP" THEN 6 ELSE NULL
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+
+message$ = json["$.displayName"]
+classification$ = json["$.typeName"]
+applicationName$ = IF processPath != "" THEN processPath ELSE NULL
+sourceUsername$ = IF userName != "" THEN userName ELSE NULL
+action$ = IF responseName != "" THEN responseName ELSE NULL
+blocked$ = IF CONTAINS(responseText, "block") OR CONTAINS(responseText, "denied") THEN 1 ELSE 0
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+m1.key$ = "detection_uuid"
+m1.value$ = STRING(json["$.uuid"])
+m2.key$ = "category"
+m2.value$ = eventType$
+m3.key$ = "eset_severity"
+m3.value$ = severityName
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "circumstances"
+m4.value$ = STRING(json["$.context.circumstances"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "protection"
+m5.value$ = protection
+eventMetadata$.record$ = IF protection != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
