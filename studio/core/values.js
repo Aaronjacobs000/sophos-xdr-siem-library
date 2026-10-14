@@ -72,7 +72,9 @@ export function toPlain(v) {
 
 const pad = (n, w = 2) => String(Math.abs(n)).padStart(w, '0');
 
-// Go's default time.Time String(): 2018-09-21 17:35:54 +0000 UTC
+// Go's default time.Time String(): 2018-09-21 17:35:54 +0000 UTC. A zone with no name, as a
+// numeric offset such as +11:00 gives, is written as its offset again: 2026-10-13 22:21:09 +1100
+// +1100 (checked in a lab tenant).
 export function formatTime(t) {
   const ms = Math.floor(t.usec / 1000) + t.offset * 60000;
   const d = new Date(ms);
@@ -80,7 +82,7 @@ export function formatTime(t) {
   const f = frac ? '.' + String(frac).padStart(6, '0').replace(/0+$/, '') : '';
   const sign = t.offset < 0 ? '-' : '+';
   const off = `${sign}${pad(Math.trunc(Math.abs(t.offset) / 60))}${pad(Math.abs(t.offset) % 60)}`;
-  return `${String(d.getUTCFullYear()).padStart(4, '0')}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}${f} ${off} ${t.zone}`;
+  return `${String(d.getUTCFullYear()).padStart(4, '0')}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}${f} ${off} ${t.zone || off}`;
 }
 
 export function compactJson(v) {

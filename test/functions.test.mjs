@@ -341,6 +341,20 @@ test('a DATETIME value compares only with another DATETIME or a number', () => {
   assert.equal(get('t = DATETIME("garbage", "2006-01-02")\nx = t == NULL', 'x'), true);
 });
 
+test('a DATETIME value and a number compare as microseconds, the number on either side', () => {
+  // What the engine returned in a lab tenant, each comparison in its own event. t is
+  // 1791849600000000 microseconds.
+  const T = 't = DATETIME("2026-10-13T00:00:00Z", "2006-01-02T15:04:05Z07:00")\n';
+  for (const [expr, want] of [
+    ['t > 5', true], ['t < 5', false], ['t >= 5', true], ['t <= 5', false], ['t == 5', false], ['t != 5', true],
+    ['5 < t', true], ['5 > t', false], ['5 <= t', true], ['5 >= t', false],
+    ['t > 1791849600000000', false], ['t >= 1791849600000000', true], ['t <= 1791849600000000', true],
+    ['t < 1791849600000000', false], ['t == 1791849600000000', true], ['t != 1791849600000000', false],
+    ['t < 1791849600000001', true], ['t > 1791849599999999', true], ['t > 1791849600000001', false],
+    ['1791849600000001 > t', true], ['t > -1', true],
+  ]) assert.equal(get(`${T}x = ${expr}`, 'x'), want, expr);
+});
+
 test('text added to a DATETIME value must read as a number', () => {
   const T = 't = DATETIME("2026-10-14T01:02:03Z", "2006-01-02T15:04:05Z07:00")\nn = NULL\n';
   for (const add of ['"at " + t', 't + " at"', '"" + t', 't + " 5"', 't + "5 "', 't + "0x10"']) assert.throws(() => run(`${T}x = ${add}`), /unable to add: cannot convert time to string/, add);
@@ -1443,6 +1457,13 @@ test('LEEF(NULL) fails the event, with or without a delimiter', () => {
   assert.equal(get('x = LEEF("LEEF:1.0|V|P|1|100|a=b\\tc=d")\ny = x["a"] + "," + x[1]', 'y'), 'b,V');
 });
 
+test('LEEF() fails on text with no LEEF:, "" included, with or without a delimiter', () => {
+  // The engine failed each with "message is not in LEEF format" (checked in a lab tenant).
+  for (const expr of ['LEEF("")', 'LEEF("no leef here")', 'LEEF("", "|")', 'LEEF("no leef here", "|")']) {
+    assert.throws(() => run(`x = ${expr}`), /message is not in LEEF format/, expr);
+  }
+});
+
 test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', () => {
   // What the engine returned in a lab tenant, in microseconds. TRUE also picks the year.
   const usec = (expr) => toPlain(execute(`t = ${expr}\nx = STRING(t + 0)`, {}, { now: '2026-10-14T20:00:00Z' }).vars.get('x'));
@@ -1468,14 +1489,11 @@ test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', (
 });
 
 test('DATETIME() with TRUE sets the current year, whatever the value holds, or the year before past 48 hours ahead', () => {
-  // What the engine returned in a lab tenant, as Go's time String() and in microseconds. Only the
-  // date, time and offset of the String() form are compared: for a numeric zone Go also repeats the
-  // offset as the zone name, which the emulator leaves out.
+  // What the engine returned in a lab tenant, as Go's time String() and in microseconds.
   const at = (now) => (expr) => {
     const vars = execute(`t = ${expr}\nx = STRING(t)\nu = STRING(t + 0)`, {}, { now }).vars;
-    return `${vars.get('x').slice(0, 25)}|${vars.get('u')}`;
+    return `${vars.get('x')}|${vars.get('u')}`;
   };
-  const go = (s) => s.replace(/^(.{25})[^|]*/, '$1');
   const read = at('2026-10-14T20:46:20Z');
   for (const [expr, want] of [
     ['DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", TRUE)', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
@@ -1507,7 +1525,7 @@ test('DATETIME() with TRUE sets the current year, whatever the value holds, or t
     ['DATETIME("Oct 20 22:21:09", "Jan _2 15:04:05", TRUE)', '2025-10-20 22:21:09 +0000 UTC|1760998869000000'],
     // Without TRUE the year stays.
     ['DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", FALSE)', '2019-10-13 22:21:09 +0000 UTC|1571005269000000'],
-  ]) assert.equal(read(expr), go(want), expr);
+  ]) assert.equal(read(expr), want, expr);
   // The 48 hours run from the moment Run Test ran, compared as instants, so the zone counts.
   const edge = at('2026-10-14T20:49:02Z');
   for (const [expr, want] of [
@@ -1517,9 +1535,27 @@ test('DATETIME() with TRUE sets the current year, whatever the value holds, or t
     ['DATETIME("2019-10-16T11:49:02-10:00", "2006-01-02T15:04:05Z07:00", TRUE)', '2025-10-16 11:49:02 -1000 -1000|1760651342000000'],
     ['DATETIME("Oct 17 05:49:02 +1000", "Jan _2 15:04:05 -0700", TRUE)', '2026-10-17 05:49:02 +1000 +1000|1792180142000000'],
     ['DATETIME("Oct 16 11:49:02 -1000", "Jan _2 15:04:05 -0700", TRUE)', '2025-10-16 11:49:02 -1000 -1000|1760651342000000'],
-  ]) assert.equal(edge(expr), go(want), expr);
+  ]) assert.equal(edge(expr), want, expr);
   // The root parser reads a plain BSD syslog header time the same way.
   const root = (line, now) => new Map(rootVars(line, now)).get('eventTimeUsec$').usec;
   assert.equal(root('Oct 15 21:48:01 zzhost ZZPROBER9E root', '2026-10-14T20:48:36Z'), 1792100881000000);
   assert.equal(root('Oct 19 20:48:01 zzhost ZZPROBER9E root', '2026-10-14T20:48:36Z'), 1760906881000000);
+});
+
+test('STRING() of a DATETIME value with a numeric zone writes the offset again as the zone name', () => {
+  // What the engine returned in a lab tenant, as Go's time String() and in microseconds. A zero
+  // offset and Z both read as UTC, and a zone abbreviation keeps its name.
+  for (const [expr, want] of [
+    ['DATETIME("2026-10-13T22:21:09+11:00", "2006-01-02T15:04:05Z07:00")', '2026-10-13 22:21:09 +1100 +1100|1791890469000000'],
+    ['DATETIME("2026-10-13T22:21:09-05:30", "2006-01-02T15:04:05Z07:00")', '2026-10-13 22:21:09 -0530 -0530|1791949869000000'],
+    ['DATETIME("2026-10-13T22:21:09+00:00", "2006-01-02T15:04:05Z07:00")', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("2026-10-13T22:21:09Z", "2006-01-02T15:04:05Z07:00")', '2026-10-13 22:21:09 +0000 UTC|1791930069000000'],
+    ['DATETIME("Oct 13 22:21:09 +1000", "Jan _2 15:04:05 -0700")', '0000-10-13 22:21:09 +1000 +1000|-62142464331000000'],
+    ['DATETIME("2026-10-13 22:21:09 -0800", "2006-01-02 15:04:05 -0700")', '2026-10-13 22:21:09 -0800 -0800|1791958869000000'],
+    ['DATETIME("2026-10-13 22:21:09 AEST", "2006-01-02 15:04:05 MST")', '2026-10-13 22:21:09 +0000 AEST|1791930069000000'],
+    ['DATETIME("2026-10-13T22:21:09.5+11:00", "2006-01-02T15:04:05.999Z07:00")', '2026-10-13 22:21:09.5 +1100 +1100|1791890469500000'],
+  ]) {
+    const v = run(`t = ${expr}\nx = STRING(t)\nu = STRING(t + 0)`);
+    assert.equal(`${v.get('x')}|${v.get('u')}`, want, expr);
+  }
 });

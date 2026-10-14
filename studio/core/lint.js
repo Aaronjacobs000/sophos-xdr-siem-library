@@ -52,12 +52,6 @@ export function lintParsers(parsers, opts = {}) {
   for (const p of compiled) if (p.parent && byName.has(p.parent)) (childrenOf.get(p.parent) || childrenOf.set(p.parent, []).get(p.parent)).push(p);
 
   const stats = { fieldsSet: 0, fieldsKnown: 0, enumsChecked: 0, enumsBad: 0, regexes: 0, regexBad: 0 };
-  const inferredSeen = new Set();
-  const inferred = (code, message, parser, line) => {
-    if (inferredSeen.has(`${parser}:${code}`)) return;
-    inferredSeen.add(`${parser}:${code}`);
-    add('inferred', code, message, parser, line);
-  };
 
   for (const p of compiled) {
     const d = p.script.directives;
@@ -164,7 +158,7 @@ export function lintParsers(parsers, opts = {}) {
             if (n.args.length < min || n.args.length > max) add('error', 'arity', `${n.name}() takes ${min === max ? min : `${min} to ${max}`} arguments, not ${n.args.length}`, p.name, st.line);
             if (DEPRECATED[n.name]) add('warning', 'deprecated', DEPRECATED[n.name], p.name, st.line);
           }
-          if (n.name === 'DATETIME') checkDatetime(n, p, st, add, inferred);
+          if (n.name === 'DATETIME') checkDatetime(n, p, st, add);
           if (n.name === 'REPLACE_REGEX' && n.args[1] && n.args[1].t === 'lit' && typeof n.args[1].v === 'string') {
             stats.regexes++;
             for (const i of checkRe2(n.args[1].v)) { if (i.level === 'error') stats.regexBad++; add(i.level, 're2', `REPLACE_REGEX: ${i.message}`, p.name, st.line); }
@@ -202,7 +196,7 @@ export function lintParsers(parsers, opts = {}) {
           }
         }
       });
-      checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf);
+      checkTarget(st, p, fields, schema, add, stats, childrenOf);
       known.add(st.target.split('.')[0]);
       known.add(st.target);
     }
@@ -254,7 +248,7 @@ function assignedNames(p) {
   return out;
 }
 
-function checkDatetime(n, p, st, add, inferred) {
+function checkDatetime(n, p, st, add) {
   const layout = n.args[1];
   if (!layout) return;
   if (layout.t !== 'lit' || typeof layout.v !== 'string') return;
@@ -263,10 +257,11 @@ function checkDatetime(n, p, st, add, inferred) {
   const two = n.args[2];
   const twoOn = two && two.t === 'lit' && truthy(two.v);
   if (!hasYear(layout.v) && !twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" has no year, so Go reads year 0 and the engine stores a huge number. Pass TRUE as the third argument so the engine sets the year. TRUE uses the current year, or the year before when that would put the time more than 48 hours ahead, and replaces any year in the value. It also drops fractional seconds.`, p.name, st.line);
+  if (hasYear(layout.v) && twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" reads a year, but TRUE replaces it with the current year, or the year before when that would put the time more than 48 hours ahead. Leave out TRUE to keep the year in the value.`, p.name, st.line);
   if (!hasZone(layout.v)) add('info', 'datetime-utc', `DATETIME layout "${layout.v}" has no zone, so the engine reads the time as UTC`, p.name, st.line);
 }
 
-function checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf) {
+function checkTarget(st, p, fields, schema, add, stats, childrenOf) {
   const parts = st.target.split('.');
   const head = parts[0];
   if (!head.endsWith('$')) return;
