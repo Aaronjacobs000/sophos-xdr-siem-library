@@ -1,0 +1,42 @@
+!SAMPLE={"@timestamp":1791856890000,"_document_id":"Lq8nC2vBx5Zt1mKp7wRy4e","action":"user.failed_login","actor":"lcontractor_acme","actor_id":51239876,"actor_ip":"198.51.100.44","actor_location":{"country_code":"SG"},"business":"acme-corp","business_id":4321,"created_at":1791856890000,"operation_type":"authentication","user":"lcontractor_acme","user_id":51239876,"user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GitHub Enterprise Cloud audit log stream.
+# Child of GITHUB_AUDIT_JSON_PARENT: user.login, user.failed_login, user.logout and the user 2FA
+# challenge events to Auth. GitHub logs these in the enterprise audit log only for Enterprise
+# Managed Users. user.failed_login covers a wrong username, password or 2FA code.
+# json, act, actor, actorIp, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$._document_id"]
+targetUserName$ = json["$.user"]
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE actor
+sourceAddress$ = actorIp
+userAgent$ = json["$.user_agent"]
+authSystem$ = "GitHub"
+targetDomainName$ = json["$.business"]
+
+ok = act == "user.login" OR act == "user.logout" OR act == "user.two_factor_challenge_success"
+authCategory$ = IF act == "user.logout" THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+action$ = IF act == "user.logout" THEN "LOGOFF" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF act == "user.failed_login" THEN "INCORRECT_USER_OR_PASSWORD" ELSE NULL
+failureCategory$ = IF act == "user.two_factor_challenge_failure" THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF act == "user.two_factor_challenge_success" OR act == "user.two_factor_challenge_failure" THEN TRUE ELSE NULL
+status$ = act
+
+m1.key$ = "actor_id"
+m1.value$ = STRING(json["$.actor_id"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "country_code"
+m2.value$ = json["$.actor_location.country_code"]
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "passkey_nickname"
+m3.value$ = json["$.passkey_nickname"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

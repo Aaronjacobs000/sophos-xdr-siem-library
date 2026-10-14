@@ -1,0 +1,31 @@
+!SAMPLE={"@timestamp":1791856800000,"_document_id":"Xk2bP9qLm4Rt7vWz1yAc3d","action":"user.login","actor":"pexample_acme","actor_id":51234567,"actor_ip":"203.0.113.10","actor_location":{"country_code":"AU"},"business":"acme-corp","business_id":4321,"created_at":1791856800000,"operation_type":"authentication","user":"pexample_acme","user_id":51234567,"user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"_document_id"\s*:\s*"[^"]+".*"action"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+"|"action"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+".*"_document_id"\s*:\s*"[^"]+")
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GitHub Enterprise Cloud audit log streaming to Amazon S3: gzip files of JSON lines, one
+# audit event per line, read by a Sophos NG-SIEM S3 Ingest (customer-managed) integration.
+# Parent: recognizes audit events by their _document_id and action, and hands each to a child.
+#   Sign-ins, failed sign-ins, sign-outs and 2FA challenges (Enterprise Managed Users) go to Auth.
+#   Every other event (git, repository, organization, enterprise, token and policy changes) goes
+#   to CloudAudit.
+# Copilot usage records in the same stream have no action, so they stay unclaimed.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "GitHub Enterprise Cloud"
+act = json["$.action"]
+actor = json["$.actor"]
+actorIp = json["$.actor_ip"]
+# created_at and @timestamp are the event time in epoch milliseconds, UTC.
+ms = json["$.created_at"]
+ms = IF ms THEN ms ELSE json["$['@timestamp']"]
+eventTimeUsec$ = IF ms THEN INT(STRING(ms), 10) * 1000 ELSE eventTimeUsec$
+
+authEvent = act == "user.login" OR act == "user.failed_login" OR act == "user.logout" OR act == "user.two_factor_challenge_success" OR act == "user.two_factor_challenge_failure"
+eventType$ = IF authEvent THEN "auth" ELSE "audit"

@@ -1,0 +1,386 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791856800000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Xk2bP9qLm4Rt7vWz1yAc3d",
+      "target_user_name": "pexample_acme",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "auth_system": "GitHub",
+      "target_domain_name": "acme-corp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "user.login",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "actor_id",
+            "value": "51234567"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791856890000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Lq8nC2vBx5Zt1mKp7wRy4e",
+      "target_user_name": "lcontractor_acme",
+      "source_address": "198.51.100.44",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0",
+      "auth_system": "GitHub",
+      "target_domain_name": "acme-corp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "status": "user.failed_login",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "actor_id",
+            "value": "51239876"
+          },
+          {
+            "key": "country_code",
+            "value": "SG"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791856930000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Wd4hT6jNs9Fq2xLc8vMb1a",
+      "target_user_name": "lcontractor_acme",
+      "source_address": "198.51.100.44",
+      "auth_system": "GitHub",
+      "target_domain_name": "acme-corp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "status": "user.two_factor_challenge_failure",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "actor_id",
+            "value": "51239876"
+          },
+          {
+            "key": "country_code",
+            "value": "SG"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791857100000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "git",
+      "sensor_event_id": "Gp3sV7kRw1Xn5cQz9tLm2b",
+      "event_source": "GitHub",
+      "event_name": "git.clone",
+      "user_name": "pexample_acme",
+      "user_id": "51234567",
+      "source_address": "203.0.113.10",
+      "management_event": false,
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "repo",
+            "value": "acme-eng/payments-api"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          },
+          {
+            "key": "token_id",
+            "value": "91234567"
+          },
+          {
+            "key": "hashed_token",
+            "value": "example-hashed-token"
+          },
+          {
+            "key": "transport_protocol_name",
+            "value": "http"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791857400000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "remove",
+      "sensor_event_id": "Tz6mB1qWv8Hc3nKx5rPd7f",
+      "event_source": "GitHub",
+      "event_name": "repo.destroy",
+      "user_name": "sadmin_acme",
+      "user_id": "51230001",
+      "source_address": "198.51.100.61",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "repo",
+            "value": "acme-eng/legacy-portal"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          },
+          {
+            "key": "visibility",
+            "value": "private"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791857520000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "modify",
+      "sensor_event_id": "Nc9kD4tWx2Lp6vRm1zBq8g",
+      "event_source": "GitHub",
+      "event_name": "org.add_member",
+      "user_name": "sadmin_acme",
+      "user_id": "51230001",
+      "target_user_name": "lcontractor_acme",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "permission",
+            "value": "read"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791857700000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "remove",
+      "sensor_event_id": "Bv2nQ7mTk5Xw9cLz3rHp6h",
+      "event_source": "GitHub",
+      "event_name": "protected_branch.destroy",
+      "user_name": "sadmin_acme",
+      "user_id": "51230001",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "repo",
+            "value": "acme-eng/payments-api"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791857880000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "personal_access_token",
+      "sensor_event_id": "Hm5pW1kRz8Nc4vTq2xLb9j",
+      "event_source": "GitHub",
+      "event_name": "personal_access_token.access_granted",
+      "user_name": "sadmin_acme",
+      "user_id": "51230001",
+      "target_user_name": "pexample_acme",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "user_programmatic_access_name",
+            "value": "ci-deploy"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791858000000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "business",
+      "sensor_event_id": "Rk7tL3vWq9Mz1cNx5pBd2k",
+      "event_source": "GitHub",
+      "event_name": "business.sso_response",
+      "user_name": "pexample_acme",
+      "user_id": "51234567",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "external_identity_nameid",
+            "value": "pat@example.com"
+          },
+          {
+            "key": "issuer",
+            "value": "https://idp.example.com/saml2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "GITHUB_AUDIT_JSON_PARENT > GITHUB_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GitHub Enterprise Cloud",
+      "event_time_usec": 1791858120000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "secret_scanning_push_protection",
+      "sensor_event_id": "Qx4wN8mTz2Kc6vLp1rHb5m",
+      "event_source": "GitHub",
+      "event_name": "secret_scanning_push_protection.bypass",
+      "user_name": "pexample_acme",
+      "user_id": "51234567",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "business",
+            "value": "acme-corp"
+          },
+          {
+            "key": "org",
+            "value": "acme-eng"
+          },
+          {
+            "key": "repo",
+            "value": "acme-eng/payments-api"
+          },
+          {
+            "key": "secret_type",
+            "value": "example_api_key"
+          },
+          {
+            "key": "push_protection_bypass_reason",
+            "value": "false_positive"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
