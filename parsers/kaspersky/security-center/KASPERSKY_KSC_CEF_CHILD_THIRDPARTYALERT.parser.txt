@@ -1,0 +1,48 @@
+!SAMPLE=<29>1 2026-10-13T02:31:40.000Z ksc01.example.com CEF:0|KasperskyLab|SecurityCenter|14.2.0.26967|GNRL_EV_ATTACK_DETECTED|Network attack detected|4|rt=1791859900000 cs9=Servers cs9Label=GroupName dhost=SRV-APP-03 dst=192.0.2.30 cs1=Intrusion.Win.MS17-010.o cs1Label=VirusName cs2=KES cs2Label=ProductName cs3=12.6.0.438 cs3Label=ProductVersion cs10=Network Threat Protection cs10Label=TaskName msg=Event type: Network attack detected\r\nComponent: Network Threat Protection\r\nAttack name: Intrusion.Win.MS17-010.o\r\nProtocol: TCP\r\nAttacking IP address: 203.0.113.60\r\nPort: 445\r\n
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kaspersky Security Center event export, CEF.
+# Child of KASPERSKY_KSC_CEF_PARENT: network attacks, blocked application startups, Adaptive
+# Anomaly Control blocks and Device Control blocks to the third-party alert schema.
+# v, eventId, eventName, sevText, severityName, host, eventType$, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+vendor$ = "Kaspersky"
+provider$ = "Kaspersky Security Center"
+component = STRING(v["TaskName"])
+subProvider$ = IF component != "" THEN component ELSE NULL
+alertCategory$ = eventId
+attack = STRING(v["VirusName"])
+title$ = IF attack != "" THEN eventName + ": " + attack ELSE eventName
+summary$ = IF host != "" THEN title$ + " on " + host ELSE title$
+targetHostName$ = IF host != "" THEN host ELSE NULL
+user = STRING(v["duser"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+ip = STRING(v["dst"])
+destinationAddress$ = IF ip != "" THEN ip ELSE NULL
+
+# Kaspersky's event severity: 1 Info, 2 Warning, 3 Error, 4 Critical.
+vendorSeverity$ = severityName
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sevText == "1" THEN "INFO" ELSE severity$
+severity$ = IF sevText == "2" THEN "LOW" ELSE severity$
+severity$ = IF sevText == "3" THEN "MEDIUM" ELSE severity$
+severity$ = IF sevText == "4" THEN "HIGH" ELSE severity$
+action$ = IF eventId == "GNRL_EV_APPLICATION_LAUNCH_DENIED" OR eventId == "GNRL_EV_ADSEC_DETECT" OR eventId == "GNRL_EV_DEVCTRL_DEV_PLUG_DENIED" THEN "BLOCKED" ELSE NULL
+
+d1.key$ = "product"
+d1.value$ = STRING(v["ProductName"])
+d2.key$ = "group"
+d2.value$ = STRING(v["GroupName"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "file_path"
+d3.value$ = STRING(v["filePath"])
+additionalData$.record$ = IF d3.value$ != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "message"
+d4.value$ = STRING(v["msg"])
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
