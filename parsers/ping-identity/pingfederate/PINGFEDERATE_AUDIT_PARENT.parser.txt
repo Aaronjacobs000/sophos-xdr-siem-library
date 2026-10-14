@@ -1,0 +1,52 @@
+!SAMPLE=Oct 13 04:40:00 pf01.example.com CEF:0|Ping Identity|PingFederate|12.2.1|AUTHN_ATTEMPT|AUTHN_ATTEMPT|0|rt=Oct 13 2026 04:40:00.123 duid=pexample src=203.0.113.10 msg=success cs1Label=Target Application URL cs1= cs2Label=Connection ID cs2= cs3Label=Protocol cs3= dvchost=pf01.example.com cs4Label=Role cs4=IdP externalId=tid:Xk2bP9qLm4Rt7vWz1yAc cs5Label=SP Local User ID cs5= cs6Label=Attributes cs6=
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:0\|Ping Identity\|PingFederate\||\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}\| [^|]*\|(?: [^|]*\|)? [A-Za-z_]+\| [^|]*\| [^|]* \| 
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: the PingFederate security audit log (audit.log) in either of its stock log4j2 layouts:
+#   CEF, from the SecurityAuditToCEFSyslog appender in log4j2.xml:
+#     CEF:0|Ping Identity|PingFederate|<version>|<event>|<event>|0|rt=... duid=<subject> src=<ip>
+#     msg=<status> cs1=<app> cs2=<connection id> cs3=<protocol> dvchost=<host> cs4=<role> externalId=<tracking id> ...
+#   The default pipe layout of audit.log, sent by a syslog forwarder that reads the file:
+#     <time>| <tracking id>| <transaction id>| <event>| <subject>| <ip> | <app>| <connection id>|
+#     <protocol>| <host>| <role>| <status>| <adapter id>| <description>| <response time>
+#   Layouts before transactionid was added have one column less; both are read.
+# Parent: reads either layout into the same variables and hands finished sign-ins, SSO, OAuth and
+# logouts (status success or failure) to the Auth child. Session, revocation and in-progress
+# events stay in the generic schema.
+
+cefm = originalData$|CEF:0\|Ping Identity\|PingFederate\|
+isCef = cefm[0] != ""
+v = IF isCef THEN CEF(originalData$) ELSE NULL
+pm = originalData$|(?P<time>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3})\| (?P<tid>[^|]*)\|(?: (?P<txid>[^|]*)\|)? (?P<event>[A-Za-z_]+)\| (?P<subject>[^|]*)\| (?P<ip>[^|]*) \| (?P<app>[^|]*)\| (?P<conn>[^|]*)\| (?P<proto>[^|]*)\| (?P<host>[^|]*)\| (?P<role>[^|]*)\| (?P<status>[^|]*)\| (?P<adapter>[^|]*)\| (?P<desc>[^|]*)\| ?(?P<rtime>\d*)\s*$
+
+# Variables and $ fields set here are visible to the child. The CEF header version is read in
+# the child: the generic schema has no sensor_version in the docs' field table.
+sensorType$ = "PingFederate"
+event = IF isCef THEN v[4] ELSE pm["event"]
+subject = IF isCef THEN v["duid"] ELSE pm["subject"]
+ip = IF isCef THEN v["src"] ELSE pm["ip"]
+status = LOWERCASE(STRING(IF isCef THEN v["msg"] ELSE pm["status"]))
+app = IF isCef THEN v["cs1"] ELSE pm["app"]
+conn = IF isCef THEN v["cs2"] ELSE pm["conn"]
+proto = IF isCef THEN v["cs3"] ELSE pm["proto"]
+host = IF isCef THEN v["dvchost"] ELSE pm["host"]
+role = IF isCef THEN v["cs4"] ELSE pm["role"]
+tid = IF isCef THEN v["externalId"] ELSE pm["tid"]
+txid = IF isCef THEN NULL ELSE pm["txid"]
+adapter = IF isCef THEN NULL ELSE pm["adapter"]
+desc = IF isCef THEN NULL ELSE pm["desc"]
+rtime = IF isCef THEN NULL ELSE pm["rtime"]
+localUser = IF isCef THEN v["cs5"] ELSE NULL
+hostId$ = IF host != "" THEN host ELSE NULL
+
+# Both layouts write local time with no zone, so this reads it as UTC.
+rt = IF isCef THEN STRING(v["rt"]) ELSE ""
+eventTimeUsec$ = IF rt != "" THEN DATETIME(rt, "Jan 02 2006 15:04:05.000") ELSE eventTimeUsec$
+eventTimeUsec$ = IF NOT isCef AND pm["time"] != "" THEN DATETIME(pm["time"], "2006-01-02 15:04:05,000") ELSE eventTimeUsec$
+
+finished = status == "success" OR status == "failure"
+authEvent = event == "AUTHN_ATTEMPT" OR event == "SSO" OR event == "OAuth" OR event == "SLO" OR event == "AUTHN_SESSION_DELETED"
+eventType$ = IF finished AND authEvent THEN "auth" ELSE "other"

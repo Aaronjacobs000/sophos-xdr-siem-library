@@ -1,0 +1,36 @@
+{
+  "vendor": "Ping Identity",
+  "product": "PingFederate",
+  "versions": [],
+  "format": "other",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.pingidentity.com/pingfederate/latest/administrators_reference_guide/pf_security_audit_logging.html",
+    "https://docs.pingidentity.com/pingfederate/latest/administrators_reference_guide/pf_writin_audit_log_cef.html",
+    "https://docs.pingidentity.com/pingfederate/latest/administrators_reference_guide/pf_loggin_common_event_format.html"
+  ],
+  "notes": "Reads the PingFederate security audit log in either stock layout. For CEF, uncomment the SecurityAuditToCEFSyslog appender in server/default/conf/log4j2.xml, point it at the data collector, and add its failover appender reference to the SP, IdP, AS, client registration and STS audit loggers, as Ping's Writing audit log in CEF page describes. For the default pipe-delimited audit.log, forward the file with a syslog agent. Finished sign-ins (AUTHN_ATTEMPT), SSO, OAuth token requests and logouts go to Auth with the subject, client IP, role, protocol and tracking ID; the pipe layout also gives the adapter and the failure description. Session, revocation and in-progress events stay in the generic schema. Both layouts write local time with no zone, so the parser reads it as UTC; keep PingFederate on UTC or change the layout. Samples follow the stock log4j2 patterns and the fields on Ping's security audit logging page, with made-up values. The child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (126 of 126 fields matched the emulator, CEF and pipe lines, with and without transactionid), and the parent's confirm string picked the same lines there. The child also passed Run Test as a separate parser under its parent. No built-in parser claimed these lines in 10 Run Tests.",
+  "parsers": [
+    {
+      "name": "PINGFEDERATE_AUDIT_PARENT",
+      "file": "PINGFEDERATE_AUDIT_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "PINGFEDERATE_AUDIT_CHILD_AUTH",
+      "file": "PINGFEDERATE_AUDIT_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "PINGFEDERATE_AUDIT_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}

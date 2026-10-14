@@ -1,0 +1,333 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866400123000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "sensor_version": "12.2.1",
+      "target_user_name": "pexample",
+      "source_address": "203.0.113.10",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "session_id": "tid:Xk2bP9qLm4Rt7vWz1yAc",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "AUTHN_ATTEMPT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "success"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866472517000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "sensor_version": "12.2.1",
+      "target_user_name": "lcontractor",
+      "source_address": "198.51.100.44",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "session_id": "tid:Lq8nC2vBx5Zt1mKp7wRy",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "status": "AUTHN_ATTEMPT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "event_time_usec": 1791866550044000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "sensor_version": "12.2.1",
+      "target_user_name": "pexample",
+      "source_address": "203.0.113.10",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "application_name": "https://payroll.example.com/saml/acs",
+      "logon_application_family": "SAML20",
+      "session_id": "tid:Xk2bP9qLm4Rt7vWz1yAc",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "SSO",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "success"
+          },
+          {
+            "key": "connection_id",
+            "value": "payroll.example.com:saml2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf02.example.com",
+      "event_time_usec": 1791866585900000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf02.example.com",
+      "sensor_version": "12.2.1",
+      "target_user_name": "svc-reporting",
+      "source_address": "192.0.2.40",
+      "target_host_name": "pf02.example.com",
+      "auth_system": "PingFederate AS",
+      "application_name": "reporting-client",
+      "logon_application_family": "OAuth20",
+      "session_id": "tid:Gp3sV7kRw1Xn5cQz9tLm",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "OAuth",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "success"
+          },
+          {
+            "key": "connection_id",
+            "value": "reporting-client"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866640010000,
+      "host_id": "pf01.example.com"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866710512000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "target_user_name": "lcontractor",
+      "source_address": "198.51.100.44",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "session_id": "tid:Bq7Lm2Xc9Vz4Nt6Rw1Ka",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "status": "AUTHN_ATTEMPT",
+      "sub_status": "[source:LDAP-8C4A5F60684C90B9ECE88D2B] Account Locked",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "failure"
+          },
+          {
+            "key": "adapter_id",
+            "value": "HTMLFormSimplePCV"
+          },
+          {
+            "key": "transaction_id",
+            "value": "7d1e0c2a5b3f4e8a"
+          },
+          {
+            "key": "response_time_ms",
+            "value": "31"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866780078000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "target_user_name": "pexample",
+      "source_address": "203.0.113.10",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "application_name": "https://crm.example.com/sso",
+      "logon_application_family": "SAML20",
+      "session_id": "tid:Hm5pW1kRz8Nc4vTq2xLb",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "SSO",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "success"
+          },
+          {
+            "key": "connection_id",
+            "value": "crm.example.com:saml2"
+          },
+          {
+            "key": "adapter_id",
+            "value": "HTMLFormSimplePCV"
+          },
+          {
+            "key": "transaction_id",
+            "value": "9c6d2f1a0b9e8d7c"
+          },
+          {
+            "key": "response_time_ms",
+            "value": "214"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866822300000,
+      "host_id": "pf01.example.com"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf02.example.com",
+      "event_time_usec": 1791866920951000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf02.example.com",
+      "source_address": "192.0.2.41",
+      "target_host_name": "pf02.example.com",
+      "auth_system": "PingFederate AS",
+      "application_name": "unknown-client",
+      "logon_application_family": "OAuth20",
+      "session_id": "tid:Qx4wN8mTz2Kc6vLp1rHb",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "status": "OAuth",
+      "sub_status": "Unknown or invalid client_id",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "failure"
+          },
+          {
+            "key": "connection_id",
+            "value": "unknown-client"
+          },
+          {
+            "key": "transaction_id",
+            "value": "5e6f7a8b9c0d1e2f"
+          },
+          {
+            "key": "response_time_ms",
+            "value": "8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "PINGFEDERATE_AUDIT_PARENT > PINGFEDERATE_AUDIT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingFederate",
+      "sensor_id": "pf01.example.com",
+      "event_time_usec": 1791866955640000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pf01.example.com",
+      "target_user_name": "pexample",
+      "source_address": "203.0.113.10",
+      "target_host_name": "pf01.example.com",
+      "auth_system": "PingFederate IdP",
+      "session_id": "tid:Wd4hT6jNs9Fq2xLc8vMb",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "AUTHN_ATTEMPT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "pf_status",
+            "value": "success"
+          },
+          {
+            "key": "adapter_id",
+            "value": "HTMLFormSimplePCV"
+          },
+          {
+            "key": "response_time_ms",
+            "value": "95"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
