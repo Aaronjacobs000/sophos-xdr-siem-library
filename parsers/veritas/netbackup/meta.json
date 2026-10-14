@@ -1,0 +1,49 @@
+{
+  "vendor": "Veritas",
+  "product": "NetBackup",
+  "versions": [
+    "10.4",
+    "11.0"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-14"
+  },
+  "docs": [
+    "https://docs.cohesity.com/docs/netbackup/11.0/21733320-167894921-0/v141930078-167894921",
+    "https://docs.cohesity.com/docs/netbackup/11.0/18716246-168258057-0/v141914248-168258057",
+    "https://docs.cohesity.com/docs/netbackup/11.0/18716246-168258057-0/v164313160-168258057",
+    "https://docs.cohesity.com/docs/netbackup/11.0/21733320-167894921-0/v40701098-167894921",
+    "https://docs.cohesity.com/docs/netbackup/11.0/15263389-167321334-0/v38711607-167321334",
+    "https://web.archive.org/web/20260217202305/https://vox.veritas.com/discussions/netbackup/how-to-enable-security-events-to-be-sent-to-the-system-logs-using-the-webui-and-/904575"
+  ],
+  "notes": "NetBackup is now part of Cohesity. On the primary server, turn on Security > Security events > Security event settings > Send the audit events to the system logs and pick the categories (SYSLOG_AUDIT_CATEGORIES in bp.conf), then have the host's syslog daemon forward to the data collector. Only Linux and UNIX primary servers write to syslog; Windows ones write to the event log, which isn't covered, and so is the OCSF format (SYSLOG_AUDIT_USE_OCSF_FORMAT), since no public sample or full mapping shows what it sends. Logon attempts (LOGIN) go to Auth: the user, the client address from Origin Host, the server from Logged in to Host, Accessed From as auth_system, and success or failure from the Status attribute. Every other category (POLICY, JOB, USER, CERT, TOKEN, HOLD, the anomaly and malware scan categories and the rest) goes to CloudAudit with the category as event_type, the action as event_name and the user, with the description, the DETAILS attribute list (old and new values) and any reason in additional_event_data. TIMESTAMP is read as epoch milliseconds, as the system log writes it, or seconds when it has 10 digits. NetBackup's docs give the audit record fields (the nbauditreport parsable format) but no system log line; the samples follow audit lines a Veritas engineer posted on the Veritas community for NetBackup 10.4 (linked, archived), with made-up values. A failed logon is marked failed when Status isn't Successful; no public sample shows one, so check it with Parse Message. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-14 (60 of 60 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent. No built-in parser claimed these lines in 6 Run Tests.",
+  "parsers": [
+    {
+      "name": "NETBACKUP_AUDIT_SYSLOG_PARENT",
+      "file": "NETBACKUP_AUDIT_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NETBACKUP_AUDIT_SYSLOG_CHILD_AUTH",
+      "file": "NETBACKUP_AUDIT_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NETBACKUP_AUDIT_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "NETBACKUP_AUDIT_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "NETBACKUP_AUDIT_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

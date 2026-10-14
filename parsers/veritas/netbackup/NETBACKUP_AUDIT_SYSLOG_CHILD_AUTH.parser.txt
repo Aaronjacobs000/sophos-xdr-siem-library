@@ -1,0 +1,48 @@
+!SAMPLE=<14>Oct 12 22:40:11 nbu-primary nbaudit@nbu-primary.corp.example.com:application[NetBackup]: DESCRIPTION: User 'root' authenticated successfully | TIMESTAMP: 1791805211351 | DATETIME: 2026-10-12T22:40:11.000+11:00 | USER: root@nbu-primary.corp.example.com | CATEGORY: LOGIN | ACTION: ACCESS | REASON:  | DETAILS: 5 attribute(s) ATTR_1: Accessed From OLDV: NEWV: NetBackup API ATTR_2: Origin Host OLDV: NEWV: 192.0.2.89 ATTR_3: Logged in to Host OLDV: NEWV: nbu-primary.corp.example.com ATTR_4: Host Type OLDV: NEWV: Primary Server ATTR_5: Status OLDV: NEWV: Successful
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Veritas NetBackup audit events in the system log.
+# Child of NETBACKUP_AUDIT_SYSLOG_PARENT: logon attempts (CATEGORY LOGIN) to the web UI or the APIs,
+# to Auth. The attributes say where the logon came from and whether it worked.
+# desc, user, category, action, reason, details, eventType$, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+accessed = details|ATTR_\d+:\s*Accessed From\s+OLDV:\s*.*?\s*NEWV:\s*(?P<v>.*?)\s*(?:ATTR_\d+:|$)
+origin = details|ATTR_\d+:\s*Origin Host\s+OLDV:\s*.*?\s*NEWV:\s*(?P<v>\S+)
+target = details|ATTR_\d+:\s*Logged in to Host\s+OLDV:\s*.*?\s*NEWV:\s*(?P<v>\S+)
+hostType = details|ATTR_\d+:\s*Host Type\s+OLDV:\s*.*?\s*NEWV:\s*(?P<v>.*?)\s*(?:ATTR_\d+:|$)
+status = details|ATTR_\d+:\s*Status\s+OLDV:\s*.*?\s*NEWV:\s*(?P<v>\S+)
+
+targetUserName$ = user
+targetHostName$ = target["v"]
+# Origin Host is the client's address, or its name when NetBackup has one.
+ip = origin["v"]|^(?P<a>[0-9.]+|[0-9A-Fa-f:]*:[0-9A-Fa-f:.]*)$
+sourceAddress$ = ip["a"]
+authSystem$ = IF accessed["v"] THEN accessed["v"] ELSE "NetBackup"
+status$ = status["v"]
+
+# A logon whose Status isn't Successful is a failed one.
+ok = status["v"] == "Successful"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+
+r1.key$ = "description"
+r1.value$ = desc
+r2.key$ = "audit_action"
+r2.value$ = action
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "host_type"
+r3.value$ = hostType["v"]
+eventMetadata$.record$ = IF r3.value$ THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "origin_host"
+r4.value$ = origin["v"]
+eventMetadata$.record$ = IF r4.value$ THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "reason"
+r5.value$ = reason
+eventMetadata$.record$ = IF reason != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
