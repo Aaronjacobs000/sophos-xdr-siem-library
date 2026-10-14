@@ -1,0 +1,606 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855121269122,
+      "event_time_fidelity": "MICRO",
+      "event_name": "SecretGet",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "203.0.113.25",
+      "user_agent": "azsdk-python-keyvault-secrets/4.8.0 Python/3.12.6 (Linux-6.8.0-x86_64)",
+      "user_name": "pat@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "User",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "object_key": "secrets/db-password",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        },
+        {
+          "resource_id": "https://kv-example-prod.vault.azure.example/secrets/db-password/4f2c8e1a9b7d4c3e8f6a5b4c3d2e1f00",
+          "resource_type": "secrets",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": true,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/secrets/db-password/?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "12"
+          },
+          {
+            "key": "appid",
+            "value": "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "true"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "false"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_2"
+          },
+          {
+            "key": "correlation_id",
+            "value": "6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855287881200,
+      "event_time_fidelity": "MICRO",
+      "event_name": "SecretGet",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "198.51.100.73",
+      "user_agent": "Go-http-client/2.0",
+      "user_name": "8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f",
+      "user_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "ServicePrincipal",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": true,
+      "status": "Forbidden",
+      "error_code": "Forbidden",
+      "error_message": "Caller is not authorized to perform action on resource. If role assignments, deny assignments or role definitions were changed recently, please observe propagation time.",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/secrets/payments-api-key/?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "403"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "4"
+          },
+          {
+            "key": "appid",
+            "value": "8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "false"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "false"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855370004512,
+      "event_time_fidelity": "MICRO",
+      "event_name": "SecretList",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "203.0.113.140",
+      "user_agent": "azsdk-net-Security.KeyVault.Secrets/4.6.0",
+      "user_name": "2b3c4d5e-6f70-4182-93a4-b5c6d7e8f901",
+      "user_id": "9f8e7d6c-5b4a-4938-a7b6-c5d4e3f2a1b0",
+      "user_type": "ServicePrincipal",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": true,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/secrets?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "21"
+          },
+          {
+            "key": "appid",
+            "value": "2b3c4d5e-6f70-4182-93a4-b5c6d7e8f901"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "true"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "false"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_2"
+          },
+          {
+            "key": "managed_identity",
+            "value": "/subscriptions/3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b/resourcegroups/rg-apps/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-web-app"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855509553187,
+      "event_time_fidelity": "MICRO",
+      "event_name": "KeyDecrypt",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "198.51.100.73",
+      "user_agent": "Go-http-client/2.0",
+      "user_name": "8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f",
+      "user_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "ServicePrincipal",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "object_key": "keys/cmk-payments",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        },
+        {
+          "resource_id": "https://kv-example-prod.vault.azure.example/keys/cmk-payments/7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d",
+          "resource_type": "keys",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": true,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/keys/cmk-payments/7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d/decrypt?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "35"
+          },
+          {
+            "key": "appid",
+            "value": "8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "false"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "true"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_2"
+          },
+          {
+            "key": "correlation_id",
+            "value": "c0d1e2f3-a4b5-4c6d-8e7f-a0b1c2d3e4f5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855662770331,
+      "event_time_fidelity": "MICRO",
+      "event_name": "SecretSet",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "203.0.113.25",
+      "user_agent": "azsdk-python-keyvault-secrets/4.8.0 Python/3.12.6 (Linux-6.8.0-x86_64)",
+      "user_name": "pat@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "User",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "object_key": "secrets/db-password",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        },
+        {
+          "resource_id": "https://kv-example-prod.vault.azure.example/secrets/db-password/9e8d7c6b5a4f4e3d2c1b0a9f8e7d6c5b",
+          "resource_type": "secrets",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": false,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/secrets/db-password?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "48"
+          },
+          {
+            "key": "appid",
+            "value": "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "true"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "false"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791855895102984,
+      "event_time_fidelity": "MICRO",
+      "event_name": "KeyDelete",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "203.0.113.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+      "user_name": "sam.admin@example.com",
+      "user_id": "7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f",
+      "user_type": "User",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "object_key": "keys/legacy-signing",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        },
+        {
+          "resource_id": "https://kv-example-prod.vault.azure.example/keys/legacy-signing",
+          "resource_type": "keys",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": false,
+      "read_only": false,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://kv-example-prod.vault.azure.example/keys/legacy-signing?api-version=7.4"
+          },
+          {
+            "key": "api_version",
+            "value": "7.4"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "63"
+          },
+          {
+            "key": "appid",
+            "value": "c44b4083-3bb0-49c1-b47d-974e53cbdf3c"
+          },
+          {
+            "key": "is_rbac_authorized",
+            "value": "true"
+          },
+          {
+            "key": "is_access_policy_match",
+            "value": "false"
+          },
+          {
+            "key": "tls_version",
+            "value": "TLS1_3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AZURE_KEYVAULT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure Key Vault",
+      "event_time_usec": 1791856032441009,
+      "event_time_fidelity": "MICRO",
+      "event_name": "VaultPatch",
+      "event_type": "AuditEvent",
+      "event_source": "Microsoft.KeyVault",
+      "source_address": "203.0.113.77",
+      "user_agent": "azure-resource-manager/2.0",
+      "user_name": "sam.admin@example.com",
+      "user_id": "7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f",
+      "user_type": "User",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "kv-example-prod.vault.azure.example",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD",
+          "resource_type": "Microsoft.KeyVault/vaults",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "management_event": true,
+      "read_only": false,
+      "status": "OK",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_uri",
+            "value": "https://control-prod-eau.vaultcore.azure.example/subscriptions/3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b/resourcegroups/rg-security/providers/Microsoft.KeyVault/vaults/kv-example-prod?api-version=2023-07-01"
+          },
+          {
+            "key": "api_version",
+            "value": "2023-07-01"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "vault",
+            "value": "KV-EXAMPLE-PROD"
+          },
+          {
+            "key": "resource_group",
+            "value": "RG-SECURITY"
+          },
+          {
+            "key": "http_status_code",
+            "value": "200"
+          },
+          {
+            "key": "result_type",
+            "value": "Success"
+          },
+          {
+            "key": "duration_ms",
+            "value": "312"
+          },
+          {
+            "key": "appid",
+            "value": "c44b4083-3bb0-49c1-b47d-974e53cbdf3c"
+          },
+          {
+            "key": "correlation_id",
+            "value": "f1e2d3c4-b5a6-4978-8a6b-5c4d3e2f1a0b"
+          }
+        ]
+      }
+    }
+  }
+]

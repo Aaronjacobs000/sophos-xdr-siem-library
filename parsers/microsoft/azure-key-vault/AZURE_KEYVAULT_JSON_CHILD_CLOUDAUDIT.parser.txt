@@ -1,0 +1,117 @@
+!SAMPLE={"time":"2026-10-13T01:32:01.2691226Z","resourceId":"/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-SECURITY/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/KV-EXAMPLE-PROD","operationName":"SecretGet","operationVersion":"7.4","category":"AuditEvent","resultType":"Success","resultSignature":"OK","resultDescription":"","durationMs":"12","callerIpAddress":"203.0.113.25","correlationId":"6f1c2e8a-1b2d-4c3e-9f4a-5b6c7d8e9f01","identity":{"claim":{"http://schemas.microsoft.com/identity/claims/objectidentifier":"6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5","appid":"04b07795-8ddb-461a-bbee-02f9e1bf7b46","upn":"pat@example.com"}},"properties":{"clientInfo":"azsdk-python-keyvault-secrets/4.8.0 Python/3.12.6 (Linux-6.8.0-x86_64)","requestUri":"https://kv-example-prod.vault.azure.example/secrets/db-password/?api-version=7.4","id":"https://kv-example-prod.vault.azure.example/secrets/db-password/4f2c8e1a9b7d4c3e8f6a5b4c3d2e1f00","httpStatusCode":200,"isAccessPolicyMatch":false,"isRbacAuthorized":true,"tlsVersion":"TLS1_2"}}
+!PARENT=Azure_Monitor_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?i)\{.*(?:"resourceId"\s*:\s*"[^"]*/PROVIDERS/MICROSOFT\.KEYVAULT/VAULTS/[^"]*".*"category"\s*:\s*"AuditEvent"|"category"\s*:\s*"AuditEvent".*"resourceId"\s*:\s*"[^"]*/PROVIDERS/MICROSOFT\.KEYVAULT/VAULTS/[^"]*")
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Azure Key Vault resource logs (category AuditEvent), streamed by an Azure Monitor
+# diagnostic setting to an event hub that a Sophos NG-SIEM Azure Event Hubs integration reads.
+# Each record of the hub's {"records": [...]} batch reaches the parsers as its own message.
+# Child of the global parser Azure_Monitor_Master, which claims Azure resource log records but
+# keeps Key Vault's in the generic schema. In Sophos Fusion, turn on Set Global Parent in Parser
+# Script. Every Key Vault request (secrets, keys, certificates and the vault itself) goes to
+# CloudAudit, with the operation (such as SecretGet) as the event name.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Azure Key Vault"
+# time is RFC 3339 in UTC, with up to 7 fractional digits.
+eventTimeUsec$ = DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+op = json["$.operationName"]
+eventName$ = op
+eventType$ = json["$.category"]
+eventSource$ = "Microsoft.KeyVault"
+sourceAddress$ = json["$.callerIpAddress"]
+userAgent$ = json["$.properties.clientInfo"]
+
+# The caller's token claims. Records name some claims by URI (Microsoft's example writes the UPN
+# claim under a SOAP claims URI) and some by short name, so read both forms.
+upn = originalData$|"claim"\s*:\s*\{[^}]*"(?:upn|[^"]*/claims/upn)"\s*:\s*"(?P<v>[^"]+)"
+oid = originalData$|"claim"\s*:\s*\{[^}]*"(?:oid|[^"]*/claims/objectidentifier)"\s*:\s*"(?P<v>[^"]+)"
+appid = json["$.identity.claim.appid"]
+userName$ = IF upn["v"] THEN upn["v"] ELSE NULL
+userName$ = IF userName$ == NULL AND appid THEN appid ELSE userName$
+userId$ = IF oid["v"] THEN oid["v"] ELSE NULL
+userType$ = IF upn["v"] THEN "User" ELSE NULL
+userType$ = IF userType$ == NULL AND appid THEN "ServicePrincipal" ELSE userType$
+
+# resourceId is /SUBSCRIPTIONS/<id>/RESOURCEGROUPS/<group>/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/<name>.
+rid = json["$.resourceId"]
+ridParts = rid|(?i)^/SUBSCRIPTIONS/(?P<sub>[^/]+)/RESOURCEGROUPS/(?P<rg>[^/]+)/PROVIDERS/MICROSOFT\.KEYVAULT/VAULTS/(?P<vault>[^/]+)
+recipientAccountId$ = ridParts["sub"]
+
+# The id property is the object the request returned or touched: https://<vault host>/<secrets|keys|
+# certificates>/<name>[/<version>]. Vault operations return the vault URI.
+objId = json["$.properties.id"]
+obj = objId|^https://(?P<host>[^/]+)/(?P<kind>[a-z]+)/(?P<name>[^/?]+)
+idHost = objId|^https://(?P<host>[^/?]+)
+uri = json["$.properties.requestUri"]
+uriHost = uri|^https://(?P<host>[^/?]+)
+targetHostname$ = IF idHost["host"] THEN idHost["host"] ELSE uriHost["host"]
+objectKey$ = IF obj["name"] THEN obj["kind"] + "/" + obj["name"] ELSE NULL
+
+vault.resourceId$ = rid
+vault.resourceType$ = "Microsoft.KeyVault/vaults"
+vault.resourceAccountId$ = ridParts["sub"]
+resources$ = [vault]
+item.resourceId$ = objId
+item.resourceType$ = obj["kind"]
+item.resourceAccountId$ = ridParts["sub"]
+resources$ = IF obj["name"] THEN resources$ + [item] ELSE resources$
+
+# Vault operations are the control plane; key, secret and certificate operations are the data
+# plane. Gets, lists, backups and cryptographic operations change nothing in the vault.
+managementEvent$ = CONTAINS(op, "Vault") AND NOT CONTAINS(op, "EventGridNotification")
+ro = op|(?P<r>(?:Get|List|ListVersions|GetDeleted|ListDeleted|Sign|Verify|Wrap|Unwrap|Encrypt|Decrypt|Backup))$
+readOnly$ = IF ro["r"] THEN TRUE ELSE FALSE
+
+code = STRING(json["$.properties.httpStatusCode"])
+failed = code|^(?P<c>[45]\d\d)$
+status$ = json["$.resultSignature"]
+errorCode$ = IF failed["c"] THEN json["$.resultSignature"] ELSE NULL
+desc = json["$.resultDescription"]
+errorMessage$ = IF failed["c"] AND desc THEN desc ELSE NULL
+
+p1.key$ = "request_uri"
+p1.value$ = uri
+p2.key$ = "api_version"
+p2.value$ = json["$.operationVersion"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF uri THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+
+d1.key$ = "vault"
+d1.value$ = ridParts["vault"]
+d2.key$ = "resource_group"
+d2.value$ = ridParts["rg"]
+d3.key$ = "http_status_code"
+d3.value$ = code
+d4.key$ = "result_type"
+d4.value$ = json["$.resultType"]
+d5.key$ = "duration_ms"
+d5.value$ = STRING(json["$.durationMs"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2, d3, d4, d5]
+d6.key$ = "appid"
+d6.value$ = appid
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "is_rbac_authorized"
+d7.value$ = STRING(json["$.properties.isRbacAuthorized"])
+additionalEventData$.record$ = IF d7.value$ != "" THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "is_access_policy_match"
+d8.value$ = STRING(json["$.properties.isAccessPolicyMatch"])
+additionalEventData$.record$ = IF d8.value$ != "" THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "tls_version"
+d9.value$ = json["$.properties.tlsVersion"]
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+d10.key$ = "managed_identity"
+d10.value$ = json["$.identity.claim.xms_mirid"]
+additionalEventData$.record$ = IF d10.value$ THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$
+d11.key$ = "correlation_id"
+d11.value$ = json["$.correlationId"]
+additionalEventData$.record$ = IF d11.value$ THEN additionalEventData$.record$ + [d11] ELSE additionalEventData$.record$
