@@ -1,0 +1,322 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "DISCOVER",
+      "client_mac": "00:00:5e:00:53:01",
+      "client_hostname": "ws-041"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "OFFER",
+      "client_address": "192.0.2.100",
+      "client_mac": "00:00:5e:00:53:01",
+      "client_hostname": "ws-041"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844812000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "REQUEST",
+      "client_address": "192.0.2.100",
+      "client_mac": "00:00:5e:00:53:01",
+      "client_hostname": "ws-041",
+      "server_address": "192.0.2.1"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844812000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "ACK",
+      "client_address": "192.0.2.100",
+      "client_mac": "00:00:5e:00:53:01",
+      "client_hostname": "ws-041"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844890000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "DISCOVER",
+      "client_mac": "00:00:5e:00:53:22"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844890000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "OFFER",
+      "client_address": "198.51.100.40",
+      "client_mac": "00:00:5e:00:53:22"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791844925000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "REQUEST",
+      "client_address": "192.0.2.77",
+      "client_mac": "00:00:5e:00:53:31",
+      "client_hostname": "printer-2f"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 9,
+    "extractor_path": "ISC_DHCPD_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC DHCP",
+      "event_time_usec": 1791845031000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp01",
+      "server_hostname": "dhcp01",
+      "action": "RELEASE",
+      "client_address": "192.0.2.100",
+      "client_mac": "00:00:5e:00:53:01",
+      "client_hostname": "ws-041"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 12,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845100000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:41",
+      "action": "DISCOVER"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845100000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:41",
+      "client_address": "198.51.100.50",
+      "action": "OFFER"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845100000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:41",
+      "server_address": "192.0.2.2",
+      "action": "OFFER"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845101000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:41",
+      "client_address": "198.51.100.50",
+      "action": "ACK",
+      "expiration_time_usec": 1791848701000000
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845187000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:88",
+      "client_address": "192.0.2.88",
+      "server_address": "192.0.2.2",
+      "action": "NACK"
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845235204000,
+      "event_time_fidelity": "MICRO",
+      "client_mac": "00:00:5e:00:53:41",
+      "client_address": "198.51.100.50",
+      "action": "RELEASE"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791805680441237,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw01.example.com",
+      "server_hostname": "fw01.example.com",
+      "client_mac": "00:00:5e:00:53:51",
+      "client_address": "192.0.2.150",
+      "action": "REQUEST"
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845342000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:61",
+      "client_address": "192.0.2.12",
+      "action": "DECLINE"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845380000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp03",
+      "server_hostname": "dhcp03",
+      "client_mac": "00:00:5e:00:53:62",
+      "client_address": "192.0.2.101",
+      "action": "OFFER"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845430000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:71",
+      "client_address": "2001:db8:1::71",
+      "action": "ACK",
+      "expiration_time_usec": 1791849430000000
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": "ISC_KEA_SYSLOG_STANDALONE_DHCP",
+    "schema": "scwx.dhcp",
+    "normalized": {
+      "sensor_type": "ISC Kea",
+      "event_time_usec": 1791845470000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "dhcp02",
+      "server_hostname": "dhcp02",
+      "client_mac": "00:00:5e:00:53:71",
+      "client_address": "2001:db8:1::71",
+      "action": "RELEASE"
+    }
+  },
+  {
+    "line": 23,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 24,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

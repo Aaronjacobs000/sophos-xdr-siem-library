@@ -1,0 +1,24 @@
+<30>Oct 12 22:40:11 dhcp01 dhcpd[1201]: DHCPDISCOVER from 00:00:5e:00:53:01 (ws-041) via eth0
+<30>Oct 12 22:40:11 dhcp01 dhcpd[1201]: DHCPOFFER on 192.0.2.100 to 00:00:5e:00:53:01 (ws-041) via eth0
+<30>Oct 12 22:40:12 dhcp01 dhcpd[1201]: DHCPREQUEST for 192.0.2.100 (192.0.2.1) from 00:00:5e:00:53:01 (ws-041) via eth0
+<30>Oct 12 22:40:12 dhcp01 dhcpd[1201]: DHCPACK on 192.0.2.100 to 00:00:5e:00:53:01 (ws-041) via eth0
+<30>Oct 12 22:41:30 dhcp01 dhcpd[1201]: DHCPDISCOVER from 00:00:5e:00:53:22 via 198.51.100.1
+<30>Oct 12 22:41:30 dhcp01 dhcpd[1201]: DHCPOFFER on 198.51.100.40 to 00:00:5e:00:53:22 via 198.51.100.1
+<30>Oct 12 22:42:05 dhcp01 dhcpd[1201]: DHCPREQUEST for 192.0.2.77 from 00:00:5e:00:53:31 (printer-2f) via eth0: lease 192.0.2.77 unavailable.
+<30>Oct 12 22:42:05 dhcp01 dhcpd[1201]: DHCPNAK on 192.0.2.77 to 00:00:5e:00:53:31 via eth0
+<30>Oct 12 22:43:51 dhcp01 dhcpd[1201]: DHCPRELEASE of 192.0.2.100 from 00:00:5e:00:53:01 (ws-041) via eth0 (found)
+<30>Oct 12 22:44:10 dhcp01 dhcpd[1201]: DHCPINFORM from 192.0.2.61 via eth0
+<30>Oct 12 22:44:10 dhcp01 dhcpd[1201]: DHCPACK to 192.0.2.61 (00:00:5e:00:53:61) via eth0
+<134>Oct 12 22:45:00 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.packets.140234567890] DHCP4_PACKET_RECEIVED [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x5e2a7f3b: DHCPDISCOVER (type 1) received from 198.51.100.1 to 192.0.2.2 on interface eth1
+<134>Oct 12 22:45:00 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.leases.140234567890] DHCP4_LEASE_OFFER [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x5e2a7f3b: lease 198.51.100.50 will be offered
+<134>Oct 12 22:45:00 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.packets.140234567890] DHCP4_PACKET_SEND [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x5e2a7f3b: trying to send packet DHCPOFFER (type 2) from 192.0.2.2:67 to 198.51.100.1:67 on interface eth1
+<134>Oct 12 22:45:01 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.leases.140234567890] DHCP4_LEASE_ALLOC [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x6f3b8a4c: lease 198.51.100.50 has been allocated for 3600 seconds
+<134>Oct 12 22:46:27 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.packets.140234567890] DHCP4_PACKET_SEND [hwtype=1 00:00:5e:00:53:88], cid=[no info], tid=0x74: trying to send packet DHCPNAK (type 6) from 192.0.2.2:67 to 192.0.2.88:68 on interface eth0
+2026-10-12 22:47:15.204 INFO  [kea-dhcp4.leases/2210.140234567890] DHCP4_RELEASE [hwtype=1 00:00:5e:00:53:41], cid=[01:00:00:5e:00:53:41], tid=0x23f37e75: address 198.51.100.50 was released properly.
+<134>1 2026-10-12T22:48:00.441237+11:00 fw01.example.com kea-dhcp4 66699 - - INFO  [kea-dhcp4.leases.0xfd5a1a16d00] DHCP4_INIT_REBOOT [hwtype=1 00:00:5e:00:53:51], cid=[01:00:00:5e:00:53:51], tid=0x8b206146: client is in INIT-REBOOT state and requests address 192.0.2.150
+<134>Oct 12 22:49:02 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.leases.140234567890] DHCP4_DECLINE_LEASE Received DHCPDECLINE for addr 192.0.2.12 from client [hwtype=1 00:00:5e:00:53:61], cid=[no info], tid=0x3508dc20. The lease will be unavailable for 86400 seconds.
+<134>Oct 12 22:49:40 dhcp03 kea-dhcp4: INFO  [kea-dhcp4.leases.140234567890] DHCP4_LEASE_ADVERT [hwtype=1 00:00:5e:00:53:62], cid=[01:00:00:5e:00:53:62], tid=0x2513847d: lease 192.0.2.101 will be advertised
+<134>Oct 12 22:50:30 dhcp02 kea-dhcp6: INFO  [kea-dhcp6.leases.140234567999] DHCP6_LEASE_ALLOC duid=[00:03:00:01:00:00:5e:00:53:71], [hwtype=1 00:00:5e:00:53:71], tid=0x1a2b3c: lease for address 2001:db8:1::71 and iaid=1 has been allocated for 4000 seconds
+<134>Oct 12 22:51:10 dhcp02 kea-dhcp6: INFO  [kea-dhcp6.leases.140234567999] DHCP6_RELEASE_NA duid=[00:03:00:01:00:00:5e:00:53:71], [hwtype=1 00:00:5e:00:53:71], tid=0x2c3d4e: binding for address 2001:db8:1::71 and iaid=1 was released properly
+<134>Oct 12 22:52:00 dhcp02 kea-dhcp4: INFO  [kea-dhcp4.dhcp4.140234567890] DHCP4_STARTED Kea DHCPv4 server version 2.6.3 started
+<132>Oct 12 22:52:44 dhcp02 kea-dhcp4: WARN  [kea-dhcp4.alloc-engine.140234567890] ALLOC_ENGINE_V4_ALLOC_FAIL [hwtype=1 00:00:5e:00:53:81], cid=[no info], tid=0x7: failed to allocate an IPv4 address after 1 attempt(s)
