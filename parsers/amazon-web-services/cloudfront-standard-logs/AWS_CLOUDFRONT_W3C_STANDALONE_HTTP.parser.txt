@@ -1,0 +1,114 @@
+!SAMPLE=2026-10-12	22:40:11	SYD62-P1	7215	203.0.113.10	GET	d111111abcdef8.cloudfront.example.net	/index.html	200	-	Mozilla/5.0%20(Windows%20NT%2010.0;%20Win64;%20x64)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/141.0.7390.108%20Safari/537.36	-	-	Hit	EXAMPLE1_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0111==	www.example.com	https	412	0.002	-	TLSv1.3	TLS_AES_128_GCM_SHA256	Hit	HTTP/2.0	-	-	52344	0.001	Hit	text/html	6890	-	-
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\d{4}-\d{2}-\d{2}\t\d{2}:\d{2}:\d{2}\t[^\t]+\t\d+\t[^\t]+\t[A-Z]+\t[^\t]+\t[^\t]*\t\d{3}\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[A-Za-z]+\t[^\t]+\t[^\t]*\t(?:https?|wss?|grpcs)\t\d+\t
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon CloudFront standard access logs (legacy, or v2 in the W3C format with the default
+# fields), tab-separated, written to an S3 bucket and read by a Sophos NG-SIEM S3 Ingest
+# (customer-managed) integration.
+# Standalone parser for the HTTP schema. Fields, from the CloudFront standard logging reference:
+#   date time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status cs(Referer)
+#   cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type x-edge-request-id x-host-header
+#   cs-protocol cs-bytes time-taken x-forwarded-for ssl-protocol ssl-cipher
+#   x-edge-response-result-type cs-protocol-version fle-status fle-encrypted-fields c-port
+#   time-to-first-byte x-edge-detailed-result-type sc-content-type sc-content-len sc-range-start
+#   sc-range-end, and on newer files distribution-tenant-id and connection-id.
+# The #Version and #Fields header lines at the top of each file don't match and stay unparsed.
+
+m = originalData$|^(?P<date>\d{4}-\d{2}-\d{2})\t(?P<time>\d{2}:\d{2}:\d{2})\t(?P<edge>[^\t]*)\t(?P<scbytes>[^\t]*)\t(?P<cip>[^\t]*)\t(?P<method>[^\t]*)\t(?P<dist>[^\t]*)\t(?P<stem>[^\t]*)\t(?P<status>[^\t]*)\t(?P<referer>[^\t]*)\t(?P<ua>[^\t]*)\t(?P<query>[^\t]*)\t(?P<cookie>[^\t]*)\t(?P<result>[^\t]*)\t(?P<reqid>[^\t]*)\t(?P<host>[^\t]*)\t(?P<proto>[^\t]*)\t(?P<csbytes>[^\t]*)\t(?P<taken>[^\t]*)\t(?P<xff>[^\t]*)\t(?P<tlsver>[^\t]*)\t(?P<cipher>[^\t]*)\t(?P<respresult>[^\t]*)\t(?P<httpver>[^\t]*)\t(?P<fle>[^\t]*)\t(?P<fleenc>[^\t]*)\t(?P<cport>[^\t]*)\t(?P<ttfb>[^\t]*)\t(?P<detail>[^\t]*)\t(?P<ctype>[^\t]*)\t(?P<clen>[^\t]*)\t(?P<rstart>[^\t]*)\t(?P<rend>[^\t]*)
+
+sensorType$ = "Amazon CloudFront"
+# The distribution's own domain name (cs(Host)) names the distribution.
+hostId$ = m["dist"]
+sensorEventId$ = m["reqid"]
+
+# date and time are UTC; time is when the edge finished the response.
+eventTimeUsec$ = DATETIME(m["date"] + " " + m["time"], "2006-01-02 15:04:05")
+
+sourceAddress$ = m["cip"]
+sourcePort$ = m["cport"]
+# Behind a proxy or load balancer, c-ip is the proxy and x-forwarded-for starts with the viewer.
+xff = m["xff"]|^\s*(?P<ip>[^,\s]+)
+trueSourceAddress$ = xff["ip"]
+
+httpMethod$ = m["method"]
+# x-host-header is the Host the viewer asked for: the alternate domain name, or the CloudFront
+# domain when the site uses that.
+uriHostRaw$ = m["host"]
+uriHost$ = m["host"]
+uriScheme$ = m["proto"]
+# CloudFront logs the path and query URL-encoded, with no question mark between them.
+uriPathRaw$ = m["stem"]
+uriPath$ = m["stem"]
+uriQueryRaw$ = m["query"]
+uriQuery$ = m["query"]
+tld = IDX_OF_TLD(m["host"])
+indexOfTopPrivateDomain$ = tld
+isTopPrivateDomainParsed$ = tld != -1
+
+# sc-status is 000 when the viewer closed the connection before the edge responded.
+responseCode$ = INT(m["status"], 10)
+referer$ = m["referer"]
+requestDirection$ = "INBOUND"
+# sc-bytes went to the viewer and cs-bytes came from it, headers included.
+rxByteCount$ = m["scbytes"]
+txByteCount$ = m["csbytes"]
+protocol$ = IF m["httpver"] == "HTTP/3.0" THEN 17 ELSE 6
+
+# CloudFront URL-encodes spaces and these characters in the user agent: " # % ' < > [ \ ] ^ ` { | } ~
+ua = m["ua"]
+ua = REPLACE(ua, "%20", " ")
+ua = REPLACE(ua, "%22", "\"")
+ua = REPLACE(ua, "%23", "#")
+ua = REPLACE(ua, "%27", "'")
+ua = REPLACE(ua, "%3C", "<")
+ua = REPLACE(ua, "%3E", ">")
+ua = REPLACE(ua, "%5B", "[")
+ua = REPLACE(ua, "%5C", "\\")
+ua = REPLACE(ua, "%5D", "]")
+ua = REPLACE(ua, "%5E", "^")
+ua = REPLACE(ua, "%60", "`")
+ua = REPLACE(ua, "%7B", "{")
+ua = REPLACE(ua, "%7C", "|")
+ua = REPLACE(ua, "%7D", "}")
+ua = REPLACE(ua, "%7E", "~")
+ua = REPLACE(ua, "%25", "%")
+userAgent$ = ua
+
+# The edge refused the request: geographic restriction or a blocked request.
+detail = m["detail"]
+blockedReq = detail == "ClientGeoBlocked" OR detail == "InvalidRequestBlocked"
+sensorTypeActions$ = IF blockedReq THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+blocked$ = IF blockedReq THEN 1 ELSE 0
+
+# Fields with no HTTP schema home go to event_metadata. cs(Cookie) stays in original_data only.
+r1.key$ = "edge_location"
+r1.value$ = m["edge"]
+r2.key$ = "edge_result_type"
+r2.value$ = m["result"]
+r3.key$ = "edge_detailed_result_type"
+r3.value$ = detail
+r4.key$ = "time_taken"
+r4.value$ = m["taken"]
+r5.key$ = "protocol_version"
+r5.value$ = m["httpver"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3, r4, r5]
+
+r6.key$ = "x_forwarded_for"
+r6.value$ = m["xff"]
+eventMetadata$.record$ = IF m["xff"] != "-" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "ssl_protocol"
+r7.value$ = m["tlsver"]
+eventMetadata$.record$ = IF m["tlsver"] != "-" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "ssl_cipher"
+r8.value$ = m["cipher"]
+eventMetadata$.record$ = IF m["cipher"] != "-" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+r9.key$ = "content_type"
+r9.value$ = m["ctype"]
+eventMetadata$.record$ = IF m["ctype"] != "-" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+r10.key$ = "fle_status"
+r10.value$ = m["fle"]
+eventMetadata$.record$ = IF m["fle"] != "-" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$

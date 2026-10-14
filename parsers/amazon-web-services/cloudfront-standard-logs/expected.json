@@ -1,0 +1,402 @@
+[
+  {
+    "line": 1,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 2,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 3,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791844811000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE1_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0111==",
+      "source_address": "203.0.113.10",
+      "source_port": 52344,
+      "http_method": "GET",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_scheme": "https",
+      "uri_path_raw": "/index.html",
+      "uri_path": "/index.html",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "request_direction": "INBOUND",
+      "rx_byte_count": 7215,
+      "tx_byte_count": 412,
+      "protocol": 6,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.108 Safari/537.36",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "SYD62-P1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "Hit"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "Hit"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.002"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/2.0"
+          },
+          {
+            "key": "ssl_protocol",
+            "value": "TLSv1.3"
+          },
+          {
+            "key": "ssl_cipher",
+            "value": "TLS_AES_128_GCM_SHA256"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791844862000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE2_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0222==",
+      "source_address": "198.51.100.23",
+      "source_port": 40112,
+      "http_method": "POST",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_scheme": "http",
+      "uri_path_raw": "/wp-login.php",
+      "uri_path": "/wp-login.php",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 403,
+      "request_direction": "INBOUND",
+      "rx_byte_count": 1033,
+      "tx_byte_count": 687,
+      "protocol": 6,
+      "user_agent": "python-requests/2.32.3",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "SYD62-P1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "Error"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "ClientGeoBlocked"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.000"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791844900000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE3_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0333==",
+      "source_address": "192.0.2.10",
+      "source_port": 51544,
+      "true_source_address": "198.51.100.77",
+      "http_method": "GET",
+      "uri_host_raw": "api.example.com",
+      "uri_host": "api.example.com",
+      "uri_scheme": "https",
+      "uri_path_raw": "/api/v1/orders",
+      "uri_path": "/api/v1/orders",
+      "uri_query_raw": "id=42&view=full",
+      "uri_query": "id=42&view=full",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "referer": "https://www.example.com/orders",
+      "request_direction": "INBOUND",
+      "rx_byte_count": 2391,
+      "tx_byte_count": 538,
+      "protocol": 6,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "MEL50-C1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "Miss"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "Miss"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.118"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "x_forwarded_for",
+            "value": "198.51.100.77"
+          },
+          {
+            "key": "ssl_protocol",
+            "value": "TLSv1.2"
+          },
+          {
+            "key": "ssl_cipher",
+            "value": "ECDHE-RSA-AES128-GCM-SHA256"
+          },
+          {
+            "key": "content_type",
+            "value": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791844935000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE4_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0444==",
+      "source_address": "192.0.2.200",
+      "source_port": 25260,
+      "http_method": "GET",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_scheme": "http",
+      "uri_path_raw": "/favicon.ico",
+      "uri_path": "/favicon.ico",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 502,
+      "referer": "http://www.example.com/",
+      "request_direction": "INBOUND",
+      "rx_byte_count": 900,
+      "tx_byte_count": 675,
+      "protocol": 6,
+      "user_agent": "curl/8.5.0",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "SYD62-P1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "Error"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "OriginDnsError"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.102"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791845010000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE5_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0555==",
+      "source_address": "203.0.113.45",
+      "source_port": 60231,
+      "http_method": "GET",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_scheme": "https",
+      "uri_path_raw": "/downloads/setup.exe",
+      "uri_path": "/downloads/setup.exe",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 0,
+      "request_direction": "INBOUND",
+      "rx_byte_count": 0,
+      "tx_byte_count": 211,
+      "protocol": 6,
+      "user_agent": "Wget/1.21.4",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "SYD62-P1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "Error"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "ClientHungUpRequest"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.004"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "ssl_protocol",
+            "value": "TLSv1.3"
+          },
+          {
+            "key": "ssl_cipher",
+            "value": "TLS_AES_256_GCM_SHA384"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AWS_CLOUDFRONT_W3C_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon CloudFront",
+      "event_time_usec": 1791845045000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "d111111abcdef8.cloudfront.example.net",
+      "sensor_event_id": "EXAMPLE6_REQUESTID_XXXXXXXXXXXXXXXXXXXXXXXXX0666==",
+      "source_address": "2001:db8::25",
+      "source_port": 58211,
+      "http_method": "GET",
+      "uri_host_raw": "www.example.com",
+      "uri_host": "www.example.com",
+      "uri_scheme": "https",
+      "uri_path_raw": "/assets/app.js",
+      "uri_path": "/assets/app.js",
+      "uri_query_raw": "v=2026.10",
+      "uri_query": "v=2026.10",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "referer": "https://www.example.com/",
+      "request_direction": "INBOUND",
+      "rx_byte_count": 15873,
+      "tx_byte_count": 389,
+      "protocol": 17,
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "edge_location",
+            "value": "AKL50-C1"
+          },
+          {
+            "key": "edge_result_type",
+            "value": "RefreshHit"
+          },
+          {
+            "key": "edge_detailed_result_type",
+            "value": "RefreshHit"
+          },
+          {
+            "key": "time_taken",
+            "value": "0.021"
+          },
+          {
+            "key": "protocol_version",
+            "value": "HTTP/3.0"
+          },
+          {
+            "key": "ssl_protocol",
+            "value": "TLSv1.3"
+          },
+          {
+            "key": "ssl_cipher",
+            "value": "TLS_AES_128_GCM_SHA256"
+          },
+          {
+            "key": "content_type",
+            "value": "application/javascript"
+          }
+        ]
+      }
+    }
+  }
+]
