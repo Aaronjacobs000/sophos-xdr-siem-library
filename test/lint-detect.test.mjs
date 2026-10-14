@@ -58,6 +58,21 @@ test('lint: the DATETIME year warning says what else TRUE does', () => {
   assert.match(m, /the year before when that would put the time more than 48 hours ahead/);
 });
 
+test('lint: DATETIME with TRUE and a year in the layout warns that TRUE replaces the year', () => {
+  const lint = (expr) => lintParsers([{ name: 'ACME_FW_STANDALONE_AV', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-firewall\n!SCHEMA=scwx.antivirus\neventTimeUsec$ = ${expr}` }]).problems.filter((p) => p.code === 'datetime-year');
+  const [w, ...more] = lint('DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", TRUE)');
+  assert.equal(more.length, 0);
+  assert.equal(w.level, 'warning');
+  assert.equal(w.line, 4);
+  assert.match(w.message, /"2006\/01\/02-15:04:05" reads a year, but TRUE replaces it with the current year, or the year before/);
+  assert.match(w.message, /Leave out TRUE to keep the year in the value/);
+  assert.equal(lint('DATETIME("19/10/13-22:21:09", "06/01/02-15:04:05", TRUE)').length, 1);
+  // No warning without TRUE, or with TRUE and no year in the layout.
+  assert.equal(lint('DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05")').length, 0);
+  assert.equal(lint('DATETIME("2019/10/13-22:21:09", "2006/01/02-15:04:05", FALSE)').length, 0);
+  assert.equal(lint('DATETIME("Oct 13 22:21:09", "Jan _2 15:04:05", TRUE)').length, 0);
+});
+
 test('lint: INT needs its base, FLATTEN order is noted, and a capture source expression is checked', () => {
   const t = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acme-app\n!SCHEMA=scwx.auth\njson = JSON(originalData$)\nn = INT("42")\neventMetadata$.record$ = FLATTEN(json)\nm = json["$.a"] + nothing|^(\\w+)\ntargetUserName$ = m[1]';
   const r = lintParsers([{ name: 'ACME_APP_STANDALONE_AUTH', text: t }]);

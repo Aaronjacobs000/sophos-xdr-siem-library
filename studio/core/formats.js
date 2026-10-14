@@ -229,11 +229,14 @@ function leefDelimiter(spec) {
 
 // LEEF:1.0 has five header fields then tab-separated attributes. LEEF:2.0 adds a sixth header
 // field naming the attribute delimiter. delimiterOverride wins over both.
+//
+// Text with no LEEF: in it fails the event, "" included, with or without a delimiter (checked in
+// a lab tenant).
 export function parseLeef(line, delimiterOverride = null) {
   if (line === null || line === undefined) return null;
   const s = String(line);
   const at = s.indexOf('LEEF:');
-  if (at === -1) return null;
+  if (at === -1) throw new RuntimeError('message is not in LEEF format: LEEF() found no "LEEF:" in the text. Check the value holds the LEEF part of the line.', 'leef-header');
   const body = s.slice(at);
   const v2 = /^LEEF:2/.test(body);
   const parts = splitUnescaped(body, '|', v2 ? 7 : 6);

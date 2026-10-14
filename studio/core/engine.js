@@ -107,12 +107,15 @@ function index(base, idx) {
 
 // <, >, <= and >= compare as floats when both sides are numbers, TRUE or FALSE, or text that
 // reads as a number, so "10" > "9". Anything else compares as text: " 10" > 9 is false and
-// "abc" > 5 is true. NULL reads as "", so NULL < 1 is true and NULL >= 0 is false (checked in a
-// lab tenant).
+// "abc" > 5 is true. NULL reads as "", so NULL < 1 is true and NULL >= 0 is false. A DATETIME
+// value compares as its microseconds with another one or with a number on either side, so t > 5
+// is true (checked in a lab tenant).
 function compare(op, a, b) {
   if (a === null || a === undefined) a = '';
   if (b === null || b === undefined) b = '';
   if (a instanceof TimeValue && b instanceof TimeValue) return cmp(op, a.usec, b.usec);
+  if (a instanceof TimeValue && typeof b === 'number') return cmp(op, a.usec, b);
+  if (typeof a === 'number' && b instanceof TimeValue) return cmp(op, a, b.usec);
   const x = asNumber(a), y = asNumber(b);
   if (x !== null && y !== null) return cmp(op, x, y);
   return cmp(op, toStr(a), toStr(b));
@@ -150,6 +153,9 @@ function plus(a, b) {
   if (a === null || a === undefined) return b ?? null;
   if (b === null || b === undefined) return a;
   a = jsonList(a); b = jsonList(b);
+  // A list and the value JSON() returned don't add, whichever side the list is on and whatever
+  // the JSON holds: "cannot convert json to list" (checked in a lab tenant).
+  if ((isList(a) && isDoc(b)) || (isDoc(a) && isList(b))) throw new RuntimeError('cannot convert json to list: the value JSON() returned can\'t be added to a list. Put it in the list instead, as in ["x", json], or add a part of it, such as json["$.items"].', 'json-list');
   if (isList(a)) return [...a, ...(isList(b) ? b : [b])];
   if (isList(b)) return [a, ...b];
   if (a instanceof TimeValue && typeof b === 'number') return a.usec + b;
@@ -179,6 +185,7 @@ const joinText = (v) => (v instanceof JsonValue && v.doc ? '{}' : v instanceof J
 // An array part of a JSON value adds like a list: "pre-" + json["$.c"] with [1,null,"y"] gives
 // ["pre-",1,NULL,"y"], which a string field stores as pre-,1,,y (checked in a lab tenant).
 const jsonList = (v) => (v instanceof JsonValue && !v.doc && Array.isArray(v.value) ? v.value.map(wrapJson) : v);
+const isDoc = (v) => v instanceof JsonValue && v.doc;
 
 // Text added to a DATETIME value counts as a number when all of it reads as one, the way Go's
 // strconv.ParseFloat reads it ("5", "-5", "5.5", "1e3", "1_000", "0x1p4"). Any other text, "",

@@ -676,6 +676,23 @@ test('a list in a string field writes the value JSON() returned as {}, whatever 
   ]) assert.equal(run8(flags, body), want, body);
 });
 
+test('a list plus the value JSON() returned fails the event, whichever side the list is on', () => {
+  // The engine failed each with "cannot convert json to list" (checked in a lab tenant).
+  const run10 = (body) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBER10E\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"\n${body}` }], ['ZZPROBER10E line'], { now: NOW })[0];
+  for (const body of [
+    'd = JSON("{\\"a\\":1}")\nontology$ = ["x"] + d',
+    'd = JSON("[1,2]")\nontology$ = ["x"] + d',
+    'd = JSON("5")\nontology$ = ["x"] + d',
+    'd = JSON("null")\nontology$ = ["x"] + d',
+    'd = JSON("{\\"a\\":1}")\nontology$ = d + ["x"]',
+    // An array part of a JSON value adds as a list, so it fails beside the doc too.
+    'd = JSON("{\\"arr\\":[1,2]}")\nontology$ = d["$.arr"] + d',
+    'd = JSON("{\\"arr\\":[1,2]}")\nontology$ = d + d["$.arr"]',
+  ]) assert.match(run10(body).error ?? '', /cannot convert json to list/, body);
+  // Beside a list, an array part still adds as a list.
+  assert.equal(run10('d = JSON("{\\"arr\\":[1,2]}")\nontology$ = ["x"] + d["$.arr"]').normalized.ontology, 'x,1,2');
+});
+
 test('a bad escape in a confirm expression rejects the parser', () => {
   // Run Test returned only a parse error (checked in a lab tenant).
   const lines = ['ZZPROBER8E one'];
