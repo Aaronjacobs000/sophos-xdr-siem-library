@@ -1,0 +1,62 @@
+!SAMPLE=Oct 13 04:45:10 pf01.example.com pf-audit: 2026-10-13 04:45:10,512| tid:Bq7Lm2Xc9Vz4Nt6Rw1Ka| 7d1e0c2a5b3f4e8a| AUTHN_ATTEMPT| lcontractor| 198.51.100.44 | | | | pf01.example.com| IdP| failure| HTMLFormSimplePCV| [source:LDAP-8C4A5F60684C90B9ECE88D2B] Account Locked| 31
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: the PingFederate security audit log, CEF or pipe layout.
+# Child of PINGFEDERATE_AUDIT_PARENT, for status success or failure:
+#   AUTHN_ATTEMPT  a sign-in against an IdP adapter (HTML form, MFA and others)
+#   SSO            single sign-on to a partner application (SAML, WS-Federation)
+#   OAuth          an OAuth or OpenID Connect token request; the connection ID is the client_id
+#   SLO and AUTHN_SESSION_DELETED  sign-outs
+# event, subject, ip, status, app, conn, proto, host, role, tid, txid, adapter, desc, rtime,
+# localUser, isCef, v, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sensorVersion$ = IF isCef THEN v[3] ELSE NULL
+
+targetUserName$ = IF subject != "" THEN subject ELSE NULL
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+authSystem$ = IF role != "" THEN "PingFederate " + role ELSE "PingFederate"
+applicationName$ = IF app != "" THEN app ELSE NULL
+applicationName$ = IF applicationName$ == NULL AND conn != "" THEN conn ELSE applicationName$
+logonApplicationFamily$ = IF proto != "" THEN proto ELSE NULL
+sessionId$ = IF tid != "" THEN tid ELSE NULL
+
+ok = status == "success"
+logoff = event == "SLO" OR event == "AUTHN_SESSION_DELETED"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+action$ = IF logoff AND ok THEN "LOGOFF" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+# The pipe layout carries the failure description; the stock CEF layout doesn't.
+d = LOWERCASE(STRING(desc))
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT ok AND CONTAINS(d, "locked") THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND CONTAINS(d, "disabled") THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND CONTAINS(d, "expired") THEN "EXPIRED_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND (CONTAINS(d, "invalid credentials") OR CONTAINS(d, "password")) AND NOT CONTAINS(d, "expired") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+status$ = event
+subStatus$ = IF desc != "" THEN desc ELSE NULL
+
+m1.key$ = "pf_status"
+m1.value$ = status
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "connection_id"
+m2.value$ = conn
+eventMetadata$.record$ = IF conn != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "adapter_id"
+m3.value$ = adapter
+eventMetadata$.record$ = IF adapter != "" AND adapter != NULL THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "transaction_id"
+m4.value$ = txid
+eventMetadata$.record$ = IF txid != "" AND txid != NULL THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "response_time_ms"
+m5.value$ = rtime
+eventMetadata$.record$ = IF rtime != "" AND rtime != NULL THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "sp_local_user_id"
+m6.value$ = localUser
+eventMetadata$.record$ = IF localUser != "" AND localUser != NULL THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
