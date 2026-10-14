@@ -94,7 +94,7 @@ function lookup(value, list, short) {
 const fail = (layout, value, why) => new RuntimeError(`DATETIME could not read "${value}" with layout "${layout}": ${why}`, 'datetime');
 
 // Parse value with a Go layout. Returns a TimeValue. Throws RuntimeError on mismatch.
-// opts.handle2DigitYear: when the value carries no year, pick one near opts.now, and drop the
+// opts.handle2DigitYear: set the year from opts.now, whatever the value carries, and drop the
 // fractional seconds.
 export function goParse(layout, value, opts = {}) {
   const chunks = layoutChunks(layout);
@@ -217,36 +217,32 @@ export function goParse(layout, value, opts = {}) {
     if (pm && hour < 12) hour += 12;
     if (!pm && hour === 12) hour = 0;
   }
-  let inferredYear = false;
-  if (!hasYear) {
-    if (opts.handle2DigitYear) {
-      const now = opts.now ? new Date(opts.now) : new Date();
-      year = now.getUTCFullYear();
-      inferredYear = true;
-    } else {
-      year = 0;
-    }
-  }
+  if (!hasYear) year = 0;
+  // The value is read in its own year first, so a day of the year or Feb 29 is checked against it.
+  const at = (y) => {
+    const d = new Date(Date.UTC(2000, 0, 1));
+    d.setUTCFullYear(y, month - 1, day);
+    d.setUTCHours(hour, minute, second, 0);
+    return d;
+  };
   if (yday > 0) {
     const d = new Date(Date.UTC(2000, 0, 1));
     d.setUTCFullYear(year, 0, yday);
     month = d.getUTCMonth() + 1; day = d.getUTCDate();
   }
-  const dt = new Date(Date.UTC(2000, 0, 1));
-  dt.setUTCFullYear(year, month - 1, day);
-  dt.setUTCHours(hour, minute, second, 0);
-  if (dt.getUTCDate() !== day) throw fail(layout, value, 'day out of range for the month');
-  let ms = dt.getTime() - (offset ?? 0) * 60000;
-  if (inferredYear) {
-    // Around new year a December log read in January belongs to last year.
+  if (at(year).getUTCDate() !== day) throw fail(layout, value, 'day out of range for the month');
+  let ms = at(year).getTime() - (offset ?? 0) * 60000;
+  // With handle2DigitYear the engine sets the year to the current one, whatever the value held:
+  // 2019, 19 and no year all become this year, with the month, day, time and zone kept, and Feb 29
+  // becomes Mar 1 in a year that has none. When that puts the time more than 48 hours ahead, it
+  // takes the year before. It also drops the fractional seconds: 22:21:09.461230 becomes 22:21:09
+  // (checked in a lab tenant).
+  if (opts.handle2DigitYear) {
     const now = opts.now ? new Date(opts.now).getTime() : Date.now();
-    if (ms - now > 7 * 86400000) {
-      dt.setUTCFullYear(year - 1);
-      ms = dt.getTime() - (offset ?? 0) * 60000;
-    }
+    const thisYear = new Date(now).getUTCFullYear();
+    ms = at(thisYear).getTime() - (offset ?? 0) * 60000;
+    if (ms - now > 48 * 3600000) ms = at(thisYear - 1).getTime() - (offset ?? 0) * 60000;
   }
-  // With handle2DigitYear the engine drops the fractional seconds, whatever the layout: TRUE turns
-  // 22:21:09.461230 into 22:21:09 (checked in a lab tenant).
   const usec = ms * 1000 + (opts.handle2DigitYear ? 0 : Math.floor(nanos / 1000));
   return new TimeValue(usec, offset ?? 0, zone ?? (offset ? '' : 'UTC'));
 }

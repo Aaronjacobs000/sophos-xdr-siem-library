@@ -202,9 +202,6 @@ export function lintParsers(parsers, opts = {}) {
           }
         }
       });
-      for (const op of st.ops || []) {
-        if (['<', '>', '<=', '>=', '/', '%'].includes(op)) inferred(`op-${op}`, `the ${op} operator isn't in the docs; the emulator supports it but confirm it in Sophos Fusion`, p.name, st.line);
-      }
       checkTarget(st, p, fields, schema, add, inferred, stats, childrenOf);
       known.add(st.target.split('.')[0]);
       known.add(st.target);
@@ -265,7 +262,7 @@ function checkDatetime(n, p, st, add, inferred) {
   if (!chunks.some((c) => c.std)) add('error', 'datetime-layout', `DATETIME layout "${layout.v}" has no Go reference fields. Write the reference time Mon Jan 2 15:04:05 MST 2006 in your format, for example "Jan 02 2006 15:04:05".`, p.name, st.line);
   const two = n.args[2];
   const twoOn = two && two.t === 'lit' && truthy(two.v);
-  if (!hasYear(layout.v) && !twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" has no year, so Go reads year 0 and the engine stores a huge number. Pass TRUE as the third argument so the engine picks the year.`, p.name, st.line);
+  if (!hasYear(layout.v) && !twoOn) add('warning', 'datetime-year', `DATETIME layout "${layout.v}" has no year, so Go reads year 0 and the engine stores a huge number. Pass TRUE as the third argument so the engine sets the year. TRUE uses the current year, or the year before when that would put the time more than 48 hours ahead, and replaces any year in the value. It also drops fractional seconds.`, p.name, st.line);
   if (!hasZone(layout.v)) add('info', 'datetime-utc', `DATETIME layout "${layout.v}" has no zone, so the engine reads the time as UTC`, p.name, st.line);
 }
 

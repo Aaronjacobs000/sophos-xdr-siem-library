@@ -224,7 +224,11 @@ export const FUNCTIONS = {
     if (s === null || s === undefined) throw new RuntimeError('message is not in LEEF format: CEF() got NULL. Check the value is set before you read it as CEF.', 'cef-header');
     return withHeaderKeys(parseCef(str(s)));
   }],
-  LEEF: [1, 2, (c, [s, d]) => withHeaderKeys(parseLeef(str(s), d === undefined ? null : str(d)))],
+  // LEEF(NULL) fails the event too, with or without a delimiter (checked in a lab tenant).
+  LEEF: [1, 2, (c, [s, d]) => {
+    if (s === null || s === undefined) throw new RuntimeError('message is not in LEEF format: LEEF() got NULL. Check the value is set before you read it as LEEF.', 'leef-header');
+    return withHeaderKeys(parseLeef(str(s), d === undefined ? null : str(d)));
+  }],
   DATETIME: [1, 3, (c, [s, layout, two]) => {
     if (s === null) return null;
     if (s instanceof TimeValue) return s;
