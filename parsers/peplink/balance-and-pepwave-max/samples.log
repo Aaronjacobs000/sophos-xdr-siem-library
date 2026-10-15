@@ -1,0 +1,7 @@
+<9>Oct 14 09:47:44 balance: Denied CONN=Ethernet WAN SRC=198.51.100.23 DST=192.0.2.20 LEN=48 PROTO=TCP SPT=2260 DPT=80
+<9>Oct 14 09:48:10 balance: Denied CONN=Cellular 1 SRC=203.0.113.45 DST=192.0.2.21 LEN=60 PROTO=TCP SPT=40102 DPT=3389
+<9>Oct 14 09:48:30 balance: Allowed CONN=LAN SRC=192.0.2.45 DST=203.0.113.80 LEN=60 PROTO=TCP SPT=51022 DPT=443
+<9>Oct 14 09:49:02 balance: Denied CONN=WAN 2 SRC=203.0.113.9 DST=192.0.2.1 LEN=28 PROTO=UDP SPT=5353 DPT=161
+<9>Oct 14 09:49:20 balance: Denied CONN=Ethernet WAN SRC=203.0.113.12 DST=192.0.2.1 LEN=84 PROTO=ICMP
+<13>Oct 14 09:50:02 balance: WAN: WAN 1 disconnected (Health check failure)
+<13>Oct 14 09:50:40 balance: System: Changes applied

@@ -1,0 +1,32 @@
+{
+  "vendor": "Peplink",
+  "product": "Balance and Pepwave MAX",
+  "versions": [
+    "8.5"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://download.peplink.com/manual/peplink-balance-and-mediafast-firmware-manual-8.5.0.pdf",
+    "https://forum.peplink.com/t/peplink-s-syslog-message-list/2697",
+    "https://forum.peplink.com/t/request-for-new-syslog-message-for-failover-rollback-and-slaves-wan-link-power-down/1764",
+    "https://forum.peplink.com/t/peplink-2500-remote-syslog/25218"
+  ],
+  "notes": "For Peplink Balance and Pepwave MAX routers. Turn on Remote Syslog under System > Event Log with the data collector as the host (UDP only), and turn on Event Logging on the firewall rules to log (outbound, inbound, internal and local service rules). Firewall lines (Denied or Allowed, CONN=, SRC=, DST=, LEN=, PROTO= and, for TCP and UDP, SPT= and DPT=) go to Netflow as blocked or allowed, with the connection name, packet length and syslog tag in event_metadata; the line names no rule. The BSD syslog time has no year or zone and is read as UTC. The device's other event log lines (WAN, system, SpeedFusion and the rest) aren't claimed: Peplink doesn't publish their message list. How sure this is: the firewall line's fields and a Denied example come from Peplink's Balance firmware manual. Peplink doesn't document the syslog header; the samples follow a header seen in lines posted on Peplink's forum (<PRI><time> balance: <message>), and the parser reads the firewall text wherever it starts. The Allowed wording and the ICMP form (no ports) are inferred. Samples are made up in those shapes. Passed Run Test in a lab tenant on 2026-10-16 (43 of 43 fields matched the emulator in each of 3 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+      "file": "PEPLINK_SYSLOG_STANDALONE_NETFLOW.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.netflow"
+    }
+  ]
+}
