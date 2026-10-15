@@ -1,0 +1,74 @@
+!SAMPLE=<134>1 2026-10-13T09:15:02.418233+11:00 bigip01.example.com tmm 21877 23003137 [F5@12276 acl_policy_name="/Common/edge_fw_policy" acl_policy_type="Enforced" acl_rule_name="/Common/edge_rules:allow_https" acl_rule_uuid="" action="Accept" hostname="bigip01.example.com" bigip_mgmt_ip="192.0.2.5" context_name="/Common/vs_www_https" context_type="Virtual Server" date_time="Oct 13 2026 09:15:02" dest_fqdn="unknown" dest_ip="198.51.100.20" dst_geo="No-lookup" dest_port="443" device_product="Advanced Firewall Module" device_vendor="F5" device_version="17.1.1.3.0.0.5" drop_reason="" errdefs_msgno="23003137" errdefs_msg_name="Network Event" flow_id="00011a2b3c4d5e6f" ip_protocol="TCP" severity="8" partition_name="Common" route_domain="0" sa_translation_pool="" sa_translation_type="Automap" source_fqdn="unknown" source_ip="203.0.113.45" src_geo="No-lookup" source_port="51544" source_user="unknown" source_user_group="unknown" translated_dest_ip="198.51.100.80" translated_dest_port="8443" translated_ip_protocol="TCP" translated_route_domain="0" translated_source_ip="198.51.100.5" translated_source_port="51544" translated_vlan="/Common/internal" vlan="/Common/external" send_to_vs="" src_zone="" dest_zone="" dest_vlan="" source_ipint_categories="No-lookup" dest_ipint_categories="No-lookup"] "192.0.2.5","bigip01.example.com","Virtual Server","/Common/vs_www_https","No-lookup","203.0.113.45","No-lookup","198.51.100.20","51544","443","/Common/external","TCP","0","198.51.100.5","198.51.100.80","51544","8443","/Common/internal","TCP","0","Enforced","/Common/edge_fw_policy","/Common/edge_rules:allow_https","","Accept","","Automap","","00011a2b3c4d5e6f","unknown","unknown","unknown","unknown","","","","","No-lookup","No-lookup"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="afm-network"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP AFM network firewall events (rfc5424 structured data, Splunk or ArcSight CEF).
+# Child of F5_BIGIP_AFM_SYSLOG_PARENT: network firewall (ACL) events, errdefs_msgno 23003137, to
+# Netflow. Accept, Accept decisively, Established, Open and Closed are FW_ALLOWED; Drop and Reject
+# are FW_BLOCKED. The rule, policy, context, VLAN, route domain and drop reason go to
+# event_metadata, and the translated addresses and ports to the NAT fields.
+# The address, port, protocol, action and context variables, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+sourcePort$ = IF srcPort != "" THEN srcPort ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+destinationPort$ = IF dstPort != "" THEN dstPort ELSE NULL
+p = UPPERCASE(protocol)
+protocol$ = NULL
+protocol$ = IF p == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF p == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF p == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF p == "ICMPV6" OR p == "IPV6-ICMP" THEN 58 ELSE protocol$
+protocol$ = IF p == "SCTP" THEN 132 ELSE protocol$
+protocol$ = IF p == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF p == "ESP" THEN 50 ELSE protocol$
+
+a = LOWERCASE(action)
+flowAction$ = NULL
+flowAction$ = IF a == "accept" OR a == "accept decisively" OR a == "established" OR a == "open" OR a == "closed" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF a == "drop" OR a == "reject" THEN "FW_BLOCKED" ELSE flowAction$
+connectionEndReason$ = IF dropReason != "" THEN dropReason ELSE NULL
+connectionEndReason$ = IF connectionEndReason$ == NULL AND a == "closed" THEN "Closed" ELSE connectionEndReason$
+
+# Translated (NAT) addresses and ports, in the keyed layouts only.
+tsrc = k|(?:^|[\s,\[])translated_source_ip="(?P<v>[^"]*)"
+tsport = k|(?:^|[\s,\[])translated_source_port="(?P<v>[^"]*)"
+tdst = k|(?:^|[\s,\[])translated_dest_ip="(?P<v>[^"]*)"
+tdport = k|(?:^|[\s,\[])translated_dest_port="(?P<v>[^"]*)"
+sourceNatAddress$ = IF tsrc["v"] != "" THEN tsrc["v"] ELSE NULL
+sourceNatPort$ = IF tsport["v"] != "" THEN tsport["v"] ELSE NULL
+destinationNatAddress$ = IF tdst["v"] != "" THEN tdst["v"] ELSE NULL
+destinationNatPort$ = IF tdport["v"] != "" THEN tdport["v"] ELSE NULL
+
+m1.key$ = "action"
+m1.value$ = action
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "acl_rule_name"
+m2.value$ = ruleName
+eventMetadata$.record$ = IF ruleName != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "acl_policy_name"
+m3.value$ = STRING(policy["v"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "acl_policy_type"
+m4.value$ = STRING(policyType["v"])
+eventMetadata$.record$ = IF m4.value$ != "" AND m4.value$ != "-" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "context_type"
+m5.value$ = STRING(ctxType["v"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "context_name"
+m6.value$ = contextName
+eventMetadata$.record$ = IF contextName != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "vlan"
+m7.value$ = vlanName
+eventMetadata$.record$ = IF vlanName != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "route_domain"
+m8.value$ = routeDomain
+eventMetadata$.record$ = IF routeDomain != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "flow_id"
+m9.value$ = STRING(flow["v"])
+eventMetadata$.record$ = IF m9.value$ != "" AND m9.value$ != "0000000000000000" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$

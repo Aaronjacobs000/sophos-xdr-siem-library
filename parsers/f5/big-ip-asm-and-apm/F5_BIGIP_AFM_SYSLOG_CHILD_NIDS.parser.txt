@@ -1,0 +1,58 @@
+!SAMPLE=<134>1 2026-10-13T10:02:00.115320+11:00 bigip01.example.com tmm 21877 23003138 [F5@12276 action="None" hostname="bigip01.example.com" bigip_mgmt_ip="192.0.2.5" context_name="Device" date_time="Oct 13 2026 10:02:00" dest_ip="" dest_port="" device_product="Advanced Firewall Module" device_vendor="F5" device_version="17.1.1.3.0.0.5" dos_attack_event="Attack Started" dos_attack_id="3318840121" dos_attack_name="TCP SYN flood" dos_packets_dropped="0" dos_packets_received="0" errdefs_msgno="23003138" errdefs_msg_name="Network DoS Event" flow_id="0000000000000000" severity="4" dos_mode="Enforced" dos_src="Volumetric, Aggregated across all SrcIP's, Device-Wide attack, metric:PPS" partition_name="Common" route_domain="" source_ip="" source_port="" vlan=""] "Oct 13 2026 10:02:00","192.0.2.5","bigip01.example.com","Device","","","","","","","TCP SYN flood","3318840121","Attack Started","None"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="afm-dos"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP AFM DoS events (rfc5424 structured data, Splunk or ArcSight CEF).
+# Child of F5_BIGIP_AFM_SYSLOG_PARENT: network, DNS and SIP DoS events (errdefs_msgno 23003138,
+# 23003141, 23003145) to NIDS, with the attack name as the message, F5's action (None while
+# detecting, Allow or Drop), blocked for Drop, and the attack ID, its event (Attack Started,
+# Sampled or Stopped), the packet counts and the context in event_metadata. Device-wide attacks
+# carry no addresses.
+# The address, port, action and context variables, sensorType$, hostId$ and eventTimeUsec$ come
+# from the parent.
+
+atkName = k|(?:^|[\s,\[])dos_attack_name="(?P<v>[^"]*)"
+atkId = k|(?:^|[\s,\[])dos_attack_id="(?P<v>[^"]*)"
+atkEvent = k|(?:^|[\s,\[])dos_attack_event="(?P<v>[^"]*)"
+dropped = k|(?:^|[\s,\[])dos_packets_dropped="(?P<v>[^"]*)"
+received = k|(?:^|[\s,\[])dos_packets_received="(?P<v>[^"]*)"
+dosSrc = k|(?:^|[\s,\[])dos_src="(?P<v>[^"]*)"
+# In CEF the attack name is the signature ID, the attack ID cn1 and its event cs1.
+name = IF isCef THEN cefSig ELSE atkName["v"]
+id = IF isCef THEN STRING(v["cn1"]) ELSE atkId["v"]
+stage = IF isCef THEN STRING(v["cs1"]) ELSE atkEvent["v"]
+
+message$ = IF name != "" THEN name ELSE "F5 BIG-IP AFM DoS event"
+classification$ = IF isCef THEN "Network DoS Event" ELSE msgName["v"]
+logType$ = "DoS"
+action$ = IF action != "" THEN action ELSE NULL
+blocked$ = IF LOWERCASE(action) == "drop" THEN 1 ELSE 0
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+sourcePort$ = IF srcPort != "" THEN srcPort ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+destinationPort$ = IF dstPort != "" THEN dstPort ELSE NULL
+
+m1.key$ = "dos_attack_id"
+m1.value$ = id
+m2.key$ = "dos_attack_event"
+m2.value$ = stage
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "dos_packets_dropped"
+m3.value$ = STRING(dropped["v"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "dos_packets_received"
+m4.value$ = STRING(received["v"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "dos_src"
+m5.value$ = STRING(dosSrc["v"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "context_name"
+m6.value$ = contextName
+eventMetadata$.record$ = IF contextName != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "vlan"
+m7.value$ = vlanName
+eventMetadata$.record$ = IF vlanName != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
