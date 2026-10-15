@@ -1,0 +1,85 @@
+!SAMPLE={"sailpoint_record":"event","org":"acme","pod":"prd04-apse2","created":"2026-10-14T02:14:51.087Z","id":"6b2e1d3f8c4e5d9fa0718293a4b5c6d7","action":"AUTHENTICATION-240","type":"AUTH","actor":{"name":"lee.contractor"},"target":{"name":"lee.contractor"},"stack":"oathkeeper","trackingNumber":"7d6c5b4a3928170af9d5e4c8f3d1e2b6","ipAddress":"198.51.100.77","attributes":{"sourceName":"SailPoint","errors":"Invalid username or password."},"objects":["AUTHENTICATION"],"operation":"REQUEST","status":"FAILED","technicalName":"AUTHENTICATION_REQUEST_FAILED","name":"Request Authentication Failed","synced":"2026-10-14T02:14:51.733Z","_type":"event","_version":"v7"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: SailPoint Identity Security Cloud audit events from the example bridge.
+# Child of SAILPOINT_ISC_JSON_PARENT: sign-ins (AUTHENTICATION-100, 103, 105, SAML2-142),
+# failed sign-ins (AUTHENTICATION-240, 241, 246, 247, 281, SAML2-166), lockouts
+# (AUTHENTICATION-245), sign-outs and session ends (AUTHENTICATION-300, 303, SESSION-2 to 6), MFA
+# checks, personal access token use, SSO app launches and password changes, to Auth.
+# json, eventId, spType, act, spStatus, actor, target, ip, isSignin, isPassword, isSso,
+# eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = eventId
+authSystem$ = "SailPoint Identity Security Cloud"
+status$ = act
+# SailPoint documents ipAddress as the address of the target system, such as the app a user
+# signs in to or the source whose password changes.
+targetAddress$ = IF ip != "" THEN ip ELSE NULL
+
+# The actor is who signed in, unless SailPoint itself raised the event (actor System) for the
+# user named in target. For an SSO launch the target is the app.
+systemActor = actor == "" OR LOWERCASE(actor) == "system"
+targetUserName$ = IF systemActor THEN target ELSE actor
+targetUserName$ = IF isSso THEN actor ELSE targetUserName$
+applicationName$ = IF isSso AND target != "" THEN target ELSE NULL
+# A password changed by someone else: the actor is the source user and the target the account.
+targetUserName$ = IF isPassword AND target != "" THEN target ELSE targetUserName$
+sourceUserName$ = IF isPassword AND NOT systemActor AND actor != target THEN actor ELSE NULL
+targetUserName$ = IF targetUserName$ == "" THEN NULL ELSE targetUserName$
+
+logoff = act == "AUTHENTICATION-300" OR act == "AUTHENTICATION-303" OR act == "SESSION-2" OR act == "SESSION-3" OR act == "SESSION-4" OR act == "SESSION-6"
+locked = act == "AUTHENTICATION-245"
+failedCode = act == "AUTHENTICATION-240" OR act == "AUTHENTICATION-241" OR act == "AUTHENTICATION-246" OR act == "AUTHENTICATION-247" OR act == "AUTHENTICATION-281" OR act == "SAML2-166" OR act == "TOKEN_VERIFICATION_FAILED" OR act == "PERSONAL_ACCESS_TOKEN_USE_FAILED" OR act == "APP_ACCESS_DENIED" OR act == "passwordChangeFailure" OR act == "USER_PASSWORD_RESET_REJECTED"
+failed = failedCode OR spStatus == "FAILED" OR spStatus == "REJECTED"
+mfa = act == "TOKEN_VERIFICATION_PASSED" OR act == "TOKEN_VERIFICATION_FAILED" OR act == "MFA_ON_LOGIN_AUTHENTICATE"
+reset = CONTAINS(LOWERCASE(act), "reset") OR CONTAINS(LOWERCASE(act), "forgot")
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+authCategory$ = IF isPassword THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+authCategory$ = IF isPassword AND reset THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+action$ = IF locked OR isPassword THEN "ACCOUNT" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF act == "AUTHENTICATION-246" THEN "EXPIRED_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF act == "TOKEN_VERIFICATION_FAILED" THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF mfa THEN TRUE ELSE NULL
+errors = STRING(json["$.attributes.errors"])
+subStatus$ = IF errors != "" THEN errors ELSE NULL
+
+m1.key$ = "type"
+m1.value$ = spType
+m2.key$ = "technical_name"
+m2.value$ = STRING(json["$.technicalName"])
+m3.key$ = "status"
+m3.value$ = STRING(json["$.status"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "name"
+m4.value$ = json["$.name"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "actor_name"
+m5.value$ = actor
+eventMetadata$.record$ = IF actor != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "target_name"
+m6.value$ = target
+eventMetadata$.record$ = IF target != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "tracking_number"
+m7.value$ = json["$.trackingNumber"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "org"
+m8.value$ = json["$.org"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+# attributes differ by event and SailPoint doesn't document them all, so they go in as JSON.
+attrs = STRING(json["$.attributes"])
+m9.key$ = "attributes"
+m9.value$ = attrs
+eventMetadata$.record$ = IF attrs != "" AND attrs != "{}" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$

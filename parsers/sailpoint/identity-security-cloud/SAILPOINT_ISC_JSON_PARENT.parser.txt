@@ -1,0 +1,43 @@
+!SAMPLE={"sailpoint_record":"event","org":"acme","pod":"prd04-apse2","created":"2026-10-14T02:10:05.412Z","id":"5a1f0c2e7b3d4c8e9f60718293a4b5c6","action":"AUTHENTICATION-103","type":"AUTH","actor":{"name":"pat.example"},"target":{"name":"pat.example"},"stack":"oathkeeper","trackingNumber":"6c5b4a39281706f9e8c4d3b7e2c0f1a5","ipAddress":"203.0.113.24","attributes":{"sourceName":"SailPoint","info":"Password"},"objects":["AUTHENTICATION"],"operation":"REQUEST","status":"PASSED","technicalName":"AUTHENTICATION_REQUEST_PASSED","name":"Request Authentication Passed","synced":"2026-10-14T02:10:06.020Z","_type":"event","_version":"v7"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"sailpoint_record"\s*:\s*"event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: SailPoint Identity Security Cloud audit events from the Search API (events index), pulled
+# by the example bridge in bridges/sailpoint-isc-events and posted to HTTP Ingest as JSON lines.
+# SailPoint has no syslog or push stream for audit events, so the bridge puts
+# "sailpoint_record": "event" in front of each event.
+# Parent: hands sign-ins, sign-outs, lockouts, MFA checks, SSO app launches and password changes
+# to Auth, and every other event (provisioning, access items, sources, admin rights, API clients,
+# certifications, system settings) to CloudAudit. Routing uses the action names in SailPoint's
+# Audit Events Reference.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "SailPoint Identity Security Cloud"
+eventId = json["$.id"]
+spType = STRING(json["$.type"])
+act = STRING(json["$.action"])
+spStatus = UPPERCASE(STRING(json["$.status"]))
+actor = STRING(json["$.actor.name"])
+target = STRING(json["$.target.name"])
+ip = STRING(json["$.ipAddress"])
+# created is ISO 8601 in UTC with milliseconds, such as 2026-10-14T02:10:05.412Z.
+created = json["$.created"]
+eventTimeUsec$ = IF created THEN DATETIME(created, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+# Sign-in, sign-out, lockout, session and MFA events of type AUTH. AUTH also holds API client,
+# personal access token and identity provider changes, which go to CloudAudit.
+signin = act|^(AUTHENTICATION-\d+|SAML2-(?:142|166)|SESSION-\d+|TOKEN_VERIFICATION_(?:PASSED|FAILED)|MFA_ON_LOGIN_AUTHENTICATE|PERSONAL_ACCESS_TOKEN_USE(?:D|_FAILED)|SUPPORT_LOGIN_AUTHENTICATE)$
+# Password changes and resets of type PASSWORD_ACTIVITY. Password policy and MFA setting changes
+# of that type go to CloudAudit.
+pw = act|^(passwordChange|passwordChangeFailure|forgotPasswordChange|expiredPasswordChange|USER_PASSWORD_UPDATE(?:_PASSED|_FAILED)?|AUTH_USER_PASSWORD_UPDATE|ACCOUNT_PASSWORD_RESET_(?:PASSED|FAILED)|USER_PASSWORD_RESET_REJECTED|SOURCE_EXTERNAL_PASSWORD_CHANGE(?:_PASSED|_FAILED)?)$
+isSignin = signin[1] != ""
+isPassword = pw[1] != ""
+isSso = spType == "SSO"
+eventType$ = IF isSignin OR isPassword OR isSso THEN "auth" ELSE "audit"

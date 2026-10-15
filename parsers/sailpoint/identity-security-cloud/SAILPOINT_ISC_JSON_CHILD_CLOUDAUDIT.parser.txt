@@ -1,0 +1,70 @@
+!SAMPLE={"sailpoint_record":"event","org":"acme","pod":"prd04-apse2","created":"2026-10-14T03:42:09.552Z","id":"d29f8e0a5d1fc0e17e8596a0b1c2d3e4","action":"DisableAccount","type":"PROVISIONING","actor":{"name":"System"},"target":{"name":"lee.contractor"},"stack":"oathkeeper","trackingNumber":"4e3d2c1b0a6958e71e0cf1d5a0e8f92d","ipAddress":"192.0.2.15","attributes":{"sourceName":"Active Directory","accountName":"CN=Lee Contractor,OU=Contractors,DC=example,DC=com","provisioningResult":"COMMITTED","interface":"Lifecycle State Change"},"objects":["ACCOUNT"],"operation":"DISABLE","status":"PASSED","technicalName":"ACCOUNT_DISABLE_PASSED","name":"Disable Account Passed","synced":"2026-10-14T03:42:10.120Z","_type":"event","_version":"v7"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: SailPoint Identity Security Cloud audit events from the example bridge.
+# Child of SAILPOINT_ISC_JSON_PARENT: every event the Auth child doesn't take, such as
+# provisioning (accounts created, disabled or deleted on a source), access items (roles,
+# entitlements, access profiles), source changes, admin rights granted or revoked, API clients
+# and personal access tokens, certifications and system settings, to CloudAudit.
+# json, eventId, spType, act, spStatus, actor, target, ip, eventType$, sensorType$ and
+# eventTimeUsec$ come from the parent.
+
+sensorEventId$ = eventId
+# The parent set eventType$ to "audit" to pick this child; the record keeps SailPoint's type.
+eventType$ = spType
+eventSource$ = "SailPoint Identity Security Cloud"
+# technicalName always reads objects_operation_status. Some actions are generic (create, update),
+# so the action goes to additional_event_data.
+tech = STRING(json["$.technicalName"])
+eventName$ = IF tech != "" THEN tech ELSE act
+userName$ = IF actor != "" THEN actor ELSE NULL
+status$ = json["$.status"]
+managementEvent$ = TRUE
+errors = STRING(json["$.attributes.errors"])
+errorMessage$ = IF errors != "" THEN errors ELSE NULL
+
+# The target is the identity, role, entitlement, source or setting the action was performed on.
+res.resourceId$ = target
+res.resourceType$ = json["$.objects[0]"]
+resources$ = IF target != "" THEN [res] ELSE NULL
+
+d1.key$ = "action"
+d1.value$ = act
+d2.key$ = "operation"
+d2.value$ = STRING(json["$.operation"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "name"
+d3.value$ = json["$.name"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+objs = json["$.objects"]
+d4.key$ = "objects"
+d4.value$ = STRING(objs)
+additionalEventData$.record$ = IF objs != NULL AND LENGTH(objs) != 0 THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "target_name"
+d5.value$ = target
+additionalEventData$.record$ = IF target != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+# SailPoint documents ipAddress as the address of the target system.
+d6.key$ = "ip_address"
+d6.value$ = ip
+additionalEventData$.record$ = IF ip != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "tracking_number"
+d7.value$ = json["$.trackingNumber"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "details"
+d8.value$ = json["$.details"]
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "org"
+d9.value$ = json["$.org"]
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+# attributes differ by event (sourceName, provisioningResult, errors, <field>_before and
+# <field>_after) and SailPoint doesn't document them all, so they go in as JSON.
+attrs = STRING(json["$.attributes"])
+d10.key$ = "attributes"
+d10.value$ = attrs
+additionalEventData$.record$ = IF attrs != "" AND attrs != "{}" THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$

@@ -1,0 +1,725 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791943805412000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5a1f0c2e7b3d4c8e9f60718293a4b5c6",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "AUTHENTICATION-103",
+      "target_address": "203.0.113.24",
+      "target_user_name": "pat.example",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "AUTH"
+          },
+          {
+            "key": "technical_name",
+            "value": "AUTHENTICATION_REQUEST_PASSED"
+          },
+          {
+            "key": "status",
+            "value": "PASSED"
+          },
+          {
+            "key": "name",
+            "value": "Request Authentication Passed"
+          },
+          {
+            "key": "actor_name",
+            "value": "pat.example"
+          },
+          {
+            "key": "target_name",
+            "value": "pat.example"
+          },
+          {
+            "key": "tracking_number",
+            "value": "6c5b4a39281706f9e8c4d3b7e2c0f1a5"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"info\":\"Password\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791944091087000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6b2e1d3f8c4e5d9fa0718293a4b5c6d7",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "AUTHENTICATION-240",
+      "target_address": "198.51.100.77",
+      "target_user_name": "lee.contractor",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "sub_status": "Invalid username or password.",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "AUTH"
+          },
+          {
+            "key": "technical_name",
+            "value": "AUTHENTICATION_REQUEST_FAILED"
+          },
+          {
+            "key": "status",
+            "value": "FAILED"
+          },
+          {
+            "key": "name",
+            "value": "Request Authentication Failed"
+          },
+          {
+            "key": "actor_name",
+            "value": "lee.contractor"
+          },
+          {
+            "key": "target_name",
+            "value": "lee.contractor"
+          },
+          {
+            "key": "tracking_number",
+            "value": "7d6c5b4a3928170af9d5e4c8f3d1e2b6"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"errors\":\"Invalid username or password.\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791944140250000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c3f2e4a9d5f6eab1829304a5b6c7d8e",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "AUTHENTICATION-245",
+      "target_address": "198.51.100.77",
+      "target_user_name": "lee.contractor",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "AUTH"
+          },
+          {
+            "key": "technical_name",
+            "value": "USER_ACCOUNT_LOCK_PASSED"
+          },
+          {
+            "key": "status",
+            "value": "PASSED"
+          },
+          {
+            "key": "name",
+            "value": "Lock User Account Passed"
+          },
+          {
+            "key": "actor_name",
+            "value": "System"
+          },
+          {
+            "key": "target_name",
+            "value": "lee.contractor"
+          },
+          {
+            "key": "tracking_number",
+            "value": "e8d7c6b5a4039281bae6f5d9a4e2f3c7"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791944533900000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "8d4a3f5b0e6a7fbc2930415b6c7d8e9f",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "TOKEN_VERIFICATION_FAILED",
+      "target_address": "203.0.113.61",
+      "target_user_name": "jo.newstarter",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "AUTH"
+          },
+          {
+            "key": "technical_name",
+            "value": "MFA_TOKEN_VERIFY_FAILED"
+          },
+          {
+            "key": "status",
+            "value": "FAILED"
+          },
+          {
+            "key": "name",
+            "value": "Verify MFA Token Failed"
+          },
+          {
+            "key": "actor_name",
+            "value": "jo.newstarter"
+          },
+          {
+            "key": "target_name",
+            "value": "jo.newstarter"
+          },
+          {
+            "key": "tracking_number",
+            "value": "f9e8d7c6b5140392cbf7a6e0b5f3a4d8"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"info\":\"Okta Verify\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791945602115000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9e5b4a6c1f7b8acd3a41526c7d8e9fa0",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "APP_LAUNCH_SAML",
+      "target_address": "203.0.113.24",
+      "target_user_name": "pat.example",
+      "application_name": "Payroll Portal",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "SSO"
+          },
+          {
+            "key": "technical_name",
+            "value": "APP_LAUNCH_PASSED"
+          },
+          {
+            "key": "status",
+            "value": "PASSED"
+          },
+          {
+            "key": "name",
+            "value": "Launch App Passed"
+          },
+          {
+            "key": "actor_name",
+            "value": "pat.example"
+          },
+          {
+            "key": "target_name",
+            "value": "Payroll Portal"
+          },
+          {
+            "key": "tracking_number",
+            "value": "0af9e8d7c62514a3dca8b7f1c6a4b5e9"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"appId\":\"2c9180867b3d4e5f017b3d4e5f600001\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791947147330000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "af6c5b7d2a8c9bde4b52637d8e9fa0b1",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "AUTHENTICATION-300",
+      "target_address": "203.0.113.24",
+      "target_user_name": "pat.example",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "AUTH"
+          },
+          {
+            "key": "technical_name",
+            "value": "AUTHENTICATION_LOGOUT_PASSED"
+          },
+          {
+            "key": "status",
+            "value": "PASSED"
+          },
+          {
+            "key": "name",
+            "value": "Logout Authentication Passed"
+          },
+          {
+            "key": "actor_name",
+            "value": "pat.example"
+          },
+          {
+            "key": "target_name",
+            "value": "pat.example"
+          },
+          {
+            "key": "tracking_number",
+            "value": "1b0af9e8d73625b4edb9c8a2d7b5c6fa"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791947480006000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b07d6c8e3b9daecf5c63748e9fa0b1c2",
+      "auth_system": "SailPoint Identity Security Cloud",
+      "status": "USER_PASSWORD_UPDATE_PASSED",
+      "target_address": "203.0.113.61",
+      "target_user_name": "jo.newstarter",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "type",
+            "value": "PASSWORD_ACTIVITY"
+          },
+          {
+            "key": "technical_name",
+            "value": "USER_PASSWORD_UPDATE_PASSED"
+          },
+          {
+            "key": "status",
+            "value": "PASSED"
+          },
+          {
+            "key": "name",
+            "value": "Update User Password Passed"
+          },
+          {
+            "key": "actor_name",
+            "value": "jo.newstarter"
+          },
+          {
+            "key": "target_name",
+            "value": "jo.newstarter"
+          },
+          {
+            "key": "tracking_number",
+            "value": "2c1b0af9e84736c5fcead9b3e8c6d70b"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"accountId\":\"jo.newstarter\",\"info\":\"Password updated by the user.\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791948644718000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "USER_MANAGEMENT",
+      "sensor_event_id": "c18e7d9f4c0ebfd06d74859fa0b1c2d3",
+      "event_source": "SailPoint Identity Security Cloud",
+      "event_name": "USER_ADMIN_GRANT_PASSED",
+      "user_name": "sam.admin",
+      "status": "PASSED",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "kim.helpdesk",
+          "resource_type": "USER"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "USER_ADMIN_GRANT"
+          },
+          {
+            "key": "operation",
+            "value": "GRANT"
+          },
+          {
+            "key": "name",
+            "value": "Grant User Admin Passed"
+          },
+          {
+            "key": "objects",
+            "value": "[\"USER\",\"ADMIN\"]"
+          },
+          {
+            "key": "target_name",
+            "value": "kim.helpdesk"
+          },
+          {
+            "key": "ip_address",
+            "value": "203.0.113.10"
+          },
+          {
+            "key": "tracking_number",
+            "value": "3d2c1b0af95847d60dfbe0c4f9d7e81c"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"capabilities\":\"ORG_ADMIN\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791949329552000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "PROVISIONING",
+      "sensor_event_id": "d29f8e0a5d1fc0e17e8596a0b1c2d3e4",
+      "event_source": "SailPoint Identity Security Cloud",
+      "event_name": "ACCOUNT_DISABLE_PASSED",
+      "user_name": "System",
+      "status": "PASSED",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "lee.contractor",
+          "resource_type": "ACCOUNT"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "DisableAccount"
+          },
+          {
+            "key": "operation",
+            "value": "DISABLE"
+          },
+          {
+            "key": "name",
+            "value": "Disable Account Passed"
+          },
+          {
+            "key": "objects",
+            "value": "[\"ACCOUNT\"]"
+          },
+          {
+            "key": "target_name",
+            "value": "lee.contractor"
+          },
+          {
+            "key": "ip_address",
+            "value": "192.0.2.15"
+          },
+          {
+            "key": "tracking_number",
+            "value": "4e3d2c1b0a6958e71e0cf1d5a0e8f92d"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"accountName\":\"CN=Lee Contractor,OU=Contractors,DC=example,DC=com\",\"interface\":\"Lifecycle State Change\",\"provisioningResult\":\"COMMITTED\",\"sourceName\":\"Active Directory\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791950311274000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ACCESS_ITEM",
+      "sensor_event_id": "e3a09f1b6e2ad1f28f96a7b1c2d3e4f5",
+      "event_source": "SailPoint Identity Security Cloud",
+      "event_name": "ENTITLEMENT_REMOVE_FAILED",
+      "user_name": "sam.admin",
+      "status": "FAILED",
+      "management_event": true,
+      "error_message": "Entitlement is still assigned by a role.",
+      "resources": [
+        {
+          "resource_id": "Finance Approvers",
+          "resource_type": "ENTITLEMENT"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "RemoveEntitlementFailure"
+          },
+          {
+            "key": "operation",
+            "value": "REMOVE"
+          },
+          {
+            "key": "name",
+            "value": "Remove Entitlement Failed"
+          },
+          {
+            "key": "objects",
+            "value": "[\"ENTITLEMENT\"]"
+          },
+          {
+            "key": "target_name",
+            "value": "Finance Approvers"
+          },
+          {
+            "key": "tracking_number",
+            "value": "5f4e3d2c1b7a69f82f1da2e6b1f90a3e"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"errors\":\"Entitlement is still assigned by a role.\",\"sourceName\":\"Active Directory\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791951175840000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "SOURCE_MANAGEMENT",
+      "sensor_event_id": "f4b1a02c7f3be2039a07b8c2d3e4f5a6",
+      "event_source": "SailPoint Identity Security Cloud",
+      "event_name": "SOURCE_UPDATE_PASSED",
+      "user_name": "sam.admin",
+      "status": "PASSED",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "Workday",
+          "resource_type": "SOURCE"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "SOURCE_UPDATE"
+          },
+          {
+            "key": "operation",
+            "value": "UPDATE"
+          },
+          {
+            "key": "name",
+            "value": "Update Source Passed"
+          },
+          {
+            "key": "objects",
+            "value": "[\"SOURCE\"]"
+          },
+          {
+            "key": "target_name",
+            "value": "Workday"
+          },
+          {
+            "key": "ip_address",
+            "value": "203.0.113.10"
+          },
+          {
+            "key": "tracking_number",
+            "value": "6a5f4e3d2c8b70a9302eb3f7c20a1b4f"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"clientId_after\":\"wd-new-client\",\"clientId_before\":\"wd-old-client\",\"sourceName\":\"Workday\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "SAILPOINT_ISC_JSON_PARENT > SAILPOINT_ISC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "SailPoint Identity Security Cloud",
+      "event_time_usec": 1791951617003000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AUTH",
+      "sensor_event_id": "a5c2b13d8a4cf314ab18c9d3e4f5a6b7",
+      "event_source": "SailPoint Identity Security Cloud",
+      "event_name": "API_CLIENT_CREATE_PASSED",
+      "user_name": "sam.admin",
+      "status": "PASSED",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "siem-reader",
+          "resource_type": "API"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "API_CLIENT_CREATED"
+          },
+          {
+            "key": "operation",
+            "value": "CREATE"
+          },
+          {
+            "key": "name",
+            "value": "Create API Client Passed"
+          },
+          {
+            "key": "objects",
+            "value": "[\"API\",\"CLIENT\"]"
+          },
+          {
+            "key": "target_name",
+            "value": "siem-reader"
+          },
+          {
+            "key": "ip_address",
+            "value": "203.0.113.10"
+          },
+          {
+            "key": "tracking_number",
+            "value": "7b6a5f4e3d9c81ba413fc4a8d31b2c5a"
+          },
+          {
+            "key": "org",
+            "value": "acme"
+          },
+          {
+            "key": "attributes",
+            "value": "{\"scope\":\"sp:search:read\",\"sourceName\":\"SailPoint\"}"
+          }
+        ]
+      }
+    }
+  }
+]
