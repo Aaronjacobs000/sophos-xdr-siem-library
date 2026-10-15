@@ -1,0 +1,83 @@
+!SAMPLE={"_embedded":{},"id":"7f3e2d1c-0b9a-4876-9543-21fedcba0007","recordedAt":"2026-10-14T09:20:31.587Z","createdAt":"2026-10-14T09:20:31.594Z","correlationId":"2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0007","actors":{"client":{"id":"5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9","name":"PingOne Admin Console","type":"CLIENT","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"href":"https://api.pingone.example/v1/environments/6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b/applications/5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9"},"user":{"id":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","name":"admin@example.com","type":"USER","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"}}},"action":{"type":"ROLE_ASSIGNMENT.CREATED","description":"Role Assignment Created"},"resources":[{"type":"USER","id":"3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11","name":"jsmith@example.com","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"},"href":"https://api.pingone.example/v1/environments/6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b/users/3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"}],"result":{"status":"SUCCESS","description":"Assigned role Environment Admin to user jsmith@example.com"},"internalCorrelation":{"sessionId":"9e8d7c6b-5a49-4382-a170-ffeeddcc0007","transactionId":"b1c2d3e4-f5a6-4b7c-8d9e-0a1b2c3d0007"},"source":{"ipAddress":"192.0.2.20","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: PingOne audit activities in Ping Activity Format, one event per record.
+# Child of PINGONE_ACTIVITY_JSON_PARENT: every action type that isn't a sign-on event, such as
+# user, role, group, application, population, policy, key and certificate changes, role access
+# control checks and flows, to CloudAudit with the action type as the event name.
+# json, actionType, userName, clientName, ip, ua, resultFailed, eventType$, sensorType$,
+# sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "PingOne"
+eventName$ = actionType
+# The action type is <RESOURCE>.<VERB>, such as ROLE_ASSIGNMENT.CREATED.
+parts = actionType|^(?P<res>[^.]+)\.(?P<verb>.+)$
+eventType$ = parts["res"]
+verb = parts["verb"]
+
+# Who did it: a user, or an API client (worker application) acting alone.
+userName$ = IF userName THEN userName ELSE clientName
+uid = json["$.actors.user.id"]
+userId$ = IF uid THEN uid ELSE json["$.actors.client.id"]
+userType$ = IF userName THEN "USER" ELSE "CLIENT"
+env = json["$.actors.user.environment.id"]
+env = IF env THEN env ELSE json["$.actors.client.environment.id"]
+env = IF env THEN env ELSE json["$.resources[0].environment.id"]
+recipientAccountId$ = env
+sourceAddress$ = ip
+userAgent$ = ua
+logonApplicationFamily$ = clientName
+r0type = STRING(json["$.resources[0].type"])
+targetUserName$ = IF r0type == "USER" THEN json["$.resources[0].name"] ELSE NULL
+
+status$ = json["$.result.status"]
+errorCode$ = IF resultFailed THEN json["$.result.reason"] ELSE NULL
+errorMessage$ = IF resultFailed THEN json["$.result.description"] ELSE NULL
+# Changes are management events; checks, flows and reads are not.
+change = verb == "CREATED" OR verb == "UPDATED" OR verb == "DELETED" OR verb == "ASSIGNED" OR verb == "UNASSIGNED" OR verb == "ADDED" OR verb == "REMOVED" OR verb == "MOVED" OR verb == "INVITED" OR verb == "PROMOTED" OR verb == "DEMOTED" OR verb == "REVOKED" OR verb == "FORCE_CHANGE" OR verb == "UNSET" OR verb == "EXTERNAL_SET"
+notAdmin = parts["res"] == "FLOW" OR parts["res"] == "AUTHENTICATION" OR parts["res"] == "SESSION" OR parts["res"] == "NOTIFICATION" OR parts["res"] == "AUTHENTICATION_CODE"
+managementEvent$ = change AND NOT notAdmin
+readOnly$ = verb == "READ" OR verb == "ACCESS_ALLOWED" OR verb == "ACCESS_DENIED"
+
+r1.resourceId$ = json["$.resources[0].id"]
+r1.resourceType$ = json["$.resources[0].type"]
+r1.resourceAccountId$ = json["$.resources[0].environment.id"]
+r2.resourceId$ = json["$.resources[1].id"]
+r2.resourceType$ = json["$.resources[1].type"]
+r2.resourceAccountId$ = json["$.resources[1].environment.id"]
+r3.resourceId$ = json["$.resources[2].id"]
+r3.resourceType$ = json["$.resources[2].type"]
+r3.resourceAccountId$ = json["$.resources[2].environment.id"]
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+resources$ = IF r3.resourceId$ THEN resources$ + [r3] ELSE resources$
+
+d1.key$ = "description"
+d1.value$ = json["$.action.description"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+d2.key$ = "result_description"
+d2.value$ = json["$.result.description"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "resource_name"
+d3.value$ = json["$.resources[0].name"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "client_name"
+d4.value$ = clientName
+additionalEventData$.record$ = IF clientName THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "correlation_id"
+d5.value$ = json["$.correlationId"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "session_id"
+d6.value$ = json["$.internalCorrelation.sessionId"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "population_id"
+d7.value$ = json["$.actors.user.population.id"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$

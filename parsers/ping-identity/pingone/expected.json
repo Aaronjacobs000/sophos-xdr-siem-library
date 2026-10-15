@@ -1,0 +1,648 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969164123000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0001",
+      "auth_system": "PingOne",
+      "target_user_name": "jsmith@example.com",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0001",
+      "status": "PASSWORD.CHECK_SUCCEEDED",
+      "sub_status": "Password check succeeded",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "PASSWORD.CHECK_SUCCEEDED"
+          },
+          {
+            "key": "user_id",
+            "value": "3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969182418000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0002",
+      "auth_system": "PingOne",
+      "target_user_name": "jsmith@example.com",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0002",
+      "status": "OTP.CHECK_SUCCESS",
+      "sub_status": "Passed OTP check",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "OTP.CHECK_SUCCESS"
+          },
+          {
+            "key": "user_id",
+            "value": "3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0002"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969260050000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0003",
+      "auth_system": "PingOne",
+      "target_user_name": "jdoe@example.com",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0003",
+      "status": "PASSWORD.CHECK_FAILED",
+      "sub_status": "Invalid credentials",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "PASSWORD.CHECK_FAILED"
+          },
+          {
+            "key": "user_id",
+            "value": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969291733000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0004",
+      "auth_system": "PingOne",
+      "target_user_name": "jdoe@example.com",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0004",
+      "status": "OTP.CHECK_FAILED",
+      "sub_status": "Invalid OTP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "OTP.CHECK_FAILED"
+          },
+          {
+            "key": "user_id",
+            "value": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969330900000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0005",
+      "auth_system": "PingOne",
+      "target_user_name": "jdoe@example.com",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "status": "USER.LOCKED",
+      "sub_status": "User locked after too many failed sign-on attempts",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "USER.LOCKED"
+          },
+          {
+            "key": "user_id",
+            "value": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0005"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969371204000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0006",
+      "auth_system": "PingOne",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "status": "PASSWORD.CHECK_FAILED_USER_NOT_FOUND",
+      "sub_status": "User not found: mallory@example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "PASSWORD.CHECK_FAILED_USER_NOT_FOUND"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0006"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969631587000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0007",
+      "event_type": "ROLE_ASSIGNMENT",
+      "event_source": "PingOne",
+      "event_name": "ROLE_ASSIGNMENT.CREATED",
+      "user_name": "admin@example.com",
+      "user_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "USER",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "source_address": "192.0.2.20",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "logon_application_family": "PingOne Admin Console",
+      "target_user_name": "jsmith@example.com",
+      "status": "SUCCESS",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11",
+          "resource_type": "USER",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Role Assignment Created"
+          },
+          {
+            "key": "result_description",
+            "value": "Assigned role Environment Admin to user jsmith@example.com"
+          },
+          {
+            "key": "resource_name",
+            "value": "jsmith@example.com"
+          },
+          {
+            "key": "client_name",
+            "value": "PingOne Admin Console"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0007"
+          },
+          {
+            "key": "session_id",
+            "value": "9e8d7c6b-5a49-4382-a170-ffeeddcc0007"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969725010000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0008",
+      "event_type": "USER",
+      "event_source": "PingOne",
+      "event_name": "USER.CREATED",
+      "user_name": "HR Provisioning",
+      "user_id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7a",
+      "user_type": "CLIENT",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "logon_application_family": "HR Provisioning",
+      "target_user_name": "jdoe@example.com",
+      "status": "SUCCESS",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e",
+          "resource_type": "USER",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User Created"
+          },
+          {
+            "key": "result_description",
+            "value": "Created user jdoe@example.com"
+          },
+          {
+            "key": "resource_name",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "client_name",
+            "value": "HR Provisioning"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0008"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791969947312000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0009",
+      "event_type": "APPLICATION",
+      "event_source": "PingOne",
+      "event_name": "APPLICATION.DELETED",
+      "user_name": "admin@example.com",
+      "user_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "USER",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "source_address": "192.0.2.20",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "logon_application_family": "PingOne Admin Console",
+      "status": "SUCCESS",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "60420de9-9d38-44c5-a2a7-4839ded541f0",
+          "resource_type": "APPLICATION",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Application Deleted"
+          },
+          {
+            "key": "result_description",
+            "value": "Deleted Application Legacy Intranet of type 'WEB_APP'"
+          },
+          {
+            "key": "resource_name",
+            "value": "Legacy Intranet"
+          },
+          {
+            "key": "client_name",
+            "value": "PingOne Admin Console"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0009"
+          },
+          {
+            "key": "session_id",
+            "value": "9e8d7c6b-5a49-4382-a170-ffeeddcc0009"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791970023666000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0010",
+      "event_type": "USER",
+      "event_source": "PingOne",
+      "event_name": "USER.ACCESS_DENIED",
+      "user_name": "jdoe@example.com",
+      "user_id": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e",
+      "user_type": "USER",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "logon_application_family": "PingOne Admin Console",
+      "target_user_name": "jdoe@example.com",
+      "status": "FAILED",
+      "error_message": "Failed role access control",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e",
+          "resource_type": "USER",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User Access Denied"
+          },
+          {
+            "key": "result_description",
+            "value": "Failed role access control"
+          },
+          {
+            "key": "resource_name",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "client_name",
+            "value": "PingOne Admin Console"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0010"
+          },
+          {
+            "key": "session_id",
+            "value": "9e8d7c6b-5a49-4382-a170-ffeeddcc0010"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791970218250000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0011",
+      "auth_system": "PingOne",
+      "target_user_name": "jsmith@example.com",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0011",
+      "status": "PASSWORD.RESET",
+      "sub_status": "Password reset by recovery code",
+      "auth_category": "PASSWORD_RESET_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "PASSWORD.RESET"
+          },
+          {
+            "key": "user_id",
+            "value": "3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0011"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791997509481000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0012",
+      "auth_system": "PingOne",
+      "target_user_name": "jsmith@example.com",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "application_name": "Example Staff Portal",
+      "session_id": "9e8d7c6b-5a49-4382-a170-ffeeddcc0012",
+      "status": "SESSION.DELETED",
+      "sub_status": "Signed off",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_type",
+            "value": "SESSION.DELETED"
+          },
+          {
+            "key": "user_id",
+            "value": "3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"
+          },
+          {
+            "key": "client_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          },
+          {
+            "key": "environment_id",
+            "value": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0012"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

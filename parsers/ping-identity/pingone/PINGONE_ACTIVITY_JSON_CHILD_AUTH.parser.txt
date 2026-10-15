@@ -1,0 +1,74 @@
+!SAMPLE={"_embedded":{},"id":"7f3e2d1c-0b9a-4876-9543-21fedcba0003","recordedAt":"2026-10-14T09:14:20.050Z","createdAt":"2026-10-14T09:14:20.057Z","correlationId":"2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0003","actors":{"client":{"id":"c0ffee00-1111-4222-8333-444455556666","name":"Example Staff Portal","type":"CLIENT","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"}},"user":{"id":"8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e","name":"jdoe@example.com","type":"USER","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"}}},"action":{"type":"PASSWORD.CHECK_FAILED","description":"Password Check Failed"},"resources":[{"type":"USER","id":"8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e","name":"jdoe@example.com","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"},"href":"https://api.pingone.example/v1/environments/6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b/users/8b7c6d5e-4f3a-4b2c-8d1e-0f9a8b7c6d5e"}],"result":{"status":"FAILED","description":"Invalid credentials"},"internalCorrelation":{"sessionId":"9e8d7c6b-5a49-4382-a170-ffeeddcc0003","transactionId":"b1c2d3e4-f5a6-4b7c-8d9e-0a1b2c3d0003"},"source":{"ipAddress":"203.0.113.45","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: PingOne audit activities in Ping Activity Format, one event per record.
+# Child of PINGONE_ACTIVITY_JSON_PARENT: sign-on events to Auth, by action type:
+#   PASSWORD.CHECK_SUCCEEDED, PASSWORD.CHECK_FAILED, PASSWORD.CHECK_FAILED_USER_NOT_FOUND,
+#   USER.KERBEROS_SUCCEEDED and _FAILED, CIBA_AUTHENTICATION.SUCCEEDED and .FAILED (sign-on);
+#   OTP.CHECK_SUCCESS, .CHECK_FAILED and .CHECK_INVALID, ASSERTION.CHECK_SUCCESS and .CHECK_FAILED,
+#   PUSH_BIOMETRICS.REJECTED (MFA); USER.LOCKED and .UNLOCKED, PASSWORD.LOCKED and .UNLOCKED;
+#   PASSWORD.RESET, .RECOVERY and .SET; SESSION.DELETED and USER.SLO_SUCCESS (sign-off).
+# json, actionType, userName, clientName, ip, ua, resultFailed, signOn, mfa, lockout,
+# passwordChange, signOff, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the
+# parent.
+
+authSystem$ = "PingOne"
+# The account: the USER resource, else the acting user.
+rType = STRING(json["$.resources[0].type"])
+rName = json["$.resources[0].name"]
+account = IF rType == "USER" AND rName THEN rName ELSE userName
+targetUserName$ = account
+sourceAddress$ = ip
+userAgent$ = ua
+applicationName$ = clientName
+sessionId$ = json["$.internalCorrelation.sessionId"]
+status$ = actionType
+subStatus$ = json["$.result.description"]
+
+failed = resultFailed OR actionType == "PASSWORD.CHECK_FAILED" OR actionType == "PASSWORD.CHECK_FAILED_USER_NOT_FOUND" OR actionType == "USER.KERBEROS_FAILED" OR actionType == "CIBA_AUTHENTICATION.FAILED" OR actionType == "OTP.CHECK_FAILED" OR actionType == "OTP.CHECK_INVALID" OR actionType == "ASSERTION.CHECK_FAILED" OR actionType == "PUSH_BIOMETRICS.REJECTED"
+locked = actionType == "USER.LOCKED" OR actionType == "PASSWORD.LOCKED"
+unlocked = actionType == "USER.UNLOCKED" OR actionType == "PASSWORD.UNLOCKED"
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF signOff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+authCategory$ = IF unlocked THEN "ACCOUNT_UNLOCK" ELSE authCategory$
+authCategory$ = IF actionType == "PASSWORD.RESET" OR actionType == "PASSWORD.RECOVERY" THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+authCategory$ = IF actionType == "PASSWORD.SET" THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF signOff THEN "LOGOFF" ELSE action$
+action$ = IF lockout OR passwordChange THEN "ACCOUNT" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF actionType == "PASSWORD.CHECK_FAILED" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF actionType == "PASSWORD.CHECK_FAILED_USER_NOT_FOUND" THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF failed AND mfa THEN "INCORRECT_MFA" ELSE failureCategory$
+mfaUsed$ = IF mfa THEN TRUE ELSE NULL
+
+m1.key$ = "action_type"
+m1.value$ = actionType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "user_id"
+m2.value$ = json["$.actors.user.id"]
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "client_id"
+m3.value$ = json["$.actors.client.id"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "environment_id"
+m4.value$ = json["$.actors.user.environment.id"]
+m4.value$ = IF m4.value$ THEN m4.value$ ELSE json["$.actors.client.environment.id"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "population_id"
+m5.value$ = json["$.actors.user.population.id"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "correlation_id"
+m6.value$ = json["$.correlationId"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "result_reason"
+m7.value$ = json["$.result.reason"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
