@@ -1,0 +1,59 @@
+!SAMPLE=<14>Oct 15 00:55:42 web01.example.com audisp-syslog: type=USER_LOGIN msg=audit(1792025742.818:4633): pid=5655 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=login acct=28696E76616C6964207573657229 exe="/usr/sbin/sshd" hostname=? addr=198.51.100.99 terminal=sshd res=failed' UID="root" AUID="unset"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Linux audit records sent to syslog by auditd's audisp-syslog plugin (program audisp-syslog,
+# or audispd when the plugin sets a facility), or read from /var/log/audit/audit.log by rsyslog.
+# Child of LINUX_AUDITD_KV_PARENT: USER_LOGIN and USER_AUTH (logins and PAM authentication)
+# and account changes (ADD_USER, DEL_USER, USER_MGMT, ADD_GROUP, DEL_GROUP, GRP_MGMT,
+# USER_CHAUTHTOK, GRP_CHAUTHTOK) to Auth. sshd writes both USER_AUTH and USER_LOGIN for a login.
+# rtype, raw, the field variables, ok, failed, auidName, eId and the $ fields come from the parent.
+
+login = rtype == "USER_LOGIN" OR rtype == "USER_AUTH"
+pw = rtype == "USER_CHAUTHTOK" OR rtype == "GRP_CHAUTHTOK"
+action$ = IF login THEN (IF ok THEN "LOGON" ELSE "FAILURE") ELSE "USER_MANAGEMENT"
+authCategory$ = IF login THEN "ACCOUNT_LOGON" ELSE NULL
+authCategory$ = IF pw THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+actionResult$ = IF ok THEN "SUCCESS" ELSE NULL
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+
+# The account the record is about: acct, or the enriched name of id, or id itself. sshd writes an
+# unknown user as acct="(invalid user)", which auditd hex-encodes.
+invalid = acct == "28696E76616C6964207573657229"
+idName = IF eId["v"] != "" AND NOT CONTAINS(eId["v"], "unknown(") THEN eId["v"] ELSE idm["v"]
+targetUserName$ = IF acct != "" THEN acct ELSE idName
+targetUserName$ = IF invalid THEN "(invalid user)" ELSE targetUserName$
+# The login user who acted (auid), when there is one.
+sourceUserName$ = IF auidName != "" THEN auidName ELSE NULL
+sourceAddress$ = IF addr != "" THEN addr ELSE NULL
+targetHostName$ = host
+processFilename$ = exe
+processId$ = pid
+sessionId$ = IF ses != "" THEN ses ELSE NULL
+base = exe|(?P<v>[^/]+)$
+authSystem$ = IF base["v"] != "" THEN base["v"] ELSE "auditd"
+os$.os$ = "OS_LINUX"
+
+failureCategory$ = IF failed AND invalid THEN "INVALID_ACCOUNT" ELSE NULL
+failureCategory$ = IF failed AND NOT invalid AND op == "PAM:authentication" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+r1.key$ = "record_type"
+r1.value$ = rtype
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r2.key$ = "op"
+r2.value$ = op
+eventMetadata$.record$ = IF op != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "terminal"
+r3.value$ = terminal
+eventMetadata$.record$ = IF terminal != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "remote_hostname"
+r4.value$ = remoteHost
+eventMetadata$.record$ = IF remoteHost != "" AND remoteHost != addr THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "id"
+r5.value$ = idm["v"]
+eventMetadata$.record$ = IF idm["v"] != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$

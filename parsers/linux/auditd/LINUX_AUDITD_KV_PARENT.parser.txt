@@ -1,0 +1,92 @@
+!SAMPLE=<14>Oct 15 00:55:31 web01.example.com audisp-syslog: type=USER_LOGIN msg=audit(1792025731.193:4621): pid=5601 uid=0 auid=1000 ses=12 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=login id=1000 exe="/usr/sbin/sshd" hostname=203.0.113.50 addr=203.0.113.50 terminal=/dev/pts/1 res=success' UID="root" AUID="jdoe" ID="jdoe"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|\s)(?:node=\S+\s+)?type=[A-Z][A-Z0-9_]*\s+msg=audit\(\d+\.\d+:\d+\):
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Linux audit records sent to syslog by auditd's audisp-syslog plugin (program audisp-syslog,
+# or audispd when the plugin sets a facility), or read from /var/log/audit/audit.log by rsyslog.
+# Parent: recognizes every audit record and sends logins, authentications and account changes to
+# the Auth child, program executions to the Process child, and sudo commands, audit rule changes
+# and service starts and stops to the ManagementEvent child. Other records stay generic.
+# Each record is "[node=<name> ]type=<TYPE> msg=audit(<seconds>.<ms>:<serial>): <name=value ...>".
+# Records of one event (SYSCALL, EXECVE, CWD, PATH, PROCTITLE) share the seconds and serial, which
+# the parser keeps as sensor_event_id; each record is a separate syslog line, so each is parsed on
+# its own. With log_format = ENRICHED (the default), auditd adds uppercase fields such as AUID="jdoe"
+# after the raw ones; audisp-syslog joins them with a space, and rsyslog escapes the separator
+# that audit.log holds as #035.
+
+m = originalData$|(?:^|\s)(?:node=(?P<node>\S+)\s+)?type=(?P<type>[A-Z][A-Z0-9_]*)\s+msg=audit\((?P<sec>\d+)\.(?P<ms>\d+):(?P<serial>\d+)\):\s?(?P<body>.*)$
+hdr = originalData$|^(?:<\d{1,3}>)?(?:\d\s+)?(?:[A-Z][a-z]{2}\s+\d{1,2}\s+\d\d:\d\d:\d\d|\d{4}-\d\d-\d\dT\S+)\s+(?P<host>\S+)\s
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Linux auditd"
+rtype = m["type"]
+host = IF m["node"] != "" THEN m["node"] ELSE hdr["host"]
+hostId$ = host
+sensorEventId$ = m["sec"] + "." + m["ms"] + ":" + m["serial"]
+eventTimeUsec$ = INT(m["sec"], 10) * 1000000 + INT(m["ms"], 10) * 1000
+body = m["body"] + " "
+# The raw fields end where the first uppercase (enriched) field or the escaped separator starts.
+rawm = body|^(?P<v>.*?)(?:\x1d|#035|\s[A-Z][A-Z0-9_]*[=]|\s*$)
+raw = " " + rawm["v"] + " "
+
+# Raw fields. User-space records (USER_LOGIN and the like) nest theirs in msg='...'. A value
+# auditd quotes is literal; an unquoted value of an encoded field (acct, exe, cmd, comm, an
+# argument) is hex, which auditd uses when the value has spaces or special characters.
+pidm = raw|[\s']pid=(?P<v>\d+)
+ppidm = raw|[\s']ppid=(?P<v>\d+)
+uidm = raw|[\s']uid=(?P<v>\d+)
+euidm = raw|[\s']euid=(?P<v>\d+)
+auidm = raw|[\s']auid=(?P<v>\d+)
+sesm = raw|[\s']ses=(?P<v>\d+)
+exem = raw|[\s']exe=(?:"(?P<q>[^"]*)"|(?P<u>[^\s']+))
+commm = raw|[\s']comm=(?:"(?P<q>[^"]*)"|(?P<u>[^\s']+))
+resm = raw|[\s']res=(?P<v>[^\s']+)
+opm = raw|[\s']op=(?:"(?P<q>[^"]*)"|(?P<u>.*?))(?:\s+[a-z][a-z_-]*[=]|'|\s*$)
+acctm = raw|[\s']acct=(?:"(?P<q>[^"]*)"|(?P<u>[^\s']+))
+idm = raw|[\s']id=(?P<v>\d+)
+addrm = raw|[\s']addr=(?P<v>[^\s']+)
+hostnamem = raw|[\s']hostname=(?P<v>[^\s']+)
+termm = raw|[\s']terminal=(?P<v>[^\s']+)
+pid = pidm["v"]
+exe = IF exem["q"] != "" THEN exem["q"] ELSE exem["u"]
+comm = IF commm["q"] != "" THEN commm["q"] ELSE commm["u"]
+op = IF opm["q"] != "" THEN opm["q"] ELSE opm["u"]
+acct = IF acctm["q"] != "" THEN acctm["q"] ELSE acctm["u"]
+# 4294967295 is (unsigned) -1: no login user or session was set.
+auid = IF auidm["v"] != "4294967295" THEN auidm["v"] ELSE ""
+ses = IF sesm["v"] != "4294967295" THEN sesm["v"] ELSE ""
+addr = IF addrm["v"] != "?" THEN addrm["v"] ELSE ""
+remoteHost = IF hostnamem["v"] != "?" THEN hostnamem["v"] ELSE ""
+terminal = IF termm["v"] != "?" THEN termm["v"] ELSE ""
+# res is success or failed in user-space records, 1 or 0 in kernel ones; SYSCALL has success=yes|no.
+okm = raw|[\s']success=(?P<v>yes|no)\s
+ok = resm["v"] == "success" OR resm["v"] == "1" OR okm["v"] == "yes"
+failed = resm["v"] == "failed" OR resm["v"] == "0" OR okm["v"] == "no"
+
+# Enriched names (log_format = ENRICHED); "unset" means no login user.
+eAuid = body|(?:^|[\s'"]|#035|\x1d)AUID="(?P<v>[^"]*)"
+eUid = body|(?:^|[\s'"]|#035|\x1d)UID="(?P<v>[^"]*)"
+eId = body|(?:^|[\s'"]|#035|\x1d)ID="(?P<v>[^"]*)"
+eSys = body|(?:^|[\s'"]|#035|\x1d)SYSCALL=(?P<v>\S+)
+auidName = IF eAuid["v"] != "" AND eAuid["v"] != "unset" THEN eAuid["v"] ELSE auid
+uidName = IF eUid["v"] != "" THEN eUid["v"] ELSE uidm["v"]
+
+# execve and execveat by architecture: x86_64 (c000003e) 59 and 322, arm64 (c00000b7) 221 and
+# 281, i386 (40000003) 11 and 358.
+sc = raw|\sarch=(?P<arch>[0-9a-f]+)\s+syscall=(?P<n>\d+)\s
+isExec = eSys["v"] == "execve" OR eSys["v"] == "execveat"
+isExec = isExec OR (sc["arch"] == "c000003e" AND (sc["n"] == "59" OR sc["n"] == "322"))
+isExec = isExec OR (sc["arch"] == "c00000b7" AND (sc["n"] == "221" OR sc["n"] == "281"))
+isExec = isExec OR (sc["arch"] == "40000003" AND (sc["n"] == "11" OR sc["n"] == "358"))
+
+authTypes = rtype == "USER_LOGIN" OR rtype == "USER_AUTH" OR rtype == "USER_CHAUTHTOK" OR rtype == "GRP_CHAUTHTOK"
+authTypes = authTypes OR rtype == "ADD_USER" OR rtype == "DEL_USER" OR rtype == "USER_MGMT" OR rtype == "ADD_GROUP" OR rtype == "DEL_GROUP" OR rtype == "GRP_MGMT"
+mgmtTypes = rtype == "USER_CMD" OR rtype == "CONFIG_CHANGE" OR rtype == "SERVICE_START" OR rtype == "SERVICE_STOP"
+eventType$ = rtype
+eventType$ = IF authTypes THEN "auth" ELSE eventType$
+eventType$ = IF rtype == "EXECVE" OR (rtype == "SYSCALL" AND isExec) THEN "process" ELSE eventType$
+eventType$ = IF mgmtTypes THEN "mgmt" ELSE eventType$
