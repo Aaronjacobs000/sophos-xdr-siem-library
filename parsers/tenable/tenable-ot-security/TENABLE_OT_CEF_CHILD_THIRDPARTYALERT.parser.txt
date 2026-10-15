@@ -1,0 +1,111 @@
+!SAMPLE=<14>Oct 15 09:34:04 192.0.2.50 CEF:0|Tenable|Tenable OT Security|3.18.45|1|SIMATIC Code Download|9|dvchost=Tenable OT Security rt=Oct 15 2026 09:34:04 duser=PLC_1511C-1 suser=Eng. Station #359 outcome=success dst=198.51.100.21 dmac=00:00:5e:00:53:21 src=198.51.100.40 smac=00:00:5e:00:53:40 cfp1Label=cluster_log_id cfp1=1530 externalId=1530 cs6Label=policy_name cs6=SIMATIC Code Download cat=ConfigurationEvents
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable OT Security policy events over syslog, CEF.
+# Child of TENABLE_OT_CEF_PARENT: each policy hit to the third-party alert schema, with the event
+# class name as the title and the event category (cat) as the alert category.
+# suser and duser are asset names (a user-defined name, DNS name or address), not user names, so
+# they go to the source and target host names.
+# v, classId, name, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Tenable"
+provider$ = "Tenable OT Security"
+providerVersion$ = STRING(v[3])
+title$ = name
+ext = STRING(v["externalId"])
+alertId$ = IF ext != "" THEN ext ELSE NULL
+cat = STRING(v["cat"])
+alertCategory$ = IF cat != "" THEN cat ELSE NULL
+logType$ = "policy_event"
+
+srcName = STRING(v["suser"])
+dstName = STRING(v["duser"])
+sourceHostName$ = IF srcName != "" THEN srcName ELSE NULL
+targetHostName$ = IF dstName != "" THEN dstName ELSE NULL
+msg = STRING(v["msg"])
+summary$ = name
+# For an event with no traffic between two assets, both names are the affected asset.
+summary$ = IF srcName != "" AND dstName != "" AND srcName != dstName THEN name + " from " + srcName + " to " + dstName ELSE summary$
+summary$ = IF dstName != "" AND srcName == dstName THEN name + " on " + dstName ELSE summary$
+summary$ = IF msg != "" THEN name + ": " + msg ELSE summary$
+
+src = STRING(v["src"])
+dst = STRING(v["dst"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+smac = STRING(v["smac"])
+dmac = STRING(v["dmac"])
+sourceMac$ = IF smac != "" THEN smac ELSE NULL
+destinationMac$ = IF dmac != "" THEN dmac ELSE NULL
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+
+# proto is the protocol Tenable saw, such as TCP, UDP, MODBUS_TCP or FTP. Only TCP and UDP map to
+# a protocol number; the name goes to additional_data.
+proto = UPPERCASE(STRING(v["proto"]))
+protocol$ = IF proto == "TCP" THEN 6 ELSE NULL
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+
+out = LOWERCASE(STRING(v["outcome"]))
+action$ = IF out == "success" THEN "SUCCEEDED" ELSE NULL
+action$ = IF out == "failure" THEN "FAILED" ELSE action$
+
+# Tenable OT sends its severities as None 0, Low 3, Medium 7 and High 9.
+sevText = STRING(v[6])
+sevKey = sevText|^(?P<k>10|[0-9])$
+k = sevKey["k"]
+vendorSeverity$ = sevText
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF k == "0" THEN "INFO" ELSE severity$
+severity$ = IF k == "1" OR k == "2" OR k == "3" THEN "LOW" ELSE severity$
+severity$ = IF k == "4" OR k == "5" OR k == "6" OR k == "7" THEN "MEDIUM" ELSE severity$
+severity$ = IF k == "8" OR k == "9" THEN "HIGH" ELSE severity$
+severity$ = IF k == "10" THEN "CRITICAL" ELSE severity$
+
+d1.key$ = "event_class_id"
+d1.value$ = classId
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1]
+d2.key$ = "protocol"
+d2.value$ = STRING(v["proto"])
+additionalData$.record$ = IF d2.value$ != "" THEN additionalData$.record$ + [d2] ELSE additionalData$.record$
+# Custom fields go in under their labels: cs6 policy_name, cs1 value_change (old->new state),
+# cs2 tag, cs3 the backplane, cs4 addresses, cs5 ports, cn1 revision, cn2 bpslot and cn3 rule_sid.
+c6.key$ = IF STRING(v["cs6Label"]) != "" THEN STRING(v["cs6Label"]) ELSE "cs6"
+c6.value$ = STRING(v["cs6"])
+additionalData$.record$ = IF c6.value$ != "" THEN additionalData$.record$ + [c6] ELSE additionalData$.record$
+c1.key$ = IF STRING(v["cs1Label"]) != "" THEN STRING(v["cs1Label"]) ELSE "cs1"
+c1.value$ = STRING(v["cs1"])
+additionalData$.record$ = IF c1.value$ != "" THEN additionalData$.record$ + [c1] ELSE additionalData$.record$
+c2.key$ = IF STRING(v["cs2Label"]) != "" THEN STRING(v["cs2Label"]) ELSE "cs2"
+c2.value$ = STRING(v["cs2"])
+additionalData$.record$ = IF c2.value$ != "" THEN additionalData$.record$ + [c2] ELSE additionalData$.record$
+c3.key$ = IF STRING(v["cs3Label"]) != "" THEN STRING(v["cs3Label"]) ELSE "cs3"
+c3.value$ = STRING(v["cs3"])
+additionalData$.record$ = IF c3.value$ != "" THEN additionalData$.record$ + [c3] ELSE additionalData$.record$
+c4.key$ = IF STRING(v["cs4Label"]) != "" THEN STRING(v["cs4Label"]) ELSE "cs4"
+c4.value$ = STRING(v["cs4"])
+additionalData$.record$ = IF c4.value$ != "" THEN additionalData$.record$ + [c4] ELSE additionalData$.record$
+c5.key$ = IF STRING(v["cs5Label"]) != "" THEN STRING(v["cs5Label"]) ELSE "cs5"
+c5.value$ = STRING(v["cs5"])
+additionalData$.record$ = IF c5.value$ != "" THEN additionalData$.record$ + [c5] ELSE additionalData$.record$
+n1.key$ = IF STRING(v["cn1Label"]) != "" THEN STRING(v["cn1Label"]) ELSE "cn1"
+n1.value$ = STRING(v["cn1"])
+additionalData$.record$ = IF n1.value$ != "" THEN additionalData$.record$ + [n1] ELSE additionalData$.record$
+n2.key$ = IF STRING(v["cn2Label"]) != "" THEN STRING(v["cn2Label"]) ELSE "cn2"
+n2.value$ = STRING(v["cn2"])
+additionalData$.record$ = IF n2.value$ != "" THEN additionalData$.record$ + [n2] ELSE additionalData$.record$
+n3.key$ = IF STRING(v["cn3Label"]) != "" THEN STRING(v["cn3Label"]) ELSE "cn3"
+n3.value$ = STRING(v["cn3"])
+additionalData$.record$ = IF n3.value$ != "" THEN additionalData$.record$ + [n3] ELSE additionalData$.record$
+last.key$ = "last_seen"
+last.value$ = STRING(v["deviceCustomDate1"])
+additionalData$.record$ = IF last.value$ != "" THEN additionalData$.record$ + [last] ELSE additionalData$.record$
