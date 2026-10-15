@@ -1,0 +1,51 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiDLP",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.fortinet.com/document/fortidlp/latest/fortidlp-administration-guide/185498/webhook-event-payload-fields",
+    "https://docs.fortinet.com/document/fortidlp/latest/fortidlp-administration-guide/107267/creating-webhooks",
+    "https://docs.fortinet.com/document/fortidlp/latest/fortidlp-administration-guide/049758/operator-audit-logs",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/HTTPIngest/Setup/index.html"
+  ],
+  "notes": "FortiDLP webhooks post straight to a Sophos NG-SIEM HTTP Ingest integration, with the Authorization header set in the webhook's Headers field, so no bridge is needed; the README has the steps. Use the JSON payload format and leave batching off: a batch wraps the events in one detections, incidents, audit_logs or actions array, which HTTP Ingest stores as a single record that these parsers don't read, so the webhook relay isn't needed either. Detections go to Thirdparty with the policy name from created_by as the title, the description as the summary, the risk score as risk_score and a severity of CRITICAL from 90, HIGH from 70, MEDIUM from 40 and LOW below (FortiDLP publishes no bands), the node and user as the source, and the first address, port, URL and host of each metadata list; files, the application, tags, labels, USB device, process path, MITRE technique and requested actions go to additional_data. Incidents go to Thirdparty with the description as the title, type (why FortiDLP sent it) as the status, the policy as the category, the score and the first, last and updated times. Audit log events go to ManagementEvent with the event type, summary, operator, remote address, audience (webapp or api), and the request method and path. FortiDLP doesn't list its audit event types, so they are kept as sent. Action events stay generic. Each event is recognized by tenant_id, tenant_name and tenant_origin at its start. Not checked against a live FortiDLP tenant: whether each payload arrives on one line, as HTTP Ingest needs. Samples are made up from the payload field tables and the detection and audit log examples in the FortiDLP Administration Guide, with example.com tenant hosts. No built-in parser claimed these lines in 3 Run Tests. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (89 of 89 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same 7 lines. Each child also passed Run Test there as a separate parser under its parent (6 of 6 lines, 87 of 87 fields, each line taken in each of 5 runs, and the generic action line matched).",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTIDLP_JSON_PARENT",
+      "file": "FORTINET_FORTIDLP_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "FORTINET_FORTIDLP_JSON_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTIDLP_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTIDLP_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FORTINET_FORTIDLP_INCIDENT_JSON_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTIDLP_INCIDENT_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTIDLP_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FORTINET_FORTIDLP_JSON_CHILD_MGMT",
+      "file": "FORTINET_FORTIDLP_JSON_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTIDLP_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

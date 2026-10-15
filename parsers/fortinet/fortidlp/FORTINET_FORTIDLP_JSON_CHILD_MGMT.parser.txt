@@ -1,0 +1,37 @@
+!SAMPLE={"tenant_id":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_name":"example","tenant_origin":"https://dlp.example.com","type":"PolicyUpdated","fields":{"auth":{"audience":["webapp"],"operator_display_name":"Alex Admin","operator_id":"8f7e6d5c-4b3a-4291-8a7b-6c5d4e3f2a1b","operator_login_name":"aadmin","role":["Built-in/Administrator"],"session_id":"3a4b5c6d-7e8f-4a9b-8c0d-1e2f3a4b5c6d"},"http":{"host":"dlp.example.com","method":"PUT","path":"/api/v1/policies/groups/1f2e3d4c-5b6a-4789-9a0b-c1d2e3/templates/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a","remote_address":"198.51.100.23","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},"summary":"Policy updated","timestamp":"2026-10-14T23:05:41.104300000Z","trace_id":"1b2c3d4e5f60718293a4b5c6d7e8f90a","type":"PolicyUpdated"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDLP webhooks, JSON payload format, one event per request.
+# Child of FORTINET_FORTIDLP_JSON_PARENT: audit log events (operator logins and logouts, token
+# creation and revocation, policy and configuration changes, manual actions) to ManagementEvent.
+# The audit event type is the operation, the summary the operation name, the operator the user,
+# the request's remote address the client, the API audience (webapp or api) the channel, and the
+# request method and path the command. FortiDLP doesn't list its audit event types, so they are
+# kept as sent.
+# json, sensorType$ and eventTimeUsec$ come from the parent.
+
+kind = STRING(json["$.fields.type"])
+kind = IF kind == "" THEN STRING(json["$.type"]) ELSE kind
+summary = STRING(json["$.fields.summary"])
+operation$ = IF kind != "" THEN kind ELSE NULL
+operationName$ = IF summary != "" THEN summary ELSE kind
+login = STRING(json["$.fields.auth.operator_login_name"])
+display = STRING(json["$.fields.auth.operator_display_name"])
+username$ = IF login != "" THEN login ELSE NULL
+username$ = IF username$ == NULL AND display != "" THEN display ELSE username$
+addr = STRING(json["$.fields.http.remote_address"])
+clientHostname$ = IF addr != "" THEN addr ELSE NULL
+aud = STRING(json["$.fields.auth.audience[0]"])
+channel$ = IF aud != "" THEN aud ELSE NULL
+method = STRING(json["$.fields.http.method"])
+path = STRING(json["$.fields.http.path"])
+command$ = IF path != "" THEN TRIM(method + " " + path) ELSE NULL
+host = STRING(json["$.fields.http.host"])
+targetHostname$ = IF host != "" THEN host ELSE NULL
+namespace$ = json["$.tenant_name"]
+remoteOperation$ = TRUE

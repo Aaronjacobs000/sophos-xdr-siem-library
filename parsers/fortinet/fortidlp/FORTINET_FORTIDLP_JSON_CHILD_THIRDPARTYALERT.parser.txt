@@ -1,0 +1,97 @@
+!SAMPLE={"customer":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_id":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_name":"example","tenant_origin":"https://dlp.example.com","agent_uuid":"0f1e2d3c-4b5a-4968-8776-655443322110","agent_hostname":"laptop01.example.com","uuid":"9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d","event_type":"sensor","timestamp":"2026-10-14T23:12:44.125581231Z","sensor_type":"AGENT_POLICY","description":"File upload to \"files.example.net\" from Firefox: q3-forecast.xlsx with size 2MB containing \"confidential\" with at least 1 match.","juid":"4d3c2b1a-0f9e-4d8c-b7a6-958473625140","username":"Jo Smith","score":75,"created_by":"policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a?instance=7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e&name=Sensitive+file+uploaded","tags":["datatracking","web","dataupload"],"anonymised_description":"File upload to \"files.example.net\" from Firefox: [REDACTED] with size 2MB containing \"confidential\" with at least 1 match.","requested_actions":[],"suppressed_actions":[],"label_ids":["2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f"],"label_names":["Finance"],"metadata":{"source_ip":["192.0.2.25"],"source_port":[50544],"destination_ip":["203.0.113.80"],"destination_port":[443],"url":["https://files.example.net/upload"],"host":["files.example.net"],"application_name":["Firefox"],"file_name":["q3-forecast.xlsx"],"file_path":["C:\\Users\\jsmith\\Documents\\q3-forecast.xlsx"],"target_file_name":[],"target_file_path":[],"recipient_mail_address":[],"sender_mail_address":[],"wifi_ssid":[],"wifi_bssid":[],"usb_vid":[],"usb_pid":[],"usb_serial":[],"content_pattern_name":["\"confidential\""],"account_name":[],"certificate_name":[],"mime_type":[],"window_title":["Upload - Example Files"],"file_size":[2097152],"file_extension":["xlsx"]},"process_info":[{"uuid":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","binary_name":"firefox.exe","binary_path":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","username":"EXAMPLE\\jsmith","app_identifier":"v1.0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","signed":true}],"indicators":[{"kind":"mitre","tactic":{"id":"TA0010","title":"Exfiltration"},"technique":{"id":"T1567","title":"Exfiltration Over Web Service"}}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="detection"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDLP webhooks, JSON payload format, one event per request.
+# Child of FORTINET_FORTIDLP_JSON_PARENT: detection events ("event_type":"sensor") to Thirdparty.
+# The policy name (from created_by) is the title and the description the summary; the risk score
+# (0 to 100) is risk_score, and the severity is CRITICAL from 90, HIGH from 70, MEDIUM from 40 and
+# LOW below. The node and user are the source. The first IP address, port, URL and host of each
+# metadata list are read; files, applications, tags, labels, USB devices, the process and the
+# MITRE ATT&CK techniques go to additional_data.
+# json, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Fortinet"
+provider$ = "FortiDLP"
+alertId$ = json["$.uuid"]
+sensorEventId$ = json["$.uuid"]
+hostId$ = json["$.agent_uuid"]
+
+# created_by is policy:///<group>/<template>?instance=<id>&name=<policy name>, form encoded.
+createdBy = STRING(json["$.created_by"])
+pn = createdBy|[?&]name=(?P<n>[^&]*)
+policy = REPLACE(STRING(pn["n"]), "+", " ")
+desc = STRING(json["$.description"])
+stype = STRING(json["$.sensor_type"])
+title$ = IF policy != "" THEN policy ELSE stype
+title$ = IF title$ == "" THEN "FortiDLP detection" ELSE title$
+summary$ = IF desc != "" THEN desc ELSE NULL
+alertCategory$ = IF stype != "" THEN stype ELSE NULL
+
+score = json["$.score"]
+riskScore$ = score
+sc = IF score == NULL THEN -1 ELSE score
+severity$ = NULL
+severity$ = IF sc >= 0 THEN "LOW" ELSE severity$
+severity$ = IF sc >= 40 THEN "MEDIUM" ELSE severity$
+severity$ = IF sc >= 70 THEN "HIGH" ELSE severity$
+severity$ = IF sc >= 90 THEN "CRITICAL" ELSE severity$
+
+user = STRING(json["$.username"])
+sourceUserName$ = IF user != "" THEN user ELSE NULL
+juid = STRING(json["$.juid"])
+sourceUserId$ = IF juid != "" THEN juid ELSE NULL
+node = STRING(json["$.agent_hostname"])
+sourceHostName$ = IF node != "" THEN node ELSE NULL
+
+srcIp = STRING(json["$.metadata.source_ip[0]"])
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+sourcePort$ = json["$.metadata.source_port[0]"]
+dstIp = STRING(json["$.metadata.destination_ip[0]"])
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+destinationPort$ = json["$.metadata.destination_port[0]"]
+url = STRING(json["$.metadata.url[0]"])
+destinationUrl$ = IF url != "" THEN url ELSE NULL
+dhost = STRING(json["$.metadata.host[0]"])
+destinationServiceName$ = IF dhost != "" THEN dhost ELSE NULL
+
+# Lists from the payload, as text: ["a","b"] becomes a,b.
+tags = originalData$|"tags"\s*:\s*\[(?P<v>[^\]]*)\]
+labels = originalData$|"label_names"\s*:\s*\[(?P<v>[^\]]*)\]
+techniques = originalData$|"technique"\s*:\s*\{\s*"id"\s*:\s*"(?P<v>[^"]+)"
+a1.key$ = "policy_source"
+a1.value$ = createdBy
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "tags"
+a2.value$ = REPLACE(STRING(tags["v"]), "\"", "")
+additionalData$.record$ = IF a2.value$ != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "labels"
+a3.value$ = REPLACE(STRING(labels["v"]), "\"", "")
+additionalData$.record$ = IF a3.value$ != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "file_name"
+a4.value$ = STRING(json["$.metadata.file_name[0]"])
+additionalData$.record$ = IF a4.value$ != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "file_path"
+a5.value$ = STRING(json["$.metadata.file_path[0]"])
+additionalData$.record$ = IF a5.value$ != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "application_name"
+a6.value$ = STRING(json["$.metadata.application_name[0]"])
+additionalData$.record$ = IF a6.value$ != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "process_path"
+a7.value$ = STRING(json["$.process_info[0].binary_path"])
+additionalData$.record$ = IF a7.value$ != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "usb_device"
+a8.value$ = STRING(json["$.metadata.usb_vid[0]"]) + ":" + STRING(json["$.metadata.usb_pid[0]"]) + " " + STRING(json["$.metadata.usb_serial[0]"])
+additionalData$.record$ = IF STRING(json["$.metadata.usb_vid[0]"]) != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "mitre_technique"
+a9.value$ = STRING(techniques["v"])
+additionalData$.record$ = IF a9.value$ != "" THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "requested_actions"
+ra = originalData$|"requested_actions"\s*:\s*\[(?P<v>[^\]]*)\]
+a10.value$ = REPLACE(STRING(ra["v"]), "\"", "")
+additionalData$.record$ = IF a10.value$ != "" THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
