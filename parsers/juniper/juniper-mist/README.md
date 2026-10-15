@@ -5,7 +5,7 @@ These parsers read three Mist webhook topics:
 | Topic | What it holds | Schema |
 | --- | --- | --- |
 | `audits` | Every configuration change made in the Mist portal or API: the admin, their address and browser, the message (such as Update Site Settings) and the settings before and after | CloudAudit |
-| `alarms` | Security alarms (rogue AP, rogue client, honeypot SSID, spoofing and flooding attacks, repeated authentication failures, gateway malware, IDP and URL blocks), infrastructure alarms (devices offline) and Marvis alarms, with Mist's severity | ThirdPartyAlert |
+| `alarms` | Security alarms (rogue AP, rogue client, honeypot SSID, spoofing and flooding attacks, repeated authentication failures, gateway malware, IDP and URL blocks), infrastructure alarms (devices offline) and Marvis alarms, with Mist's severity | Thirdparty |
 | `nac-events` | Mist Access Assurance: network sign-ins allowed or denied, certificate checks, sessions, and identity provider and MDM lookups | Auth |
 
 Mist sends these topics as a batch, `{"topic": ..., "events": [...]}`, with several events in one body, and doesn't offer one event per message for them. HTTP Ingest stores a body as one record, so send them through the [webhook relay](../../../bridges/webhook-relay/) with `BRIDGE_SPLIT_BATCHES=1`, which forwards each event as its own record in the same envelope. The parsers read the first event of a record, so a batch sent straight to HTTP Ingest would keep only its first event.
