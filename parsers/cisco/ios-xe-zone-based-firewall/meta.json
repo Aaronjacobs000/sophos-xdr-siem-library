@@ -1,0 +1,37 @@
+{
+  "vendor": "Cisco",
+  "product": "IOS XE Zone-Based Firewall",
+  "versions": [
+    "17.x"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/sec-vpn/b-security-vpn/m_sec-data-fw-hsl.html",
+    "https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/sec-vpn/b-security-vpn/m_sec-zone-pol-fw-xe.html",
+    "https://www.cisco.com/c/en/us/td/docs/routers/sdwan/configuration/security/ios-xe-17/security-book-xe/m-firewall-17.html",
+    "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/17_xe/syslogs/17-5-x/b-system-message-guide-routers-17-5-x.html",
+    "https://www.cisco.com/c/en/us/td/docs/ios/system/messages/guide/xemsg01.html",
+    "https://www.cisco.com/c/en/us/support/docs/security/ios-firewall/117721-technote-iosfirewall-00.html",
+    "https://www.cisco.com/c/en/us/support/docs/routers/isr-4000-series-ios-xe-sd-wan/222711-configure-zbfw-from-sd-wan-cli-template.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For the zone-based policy firewall's syslog from IOS XE routers and Catalyst SD-WAN edges, sent to the data collector; the README has the router and SD-WAN Manager steps (log dropped-packets, audit-trail on, drop log, pass log). Drops (%FW-6-DROP_PKT) and drop summaries (%FW-6-LOG_SUMMARY) go to Netflow as blocked; passes (%FW-6-PASS_PKT), pass summaries and inspected sessions (%FW-6-SESS_AUDIT_TRAIL_START, and %FW-6-SESS_AUDIT_TRAIL at the end) as allowed, with a summary's packet count and the bytes each side sent. tcp, udp and icmp become protocol numbers, and a layer 7 name such as dns goes to application_name. The interface, zone pair, class, reason, TCP flags and the SD-WAN VPN or VRF pair go to event_metadata. Lines are read with or without the %IOSXE-6-PLATFORM cpp_cp wrapper, and IPv6 addresses up to the last colon. Threshold and host alerts (%FW-4-ALERT_ON, %FW-4-HOST_TCP_ALERT_ON, %FW-2-BLOCK_HOST and others) carry no flow and aren't covered, nor are the application inspection messages of the older IOS XE message guide. High-speed logging (log flow-export) sends NetFlow v9, not syslog. The IOS XE time carries no usable zone, so it is read as UTC; keep the devices on UTC. A time without the year is read to the second; a line without a date keeps the ingest time. The lines carry no host name. The parser is a child of the global parser Cisco_IOS_Master, which claims these lines and leaves them without a schema. To add it in Sophos Fusion, choose Add Custom Parser, tick Set Global Parent in Parser Script and keep Parent parser (default): the parent picker lists only your own parsers, never built-in ones. Paste the whole file, !PARENT line included; its !SCHEMA line sets the schema, whatever the dialog shows. Without that option the save fails with \"code contains restricted syntax: !PARENT\"; turn the option on in the editor and save again. Samples are made up in the shapes of Cisco's IOS XE and Catalyst SD-WAN firewall syslog tables, system message guides and TechNotes; the SD-WAN summary also matches Microsoft Sentinel's Cisco SD-WAN sample data. The parser passed Run Test in a lab tenant on 2026-10-16, as one top-level parser and as a child of Cisco_IOS_Master (106 of 106 fields matched the emulator each way). Under Cisco_IOS_Master it took every firewall line in each of 27 runs, also with a line taken by its built-in child Cisco_IOS_SYS_Master before each one; no built-in child competed, and the parent added no fields.",
+  "parsers": [
+    {
+      "name": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+      "file": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "Cisco_IOS_Master",
+      "schema": "scwx.netflow"
+    }
+  ]
+}

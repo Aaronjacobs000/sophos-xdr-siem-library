@@ -1,0 +1,99 @@
+!SAMPLE=<190>102: *Oct 15 09:20:39.075: %IOSXE-6-PLATFORM: F0: cpp_cp: QFP:0.0 Thread:103 TS:00000605668054541102 %FW-6-DROP_PKT: Dropping tcp pkt from GigabitEthernet0/0/2 203.0.113.45:41871 => 192.0.2.20:23(target:class)-(OUTSIDE_INSIDE_ZP:class-default) due to Policy drop:classify result with ip ident 12804 tcp flag 0x2, seq 3120554871, ack 0
+!PARENT=Cisco_IOS_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%FW-6-(?:(?:DROP|PASS)_PKT\s?:\s*(?:Dropping|Passing)\s.+?\spkt\s+from\s+\S+\s+\[?[0-9A-Fa-f.:]+\]?:\d+\s*[=]>|LOG_SUMMARY\s?:\s*\d+\s.*?packets?\s+(?:were|was)\s+(?:dropped|passed)\s+from\s+\S+\s+\[?[0-9A-Fa-f.:]+\]?:\d+\s*[=]>|SESS_AUDIT_TRAIL(?:_START)?\s?:\s*(?:\(target:class\)\s*-?\s*\([^()]*\)\s*:\s*)?(?:Start|Stop)\s.+?\ssession:\s+initiator\s.*\sfrom\s+\S)
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco IOS XE zone-based policy firewall syslog (ISR, ASR 1000, Catalyst 8000 and Catalyst
+# SD-WAN edges), with or without the "%IOSXE-6-PLATFORM: <slot>: cpp_cp: ... TS:<n>" wrapper:
+#   %FW-6-DROP_PKT: Dropping <proto> pkt from <if> <src>:<port> => <dst>:<port>(target:class)-(<zone pair>:<class>)
+#     due to <reason> with ip ident <n> [tcp flag <hex>, seq <n>, ack <n>] [(srcvpn:dstvpn)-(<n>:<n>)]
+#   %FW-6-PASS_PKT: Passing <proto> pkt from ... due to PASS action found in policy-map with ip ident <n>
+#   %FW-6-LOG_SUMMARY: <n> [<proto>] packets were (or packet was) dropped or passed from <if> <src>:<port> => <dst>:<port> ...
+#   %FW-6-SESS_AUDIT_TRAIL_START: [(target:class)-(<zone pair>:<class>):]Start <proto> session:
+#     initiator (<src>:<port>) -- responder (<dst>:<port>) from <if>
+#   %FW-6-SESS_AUDIT_TRAIL: [...]Stop <proto> session: initiator (...) sent <n> bytes -- responder (...) sent <n> bytes, from <if>
+# Child of the global parser Cisco_IOS_Master, which claims these lines and leaves them without a
+# schema. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads the whole
+# line itself, not the parent's variables.
+# Each line to Netflow: drops as blocked, passes and inspected sessions as allowed, with the packet
+# count of a summary and the byte counts of a session that ended. The interface, zone pair, class,
+# drop or pass reason, TCP flags and the SD-WAN VPN or VRF pair go to event_metadata.
+
+fw = originalData$|%FW-6-(?P<mn>DROP_PKT|PASS_PKT|LOG_SUMMARY|SESS_AUDIT_TRAIL_START|SESS_AUDIT_TRAIL)\s?:\s*(?P<body>.*)$
+mn = STRING(fw["mn"])
+body = STRING(fw["body"])
+
+sensorType$ = "Cisco IOS XE"
+sensorEventId$ = "FW-6-" + mn
+
+# IOS XE time: *Oct 15 09:20:01.123: (* or . when the clock isn't synced), with the year when service
+# timestamps adds it. A zone name after it, such as UTC, is ignored, so the time is read as UTC; keep
+# the devices on UTC. A line without a date keeps the ingest time.
+ht = originalData$|^[^%]*?(?:(?P<yr>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?))[^%]*%
+eventTimeUsec$ = IF ht["yr"] != "" THEN DATETIME(ht["yr"], "Jan _2 2006 15:04:05") ELSE eventTimeUsec$
+eventTimeUsec$ = IF ht["bsd"] != "" THEN DATETIME(ht["bsd"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+# One of three shapes matches. IPv6 addresses are read up to the last colon, with or without brackets.
+pkt = body|^(?P<verb>Dropping|Passing)\s+(?P<proto>.+?)\s+pkt\s+from\s+(?P<inif>\S+)\s+\[?(?P<src>[0-9A-Fa-f.:]+)\]?:(?P<sport>\d+)\s*[=]>\s*\[?(?P<dst>[0-9A-Fa-f.:]+)\]?:(?P<dport>\d+)
+sum = body|^(?P<count>\d+)\s+(?:(?P<proto>.+?)\s+)?packets?\s+(?:were|was)\s+(?P<act>dropped|passed)\s+from\s+(?P<inif>\S+)\s+\[?(?P<src>[0-9A-Fa-f.:]+)\]?:(?P<sport>\d+)\s*[=]>\s*\[?(?P<dst>[0-9A-Fa-f.:]+)\]?:(?P<dport>\d+)
+ses = body|^(?:\(target:class\)\s*-?\s*\([^()]*\)\s*:\s*)?(?P<ev>Start|Stop)\s+(?P<proto>.+?)\s+session:\s+initiator\s+\(?\[?(?P<src>[0-9A-Fa-f.:]+)\]?:(?P<sport>\d+)\)?(?:\s+sent\s+(?P<txb>\d+)\s+bytes)?\s+--\s+responder\s+\(?\[?(?P<dst>[0-9A-Fa-f.:]+)\]?:(?P<dport>\d+)\)?(?:\s+sent\s+(?P<rxb>\d+)\s+bytes)?\s*,?\s*from\s+(?P<inif>[^\s,]+)
+
+src = STRING(pkt["src"]) + STRING(sum["src"]) + STRING(ses["src"])
+dst = STRING(pkt["dst"]) + STRING(sum["dst"]) + STRING(ses["dst"])
+sport = STRING(pkt["sport"]) + STRING(sum["sport"]) + STRING(ses["sport"])
+dport = STRING(pkt["dport"]) + STRING(sum["dport"]) + STRING(ses["dport"])
+proto = LOWERCASE(STRING(pkt["proto"]) + STRING(sum["proto"]) + STRING(ses["proto"]))
+inif = STRING(pkt["inif"]) + STRING(sum["inif"]) + STRING(ses["inif"])
+
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+
+# tcp, udp and icmp become IANA numbers. Inspected sessions can name a layer 7 protocol instead,
+# such as dns or https, which goes to application_name.
+v6 = src|^(?P<c>[0-9A-Fa-f]*:)
+pnum = 0
+pnum = IF proto == "tcp" THEN 6 ELSE pnum
+pnum = IF proto == "udp" THEN 17 ELSE pnum
+pnum = IF proto == "icmp" THEN 1 ELSE pnum
+pnum = IF proto == "icmp" AND v6["c"] != "" THEN 58 ELSE pnum
+protocol$ = IF pnum > 0 THEN pnum ELSE NULL
+applicationName$ = IF pnum == 0 AND proto != "" AND proto != "unknown prot" THEN proto ELSE NULL
+
+dropped = mn == "DROP_PKT" OR sum["act"] == "dropped"
+flowAction$ = IF dropped THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+txPacketCount$ = IF sum["count"] != "" THEN INT(sum["count"], 10) ELSE NULL
+# The initiator's bytes went to the responder, and the responder's came back.
+txByteCount$ = IF ses["txb"] != "" THEN INT(ses["txb"], 10) ELSE NULL
+rxByteCount$ = IF ses["rxb"] != "" THEN INT(ses["rxb"], 10) ELSE NULL
+
+zc = body|\(target:class\)\s*-?\s*\((?P<zp>[^:()]*):(?P<cls>[^()]*)\)
+why = body|\sdue to\s+(?P<v>.*?)\s+with ip ident\s
+tcp = body|\stcp flag\s+(?P<v>0x[0-9A-Fa-f]+)
+# Catalyst SD-WAN edges add the VPN pair, (srcvpn:dstvpn)-(<n>:<n>), or the VRF pair, (srcvrf:dstvrf).
+vpn = body|\((?P<k1>src[a-z]+):(?P<k2>dst[a-z]+)\)-\((?P<v1>[^:()]*):(?P<v2>[^:()]*)\)
+
+m1.key$ = "interface"
+m1.value$ = inif
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "zone_pair"
+m2.value$ = zc["zp"]
+m3.key$ = "class"
+m3.value$ = zc["cls"]
+eventMetadata$.record$ = IF zc["zp"] != "" THEN eventMetadata$.record$ + [m2, m3] ELSE eventMetadata$.record$
+m4.key$ = "reason"
+m4.value$ = why["v"]
+eventMetadata$.record$ = IF why["v"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "tcp_flags"
+m5.value$ = tcp["v"]
+eventMetadata$.record$ = IF tcp["v"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = vpn["k1"]
+m6.value$ = vpn["v1"]
+m7.key$ = vpn["k2"]
+m7.value$ = vpn["v2"]
+eventMetadata$.record$ = IF vpn["k1"] != "" THEN eventMetadata$.record$ + [m6, m7] ELSE eventMetadata$.record$
