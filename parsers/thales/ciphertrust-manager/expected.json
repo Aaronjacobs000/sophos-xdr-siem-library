@@ -1,0 +1,198 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Thales CipherTrust Manager",
+      "event_time_usec": 1791942882868478,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctm01",
+      "event_name": "Update connection",
+      "event_type": "Server_Audit",
+      "event_source": "citrus",
+      "user_name": "jsmith",
+      "user_id": "local|d7c6473a-286d-4e10-9455-3f078743d4a5",
+      "sensor_event_id": "d0a8f585-35b3-4414-99c1-c21db5d244d1",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"category\":\"cloud\",\"identifier\":\"Syslog Connection\",\"name\":\"Syslog Connection\",\"port\":6514,\"service\":\"syslog\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "info"
+          },
+          {
+            "key": "request_id",
+            "value": "c6ce87a7-1775-4d4e-92ad-67e031b620f9"
+          },
+          {
+            "key": "account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          },
+          {
+            "key": "domain_id",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "key": "principal_account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Thales CipherTrust Manager",
+      "event_time_usec": 1791943136000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctm01",
+      "event_name": "Create Key",
+      "event_source": "kylo",
+      "user_name": "svc-keyadmin",
+      "user_id": "local|2c4e6a8b-0d1f-4a3c-9e5b-7d9f1b3c5e70",
+      "sensor_event_id": "5b2d8e14-6f3a-4c97-8e21-0a9b7c6d5e43",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"algorithm\":\"AES\",\"id\":\"8a6c2f19-4e3b-4d71-b5a0-9c8e7d6f5a41\",\"name\":\"payments-db-tde\",\"objectType\":\"Symmetric Key\",\"size\":256,\"usageMask\":12}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "info"
+          },
+          {
+            "key": "request_id",
+            "value": "3f1e9a52-7c4d-4b8e-9a61-2d5c8e0f4b73"
+          },
+          {
+            "key": "account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          },
+          {
+            "key": "domain_id",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "key": "principal_account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Thales CipherTrust Manager",
+      "event_time_usec": 1791943303000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctm01",
+      "sensor_version": "2.24.0+21875",
+      "event_name": "Create Token",
+      "event_type": "Server_Audit",
+      "event_source": "kylo",
+      "user_name": "adoe",
+      "sensor_event_id": "e2c4a6f8-1b3d-4e5f-a708-9c1b3d5f7a92",
+      "status": "Failed",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"grant_type\":\"password\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "warning"
+          },
+          {
+            "key": "request_id",
+            "value": "9d7b5f31-2e4c-4a68-b0d2-6f8a1c3e5b97"
+          },
+          {
+            "key": "account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          },
+          {
+            "key": "domain_id",
+            "value": "6a8c0e2f-4b6d-4f8a-9c1e-3b5d7f9a1c3e"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Thales CipherTrust Manager",
+      "event_time_usec": 1791943427000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctm01",
+      "sensor_version": "2.24.0+21875",
+      "event_name": "Delete connection",
+      "event_type": "Server_Audit",
+      "event_source": "citrus",
+      "user_name": "jsmith",
+      "user_id": "local|d7c6473a-286d-4e10-9455-3f078743d4a5",
+      "sensor_event_id": "b575dba4-0fc4-4ce9-8d04-215b29f9efea",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "details",
+            "value": "{\"category\":\"cloud\",\"identifier\":\"SIEM Syslog\",\"name\":\"SIEM Syslog\",\"port\":514,\"service\":\"syslog\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "info"
+          },
+          {
+            "key": "request_id",
+            "value": "b280abc6-4e88-46e4-9550-09409978a2e1"
+          },
+          {
+            "key": "account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          },
+          {
+            "key": "domain_id",
+            "value": "00000000-0000-0000-0000-000000000000"
+          },
+          {
+            "key": "principal_account",
+            "value": "kylo:kylo:admin:accounts:kylo"
+          }
+        ]
+      }
+    }
+  }
+]

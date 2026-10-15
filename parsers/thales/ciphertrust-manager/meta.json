@@ -1,0 +1,31 @@
+{
+  "vendor": "Thales",
+  "product": "CipherTrust Manager",
+  "versions": [
+    "2.10",
+    "2.24"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T03:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://thalesdocs.com/ctp/cm/latest/admin/cm_admin/connection-manager/syslog-con/index.html",
+    "https://thalesdocs.com/ctp/cm/2.10/admin/cm_admin/connection-manager/syslog-con/index.html"
+  ],
+  "notes": "For CipherTrust Manager audit records sent by a syslog log forwarder connection (Access Management > Connections, category Log Forwarder, type Syslog, over TCP or TLS; UDP cuts messages at 1024 bytes), with the server audit records product added. All four message formats are read: rfc5424 (the default), rfc3164, cef and leef. Each carries the same record JSON: after the RFC 5424 header (and the byte order mark Thales shows there), after the RFC 3164 <appliance>[<service>]: tag, or in the single log= key of CEF and LEEF, whose header names Thales Group and puts the appliance name in the product field. Every record goes to CloudAudit: message as the event name (such as Create Key, Create Token or Update connection), the record type (Server_Audit) as the event type when the format carries it, service as the event source, username and principal.sub as the user, id as the sensor event ID, and success as Success or Failed. details varies by operation, so it goes to request_parameters whole, as JSON with its keys sorted; severity, requestId, account, domain_id and principal.acct go to additional_event_data. host_id is the appliance name and sensor_version the CEF or LEEF version. The records carry no time or client address of their own, so the event time is the syslog header's: RFC 5424 times are UTC, and RFC 3164, CEF and LEEF times, which have no zone or year, are read as UTC in the current year. The legacy Admin Settings > Syslog output, which Thales deprecated in 2.24 and documents no samples for, and the older Vormetric Data Security Manager aren't covered. Thales documents only server audit records in its samples; client audit, KMIP and NAE activity records that carry the same JSON keys parse the same way. Samples are made up in the four layouts of Thales's syslog connection page, with the values changed. Passed Run Test in a lab tenant on 2026-10-16 (48 of 48 fields matched the emulator in each of 3 runs). No built-in parser claimed these lines in 3 Run Tests.",
+  "parsers": [
+    {
+      "name": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT",
+      "file": "THALES_CTM_SYSLOG_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
