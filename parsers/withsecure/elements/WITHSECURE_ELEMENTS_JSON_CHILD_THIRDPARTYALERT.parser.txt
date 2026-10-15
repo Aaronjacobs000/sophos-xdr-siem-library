@@ -1,0 +1,124 @@
+!SAMPLE={"withsecure_record":"security_event","id":"a05e6f70-8192-3dae-1f2a-3b4c5d6e7f80_0","action":"created","engine":"edr","severity":"critical","serverTimestamp":"2026-10-14T02:41:03.208Z","persistenceTimestamp":"2026-10-14T02:41:04.019Z","eventTransactionId":"0000-4f3a2b1c0d9e8f7a","acknowledged":false,"message":"A new incident '11355-92710' was created","description":"Endpoint Detection and Response (EDR) event","organization":{"id":"5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f","name":"Acme Corp"},"target":{"name":"FIN-LT-041","id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"},"device":{"id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912","name":"FIN-LT-041"},"details":{"readableIncidentId":"11355-92710","incidentId":"9f003dcb-528b-43e2-8ea5-f09d7eda2fe9","incidentPublicId":"11355-92710","initialDetectionTimestamp":"1791944460000","risk":"HIGH","clientTimestamp":"1791944462000","categories":"PERSISTENCE","fingerprint":"aa77e49047798bd8efe373fdcf7bb65954083664"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WithSecure Elements security events from the example bridge.
+# Child of WITHSECURE_ELEMENTS_JSON_PARENT: every security event the Antivirus child doesn't take,
+# such as EDR (Broad Context Detection) incidents and their updates, firewall and connection
+# control blocks, browsing protection, web content control and web traffic scanning, application
+# control, device control, DataGuard, tamper protection, rollback, Collaboration Protection
+# (email, Teams, OneDrive, SharePoint), Exposure Management recommendations and setting changes,
+# to ThirdPartyAlert.
+# json, eventId, engine, orgName, orgId, eventType$, sensorType$ and eventTimeUsec$ come from
+# the parent.
+
+sensorEventId$ = eventId
+vendor$ = "WithSecure"
+provider$ = "WithSecure Elements"
+subProvider$ = json["$.engine"]
+logType$ = "security_event"
+det = json["$.details"]
+incident = STRING(json["$.details.incidentPublicId"])
+alertId$ = IF incident != "" THEN incident ELSE eventId
+# description names the event type and message says what happened.
+desc = STRING(json["$.description"])
+title$ = IF desc != "" THEN desc ELSE STRING(json["$.engine"])
+msg = STRING(json["$.message"])
+summary$ = IF msg != "" THEN msg ELSE NULL
+cats = STRING(json["$.details.categories"])
+alertCategory$ = IF cats != "" THEN cats ELSE STRING(json["$.engine"])
+edrStatus = STRING(json["$.details.status"])
+status$ = IF edrStatus != "" THEN edrStatus ELSE json["$.action"]
+
+# severity is critical, warning or info. EDR incidents also carry risk (INFO, LOW, MEDIUM,
+# HIGH, SEVERE), which is used when present.
+sev = LOWERCASE(STRING(json["$.severity"]))
+vendorSeverity$ = json["$.severity"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "info" THEN "INFO" ELSE severity$
+severity$ = IF sev == "warning" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "critical" THEN "HIGH" ELSE severity$
+risk = UPPERCASE(STRING(json["$.details.risk"]))
+severity$ = IF risk == "INFO" THEN "INFO" ELSE severity$
+severity$ = IF risk == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF risk == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF risk == "HIGH" THEN "HIGH" ELSE severity$
+severity$ = IF risk == "SEVERE" THEN "CRITICAL" ELSE severity$
+
+act = LOWERCASE(STRING(json["$.action"]))
+blocked = act == "blocked" OR act == "deny" OR act == "quarantined" OR act == "deleted" OR act == "disinfected" OR act == "renamed" OR act == "trashed"
+action$ = IF blocked THEN "BLOCKED" ELSE NULL
+action$ = IF act == "allow" THEN "SUCCEEDED" ELSE action$
+
+device = STRING(json["$.device.name"])
+targetHostName$ = IF device != "" THEN device ELSE NULL
+hostId$ = IF device != "" THEN device ELSE NULL
+user = STRING(json["$.details.userName"])
+user = IF user == "" THEN STRING(json["$.userName"]) ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+upn = STRING(json["$.details.userPrincipalName"])
+userPrincipalName$ = IF upn != "" THEN upn ELSE NULL
+url = STRING(json["$.details.url"])
+url = IF url == "" THEN STRING(json["$.details.websiteUrl"]) ELSE url
+destinationUrl$ = IF url != "" THEN url ELSE NULL
+firstSeen = STRING(json["$.details.initialDetectionTimestamp"])
+firstEventTimeUsec$ = IF firstSeen != "" THEN INT(firstSeen, 10) * 1000 ELSE NULL
+
+# Firewall events give the endpoint's side (local) and the other side (remote), with
+# ruleDirection inbound or outbound. Connection control gives ip and port for an outbound block.
+localIp = STRING(json["$.details.localAddress"])
+remoteIp = STRING(json["$.details.remoteAddress"])
+remoteIp = IF remoteIp == "" THEN STRING(json["$.details.ip"]) ELSE remoteIp
+localPort = STRING(json["$.details.localPort"])
+remotePort = STRING(json["$.details.remotePort"])
+remotePort = IF remotePort == "" THEN STRING(json["$.details.port"]) ELSE remotePort
+dirText = LOWERCASE(STRING(json["$.details.ruleDirection"]) + STRING(json["$.details.direction"]))
+inbound = dirText == "inbound" OR dirText == "in"
+direction$ = NULL
+direction$ = IF remoteIp != "" AND inbound THEN "INBOUND" ELSE direction$
+direction$ = IF remoteIp != "" AND NOT inbound THEN "OUTBOUND" ELSE direction$
+srcIp = IF inbound THEN remoteIp ELSE localIp
+dstIp = IF inbound THEN localIp ELSE remoteIp
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+srcPortText = IF inbound THEN remotePort ELSE localPort
+dstPortText = IF inbound THEN localPort ELSE remotePort
+sp = srcPortText|^(?P<n>\d{1,5})$
+dp = dstPortText|^(?P<n>\d{1,5})$
+sourcePort$ = IF sp["n"] != "" THEN INT(sp["n"], 10) ELSE NULL
+destinationPort$ = IF dp["n"] != "" THEN INT(dp["n"], 10) ELSE NULL
+# ipProtocol reads like TCP(6).
+ipProto = STRING(json["$.details.ipProtocol"])
+proto = ipProto|\((?P<n>\d{1,3})\)
+protocol$ = IF proto["n"] != "" THEN INT(proto["n"], 10) ELSE NULL
+
+d1.key$ = "engine"
+d1.value$ = STRING(json["$.engine"])
+d2.key$ = "action"
+d2.value$ = STRING(json["$.action"])
+d3.key$ = "organization_name"
+d3.value$ = orgName
+d4.key$ = "organization_id"
+d4.value$ = orgId
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3, d4]
+d5.key$ = "alert_type"
+d5.value$ = json["$.details.alertType"]
+additionalData$.record$ = IF d5.value$ THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "device_id"
+d6.value$ = json["$.device.id"]
+additionalData$.record$ = IF d6.value$ THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "target_name"
+d7.value$ = json["$.target.name"]
+additionalData$.record$ = IF d7.value$ AND d7.value$ != device THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "acknowledged"
+d8.value$ = STRING(json["$.acknowledged"])
+additionalData$.record$ = IF json["$.acknowledged"] != NULL THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+# details holds every engine-specific field (process, rule, incident, email and file details).
+d9.key$ = "details"
+d9.value$ = STRING(det)
+additionalData$.record$ = IF det != NULL THEN additionalData$.record$ + [d9] ELSE additionalData$.record$

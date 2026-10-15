@@ -1,0 +1,49 @@
+!SAMPLE={"withsecure_record":"audit_log","id":"3e1c9a7b-2d4f-4e6a-8b0c-1d2e3f4a5b6c","serverTimestamp":"2026-10-14T00:58:02.117Z","transactionId":"0000-gwsbcqbdo43qdl2u","namespace":"elements-core","action":"login","username":"it.admin@example.com","organization":{"id":"5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f","name":"Acme Corp","orgPath":"00000000-0000-0000-0000-000000000000/1c2d3e4f-5a6b-4c7d-8e9f-a0b1c2d3e4f5/5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f/"},"target":{"id":"it.admin@example.com","name":"it.admin@example.com"},"description":"Administrator \"it.admin@example.com\" (\"it.admin@example.com\") logged in from IP \"203.0.113.45\" using web browser \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36\""}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WithSecure Elements audit logs from the example bridge.
+# Child of WITHSECURE_ELEMENTS_JSON_PARENT: administrator logins to Elements Security Center
+# (audit log action login), to Auth. The audit log records only successful logins.
+# json, eventId, orgName, orgId, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = eventId
+authSystem$ = "WithSecure Elements Security Center"
+user = STRING(json["$.username"])
+user = IF user == "" THEN STRING(json["$.target.name"]) ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+authCategory$ = "ACCOUNT_LOGON"
+action$ = "LOGON"
+actionResult$ = "SUCCESS"
+status$ = json["$.action"]
+
+# The address and browser are only in the description, which is English unless the bridge asks
+# for another language: Administrator "a" ("a") logged in from IP "203.0.113.1" using web
+# browser "Mozilla/5.0 ...".
+desc = STRING(json["$.description"])
+from = desc|logged in from IP "(?P<ip>[^"]+)"
+sourceAddress$ = IF from["ip"] != "" THEN from["ip"] ELSE NULL
+browser = desc|using web browser "(?P<ua>[^"]+)"
+userAgent$ = IF browser["ua"] != "" THEN browser["ua"] ELSE NULL
+
+m1.key$ = "organization_name"
+m1.value$ = orgName
+m2.key$ = "organization_id"
+m2.value$ = orgId
+m3.key$ = "namespace"
+m3.value$ = STRING(json["$.namespace"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "org_path"
+m4.value$ = json["$.organization.orgPath"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "transaction_id"
+m5.value$ = json["$.transactionId"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "description"
+m6.value$ = desc
+eventMetadata$.record$ = IF desc != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
