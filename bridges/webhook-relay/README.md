@@ -53,6 +53,7 @@ Everything comes from environment variables. Keep secrets in a secrets manager o
 | `BRIDGE_LISTEN_PORT` | `8080` | Port to listen on. |
 | `BRIDGE_MAX_BODY_BYTES` | `524288` | Larger deliveries get 413. HTTP Ingest recommends records under about 500 KB. |
 | `BRIDGE_FORWARD_DEADLINE` | `8` | Seconds to keep retrying HTTP Ingest before answering the vendor 503. Autotask gives up on a delivery after 10 seconds. |
+| `BRIDGE_MAX_CONNECTIONS` | `32` | Requests the relay handles at once, 1 to 1000. Past that it answers 503 straight away, and the vendor retries. |
 | `BRIDGE_DRY_RUN` | `0` | Same as `--dry-run`. |
 | `BRIDGE_LOG_LEVEL` | `INFO` | Same as `--log-level`. |
 
@@ -90,6 +91,15 @@ Keep the host's clock in sync: the relay refuses Huntress deliveries stamped mor
 Vendors need an HTTPS URL. Keep the relay on 127.0.0.1 and put a reverse proxy in front that terminates TLS. Caddy gets the certificate itself:
 
 ```
+{
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 30s
+		}
+	}
+}
+
 relay.example.com {
 	request_body {
 		max_size 1MB
@@ -107,6 +117,8 @@ server {
     ssl_certificate     /etc/ssl/relay.example.com/fullchain.pem;
     ssl_certificate_key /etc/ssl/relay.example.com/privkey.pem;
     client_max_body_size 1m;
+    client_header_timeout 10s;
+    client_body_timeout 10s;
     access_log off;
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -114,7 +126,9 @@ server {
 }
 ```
 
-Keep the proxy's access log off: it records request URLs, which hold the Hudu and ScreenConnect secrets. Caddy writes none unless you add a `log` directive.
+Keep the proxy's access log off: it records request URLs, which hold the Hudu and ScreenConnect secrets. Caddy writes none unless you add a `log` directive. nginx's error log also records the request URL when it can't reach the relay, so keep that file readable only by administrators.
+
+The timeouts above make the proxy, not the relay, wait on a slow sender. nginx also reads the whole body before it passes a request on.
 
 ## What it sends and answers
 
@@ -129,7 +143,7 @@ Keep the proxy's access log off: it records request URLs, which hold the Hudu an
 | 404 | Unknown path, vendor not configured, or wrong path secret. |
 | 400, 405, 411, 413 | Empty body, not POST, no `Content-Length` (chunked), or body over `BRIDGE_MAX_BODY_BYTES`. |
 | 502 | HTTP Ingest refused the delivery. Check the key and URL. |
-| 503 | HTTP Ingest stayed unavailable until the deadline. |
+| 503 | HTTP Ingest stayed unavailable until the deadline, or `BRIDGE_MAX_CONNECTIONS` requests were already in progress. |
 
 After a non-2xx answer, Huntress (Svix) tries again after 5 seconds, 5 minutes, 30 minutes, then 2, 5, 10 and 10 hours. Autotask tries 5 times in 2 minutes, keeps the payload in its Webhook Error Log for 30 days, and turns the webhook off after 25 consecutive failures over more than 4 hours. Hudu and ScreenConnect don't document retries, so a delivery the relay can't forward is lost.
 
@@ -141,6 +155,7 @@ HTTP Ingest delivers at least once and does not remove duplicates, so a vendor r
 - Hudu and ScreenConnect can't sign, so the path secret is the only check, and it is weaker: anyone who sees the URL (in the vendor's settings, a proxy log or a screenshot) can post records. Rotate a secret that leaks: change the variable, restart the relay, and update the vendor.
 - The relay never logs secrets, the HTTP Ingest key, the HTTP Ingest URL path or bodies. It logs the vendor, the outcome, the size, Huntress delivery IDs, and the connecting address on rejections (the proxy's, behind a proxy).
 - It verifies the HTTP Ingest certificate and doesn't follow redirects, so the key only goes to the configured host.
+- It handles at most `BRIDGE_MAX_CONNECTIONS` requests at once and gives each 30 seconds in all to arrive, so slow or numerous connections can't use up its threads and files. While they last they can still keep it busy, so set the proxy timeouts above.
 
 ## Tests
 
@@ -148,7 +163,7 @@ HTTP Ingest delivers at least once and does not remove duplicates, so a vendor r
 python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 ```
 
-The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor; the size limit; line-break handling; retries, the deadline and refusals; dry-run; and that no secret or body reaches the log.
+The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor; the size limit; line-break handling; retries, the deadline and refusals; the connection limit and the time limit for a slow sender; dry-run; and that no secret or body reaches the log.
 
 ## References
 
