@@ -1,0 +1,255 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "IBM Guardium",
+      "event_time_usec": 1791976865000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "IBM",
+      "provider": "Guardium Data Protection",
+      "sensor_version": "12.0",
+      "host_id": "gcoll01.corp.example.com",
+      "title": "Login failures",
+      "summary": "Login failures (LOGIN_FAILED)",
+      "alert_id": "15",
+      "severity": "INFO",
+      "vendor_severity": "INFO",
+      "source_address": "192.0.2.31",
+      "source_port": 38754,
+      "destination_address": "198.51.100.20",
+      "destination_port": 50000,
+      "destination_service_name": "DB2",
+      "source_user_name": "jsmith",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "20026"
+          },
+          {
+            "key": "request_type",
+            "value": "LOGIN_FAILED"
+          },
+          {
+            "key": "last_error",
+            "value": "08001-XXXX:30082-01"
+          },
+          {
+            "key": "source_program",
+            "value": "DB2JCC_APPLICATION"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "IBM Guardium",
+      "event_time_usec": 1791977022000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "IBM",
+      "provider": "Guardium Data Protection",
+      "sensor_version": "12.0",
+      "host_id": "gcoll01.corp.example.com",
+      "title": "Unauthorized Users on Cardholder Objects - Alert",
+      "summary": "Unauthorized Users on Cardholder Objects - Alert (SQL_LANG)",
+      "alert_category": "PCI",
+      "severity": "MEDIUM",
+      "vendor_severity": "MED",
+      "source_address": "192.0.2.44",
+      "source_port": 60621,
+      "destination_address": "198.51.100.21",
+      "destination_port": 1433,
+      "destination_service_name": "MS SQL SERVER",
+      "source_user_name": "svc_reports",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "159"
+          },
+          {
+            "key": "request_type",
+            "value": "SQL_LANG"
+          },
+          {
+            "key": "classification",
+            "value": "Violation"
+          },
+          {
+            "key": "sql",
+            "value": "SELECT name + '|' + card_number FROM cardholder WHERE region = 'APJ'"
+          },
+          {
+            "key": "source_program",
+            "value": "REPORTS.EXE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "IBM Guardium",
+      "event_time_usec": 1791977477000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "IBM",
+      "provider": "Guardium Data Protection",
+      "sensor_version": "12.0",
+      "host_id": "gcoll02.corp.example.com",
+      "title": "DDL on sensitive objects - Alert",
+      "summary": "DDL on sensitive objects - Alert (SQL_LANG)",
+      "alert_category": "SOX",
+      "alert_id": "48211",
+      "severity": "HIGH",
+      "vendor_severity": "HIGH",
+      "source_address": "192.0.2.57",
+      "source_port": 51022,
+      "destination_address": "198.51.100.30",
+      "destination_port": 1521,
+      "destination_service_name": "ORACLE",
+      "source_user_name": "APPADMIN",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "20311"
+          },
+          {
+            "key": "request_type",
+            "value": "SQL_LANG"
+          },
+          {
+            "key": "classification",
+            "value": "Violation"
+          },
+          {
+            "key": "sql",
+            "value": "DROP TABLE PAYROLL.SALARY_HISTORY"
+          },
+          {
+            "key": "source_program",
+            "value": "SQLPLUS.EXE"
+          },
+          {
+            "key": "app_user_name",
+            "value": "akim"
+          },
+          {
+            "key": "database_name",
+            "value": "FINPRD"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "IBM Guardium",
+      "event_time_usec": 1791978000000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "IBM",
+      "provider": "Guardium Data Protection",
+      "sensor_version": "7.0",
+      "host_id": "gcoll01.corp.example.com",
+      "title": "Privileged user access to PHI",
+      "summary": "Privileged user access to PHI (SQL_LANG)",
+      "alert_category": "HIPAA",
+      "alert_id": "48230",
+      "severity": "LOW",
+      "vendor_severity": "LOW",
+      "source_address": "192.0.2.80",
+      "source_port": 40118,
+      "destination_address": "198.51.100.40",
+      "destination_port": 5432,
+      "destination_service_name": "POSTGRESQL",
+      "source_user_name": "postgres",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "20412"
+          },
+          {
+            "key": "request_type",
+            "value": "SQL_LANG"
+          },
+          {
+            "key": "classification",
+            "value": "Violation"
+          },
+          {
+            "key": "sql",
+            "value": "SELECT * FROM patients WHERE mrn=?"
+          },
+          {
+            "key": "source_program",
+            "value": "psql"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "IBM Guardium",
+      "event_time_usec": 1791978289000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "IBM",
+      "provider": "Guardium Data Protection",
+      "sensor_version": "12.0",
+      "host_id": "gcoll02.corp.example.com",
+      "title": "Failed logins from unknown clients",
+      "summary": "Failed logins from unknown clients (LOGIN_FAILED)",
+      "alert_category": "Access",
+      "alert_id": "48236",
+      "severity": "LOW",
+      "vendor_severity": "LOW",
+      "source_address": "203.0.113.77",
+      "source_port": 55012,
+      "destination_address": "198.51.100.50",
+      "destination_port": 3306,
+      "destination_service_name": "MYSQL",
+      "source_user_name": "root",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "rule_id",
+            "value": "20530"
+          },
+          {
+            "key": "request_type",
+            "value": "LOGIN_FAILED"
+          },
+          {
+            "key": "last_error",
+            "value": "Access denied for user"
+          },
+          {
+            "key": "source_program",
+            "value": "mysql"
+          }
+        ]
+      }
+    }
+  }
+]

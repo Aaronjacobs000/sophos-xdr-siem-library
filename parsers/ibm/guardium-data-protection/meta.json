@@ -1,0 +1,31 @@
+{
+  "vendor": "IBM",
+  "product": "Guardium Data Protection",
+  "versions": [
+    "12.x"
+  ],
+  "format": "leef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T12:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.ibm.com/docs/en/SS42VS_DSM/com.ibm.dsm.doc/c_dsm_guide_IBM_Guardium_sample_event_msg.html",
+    "https://www.ibm.com/docs/en/gdp/12.x?topic=integration-leef-mapping",
+    "https://www.ibm.com/docs/en/gdp/12.x?topic=integration-cef-mapping"
+  ],
+  "notes": "For IBM Guardium Data Protection policy and correlation alerts sent by syslog from a collector or Central Manager (store remotelog add, TCP or UDP), with an alert action that uses one of IBM's predefined message templates: LEEF (the QRadar template) or CEF (the ArcSight template). Each policy rule picks its own template, so alerts that use a custom template aren't covered. LEEF lines carry IBM's keys in a fixed order with | between them, as IBM's samples show; the parser also takes LEEF's tab, reads each key by name, and reads sql up to the last error key, since SQL text can hold | and =. A databaseName key added to the template is kept. CEF lines follow Guardium's published template (rt, cs1 severity, cs2 server type, cs3 classification, cat, suser, sproc, act, externalId, duser, dst, dpt, src, spt, proto, msg); msg, the SQL, is the template's last key and is read to the end of the line. Vendor IBM or Guardium both match. Sniffer alerts wrapped in subject \"SQLGUARD ALERT\", \"...\" are unwrapped. Every alert goes to the third-party alert schema: the rule description as the title, Guardium's severity (INFO, LOW, NONE, MED, HIGH; NONE as INFO), the category, violationID as the alert ID when not 0, the database client as the source address and port, the database server as the destination and the server type as the service, the database user as the source user, and TCP or UDP as the protocol. The rule ID, request type (such as LOGIN_FAILED or SQL_LANG), classification, SQL, last error, source program, application user and database name go to additional_data. The event time is start (LEEF) or rt (CEF), the receipt time in milliseconds since 1970; devTime is the collector's local time with no zone, so it isn't used. host_id is the collector that sent the alert. Samples are made up in the layout of IBM's QRadar DSM samples and Guardium's CEF template. Passed Run Test in a lab tenant on 2026-10-16 (98 of 98 fields matched the emulator in each of 3 runs). No built-in parser claimed these lines in 3 Run Tests.",
+  "parsers": [
+    {
+      "name": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT",
+      "file": "IBM_GUARDIUM_SYSLOG_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
