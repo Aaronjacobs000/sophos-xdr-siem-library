@@ -34,6 +34,13 @@ test('metadata rules', () => {
   assert.equal(slug('ESET PROTECT On-Prem'), 'eset-protect-on-prem');
 });
 
+test('notes take up to 2500 characters', () => {
+  const meta = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
+  const notes = (n) => validateMeta({ ...meta, notes: 'x'.repeat(n) }).map((p) => p.message);
+  assert.deepEqual(notes(2500), []);
+  assert.deepEqual(notes(2501), ['notes must be text up to 2500 characters']);
+});
+
 test('the scan blocks secrets, private and real IPs, real emails, hostnames and company names', () => {
   assert.deepEqual(kinds('src=192.0.2.4 dst=198.51.100.2 host=www.example.com user=jdoe@example.com v6=2001:db8::1'), []);
   assert.deepEqual(kinds('src=10.1.2.3'), ['ip']);
