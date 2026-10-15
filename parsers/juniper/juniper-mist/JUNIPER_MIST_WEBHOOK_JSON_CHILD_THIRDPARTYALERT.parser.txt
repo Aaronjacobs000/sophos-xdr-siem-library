@@ -9,7 +9,7 @@
 # Source: Juniper Mist alarms webhooks: security alarms (rogue AP, rogue client, honeypot SSID,
 # spoofing and flooding attacks, repeated authentication failures, gateway malware, IDP and URL
 # blocks), infrastructure alarms (devices offline) and Marvis alarms.
-# Child of JUNIPER_MIST_WEBHOOK_JSON_PARENT: each one to ThirdPartyAlert, with the alarm type (such
+# Child of JUNIPER_MIST_WEBHOOK_JSON_PARENT: each one to Thirdparty, with the alarm type (such
 # as rogue_ap) as the title, the alarm group (security, infrastructure or marvis) as the category,
 # and Mist's severity: critical is Critical, warn is Medium and info is Info. Mist lists up to 10
 # APs, BSSIDs, SSIDs and other entities per alarm; they go to additional data.
