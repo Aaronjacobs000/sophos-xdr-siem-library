@@ -1,0 +1,55 @@
+!SAMPLE={"event_title":"Compliance Changed","event_link":"https://lacework.example.com/ui/investigate/Event/120884?startTime=1792008000000&endTime=1792011600000","lacework_account":"example","event_source":"AWSCompliance","event_description":"AWS Account 111122223333: AWS_CIS_1_4 Ensure access keys are rotated every 90 days or less changed from compliant to non-compliant","event_timestamp":"14 Oct 2026 09:00 GMT","event_type":"Compliance","event_id":"120884","event_severity":"2","rec_id":"AWS_CIS_1_4"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"event_title"\s*:\s*"[^"]*"\s*,\s*"event_link"\s*:\s*"[^"]*"\s*,\s*"lacework_account"\s*:
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiCNAPP (Lacework) alerts from a custom webhook alert channel, one alert per request,
+# through bridges/webhook-relay (route /forticnapp/<secret>) to a Sophos NG-SIEM HTTP Ingest
+# integration. The relay puts Fortinet's indented JSON on one line. Keys, in Fortinet's order:
+#   event_title, event_link, lacework_account, event_source, event_description, event_timestamp,
+#   event_type, event_id, event_severity, and rec_id on compliance events.
+# Standalone parser: every alert to Thirdparty. event_severity runs from 1 (highest) to 5.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Fortinet FortiCNAPP"
+vendor$ = "Fortinet"
+provider$ = "FortiCNAPP"
+id = STRING(json["$.event_id"])
+alertId$ = IF id != "" THEN id ELSE NULL
+sensorEventId$ = alertId$
+title = STRING(json["$.event_title"])
+title$ = IF title != "" THEN title ELSE "FortiCNAPP alert"
+desc = STRING(json["$.event_description"])
+summary$ = IF desc != "" THEN desc ELSE NULL
+etype = STRING(json["$.event_type"])
+alertCategory$ = IF etype != "" THEN etype ELSE NULL
+source = STRING(json["$.event_source"])
+subProvider$ = IF source != "" THEN source ELSE NULL
+
+# event_timestamp is the day, month, year and minute in GMT, such as "27 May 2021 17:00 GMT".
+ts = STRING(json["$.event_timestamp"])
+eventTimeUsec$ = IF ts != "" THEN DATETIME(ts, "2 Jan 2006 15:04 MST") ELSE eventTimeUsec$
+
+sev = STRING(json["$.event_severity"])
+severity$ = NULL
+severity$ = IF sev == "1" THEN "CRITICAL" ELSE severity$
+severity$ = IF sev == "2" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "3" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "4" THEN "LOW" ELSE severity$
+severity$ = IF sev == "5" THEN "INFO" ELSE severity$
+vendorSeverity$ = IF sev != "" THEN sev ELSE NULL
+
+# The account part of the console host, and the link to the event in the console.
+a1.key$ = "lacework_account"
+a1.value$ = STRING(json["$.lacework_account"])
+a2.key$ = "event_link"
+a2.value$ = STRING(json["$.event_link"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "rec_id"
+a3.value$ = STRING(json["$.rec_id"])
+additionalData$.record$ = IF a3.value$ != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$

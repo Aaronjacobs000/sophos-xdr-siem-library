@@ -1,0 +1,29 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiCNAPP",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "bridge": "bridges/webhook-relay",
+  "docs": [
+    "https://docs.fortinet.com/document/forticnapp/latest/administration-guide/465696/custom-webhook-alert-channel",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/HTTPIngest/Setup/index.html"
+  ],
+  "notes": "FortiCNAPP's custom webhook alert channel takes only a URL and can't add the Authorization header, so it sends to bridges/webhook-relay on /forticnapp/<secret>, which forwards each alert to a Sophos NG-SIEM HTTP Ingest integration with the header; the README has the steps. Fortinet's docs put a token in the URL's query string, but the relay reads the secret from the path. Each alert goes to Thirdparty: event_title as the title, event_description as the summary, event_id as alert_id, event_type as the category, event_source (such as AWS, AWSCompliance or Agent) as the sub-provider, and event_severity 1 to 5 as CRITICAL, HIGH, MEDIUM, LOW and INFO. The account, the console link and the compliance recommendation ID (rec_id) go to additional_data. The time comes from event_timestamp, which is to the minute in GMT. The description is free text, so users, hosts and addresses in it stay there. Samples are made up from the payload and field table on Fortinet's custom webhook page, with links under example.com in place of <account>.lacework.net; the event types other than Compliance are illustrative. The last sample is Fortinet's indented example as the relay forwards it, on one line. No built-in parser claimed these lines in 3 Run Tests. The parser passed Run Test in a lab tenant on 2026-10-16 (65 of 65 fields matched the emulator, every line taken in each of 3 runs).",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
