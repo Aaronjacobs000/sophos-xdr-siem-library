@@ -207,9 +207,11 @@ class DattoClient:
         return token
 
     def get(self, url: str) -> dict:
-        # Only ever send the token to the configured API host, including nextPageUrl links.
-        if _host(url) != _host(self.cfg["api_url"]):
-            raise BridgeError("a page link points at a different host; refusing to send the token there")
+        # Only ever send the token to the configured API scheme and host, including nextPageUrl
+        # links, so a link can't send it somewhere else or over plain http.
+        here, api = urllib.parse.urlsplit(url), urllib.parse.urlsplit(self.cfg["api_url"])
+        if (here.scheme, here.netloc) != (api.scheme, api.netloc):
+            raise BridgeError("a page link points at a different host or scheme; refusing to send the token there")
         for refreshed in (False, True):
             if not self.token:
                 self.token = self._get_token()

@@ -134,6 +134,21 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _NO_REDIRECT = urllib.request.build_opener(_NoRedirect)
 
 
+class _HttpsRedirect(urllib.request.HTTPRedirectHandler):
+    """For the signed log file URL, which is a credential: follows a redirect only to https."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
+        try:
+            _require_https(urllib.parse.urljoin(req.full_url, newurl), "a redirect from the signed file download")
+        except BridgeError:
+            fp.close()
+            raise
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_HTTPS_REDIRECT = urllib.request.build_opener(_HttpsRedirect)
+
+
 def _host(url: str) -> str:
     return urllib.parse.urlsplit(url).netloc
 
@@ -152,9 +167,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
              redirects: str = "refuse", what: str = "request"):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, headers, body).
     A redirect fails like any other status by default, so a key only goes to the configured host.
-    redirects="return" hands a redirect to the caller instead, and "follow" follows it, for a
-    request that carries no key."""
-    opener = urllib.request.build_opener() if redirects == "follow" else _NO_REDIRECT
+    redirects="return" hands a redirect to the caller instead, and "follow" follows one to https,
+    for a request that carries no key."""
+    opener = _HTTPS_REDIRECT if redirects == "follow" else _NO_REDIRECT
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
         try:
@@ -374,8 +389,9 @@ def _download_clp_file(url: str, auth: dict, timeout: float) -> list[dict]:
         if not location:
             raise BridgeError("log file download redirect has no Location")
         location = urllib.parse.urljoin(url, location)
-        # The signed URL carries its own authorization: never send the API key to it, and
-        # never log it (its query string is a credential).
+        # The signed URL carries its own authorization: never send the API key to it, never log
+        # it (its query string is a credential), and only fetch it over https.
+        _require_https(location, "the log file's signed URL")
         _, _, body = _request("GET", location, {"User-Agent": USER_AGENT}, None, timeout, redirects="follow",
                               what="signed file download")
     out = []

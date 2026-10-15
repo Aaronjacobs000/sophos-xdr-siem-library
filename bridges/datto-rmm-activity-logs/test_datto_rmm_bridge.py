@@ -48,6 +48,7 @@ class Mock:
         self.ingested = []
         self.requests = []
         self.next_page_host = None
+        self.next_page_scheme = "http"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -123,7 +124,7 @@ class Handler(BaseHTTPRequestHandler):
             nq = dict((k, v[0]) for k, v in q.items() if k != "searchAfter")
             nq.update(searchAfter=f"{int(last['date'] * 1000)},{last['id']}", page="next")
             host = m.next_page_host or self.headers["Host"]
-            nxt = f"http://{host}/api/v2/activity-logs?{urllib.parse.urlencode(nq)}"
+            nxt = f"{m.next_page_scheme}://{host}/api/v2/activity-logs?{urllib.parse.urlencode(nq)}"
         self._json({"pageDetails": {"count": len(page), "totalCount": len(rows), "prevPageUrl": None, "nextPageUrl": nxt},
                     "activities": page})
 
@@ -296,6 +297,14 @@ class BridgeTest(unittest.TestCase):
             c.run_once(self.cfg())
         gets = [r for r in self.mock.requests if r[0] == "GET"]
         self.assertEqual(len(gets), 1)
+        self.assertEqual(self.mock.ingested, [])
+
+    def test_next_page_with_another_scheme_is_refused(self):
+        # Same host, different scheme: the token only goes out the way the API URL says.
+        self.add(300)
+        self.mock.next_page_scheme = "https"
+        with self.assertRaisesRegex(c.BridgeError, "different host or scheme"):
+            c.run_once(self.cfg())
         self.assertEqual(self.mock.ingested, [])
 
     def test_gzip_batches_and_headers(self):
