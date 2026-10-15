@@ -1,0 +1,64 @@
+!SAMPLE=<37>1 2026-10-14T09:10:41.557210+11:00 IBMI01.CORP.EXAMPLE.COM - - - - CEF:0|IBM|IBM i|7.5|QSYS-AUDJRN|T=CP|Low|reason=User profile changed, created, or restored suser=QSECOFR sproc=223344/QSECOFR/QPADEV0004 shost=IBMI01 src=192.0.2.80 spt=51544 objName=JSMITH fileType=*USRPRF attrName=SPCAUT attrValue=*ALLOBJ *SECADM oldAttrValue=*NONE
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s?0\|(?:IBM\|IBM i\|[^|]*\|QSYS-(?:AUDJRN|QHST)|Power[Tt]ech\|SIEM Agent\|[^|]*\|[A-Z0-9:]+)\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM i security audit journal (QAUDJRN) entries as CEF over syslog, from either route:
+#   IBM: QSYS2.DISPLAY_JOURNAL with GENERATE_SYSLOG => 'RFC5424' or 'RFC3164', sent through the
+#     PASE syslog daemon: CEF:0|IBM|IBM i|7.5|QSYS-AUDJRN|T=PW|Low|reason=... suser=... src=...
+#     (history log messages come as QSYS-QHST with the message ID)
+#   Fortra Powertech SIEM Agent for IBM i, *CEF style:
+#     CEF:0|Powertech|SIEM Agent|4.10|TPW0016|<event text>|<severity>|src=<IBM i> dst=<client> ...
+# Parent: hands invalid password and user entries (PW) to the Auth child and every other audit
+# journal entry to the CloudAudit child. History log messages and other Powertech events stay
+# generic.
+
+cm = originalData$|(?P<cef>CEF:\s?0\|.*)$
+cefText = REPLACE_REGEX(cm["cef"], "^CEF:\\s0", "CEF:0")
+v = CEF(cefText)
+h = cefText|^CEF:0\|(?P<vendor>[^|]*)\|(?P<product>[^|]*)\|(?P<ver>[^|]*)\|(?P<sig>[^|]*)\|(?P<name>[^|]*)\|(?P<sev>[^|]*)\|
+ibm = h["vendor"] == "IBM"
+it = h["name"]|^(?P<code>[TU])=(?P<type>[A-Z0-9]{2})$
+pt = h["sig"]|^T(?P<type>[A-Z0-9]{2})(?P<sub>\d{4})$
+audit = IF ibm THEN h["sig"] == "QSYS-AUDJRN" AND it["code"] == "T" ELSE pt["type"] != ""
+# The entry type, such as PW, CP, AF or OW: IBM names it T=PW; Powertech's event ID is T, the
+# type and the subtype's place in the alphabet (TPW0016 is PW subtype P).
+entryType = IF ibm THEN it["type"] ELSE pt["type"]
+sub = INT(pt["sub"], 10)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "IBM i"
+sensorVersion$ = IF h["ver"] != "" THEN h["ver"] ELSE NULL
+hdr = originalData$|^(?:<\d{1,3}>)?\s?(?:1 \S+|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+shost = STRING(v["shost"])
+hostName = IF shost != "" THEN shost ELSE hdr["host"]
+hostId$ = IF hostName != "" THEN hostName ELSE NULL
+
+# RFC 5424 headers carry the time with its offset. An RFC 3164 header has no zone or year, so its
+# time is read as UTC in the current year, with or without a <PRI> in front.
+ts = originalData$|^(?:<\d{1,3}>)?1 (?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s
+bsd = originalData$|^(?:<\d{1,3}>)?\s?(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s
+eventTimeUsec$ = IF ts["t"] != "" THEN DATETIME(ts["t"], "2006-01-02T15:04:05Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF ts["t"] == "" AND bsd["t"] != "" THEN DATETIME(bsd["t"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+# The job: IBM's sproc and Powertech's dproc are number/user/name; older Powertech output packs
+# JJOB, JUSER and JNBR into msg.
+msg = STRING(v["msg"])
+jobText = IF ibm THEN STRING(v["sproc"]) ELSE STRING(v["dproc"])
+packed = msg|JJOB:(?P<job>\S*)\s+JUSER:(?P<user>\S*)\s+JNBR:(?P<nbr>\S*)
+jobText = IF jobText == "" AND packed["nbr"] != "" THEN packed["nbr"] + "/" + packed["user"] + "/" + packed["job"] ELSE jobText
+jobParts = jobText|^(?P<nbr>[^/]*)/(?P<user>[^/]*)/(?P<name>.*)$
+# The user the job ran as. Powertech also sends suser and duser, whose meaning it doesn't define.
+actor = IF ibm THEN STRING(v["suser"]) ELSE jobParts["user"]
+actor = IF actor == "" THEN STRING(v["suser"]) ELSE actor
+# The client: IBM's src (REMOTE_ADDRESS) or Powertech's dst; Powertech's src is the IBM i itself.
+client = IF ibm THEN STRING(v["src"]) ELSE STRING(v["dst"])
+clientOk = IF client != "" THEN IS_VALID_IP(client) ELSE FALSE
+systemIp = IF ibm THEN "" ELSE STRING(v["src"])
+reason = IF ibm THEN STRING(v["reason"]) ELSE h["name"]
+
+eventType$ = "other"
+eventType$ = IF audit THEN "audit" ELSE eventType$
+eventType$ = IF audit AND entryType == "PW" THEN "auth" ELSE eventType$

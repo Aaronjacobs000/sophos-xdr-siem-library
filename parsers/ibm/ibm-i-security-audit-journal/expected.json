@@ -1,0 +1,328 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791928923123456,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "7.5",
+      "host_id": "IBMI01",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "auth_category": "ACCOUNT_LOGON",
+      "auth_system": "IBM i",
+      "target_user_name": "JDOE",
+      "target_host_name": "IBMI01",
+      "source_address": "192.0.2.77",
+      "source_port": "50122",
+      "extra_failurereason": "Invalid password: User JDOE name not valid",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entry_type",
+            "value": "PW"
+          },
+          {
+            "key": "job",
+            "value": "123456/QTCP/QTFTP00001"
+          },
+          {
+            "key": "job_user",
+            "value": "QTCP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791929441557210,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "7.5",
+      "host_id": "IBMI01",
+      "event_type": "T=CP",
+      "event_name": "User profile changed, created, or restored",
+      "event_source": "QAUDJRN",
+      "user_name": "QSECOFR",
+      "source_address": "192.0.2.80",
+      "target_hostname": "IBMI01",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "objName",
+            "value": "JSMITH"
+          },
+          {
+            "key": "fileType",
+            "value": "*USRPRF"
+          },
+          {
+            "key": "attrName",
+            "value": "SPCAUT"
+          },
+          {
+            "key": "attrValue",
+            "value": "*ALLOBJ *SECADM"
+          },
+          {
+            "key": "oldAttrValue",
+            "value": "*NONE"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "job",
+            "value": "223344/QSECOFR/QPADEV0004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791929529004118,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "7.5",
+      "host_id": "IBMI01",
+      "event_type": "T=AF",
+      "event_name": "Authority failure",
+      "event_source": "QAUDJRN",
+      "user_name": "AKIM",
+      "source_address": "192.0.2.81",
+      "target_hostname": "IBMI01",
+      "status": "Failed",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "objName",
+            "value": "PAYROLL PAYLIB"
+          },
+          {
+            "key": "fileType",
+            "value": "*FILE"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "job",
+            "value": "334455/AKIM/QPADEV0007"
+          },
+          {
+            "key": "msg",
+            "value": "Not authorized to object"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791929730861902,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "7.5",
+      "host_id": "IBMI01",
+      "event_type": "T=SV",
+      "event_name": "System value changed",
+      "event_source": "QAUDJRN",
+      "user_name": "QSECOFR",
+      "source_address": "192.0.2.80",
+      "target_hostname": "IBMI01",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "attrName",
+            "value": "QPWDEXPITV"
+          },
+          {
+            "key": "attrValue",
+            "value": "*NOMAX"
+          },
+          {
+            "key": "oldAttrValue",
+            "value": "90"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "job",
+            "value": "223344/QSECOFR/QPADEV0004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791969644000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "7.5",
+      "host_id": "IBMI01",
+      "event_type": "T=OW",
+      "event_name": "Object ownership changed",
+      "event_source": "QAUDJRN",
+      "user_name": "QSECOFR",
+      "target_hostname": "IBMI01",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "objName",
+            "value": "JSMITH QUSRSYS"
+          },
+          {
+            "key": "fileType",
+            "value": "*MSGQ"
+          },
+          {
+            "key": "duser",
+            "value": "JSMITH"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "job",
+            "value": "223344/QSECOFR/QPADEV0004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "IBM_I_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791968711000000,
+      "sensor_version": "7.5",
+      "host_id": "IBMI01"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "event_time_usec": 1791968822000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "4.10",
+      "host_id": "IBMI01",
+      "event_type": "T=OW",
+      "event_name": "Changes to object ownership",
+      "event_source": "QAUDJRN",
+      "user_name": "QSECOFR",
+      "source_address": "192.0.2.81",
+      "target_hostname": "IBMI01",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "fileType",
+            "value": "*MSGQ"
+          },
+          {
+            "key": "fname",
+            "value": "QUSRSYS/JSMITH"
+          },
+          {
+            "key": "duser",
+            "value": "QSECOFR"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "job",
+            "value": "537013/QSECOFR/QPADEV0002"
+          },
+          {
+            "key": "msg",
+            "value": "The message queue QUSRSYS/JSMITH ownership was changed from user profile QSECOFR to user profile JSMITH."
+          },
+          {
+            "key": "program",
+            "value": "PAYROLL01"
+          },
+          {
+            "key": "sequence",
+            "value": "1579233"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "IBM_I_CEF_PARENT > IBM_I_CEF_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "IBM i",
+      "sensor_id": "IBMI01",
+      "event_time_usec": 1791968970000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "4.4",
+      "host_id": "IBMI01",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "auth_category": "ACCOUNT_LOGON",
+      "auth_system": "IBM i",
+      "target_user_name": "MLEE",
+      "target_host_name": "IBMI01",
+      "target_address": "192.0.2.80",
+      "source_address": "203.0.113.45",
+      "extra_failurereason": "An invalid password was entered for user profile MLEE.",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entry_type",
+            "value": "PW"
+          },
+          {
+            "key": "violation_type",
+            "value": "P"
+          },
+          {
+            "key": "job",
+            "value": "003752/QSYS/QPADEV000B"
+          },
+          {
+            "key": "job_user",
+            "value": "QSYS"
+          }
+        ]
+      }
+    }
+  }
+]

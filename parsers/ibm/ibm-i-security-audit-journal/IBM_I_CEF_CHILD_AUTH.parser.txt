@@ -1,0 +1,61 @@
+!SAMPLE=<37>1 2026-10-14T09:02:03.123456+11:00 IBMI01.CORP.EXAMPLE.COM - - - - CEF:0|IBM|IBM i|7.5|QSYS-AUDJRN|T=PW|Low|reason=Invalid password msg=User JDOE name not valid suser=QTCP sproc=123456/QTCP/QTFTP00001 shost=IBMI01 src=192.0.2.77 spt=50122
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM i security audit journal PW (invalid password or user ID) entries as CEF.
+# Child of IBM_I_CEF_PARENT: each one to Auth as a failed logon. The user who failed is in IBM's msg
+# ("User JDOE name not valid") or Powertech's event text ("... for user profile MLEE.") or DETAIL;
+# the job's user (such as QTCP for FTP) is kept in event_metadata.
+# v, h, ibm, msg, sub, actor, client, clientOk, systemIp, reason, jobText, hostName, sensorType$,
+# hostId$ and eventTimeUsec$ come from the parent.
+
+action$ = "FAILURE"
+actionResult$ = "FAILED"
+authCategory$ = "ACCOUNT_LOGON"
+authSystem$ = "IBM i"
+
+um = msg|^User (?P<u>\S+)
+tm = h["name"]|user profile (?P<u>[^\s.]+)
+dm = msg|DETAIL:(?P<t>[A-Z]) (?P<u>\S+)
+user = IF ibm THEN um["u"] ELSE tm["u"]
+user = IF user == "" AND NOT ibm THEN dm["u"] ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+targetHostName$ = IF hostName != "" THEN hostName ELSE NULL
+targetAddress$ = IF systemIp != "" THEN systemIp ELSE NULL
+sourceAddress$ = IF clientOk THEN client ELSE NULL
+port = IF ibm THEN STRING(v["spt"]) ELSE ""
+sourcePort$ = IF port != "" THEN port ELSE NULL
+extraFailurereason$ = IF ibm AND msg != "" THEN reason + ": " + msg ELSE reason
+
+# PW violation types (IBM's QAUDJRN reference): P password not valid, U user name not valid,
+# R password expired, Q profile disabled, X service tools user ID disabled, and others. Powertech
+# gives the type as the subtype's place in the alphabet (P is 16) or in DETAIL; IBM's CEF doesn't.
+letter = dm["t"]
+letter = IF letter == "" AND sub == 16 THEN "P" ELSE letter
+letter = IF letter == "" AND sub == 21 THEN "U" ELSE letter
+letter = IF letter == "" AND sub == 18 THEN "R" ELSE letter
+letter = IF letter == "" AND sub == 17 THEN "Q" ELSE letter
+letter = IF letter == "" AND sub == 24 THEN "X" ELSE letter
+failureCategory$ = "OTHER_ERROR"
+failureCategory$ = IF letter == "P" OR letter == "U" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF letter == "R" THEN "EXPIRED_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF letter == "Q" OR letter == "X" THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+# IBM's msg says which part was wrong.
+failureCategory$ = IF ibm AND (CONTAINS(msg, "not valid") OR CONTAINS(LOWERCASE(reason), "password")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+m1.key$ = "entry_type"
+m1.value$ = "PW"
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "violation_type"
+m2.value$ = letter
+eventMetadata$.record$ = IF letter != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "job"
+m3.value$ = jobText
+eventMetadata$.record$ = IF jobText != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "job_user"
+m4.value$ = actor
+eventMetadata$.record$ = IF actor != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
