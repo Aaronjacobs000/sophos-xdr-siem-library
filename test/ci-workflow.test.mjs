@@ -156,3 +156,24 @@ test('CI workflow: the scan covers a pull request\'s own commits, or the commits
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('CI workflow: every bridge test server notices shutdown within 0.05 s, so the tests job stays well inside its limit', async () => {
+  // serve_forever looks for a shutdown request every poll_interval, 0.5 s by default, and the bridge
+  // suites start and stop a server in nearly every test. At the default, the shutdowns alone took
+  // most of the tests job's 10 minutes.
+  const { readdir } = await import('node:fs/promises');
+  const limit = Number(/^ {4}timeout-minutes: (\d+)$/m.exec(jobs().tests.join('\n'))[1]);
+  assert.ok(limit <= 10, `tests job limit ${limit}`);
+  let servers = 0;
+  for (const dir of (await readdir(path.join(ROOT, 'bridges'), { withFileTypes: true })).filter((d) => d.isDirectory())) {
+    for (const file of (await readdir(path.join(ROOT, 'bridges', dir.name))).filter((f) => /^test_.*\.py$/.test(f))) {
+      const src = await readFile(path.join(ROOT, 'bridges', dir.name, file), 'utf8');
+      for (const line of src.split('\n').filter((l) => l.includes('serve_forever'))) {
+        servers++;
+        const m = /serve_forever, args=\((\d*\.?\d+),\)/.exec(line);
+        assert.ok(m && Number(m[1]) <= 0.05, `${dir.name}/${file}: ${line.trim()}`);
+      }
+    }
+  }
+  assert.ok(servers >= 100, `found ${servers} test servers`);
+});

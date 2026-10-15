@@ -221,7 +221,7 @@ class Redirects:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -253,7 +253,7 @@ class Sized:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -297,7 +297,7 @@ class CutShort:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -327,7 +327,7 @@ class BridgeTest(unittest.TestCase):
         self.mock = Mock()
         handler = type("H", (Handler,), {"mock": self.mock})
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
         self.tmp = tempfile.TemporaryDirectory()
         self.state = os.path.join(self.tmp.name, "state.json")
