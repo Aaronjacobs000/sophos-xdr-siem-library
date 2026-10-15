@@ -183,12 +183,20 @@ export function compareExpected(results, expected) {
   if (expected.length !== results.length) out.push(`expected.json has ${expected.length} results for ${results.length} sample lines`);
   results.forEach((r, i) => {
     const e = expected[i];
-    if (!e) return;
+    if (i >= expected.length) return;
+    if (!e || typeof e !== 'object' || Array.isArray(e)) { out.push(`line ${r.line}: expected.json has no result for this line`); return; }
     const got = expectedShape(r);
+    const before = out.length;
     if (got.extractor_path !== e.extractor_path) out.push(`line ${r.line}: extractor path is ${JSON.stringify(got.extractor_path)}, expected ${JSON.stringify(e.extractor_path)}`);
     if (got.schema !== e.schema) out.push(`line ${r.line}: schema is ${got.schema}, expected ${e.schema}`);
     if (Boolean(got.error) !== Boolean(e.error)) out.push(`line ${r.line}: ${got.error ? `the emulator raised an error (${r.error})` : 'expected.json records an error, the emulator ran cleanly'}`);
     if (!same(got.normalized, e.normalized ?? null)) out.push(...diffRecords(got.normalized, e.normalized).map((d) => `line ${r.line}: ${d}`));
+    // expected.json isn't scanned like the samples, because it should hold only what the emulator
+    // writes. Anything more, or any other difference, fails.
+    if (out.length === before && !same(got, e)) {
+      const extra = Object.keys(e).filter((k) => !(k in got));
+      out.push(extra.length ? `line ${r.line}: expected.json has fields the emulator doesn't write: ${extra.slice(0, 5).join(', ')}` : `line ${r.line}: expected.json doesn't match the emulator's output. Run tools/update-expected.mjs.`);
+    }
   });
   return out;
 }
