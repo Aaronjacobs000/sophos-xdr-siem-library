@@ -1,0 +1,96 @@
+!SAMPLE={"originalEventTimestamp":"2026-10-15T00:47:30.4410000Z","time":"2026-10-15T00:47:30.4410000Z","resourceId":"/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB","category":"SQLSecurityAuditEvents","operationName":"AuditEvent","properties":{"audit_schema_version":1,"event_time":"2026-10-15T00:47:30.441Z","sequence_number":1,"action_id":"BCM ","action_name":"BATCH COMPLETED","succeeded":"true","is_column_permission":"false","session_id":161,"server_principal_id":0,"database_principal_id":5,"target_server_principal_id":0,"target_database_principal_id":0,"object_id":0,"user_defined_event_id":0,"transaction_id":0,"class_type":"DB","class_type_description":"DATABASE","securable_class_type":"DATABASE","duration_milliseconds":48,"response_rows":1532,"affected_rows":0,"client_tls_version":771,"database_transaction_id":0,"ledger_start_sequence_number":0,"is_local_secondary_replica":"false","client_ip":"192.0.2.25","permission_bitmask":"00000000000000000000000000000000","sequence_group_id":"8E6B1C2D-3A4F-4B5C-9D8E-7F6A5B4C3D2E","session_server_principal_name":"app_web","server_principal_name":"app_web","server_principal_sid":"010600000000006400000000000000004A3B2C1D5E6F70819203A4B5C6D7E8F9","database_principal_name":"app_web","target_server_principal_name":"","target_server_principal_sid":"","target_database_principal_name":"","server_instance_name":"sql-example","database_name":"salesdb","schema_name":"","object_name":"","statement":"SELECT TOP (5000) CustomerID, Email, CardLast4 FROM dbo.Customers WHERE Region = N'APAC'","additional_information":"","user_defined_information":"","application_name":".Net SqlClient Data Provider","connection_id":"5C4B3A29-1807-4F6E-8D5C-4B3A29180706","data_sensitivity_information":"","host_name":"web01","session_context":"","client_tls_version_name":"1.2","external_policy_permissions_checked":"","obo_middle_tier_app_id":"","is_server_level_audit":"true","event_id":"3C4D5E6F-7081-4293-A4B5-C6D7E8F90A1B"},"location":"australiaeast","LogicalServerName":"sql-example","SubscriptionId":"3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b","ResourceGroup":"rg-data"}
+!PARENT=Azure_Monitor_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"category"\s*:\s*"SQLSecurityAuditEvents".*"action_id"\s*:\s*"(?:[^LD"\s][^"\s]*|L(?:[^G"\s][^"\s]*)?|LG(?:[^IO"\s][^"\s]*)?|LGI(?:[^SF"\s][^"\s]*)?|LGI[SF][^"\s]+|LGO[^"\s]+|D(?:[^B"\s][^"\s]*)?|DB(?:[^AL"\s][^"\s]*)?|DBA(?:[^SF"\s][^"\s]*)?|DBA[SF][^"\s]+|DBL[^"\s]+)\s*"|"action_id"\s*:\s*"(?:[^LD"\s][^"\s]*|L(?:[^G"\s][^"\s]*)?|LG(?:[^IO"\s][^"\s]*)?|LGI(?:[^SF"\s][^"\s]*)?|LGI[SF][^"\s]+|LGO[^"\s]+|D(?:[^B"\s][^"\s]*)?|DB(?:[^AL"\s][^"\s]*)?|DBA(?:[^SF"\s][^"\s]*)?|DBA[SF][^"\s]+|DBL[^"\s]+)\s*".*"category"\s*:\s*"SQLSecurityAuditEvents")
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Azure SQL Database, SQL Managed Instance and Synapse SQL auditing (category
+# SQLSecurityAuditEvents), streamed by a diagnostic setting to an event hub that a Sophos NG-SIEM
+# Azure Event Hubs integration reads. Each record of the hub's {"records": [...]} batch reaches
+# the parsers as its own message.
+# Child of the global parser Azure_Monitor_Master, which claims Azure resource log records but
+# keeps these in the generic schema. In Sophos Fusion, turn on Set Global Parent in Parser Script.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+p = "$.properties."
+sensorType$ = "Azure SQL"
+# event_time is UTC; time is when Azure logged the record.
+et = json[p + "event_time"]
+eventTimeUsec$ = IF et != NULL AND et != "" THEN DATETIME(et, "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+# action_id is padded to four characters with spaces.
+aidRaw = STRING(json[p + "action_id"])
+aidm = aidRaw|^\s*(?P<v>\S+)
+aid = aidm["v"]
+ok = STRING(json[p + "succeeded"])
+principal = json[p + "server_principal_name"]
+ip = json[p + "client_ip"]
+db = json[p + "database_name"]
+server = json["$.LogicalServerName"]
+app = json[p + "application_name"]
+client = json[p + "host_name"]
+rid = json["$.resourceId"]
+# resourceId is /SUBSCRIPTIONS/<id>/RESOURCEGROUPS/<group>/PROVIDERS/<provider>/<type>/<name>, with
+# /DATABASES/<name> after a SQL Database server.
+ridParts = rid|(?i)^/SUBSCRIPTIONS/(?P<sub>[^/]+)/RESOURCEGROUPS/(?P<rg>[^/]+)/PROVIDERS/(?P<prov>[^/]+)/(?P<kind>[^/]+)/[^/]+(?:/(?P<kind2>[^/]+)/[^/]+)?
+
+# Every action except logins and logouts goes here, with the action name (such as BATCH COMPLETED)
+# as the event name. The Auth parser takes DBAS, DBAF, LGIS, LGIF, LGO and DBL.
+eventName$ = json[p + "action_name"]
+eventName$ = IF eventName$ == NULL OR eventName$ == "" THEN aid ELSE eventName$
+eventType$ = json["$.category"]
+eventSource$ = "Microsoft.Sql"
+userName$ = principal
+sourceAddress$ = ip
+userAgent$ = app
+recipientAccountId$ = ridParts["sub"]
+targetHostname$ = server
+status$ = IF ok == "true" THEN "succeeded" ELSE "failed"
+
+# The audited object, as database.schema.object.
+schema = STRING(json[p + "schema_name"])
+object = STRING(json[p + "object_name"])
+objectKey$ = IF object != "" AND schema != "" THEN db + "." + schema + "." + object ELSE NULL
+res.resourceId$ = rid
+rtype = IF ridParts["prov"] != "" THEN ridParts["prov"] + "/" + ridParts["kind"] ELSE NULL
+res.resourceType$ = IF ridParts["kind2"] != "" THEN rtype + "/" + ridParts["kind2"] ELSE rtype
+res.resourceAccountId$ = ridParts["sub"]
+resources$ = [res]
+
+q1.key$ = "statement"
+q1.value$ = json[p + "statement"]
+q2.key$ = "database_name"
+q2.value$ = db
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF q1.value$ != NULL AND q1.value$ != "" THEN requestParameters$.record$ + [q1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF db != NULL AND db != "" THEN requestParameters$.record$ + [q2] ELSE requestParameters$.record$
+
+d1.key$ = "action_id"
+d1.value$ = aid
+d2.key$ = "class_type"
+d2.value$ = json[p + "class_type_description"]
+d3.key$ = "session_id"
+d3.value$ = STRING(json[p + "session_id"])
+d4.key$ = "duration_milliseconds"
+d4.value$ = STRING(json[p + "duration_milliseconds"])
+d5.key$ = "response_rows"
+d5.value$ = STRING(json[p + "response_rows"])
+d6.key$ = "affected_rows"
+d6.value$ = STRING(json[p + "affected_rows"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1]
+additionalEventData$.record$ = IF d2.value$ != NULL AND d2.value$ != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ != "" AND d4.value$ != "0" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ != "" AND d5.value$ != "0" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ != "" AND d6.value$ != "0" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "client_host_name"
+d7.value$ = client
+additionalEventData$.record$ = IF client != NULL AND client != "" THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "event_id"
+d8.value$ = json[p + "event_id"]
+additionalEventData$.record$ = IF d8.value$ != NULL AND d8.value$ != "" THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$

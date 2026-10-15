@@ -1,0 +1,339 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025101634000,
+      "event_time_fidelity": "MICRO",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "app_web",
+      "source_address": "192.0.2.25",
+      "target_host_name": "sql-example",
+      "service_name": "salesdb",
+      "application_name": ".Net SqlClient Data Provider",
+      "extra_workstationname": "web01",
+      "session_id": "161",
+      "auth_system": "Azure SQL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "DBAS"
+          },
+          {
+            "key": "subscription_id",
+            "value": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+          },
+          {
+            "key": "resource_id",
+            "value": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB"
+          },
+          {
+            "key": "event_id",
+            "value": "1A2B3C4D-5E6F-4071-8293-A4B5C6D7E8F9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025172002000,
+      "event_time_fidelity": "MICRO",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "sqladmin",
+      "source_address": "203.0.113.50",
+      "target_host_name": "sql-example",
+      "service_name": "salesdb",
+      "application_name": "sqlcmd",
+      "extra_workstationname": "scanner01",
+      "auth_system": "Azure SQL",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "DBAF"
+          },
+          {
+            "key": "subscription_id",
+            "value": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+          },
+          {
+            "key": "resource_id",
+            "value": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB"
+          },
+          {
+            "key": "error_state",
+            "value": "8"
+          },
+          {
+            "key": "event_id",
+            "value": "2B3C4D5E-6F70-4182-93A4-B5C6D7E8F901"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025250441000,
+      "event_time_fidelity": "MICRO",
+      "event_name": "BATCH COMPLETED",
+      "event_type": "SQLSecurityAuditEvents",
+      "event_source": "Microsoft.Sql",
+      "user_name": "app_web",
+      "source_address": "192.0.2.25",
+      "user_agent": ".Net SqlClient Data Provider",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "sql-example",
+      "status": "succeeded",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB",
+          "resource_type": "MICROSOFT.SQL/SERVERS/DATABASES",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "statement",
+            "value": "SELECT TOP (5000) CustomerID, Email, CardLast4 FROM dbo.Customers WHERE Region = N'APAC'"
+          },
+          {
+            "key": "database_name",
+            "value": "salesdb"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "BCM"
+          },
+          {
+            "key": "class_type",
+            "value": "DATABASE"
+          },
+          {
+            "key": "session_id",
+            "value": "161"
+          },
+          {
+            "key": "duration_milliseconds",
+            "value": "48"
+          },
+          {
+            "key": "response_rows",
+            "value": "1532"
+          },
+          {
+            "key": "client_host_name",
+            "value": "web01"
+          },
+          {
+            "key": "event_id",
+            "value": "3C4D5E6F-7081-4293-A4B5-C6D7E8F90A1B"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025282900000,
+      "event_time_fidelity": "MICRO",
+      "event_name": "BATCH COMPLETED",
+      "event_type": "SQLSecurityAuditEvents",
+      "event_source": "Microsoft.Sql",
+      "user_name": "jo.admin@example.com",
+      "source_address": "198.51.100.40",
+      "user_agent": "azdata",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "sql-example",
+      "status": "succeeded",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB",
+          "resource_type": "MICROSOFT.SQL/SERVERS/DATABASES",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "statement",
+            "value": "ALTER ROLE db_owner ADD MEMBER [temp.contractor@example.com];"
+          },
+          {
+            "key": "database_name",
+            "value": "salesdb"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "BCM"
+          },
+          {
+            "key": "class_type",
+            "value": "DATABASE"
+          },
+          {
+            "key": "session_id",
+            "value": "172"
+          },
+          {
+            "key": "duration_milliseconds",
+            "value": "12"
+          },
+          {
+            "key": "client_host_name",
+            "value": "laptop-jo"
+          },
+          {
+            "key": "event_id",
+            "value": "4D5E6F70-8192-43A4-B5C6-D7E8F90A1B2C"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025355120000,
+      "event_time_fidelity": "MICRO",
+      "event_name": "RPC COMPLETED",
+      "event_type": "SQLSecurityAuditEvents",
+      "event_source": "Microsoft.Sql",
+      "user_name": "app_web",
+      "source_address": "192.0.2.25",
+      "user_agent": ".Net SqlClient Data Provider",
+      "recipient_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B",
+      "target_hostname": "sql-example",
+      "status": "succeeded",
+      "resources": [
+        {
+          "resource_id": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB",
+          "resource_type": "MICROSOFT.SQL/SERVERS/DATABASES",
+          "resource_account_id": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "statement",
+            "value": "exec sp_executesql N'UPDATE dbo.Orders SET Status = @p0 WHERE OrderID = @p1',N'@p0 nvarchar(20),@p1 int',@p0=N'Shipped',@p1=40211"
+          },
+          {
+            "key": "database_name",
+            "value": "salesdb"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "RCM"
+          },
+          {
+            "key": "class_type",
+            "value": "DATABASE"
+          },
+          {
+            "key": "session_id",
+            "value": "161"
+          },
+          {
+            "key": "duration_milliseconds",
+            "value": "3"
+          },
+          {
+            "key": "response_rows",
+            "value": "1"
+          },
+          {
+            "key": "affected_rows",
+            "value": "1"
+          },
+          {
+            "key": "client_host_name",
+            "value": "web01"
+          },
+          {
+            "key": "event_id",
+            "value": "5E6F7081-92A3-44B5-86C7-D8E90A1B2C3D"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AZURE_SQL_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Azure SQL",
+      "event_time_usec": 1792025440007000,
+      "event_time_fidelity": "MICRO",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "EXAMPLE\\svc-etl",
+      "source_address": "192.0.2.60",
+      "target_host_name": "sqlmi-example",
+      "service_name": "master",
+      "application_name": "SSIS-Package",
+      "extra_workstationname": "etl01",
+      "session_id": "88",
+      "auth_system": "Azure SQL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "LGIS"
+          },
+          {
+            "key": "subscription_id",
+            "value": "3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B"
+          },
+          {
+            "key": "resource_id",
+            "value": "/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/MANAGEDINSTANCES/SQLMI-EXAMPLE"
+          },
+          {
+            "key": "event_id",
+            "value": "6F708192-A3B4-45C6-97D8-E90A1B2C3D4E"
+          }
+        ]
+      }
+    }
+  }
+]
