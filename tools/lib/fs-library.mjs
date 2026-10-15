@@ -9,16 +9,22 @@ async function exists(p) {
 }
 
 // Reads parsers/<vendor>/<product>. Bad JSON is reported, not thrown, so CI can explain it.
+// Only regular files are read: a symlink or anything else that isn't a plain file is reported
+// and left unread.
 export async function loadEntryFromDir(dir, root = null) {
   const abs = path.resolve(dir);
-  const names = (await readdir(abs, { withFileTypes: true })).map((d) => (d.isDirectory() ? `${d.name}/` : d.name));
   const files = [];
-  for (const n of names) {
-    if (n.endsWith('/')) { files.push({ path: n, content: '' }); continue; }
-    files.push({ path: n, content: await readFile(path.join(abs, n), 'utf8') });
+  const loadProblems = [];
+  for (const d of await readdir(abs, { withFileTypes: true })) {
+    if (d.isDirectory()) { files.push({ path: `${d.name}/`, content: '' }); continue; }
+    if (!d.isFile()) {
+      files.push({ path: d.name, content: '' });
+      loadProblems.push({ level: 'error', code: 'files', message: `${d.name} is not a regular file. Library entries hold plain files only.`, file: d.name });
+      continue;
+    }
+    files.push({ path: d.name, content: await readFile(path.join(abs, d.name), 'utf8') });
   }
   const get = (n) => (files.find((f) => f.path === n) || {}).content;
-  const loadProblems = [];
   let meta = null;
   try { meta = JSON.parse(get('meta.json') ?? 'null'); } catch (e) { loadProblems.push({ level: 'error', code: 'json', message: `meta.json is not valid JSON: ${e.message}`, file: 'meta.json' }); }
   let expected = [];

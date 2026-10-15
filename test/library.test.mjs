@@ -1,7 +1,7 @@
 // Library entries: metadata rules, the sample scan, the issue-form bundle, and the CI script.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, cp, writeFile, readFile, rm, mkdir } from 'node:fs/promises';
+import { mkdtemp, cp, writeFile, readFile, rm, mkdir, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -111,6 +111,20 @@ test('the scan lets service domains, .id properties and versions in URL-encoded 
   assert.deepEqual(kinds('see mail.realcorp.co.id'), ['hostname']);
   assert.deepEqual(kinds('ua=x%20Chrome/192.168.1.1'), ['ip']);
   assert.deepEqual(kinds('ua=x%20Client/125.0.0.0'), ['ip']);
+});
+
+test('an entry file that is a symlink is reported, not followed', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-link-'));
+  const entry = path.join(dir, 'parsers/dnsmasq/dnsmasq');
+  await cp(path.join(ROOT, 'parsers/dnsmasq/dnsmasq'), entry, { recursive: true });
+  await writeFile(path.join(dir, 'elsewhere.txt'), 'TEXT FROM OUTSIDE THE ENTRY\n');
+  await rm(path.join(entry, 'samples.log'));
+  await symlink(path.join(dir, 'elsewhere.txt'), path.join(entry, 'samples.log'));
+  const e = await loadEntryFromDir(entry, dir);
+  await rm(dir, { recursive: true, force: true });
+  assert.ok(e.loadProblems.some((p) => p.level === 'error' && p.file === 'samples.log' && /not a regular file/.test(p.message)), JSON.stringify(e.loadProblems));
+  assert.ok(!e.files.some((f) => f.content.includes('TEXT FROM OUTSIDE')));
+  assert.deepEqual(e.samples, []);
 });
 
 test('CI: an entry whose folder doesn\'t match its vendor and product fails', async () => {
