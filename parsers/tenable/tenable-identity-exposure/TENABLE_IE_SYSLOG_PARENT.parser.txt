@@ -12,7 +12,7 @@
 # matches the field layout after it. type is 0 for an
 # Indicator of Exposure (IoE) deviance, 1 for an AD change, 2 for an Indicator of Attack (IoA)
 # and 3 for a health check. Inner double quotes are escaped as \".
-# Parent: hands IoE deviances and IoA attacks to their ThirdPartyAlert children. AD changes and
+# Parent: hands IoE deviances and IoA attacks to their Thirdparty children. AD changes and
 # health checks stay in the generic schema.
 
 h = originalData$|\[\d+\]:\s"(?P<type>[0-3])"\s"(?P<alertid>\d+)"\s(?P<rest>.*)$

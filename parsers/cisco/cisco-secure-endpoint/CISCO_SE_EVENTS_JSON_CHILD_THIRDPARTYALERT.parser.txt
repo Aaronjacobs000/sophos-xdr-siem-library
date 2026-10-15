@@ -10,7 +10,7 @@
 # Executed malware, Potential Dropper Infection, the "compromise" and "launched a shell" events,
 # Suspected botnet connection, Vulnerable Application Detected, Potential Ransomware and the
 # like) and network detections (DFC Threat Detected), which carry network_info.
-# Child of CISCO_SE_EVENTS_JSON_PARENT: each one to ThirdPartyAlert, with the event type as the
+# Child of CISCO_SE_EVENTS_JSON_PARENT: each one to Thirdparty, with the event type as the
 # title, Cisco's severity (Low, Medium, High, Critical), and the connection for network detections.
 # json, eid, host, user, sev, det, detId, eventType$, sensorType$ and eventTimeUsec$ come from
 # the parent.

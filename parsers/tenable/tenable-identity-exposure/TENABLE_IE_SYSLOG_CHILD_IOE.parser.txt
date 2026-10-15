@@ -6,7 +6,7 @@
 # Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Tenable Identity Exposure syslog alerts.
-# Child of TENABLE_IE_SYSLOG_PARENT: Indicator of Exposure deviances (type 0) to ThirdPartyAlert.
+# Child of TENABLE_IE_SYSLOG_PARENT: Indicator of Exposure deviances (type 0) to Thirdparty.
 # After the common fields come the deviant object's distinguished name, the deviance ID, the
 # profile ID, the reason codename and the event ID, then "name"="value" insertion strings.
 # h, f, forest, domain, code, sev, tail, p1 to p4, alertConfigId, eventType$ and sensorType$

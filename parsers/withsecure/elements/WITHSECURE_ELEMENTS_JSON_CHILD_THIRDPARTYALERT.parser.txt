@@ -12,7 +12,7 @@
 # control blocks, browsing protection, web content control and web traffic scanning, application
 # control, device control, DataGuard, tamper protection, rollback, Collaboration Protection
 # (email, Teams, OneDrive, SharePoint), Exposure Management recommendations and setting changes,
-# to ThirdPartyAlert.
+# to Thirdparty.
 # json, eventId, engine, orgName, orgId, eventType$, sensorType$ and eventTimeUsec$ come from
 # the parent.
 
