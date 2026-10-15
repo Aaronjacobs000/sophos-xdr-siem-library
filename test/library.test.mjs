@@ -346,3 +346,54 @@ test('CI: a pull request that adds a file under bridges/ never merges on its own
   assert.equal(only.report.eligible, false);
   assert.match(only.report.reasons.join('; '), /bridge code/);
 });
+
+test('the scan lets a library vendor\'s own company name through, and only that exact name', () => {
+  const companies = (text, allowNames) => scanText(text, { allowNames }).filter((f) => f.code === 'company').map((f) => f.text);
+  assert.deepEqual(companies('Company: Microsoft Corporation O=Microsoft Corp. signer=Palo Alto Networks Inc', ['Microsoft', 'Palo Alto Networks']), []);
+  assert.deepEqual(companies('Company: Microsoft Corporation', []), ['Microsoft Corporation']);
+  assert.deepEqual(companies('Customer: Initrode Pty Ltd', ['Microsoft']), ['Initrode Pty Ltd']);
+  // Part of a name isn't enough: "isc" is inside Discovery and "rsa" inside Universal, and a
+  // customer's name can hold a vendor's name.
+  for (const name of ['Discovery Holdings Ltd', 'Universal Pty Ltd', 'Microsoft Australia Pty Ltd', 'Bluewave Microsoft Pty Ltd']) {
+    assert.deepEqual(companies(`Customer: ${name}`, ['ISC', 'RSA', 'Microsoft']), [name]);
+  }
+});
+
+test('validateEntry passes the allowed names to the sample scan', async () => {
+  const e = await loadEntryFromDir(path.join(ROOT, 'parsers/microsoft/sysmon'), ROOT);
+  e.samples = e.samples.map((l) => l.replace('Company: -', 'Company: Microsoft Corporation'));
+  e.files = e.files.map((f) => (f.path === 'samples.log' ? { ...f, content: f.content.replace(/Company: -/g, 'Company: Microsoft Corporation') } : f));
+  const companies = (v) => v.problems.filter((p) => p.code === 'company').map((p) => p.message);
+  assert.equal(companies(validateEntry(e, {})).length, 1);
+  assert.deepEqual(companies(validateEntry(e, { allowNames: ['Microsoft'] })), []);
+});
+
+// Puts a company name in the Company field of the Sysmon entry's samples, which belongs to
+// Aaronjacobs000, and writes the expected.json the emulator gives for them.
+async function setSysmonCompany(pr, company) {
+  const dir = path.join(pr, 'parsers/microsoft/sysmon');
+  const f = path.join(dir, 'samples.log');
+  await writeFile(f, (await readFile(f, 'utf8')).replace(/Company: -/g, `Company: ${company}`));
+  const e = await loadEntryFromDir(dir, pr);
+  const { expectedFrom } = await import('../studio/core/library.js');
+  await writeFile(path.join(dir, 'expected.json'), JSON.stringify(expectedFrom(runParsers(e.parsers, e.samples, { now: e.meta.reference_time })), null, 2) + '\n');
+  return ['parsers/microsoft/sysmon/samples.log', 'parsers/microsoft/sysmon/expected.json'];
+}
+
+test('CI: a sample may name a vendor on the base branch, such as Microsoft Corporation, but not a customer', async () => {
+  const vendor = await ciRun((pr) => setSysmonCompany(pr, 'Microsoft Corporation'), 'Aaronjacobs000');
+  assert.equal(vendor.code, 0, JSON.stringify(vendor.report.entries.map((e) => e.problems)));
+  assert.equal(vendor.report.eligible, true, vendor.report.reasons.join('; '));
+  const customer = await ciRun((pr) => setSysmonCompany(pr, 'Initrode Pty Ltd'), 'Aaronjacobs000');
+  assert.equal(customer.code, 1);
+  assert.ok(customer.report.entries[0].problems.some((p) => p.code === 'company'));
+});
+
+test('CI: a pull request can\'t add to the allowed names with a vendor of its own', async () => {
+  // The names come from the base branch, so a vendor that only the pull request adds doesn't count.
+  const { code, report } = await ciRun(async (pr) => [...await addFixtureEntry(pr), ...await setSysmonCompany(pr, 'CI Fixture Pty Ltd')], 'Aaronjacobs000');
+  assert.equal(code, 1);
+  const sysmon = report.entries.find((e) => e.id === 'microsoft/sysmon');
+  assert.ok(sysmon.problems.some((p) => p.code === 'company' && /CI Fixture Pty Ltd/.test(p.message)), JSON.stringify(sysmon.problems));
+  assert.equal(report.eligible, false);
+});
