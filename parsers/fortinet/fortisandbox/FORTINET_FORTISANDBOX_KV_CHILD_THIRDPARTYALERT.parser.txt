@@ -17,7 +17,9 @@
 # and malware or netalert, so the parser takes any of them.
 
 kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
-kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM, and it ends an unquoted value at the next " key=".
+kv = CEF("CEF:0|Fortinet|FortiSandbox|0|kv|kv|0|" + kvm["kv"])
 logId = STRING(kv["logid"])
 sub = LOWERCASE(STRING(kv["subtype"]))
 
