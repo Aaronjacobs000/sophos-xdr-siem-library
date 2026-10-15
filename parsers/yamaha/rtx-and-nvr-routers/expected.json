@@ -1,0 +1,612 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969614000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.5",
+      "source_port": 3186,
+      "destination_port": 445,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "IN"
+          },
+          {
+            "key": "filter_number",
+            "value": "2000"
+          },
+          {
+            "key": "interface",
+            "value": "PP[01]"
+          },
+          {
+            "key": "filter_action",
+            "value": "Rejected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969615000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "destination_address": "192.0.2.1",
+      "protocol": 1,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "IN"
+          },
+          {
+            "key": "filter_number",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "LAN1"
+          },
+          {
+            "key": "filter_action",
+            "value": "Passed"
+          },
+          {
+            "key": "detail",
+            "value": "echo request"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969630000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.26",
+      "destination_address": "192.0.2.1",
+      "source_port": 1039,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "IN"
+          },
+          {
+            "key": "filter_number",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "LAN1"
+          },
+          {
+            "key": "filter_action",
+            "value": "Passed"
+          },
+          {
+            "key": "detail",
+            "value": "(DNS Query [www.example.com])"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969640000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.27",
+      "destination_address": "203.0.113.21",
+      "source_port": 1024,
+      "destination_port": 21,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "OUT"
+          },
+          {
+            "key": "filter_number",
+            "value": "default"
+          },
+          {
+            "key": "interface",
+            "value": "PP[01]"
+          },
+          {
+            "key": "filter_action",
+            "value": "Rejected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969644000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.60",
+      "destination_address": "198.51.100.2",
+      "source_port": 1313,
+      "destination_port": 135,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "NAT"
+          },
+          {
+            "key": "filter_number",
+            "value": "2"
+          },
+          {
+            "key": "interface",
+            "value": "PP[02]"
+          },
+          {
+            "key": "filter_action",
+            "value": "Rejected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969665000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 51073,
+      "destination_port": 21,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1791969614000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dynamic filter connection"
+          },
+          {
+            "key": "filter",
+            "value": "dynamic out"
+          },
+          {
+            "key": "filter_number",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "PP[01]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969667000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.80",
+      "destination_address": "192.0.2.25",
+      "source_port": 20,
+      "destination_port": 51077,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1791969648000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dynamic filter connection"
+          },
+          {
+            "key": "filter",
+            "value": "dynamic out"
+          },
+          {
+            "key": "filter_number",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "PP[01]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969791000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "message": "TCP SYN and FIN",
+      "classification": "TCP SYN and FIN",
+      "log_type": "intrusion detection",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.1",
+      "protocol": 6
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969820000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "message": "Unknown IP protocol",
+      "classification": "Unknown IP protocol",
+      "log_type": "intrusion detection",
+      "source_address": "198.51.100.7",
+      "destination_address": "192.0.2.1"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1791969842000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "uri_host": "malware.example.com",
+      "uri_path": "/download/setup.exe",
+      "source_address": "192.0.2.25",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "url_filter",
+            "value": "LAN1 IN(1) filter"
+          },
+          {
+            "key": "url_filter_action",
+            "value": "Rejected"
+          },
+          {
+            "key": "url",
+            "value": "malware.example.com/download/setup.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792051353000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.44",
+      "target_host_name": "rtx01",
+      "logon_application_family": "TELNET",
+      "auth_system": "Yamaha RTX",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "TELNET"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792051354000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.44",
+      "target_host_name": "rtx01",
+      "logon_application_family": "SSH",
+      "auth_system": "Yamaha RTX",
+      "action": "ACCOUNT",
+      "auth_category": "ACCOUNT_LOCK",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "SSH"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792051510000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "target_user_name": "jsmith",
+      "target_host_name": "rtx01",
+      "logon_application_family": "SSH",
+      "auth_system": "RADIUS",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "SSH"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792051560000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "target_user_name": "jsmith",
+      "target_host_name": "rtx01",
+      "logon_application_family": "HTTP",
+      "auth_system": "Yamaha RTX",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "HTTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792051580000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "target_user_name": "jsmith",
+      "target_host_name": "rtx01",
+      "logon_application_family": "HTTP",
+      "auth_system": "Yamaha RTX",
+      "action": "PRIVILEGE",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "HTTP"
+          },
+          {
+            "key": "administrator_mode",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792052100000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.25",
+      "target_user_name": "jsmith",
+      "target_host_name": "rtx01",
+      "logon_application_family": "HTTP",
+      "auth_system": "Yamaha RTX",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "HTTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792108800000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.51",
+      "destination_address": "192.0.2.5",
+      "source_port": 3190,
+      "destination_port": 445,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "IN"
+          },
+          {
+            "key": "filter_number",
+            "value": "2000"
+          },
+          {
+            "key": "interface",
+            "value": "PP[01]"
+          },
+          {
+            "key": "filter_action",
+            "value": "Rejected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792020000000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx1220-01",
+      "source_address": "203.0.113.5",
+      "destination_address": "192.0.2.1",
+      "source_port": 40122,
+      "destination_port": 23,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "IP filter"
+          },
+          {
+            "key": "filter",
+            "value": "IN"
+          },
+          {
+            "key": "filter_number",
+            "value": "10"
+          },
+          {
+            "key": "interface",
+            "value": "LAN2"
+          },
+          {
+            "key": "filter_action",
+            "value": "Rejected"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 20,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

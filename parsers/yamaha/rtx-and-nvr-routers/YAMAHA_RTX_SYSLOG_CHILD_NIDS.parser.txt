@@ -1,0 +1,31 @@
+!SAMPLE=<13>Oct 14 09:23:11 rtx01 [INSPECT] TCP SYN and FIN 203.0.113.9 > 192.0.2.1
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="intrusion"
+!SCHEMA=scwx.nids
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Yamaha RTX and NVR routers, intrusion detection (ip <interface> intrusion detection),
+# syslog to the data collector (syslog notice on):
+#   [INSPECT] <attack name> <source> > <destination>
+# Child of YAMAHA_RTX_SYSLOG_PARENT: each attack the router detected, to NIDS. The line names no
+# interface, direction or action; the router drops some attacks always and others only with
+# reject=on, so the outcome is left unset.
+# ids, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+name = STRING(ids["name"])
+src = STRING(ids["src"])
+dst = STRING(ids["dst"])
+message$ = name
+classification$ = name
+logType$ = "intrusion detection"
+sourceAddress$ = IF IS_VALID_IP(src) THEN src ELSE NULL
+destinationAddress$ = IF IS_VALID_IP(dst) THEN dst ELSE NULL
+
+# The attack names start with the protocol they concern, such as TCP SYN and FIN or ICMP too large.
+lname = UPPERCASE(name)
+protocol$ = NULL
+protocol$ = IF CONTAINS(lname, "TCP ") THEN 6 ELSE protocol$
+protocol$ = IF CONTAINS(lname, "UDP ") THEN 17 ELSE protocol$
+protocol$ = IF CONTAINS(lname, "ICMP ") THEN 1 ELSE protocol$

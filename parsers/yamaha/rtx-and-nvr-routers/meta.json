@@ -1,0 +1,65 @@
+{
+  "vendor": "Yamaha",
+  "product": "RTX and NVR routers",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.rtpro.yamaha.co.jp/RT/manual/rt-common/setup/syslog_format_type.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/firewall/index.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/ids/index.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/url-filter/index.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/login-radius/index.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/custom-gui/index.html",
+    "https://www.rtpro.yamaha.co.jp/RT/FAQ/Syslog/syslog-messages.html",
+    "https://www.rtpro.yamaha.co.jp/RT/FAQ/IP-Filter/watch-ping-by-pass-log.html",
+    "https://www.rtpro.yamaha.co.jp/RT/FAQ/Security/winny-filter.html",
+    "https://www.rtpro.yamaha.co.jp/RT/FAQ/Security/blaster.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/relnote/Rev.11.01/relnote_11_01_33.txt"
+  ],
+  "notes": "For Yamaha RTX and NVR routers, and FWX120 and SRT100. Add the data collector with syslog host <address>, turn on syslog notice (filter, [INSPECT], intrusion detection and URL filter logs) and keep syslog info on (logins). Set syslog format type rfc3164 or rfc5424 where the firmware has it (RTX1300, RTX1220, RTX1210, RTX830, RTX840, vRX and NVR510 on 2024 or later firmware): the default format sends no time or host name, so those lines keep the ingest time. The rfc3164 time has no zone and is read as UTC; rfc5424 carries the offset. Filters log with reject (reject-log) or pass-log; ip filter dynamic logs a summary of each connection. IP filter and NAT logs (Passed or Rejected at IN, OUT or NAT) go to Netflow with the interface, filter and detail, and [INSPECT] connection summaries go to Netflow as allowed with the start time, the arrow giving which end opened the connection. Intrusion detection lines ([INSPECT] <attack> <src> > <dst>) go to NIDS with the attack name; the line gives no action. URL filter lines go to HTTP with the URL, client and filter. Logins, failures, logouts, administrator mode and lockouts on TELNET, SSH, HTTP, Serial and Remote, local or through RADIUS, go to Auth. IKE and IPsec (debug level only), L2TP, PPP, DPI and config saves aren't covered. How sure this is: the message text comes from Yamaha's Japanese technical docs, FAQ and release notes on Yamaha's RTpro site; the messages themselves are English. The filter, [INSPECT], intrusion detection and RADIUS and HTTP login lines appear there as examples or templates. How the URL filter writes the interface and direction is inferred, and so is the exact text of a local SSH or console login beyond the Syslog FAQ's list. IPv6 filter lines aren't documented and aren't read. Samples are made up in those shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (185 of 186 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (185 of 186 fields, each line taken in 5 of 5 runs). The one difference is the event time of the default-format line, which has none: both take the ingest time, and the emulator's is reference_time. No built-in parser competed for these lines.",
+  "parsers": [
+    {
+      "name": "YAMAHA_RTX_SYSLOG_PARENT",
+      "file": "YAMAHA_RTX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "YAMAHA_RTX_SYSLOG_CHILD_NETFLOW",
+      "file": "YAMAHA_RTX_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "YAMAHA_RTX_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "YAMAHA_RTX_SYSLOG_CHILD_NIDS",
+      "file": "YAMAHA_RTX_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "YAMAHA_RTX_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "YAMAHA_RTX_SYSLOG_CHILD_HTTP",
+      "file": "YAMAHA_RTX_SYSLOG_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "YAMAHA_RTX_SYSLOG_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+      "file": "YAMAHA_RTX_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "YAMAHA_RTX_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}

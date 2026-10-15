@@ -1,0 +1,20 @@
+<13>Oct 14 09:20:14 rtx01 PP[01] Rejected at IN(2000) filter: TCP 203.0.113.50:3186 > 192.0.2.5:445
+<13>Oct 14 09:20:15 rtx01 LAN1 Passed at IN(1) filter: ICMP 192.0.2.25 > 192.0.2.1 : echo request
+<13>Oct 14 09:20:30 rtx01 LAN1 Passed at IN(1) filter: UDP 192.0.2.26:1039 > 192.0.2.1:53 (DNS Query [www.example.com])
+<13>Oct 14 09:20:40 rtx01 PP[01] Rejected at OUT(default) filter: TCP 192.0.2.27:1024 > 203.0.113.21:21
+<13>Oct 14 09:20:44 rtx01 PP[02] Rejected at NAT(2): TCP 203.0.113.60:1313 > 198.51.100.2:135
+<13>Oct 14 09:21:05 rtx01 [INSPECT] PP[01][out][1] TCP 192.0.2.25:51073 > 203.0.113.80:21 (2026/10/14 09:20:14)
+<13>Oct 14 09:21:07 rtx01 [INSPECT] PP[01][out][1] TCP 192.0.2.25:51077 < 203.0.113.80:20 (2026/10/14 09:20:48)
+<13>Oct 14 09:23:11 rtx01 [INSPECT] TCP SYN and FIN 203.0.113.9 > 192.0.2.1
+<13>Oct 14 09:23:40 rtx01 [INSPECT] Unknown IP protocol 198.51.100.7 > 192.0.2.1
+<13>Oct 14 09:24:02 rtx01 [URL FILTER] Rejected at LAN1 IN(1) filter: 192.0.2.25 : malware.example.com/download/setup.exe
+<14>Oct 15 08:02:33 rtx01 Login failed for TELNET: 203.0.113.44
+<14>Oct 15 08:02:34 rtx01 Login access from SSH was restricted. : 203.0.113.44
+<14>Oct 15 08:05:10 rtx01 Login succeeded for SSH via RADIUS: 192.0.2.25 jsmith
+<14>Oct 15 08:06:00 rtx01 Login succeeded for HTTP: 192.0.2.25 jsmith
+<14>Oct 15 08:06:20 rtx01 'administrator' succeeded for HTTP: 192.0.2.25 jsmith
+<14>Oct 15 08:15:00 rtx01 Logout from HTTP: 192.0.2.25 jsmith
+<13>PP[01] Rejected at IN(2000) filter: TCP 203.0.113.51:3190 > 192.0.2.5:445
+<13>1 2026-10-15T08:20:00+09:00 rtx1220-01 - - - - LAN2 Rejected at IN(10) filter: TCP 203.0.113.5:40122 > 192.0.2.1:23
+<14>Oct 15 08:10:41 rtx01 [L2TP] TUNNEL[1] connected from 203.0.113.1
+<15>Oct 15 08:11:00 rtx01 [IKE] initiate ISAKMP phase to 203.0.113.9

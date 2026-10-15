@@ -1,0 +1,55 @@
+!SAMPLE=<13>Oct 14 09:20:14 rtx01 PP[01] Rejected at IN(2000) filter: TCP 203.0.113.50:3186 > 192.0.2.5:445
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|[>\s])(?:(?:\S+\s+)?(?:Passed|Rejected|Restricted) at (?:IN|OUT|NAT|Inbound Filter|Policy Filter)\([^)]*\)(?:\s+filter)?:?\s+\S+\s+\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\s+>\s+|\[INSPECT\]\s+\S.*\s\S+\s+[<>]\s+\S+|\[URL FILTER\]\s+(?:Passed|Rejected) at .+:\s*\S+\s+:\s+\S|Login (?:succeeded|failed) for (?:TELNET|SSH|HTTP|Serial|Remote)(?:\s+via RADIUS)?(?::|\s*$)|Login access from (?:TELNET|SSH|HTTP|Serial|Remote) was restricted\.|Logout from (?:TELNET|SSH|HTTP|Serial|Remote):|'administrator' succeeded for (?:TELNET|SSH|HTTP|Serial|Remote)\b)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Yamaha RTX and NVR routers (and FWX120 and SRT100), syslog to the data collector. The
+# messages are in English whatever the console language. Lines it hands on:
+#   IP filter logs: <interface> Passed|Rejected at IN|OUT(<filter>) filter: <protocol> <src>[:<port>] > <dst>[:<port>] ...
+#     and NAT drops (Rejected at NAT(<n>):)                                          to the Netflow child
+#   [INSPECT] <interface>[in|out][<n>] <protocol> <a>:<port> >|< <b>:<port> (<start>), a dynamic
+#     filter connection that ended                                                    to the Netflow child
+#   [INSPECT] <attack name> <src> > <dst>, intrusion detection                        to the NIDS child
+#   [URL FILTER] Passed|Rejected at <interface> <direction>(<filter>) filter: <client> : <URL> to the HTTP child
+#   Login succeeded|failed for <type>[ via RADIUS]: ..., Logout from <type>: ..., 'administrator'
+#     succeeded for <type>: ..., Login access from <type> was restricted.          to the Auth child
+# Header: syslog format type rfc3164 adds <time> <host>, rfc5424 adds 1 <time> <host> - - - -, and the
+# default (yamaha) sends the message alone, so its lines keep the ingest time. The rfc3164 time has
+# no zone and is read as UTC; the rfc5424 time carries the router's offset.
+
+hdr = originalData$|^(?:<\d{1,3}>)?\s?(?:1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?P<tz>Z|[+-]\d{2}:?\d{2})?\s+(?P<host5>\S+)\s+-\s+-\s+-\s+-\s+|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>[A-Za-z0-9-]+)\s+)?(?P<msg>.*?)\s*$
+msg = STRING(hdr["msg"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Yamaha RTX"
+host = IF hdr["host5"] != "" THEN STRING(hdr["host5"]) ELSE STRING(hdr["host"])
+hostId$ = IF host != "" THEN host ELSE NULL
+iso = STRING(hdr["iso"])
+bsd = STRING(hdr["bsd"])
+# The router's offset, as -0700, for the rfc5424 time and the [INSPECT] start time. Empty when
+# the line doesn't carry one.
+tz = REPLACE(STRING(hdr["tz"]), ":", "")
+tz = IF tz == "Z" THEN "+0000" ELSE tz
+eventTimeUsec$ = IF bsd != "" THEN DATETIME(bsd, "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventTimeUsec$ = IF iso != "" AND tz == "" THEN DATETIME(iso, "2006-01-02T15:04:05.999999999") ELSE eventTimeUsec$
+eventTimeUsec$ = IF iso != "" AND tz != "" THEN DATETIME(iso + tz, "2006-01-02T15:04:05.999999999-0700") ELSE eventTimeUsec$
+
+# IP filter and NAT logs. ICMP lines name no ports and end with the ICMP type; DNS lines with the query.
+flt = msg|^(?:(?P<if>\S+)\s+)?(?P<act>Passed|Rejected|Restricted) at (?P<at>IN|OUT|NAT|Inbound Filter|Policy Filter)\((?P<num>[^)]*)\)(?:\s+filter)?:?\s+(?P<proto>\S+)\s+(?P<src>\d{1,3}(?:\.\d{1,3}){3})(?::(?P<sport>\d+))?\s+>\s+(?P<dst>\d{1,3}(?:\.\d{1,3}){3})(?::(?P<dport>\d+))?(?:\s+(?P<rest>.*))?$
+# Dynamic filter connection summaries, written when the connection ends. "a > b" means a opened the
+# connection to b, and "a < b" that b opened it to a. The time in brackets is when it started.
+insp = msg|^\[INSPECT\]\s+(?P<if>[A-Za-z]+[0-9/.]*(?:\[[^\]]*\])?)\[(?P<dir>in|out)\]\[(?P<num>\d+)\]\s+(?P<proto>\S+)\s+(?P<a>\S+)\s+(?P<arrow>[<>])\s+(?P<b>\S+)\s+\((?P<start>\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2})\)$
+# Intrusion detection: the attack's name, then source > destination.
+ids = msg|^\[INSPECT\]\s+(?P<name>.+?)\s+(?P<src>\S+)\s+>\s+(?P<dst>\S+)$
+url = msg|^\[URL FILTER\]\s+(?P<act>Passed|Rejected) at (?P<where>.+?):\s*(?P<client>\S+)\s+:\s+(?P<url>\S.*)$
+login = msg|^(?:(?P<adm>'administrator')\s+succeeded|Login (?P<res>succeeded|failed)|(?P<out>Logout) from|Login access from) (?:for )?(?P<svc>TELNET|SSH|HTTP|Serial|Remote)\b(?P<rest>.*)$
+
+eventType$ = "other"
+eventType$ = IF flt["act"] != "" THEN "filter" ELSE eventType$
+eventType$ = IF insp["arrow"] != "" THEN "connection" ELSE eventType$
+eventType$ = IF insp["arrow"] == "" AND ids["src"] != "" THEN "intrusion" ELSE eventType$
+eventType$ = IF url["act"] != "" THEN "url" ELSE eventType$
+eventType$ = IF login["svc"] != "" THEN "login" ELSE eventType$
