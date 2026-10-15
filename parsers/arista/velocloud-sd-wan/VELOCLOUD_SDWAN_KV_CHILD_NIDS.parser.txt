@@ -1,0 +1,79 @@
+!SAMPLE=<158>Oct 14 21:23:18 b1-edge1 velocloud.sdwan: ACTION=VCF Alert ATP_ACTION=Drop SEGMENT=0 IN="GE3" PROTO=TCP SRC=198.51.100.77 DST=192.0.2.40 SPT=49822 DPT=445 DEST_DOMAIN=files.example.com FW_POLICY_NAME=Branch Default SEGMENT_NAME=Global Segment SIG_ID=2024218 SIGNATURE=ET EXPLOIT Possible ETERNALBLUE MS17-010 Echo Response CATEGORY=Attempted Administrator Privilege Gain SEVERITY=1 SRC_IP=198.51.100.77 SRC_PORT=49822 TARGET_IP=192.0.2.40 TARGET_PORT=445
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Arista VeloCloud SD-WAN Edge firewall logs over syslog.
+# Child of VELOCLOUD_SDWAN_KV_PARENT: Enhanced Firewall Services IDS/IPS alerts (VCF Alert) to
+# NIDS. Arista's syslog table doesn't list these keys; this child reads the ones the Microsoft
+# Sentinel VMware SD-WAN solution reads (SIG_ID, SIGNATURE, CATEGORY, SEVERITY, ATP_ACTION,
+# SRC_IP, TARGET_IP, DEST_DOMAIN), in any order.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, src, dst, spt, dpt, ipProto, policy, segName, segment, inName, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+sourceAddress$ = IF src["v"] != "" THEN src["v"] ELSE NULL
+destinationAddress$ = IF dst["v"] != "" THEN dst["v"] ELSE NULL
+sourcePort$ = spt["v"]
+destinationPort$ = dpt["v"]
+protocol$ = ipProto
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+sig = kv|\sSIGNATURE=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+cat = kv|\sCATEGORY=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+sigId = kv|\sSIG_ID=(?P<v>\d{1,10})(?:\s|$)
+sev = kv|\sSEVERITY=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+sevNum = sev["v"]|^(?P<n>\d{1,3})$
+atp = kv|\sATP_ACTION=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+message$ = IF sig["v"] != "" THEN sig["v"] ELSE NULL
+classification$ = IF cat["v"] != "" THEN cat["v"] ELSE NULL
+signatureId$ = IF sigId["v"] != "" THEN INT(sigId["v"], 10) ELSE NULL
+priority$ = IF sevNum["n"] != "" THEN INT(sevNum["n"], 10) ELSE NULL
+action$ = IF atp["v"] != "" THEN atp["v"] ELSE NULL
+# IPS mode drops the flow; IDS mode only logs it. Arista doesn't list the ATP_ACTION values.
+atpLower = LOWERCASE(atp["v"])
+blockWord = atpLower|^(?:drop|block|deny|reject|reset)
+blocked$ = IF blockWord[0] != "" THEN 1 ELSE 0
+
+domain = kv|\sDEST_DOMAIN=(?P<v>\S+)
+attacker = kv|\sSRC_IP=(?P<v>[0-9A-Fa-f.:]+)
+attackerPort = kv|\sSRC_PORT=(?P<v>\d+)
+target = kv|\sTARGET_IP=(?P<v>[0-9A-Fa-f.:]+)
+targetPort = kv|\sTARGET_PORT=(?P<v>\d+)
+
+n1.key$ = "vcf_action"
+n1.value$ = "Alert"
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1]
+n2.key$ = "severity"
+n2.value$ = sev["v"]
+eventMetadata$.record$ = IF sev["v"] != "" THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "dest_domain"
+n3.value$ = domain["v"]
+eventMetadata$.record$ = IF domain["v"] != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "attacker_ip"
+n4.value$ = attacker["v"]
+eventMetadata$.record$ = IF attacker["v"] != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "attacker_port"
+n5.value$ = attackerPort["v"]
+eventMetadata$.record$ = IF attackerPort["v"] != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "target_ip"
+n6.value$ = target["v"]
+eventMetadata$.record$ = IF target["v"] != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "target_port"
+n7.value$ = targetPort["v"]
+eventMetadata$.record$ = IF targetPort["v"] != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "firewall_policy"
+n8.value$ = policy["v"]
+eventMetadata$.record$ = IF policy["v"] != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "segment_name"
+n9.value$ = segName["v"]
+eventMetadata$.record$ = IF segName["v"] != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
+n10.key$ = "segment_id"
+n10.value$ = segment["v"]
+eventMetadata$.record$ = IF segment["v"] != "" THEN eventMetadata$.record$ + [n10] ELSE eventMetadata$.record$
+n11.key$ = "in_interface"
+n11.value$ = inName
+eventMetadata$.record$ = IF inName != "" THEN eventMetadata$.record$ + [n11] ELSE eventMetadata$.record$
