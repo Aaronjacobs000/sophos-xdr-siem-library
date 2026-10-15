@@ -8,13 +8,15 @@ export const SCALARS = new Set(['string', 'bool', 'uint32', 'uint64', 'int32', '
 export const INT_TYPES = new Set(['uint32', 'uint64', 'int32', 'int64', 'sint32', 'sint64']);
 
 // The generic schema has no page of its own; the overview lists its common fields. The engine
-// also stores sensorVersion$ as sensor_version (checked in a lab tenant).
+// also stores sensorVersion$ as sensor_version and sensorEventId$ as sensor_event_id (checked in
+// a lab tenant).
 const GENERIC_FIELDS = [
   { name: 'sensor_type', type: 'string', parser: 'sensorType$' },
   { name: 'sensor_id', type: 'string', parser: 'sensorId$' },
   { name: 'host_id', type: 'string', parser: 'hostId$' },
   { name: 'event_time_usec', type: 'uint64', parser: 'eventTimeUsec$' },
   { name: 'sensor_version', type: 'string', parser: 'sensorVersion$', engineOnly: true },
+  { name: 'sensor_event_id', type: 'string', parser: 'sensorEventId$', engineOnly: true },
 ];
 
 export const SCHEMA_IDS = [GENERIC, ...Object.keys(data.schemas)];
@@ -33,10 +35,19 @@ const ENGINE_FIELDS = {
   ],
 };
 
+// Fields in the docs' schema tables that the engine doesn't store: Registry's rule_context is
+// dropped, with no error (checked in a lab tenant). normalize() drops them with a warning.
+const ENGINE_DROPS = {
+  'scwx.registry': new Set(['ruleContext$']),
+};
+
 export function schemaInfo(id) {
   if (id === GENERIC) return { id, name: 'Generic', page: 'https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/#generic-schema', documentedId: true, fields: GENERIC_FIELDS };
   const s = data.schemas[id];
-  return s ? { id, ...s, fields: [...s.fields, ...(ENGINE_FIELDS[id] || [])] } : null;
+  if (!s) return null;
+  const drops = ENGINE_DROPS[id];
+  const fields = drops ? s.fields.map((f) => (drops.has(f.parser) ? { ...f, engineDrops: true } : f)) : s.fields;
+  return { id, ...s, fields: [...fields, ...(ENGINE_FIELDS[id] || [])] };
 }
 
 const fieldIndex = new Map();

@@ -5,6 +5,7 @@ import { runParsers, expectedShape } from '../studio/core/engine.js';
 import { compileGo, checkRe2, groupCount } from '../studio/core/goregex.js';
 import { parseScript } from '../studio/core/language.js';
 import { splitSyslog } from '../studio/core/formats.js';
+import { lintParsers } from '../studio/core/lint.js';
 
 const PARENT = `!CONFIRMWITH=PATTERN
 !CONFIRMSTRING=acmegw\\[\\d+\\]:\\s*\\{"type"
@@ -700,4 +701,65 @@ test('a bad escape in a confirm expression rejects the parser', () => {
   assert.ok(bad.every((r) => r.rejected && /^P line 2: syntax error: confirm expression: \\q inside double quotes/.test(r.error)), bad[0].error);
   const good = runParsers([{ name: 'P', text: '!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=CONTAINS(message, "ZZPROBER8E")\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"' }], lines, { now: NOW });
   assert.equal(good[0].normalized.summary, 'ok');
+});
+
+test('the ingest time is a whole second, as the engine\'s is', () => {
+  // In a lab tenant eventTimeUsec$, ingest_time_usec and event_time_usec were whole seconds on every
+  // line with no plain BSD header (round 11 probes E1 to E3).
+  const text = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"\ntitle$ = STRING(eventTimeUsec$)';
+  for (const line of ['ZZPROBE line', '<134>ZZPROBE line']) {
+    const [r] = runParsers([{ name: 'P', text }], [line], { now: '2026-10-15T10:00:00.678Z' });
+    assert.deepEqual([r.normalized.title, r.normalized.event_time_usec], ['1792058400000000', 1792058400000000], line);
+  }
+  const [live] = runParsers([{ name: 'P', text }], ['ZZPROBE line']);
+  assert.equal(live.normalized.event_time_usec % 1e6, 0);
+});
+
+test('Run Test rejects a parser that reads a variable before a statement sets it, even in an IF branch that isn\'t taken', () => {
+  // What the engine returned in a lab tenant (round 11 probes U1 to U8): a top-level error and no
+  // record for any line, the one that doesn't match included.
+  const run1 = (body, lines = ['ZZPROBE line', 'other line']) => runParsers([{ name: 'P', text: `!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = "ok"\n${body}\ntitle$ = "h=[" + STRING(h) + "]"` }], lines, { now: NOW });
+  for (const [body, error] of [
+    ['h = IF TRUE THEN "a" ELSE hostId$', 'P line 5: variable hostId$ is not set'],
+    ['h = IF TRUE THEN "a" ELSE fooVar', 'P line 5: variable fooVar is not set'],
+    ['h = IF TRUE THEN "a" ELSE UPPERCASE(hostId$)', 'P line 5: variable hostId$ is not set'],
+    ['h = IF TRUE THEN "a" ELSE hostId$\nhostId$ = "x"', 'P line 5: variable hostId$ is not set'],
+    ['r.x$ = "1"\nh = IF TRUE THEN "a" ELSE r.y$', 'P line 6: variable r.y$ is not set'],
+    ['h = hostId$', 'P line 5: variable hostId$ is not set'],
+  ]) {
+    const rs = run1(body);
+    assert.ok(rs.every((r) => r.rejected && r.rejectedFor === 'unset-var' && r.normalized === null && r.extractor_path === null && r.error === error), `${body}: ${JSON.stringify(rs.map((r) => r.error))}`);
+  }
+  // Functions in a branch that isn't taken don't run: CEF() of text with no header is fine there.
+  assert.equal(run1('h = IF FALSE THEN CEF("no header here") ELSE "ok"', ['ZZPROBE line'])[0].normalized.title, 'h=[ok]');
+  // Fields of a record set from a whole value are left to the run, as are the variables of a parser
+  // that the parser imports or the parent sets.
+  assert.ok(!run1('r = ADDFIELD(NULL, "x$", ["1"])\nh = IF TRUE THEN "a" ELSE r.y$', ['ZZPROBE line'])[0].rejected);
+  assert.ok(!run1('q.x$ = "1"\nr.a$ = q\nh = IF TRUE THEN "a" ELSE r.a$.y$', ['ZZPROBE line'])[0].rejected);
+  const lib = { name: 'LIB', text: '!IMPORTONLY\nfromLib = "x"' };
+  assert.equal(runParsers([lib, { name: 'P', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.thirdpartyalert\n!IMPORT=LIB\ntitle$ = fromLib' }], ['ZZPROBE'], { now: NOW })[0].normalized.title, 'x');
+  const parent = { name: 'PARENT', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.generic\nkind = "a"' };
+  const child = (body) => ({ name: 'CHILD', parent: 'PARENT', text: `!CONFIRMWITH=EXPRESSION\n!CONFIRMSTRING=kind == "a"\n!SCHEMA=scwx.thirdpartyalert\n${body}` });
+  assert.equal(runParsers([parent, child('title$ = kind')], ['ZZPROBE'], { now: NOW })[0].normalized.title, 'a');
+  const bad = runParsers([parent, child('title$ = IF TRUE THEN kind ELSE nope')], ['ZZPROBE', 'other'], { now: NOW });
+  assert.ok(bad.every((r) => r.rejected && r.error === 'CHILD line 4: variable nope is not set'));
+  // A child of a global parser may read what that parser sets, which the emulator can't see, so only
+  // a read that runs fails, and only that event.
+  const global = { name: 'CHILD', text: '!PARENT=SNARE_Unsupported\n!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.thirdpartyalert\ntitle$ = IF TRUE THEN "a" ELSE winEventId$' };
+  assert.equal(runParsers([global], ['ZZPROBE'], { now: NOW })[0].normalized.title, 'a');
+  // The lint says why, next to the read.
+  const lint = lintParsers([{ name: 'P', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.thirdpartyalert\nsummary$ = IF TRUE THEN "a" ELSE hostId$' }], { samples: ['ZZPROBE'], now: NOW });
+  const rejected = lint.problems.find((p) => p.code === 'rejected');
+  assert.deepEqual([rejected.parser, rejected.line], ['P', 4]);
+  assert.match(rejected.message, /reads a variable before a statement sets it \(variable hostId\$ is not set\), even in an IF branch that isn't taken/);
+});
+
+test('the engine drops rule_context from Registry events and keeps sensor_event_id in generic ones', () => {
+  // What the engine stored in a lab tenant (round 11 probes F1 and F2).
+  const [reg] = runParsers([{ name: 'P', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.registry\nsensorType$ = "PROBE"\nc1.key$ = "event_type"\nc1.value$ = "SetValue"\nruleContext$ = [c1]\npath$ = "HKLM\\\\SOFTWARE\\\\x"' }], ['ZZPROBE'], { now: NOW });
+  assert.equal(reg.normalized.rule_context, undefined);
+  assert.equal(reg.normalized.path, 'HKLM\\SOFTWARE\\x');
+  assert.ok(reg.notes.some((n) => n.code === 'engine-drops' && n.field === 'rule_context'));
+  const [gen] = runParsers([{ name: 'P', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=ZZPROBE\n!SCHEMA=scwx.generic\nsensorType$ = "PROBE"\nsensorEventId$ = "12"\nhostId$ = "h1"' }], ['ZZPROBE'], { now: NOW });
+  assert.deepEqual([gen.normalized.sensor_event_id, gen.normalized.host_id], ['12', 'h1']);
 });

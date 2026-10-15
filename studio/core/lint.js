@@ -209,10 +209,13 @@ export function lintParsers(parsers, opts = {}) {
   let results = null;
   if (opts.samples && opts.samples.length) {
     results = runParsers(parsers, opts.samples, { now: opts.now });
-    // A syntax error rejects the whole parser, so every line fails the same way: one entry, next to
-    // the syntax error it points at, rather than one per line.
+    // A syntax error, or a read of a variable before it is set, rejects the whole parser, so every
+    // line fails the same way: one entry, next to the line it points at, rather than one per line.
     const rejected = results.filter((r) => r.rejected);
-    if (rejected.length) problems.push({ level: 'error', code: 'rejected', message: 'Run Test rejects the whole parser over this syntax error, so no sample line gets a record.', parser: rejected[0].errorAt.parser, line: rejected[0].errorAt.line, lines: rejected.map((r) => r.line) });
+    const why = rejected.length && rejected[0].rejectedFor === 'unset-var'
+      ? `Run Test rejects the whole parser because it reads a variable before a statement sets it (${rejected[0].error.replace(/^.*?: /, '')}), even in an IF branch that isn't taken, so no sample line gets a record.`
+      : 'Run Test rejects the whole parser over this syntax error, so no sample line gets a record.';
+    if (rejected.length) problems.push({ level: 'error', code: 'rejected', message: why, parser: rejected[0].errorAt.parser, line: rejected[0].errorAt.line, lines: rejected.map((r) => r.line) });
     const seen = new Map();
     for (const r of results) {
       if (r.error && !r.rejected) add('error', 'runtime', `line ${r.line}: ${r.error}`, null);

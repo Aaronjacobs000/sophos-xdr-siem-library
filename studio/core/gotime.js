@@ -100,7 +100,8 @@ export function goParse(layout, value, opts = {}) {
   const chunks = layoutChunks(layout);
   let v = String(value);
   let year = null, month = 1, day = 1, hour = 0, minute = 0, second = 0, nanos = 0, yday = -1;
-  let pm = null, offset = null, zone = null;
+  // utc: the value said UTC or Z. offset: a numeric offset, in minutes. zone: a zone name.
+  let pm = null, offset = null, zone = null, utc = false;
   let hasYear = false;
   for (let k = 0; k < chunks.length; k++) {
     const ch = chunks[k];
@@ -182,14 +183,13 @@ export function goParse(layout, value, opts = {}) {
       case 'MST': {
         const m = /^(UTC|GMT[+-]\d{1,2}|GMT|[A-Z]{3,5})/.exec(v);
         if (!m) throw fail(layout, value, `expected a zone abbreviation at "${v}"`);
-        zone = m[1];
-        if (zone.startsWith('GMT') && zone.length > 3) offset = Number(zone.slice(3)) * 60;
-        else offset = 0; // Go gives an unknown abbreviation a zero offset.
+        if (m[1] === 'UTC') utc = true;
+        else zone = m[1];
         v = v.slice(m[0].length); break;
       }
       default:
         if (std.startsWith('-07') || std.startsWith('Z07')) {
-          if (std[0] === 'Z' && v[0] === 'Z') { offset = 0; zone = 'UTC'; v = v.slice(1); break; }
+          if (std[0] === 'Z' && v[0] === 'Z') { utc = true; v = v.slice(1); break; }
           const shape = std.slice(1);
           const re = shape === '07:00:00' ? /^([+-])(\d{2}):(\d{2}):(\d{2})/ : shape === '070000' ? /^([+-])(\d{2})(\d{2})(\d{2})/
             : shape === '07:00' ? /^([+-])(\d{2}):(\d{2})/ : shape === '0700' ? /^([+-])(\d{2})(\d{2})/ : /^([+-])(\d{2})/;
@@ -231,7 +231,15 @@ export function goParse(layout, value, opts = {}) {
     month = d.getUTCMonth() + 1; day = d.getUTCDate();
   }
   if (at(year).getUTCDate() !== day) throw fail(layout, value, 'day out of range for the month');
-  let ms = at(year).getTime() - (offset ?? 0) * 60000;
+  // Go's time.Parse: UTC or Z in the value wins. Otherwise a numeric offset wins, and a zone name
+  // beside it stays the name: "-0700 MST" is -0700 MST, not +0000 MST. A zone name alone gets a
+  // zero offset, or GMT+3's three hours, since Go can't look up an unknown abbreviation (checked
+  // in a lab tenant: "+1000 AEST" is +1000 AEST, "-0700 UTC" is +0000 UTC).
+  let off = 0;
+  let name = 'UTC';
+  if (!utc && offset !== null) { off = offset; name = zone ?? (offset ? '' : 'UTC'); }
+  else if (!utc && zone !== null) { off = zone.startsWith('GMT') && zone.length > 3 ? Number(zone.slice(3)) * 60 : 0; name = zone; }
+  let ms = at(year).getTime() - off * 60000;
   // With handle2DigitYear the engine sets the year to the current one, whatever the value held:
   // 2019, 19 and no year all become this year, with the month, day, time and zone kept, and Feb 29
   // becomes Mar 1 in a year that has none. When that puts the time more than 48 hours ahead, it
@@ -240,11 +248,11 @@ export function goParse(layout, value, opts = {}) {
   if (opts.handle2DigitYear) {
     const now = opts.now ? new Date(opts.now).getTime() : Date.now();
     const thisYear = new Date(now).getUTCFullYear();
-    ms = at(thisYear).getTime() - (offset ?? 0) * 60000;
-    if (ms - now > 48 * 3600000) ms = at(thisYear - 1).getTime() - (offset ?? 0) * 60000;
+    ms = at(thisYear).getTime() - off * 60000;
+    if (ms - now > 48 * 3600000) ms = at(thisYear - 1).getTime() - off * 60000;
   }
   const usec = ms * 1000 + (opts.handle2DigitYear ? 0 : Math.floor(nanos / 1000));
-  return new TimeValue(usec, offset ?? 0, zone ?? (offset ? '' : 'UTC'));
+  return new TimeValue(usec, off, name);
 }
 
 // DATETIME(data) with no layout: try the common shapes. INFERRED: the docs call the layout

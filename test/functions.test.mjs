@@ -18,8 +18,9 @@ test('SPLIT, with and without makeGreedy', () => {
 test('SPLIT_NAME_VALUES', () => {
   const t = 'data = "User: Unknown, InitiatorPackets: 2, ResponderPackets: 1, InitiatorBytes: 120, ResponderBytes: 66"\ndict = SPLIT_NAME_VALUES(data, ",", ":", "\\\\")\nout = dict["InitiatorBytes"]\nuser = dict["User"]\nmiss = dict["email"]';
   const v = run(t);
-  assert.equal(v.get('out'), '120');
-  assert.equal(v.get('user'), 'Unknown');
+  // Values keep the space after the separator (checked in a lab tenant).
+  assert.equal(v.get('out'), ' 120');
+  assert.equal(v.get('user'), ' Unknown');
   assert.equal(v.get('miss'), null);
   assert.equal(get('d = SPLIT_NAME_VALUES("user=alice,role=admin", ",", "=", "\\\\")\nout = d["role"]', 'out'), 'admin');
   assert.equal(get('d = SPLIT_NAME_VALUES(\'a=1 msg="two words" b=3\', " ", "=", "\\"")\nout = d["msg"]', 'out'), 'two words');
@@ -1041,6 +1042,21 @@ test('CEF resolves cs, cn, flexString and flexNumber labels and keeps \\n as two
   assert.deepEqual(names.map((n, i) => v.get(`o${i}`)), ['abc', '42', 'fs', '7', null, null, null, null, null, '1.5', 'line1\\nline2 back\\slash eq=sign cr\\rx pipe\\|here']);
 });
 
+test('SPLIT_NAME_VALUES keeps the spaces around a value, and only a value that starts and ends with a quote loses it', () => {
+  // What the engine gave in a lab tenant (round 11 probes N1 and N2).
+  const vals = (s, d, sep, q) => Object.fromEntries([...run(`o = SPLIT_NAME_VALUES(s, d, sep, q)`, { s, d, sep, q }).get('o').map]);
+  assert.deepEqual(vals('a: 1;b: 2; c: 3', ';', ':', '\\'), { a: ' 1', b: ' 2', c: ' 3' });
+  assert.deepEqual(vals('a: 1 ;b:2 ; c:   3', ';', ':', '\\'), { a: ' 1 ', b: '2 ', c: '   3' });
+  assert.deepEqual(vals('a:\t1;b: \t2', ';', ':', '\\'), { a: '\t1', b: ' \t2' });
+  assert.deepEqual(vals('a= 1, b= 2', ',', '=', '"'), { a: ' 1', b: ' 2' });
+  assert.deepEqual(vals('a: "x;y";b: 2;c:"p;q"', ';', ':', '"'), { a: ' "x y"', b: ' 2', c: 'p q' });
+  assert.deepEqual(vals('a=x"y;z"w;b=2', ';', '=', '"'), { a: 'x"y z"w', b: '2' });
+  assert.deepEqual(vals('a="x;y"z;b=2', ';', '=', '"'), { a: '"x y"z', b: '2' });
+  assert.deepEqual(vals('a= "x;y" ;b=2', ';', '=', '"'), { a: ' "x y" ', b: '2' });
+  assert.deepEqual(vals('a="x;y" ;b=2', ';', '=', '"'), { a: '"x y" ', b: '2' });
+  assert.deepEqual(vals('a= 1;b= "2"', ';', '=', '"'), { a: ' 1', b: ' "2"' });
+});
+
 test('SPLIT_NAME_VALUES gives a delimiter inside quotes back as a space', () => {
   const v = run('d = SPLIT_NAME_VALUES(s, ",", "=", "\\"")\nmsg = d["msg"]\nc = d["c"]\nf = d["f"]', { s: 'a=1,msg="x, y",b=2,c="p,q,r",f=" lead"' });
   assert.deepEqual([v.get('msg'), v.get('c'), v.get('f')], ['x  y', 'p q r', ' lead']);
@@ -1558,4 +1574,37 @@ test('STRING() of a DATETIME value with a numeric zone writes the offset again a
     const v = run(`t = ${expr}\nx = STRING(t)\nu = STRING(t + 0)`);
     assert.equal(`${v.get('x')}|${v.get('u')}`, want, expr);
   }
+});
+
+test('DATETIME keeps a numeric offset next to a zone name, and a UTC zone name wins over the offset', () => {
+  // What the engine gave in a lab tenant (round 11 probe Z1): STRING() and the microseconds.
+  for (const [value, layout, text, usec] of [
+    ['2026-10-13 22:21:09 -0700 MST', '2006-01-02 15:04:05 -0700 MST', '2026-10-13 22:21:09 -0700 MST', 1791955269000000],
+    ['2026-10-13 22:21:09 +1000 AEST', '2006-01-02 15:04:05 -0700 MST', '2026-10-13 22:21:09 +1000 AEST', 1791894069000000],
+    ['2026-10-13 22:21:09 MST -0700', '2006-01-02 15:04:05 MST -0700', '2026-10-13 22:21:09 -0700 MST', 1791955269000000],
+    ['2026-10-13 22:21:09 -0700 UTC', '2006-01-02 15:04:05 -0700 MST', '2026-10-13 22:21:09 +0000 UTC', 1791930069000000],
+    ['2026-10-13 22:21:09 -0700', '2006-01-02 15:04:05 -0700', '2026-10-13 22:21:09 -0700 -0700', 1791955269000000],
+    ['2026-10-13 22:21:09 MST', '2006-01-02 15:04:05 MST', '2026-10-13 22:21:09 +0000 MST', 1791930069000000],
+    ['2026-10-13T22:21:09+05:30 IST', '2006-01-02T15:04:05Z07:00 MST', '2026-10-13 22:21:09 +0530 IST', 1791910269000000],
+  ]) {
+    const v = run(`t = DATETIME("${value}", "${layout}")\ns = STRING(t)\nu = t + 0`);
+    assert.deepEqual([v.get('s'), v.get('u')], [text, usec], value);
+  }
+});
+
+test('a DATETIME value compares with text that reads as a number, TRUE and FALSE as microseconds, and fails on other text or NULL', () => {
+  // What the engine returned in a lab tenant, one comparison per event (round 11 probes C and C2).
+  const T = 't = DATETIME("2026-10-13T00:00:00Z", "2006-01-02T15:04:05Z07:00")\n';
+  for (const [expr, want] of [
+    ['t > "5"', true], ['t < "5"', false], ['t >= "5"', true], ['t <= "5"', false],
+    ['t > "1791849600000001"', false], ['t < "1791849600000001"', true], ['t >= "1791849600000001"', false], ['t <= "1791849600000001"', true],
+    ['t > TRUE', true], ['t < TRUE', false], ['t >= TRUE', true], ['t <= TRUE', false],
+    ['"5" > t', false], ['"1791849600000001" > t', true], ['TRUE > t', false],
+  ]) assert.equal(get(`${T}x = ${expr}`, 'x'), want, expr);
+  for (const expr of ['t > "abc"', 't < "abc"', 't >= "abc"', 't <= "abc"', 't > NULL', 't < NULL', 't >= NULL', 't <= NULL', '"abc" > t', 'NULL > t']) {
+    assert.throws(() => run(`${T}x = ${expr}`), /unable to compare: cannot convert time to string/, expr);
+  }
+  // TRUE is 1 and FALSE is 0: t is one microsecond after the epoch here.
+  const T1 = 't = DATETIME("1970-01-01T00:00:00.000001Z", "2006-01-02T15:04:05.999999Z07:00")\n';
+  assert.deepEqual(['t > TRUE', 't >= TRUE', 't > FALSE'].map((e) => get(`${T1}x = ${e}`, 'x')), [false, true, true]);
 });

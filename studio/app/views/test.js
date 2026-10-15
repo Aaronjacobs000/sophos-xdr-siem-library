@@ -122,7 +122,7 @@ export function resultCard(r, on, onclick) {
   if (r.error) head.append(pill('error', 'red'));
   else if (r.normalized) head.append(pill(`${r.schema} · ${n} fields`, 'green'));
   else head.append(pill('generic only', 'grey'));
-  card.append(head, h('span', { class: 'path', text: r.extractor_path ? shortPath(r.extractor_path) : r.rejected ? 'syntax error, parser rejected' : 'no parser matched' }));
+  card.append(head, h('span', { class: 'path', text: r.extractor_path ? shortPath(r.extractor_path) : r.rejected ? (r.rejectedFor === 'unset-var' ? 'unset variable, parser rejected' : 'syntax error, parser rejected') : 'no parser matched' }));
   return card;
 }
 
