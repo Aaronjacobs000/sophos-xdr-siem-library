@@ -46,7 +46,8 @@
     "normalized": {
       "sensor_type": "Linux auditd",
       "event_time_usec": 1792025701123000,
-      "host_id": "web01.example.com"
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025701.123:4567"
     }
   },
   {
@@ -96,7 +97,8 @@
     "normalized": {
       "sensor_type": "Linux auditd",
       "event_time_usec": 1792025721500000,
-      "host_id": "web01.example.com"
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025721.500:4610"
     }
   },
   {
@@ -530,7 +532,8 @@
     "normalized": {
       "sensor_type": "Linux auditd",
       "event_time_usec": 1792025831533000,
-      "host_id": "app02.example.com"
+      "host_id": "app02.example.com",
+      "sensor_event_id": "1792025831.533:182"
     }
   },
   {
@@ -540,7 +543,8 @@
     "normalized": {
       "sensor_type": "Linux auditd",
       "event_time_usec": 1792025701123000,
-      "host_id": "web01.example.com"
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025701.123:4567"
     }
   },
   {

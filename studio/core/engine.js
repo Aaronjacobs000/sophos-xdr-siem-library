@@ -108,19 +108,32 @@ function index(base, idx) {
 // <, >, <= and >= compare as floats when both sides are numbers, TRUE or FALSE, or text that
 // reads as a number, so "10" > "9". Anything else compares as text: " 10" > 9 is false and
 // "abc" > 5 is true. NULL reads as "", so NULL < 1 is true and NULL >= 0 is false. A DATETIME
-// value compares as its microseconds with another one or with a number on either side, so t > 5
-// is true (checked in a lab tenant).
+// value compares as its microseconds with another one, a number, TRUE or FALSE, or text that reads
+// as a number, on either side: t > 5, t > "5" and t > TRUE are true. With NULL or other text, the
+// engine fails the event: "unable to compare: cannot convert time to string" (checked in a lab
+// tenant).
 function compare(op, a, b) {
+  const ta = a instanceof TimeValue, tb = b instanceof TimeValue;
+  if ((ta || tb) && [a, b].every((v) => v instanceof TimeValue || v === null || v === undefined || ['number', 'boolean', 'string'].includes(typeof v))) {
+    return cmp(op, timeOperand(a), timeOperand(b));
+  }
   if (a === null || a === undefined) a = '';
   if (b === null || b === undefined) b = '';
-  if (a instanceof TimeValue && b instanceof TimeValue) return cmp(op, a.usec, b.usec);
-  if (a instanceof TimeValue && typeof b === 'number') return cmp(op, a.usec, b);
-  if (typeof a === 'number' && b instanceof TimeValue) return cmp(op, a, b.usec);
   const x = asNumber(a), y = asNumber(b);
   if (x !== null && y !== null) return cmp(op, x, y);
   return cmp(op, toStr(a), toStr(b));
 }
 const cmp = (op, a, b) => (op === '<' ? a < b : op === '>' ? a > b : op === '<=' ? a <= b : a >= b);
+
+// One side of a comparison with a DATETIME value, as a number of microseconds.
+function timeOperand(v) {
+  if (v instanceof TimeValue) return v.usec;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'boolean') return Number(v);
+  const n = parseGoFloat(v);
+  if (n !== null) return n;
+  throw new RuntimeError(`unable to compare: cannot convert time to string. A DATETIME value compares with another DATETIME, a number, TRUE, FALSE or text that reads as a number, not ${v === null || v === undefined ? 'NULL' : JSON.stringify(v)}`, 'time-compare');
+}
 
 // == and != compare a DATETIME value with another one or with a number of microseconds. With
 // anything else, NULL included, the engine fails the event (checked in a lab tenant).
@@ -391,10 +404,74 @@ function firstSyntaxError(compiled) {
   return null;
 }
 
+// Run Test rejects a parser that reads a variable before a statement sets it, wherever the read
+// is: in an IF branch that isn't taken, in a function's argument, or a field of a record that was
+// never set, as r.y$ after only r.x$ = "1". It returns no record for any line, only "variable
+// hostId$ is not set", and a later statement that sets the variable doesn't help (checked in a lab
+// tenant). A child also has the variables its parent sets, and !IMPORT those of the parser it
+// imports. A child of a global parser isn't checked here, since the emulator can't see what that
+// parent sets. Returns {parser, line, message} or null.
+const ROOT_NAMES = ['originalData$', 'message', 'sensorType$', 'sensorId$', 'eventTimeUsec$', 'eventTimeFidelity$'];
+
+function firstUnsetRead(compiled, byName) {
+  for (const p of compiled) {
+    if (p.flags.has('IMPORTONLY') || p.flags.has('DISABLED')) continue;
+    if (p.parent && !byName.has(p.parent)) continue;
+    const scope = { known: new Set(ROOT_NAMES), whole: new Set(ROOT_NAMES), hit: null };
+    if (p.parent) scanReads(byName.get(p.parent), { ...scope, hit: undefined }, byName, 0);
+    scanReads(p, scope, byName, 0);
+    if (scope.hit) return scope.hit;
+  }
+  return null;
+}
+
+// Walks a parser's statements in order: checks each read against the names set so far, then adds
+// the name the statement sets. scope.hit keeps the first read of an unset name; undefined means
+// only collect the names. A value set whole, as r = ... or r.a$ = ..., may be a record whose fields
+// the check can't see, so reads of its fields are left to the run.
+function scanReads(p, scope, byName, depth) {
+  const { known, whole } = scope;
+  const miss = (st, label) => { if (scope.hit === null) scope.hit = { parser: p.name, line: st.line, message: `variable ${label} is not set` }; };
+  const reads = (st, expr) => {
+    const bases = new Set();
+    walk(expr, (n) => {
+      if (n.t !== 'member') return;
+      let b = n;
+      while (b.t === 'member') b = b.e;
+      if (b.t !== 'var') return;
+      bases.add(b);
+      const label = memberLabel(n);
+      const parts = label.split('.');
+      const setWhole = parts.slice(0, -1).some((_, i) => whole.has(parts.slice(0, i + 1).join('.')));
+      if (!known.has(b.name) || (!setWhole && !known.has(label))) miss(st, label);
+    });
+    walk(expr, (n) => { if (n.t === 'var' && !bases.has(n) && !known.has(n.name)) miss(st, n.name); });
+  };
+  const sets = (target) => {
+    const parts = target.split('.');
+    whole.add(target);
+    for (let i = 1; i <= parts.length; i++) known.add(parts.slice(0, i).join('.'));
+  };
+  for (const st of p.script.statements) {
+    if (st.kind === 'import') {
+      const imported = byName.get(st.target);
+      if (imported && depth < 10) scanReads(imported, scope, byName, depth + 1);
+      continue;
+    }
+    if (st.kind === 'capture') {
+      if (st.sourceExpr) reads(st, st.sourceExpr);
+      else if (!known.has(st.source)) miss(st, st.source);
+    } else {
+      reads(st, st.expr);
+    }
+    sets(st.target);
+  }
+}
+
 // parsers: [{name, text, parent?, role?}]; samples: [string]; opts: {now}
 export function runParsers(parsers, samples, opts = {}) {
   const now = opts.now || new Date().toISOString();
-  const nowUsec = Date.parse(now) * 1000;
+  const nowUsec = ingestUsec(now);
   const compiled = parsers.map(compileParser);
   // A syntax error, in a statement or in the confirm expression, makes Run Test reject the whole
   // parser: it returns no records for any line, only the error (checked in a lab tenant).
@@ -407,9 +484,22 @@ export function runParsers(parsers, samples, opts = {}) {
       errorAt: { parser: bad.parser, line: bad.line },
       result: 'Run Test rejects a parser with a syntax error, so no line gets a record.',
       rejected: true,
+      rejectedFor: 'syntax',
     }));
   }
   const byName = new Map(compiled.map((p) => [p.name, p]));
+  const unset = firstUnsetRead(compiled, byName);
+  if (unset) {
+    const where = `${unset.parser} line ${unset.line}`;
+    return samples.map((sample, n) => ({
+      line: n + 1, sample, extractor_path: null, schema: GENERIC, normalized: null, notes: [],
+      error: `${where}: ${unset.message}`,
+      errorAt: { parser: unset.parser, line: unset.line },
+      result: 'Run Test rejects a parser that reads a variable before a statement sets it, even in an IF branch that isn\'t taken, so no line gets a record.',
+      rejected: true,
+      rejectedFor: 'unset-var',
+    }));
+  }
   const active = compiled.filter((p) => !p.flags.has('IMPORTONLY') && !p.flags.has('DISABLED'));
   const childrenOf = new Map();
   const top = [];
@@ -573,6 +663,13 @@ function withEventTime(record, nowUsec, now, notes, parser, kept = false) {
   return record;
 }
 
+// The ingest time in microseconds. The engine's is a whole second, as are ingest_time_usec and
+// eventTimeUsec$ (checked in a lab tenant), so the emulator drops the milliseconds of "now".
+function ingestUsec(now) {
+  const ms = now === undefined ? Date.now() : Date.parse(now);
+  return Math.floor(ms / 1000) * 1e6;
+}
+
 // Fields the engine's root parser fills before any custom parser runs.
 export const ROOT_FIELDS = new Set(['sensor_type', 'sensor_id', 'event_time_usec', 'event_time_fidelity']);
 
@@ -587,7 +684,7 @@ export function rootVars(sample, now) {
   if (rs.time) {
     try { time = goParse('Jan _2 15:04:05', rs.time, { handle2DigitYear: true, now }); } catch { time = null; }
   } else {
-    const usec = (now === undefined ? Date.now() : Date.parse(now)) * 1000;
+    const usec = ingestUsec(now);
     time = Number.isFinite(usec) ? usec : null;
   }
   return [['originalData$', sample], ['message', rs.message], ['sensorType$', 'Generic'], ['sensorId$', rs.host], ['eventTimeUsec$', time], ['eventTimeFidelity$', 'MICRO']];

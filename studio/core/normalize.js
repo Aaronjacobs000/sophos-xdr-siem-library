@@ -283,6 +283,10 @@ export function normalize(vars, schemaId, opts = {}) {
       notes.push({ level: 'warning', code: 'not-a-field', field: name, message: `${name} isn't in the documented ${info.name} field table, so the emulator drops it. The engine's schemas have more fields than the docs list, so Run Test may still store it.` });
       continue;
     }
+    if (field.engineDrops) {
+      notes.push({ level: 'warning', code: 'engine-drops', field: field.name, message: `${name}: the engine doesn't store ${field.name} in ${info.name} events, though the docs list it, so the emulator drops it too` });
+      continue;
+    }
     const val = coerce(value, field, field.name, notes, o);
     if (schemaId === 'scwx.auth' && field.name === 'event_metadata') auth0Codes(val, notes);
     // "" is the protobuf default, so it isn't stored.

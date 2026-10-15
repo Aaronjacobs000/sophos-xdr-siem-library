@@ -253,43 +253,41 @@ export function parseLeef(line, delimiterOverride = null) {
 
 // ---------------------------------------------------------------- name/value pairs
 
-// SPLIT_NAME_VALUES(data, delimiter, separator, quoteChar). Keys and unquoted values are
-// trimmed (docs example: "User: Unknown, InitiatorPackets: 2"). A backslash quote character,
-// as in the docs examples, means values are not quoted. The engine splits on the delimiter
-// before it reads quotes, so each delimiter inside a quoted value comes back as a space:
-// msg="x, y" with delimiter "," gives "x  y" (checked in a lab tenant).
+// SPLIT_NAME_VALUES(data, delimiter, separator, quoteChar). Keys are trimmed, values are not:
+// "a: 1;b: 2" with delimiter ";" and separator ":" gives " 1" and " 2", and so does the docs
+// example "User: Unknown, InitiatorPackets: 2" (" Unknown"). A backslash quote character, as in
+// the docs examples, means values are not quoted. The engine splits on the delimiter before it
+// reads quotes, so each delimiter inside quotes comes back as a space: msg="x, y" with delimiter
+// "," gives "x  y". A quote anywhere in a value protects a delimiter, but only a value that starts
+// and ends with the quote character loses its quotes: a= "x;y" gives ' "x y"' and a=x"y;z"w gives
+// 'x"y z"w' (checked in a lab tenant).
 export function splitNameValues(data, delimiter, separator, quoteChar) {
   if (data === null || data === undefined) return null;
   const s = String(data);
   const d = delimiter || ' ';
   const sep = separator || '=';
   const q = quoteChar && quoteChar !== '\\' ? quoteChar : null;
-  const map = new Map();
-  let i = 0;
-  while (i < s.length) {
-    while (i < s.length && (s.startsWith(d, i) || (d !== ' ' && /\s/.test(s[i])))) i += s.startsWith(d, i) ? d.length : 1;
-    if (i >= s.length) break;
-    const sepAt = s.indexOf(sep, i);
-    const delimAt = s.indexOf(d, i);
-    if (sepAt === -1) break;
-    if (delimAt !== -1 && delimAt < sepAt) { i = delimAt + d.length; continue; }
-    const key = s.slice(i, sepAt).trim();
-    i = sepAt + sep.length;
-    if (d !== ' ') while (i < s.length && s[i] === ' ') i++;
-    let value;
-    if (q && s.startsWith(q, i)) {
-      const close = s.indexOf(q, i + q.length);
-      if (close === -1) { value = s.slice(i + q.length); i = s.length; } else {
-        value = s.slice(i + q.length, close).split(d).join(' ');
-        i = close + q.length;
-        const nd = s.indexOf(d, i);
-        i = nd === -1 ? s.length : nd + d.length;
-      }
-    } else {
-      const end = s.indexOf(d, i);
-      value = (end === -1 ? s.slice(i) : s.slice(i, end)).trim();
-      i = end === -1 ? s.length : end + d.length;
+  const items = [];
+  let item = '';
+  let quoted = false;
+  for (let i = 0; i < s.length;) {
+    if (q && s.startsWith(q, i)) { quoted = !quoted; item += q; i += q.length; continue; }
+    if (s.startsWith(d, i)) {
+      if (quoted) item += ' ';
+      else { items.push(item); item = ''; }
+      i += d.length;
+      continue;
     }
+    item += s[i++];
+  }
+  items.push(item);
+  const map = new Map();
+  for (const it of items) {
+    const at = it.indexOf(sep);
+    if (at === -1) continue;
+    const key = it.slice(0, at).trim();
+    let value = it.slice(at + sep.length);
+    if (q && value.length >= 2 * q.length && value.startsWith(q) && value.endsWith(q)) value = value.slice(q.length, -q.length);
     if (key) map.set(key, value);
   }
   return new ObjValue(map);
