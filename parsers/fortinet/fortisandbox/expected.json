@@ -361,5 +361,23 @@
       "command": "Failed to delete allowlist entry update.example.net",
       "result": "failure: object in use"
     }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792021827000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0103000001",
+      "host_id": "FSA3KE0000000001",
+      "username": "jsmith",
+      "channel": "GUI",
+      "operation_name": "update",
+      "operation": "update",
+      "command": "Remote log server syslog01 changed: port=514 level=information",
+      "result": "success"
+    }
   }
 ]
