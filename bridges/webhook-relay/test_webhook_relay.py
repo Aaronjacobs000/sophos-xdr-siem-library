@@ -16,6 +16,7 @@ import io
 import json
 import logging
 import os
+import socket
 import sys
 import threading
 import time
@@ -394,6 +395,73 @@ class RelayTest(unittest.TestCase):
         with self.assertRaises(r.RelayError) as caught:
             r.load_config(self.env(NGSIEM_INGEST_KEY="key-part-one\nkey-part-two"))
         self.assertNotIn("key-part", str(caught.exception))
+
+    # -------------------------------------------------------------- slow and many connections
+
+    def slow_client(self):
+        """Opens a connection that sends part of a request and stops."""
+        s = socket.create_connection(("127.0.0.1", self.relay.server_address[1]), timeout=5)
+        s.sendall(b"POST /hudu/" + HUDU_SECRET.encode() + b" HTTP/1.1\r\nX-Slow: a")
+        return s
+
+    def test_connections_past_the_limit_get_503_and_slots_come_back(self):
+        self.start(BRIDGE_MAX_CONNECTIONS="2")
+        slow = [self.slow_client() for _ in range(2)]
+        try:
+            self._sleep(0.3)
+            extra = socket.create_connection(("127.0.0.1", self.relay.server_address[1]), timeout=3)
+            try:
+                self.assertTrue(extra.recv(64).startswith(b"HTTP/1.0 503"))
+            finally:
+                extra.close()
+        finally:
+            for s in slow:
+                s.close()
+        self.assertIn("all 2 connections are in use", self.log.getvalue())
+        deadline = time.monotonic() + 5
+        while self.post(f"/hudu/{HUDU_SECRET}", b'{"a": 1}')[0] != 200:
+            self.assertLess(time.monotonic(), deadline, "the slots never came back")
+            self._sleep(0.1)
+        self.assertEqual(self.bodies(), [b'{"a": 1}'])
+
+    def test_a_slow_sender_gets_a_fixed_time_in_all(self):
+        # Each read has its own 30-second timeout, so a sender that trickles bytes would keep a
+        # connection forever. REQUEST_SECONDS bounds the whole request instead.
+        saved = getattr(r, "REQUEST_SECONDS", None)
+        r.REQUEST_SECONDS = 1
+        try:
+            self.start()
+            s = self.slow_client()
+            s.settimeout(0.3)
+            began, ended = time.monotonic(), None
+            try:
+                while time.monotonic() - began < 4:
+                    try:
+                        s.sendall(b"a")
+                        if s.recv(64) is not None:
+                            ended = time.monotonic()
+                            break
+                    except socket.timeout:
+                        continue
+                    except OSError:
+                        ended = time.monotonic()
+                        break
+            finally:
+                s.close()
+        finally:
+            if saved is None:
+                del r.REQUEST_SECONDS
+            else:
+                r.REQUEST_SECONDS = saved
+        self.assertIsNotNone(ended, "the relay kept the slow connection open")
+        self.assertLess(ended - began, 2.5)
+
+    def test_max_connections_is_checked(self):
+        for bad in ("0", "1001", "many"):
+            with self.subTest(bad):
+                with self.assertRaises(r.RelayError):
+                    r.load_config(self.env(BRIDGE_MAX_CONNECTIONS=bad))
+        self.assertEqual(r.load_config(self.env())["max_connections"], 32)
 
     def test_config_is_checked(self):
         bad = {

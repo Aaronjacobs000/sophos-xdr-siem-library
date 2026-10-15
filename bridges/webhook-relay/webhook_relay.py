@@ -19,6 +19,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import io
 import json
 import logging
 import os
@@ -52,6 +53,8 @@ VENDORS = {
     "screenconnect": "path",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
+# A sender gets this long in all, however slowly it sends, for its request line, headers and body.
+REQUEST_SECONDS = 30
 LINE_BREAK = re.compile(rb"\r\n|\r|\n")
 
 
@@ -121,9 +124,11 @@ def load_config(env: dict | None = None) -> dict:
             "port": int(_env(env, "BRIDGE_LISTEN_PORT", "8080")),
             "max_body": int(_env(env, "BRIDGE_MAX_BODY_BYTES", "524288")),
             "deadline": float(_env(env, "BRIDGE_FORWARD_DEADLINE", "8")),
+            "max_connections": int(_env(env, "BRIDGE_MAX_CONNECTIONS", "32")),
         }
     except ValueError:
-        raise RelayError("BRIDGE_LISTEN_PORT, BRIDGE_MAX_BODY_BYTES and BRIDGE_FORWARD_DEADLINE must be numbers") from None
+        raise RelayError("BRIDGE_LISTEN_PORT, BRIDGE_MAX_BODY_BYTES, BRIDGE_FORWARD_DEADLINE and BRIDGE_MAX_CONNECTIONS "
+                         "must be numbers") from None
     secrets = {
         "huntress": _svix_key(_env(env, "HUNTRESS_SIGNING_SECRET")) if _env(env, "HUNTRESS_SIGNING_SECRET") else None,
         "autotask": _shared_secret(env, "AUTOTASK_SECRET_KEY", AUTOTASK_MAX_KEY_CHARS),
@@ -145,6 +150,8 @@ def load_config(env: dict | None = None) -> dict:
         raise RelayError("BRIDGE_MAX_BODY_BYTES must be at least 1024")
     if not 0 < cfg["deadline"] <= 60:
         raise RelayError("BRIDGE_FORWARD_DEADLINE must be more than 0 and at most 60 seconds")
+    if not 1 <= cfg["max_connections"] <= 1000:
+        raise RelayError("BRIDGE_MAX_CONNECTIONS must be between 1 and 1000")
     return cfg
 
 
@@ -307,14 +314,39 @@ class Relay:
 
 # ---------------------------------------------------------------- HTTP server
 
+class _DeadlineReader(io.RawIOBase):
+    """Reads a request from a socket until a deadline. A read past it raises TimeoutError, which
+    the request handler treats as a timed-out request and closes the connection."""
+
+    def __init__(self, sock, deadline: float, per_read: float):
+        self.sock, self.deadline, self.per_read = sock, deadline, per_read
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, buffer) -> int:
+        left = self.deadline - time.monotonic()
+        if left <= 0:
+            raise TimeoutError("the request took too long")
+        self.sock.settimeout(min(left, self.per_read))
+        return self.sock.recv_into(buffer)
+
+
 def _safe_id(value: str | None) -> str:
     return value if value and SAFE_ID.match(value) else "-"
 
 
 class Handler(BaseHTTPRequestHandler):
     relay: Relay = None
-    # Seconds a sender may take to send its headers and body.
+    # Seconds a sender may take over any one read. REQUEST_SECONDS bounds the whole request.
     timeout = 30
+
+    def setup(self):
+        super().setup()
+        # A sender that trickles a byte at a time never hits the per-read timeout, so every read
+        # waits at most the time left of REQUEST_SECONDS, and none starts after it.
+        self.rfile.close()
+        self.rfile = io.BufferedReader(_DeadlineReader(self.connection, time.monotonic() + REQUEST_SECONDS, self.timeout))
 
     def version_string(self) -> str:
         return "webhook-relay"
@@ -364,6 +396,7 @@ class Handler(BaseHTTPRequestHandler):
             LOG.warning("%s: rejected %d bytes from %s, over BRIDGE_MAX_BODY_BYTES", vendor, size, peer)
             return self._reply(413, "body too large")
         body = self.rfile.read(size)
+        self.connection.settimeout(self.timeout)
         if len(body) != size:
             self.close_connection = True
             return self._reply(400, "body shorter than Content-Length")
@@ -383,12 +416,59 @@ class Handler(BaseHTTPRequestHandler):
         self._reply(code, text)
 
 
+class Server(ThreadingHTTPServer):
+    """Handles at most max_connections requests at once, so slow or numerous senders can't use up
+    the relay's threads and file descriptors. A connection past the limit gets 503 and is closed."""
+
+    daemon_threads = True
+
+    def __init__(self, address, handler, max_connections: int):
+        super().__init__(address, handler)
+        self.max_connections = max_connections
+        self.slots = threading.BoundedSemaphore(max_connections)
+        self.busy_logged = None
+
+    def process_request(self, request, client_address):
+        if not self.slots.acquire(blocking=False):
+            self._busy(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self.slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.slots.release()
+
+    def _busy(self, request):
+        try:
+            request.settimeout(1)
+            request.sendall(b"HTTP/1.0 503 Service Unavailable\r\nContent-Type: text/plain; charset=utf-8\r\n"
+                            b"Content-Length: 5\r\nConnection: close\r\n\r\nbusy\n")
+        except OSError:
+            pass
+        self.shutdown_request(request)
+        now = time.monotonic()
+        if self.busy_logged is None or now - self.busy_logged >= 60:
+            self.busy_logged = now
+            LOG.warning("all %d connections are in use; answering 503 to new ones", self.max_connections)
+
+    def handle_error(self, request, client_address):
+        # A sender that hangs up or stops mid-request isn't worth a traceback in the log.
+        if isinstance(sys.exc_info()[1], OSError):
+            LOG.debug("a connection from %s ended early", client_address[0])
+            return
+        super().handle_error(request, client_address)
+
+
 def make_server(cfg: dict, dry_run: bool = False, out=None) -> ThreadingHTTPServer:
     relay = Relay(cfg, dry_run, out)
     handler = type("RelayHandler", (Handler,), {"relay": relay})
-    server = ThreadingHTTPServer((cfg["host"], cfg["port"]), handler)
-    server.daemon_threads = True
-    return server
+    return Server((cfg["host"], cfg["port"]), handler, cfg.get("max_connections", 32))
 
 
 def main(argv: list[str] | None = None) -> int:
