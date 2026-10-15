@@ -1,0 +1,49 @@
+{
+  "vendor": "Netwrix",
+  "product": "Netwrix Auditor",
+  "versions": [
+    "10.9"
+  ],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T04:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.netwrix.com/docs/auditor/10_9/api/retrieveactivityrecords",
+    "https://docs.netwrix.com/docs/auditor/10_9/api/activityrecordreference",
+    "https://docs.netwrix.com/docs/auditor/10_9/api/searchactivityrecords",
+    "https://docs.netwrix.com/docs/auditor/10_9/api/filterreference/filters",
+    "https://docs.netwrix.com/docs/auditor/10_9/configuration/logonactivity/overview",
+    "https://docs.netwrix.com/docs/auditor/10_9/addon/splunk/datamodelmap"
+  ],
+  "notes": "Netwrix Auditor keeps its audit trail on the customer's network and its Integration API is pull only, so these parsers read the activity records the example bridge in bridges/netwrix-auditor-activity-records searches by time and posts to HTTP Ingest. The account needs only the Global reviewer role, or the Reviewer role on the monitoring plans to send. The bridge puts \"netwrix_auditor_record\": \"activity_record\" first; the rest is the record as Netwrix returns it. Successful Logon, Failed Logon and Logoff (Logon Activity, Entra ID, AD FS, SQL Server and VMware) go to Auth: LOGON, FAILURE or LOGOFF, Who split into domain and user, Where as the target host, Workstation as the source address when it is an address and as the workstation name otherwise, and INTERACTIVE for Interactive Logon. Every other record (changes, reads and failed attempts such as Modify (Failed Attempt)) goes to CloudAudit: the action as the event name, the object type as the event type, the data source as the event source, Who as the user, Where as the target host, RID as the sensor event ID, Failed or Success as the status, and read_only for reads. The first five DetailList entries go to request_parameters (Auth: event_metadata) as the property and its value, Before -> After when both are set, or Message; What, the monitoring plan, the item and the workstation go to additional_event_data. Actions are compared in lower case, since Netwrix's tables write some in lower case. When is read as ISO 8601 with its zone. Netwrix's CEF and Windows event log add-ons aren't covered. Samples follow the record shape and fields in Netwrix's Integration API reference and the data source and action names in its docs, with made-up values; the DetailList content of each data source isn't documented, so it is made up too. The parent and each child, combined into one parser, passed Run Test in a lab tenant on 2026-10-16 (127 of 127 fields matched the emulator in each of 3 runs). Each child also passed Run Test as a separate parser under its parent (11 of 11 lines, 127 of 127 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records in 3 Run Tests.",
+  "parsers": [
+    {
+      "name": "NETWRIX_AUDITOR_JSON_PARENT",
+      "file": "NETWRIX_AUDITOR_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NETWRIX_AUDITOR_JSON_CHILD_AUTH",
+      "file": "NETWRIX_AUDITOR_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NETWRIX_AUDITOR_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+      "file": "NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "NETWRIX_AUDITOR_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/netwrix-auditor-activity-records"
+}
