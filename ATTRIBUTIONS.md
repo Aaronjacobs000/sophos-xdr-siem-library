@@ -30,6 +30,7 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 | `parsers/trend-micro/tippingpoint-sms` | Microsoft Sentinel Trend Micro TippingPoint parser: the `UnityOne` device product of the ArcSight CEF Format v4.2; [Cortex XSOAR content](https://github.com/demisto/content) Trend Micro TippingPoint pack: the Space delimiter setting for that format | MIT; MIT |
 | `parsers/forcepoint/forcepoint-dlp` | [Google Security Operations](https://docs.cloud.google.com/chronicle/docs/ingestion/default-parsers/forcepoint-dlp) Forcepoint DLP parser docs: `analyzedBy` and `sourceIp` as keys of their own, where Forcepoint's template shows no space before them | CC BY 4.0 |
 | `parsers/nasuni/edge-appliance` | [Microsoft Sentinel](https://github.com/Azure/Azure-Sentinel) Nasuni solution analytics rules (Ransomware Attack Detected, Ransomware Client Blocked): the opening words of the ransomware detection and mitigation notifications, which Nasuni's docs don't quote | MIT |
+| `parsers/arista/velocloud-sd-wan` | Microsoft Sentinel VMware SD-WAN and SASE solution, the syslog queries in `Analytic Rules/vmw-sdwan-idps-alert-syslog.yaml` and `Workbooks/VMwareSASESOCDashboard.json`: the `VCF Drop` and `VCF Alert` actions and the IDS/IPS alert keys (`SIG_ID`, `SIGNATURE`, `CATEGORY`, `SEVERITY`, `ATP_ACTION`, `SRC_IP`, `TARGET_IP`, `DEST_DOMAIN`), which Arista's syslog table doesn't list | MIT |
 
 ## Code
 
