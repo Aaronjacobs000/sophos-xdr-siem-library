@@ -1,0 +1,419 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969164000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10418",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Release Request Add",
+      "user_name": "jsmith",
+      "user_id": "12",
+      "source_address": "192.0.2.10",
+      "target_hostname": "db01.example.com",
+      "target_user_name": "sa",
+      "status": "success",
+      "read_only": false,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "139",
+          "resource_type": "Release Request"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Requestors"
+          },
+          {
+            "key": "object_type",
+            "value": "Release Request"
+          },
+          {
+            "key": "operation",
+            "value": "Add"
+          },
+          {
+            "key": "target",
+            "value": "Asset:db01.example.com MAccount:sa"
+          },
+          {
+            "key": "details",
+            "value": "Reason: quarterly patching, Duration: 120 minutes"
+          },
+          {
+            "key": "request_id",
+            "value": "139"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10419",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Release Request Approve",
+      "user_name": "kwong",
+      "user_id": "15",
+      "source_address": "192.0.2.11",
+      "target_hostname": "db01.example.com",
+      "target_user_name": "sa",
+      "status": "success",
+      "read_only": false,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "139",
+          "resource_type": "Release Request"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Approvers"
+          },
+          {
+            "key": "object_type",
+            "value": "Release Request"
+          },
+          {
+            "key": "operation",
+            "value": "Approve"
+          },
+          {
+            "key": "target",
+            "value": "Asset:db01.example.com MAccount:sa"
+          },
+          {
+            "key": "request_id",
+            "value": "139"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969330000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10420",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Password Retrieve",
+      "user_name": "jsmith",
+      "user_id": "12",
+      "source_address": "192.0.2.10",
+      "target_hostname": "db01.example.com",
+      "target_user_name": "sa",
+      "status": "success",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "88",
+          "resource_type": "Password"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Requestors"
+          },
+          {
+            "key": "object_type",
+            "value": "Password"
+          },
+          {
+            "key": "operation",
+            "value": "Retrieve"
+          },
+          {
+            "key": "target",
+            "value": "Asset:db01.example.com MAccount:sa"
+          },
+          {
+            "key": "details",
+            "value": "Release #4471, Ticket #CHG0012345, TicketSystem=ServiceNow"
+          },
+          {
+            "key": "request_id",
+            "value": "139"
+          },
+          {
+            "key": "release_id",
+            "value": "4471"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969611000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10421",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Functional Account Add",
+      "user_name": "EXAMPLE\\adm-jdoe",
+      "user_id": "3",
+      "source_address": "192.0.2.12",
+      "target_user_name": "svc_rotate",
+      "status": "success",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "25",
+          "resource_type": "Functional Account"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Administrators"
+          },
+          {
+            "key": "object_type",
+            "value": "Functional Account"
+          },
+          {
+            "key": "operation",
+            "value": "Add"
+          },
+          {
+            "key": "target",
+            "value": "FAccount=svc_rotate FAlias=svc_rotate FDomain=example PFid=25"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969767000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10422",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Managed Account Update",
+      "user_name": "EXAMPLE\\adm-jdoe",
+      "user_id": "3",
+      "source_address": "198.51.100.40",
+      "target_hostname": "db01.example.com",
+      "target_user_name": "sa",
+      "status": "failed",
+      "error_message": "Access denied by Smart Rule",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "88",
+          "resource_type": "Managed Account"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Administrators"
+          },
+          {
+            "key": "object_type",
+            "value": "Managed Account"
+          },
+          {
+            "key": "operation",
+            "value": "Update"
+          },
+          {
+            "key": "target",
+            "value": "Asset:db01.example.com MAccount:sa"
+          },
+          {
+            "key": "details",
+            "value": "Access denied by Smart Rule"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791969903000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "10423",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "System",
+      "event_name": "Session Add",
+      "user_name": "jsmith",
+      "user_id": "12",
+      "source_address": "192.0.2.10",
+      "target_hostname": "srv02.example.com",
+      "target_user_name": "root",
+      "status": "success",
+      "read_only": false,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "5120",
+          "resource_type": "Session"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "role",
+            "value": "Requestors"
+          },
+          {
+            "key": "object_type",
+            "value": "Session"
+          },
+          {
+            "key": "operation",
+            "value": "Add"
+          },
+          {
+            "key": "target",
+            "value": "Asset:srv02.example.com MAccount:root"
+          },
+          {
+            "key": "details",
+            "value": "Protocol: SSH"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "BeyondTrust Password Safe",
+      "sensor_id": "bi01.example.com",
+      "event_time_usec": 1791970200000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "25.2.0",
+      "sensor_event_id": "55120",
+      "event_source": "BeyondTrust Password Safe",
+      "event_type": "Change",
+      "event_name": "Password Change",
+      "target_user_name": "sa",
+      "status": "failed",
+      "error_message": "Password change failed: login failed for functional account",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "88",
+          "resource_type": "Managed Account"
+        },
+        {
+          "resource_id": "41",
+          "resource_type": "Managed System"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "change_reason",
+            "value": "S (scheduled password change)"
+          },
+          {
+            "key": "comment",
+            "value": "Password change failed: login failed for functional account"
+          },
+          {
+            "key": "workgroup",
+            "value": "BeyondTrust Workgroup"
+          },
+          {
+            "key": "next_change_date",
+            "value": "10/15/2026 09:30:00"
+          },
+          {
+            "key": "beyondinsight_address",
+            "value": "192.0.2.5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
