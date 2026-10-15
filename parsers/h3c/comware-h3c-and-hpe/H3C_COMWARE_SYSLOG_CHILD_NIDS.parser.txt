@@ -1,0 +1,95 @@
+!SAMPLE=<187>Oct 15 09:23:55 2026 fw01 %%10ATK/3/ATK_IP4_PORTSCAN: -DevIP=192.0.2.2; SubModule(1127)=SINGLE;RcvIfName(1023)=GigabitEthernet1/0/2;Protocol(1001)=TCP;SrcIPAddr(1003)=203.0.113.99;SndDSLiteTunnelPeer(1041)=--;RcvVPNInstance(1042)=;DstIPAddr(1007)=192.0.2.10;Action(1053)=logging,block-source;BeginTime_c(1011)=20261015092355.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ips"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C SecPath and Comware firewall system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: intrusion prevention and attack defense logs to NIDS.
+#   IPS_IPV4_INTERZONE, IPS_IPV6_INTERZONE: ...;SrcIPAddr(1003)=...;...;AttackName(1088)=...;AttackID(1089)=...;
+#     Category(1090)=...;...;Severity(1087)=...;Action(1053)=...;CVE(1075)=...;...
+#   ATK attack defense messages, such as ATK_IP4_PORTSCAN and ATK_IP4_SYN_FLOOD: ...;SrcIPAddr(1003)=...;
+#     DstIPAddr(1007)=...;Action(1053)=...;BeginTime_c(1011)=...
+# The attack name, or the attack defense message, is the message. Actions that reset, drop or block
+# count as blocked.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# mod, mn, kv, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SrcIPAddr"])
+src = IF src == "" THEN STRING(kv["SrcIPv6Addr"]) ELSE src
+dst = STRING(kv["DstIPAddr"])
+dst = IF dst == "" THEN STRING(kv["DstIPv6Addr"]) ELSE dst
+sourceAddress$ = IF src != "" AND src != "--" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" AND dst != "--" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["SrcPort"])
+destinationPort$ = STRING(kv["DstPort"])
+proto = UPPERCASE(STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+app = STRING(kv["Application"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+user = STRING(kv["UserName"])
+sourceUsername$ = IF user != "" THEN user ELSE NULL
+
+isAtk = mod == "ATK"
+attack = STRING(kv["AttackName"])
+message$ = IF attack != "" THEN attack ELSE mn
+cat = STRING(kv["Category"])
+classification$ = IF isAtk THEN "attack defense" ELSE cat
+classification$ = IF classification$ == "" THEN NULL ELSE classification$
+signatureId$ = STRING(kv["AttackID"])
+act = STRING(kv["Action"])
+action$ = IF act != "" THEN act ELSE NULL
+lact = LOWERCASE(act)
+blocked$ = IF CONTAINS(lact, "reset") OR CONTAINS(lact, "drop") OR CONTAINS(lact, "block") THEN 1 ELSE 0
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+# Comware's severities, as priorities with 1 the highest: critical and high 1, medium 2, low 3.
+sev = UPPERCASE(STRING(kv["Severity"]))
+priority$ = NULL
+priority$ = IF sev == "CRITICAL" OR sev == "HIGH" THEN 1 ELSE priority$
+priority$ = IF sev == "MEDIUM" THEN 2 ELSE priority$
+priority$ = IF sev == "LOW" THEN 3 ELSE priority$
+
+# Keys with no NIDS field go to event_metadata.
+n1.key$ = "log_name"
+n1.value$ = sensorEventId$
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1]
+n2.key$ = "severity"
+n2.value$ = sev
+eventMetadata$.record$ = IF sev != "" THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "source_zone"
+n3.value$ = STRING(kv["SrcZoneName"])
+eventMetadata$.record$ = IF n3.value$ != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "destination_zone"
+n4.value$ = STRING(kv["DstZoneName"])
+eventMetadata$.record$ = IF n4.value$ != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "policy"
+n5.value$ = STRING(kv["PolicyName"])
+eventMetadata$.record$ = IF n5.value$ != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "cve"
+n6.value$ = STRING(kv["CVE"])
+eventMetadata$.record$ = IF n6.value$ != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "sub_category"
+n7.value$ = STRING(kv["SubCategory"])
+eventMetadata$.record$ = IF n7.value$ != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "protected_object"
+n8.value$ = STRING(kv["SubProtection"])
+eventMetadata$.record$ = IF n8.value$ != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "hit_direction"
+n9.value$ = STRING(kv["HitDirection"])
+eventMetadata$.record$ = IF n9.value$ != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
+n10.key$ = "interface"
+n10.value$ = STRING(kv["RcvIfName"])
+eventMetadata$.record$ = IF n10.value$ != "" THEN eventMetadata$.record$ + [n10] ELSE eventMetadata$.record$
+n11.key$ = "attack_begin_time"
+n11.value$ = STRING(kv["BeginTime_c"])
+eventMetadata$.record$ = IF n11.value$ != "" THEN eventMetadata$.record$ + [n11] ELSE eventMetadata$.record$
+n12.key$ = "device_ip"
+n12.value$ = devIp
+eventMetadata$.record$ = IF devIp != "" THEN eventMetadata$.record$ + [n12] ELSE eventMetadata$.record$

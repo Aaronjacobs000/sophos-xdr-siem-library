@@ -1,0 +1,75 @@
+{
+  "vendor": "H3C",
+  "product": "Comware (H3C and HPE)",
+  "versions": [
+    "Comware 7"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.h3c.com/en/Support/Resource_Center/EN/Home/Switches/00-Public/Reference_Guides/Log_Message_References/H3C_Campus_Fixed_Port_Switches_System_Log_Messa-16/?CHID=981747",
+    "https://www.h3c.com/en/Support/Resource_Center/EN/Home/Security/00-Public/Reference_Guides/Log_Message_References/H3C_Security_Products_System_Log_Messages_Refer-29/?CHID=1227560",
+    "https://www.h3c.com/en/d_202405/2142635_294551_0.htm",
+    "https://www.h3c.com/en/d_202407/2220485_294551_0.htm",
+    "https://support.hpe.com/hpesc/public/api/document/c05349961"
+  ],
+  "notes": "Send the system logs to the data collector in the default (non-customized) format at the informational level; the README has the commands. CLI, SSH and web sign-ins, failures and sign-outs, AAA authentication results, and 802.1X and MAC authentication go to Auth; SHELL_CMD command records and CFGMAN_CFGCHANGED to Management Event; SecPath session logs and packet filter matches to Netflow (a deny as blocked); IPS and ATK attack defense logs to NIDS; URL filtering matches to HTTP; antivirus detections to Antivirus. Other messages of the claimed modules stay generic. The Keyword(ID)=Value pairs of firewall logs are read with the IDs taken off. The time is read in the date, iso (with or without a zone) and no-year-date log host formats; times without a zone are read as UTC. How sure this is: the header, the location element and the message templates come from H3C's Campus Fixed-Port Switches and Security Products System Log Messages References and its information center and fast log output guides, and from HPE's FlexFabric 5950 System Log Messages Reference, which documents the same format for HPE Comware. H3C shows fast log output's header but not the message after it, so a fast log line is read as the header followed by the message as the references show it; that part is inferred. IPS_IPV4_INTERZONE is documented for fast log output only. The CMCC, SGCC and Unicom formats aren't read, and fast log output defaults to GB18030, so set UTF-8. Event IDs other than (8) Session created aren't documented. Samples are made up from the templates. The parsers passed Run Test in a lab tenant on 2026-10-16: each child combined with the parent into one parser (294 of 294 fields matched the emulator in each of 3 runs), and each child as a separate parser under its parent (290 of 290 fields, each line taken in 5 of 5 runs, and the parent-only line matched). No built-in parser claimed these lines in 3 runs.",
+  "parsers": [
+    {
+      "name": "H3C_COMWARE_SYSLOG_PARENT",
+      "file": "H3C_COMWARE_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_AUTH",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_MGMT",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_NETFLOW",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_NIDS",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_HTTP",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "H3C_COMWARE_SYSLOG_CHILD_ANTIVIRUS",
+      "file": "H3C_COMWARE_SYSLOG_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "H3C_COMWARE_SYSLOG_PARENT",
+      "schema": "scwx.antivirus"
+    }
+  ]
+}

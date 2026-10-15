@@ -1,0 +1,99 @@
+!SAMPLE=<189>Oct 15 09:13:05 2026 sw01 %%10LOGIN/5/LOGIN_FAILED: -DevIP=192.0.2.1; admin failed to log in from 198.51.100.23.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C and HPE Comware system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: sign-ins, failures, sign-outs and network access authentication to Auth.
+#   SHELL_LOGIN, SHELL_LOGOUT:  <user> logged in from|logged out from <line or address>[, reason: <reason>].
+#   LOGIN_FAILED:               <user> failed to log in from <line or address>.
+#   LOGIN_INVALID_USERNAME_PWD: Invalid username or password from <line or address>.
+#   SSHS_AUTH_SUCCESS:          SSH user <user> from <address> port <port> passed <method> authentication.
+#   SSHS_AUTH_FAIL:             SSH user <user> (IP: <address>) didn't pass <method> authentication[ for <reason>].
+#   SSHS_LOG:                   Authentication|Authorization failed for user <user> from <address> port <port>[ because of <reason>].
+#   WEB LOGIN, LOGIN_FAILED, LOGOUT: <user> logged in from|failed to log in from|logged out from <address>.
+#   AAA_SUCCESS, AAA_FAILURE (AAAType AUTHEN): -AAAType=...-AAADomain=...-Service=...-UserName=...; AAA succeeded|failed.
+#   DOT1X_LOGIN_SUCC, DOT1X_LOGIN_FAILURE, MACA_LOGIN_SUCC, MACA_LOGIN_FAILURE:
+#     -IfName=...-MACAddr=...-...-Username=...; User passed|failed ... authentication[. Reason: <reason>].
+# mod, mn, body, aaa, host, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+inOk = body|^(?P<user>.+?) logged in from (?P<from>\S+?)\.?$
+outOk = body|^(?P<user>.+?) logged out from (?P<from>[^,\s]+?)(?:, reason: (?P<why>.*?))?\.?$
+bad = body|^(?P<user>.+?) failed to log ?in from (?P<from>\S+?)\.?$
+invalid = body|^Invalid username or password from (?P<from>\S+?)\.?$
+sshOk = body|^SSH user (?P<user>.+?) from (?P<from>\S+) port (?P<port>\d+) passed (?P<meth>\S+) authentication
+sshKey = body|^SSH user (?P<user>.+?) \(IP: (?P<from>[^)]+)\) didn't pass (?P<meth>.+?) authentication(?: for (?P<why>.*?))?\.?$
+sshBad = body|^(?P<what>Authentication|Authorization) failed for user (?P<user>.+?) from (?P<from>\S+) port (?P<port>\d+)(?: because of (?P<why>.*?))?\.?$
+nac = body|^-IfName=(?P<if>.*?)-MACAddr=(?P<mac>[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4})-(?:AccessVLANID=(?P<vlan>[^-;]*)-AuthorizationVLANID=[^-;]*|VLANID=(?P<vlan2>[^-;]*))-Username=(?P<user>.*?)(?:-UsernameFormat=[^;]*|-ErrCode=(?P<err>[^;]*))?;\s*(?P<text>.*)$
+nacWhy = body|Reason: (?P<why>.*?)\.?$
+
+isAaa = mod == "AAA"
+isNac = mod == "DOT1X" OR mod == "MACA"
+user = STRING(inOk["user"]) + STRING(outOk["user"]) + STRING(bad["user"]) + STRING(sshOk["user"]) + STRING(sshKey["user"]) + STRING(sshBad["user"])
+user = IF isAaa THEN STRING(aaa["user"]) ELSE user
+user = IF isNac THEN STRING(nac["user"]) ELSE user
+targetUserName$ = IF user != "" AND user != "**" THEN user ELSE NULL
+from = STRING(inOk["from"]) + STRING(outOk["from"]) + STRING(bad["from"]) + STRING(invalid["from"]) + STRING(sshOk["from"]) + STRING(sshKey["from"]) + STRING(sshBad["from"])
+ipLike = from|^(?P<ip>[0-9A-Fa-f:]*[0-9A-Fa-f][.:][0-9A-Fa-f.:]+)$
+sourceAddress$ = IF STRING(ipLike["ip"]) != "" THEN ipLike["ip"] ELSE NULL
+port = STRING(sshOk["port"]) + STRING(sshBad["port"])
+sourcePortNumber$ = IF port != "" THEN port ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+targetAddress$ = IF devIp != "" THEN devIp ELSE NULL
+
+kind = "CLI"
+kind = IF mod == "SSHS" THEN "SSH" ELSE kind
+kind = IF mod == "WEB" THEN "Web" ELSE kind
+kind = IF isAaa THEN "AAA " + STRING(aaa["svc"]) ELSE kind
+kind = IF mod == "DOT1X" THEN "802.1X" ELSE kind
+kind = IF mod == "MACA" THEN "MAC authentication" ELSE kind
+logonApplicationFamily$ = kind
+authSystem$ = "Comware " + kind
+
+logout = mn == "SHELL_LOGOUT" OR mn == "LOGOUT"
+success = mn == "SHELL_LOGIN" OR mn == "LOGIN" OR mn == "SSHS_AUTH_SUCCESS" OR logout OR mn == "DOT1X_LOGIN_SUCC" OR mn == "MACA_LOGIN_SUCC"
+success = success OR (isAaa AND aaa["res"] == "succeeded")
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+why = STRING(sshKey["why"]) + STRING(sshBad["why"]) + STRING(nacWhy["why"])
+why = IF why == "" AND STRING(sshBad["what"]) == "Authorization" THEN "Authorization failed" ELSE why
+why = IF why == "" AND STRING(sshKey["meth"]) != "" THEN "Didn't pass " + sshKey["meth"] + " authentication" ELSE why
+why = IF why == "" AND mn == "LOGIN_INVALID_USERNAME_PWD" THEN "Invalid username or password" ELSE why
+extraFailurereason$ = IF NOT success AND why != "" THEN why ELSE NULL
+lwhy = LOWERCASE(why)
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND (CONTAINS(lwhy, "password") OR CONTAINS(lwhy, "public key")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+# The line, sign-in method, interface, client MAC, VLAN, AAA domain and error code go to event_metadata.
+k1.key$ = "log_name"
+k1.value$ = sensorEventId$
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [k1]
+k2.key$ = "line"
+k2.value$ = IF STRING(ipLike["ip"]) == "" THEN from ELSE ""
+eventMetadata$.record$ = IF k2.value$ != "" THEN eventMetadata$.record$ + [k2] ELSE eventMetadata$.record$
+k3.key$ = "authentication_method"
+k3.value$ = STRING(sshOk["meth"]) + STRING(sshKey["meth"])
+eventMetadata$.record$ = IF k3.value$ != "" THEN eventMetadata$.record$ + [k3] ELSE eventMetadata$.record$
+k4.key$ = "interface"
+k4.value$ = STRING(nac["if"])
+eventMetadata$.record$ = IF k4.value$ != "" THEN eventMetadata$.record$ + [k4] ELSE eventMetadata$.record$
+k5.key$ = "client_mac"
+k5.value$ = STRING(nac["mac"])
+eventMetadata$.record$ = IF k5.value$ != "" THEN eventMetadata$.record$ + [k5] ELSE eventMetadata$.record$
+k6.key$ = "vlan"
+k6.value$ = STRING(nac["vlan"]) + STRING(nac["vlan2"])
+eventMetadata$.record$ = IF k6.value$ != "" THEN eventMetadata$.record$ + [k6] ELSE eventMetadata$.record$
+k7.key$ = "aaa_domain"
+k7.value$ = STRING(aaa["domain"])
+eventMetadata$.record$ = IF isAaa AND k7.value$ != "" THEN eventMetadata$.record$ + [k7] ELSE eventMetadata$.record$
+k8.key$ = "error_code"
+k8.value$ = STRING(nac["err"])
+eventMetadata$.record$ = IF k8.value$ != "" THEN eventMetadata$.record$ + [k8] ELSE eventMetadata$.record$
+k9.key$ = "logout_reason"
+k9.value$ = STRING(outOk["why"])
+eventMetadata$.record$ = IF k9.value$ != "" THEN eventMetadata$.record$ + [k9] ELSE eventMetadata$.record$

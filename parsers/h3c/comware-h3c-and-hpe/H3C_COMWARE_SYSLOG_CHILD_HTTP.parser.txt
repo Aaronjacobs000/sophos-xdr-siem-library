@@ -1,0 +1,67 @@
+!SAMPLE=<190>Oct 15 09:22:40 2026 fw01 %%10UFLT/6/UFLT_MATCH_IPV4_LOG: -DevIP=192.0.2.2; Protocol(1001)=TCP;Application(1002)=http;URL(1093)=bad.example.com/download;URLCategory(1094)=Malware;PolicyName(1079)=policy1;SrcIPAddr(1003)=192.0.2.25;SrcPort(1004)=50444;DstIPAddr(1007)=203.0.113.90;DstPort(1008)=80;SrcZoneName(1025)=Trust;DstZoneName(1035)=Untrust;UserName(1113)=jsmith;Action(1053)=Drop;VlanID(1175)=400;VNI(1213)=--;SrcLocation(1209)=;DstLocation(1214)=;SrcMacAddr(1021)=00-00-5e-00-53-25;DstMacAddr(1022)=00-00-5e-00-53-01;
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="url"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C SecPath and Comware firewall system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: URL filtering matches to HTTP.
+#   UFLT_MATCH_IPV4_LOG, UFLT_MATCH_IPV6_LOG: Protocol(1001)=...;Application(1002)=...;URL(1093)=<host and path>;
+#     URLCategory(1094)=...;PolicyName(1079)=...;SrcIPAddr(1003)=...;...;UserName(1113)=...;Action(1053)=...;...
+# The URL has no scheme; its host and path are split. Block-Source, Drop and Reset count as blocked.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SrcIPAddr"])
+src = IF src == "" THEN STRING(kv["SrcIPv6Addr"]) ELSE src
+dst = STRING(kv["DstIPAddr"])
+dst = IF dst == "" THEN STRING(kv["DstIPv6Addr"]) ELSE dst
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["SrcPort"])
+destinationPort$ = STRING(kv["DstPort"])
+proto = UPPERCASE(STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+app = STRING(kv["Application"])
+l7Protocol$ = IF app != "" THEN app ELSE NULL
+user = STRING(kv["UserName"])
+sourceUsername$ = IF user != "" THEN user ELSE NULL
+smac = STRING(kv["SrcMacAddr"])
+dmac = STRING(kv["DstMacAddr"])
+sourceMac$ = IF smac != "" THEN smac ELSE NULL
+destinationMac$ = IF dmac != "" THEN dmac ELSE NULL
+url = STRING(kv["URL"])
+u = url|^(?P<host>[^/]+)(?P<path>/.*)?$
+uriHost$ = IF STRING(u["host"]) != "" THEN u["host"] ELSE NULL
+uriPath$ = IF STRING(u["path"]) != "" THEN u["path"] ELSE NULL
+act = LOWERCASE(STRING(kv["Action"]))
+stop = CONTAINS(act, "drop") OR CONTAINS(act, "reset") OR CONTAINS(act, "block")
+blocked$ = IF stop THEN 1 ELSE 0
+sensorTypeActions$ = IF stop THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+
+# Keys with no HTTP field go to event_metadata.
+w1.key$ = "url_category"
+w1.value$ = STRING(kv["URLCategory"])
+w2.key$ = "action"
+w2.value$ = STRING(kv["Action"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [w1, w2]
+w3.key$ = "policy"
+w3.value$ = STRING(kv["PolicyName"])
+eventMetadata$.record$ = IF w3.value$ != "" THEN eventMetadata$.record$ + [w3] ELSE eventMetadata$.record$
+w4.key$ = "source_zone"
+w4.value$ = STRING(kv["SrcZoneName"])
+eventMetadata$.record$ = IF w4.value$ != "" THEN eventMetadata$.record$ + [w4] ELSE eventMetadata$.record$
+w5.key$ = "destination_zone"
+w5.value$ = STRING(kv["DstZoneName"])
+eventMetadata$.record$ = IF w5.value$ != "" THEN eventMetadata$.record$ + [w5] ELSE eventMetadata$.record$
+w6.key$ = "vlan"
+w6.value$ = STRING(kv["VlanID"])
+eventMetadata$.record$ = IF w6.value$ != "" AND w6.value$ != "--" THEN eventMetadata$.record$ + [w6] ELSE eventMetadata$.record$
+w7.key$ = "device_ip"
+w7.value$ = devIp
+eventMetadata$.record$ = IF devIp != "" THEN eventMetadata$.record$ + [w7] ELSE eventMetadata$.record$
