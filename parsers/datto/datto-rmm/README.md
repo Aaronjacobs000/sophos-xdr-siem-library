@@ -32,4 +32,4 @@ See `bridges/datto-rmm-activity-logs`. It posts each Activity Log record unchang
 
 ## Not checked against a live account
 
-Whether Datto RMM escapes quotes and backslashes in the values it puts into the payload (its own Teams template puts `[alert_message_en]` inside a JSON string, so the parser assumes it does), the full list of activity categories and actions, and the format of the `details` text. Compare a test webhook and a few collected records with `samples.log` before you rely on them.
+Three things haven't been checked: whether Datto RMM escapes quotes and backslashes in the values it puts into the payload (its own Teams template puts `[alert_message_en]` inside a JSON string, so the parser assumes it does), the full list of activity categories and actions, and the format of the `details` text. Compare a test webhook and a few collected records with `samples.log` before you rely on them.
