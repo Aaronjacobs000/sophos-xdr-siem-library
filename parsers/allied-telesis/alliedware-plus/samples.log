@@ -1,0 +1,16 @@
+<174>Oct 14 09:26:34 ar4050s ulogd[432]: Firewall rule 10: DENY IN=eth1 OUT=vlan1 MAC=00:00:5e:00:53:01:00:00:5e:00:53:02:08:00 SRC=198.51.100.23 DST=192.0.2.10 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=54219 DF PROTO=TCP SPT=51514 DPT=3389 WINDOW=64240 RES=0x00 SYN URGP=0
+<174>2026-10-14T09:27:01+13:00 ar3050s-akl ulogd[440]: Firewall: DENY in policy IN=eth1 OUT=vlan1 SRC=203.0.113.50 DST=192.0.2.20 LEN=40 TOS=0x00 PREC=0x00 TTL=52 ID=1201 PROTO=TCP SPT=40000 DPT=23 WINDOW=1024 RES=0x00 SYN URGP=0
+<174>Oct 14 09:27:40 ar4050s ulogd[432]: Firewall: DENY probe FIN IN=eth1 OUT=vlan1 MAC=00:00:5e:00:53:01:00:00:5e:00:53:03:08:00 SRC=203.0.113.61 DST=192.0.2.21 LEN=40 TOS=0x00 PREC=0x00 TTL=63 ID=54219 PROTO=TCP SPT=6000 DPT=21 WINDOW=512 RES=0x00 UG PSH FIN URGP=0
+<174>Oct 14 09:27:52 ar4050s ulogd[432]: Firewall rule 20: PERMIT IN= OUT=eth1 SRC=198.51.100.2 DST=203.0.113.1 LEN=84 TOS=0x00 PREC=0x00 TTL=64 ID=7935 DF PROTO=ICMP TYPE=8 CODE=0 ID=2406 SEQ=1
+<174>Oct 14 09:28:03 ar4050s ulogd[432]: DENY SYNLIMIT reach. IN=eth1 OUT=vlan1 SRC=203.0.113.70 DST=192.0.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=50 ID=3301 PROTO=TCP SPT=45810 DPT=443 WINDOW=1024 RES=0x00 SYN URGP=0
+<174>Oct 14 09:28:09 ar4050s ulogd[432]: Firewall rule 30: REJECT IN=vlan1 OUT=eth1 SRC=192.0.2.45 DST=203.0.113.53 LEN=72 TOS=0x00 PREC=0x00 TTL=63 ID=21102 PROTO=UDP SPT=53112 DPT=53 LEN=52 MARK=0x1053
+<174>Oct 14 09:28:15 ar4050s ulogd[432]: END proto=TCP orig_src=192.0.2.45 orig_dst=203.0.113.80 orig_sport=55532 orig_dport=443 orig_pkts=12 orig_bytes=1840 reply_src=203.0.113.80 reply_dst=198.51.100.2 reply_sport=443 reply_dport=55532 reply_pkts=10 reply_bytes=9120
+<174>Oct 14 09:28:20 ar4050s ulogd[432]: NEW proto=ICMP orig_src=192.0.2.46 orig_dst=203.0.113.1 reply_src=203.0.113.1 reply_dst=198.51.100.2
+<12>Oct 14 09:35:02 ar4050s UTM[1567]: Web_Control: BLOCK http://malware.example.com/download/setup.exe requested by 192.0.2.45 Malware, 3
+<12>Oct 14 09:35:40 ar4050s UTM[1567]: Web_Control: ALLOW https://news.example.org/world?page=2 requested by 192.0.2.47 News,Social Networking, 7
+<12>Oct 14 09:36:20 ar4050s UTM[1567]: antivirus:Virus EICAR-Test-File detected in http://files.example.com/eicar.com to 192.0.2.45
+<13>Oct 14 09:40:02 ar4050s IMISH[3883]: [manager@ttyS0]no log host 192.0.2.250
+<13>2026-10-14T09:41:15+13:00 x530-sw01 IMISH[2670]: [jsmith@vty1]copy running-config startup-config
+<85>Oct 14 09:30:12 x530-sw02 login[2211]: pam_unix(vty0:auth): authentication failure; logname= uid=0 euid=0 tty=vty0 ruser= rhost=198.51.100.7 user=jsmith
+<13>Oct 14 09:42:20 x930-core IMISH[676]: show log
+<14>Oct 14 09:36:50 ar4050s UTM[1567]: antivirus: No virus detected in http://files.example.com/report.pdf to 192.0.2.47
