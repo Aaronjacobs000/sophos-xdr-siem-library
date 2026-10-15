@@ -1,0 +1,102 @@
+!SAMPLE=<140>Oct 14 09:12:44 usgflex200 src="198.51.100.23:51514" dst="192.0.2.10:3389" msg="priority:5, from WAN to LAN1, TCP, service RDP, DROP" note="ACCESS BLOCK" user="unknown" devID="00005e005301" cat="Security Policy Control"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="policy" OR eventType$=="traffic"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zyxel ZLD firewalls, VRPT/Syslog or CEF/Syslog remote syslog server logs.
+# Child of ZYXEL_ZLD_SYSLOG_PARENT: security policy decisions and traffic logs to Netflow.
+#   Security Policy Control: msg="priority:<rule>, from <zone> to <zone>, <protocol>, service <service>, <action>"
+#     with note ACCESS BLOCK or ACCESS FORWARD, and other drops such as "Abnormal TCP traffic detected, ..., DROP"
+#   Traffic Log: a session's bytes each way (sent, rcvd), duration, source NAT (sourceTranslatedAddress
+#     and sourceTranslatedPort), interfaces (dir), protocol number (protoID), application (proto) and client MAC
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, cat, msg, note, user, devId, srcIp, dstIp, srcPort, dstPort, eventType$, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+isTraffic = eventType$ == "traffic"
+sourceAddress$ = srcIp
+destinationAddress$ = dstIp
+sourcePort$ = IF srcPort != "" THEN INT(srcPort, 10) ELSE NULL
+destinationPort$ = IF dstPort != "" THEN INT(dstPort, 10) ELSE NULL
+
+# Policy lines: the rule's priority, the zones, the protocol, the service and the action.
+pol = msg|^priority:\s*(?P<rule>\d+),\s*from\s+(?P<from>.+?)\s+to\s+(?P<to>.+?),\s*(?P<proto>[^,]+),\s*(?P<svc>.*?),\s*(?P<act>[A-Za-z]+)\s*$
+# The action is the last word of msg (DROP, for example); failing that, the note says ACCESS BLOCK
+# or ACCESS FORWARD.
+lastWord = msg|,\s*(?P<w>[A-Za-z]+)\s*$
+word = UPPERCASE(STRING(lastWord["w"]))
+unote = UPPERCASE(note)
+blockedWord = word == "DROP" OR word == "DENY" OR word == "BLOCK" OR word == "REJECT"
+allowedWord = word == "ALLOW" OR word == "ACCEPT" OR word == "PERMIT" OR word == "FORWARD" OR word == "PASS"
+flowAction$ = NULL
+flowAction$ = IF CONTAINS(unote, "ACCESS FORWARD") THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF CONTAINS(unote, "ACCESS BLOCK") THEN "FW_BLOCKED" ELSE flowAction$
+flowAction$ = IF allowedWord THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF blockedWord THEN "FW_BLOCKED" ELSE flowAction$
+# A traffic log is a session the firewall let through.
+flowAction$ = IF isTraffic THEN "FW_ALLOWED" ELSE flowAction$
+
+# protocol takes the IANA number: protoID on a traffic log, the protocol name on a policy line.
+pid = STRING(kv["protoID"])
+pname = UPPERCASE(STRING(pol["proto"]))
+protocol$ = IF pid != "" THEN INT(pid, 10) ELSE NULL
+protocol$ = IF pname == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF pname == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF pname == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF pname == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF pname == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF pname == "ESP" THEN 50 ELSE protocol$
+protocol$ = IF pname == "AH" THEN 51 ELSE protocol$
+
+# Traffic logs: the bytes the client sent and received, source NAT, the application and client MAC.
+sent = STRING(kv["sent"])
+rcvd = STRING(kv["rcvd"])
+txByteCount$ = IF isTraffic AND sent != "" THEN INT(sent, 10) ELSE NULL
+rxByteCount$ = IF isTraffic AND rcvd != "" THEN INT(rcvd, 10) ELSE NULL
+nat = STRING(kv["sourceTranslatedAddress"])
+natPort = STRING(kv["sourceTranslatedPort"])
+sourceNatAddress$ = IF nat != "" AND nat != "0.0.0.0" THEN nat ELSE NULL
+sourceNatPort$ = IF nat != "" AND nat != "0.0.0.0" AND natPort != "" THEN INT(natPort, 10) ELSE NULL
+app = STRING(kv["proto"])
+applicationName$ = IF isTraffic AND app != "" THEN app ELSE NULL
+cmac = STRING(kv["client_mac"])
+sourceMac$ = IF cmac != "" THEN cmac ELSE NULL
+
+# Fields with no Netflow home go to event_metadata.
+m1.key$ = "category"
+m1.value$ = cat
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "message"
+m2.value$ = msg
+eventMetadata$.record$ = IF msg != "" AND NOT isTraffic THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "note"
+m3.value$ = note
+eventMetadata$.record$ = IF note != "" AND NOT isTraffic THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "policy_priority"
+m4.value$ = pol["rule"]
+m5.key$ = "from_zone"
+m5.value$ = pol["from"]
+m6.key$ = "to_zone"
+m6.value$ = pol["to"]
+m7.key$ = "service"
+m7.value$ = pol["svc"]
+eventMetadata$.record$ = IF pol["rule"] != "" THEN eventMetadata$.record$ + [m4, m5, m6, m7] ELSE eventMetadata$.record$
+# Zyxel writes user="unknown" when no user signed in.
+m8.key$ = "user"
+m8.value$ = user
+eventMetadata$.record$ = IF user != "" AND LOWERCASE(user) != "unknown" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+dir = STRING(kv["dir"])
+m9.key$ = "interfaces"
+m9.value$ = dir
+eventMetadata$.record$ = IF dir != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+dur = STRING(kv["duration"])
+m10.key$ = "duration_seconds"
+m10.value$ = dur
+eventMetadata$.record$ = IF dur != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "device_id"
+m11.value$ = devId
+eventMetadata$.record$ = IF devId != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$

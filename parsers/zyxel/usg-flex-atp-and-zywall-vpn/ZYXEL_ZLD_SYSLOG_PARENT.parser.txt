@@ -1,0 +1,55 @@
+!SAMPLE=<140>Oct 14 09:12:44 usgflex200 src="198.51.100.23:51514" dst="192.0.2.10:3389" msg="priority:5, from WAN to LAN1, TCP, service RDP, DROP" note="ACCESS BLOCK" user="unknown" devID="00005e005301" cat="Security Policy Control"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:\sdevID="[0-9A-Fa-f]{12}"\s+cat="[^"]*"|\sCEF:\s*\d+\|[Zz][Yy][Xx][Ee][Ll]\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|.*\bdevID=[0-9A-Fa-f]{12}\b)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zyxel ZLD firewalls (USG FLEX, ATP, ZyWALL VPN and USG), remote syslog server logs in
+# either log format the device offers:
+#   VRPT/Syslog (the default): <time> [<year>] <host> src="<ip>:<port>" dst="<ip>:<port>" msg="<text>"
+#     note="<note>" user="<user>" devID="<MAC>" cat="<category>" [<more key=value fields>]
+#   CEF/Syslog: <time> [<year>] <host> CEF:0|ZyXEL|<model>|<firmware>|<id>|<category>|<severity>|devID=<MAC>
+#     src=<ip> dst=<ip> spt=<port> dpt=<port> dvchost=<host> msg=<text> cat=<category> ZYlevel=<level> ZYnote=<note>
+# Parent: recognizes both, by devID and cat or by the ZyXEL CEF header, and reads them into the same
+# variables. Security policy decisions and traffic logs go to the Netflow child; other categories
+# (IKE, interface statistics, the security services and the rest) stay generic, since Zyxel doesn't
+# publish their message text.
+# The time has no zone and is read as UTC; ZLD can add the year after it, which is read when present.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\s+(?P<year>\d{4}))?\s+(?P<host>\S+)\s+(?P<body>.*?)\s*$
+body = STRING(hdr["body"])
+isCef = CONTAINS(body, "CEF:")
+
+# Variables and $ fields set here are visible to the child.
+sensorType$ = "Zyxel ZLD"
+hostId$ = IF hdr["host"] != "" THEN hdr["host"] ELSE NULL
+time = STRING(hdr["time"])
+year = STRING(hdr["year"])
+eventTimeUsec$ = IF time != "" THEN DATETIME(time, "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventTimeUsec$ = IF time != "" AND year != "" THEN DATETIME(time + " " + year, "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+
+# One object of named fields from either format: CEF() for CEF, else the key="value" pairs.
+kv = IF isCef THEN CEF(body) ELSE SPLIT_NAME_VALUES(body, " ", "=", `"`)
+cat = STRING(kv["cat"])
+msg = STRING(kv["msg"])
+note = IF isCef THEN STRING(kv["ZYnote"]) ELSE STRING(kv["note"])
+user = STRING(kv["user"])
+devId = STRING(kv["devID"])
+
+# VRPT writes src and dst as <ip>:<port>; CEF writes the ports in spt and dpt.
+srcText = STRING(kv["src"])
+dstText = STRING(kv["dst"])
+sm = srcText|^(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?$
+dm = dstText|^(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?$
+srcIp = IF isCef THEN srcText ELSE STRING(sm["ip"])
+dstIp = IF isCef THEN dstText ELSE STRING(dm["ip"])
+srcPort = IF isCef THEN STRING(kv["spt"]) ELSE STRING(sm["port"])
+dstPort = IF isCef THEN STRING(kv["dpt"]) ELSE STRING(dm["port"])
+
+lcat = LOWERCASE(cat)
+hasFlow = srcIp != "" AND dstIp != "" AND srcIp != "0.0.0.0"
+eventType$ = IF cat != "" THEN cat ELSE "other"
+eventType$ = IF hasFlow AND (lcat == "security policy control" OR lcat == "security policy" OR lcat == "firewall") THEN "policy" ELSE eventType$
+eventType$ = IF hasFlow AND lcat == "traffic log" THEN "traffic" ELSE eventType$
