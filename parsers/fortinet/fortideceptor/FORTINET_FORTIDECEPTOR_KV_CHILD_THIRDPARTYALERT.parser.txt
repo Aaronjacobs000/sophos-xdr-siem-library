@@ -14,7 +14,7 @@
 # every FortiDeceptor line (all are type=event subtype=system) and stores only the sensor type
 # FORTIGATE_FW. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads
 # the whole line itself, not the parents' variables.
-# Decoy events (regular, IPS, web filtering and port scan) to the third-party alert schema.
+# Decoy events (regular, IPS, web filtering and port scan) to Thirdparty.
 # Releases before 4.3 put the decoy fields in msg (AttackerIp=...); the log reference since 5.0
 # lists them as fields of their own (EventID=... AttackerIP=...). The parser reads either.
 # FortiDeceptor's "SNMP TRAP sent out:" copy of an event is left alone.

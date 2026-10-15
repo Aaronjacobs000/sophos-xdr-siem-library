@@ -12,7 +12,7 @@
 # Child of the global parser Fortinet_Master_non-cef, which claims these lines and stores nothing
 # from them. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads the
 # whole line itself, not the parent's variables.
-# Alert logs to the third-party alert schema: malware (a file the sandbox rated), and the network
+# Alert logs to Thirdparty: malware (a file the sandbox rated), and the network
 # alerts netattack, netbotnet and neturl. Fortinet's log reference names the alert type both alert
 # and malware or netalert, so the parser takes any of them.
 
