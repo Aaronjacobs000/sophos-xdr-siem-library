@@ -1,0 +1,473 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012565000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Deny"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE3"
+          },
+          {
+            "key": "icmp_type",
+            "value": "8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012570000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 51544,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 40122,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Open"
+          },
+          {
+            "key": "session_id",
+            "value": "1543"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE2"
+          },
+          {
+            "key": "dest_name",
+            "value": "Internet-via-GE3"
+          },
+          {
+            "key": "source_vlan",
+            "value": "10"
+          },
+          {
+            "key": "dest_vlan",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012665000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 51544,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 40122,
+      "application_name": "Microsoft Office 365",
+      "tx_byte_count": 18234,
+      "rx_byte_count": 402117,
+      "connection_end_reason": "Fin-Received",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Close"
+          },
+          {
+            "key": "session_id",
+            "value": "1543"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE2"
+          },
+          {
+            "key": "dest_name",
+            "value": "Internet-via-GE3"
+          },
+          {
+            "key": "source_vlan",
+            "value": "10"
+          },
+          {
+            "key": "dest_vlan",
+            "value": "0"
+          },
+          {
+            "key": "duration_secs",
+            "value": "95"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012682000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.40",
+      "source_port": 44310,
+      "destination_port": 3389,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "connection_end_reason": "State Violation",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Deny"
+          },
+          {
+            "key": "session_id",
+            "value": "1544"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012770000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b2-edge1",
+      "source_address": "192.0.2.60",
+      "destination_address": "198.51.100.53",
+      "source_port": 53122,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Open"
+          },
+          {
+            "key": "session_id",
+            "value": "2201"
+          },
+          {
+            "key": "segment_id",
+            "value": "1"
+          },
+          {
+            "key": "segment_name",
+            "value": "Corporate"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "VPN"
+          },
+          {
+            "key": "dest_name",
+            "value": "hq-edge1-via-Hub"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012812000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b2-edge1",
+      "source_address": "192.0.2.60",
+      "destination_address": "198.51.100.53",
+      "source_port": 53122,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Update"
+          },
+          {
+            "key": "session_id",
+            "value": "2201"
+          },
+          {
+            "key": "segment_id",
+            "value": "1"
+          },
+          {
+            "key": "segment_name",
+            "value": "Corporate"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "VPN"
+          },
+          {
+            "key": "dest_name",
+            "value": "hq-edge1-via-Hub"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012900000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b3-edge1",
+      "source_address": "192.0.2.61",
+      "destination_address": "198.51.100.123",
+      "source_port": 123,
+      "destination_port": 123,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Allow"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Store Policy"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE2"
+          },
+          {
+            "key": "dest_name",
+            "value": "Internet-via-GE3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012925000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.10",
+      "source_port": 60001,
+      "destination_port": 22,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "connection_end_reason": "State Violation",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Drop"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "VELOCLOUD_SDWAN_KV_PARENT > VELOCLOUD_SDWAN_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "VeloCloud SD-WAN Edge",
+      "event_time_usec": 1792012998000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "b1-edge1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.40",
+      "source_port": 49822,
+      "destination_port": 445,
+      "protocol": 6,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "message": "ET EXPLOIT Possible ETERNALBLUE MS17-010 Echo Response",
+      "classification": "Attempted Administrator Privilege Gain",
+      "signature_id": 2024218,
+      "priority": 1,
+      "action": "Drop",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vcf_action",
+            "value": "Alert"
+          },
+          {
+            "key": "severity",
+            "value": "1"
+          },
+          {
+            "key": "dest_domain",
+            "value": "files.example.com"
+          },
+          {
+            "key": "attacker_ip",
+            "value": "198.51.100.77"
+          },
+          {
+            "key": "attacker_port",
+            "value": "49822"
+          },
+          {
+            "key": "target_ip",
+            "value": "192.0.2.40"
+          },
+          {
+            "key": "target_port",
+            "value": "445"
+          },
+          {
+            "key": "firewall_policy",
+            "value": "Branch Default"
+          },
+          {
+            "key": "segment_name",
+            "value": "Global Segment"
+          },
+          {
+            "key": "segment_id",
+            "value": "0"
+          },
+          {
+            "key": "in_interface",
+            "value": "GE3"
+          }
+        ]
+      }
+    }
+  }
+]

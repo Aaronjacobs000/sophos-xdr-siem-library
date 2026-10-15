@@ -1,0 +1,43 @@
+{
+  "vendor": "Arista",
+  "product": "VeloCloud SD-WAN",
+  "versions": [],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://www.arista.com/en/admin-guide-vc-7-0/sd-wan-7-0-configure-device-settings-for-profiles",
+    "https://www.arista.com/en/admin-guide-vc-7-0/sd-wan-7-0-firewall-overview",
+    "https://www.arista.com/en/admin-guide-vc-6-4/sd-wan-6-4-configure-device-settings-for-profiles"
+  ],
+  "notes": "For Arista VeloCloud SD-WAN (formerly VMware SD-WAN) Edges that send firewall logs straight to the data collector. In the Orchestrator, add a syslog collector under Device > Telemetry > Syslog with the FIREWALL EVENT role (UDP or TCP, port 514 by default), and turn on Syslog Forwarding on the Firewall page, for the Profile or the Edge. The Edge reaches the collector over the Cloud VPN or a LAN, so the collector has to be on a network the Edge can route to. Session lines go to Netflow: VCF Open, Close, Update and Deny with the stateful firewall on, Allow and Deny with it off, and Drop. Each has the addresses, ports and protocol, FW_ALLOWED or FW_BLOCKED, and source NAT; Close lines add the application, bytes and the close reason. The session ID, segment, firewall policy, interface, destination name, VLANs and duration go to event_metadata. Enhanced Firewall Services IDS/IPS alerts (VCF Alert) go to NIDS with the signature name, ID, category and severity. Arista's syslog table doesn't list the alert keys or the Drop action, so those follow the syslog queries in the Microsoft Sentinel VMware SD-WAN and SASE solution. blocked is set when ATP_ACTION starts with Drop, Block, Deny, Reject or Reset; Arista doesn't list its values. Edge events (the EDGE EVENT role) have no published layout and stay unparsed. The parser accepts any syslog tag. The syslog time has no year or zone and is read as UTC. Samples are made up in the layout of Arista's firewall log example and field table. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (104 of 104 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (9 of 9 lines, 104 of 104 fields). No built-in parser claimed these lines in 12 Run Tests.",
+  "parsers": [
+    {
+      "name": "VELOCLOUD_SDWAN_KV_PARENT",
+      "file": "VELOCLOUD_SDWAN_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "VELOCLOUD_SDWAN_KV_CHILD_NETFLOW",
+      "file": "VELOCLOUD_SDWAN_KV_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "VELOCLOUD_SDWAN_KV_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "VELOCLOUD_SDWAN_KV_CHILD_NIDS",
+      "file": "VELOCLOUD_SDWAN_KV_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "VELOCLOUD_SDWAN_KV_PARENT",
+      "schema": "scwx.nids"
+    }
+  ]
+}

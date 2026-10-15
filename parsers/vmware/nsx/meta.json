@@ -1,0 +1,56 @@
+{
+  "vendor": "VMware",
+  "product": "NSX",
+  "versions": [
+    "4.2",
+    "9.0"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/4-2/vdefend-distributed-firewall/monitoring-and-troubleshooting-dfw/firewall-packet-logs.html",
+    "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/4-2/vdefend-gateway-firewall/monitoring-and-troubleshooting-gfw/gateway-firewall-packet-logs.html",
+    "https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/administration-guide/operations-and-management/log-messages-and-error-codes.html",
+    "https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/administration-guide/operations-and-management/log-messages-and-error-codes/firewall-audit-log-messages.html",
+    "https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/administration-guide/operations-and-management/log-messages-and-error-codes/configure-remote-logging.html",
+    "https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-1/administration-guide/security/distributed-firewall/firewall-packet-logs.html"
+  ],
+  "notes": "For VMware NSX (vDefend Firewall) 4.2 and 9. ESXi hosts send distributed firewall (DFW) packet logs through their own syslog (Syslog.global.logHost); NSX Manager and Edge nodes send gateway firewall (GFW) packet logs and audit logs (set logging-server <collector> proto udp level info). Packet logs exist only for rules with logging on and need a vDefend Firewall license. DFW and GFW packet logs go to Netflow: addresses, ports, protocol, FW_ALLOWED for PASS and FW_BLOCKED for DROP and REJECT, NAT addresses (the -OR original goes to source or destination), and on session ends the close reason and the packet and byte counts. The rule, direction, TCP flags, interface and any FQDN, APP_ application or AD SID go to event_metadata. NSX Manager logins and logouts go to Auth. Other audited API calls, NSX CLI commands and node API calls go to ManagementEvent, with operation write or read from the update flag. NSX audits reads too; to send only writes, add structured-data update=\"true\" to the logging server. Long audit messages split across lines (splitIndex): only the first has the user and operation, so the rest stay generic, as do other NSX messages. Unified security logs (IDPS, URL filtering, TLS inspection) aren't covered: Broadcom shows examples but no field table. The parser doesn't read the facility, since Broadcom's docs disagree on it. Samples are made up in the layouts of Broadcom's examples. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (199 of 199 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (19 of 19 lines, 193 of 193 fields, and the 2 generic lines matched). No built-in parser claimed these lines in 12 Run Tests.",
+  "parsers": [
+    {
+      "name": "VMWARE_NSX_SYSLOG_PARENT",
+      "file": "VMWARE_NSX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+      "file": "VMWARE_NSX_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "VMWARE_NSX_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "VMWARE_NSX_SYSLOG_CHILD_AUTH",
+      "file": "VMWARE_NSX_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "VMWARE_NSX_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "VMWARE_NSX_SYSLOG_CHILD_MGMT",
+      "file": "VMWARE_NSX_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "VMWARE_NSX_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

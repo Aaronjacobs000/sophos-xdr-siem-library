@@ -1,0 +1,56 @@
+!SAMPLE=<13>2026-10-14T22:10:01.019Z esx01.example.com FIREWALL-PKTLOG[1057591]: b569cb6a INET match PASS 1045 IN 48 TCP 192.0.2.7/42946->203.0.113.116/80 S
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:\sFIREWALL-PKTLOG(?:\[\d+\]:|:|\s+\d+\s+-\s+-)\s+[0-9a-f]{8}\s+INET6?\s|\sNSX\s+\S+\s+\S+\s+\[nsx@6876\s)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware NSX (vDefend Firewall) syslog to the data collector. Two senders:
+#   ESXi hosts send distributed firewall (DFW) packet logs through the host's own syslog:
+#     <13>2026-10-14T22:10:01.019Z esx01 FIREWALL-PKTLOG[1057591]: b569cb6a INET match PASS 1045 IN 48 TCP ...
+#   NSX Manager and Edge nodes send RFC 5424 with [nsx@6876 ...] structured data, including
+#   gateway firewall (GFW) packet logs and audit logs (audit="true"):
+#     <182>1 2026-10-14T22:20:01.339Z nsxmgr01 NSX 1513 SYSTEM [nsx@6876 audit="true" ...] UserName="admin", ...
+# Parent: hands DFW and GFW packet logs to the Netflow child, UI and API logins and logouts to the
+# Auth child, and other audited API calls, CLI commands and node API calls to the
+# ManagementEvent child. Other NSX messages stay generic.
+
+dfw = originalData$|^(?:<\d{1,3}>)?(?:1\s+)?(?:(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))\s+(?P<host>\S+)\s+)?FIREWALL-PKTLOG(?:\[\d+\]:|:|\s+\d+\s+-\s+-)\s+(?P<vif>[0-9a-f]{8})\s+(?P<pkt>INET6?\s.*)$
+nsx = originalData$|^(?:<\d{1,3}>)?(?:1\s+)?(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))\s+(?P<host>\S+)\s+NSX\s+(?P<procid>\S+)\s+(?P<msgid>\S+)\s+\[nsx@6876\s(?P<sd>[^\]]*)\]\s*(?P<msg>.*)$
+sd = nsx["sd"]
+msg = nsx["msg"]
+gfw = msg|^<(?P<vrf>\d+)\s+(?P<ifid>[0-9A-Fa-f:-]+)>\s+(?P<pkt>INET6?\s.*)$
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "VMware NSX"
+host = IF dfw["host"] != "" THEN dfw["host"] ELSE nsx["host"]
+hostId$ = IF host != "" THEN host ELSE NULL
+time = IF dfw["time"] != "" THEN dfw["time"] ELSE nsx["time"]
+eventTimeUsec$ = IF time != "" THEN DATETIME(time, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+
+logType = ""
+logType = IF dfw["pkt"] != "" THEN "dfw" ELSE logType
+logType = IF gfw["pkt"] != "" THEN "gfw" ELSE logType
+pkt = IF logType == "dfw" THEN dfw["pkt"] ELSE gfw["pkt"]
+
+# Structured data. Every API call is audited (audit="true"); writes also carry update="true".
+audited = sd|(?:^|\s)audit="true"
+comp = sd|(?:^|\s)comp="(?P<v>[^"]*)"
+subcomp = sd|(?:^|\s)subcomp="(?P<v>[^"]*)"
+sdUser = sd|(?:^|\s)username="(?P<v>[^"]*)"
+reqId = sd|(?:^|\s)reqId="(?P<v>[^"]*)"
+
+# Audit message bodies: a policy or manager API call, an NSX CLI command, or a node API call.
+api = msg|^UserName="(?P<user>[^"]*)",\s*ModuleName="(?P<module>[^"]*)",\s*Operation="(?P<op>[^"]*)",\s*Operation status="(?P<status>[^"]*)"
+cli = msg|^CMD:\s+(?P<cmd>.*?)\s+\(duration:\s*(?P<secs>[0-9.]+)s\),\s*Operation status:\s*(?P<status>\S+)
+napi = msg|^(?P<user>\S+)\s+'(?P<method>[A-Z]+)\s+(?P<path>[^']*)'\s+(?P<code>\d{3})\s+(?P<size>\d+)\s+"(?P<ref>[^"]*)"\s+"(?P<ua>[^"]*)"\s+(?P<secs>[0-9.]+)
+
+auditKind = ""
+auditKind = IF audited[0] != "" AND api["op"] != "" THEN "api" ELSE auditKind
+auditKind = IF audited[0] != "" AND cli["cmd"] != "" THEN "cli" ELSE auditKind
+auditKind = IF audited[0] != "" AND napi["method"] != "" THEN "napi" ELSE auditKind
+
+eventType$ = "other"
+eventType$ = IF logType != "" THEN "flow" ELSE eventType$
+eventType$ = IF auditKind != "" THEN "audit" ELSE eventType$
+eventType$ = IF auditKind == "api" AND (api["op"] == "LOGIN" OR api["op"] == "LOGOUT") THEN "login" ELSE eventType$
