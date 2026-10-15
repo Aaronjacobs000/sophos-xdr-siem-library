@@ -48,6 +48,7 @@ python3 nordpass_activity_bridge.py --interval 300    # keep polling every 5 min
 
 Exit code 0 means every page was read and sent. On an error the bridge logs it with the HTTP status, stops, and leaves the cursor where it was, so the next run reads the same window again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
+A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 
 ## How it reads the API
 

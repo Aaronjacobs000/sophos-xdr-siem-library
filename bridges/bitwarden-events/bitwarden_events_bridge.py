@@ -29,6 +29,7 @@ import logging
 import os
 import random
 import re
+import socket
 import sys
 import tempfile
 import time
@@ -62,6 +63,11 @@ class NetworkError(BridgeError):
     bridge logs it and tries again at the next interval."""
 
 
+class HostNotFound(NetworkError):
+    """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
+    it stops the bridge even with --interval, since it is most likely a mistyped URL."""
+
+
 # ---------------------------------------------------------------- configuration
 
 def _env(env: dict, name: str, default: str | None = None) -> str | None:
@@ -79,8 +85,10 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
-    """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9,
+            out_of_range: str | None = None):
+    """A numeric setting: a bad value stops the bridge with one plain error, not a traceback.
+    out_of_range, if given, is the error for a number outside low to high."""
     value = _env(env, name, default)
     try:
         number = cast(value)
@@ -88,7 +96,7 @@ def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: 
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
     if not low <= number <= high:
-        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
+        raise BridgeError(out_of_range or f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -114,7 +122,9 @@ def load_config(env: dict | None = None) -> dict:
         "state_file": _env(env, "BRIDGE_STATE_FILE", "bitwarden_events_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
-        "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
+        "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=366 * 24,
+                                  out_of_range="BRIDGE_LOOKBACK_HOURS must be above 0 and at most 8784 (366 days), "
+                                               "the longest range the API accepts"),
         "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "3600"),
         "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
@@ -126,8 +136,6 @@ def load_config(env: dict | None = None) -> dict:
     cfg["organization_id"] = m.group(1).lower()
     if cfg["overlap_seconds"] < 0 or cfg["lookback_hours"] <= 0:
         raise BridgeError("BRIDGE_OVERLAP_SECONDS can't be negative and BRIDGE_LOOKBACK_HOURS must be above 0")
-    if cfg["lookback_hours"] > 366 * 24:
-        raise BridgeError("BRIDGE_LOOKBACK_HOURS can be at most 8784 (366 days), the longest range the API accepts")
     _require_https(cfg["api_url"], "BITWARDEN_API_URL")
     _require_https(cfg["identity_url"], "BITWARDEN_IDENTITY_URL")
     if cfg["ingest_url"]:
@@ -163,6 +171,11 @@ class HttpStatus(BridgeError):
         self.body = body
 
 
+class RetriedStatus(HttpStatus, NetworkError):
+    """A 408, 429 or 5xx that outlasted the retries. It is a NetworkError too, so with --interval
+    the bridge logs it and tries again at the next interval."""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Following a redirect would send the request's key or token to another URL, so it isn't
     followed: the redirect fails like any other status."""
@@ -190,6 +203,11 @@ def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
                               "refuses so a bad response can't use up memory")
 
 
+# Retried, then a NetworkError. On Python 3.9 a read timeout is socket.timeout, which isn't a
+# TimeoutError yet, and IncompleteRead means the connection closed partway through an answer.
+_NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError, http.client.IncompleteRead)
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
@@ -207,6 +225,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 if e.code not in RETRY_STATUS:
                     raise
                 error_body = b""
+            except _NETWORK_ERRORS:
+                # The body was cut short or timed out: the status still decides what happens.
+                error_body = b""
             finally:
                 e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
@@ -214,13 +235,18 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
+            if e.code in RETRY_STATUS:
+                raise RetriedStatus(what, url, e.code, error_body) from None
             raise HttpStatus(what, url, e.code, error_body) from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        except _NETWORK_ERRORS as e:
             if attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, None)
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
+                                   "check the URL setting") from None
             raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
         except ValueError:
             # http.client puts a header value it refuses, such as a key with a line break in it,
@@ -270,7 +296,8 @@ class Bitwarden:
         try:
             _, raw = _request("POST", url, headers, urllib.parse.urlencode(form).encode(), self.cfg["timeout"], "Bitwarden token request")
         except HttpStatus as e:
-            if e.code in REDIRECT_STATUS:
+            # A redirect, or a 408, 429 or 5xx that outlasted the retries, isn't about the key.
+            if e.code in REDIRECT_STATUS or isinstance(e, RetriedStatus):
                 raise
             raise BridgeError(f"Bitwarden refused the API key (HTTP {e.code}); check BITWARDEN_CLIENT_ID and "
                                  "BITWARDEN_CLIENT_SECRET, and that BITWARDEN_IDENTITY_URL is for the organization's server") from None
@@ -502,11 +529,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         cfg = load_config()
         client = Bitwarden(cfg)
+        worked = False
         while True:
             try:
                 run_once(cfg, dry_run, client=client)
+                worked = True
             except NetworkError as e:
-                if not args.interval:
+                # A host name that doesn't resolve before any run has worked is most likely a
+                # mistyped URL, so it stops the bridge.
+                if not args.interval or (isinstance(e, HostNotFound) and not worked):
                     raise
                 LOG.error("%s; trying again in %d seconds", e, args.interval)
             except BridgeError:

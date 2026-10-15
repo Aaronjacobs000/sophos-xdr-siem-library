@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import random
+import socket
 import sys
 import tempfile
 import time
@@ -51,6 +52,11 @@ class BridgeError(Exception):
 class NetworkError(BridgeError):
     """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
     bridge logs it and tries again at the next interval."""
+
+
+class HostNotFound(NetworkError):
+    """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
+    it stops the bridge even with --interval, since it is most likely a mistyped URL."""
 
 
 # ---------------------------------------------------------------- configuration
@@ -146,6 +152,11 @@ class HttpStatus(BridgeError):
         self.code = code
 
 
+class RetriedStatus(HttpStatus, NetworkError):
+    """A 408, 429 or 5xx that outlasted the retries. It is a NetworkError too, so with --interval
+    the bridge logs it and tries again at the next interval."""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Following a redirect would send the request's key or token to another URL, so it isn't
     followed: the redirect fails like any other status."""
@@ -173,6 +184,11 @@ def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
                               "refuses so a bad response can't use up memory")
 
 
+# Retried, then a NetworkError. On Python 3.9 a read timeout is socket.timeout, which isn't a
+# TimeoutError yet, and IncompleteRead means the connection closed partway through an answer.
+_NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError, http.client.IncompleteRead)
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
@@ -189,13 +205,18 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
+            if e.code in RETRY_STATUS:
+                raise RetriedStatus(what, url, e.code) from None
             raise HttpStatus(what, url, e.code) from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        except _NETWORK_ERRORS as e:
             if attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, None)
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
+                                   "check the URL setting") from None
             raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
         except ValueError:
             # http.client puts a header value it refuses, such as a key with a line break in it,
@@ -366,11 +387,15 @@ def main(argv: list[str] | None = None) -> int:
     dry_run = args.dry_run or _flag(dict(os.environ), "BRIDGE_DRY_RUN", False)
     try:
         cfg = load_config()
+        worked = False
         while True:
             try:
                 run_once(cfg, dry_run)
+                worked = True
             except NetworkError as e:
-                if not args.interval:
+                # A host name that doesn't resolve before any run has worked is most likely a
+                # mistyped URL, so it stops the bridge.
+                if not args.interval or (isinstance(e, HostNotFound) and not worked):
                     raise
                 LOG.error("%s; trying again in %d seconds", e, args.interval)
             except BridgeError:

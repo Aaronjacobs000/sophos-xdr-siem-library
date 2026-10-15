@@ -14,6 +14,7 @@ import io
 import json
 import logging
 import os
+import socket
 import sys
 import tempfile
 import threading
@@ -176,11 +177,43 @@ class Sized:
         self.server.server_close()
 
 
+class CutShort:
+    """A server that starts a chunked answer with the given status, then closes the connection
+    partway through it, as a dropped connection would."""
+
+    def __init__(self, code=200):
+        self.requests = 0
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"
+
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                outer.requests += 1
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+                self.wfile.write(b'100\r\n{"partial":')
+                self.close_connection = True
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
 # Every numeric setting: its name, config key, default, a normal value, type, and highest value.
 NUMBERS = [
     ("ITGLUE_PAGE_SIZE", "page_size", 1000, 100, int, 1000),
     ("BRIDGE_BATCH_BYTES", "batch_bytes", 100000, 50000, int, 10 ** 9),
-    ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 10 ** 6),
+    ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 720),
     ("BRIDGE_OVERLAP_SECONDS", "overlap_seconds", 300, 600, int, 10 ** 9),
     ("BRIDGE_SETTLE_SECONDS", "settle_seconds", 60, 30, int, 10 ** 9),
     ("BRIDGE_HTTP_TIMEOUT", "timeout", 60.0, 30.5, float, 10 ** 9),
@@ -406,6 +439,19 @@ class TimeTest(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(c._parse_time(text), expected)
 
+    def test_times_read_alike_on_python_3_9_to_3_13(self):
+        # Z or z, an offset with or without its colon, and 0 to 9 fraction digits. Before 3.11,
+        # fromisoformat took no Z, no +1000 and no fraction but 3 or 6 digits; no version takes z.
+        at = datetime(2026, 10, 15, 10, 0, 0, tzinfo=timezone.utc)
+        for zone, minutes in (("Z", 0), ("z", 0), ("+10:00", 600), ("+1000", 600), ("-05:30", -330), ("-0530", -330)):
+            local = (at + timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M:%S")
+            for digits in range(10):
+                fraction = "123456789"[:digits]
+                text = local + ("." if fraction else "") + fraction + zone
+                expected = at + timedelta(microseconds=int((fraction + "000000")[:6]))
+                with self.subTest(text=text):
+                    self.assertEqual(c._parse_time(text), expected)
+
 
 class LegacyNameTest(unittest.TestCase):
     """Bridges were called collectors: a setup that still sets the COLLECTOR_ names keeps working."""
@@ -443,6 +489,53 @@ class RequestSafetyTest(unittest.TestCase):
             c.time.sleep = saved
         self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
 
+    def test_read_timeout_is_retried_then_a_network_error(self):
+        # The listener never accepts, so no answer comes and every attempt times out. On Python 3.9
+        # that is socket.timeout, which isn't a TimeoutError yet. The backoff is skipped.
+        listener = socket.socket()
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(16)
+        host = f"127.0.0.1:{listener.getsockname()[1]}"
+        slept = []
+        saved, c.time.sleep = c.time.sleep, slept.append
+        try:
+            with self.assertRaises(c.NetworkError) as caught:
+                c._request("GET", f"http://{host}/x", {}, None, 0.05, what="test request")
+        finally:
+            c.time.sleep = saved
+            listener.close()
+        self.assertEqual(len(slept), c.MAX_ATTEMPTS - 1)
+        self.assertRegex(str(caught.exception), rf"^test request to {host} failed: (timeout|TimeoutError)$")
+
+    def test_answer_cut_short_is_retried_then_a_network_error(self):
+        # The connection closes partway through every answer (IncompleteRead), whether its status
+        # is OK or one that is retried. The error names the type, never the partial body.
+        for code, ending in ((200, "failed: IncompleteRead"), (503, "failed with HTTP 503")):
+            with self.subTest(code=code):
+                server, slept = CutShort(code), []
+                saved, c.time.sleep = c.time.sleep, slept.append
+                try:
+                    with self.assertRaises(c.NetworkError) as caught:
+                        c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+                finally:
+                    c.time.sleep = saved
+                    server.close()
+                self.assertEqual((server.requests, len(slept)), (c.MAX_ATTEMPTS, c.MAX_ATTEMPTS - 1))
+                self.assertTrue(str(caught.exception).endswith(ending), str(caught.exception))
+                self.assertNotIn("partial", str(caught.exception))
+
+    def test_error_answer_cut_short_still_stops_at_once(self):
+        # A status that isn't retried stops the run at the first answer, cut short or not.
+        server = CutShort(400)
+        try:
+            with self.assertRaises(c.BridgeError) as caught:
+                c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+        finally:
+            server.close()
+        self.assertNotIsInstance(caught.exception, c.NetworkError)
+        self.assertEqual(server.requests, 1)
+        self.assertTrue(str(caught.exception).endswith("failed with HTTP 400"), str(caught.exception))
+
 
 class RangeTest(unittest.TestCase):
     """A number outside its range stops the bridge with an error that gives the range."""
@@ -458,6 +551,14 @@ class RangeTest(unittest.TestCase):
                     c.BridgeError, r"^BRIDGE_HTTP_TIMEOUT must be between 0\.001 and 1,000,000,000$"):
                 self.load(BRIDGE_HTTP_TIMEOUT=value)
         self.assertEqual(self.load(BRIDGE_HTTP_TIMEOUT="0.5")["timeout"], 0.5)
+
+    def test_lookback_out_of_range_gives_its_range_and_reason(self):
+        message = r"^BRIDGE_LOOKBACK_HOURS must be between 0 and 720: GET /logs only covers the most recent 30 days$"
+        for value in ("-1", "-0.5", "720.5", "1000", "1000001"):
+            with self.subTest(value=value), self.assertRaisesRegex(c.BridgeError, message):
+                self.load(BRIDGE_LOOKBACK_HOURS=value)
+        for value in ("0", "0.5", "720"):
+            self.assertEqual(self.load(BRIDGE_LOOKBACK_HOURS=value)["lookback_hours"], float(value))
 
     def test_page_size_out_of_range_gives_its_range(self):
         for value in ("-1", "0", "1001"):
@@ -567,6 +668,85 @@ class IntervalTest(unittest.TestCase):
             c.main(["--interval", "-1"])
         self.assertEqual(caught.exception.code, 2)
         self.assertEqual(self.calls, [])
+
+    def every_request_fails(self, error, argv):
+        """main with the real run and every request failing with error(url); a second run stops the
+        loop. Returns main's exit code and the number of runs."""
+        runs = []
+
+        def run_once(*args, **kwargs):
+            runs.append(1)
+            if len(runs) > 1:
+                raise KeyboardInterrupt()
+            return self.saved[1](*args, **kwargs)
+
+        def fail(opener, req, *args, **kwargs):
+            raise error(req.full_url)
+
+        c.run_once = run_once
+        opener = c.urllib.request.OpenerDirector
+        saved_open, opener.open = opener.open, fail
+        try:
+            return c.main(argv), len(runs)
+        finally:
+            opener.open = saved_open
+
+    @staticmethod
+    def status(code):
+        return lambda url: c.urllib.error.HTTPError(url, code, "test status", c.http.client.HTTPMessage(), io.BytesIO(b"{}"))
+
+    def errors(self):
+        return [line for line in self.log.getvalue().splitlines() if line.startswith("ERROR")]
+
+    def test_retried_status_past_the_retries_is_logged_by_host_and_polling_goes_on(self):
+        for code in (429, 503):
+            with self.subTest(code=code):
+                self.log.seek(0)
+                self.log.truncate()
+                del self.slept[:]
+                self.assertEqual(self.every_request_fails(self.status(code), ["--interval", "5", "--dry-run"]), (130, 2))
+                self.assertEqual(len(self.slept), c.MAX_ATTEMPTS)
+                self.assertEqual(self.slept[-1], 5)
+                errors = self.errors()
+                self.assertEqual(len(errors), 1)
+                self.assertRegex(errors[0], rf"^ERROR .+ to [a-z0-9.-]+ failed with HTTP {code}; trying again in 5 seconds$")
+                self.assertNotRegex(self.log.getvalue(), r"not-?real")
+
+    def test_other_statuses_and_redirects_still_stop_the_bridge(self):
+        for code in (302, 400, 401, 403, 404):
+            with self.subTest(code=code):
+                self.assertEqual(self.every_request_fails(self.status(code), ["--interval", "5", "--dry-run"]), (1, 1))
+
+    def test_unknown_host_before_a_run_has_worked_stops_the_bridge(self):
+        """A host name that doesn't resolve before any run has worked is most likely a mistyped URL,
+        so after the retries it stops the bridge, even with --interval."""
+        def not_found(url):
+            return c.urllib.error.URLError(socket.gaierror(socket.EAI_NONAME, "test lookup failure"))
+
+        self.assertEqual(self.every_request_fails(not_found, ["--interval", "5", "--dry-run"]), (1, 1))
+        self.assertEqual(len(self.slept), c.MAX_ATTEMPTS - 1)
+        errors = self.errors()
+        self.assertEqual(len(errors), 1)
+        self.assertRegex(errors[0], r"^ERROR .+ to [a-z0-9.-]+ failed: the host name wasn't found; check the URL setting$")
+        self.assertNotRegex(self.log.getvalue(), r"not-?real")
+
+    def test_unknown_host_after_a_run_has_worked_is_logged_and_polling_goes_on(self):
+        error = c.HostNotFound("events request to api.example.com failed: the host name wasn't found; check the URL setting")
+        results = [None, error]
+
+        def run_once(cfg, *args, **kwargs):
+            self.calls.append(kwargs)
+            if not results:
+                raise KeyboardInterrupt()
+            result = results.pop(0)
+            if result:
+                raise result
+
+        c.run_once = run_once
+        self.assertEqual(c.main(["--interval", "5"]), 130)
+        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(self.slept, [5, 5])
+        self.assertEqual(self.errors(), [f"ERROR {error}; trying again in 5 seconds"])
 
 
 if __name__ == "__main__":
