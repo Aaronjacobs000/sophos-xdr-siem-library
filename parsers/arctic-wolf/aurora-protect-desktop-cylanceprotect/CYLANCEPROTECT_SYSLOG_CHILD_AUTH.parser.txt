@@ -1,0 +1,33 @@
+!SAMPLE=<46>1 2026-10-15T02:03:30.000000Z sysloghost CylancePROTECT - - - Event Type: AuditLog, Event Name: LoginFailure, Message: Provider: Cylance, Source IP: 198.51.100.23, User: (adoe@example.com)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="Login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Aurora Protect Desktop (CylancePROTECT) audit log over syslog: sign-ins to the Aurora
+# Endpoint Security console (Event Name LoginSuccess or LoginFailure).
+# Child of CYLANCEPROTECT_SYSLOG_PARENT: each sign-in to Auth, with the console user as the target
+# user. Arctic Wolf doesn't show a sign-in message, so Provider and Source IP are read from the
+# message when they are there.
+# evType, evName, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Aurora Endpoint Security console"
+authCategory$ = "ACCOUNT_LOGON"
+ok = evName == "LoginSuccess"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+
+# The user is the last "User: " field: a name and the email address in parentheses, or the
+# address alone. An Eco Id can follow the address inside the parentheses.
+u = originalData$|.*, User: (?P<name>[^(,]*?)\s*\(\s*(?P<email>[^,)\s]+)
+uOnly = originalData$|.*, User: (?P<v>[^(,]+)$
+targetUserName$ = IF u["email"] != "" THEN u["email"] ELSE NULL
+targetUserName$ = IF u["email"] == "" AND uOnly["v"] != "" THEN TRIM(uOnly["v"]) ELSE targetUserName$
+userDisplayName$ = IF u["name"] != "" THEN u["name"] ELSE NULL
+
+src = originalData$|, Source IP: (?P<v>[0-9A-Fa-f.:]+)
+sourceAddress$ = IF src["v"] != "" THEN src["v"] ELSE NULL
+prov = originalData$|Message: Provider: (?P<v>[^,]+),
+logonApplicationFamily$ = IF prov["v"] != "" THEN prov["v"] ELSE NULL
+status$ = evName

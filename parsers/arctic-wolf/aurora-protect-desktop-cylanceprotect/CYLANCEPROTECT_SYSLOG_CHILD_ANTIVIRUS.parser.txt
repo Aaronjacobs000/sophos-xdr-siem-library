@@ -1,0 +1,132 @@
+!SAMPLE=<46>1 2026-10-15T01:07:19.100000Z sysloghost CylancePROTECT - - - Event Type: Threat, Event Name: threat_found, Device Name: WS-0142, IP Address: (192.0.2.31), File Name: invoice_viewer.exe, Path: c:\users\jsmith\downloads\, Drive Type: None, File Owner: EXAMPLE\jsmith, SHA256: AF68C74FBB69025C74CFC01213269C878B370FAA3F19ED0A0E16A55C11D23657, MD5: , Status: Unsafe, Cylance Score: 100, Found Date: 10/15/2026 1:07:12 AM, File Type: Executable, Is Running: False, Auto Run: False, Detected By: FileWatcher, Zone Names: (Workstations), Is Malware: True, Is Unique to Cylance: False, Threat Classification: Malware - Trojan - Generic, Policy Name: Workstations Default
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="Threat" OR eventType$=="ExploitAttempt" OR eventType$=="ScriptControl"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Aurora Protect Desktop (CylancePROTECT) syslog from the Aurora Endpoint Security console.
+# Child of CYLANCEPROTECT_SYSLOG_PARENT: threats (Threat), memory protection (ExploitAttempt) and
+# script control (ScriptControl) events to the Antivirus schema.
+# evType, evName, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+# Each value runs from "Key: " to the next ", Key: " or the end of the line, so values with
+# commas inside, such as an address list in parentheses, stay whole.
+
+isThreat = evType == "Threat"
+isExploit = evType == "ExploitAttempt"
+isScript = evType == "ScriptControl"
+vendorAlertType$ = evType
+
+dev = originalData$|, Device Name: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+computerName$ = IF dev["v"] != "" THEN dev["v"] ELSE NULL
+hostId$ = IF dev["v"] != "" THEN dev["v"] ELSE NULL
+devId = originalData$|, Device I[Dd]: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+agentDeviceId$ = IF devId["v"] != "" THEN devId["v"] ELSE NULL
+pol = originalData$|, Policy Name: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+policyName$ = IF pol["v"] != "" THEN pol["v"] ELSE NULL
+user = originalData$|, User Name: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+userName$ = IF user["v"] != "" THEN user["v"] ELSE NULL
+proc = originalData$|, Process Name: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+processName$ = IF proc["v"] != "" THEN proc["v"] ELSE NULL
+
+sha = originalData$|, SHA256: (?P<v>[0-9A-Fa-f]{64})
+md5 = originalData$|, MD5: (?P<v>[0-9A-Fa-f]{32})
+fileHash$.sha256$ = IF sha["v"] != "" THEN sha["v"] ELSE NULL
+fileHash$.md5$ = IF md5["v"] != "" THEN md5["v"] ELSE NULL
+
+# Threats give the folder (Path) and the file name; script control gives the full File Path.
+fname = originalData$|, File Name: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+dir = originalData$|, Path: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+full = originalData$|, File Path: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+dirSlash = dir["v"]|^(?P<d>.*[\\/])$
+folder = IF dirSlash["d"] != "" THEN dirSlash["d"] ELSE dir["v"] + "\\"
+filePath$ = IF full["v"] != "" THEN full["v"] ELSE NULL
+filePath$ = IF isThreat AND fname["v"] != "" AND dir["v"] != "" THEN folder + fname["v"] ELSE filePath$
+filePath$ = IF isThreat AND fname["v"] != "" AND dir["v"] == "" THEN fname["v"] ELSE filePath$
+scriptName = full["v"]|(?P<n>[^\\/]+)$
+
+# Threat Classification is "<class> - <subclass> - <family>", or the class alone, such as
+# File Unavailable.
+cls = originalData$|, Threat Classification: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+parts = cls["v"]|^(?P<c>.*?)(?: - (?P<s>.*?))?(?: - (?P<f>.*))?$
+cl = LOWERCASE(parts["c"])
+sub = LOWERCASE(parts["s"])
+viol = originalData$|, Violation Type: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+
+# The threat name is the classification for threats (the file name when there is none), the
+# violation type for memory protection, and the script's file name for script control.
+threatName$ = IF isThreat AND parts["s"] != "" THEN cls["v"] ELSE NULL
+threatName$ = IF isThreat AND parts["s"] == "" THEN fname["v"] ELSE threatName$
+threatName$ = IF isExploit AND viol["v"] != "" THEN viol["v"] ELSE threatName$
+threatName$ = IF isScript AND scriptName["n"] != "" THEN scriptName["n"] ELSE threatName$
+
+threatType$ = IF isExploit THEN "MEMORY" ELSE "FILE"
+threatCategory$ = "UNKNOWN_THREATCATEGORY"
+threatCategory$ = IF cl == "malware" THEN "MALWARE" ELSE threatCategory$
+threatCategory$ = IF cl == "pup" OR cl == "possible pup" THEN "APPLICATION" ELSE threatCategory$
+threatCategory$ = IF cl == "malware" AND sub == "trojan" THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF cl == "malware" AND sub == "virus" THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF cl == "malware" AND sub == "ransom" THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF cl == "malware" AND sub == "backdoor" THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF cl == "malware" AND sub == "exploit" THEN "EXPLOIT" ELSE threatCategory$
+threatCategory$ = IF isExploit THEN "EXPLOIT" ELSE threatCategory$
+
+# Threats: Status (Unsafe, Abnormal, Quarantined, Waived, File Removed) is the agent's
+# verdict, and the event name says what changed. Memory protection: Action. Script control:
+# the event name (Blocked, Alert, None).
+status = originalData$|, Status: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+st = LOWERCASE(status["v"])
+en = LOWERCASE(evName)
+actField = originalData$|, Action: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+act = IF isExploit THEN LOWERCASE(actField["v"]) ELSE en
+agentPriority$ = IF status["v"] != "" THEN status["v"] ELSE NULL
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF isThreat AND (en == "threat_found" OR en == "corrupt_found" OR st == "unsafe" OR st == "abnormal") THEN "ALERT" ELSE actionTaken$
+actionTaken$ = IF isThreat AND (en == "threat_quarantined" OR st == "quarantined") THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF isThreat AND (en == "threat_cleared" OR CONTAINS(st, "removed")) THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF isThreat AND (en == "threat_waived" OR st == "waived") THEN "NONE" ELSE actionTaken$
+actionTaken$ = IF NOT isThreat AND act == "blocked" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF NOT isThreat AND act == "terminated" THEN "TERMINATED" ELSE actionTaken$
+actionTaken$ = IF NOT isThreat AND (act == "alert" OR (isExploit AND act == "none")) THEN "ALERT" ELSE actionTaken$
+actionTaken$ = IF NOT isThreat AND (act == "allowed" OR (isScript AND act == "none")) THEN "NONE" ELSE actionTaken$
+
+# Cylance Score runs from 1 to 100: 1 to 59 is Abnormal and 60 to 100 Unsafe.
+score = originalData$|, Cylance Score: (?P<v>\d{1,3})(?:,|$)
+agentConfidenceScore$ = IF score["v"] != "" THEN INT(score["v"], 10) ELSE NULL
+
+m1.key$ = "event_name"
+m1.value$ = evName
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+ip = originalData$|, IP Address: \(\s*(?P<v>[^,)\s]+)
+m2.key$ = "device_ip"
+m2.value$ = ip["v"]
+eventMetadata$.record$ = IF ip["v"] != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+zones = originalData$|, Zone Names: \((?P<v>[^)]*)\)
+m3.key$ = "zone_names"
+m3.value$ = zones["v"]
+eventMetadata$.record$ = IF zones["v"] != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+det = originalData$|, Detected By: (?P<v>[A-Za-z]+)
+m4.key$ = "detected_by"
+m4.value$ = det["v"]
+eventMetadata$.record$ = IF det["v"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+owner = originalData$|, File Owner: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+m5.key$ = "file_owner"
+m5.value$ = owner["v"]
+eventMetadata$.record$ = IF owner["v"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+found = originalData$|, Found Date: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+m6.key$ = "found_date"
+m6.value$ = found["v"]
+eventMetadata$.record$ = IF found["v"] != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+running = originalData$|, Is Running: (?P<v>True|False|Unknown)
+m7.key$ = "is_running"
+m7.value$ = running["v"]
+eventMetadata$.record$ = IF running["v"] != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+pid = originalData$|, Process ID: (?P<v>\d+)
+m8.key$ = "process_id"
+m8.value$ = pid["v"]
+eventMetadata$.record$ = IF pid["v"] != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+interp = originalData$|, Interpreter: (?P<v>.*?)(?:, [A-Z][A-Za-z0-9 ]*: |$)
+m9.key$ = "interpreter"
+m9.value$ = interp["v"]
+eventMetadata$.record$ = IF interp["v"] != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$

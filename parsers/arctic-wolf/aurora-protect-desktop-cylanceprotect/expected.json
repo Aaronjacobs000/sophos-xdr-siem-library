@@ -1,0 +1,450 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792026439100000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat",
+      "vendor_alert_type": "Threat",
+      "computer_name": "WS-0142",
+      "host_id": "WS-0142",
+      "policy_name": "Workstations Default",
+      "file_hash": {
+        "sha256": "AF68C74FBB69025C74CFC01213269C878B370FAA3F19ED0A0E16A55C11D23657"
+      },
+      "file_path": "c:\\users\\jsmith\\downloads\\invoice_viewer.exe",
+      "threat_name": "Malware - Trojan - Generic",
+      "threat_type": "FILE",
+      "threat_category": "TROJAN",
+      "agent_priority": "Unsafe",
+      "action_taken": "ALERT",
+      "agent_confidence_score": 100,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "threat_found"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.31"
+          },
+          {
+            "key": "zone_names",
+            "value": "Workstations"
+          },
+          {
+            "key": "detected_by",
+            "value": "FileWatcher"
+          },
+          {
+            "key": "file_owner",
+            "value": "EXAMPLE\\jsmith"
+          },
+          {
+            "key": "found_date",
+            "value": "10/15/2026 1:07:12 AM"
+          },
+          {
+            "key": "is_running",
+            "value": "False"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792026764250000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat",
+      "vendor_alert_type": "Threat",
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "policy_name": "Finance Lockdown",
+      "file_hash": {
+        "sha256": "2C9575680715584BD1FCB9E051524F366570F0CB864E7F159688BF6D6F8133FA",
+        "md5": "2EC218285B96297F0A5FA941CCBA540F"
+      },
+      "file_path": "c:\\programdata\\updater\\update_helper.dll",
+      "threat_name": "Malware - Ransom - Generic",
+      "threat_type": "FILE",
+      "threat_category": "RANSOMWARE",
+      "agent_priority": "Quarantined",
+      "action_taken": "QUARANTINED",
+      "agent_confidence_score": 87,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "threat_quarantined"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "zone_names",
+            "value": "Finance,Laptops"
+          },
+          {
+            "key": "detected_by",
+            "value": "RunningModuleScan"
+          },
+          {
+            "key": "file_owner",
+            "value": "NT AUTHORITY\\SYSTEM"
+          },
+          {
+            "key": "found_date",
+            "value": "10/15/2026 1:12:40 AM"
+          },
+          {
+            "key": "is_running",
+            "value": "True"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792027203000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat",
+      "vendor_alert_type": "Threat",
+      "computer_name": "ENG-WS-009",
+      "host_id": "ENG-WS-009",
+      "policy_name": "Engineering",
+      "file_hash": {
+        "sha256": "A06ED24DD3B3A9EFB13460DF00661B7664395A3197F2961E1CC3DC415E8D0B9F"
+      },
+      "file_path": "d:\\tools\\keygen_tool.exe",
+      "threat_name": "PUP - Keygen - Generic",
+      "threat_type": "FILE",
+      "threat_category": "APPLICATION",
+      "agent_priority": "Waived",
+      "action_taken": "NONE",
+      "agent_confidence_score": 45,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "threat_waived"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.59"
+          },
+          {
+            "key": "zone_names",
+            "value": "Engineering"
+          },
+          {
+            "key": "detected_by",
+            "value": "ExecutionControl"
+          },
+          {
+            "key": "file_owner",
+            "value": "EXAMPLE\\pkim"
+          },
+          {
+            "key": "found_date",
+            "value": "10/15/2026 1:19:55 AM"
+          },
+          {
+            "key": "is_running",
+            "value": "False"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792026581250000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ExploitAttempt",
+      "vendor_alert_type": "ExploitAttempt",
+      "computer_name": "WS-0177",
+      "host_id": "WS-0177",
+      "agent_device_id": "f02cee2f-b105-4c9d-8adb-c972216426b7",
+      "policy_name": "Workstations Default",
+      "user_name": "adoe",
+      "process_name": "C:\\Temp\\tool64.exe",
+      "threat_name": "LSASS Read",
+      "threat_type": "MEMORY",
+      "threat_category": "EXPLOIT",
+      "action_taken": "BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "blocked"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.32"
+          },
+          {
+            "key": "zone_names",
+            "value": "Workstations"
+          },
+          {
+            "key": "process_id",
+            "value": "3804"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792027917500000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ExploitAttempt",
+      "vendor_alert_type": "ExploitAttempt",
+      "computer_name": "WS-0203",
+      "host_id": "WS-0203",
+      "agent_device_id": "73a7da56-4ae9-4095-80ba-b947055bdeed",
+      "policy_name": "Workstations Default",
+      "user_name": "EXAMPLE\\pkim",
+      "process_name": "C:\\Program Files\\Example\\Viewer\\viewer.exe",
+      "threat_name": "Stack Pivot",
+      "threat_type": "MEMORY",
+      "threat_category": "EXPLOIT",
+      "action_taken": "TERMINATED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "terminated"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.33"
+          },
+          {
+            "key": "zone_names",
+            "value": "Workstations"
+          },
+          {
+            "key": "process_id",
+            "value": "7712"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792028412000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ScriptControl",
+      "vendor_alert_type": "ScriptControl",
+      "computer_name": "OPS-WS-057",
+      "host_id": "OPS-WS-057",
+      "agent_device_id": "9946ecf5-2777-41e8-972b-fcf09f9f1d96",
+      "policy_name": "Operations",
+      "file_hash": {
+        "sha256": "3816D04A0DE7322A2BCCDC17ADD65C4B34F746C839DD2C41CFD4606C11D4C368"
+      },
+      "file_path": "c:\\users\\jlee\\appdata\\local\\temp\\stage2.ps1",
+      "threat_name": "stage2.ps1",
+      "threat_type": "FILE",
+      "action_taken": "BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Blocked"
+          },
+          {
+            "key": "zone_names",
+            "value": "Operations"
+          },
+          {
+            "key": "interpreter",
+            "value": "Powershell"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792029675000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Aurora Endpoint Security console",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "jsmith@example.com",
+      "user_display_name": "Jane Smith",
+      "source_address": "203.0.113.45",
+      "logon_application_family": "Cylance",
+      "status": "LoginSuccess"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792029810000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Aurora Endpoint Security console",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "target_user_name": "adoe@example.com",
+      "source_address": "198.51.100.23",
+      "logon_application_family": "Cylance",
+      "status": "LoginFailure"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792030502000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditLog",
+      "event_source": "Aurora Endpoint Security",
+      "event_name": "ThreatGlobalQuarantine",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_type": "User",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "SHA256: AF68C74FBB69025C74CFC01213269C878B370FAA3F19ED0A0E16A55C11D23657, F2BAD753DC1349EDA81408013D8565945AB52341CD05DD46D9C2B582FCB8B5F0; Reason: Confirmed malicious by the SOC."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792030968000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditLog",
+      "event_source": "Aurora Endpoint Security",
+      "event_name": "PolicyEdit",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_type": "User",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Policy: Finance Lockdown"
+          },
+          {
+            "key": "eco_id",
+            "value": "Qx7Lm2Np4Rs6Tu8Vw0Yz1Ab3="
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT > CYLANCEPROTECT_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792031405000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AuditLog",
+      "event_source": "Aurora Endpoint Security",
+      "event_name": "UserEdit",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_type": "User",
+      "target_user_name": "Pat Lee",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "User: Pat Lee"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792032250000000
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792032693000000
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792033339000000
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "CYLANCEPROTECT_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Aurora Protect Desktop",
+      "event_time_usec": 1792033847000000
+    }
+  }
+]
