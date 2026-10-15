@@ -1,0 +1,80 @@
+!SAMPLE=<134>1 2026-10-13T09:15:02.418233+11:00 bigip01.example.com tmm 21877 23003137 [F5@12276 acl_policy_name="/Common/edge_fw_policy" acl_policy_type="Enforced" acl_rule_name="/Common/edge_rules:allow_https" acl_rule_uuid="" action="Accept" hostname="bigip01.example.com" bigip_mgmt_ip="192.0.2.5" context_name="/Common/vs_www_https" context_type="Virtual Server" date_time="Oct 13 2026 09:15:02" dest_fqdn="unknown" dest_ip="198.51.100.20" dst_geo="No-lookup" dest_port="443" device_product="Advanced Firewall Module" device_vendor="F5" device_version="17.1.1.3.0.0.5" drop_reason="" errdefs_msgno="23003137" errdefs_msg_name="Network Event" flow_id="00011a2b3c4d5e6f" ip_protocol="TCP" severity="8" partition_name="Common" route_domain="0" sa_translation_pool="" sa_translation_type="Automap" source_fqdn="unknown" source_ip="203.0.113.45" src_geo="No-lookup" source_port="51544" source_user="unknown" source_user_group="unknown" translated_dest_ip="198.51.100.80" translated_dest_port="8443" translated_ip_protocol="TCP" translated_route_domain="0" translated_source_ip="198.51.100.5" translated_source_port="51544" translated_vlan="/Common/internal" vlan="/Common/external" send_to_vs="" src_zone="" dest_zone="" dest_vlan="" source_ipint_categories="No-lookup" dest_ipint_categories="No-lookup"] "192.0.2.5","bigip01.example.com","Virtual Server","/Common/vs_www_https","No-lookup","203.0.113.45","No-lookup","198.51.100.20","51544","443","/Common/external","TCP","0","198.51.100.5","198.51.100.80","51544","8443","/Common/internal","TCP","0","Enforced","/Common/edge_fw_policy","/Common/edge_rules:allow_https","","Accept","","Automap","","00011a2b3c4d5e6f","unknown","unknown","unknown","unknown","","","","","No-lookup","No-lookup"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:[\s,\[]|^)device_product="Advanced Firewall Module"[\s,\]]|CEF:\d+\|F5\|Advanced Firewall Module\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: F5 BIG-IP AFM network firewall and DoS events from a security logging profile's log
+# publisher, in one of three keyed layouts:
+#   Remote Syslog, rfc5424: <PRI>1 <time> <host> tmm <pid> <msgno> [F5@12276 key="value" ...] <text>
+#   Splunk: key="value",key="value",... (a Remote High-Speed Log sends no syslog header)
+#   ArcSight: CEF:0|F5|Advanced Firewall Module|<version>|<msgno or attack name>|<name>|<sev>|...
+# Network firewall events (errdefs_msgno 23003137) go to the Netflow child; network, DNS and SIP
+# DoS events (23003138, 23003141, 23003145) to the NIDS child. Other AFM events stay generic. The
+# rfc3164 and legacy-bigip layouts carry the fields without names, by position, and aren't read.
+# Parent: reads each layout into the same variables. Values are read key by key, because some,
+# such as dos_src, hold commas and spaces.
+
+cefm = originalData$|(?P<cef>CEF:\d+\|F5\|Advanced Firewall Module\|.*)$
+isCef = cefm["cef"] != ""
+v = IF isCef THEN CEF(cefm["cef"]) ELSE NULL
+k = originalData$
+src = k|(?:^|[\s,\[])source_ip="(?P<v>[^"]*)"
+sport = k|(?:^|[\s,\[])source_port="(?P<v>[^"]*)"
+dst = k|(?:^|[\s,\[])dest_ip="(?P<v>[^"]*)"
+dport = k|(?:^|[\s,\[])dest_port="(?P<v>[^"]*)"
+proto = k|(?:^|[\s,\[])ip_protocol="(?P<v>[^"]*)"
+act = k|(?:^|[\s,\[])action="(?P<v>[^"]*)"
+host = k|(?:^|[\s,\[])hostname="(?P<v>[^"]*)"
+mgmt = k|(?:^|[\s,\[])bigip_mgmt_ip="(?P<v>[^"]*)"
+vlan = k|(?:^|[\s,\[])vlan="(?P<v>[^"]*)"
+rd = k|(?:^|[\s,\[])route_domain="(?P<v>[^"]*)"
+ctxName = k|(?:^|[\s,\[])context_name="(?P<v>[^"]*)"
+ctxType = k|(?:^|[\s,\[])context_type="(?P<v>[^"]*)"
+drop = k|(?:^|[\s,\[])drop_reason="(?P<v>[^"]*)"
+policy = k|(?:^|[\s,\[])acl_policy_name="(?P<v>[^"]*)"
+policyType = k|(?:^|[\s,\[])acl_policy_type="(?P<v>[^"]*)"
+rule = k|(?:^|[\s,\[])acl_rule_name="(?P<v>[^"]*)"
+flow = k|(?:^|[\s,\[])flow_id="(?P<v>[^"]*)"
+msgno = k|(?:^|[\s,\[])errdefs_msgno="(?P<v>[^"]*)"
+msgName = k|(?:^|[\s,\[])errdefs_msg_name="(?P<v>[^"]*)"
+version = k|(?:^|[\s,\[])device_version="(?P<v>[^"]*)"
+dt = k|(?:^|[\s,\[])date_time="(?P<v>[^"]*)"
+
+# In CEF, network events carry the msgno as the signature ID; DoS events carry the attack name
+# there, the action as the name, and cn1 labeled attack_id. IPv6 addresses go in c6a2 and c6a3.
+cefSig = IF isCef THEN STRING(v[4]) ELSE ""
+cefDos = IF isCef THEN STRING(v["cn1Label"]) == "attack_id" ELSE FALSE
+event = IF isCef THEN cefSig ELSE msgno["v"]
+event = IF cefDos THEN "23003138" ELSE event
+srcIp = IF isCef THEN STRING(v["src"]) ELSE src["v"]
+srcIp = IF isCef AND srcIp == "" THEN STRING(v["c6a2"]) ELSE srcIp
+dstIp = IF isCef THEN STRING(v["dst"]) ELSE dst["v"]
+dstIp = IF isCef AND dstIp == "" THEN STRING(v["c6a3"]) ELSE dstIp
+srcPort = IF isCef THEN STRING(v["spt"]) ELSE sport["v"]
+dstPort = IF isCef THEN STRING(v["dpt"]) ELSE dport["v"]
+protocol = IF isCef THEN STRING(v["proto"]) ELSE proto["v"]
+action = IF isCef THEN STRING(v["act"]) ELSE act["v"]
+vlanName = IF isCef THEN STRING(v["cs2"]) ELSE vlan["v"]
+routeDomain = IF isCef THEN STRING(v["cn4"]) ELSE rd["v"]
+contextName = IF isCef AND cefDos THEN STRING(v["cs3"]) ELSE ctxName["v"]
+contextName = IF isCef AND NOT cefDos THEN STRING(v["cs1"]) ELSE contextName
+dropReason = IF isCef AND NOT cefDos THEN STRING(v["cs3"]) ELSE drop["v"]
+ruleName = IF isCef AND NOT cefDos THEN STRING(v["cs5"]) ELSE rule["v"]
+bigip = IF isCef THEN STRING(v["dvchost"]) ELSE host["v"]
+
+sensorType$ = "F5 BIG-IP AFM"
+sensorEventId$ = IF event != "" THEN event ELSE NULL
+hostId$ = IF bigip != "" THEN bigip ELSE NULL
+sensorVersion$ = IF isCef THEN STRING(v[3]) ELSE version["v"]
+eventType$ = "afm"
+eventType$ = IF event == "23003137" THEN "afm-network" ELSE eventType$
+eventType$ = IF event == "23003138" OR event == "23003141" OR event == "23003145" THEN "afm-dos" ELSE eventType$
+
+# The event time: the rfc5424 header's, which has a zone, else date_time or the CEF rt, which are
+# in the BIG-IP's time zone with none given, read as UTC.
+hdr = originalData$|^(?:<\d{1,3}>)?1\s+(?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s
+local = IF isCef THEN STRING(v["rt"]) ELSE dt["v"]
+eventTimeUsec$ = IF local != "" THEN DATETIME(local, "Jan _2 2006 15:04:05") ELSE eventTimeUsec$
+eventTimeUsec$ = IF hdr["t"] != "" THEN DATETIME(hdr["t"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
