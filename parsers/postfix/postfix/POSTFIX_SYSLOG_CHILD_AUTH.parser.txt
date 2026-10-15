@@ -1,0 +1,49 @@
+!SAMPLE=<20>Oct 14 11:26:41 mx1.example.com postfix/submission/smtpd[58700]: warning: unknown[203.0.113.88]: SASL LOGIN authentication failed: authentication failure, sasl_username=admin@example.com
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Postfix smtpd log lines sent by syslog.
+# Child of POSTFIX_SYSLOG_PARENT: SMTP AUTH (SASL) sign-ins to Auth.
+#   <id>: client=<name>[<address>], sasl_method=<m>, sasl_username=<user>          a successful sign-in
+#   warning: <name>[<address>]: SASL <m> authentication failed: <reason>           a failed one
+# From Postfix 3.9 a failure ends in ", sasl_username=<user>", or "(unavailable)" when the user
+# isn't known. Before that it names no user.
+# sasl, fail, daemon, mta, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+success = sasl["qid"] != ""
+user = IF success THEN sasl["user"] ELSE fail["user"]
+targetUserName$ = IF user != "" AND user != "(unavailable)" THEN user ELSE NULL
+addr = IF success THEN sasl["addr"] ELSE fail["addr"]
+sourceAddress$ = IF addr != "" THEN addr ELSE NULL
+client = IF success THEN sasl["client"] ELSE fail["client"]
+targetHostName$ = mta
+authSystem$ = "Postfix SMTP AUTH"
+logonApplicationFamily$ = "smtp"
+method = IF success THEN sasl["method"] ELSE fail["method"]
+
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+reason = fail["reason"]
+extraFailurereason$ = IF success THEN NULL ELSE reason
+# Cyrus SASL reports a wrong user name or password as "authentication failure".
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND CONTAINS(LOWERCASE(reason), "authentication failure") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+m1.key$ = "sasl_method"
+m1.value$ = method
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "client_name"
+m2.value$ = client
+eventMetadata$.record$ = IF client != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "queue_id"
+m3.value$ = sasl["qid"]
+eventMetadata$.record$ = IF success THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "daemon"
+m4.value$ = daemon
+eventMetadata$.record$ = eventMetadata$.record$ + [m4]

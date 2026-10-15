@@ -1,0 +1,51 @@
+!SAMPLE=<22>Oct 14 11:21:09 mx1.example.com postfix/smtpd[58549]: NOQUEUE: reject: RCPT from unknown[203.0.113.66]: 550 5.1.1 <nobody@example.com>: Recipient address rejected: User unknown in local recipient table; from=<> to=<nobody@example.com> proto=ESMTP helo=<spam.example.org>
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\spostfix[\w./-]*/[\w-]+\[\d+\]:\s(?:[0-9A-Za-z]+: (?:reject|discard|hold|to=<|from=<[^>]*>, size=\d|client=[^,]*, sasl_method=)|warning: \S+: SASL \S+ authentication failed)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Postfix mail log lines (smtpd, postscreen, cleanup, qmgr and the delivery agents) sent by
+# syslog to the data collector. Postfix has no field reference; the line shapes follow the format
+# strings in its source (smtpd_check.c, postscreen_smtpd.c, cleanup_message.c, opened.c,
+# log_adhoc.c, smtpd.c and smtpd_sasl_glue.c) and the examples in its README files.
+# Parent: claims the lines its children map, and hands them on:
+#   <id>: reject|discard|hold: ...       mail refused or held by smtpd, postscreen or cleanup  to Email
+#   <id>: to=<...>, relay=..., status=   delivery results (sent, deferred, bounced, expired)    to Email
+#   <id>: from=<...>, size=, nrcpt=      a message entering the active queue (qmgr)            to Email
+#   <id>: client=..., sasl_username=     a client that signed in with SMTP AUTH                to Auth
+#   warning: ...: SASL ... authentication failed                                               to Auth
+# Other Postfix lines (connect, disconnect, message-id, removed) aren't claimed. Each line stands
+# alone: one message spans several lines tied by the queue ID, which goes to event_metadata.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:\d+\s)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))\s+(?P<host>\S+)\s+postfix[\w./-]*/(?P<daemon>[\w-]+)\[\d+\]:\s(?P<msg>.*)$
+msg = hdr["msg"]
+daemon = hdr["daemon"]
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Postfix"
+mta = hdr["host"]
+hostId$ = mta
+# A BSD syslog time has no year and no zone: DATETIME picks the year (TRUE) and reads UTC. An RFC 3339
+# time, as rsyslog forwards it, keeps its zone.
+iso = hdr["time"]|^\d{4}-
+eventTimeUsec$ = IF iso[0] != "" THEN DATETIME(hdr["time"], "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE)
+
+# smtpd and postscreen: <id>: reject: <stage> from <name>[<address>](:<port>): <reply>; from=<..> to=<..> proto=.. helo=<..>
+# (postscreen separates the last four with commas)
+rej = msg|^(?P<qid>NOQUEUE|[0-9A-Za-z]+): (?P<act>reject|discard|hold): (?P<stage>[A-Z][A-Z-]*) from (?P<client>[^\[\s]*)\[(?P<addr>[^\]]*)\](?::\d+)?: (?P<reply>.*)$
+# cleanup header and body checks: <id>: reject: header|body <text> from <name>[<address>]; from=<..> to=<..> ...: <reply>
+chk = msg|^(?P<qid>[0-9A-Za-z]+): (?P<act>reject|discard|hold): (?P<class>header|body|content) (?P<content>.*) from (?P<client>[^\[\s;]*)(?:\[(?P<addr>[^\]]*)\])?(?::\d+)?;(?P<rest>.*)$
+# Delivery agents (smtp, lmtp, local, virtual, pipe, error): <id>: to=<..>, [orig_to=<..>,] relay=.., delay=.., delays=.., dsn=.., status=.. (text)
+dlv = msg|^(?P<qid>[0-9A-Za-z]+): to=<(?P<to>[^>]*)>, (?:orig_to=<(?P<orig>[^>]*)>, )?relay=(?P<relay>[^,]+),.*?\bdelay=(?P<delay>[\d.]+), delays=(?P<delays>[\d./]+),.*?\bdsn=(?P<dsn>[\d.]+), status=(?P<status>\w+)(?: \((?P<text>.*)\))?$
+# qmgr: <id>: from=<..>, size=.., nrcpt=.. (queue active)
+qmg = msg|^(?P<qid>[0-9A-Za-z]+): from=<(?P<from>[^>]*)>, size=(?P<size>\d+), nrcpt=(?P<nrcpt>\d+)
+# smtpd: <id>: client=<name>[<address>], sasl_method=.., sasl_username=..
+sasl = msg|^(?P<qid>[0-9A-Za-z]+): client=(?P<client>[^\[\s,]*)\[(?P<addr>[^\]]*)\](?::\d+)?, sasl_method=(?P<method>[^,]+), sasl_username=(?P<user>[^,]+)
+# smtpd: warning: <name>[<address>]: SASL <method> authentication failed: <reason>[, sasl_username=<user>] (the user from Postfix 3.9)
+fail = msg|^warning: (?P<client>[^\[\s]*)\[(?P<addr>[^\]]*)\](?::\d+)?: SASL (?P<method>\S+) authentication failed: (?P<reason>.*?)(?:, sasl_username=(?P<user>.*))?$
+
+eventType$ = "other"
+eventType$ = IF rej["qid"] != "" OR chk["qid"] != "" OR dlv["qid"] != "" OR qmg["qid"] != "" THEN "email" ELSE eventType$
+eventType$ = IF sasl["qid"] != "" OR fail["method"] != "" THEN "auth" ELSE eventType$

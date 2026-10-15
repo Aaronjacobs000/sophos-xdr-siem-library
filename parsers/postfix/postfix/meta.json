@@ -1,0 +1,49 @@
+{
+  "vendor": "Postfix",
+  "product": "Postfix",
+  "versions": [
+    "3"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.postfix.org/postconf.5.html",
+    "https://www.postfix.org/POSTSCREEN_README.html",
+    "https://www.postfix.org/BACKSCATTER_README.html",
+    "https://www.postfix.org/MAILLOG_README.html",
+    "https://github.com/vdukhovni/postfix/blob/master/postfix/src/global/log_adhoc.c",
+    "https://github.com/vdukhovni/postfix/blob/master/postfix/src/smtpd/smtpd_check.c",
+    "https://github.com/vdukhovni/postfix/blob/master/postfix/src/smtpd/smtpd_sasl_glue.c"
+  ],
+  "notes": "Forward the Postfix host's mail log (the mail facility) to the data collector with rsyslog or syslog-ng, or set maillog_file and ship that file. Postfix publishes no field reference, so these parsers follow the format strings in Postfix's source (smtpd_check.c, postscreen_smtpd.c, cleanup_message.c, opened.c, log_adhoc.c, smtpd.c and smtpd_sasl_glue.c; three are linked) and the log examples in its README files. To Email: mail refused or held by smtpd, postscreen or cleanup's header and body checks (event_type reject, discard or hold; reject and discard are BLOCKED, hold QUARANTINED), with the sender, recipient, client address and the reply as the reason; delivery results from smtp, lmtp, local, virtual and pipe (event_type delivery), with the recipient, relay, dsn and status, where sent is DELIVERED and deferred, bounced and expired keep Postfix's status in event_metadata; and qmgr's queue entry (event_type queued) with the sender and size. To Auth: SMTP AUTH sign-ins (client= with sasl_username) and failures (SASL ... authentication failed) with the user and address. A failure names the user only from Postfix 3.9. Connect, disconnect, message-id and removed lines aren't claimed. Each line stands alone: one message spans several lines tied by its queue ID, which goes to event_metadata, so search on queue_id to follow a message. Service names such as postfix/submission/smtpd are read. A BSD syslog time has no year or zone and is read as UTC; keep the host on UTC, or forward with RFC 3339 times (rsyslog's forwarding format), whose zone is kept. Samples are made up in those shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (101 of 101 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (101 of 101 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines or the unclaimed ones.",
+  "parsers": [
+    {
+      "name": "POSTFIX_SYSLOG_PARENT",
+      "file": "POSTFIX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "POSTFIX_SYSLOG_CHILD_EMAIL",
+      "file": "POSTFIX_SYSLOG_CHILD_EMAIL.parser.txt",
+      "role": "child",
+      "parent": "POSTFIX_SYSLOG_PARENT",
+      "schema": "scwx.email"
+    },
+    {
+      "name": "POSTFIX_SYSLOG_CHILD_AUTH",
+      "file": "POSTFIX_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "POSTFIX_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}
