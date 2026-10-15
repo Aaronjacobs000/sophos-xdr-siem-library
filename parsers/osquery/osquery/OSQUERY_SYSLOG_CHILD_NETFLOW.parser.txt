@@ -1,0 +1,43 @@
+!SAMPLE=<158>Oct 15 01:02:30 web01.example.com osqueryd[2214]: {"name":"pack_incident-response_open_sockets","hostIdentifier":"web01.example.com","calendarTime":"Thu Oct 15 01:02:30 2026 UTC","unixTime":"1792026150","epoch":"0","counter":"12","numerics":false,"decorations":{"host_uuid":"4C4C4544-0047-3810-8052-B7C04F4A4E32","username":"jsmith"},"columns":{"family":"2","local_address":"192.0.2.15","local_port":"51544","path":"","pid":"4021","protocol":"6","remote_address":"203.0.113.80","remote_port":"4444"},"action":"added"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="netflow"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: osquery result rows over syslog from tables with a local and a remote address, such as
+# process_open_sockets (the incident-response pack's open_sockets) and socket_events.
+# Child of OSQUERY_SYSLOG_PARENT: each added row with a connected remote address to Netflow, with
+# the host's address as the source. osquery can't tell who opened the connection, so there is no
+# direction.
+# json, host, pid, remote, rport, act, eventType$, sensorType$, hostId$ and eventTimeUsec$ come
+# from the parent.
+
+local = STRING(json["$.columns.local_address"])
+lport = STRING(json["$.columns.local_port"])
+sourceAddress$ = IF local != "" AND local != "0.0.0.0" AND local != "::" THEN local ELSE NULL
+destinationAddress$ = remote
+lportOk = lport|^(?P<n>\d{1,5})$
+rportOk = rport|^(?P<n>\d{1,5})$
+sourcePort$ = IF lportOk["n"] != "" THEN INT(lportOk["n"], 10) ELSE NULL
+destinationPort$ = IF rportOk["n"] != "" THEN INT(rportOk["n"], 10) ELSE NULL
+# protocol is the IANA number, such as 6 for TCP and 17 for UDP.
+proto = STRING(json["$.columns.protocol"])
+protoOk = proto|^(?P<n>\d{1,3})$
+protocol$ = IF protoOk["n"] != "" THEN INT(protoOk["n"], 10) ELSE NULL
+
+m1.key$ = "query_name"
+m1.value$ = STRING(json["$.name"])
+m2.key$ = "pid"
+m2.value$ = pid
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+# socket_events names the process's executable in path; process_open_sockets uses path for a
+# UNIX socket's file, which never reaches this child.
+evAct = STRING(json["$.columns.action"])
+path = STRING(json["$.columns.path"])
+processImagePath$ = IF evAct != "" AND path != "" THEN path ELSE NULL
+m3.key$ = "socket_action"
+m3.value$ = evAct
+eventMetadata$.record$ = IF evAct != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

@@ -1,0 +1,42 @@
+{
+  "vendor": "osquery",
+  "product": "osquery",
+  "versions": [],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://osquery.readthedocs.io/en/stable/deployment/logging/",
+    "https://osquery.readthedocs.io/en/stable/installation/cli-flags/"
+  ],
+  "notes": "Run osqueryd on Linux or macOS hosts with --logger_plugin=syslog (or filesystem,syslog) and forward the system log to the data collector. Results go to facility local3 (--logger_syslog_facility), one JSON object per row change in the default event format, and status logs as severity=N location=file:line message=text. An @cee: cookie (--logger_syslog_prepend_cee) is skipped. Query names and columns are set by whoever writes the query, so rows are routed by their columns. Added rows with pid and cmdline (processes, process_events and the incident-response pack's logged_in_users) go to Process, with the host identifier as the computer, the parent's PID, path, name and, for logged_in_users, the user. Added rows with a connected remote address and port (process_open_sockets, as in the incident-response pack's open_sockets, and socket_events) go to Netflow, with the local address as the source, the query name and PID in event_metadata, and no direction, since osquery can't tell who opened the connection. Removed rows, snapshots, batched results, other queries and status logs stay generic, with the host identifier as host_id. Numbers are read whether they come as text or as numbers (numerics). The event time is unixTime, when the query ran, not when the process started or the connection opened; process_create_time_usec comes from start_time where the query has it. A syslog daemon cuts lines over its message limit (8 KB by default in rsyslog), and a cut line's JSON can't be read, so keep queries narrow or raise the limit. The syslog logger isn't available on Windows. Results another forwarder sends as syslog lines with the same JSON also match, since the confirm string looks for osquery's calendarTime. Samples are made up in the event, snapshot and status formats from osquery's logging docs and its syslog logger plugin's source, with the incident-response pack's query names. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (48 of 48 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (36 of 36 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "OSQUERY_SYSLOG_PARENT",
+      "file": "OSQUERY_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "OSQUERY_SYSLOG_CHILD_PROCESS",
+      "file": "OSQUERY_SYSLOG_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "OSQUERY_SYSLOG_PARENT",
+      "schema": "scwx.process"
+    },
+    {
+      "name": "OSQUERY_SYSLOG_CHILD_NETFLOW",
+      "file": "OSQUERY_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "OSQUERY_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    }
+  ]
+}
