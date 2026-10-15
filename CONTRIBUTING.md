@@ -2,6 +2,8 @@
 
 Library contributions are open to anyone with a GitHub account. You don't need git.
 
+To report a security problem, follow [SECURITY.md](SECURITY.md) instead of opening an issue.
+
 ## Add parsers to the library
 
 Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/), then choose **Share to the library** on the Test step. Fill in the details and run the library checks; they are the same checks the repo runs. When they pass, pick a route.

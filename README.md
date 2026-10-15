@@ -1,6 +1,6 @@
 # Parser Studio for Sophos NG-SIEM
 
-> **Unofficial project, not from Sophos.** This is a personal project by an individual. It is not an official Sophos product and it is not built, endorsed, supported, or warranted by Sophos. Raise problems as issues on this repository, not with Sophos support.
+> **Unofficial project, not from Sophos.** This is a personal project by an individual. It is not an official Sophos product and it is not built, endorsed, supported, or warranted by Sophos. Raise problems as issues on this repository, not with Sophos support. Report a security problem privately, as [SECURITY.md](SECURITY.md) explains.
 
 Parser Studio helps you write custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM) and test them in your browser before you add them in Sophos Fusion. It also holds a community library of parsers that anyone can use, test against their own logs, fork, and add to.
 
