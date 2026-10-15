@@ -1,0 +1,370 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056001000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-DROP_PKT",
+      "source_address": "198.51.100.40",
+      "destination_address": "192.0.2.15",
+      "source_port": 12346,
+      "destination_port": 12346,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet1"
+          },
+          {
+            "key": "zone_pair",
+            "value": "none"
+          },
+          {
+            "key": "class",
+            "value": "none"
+          },
+          {
+            "key": "reason",
+            "value": "Zone-pair without policy"
+          },
+          {
+            "key": "srcvpn",
+            "value": "0"
+          },
+          {
+            "key": "dstvpn",
+            "value": "65534"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056039000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-DROP_PKT",
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.20",
+      "source_port": 41871,
+      "destination_port": 23,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/2"
+          },
+          {
+            "key": "zone_pair",
+            "value": "OUTSIDE_INSIDE_ZP"
+          },
+          {
+            "key": "class",
+            "value": "class-default"
+          },
+          {
+            "key": "reason",
+            "value": "Policy drop:classify result"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "0x2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056052000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-PASS_PKT",
+      "source_address": "192.0.2.30",
+      "destination_address": "198.51.100.53",
+      "source_port": 52011,
+      "destination_port": 22,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet2"
+          },
+          {
+            "key": "zone_pair",
+            "value": "ZP_user_dc_fw-pol"
+          },
+          {
+            "key": "class",
+            "value": "fw-pol-seq-1-cm_"
+          },
+          {
+            "key": "reason",
+            "value": "PASS action found in policy-map"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056076000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-LOG_SUMMARY",
+      "source_address": "192.0.2.102",
+      "destination_address": "198.51.100.150",
+      "source_port": 53912,
+      "destination_port": 8001,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "tx_packet_count": 2,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet3"
+          },
+          {
+            "key": "zone_pair",
+            "value": "ZP_user_dc_fw-pol"
+          },
+          {
+            "key": "class",
+            "value": "fw-pol-seq-1-cm_"
+          },
+          {
+            "key": "srcvrf",
+            "value": "10"
+          },
+          {
+            "key": "dstvrf",
+            "value": "20"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056120512000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-LOG_SUMMARY",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 5060,
+      "destination_port": 5060,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "tx_packet_count": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/0"
+          },
+          {
+            "key": "zone_pair",
+            "value": "OUTSIDE_INSIDE_ZP"
+          },
+          {
+            "key": "class",
+            "value": "class-default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056181000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-SESS_AUDIT_TRAIL_START",
+      "source_address": "192.0.2.10",
+      "destination_address": "198.51.100.20",
+      "source_port": 43512,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056195000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-SESS_AUDIT_TRAIL",
+      "source_address": "192.0.2.10",
+      "destination_address": "198.51.100.20",
+      "source_port": 43512,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "tx_byte_count": 4096,
+      "rx_byte_count": 81920,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-SESS_AUDIT_TRAIL_START",
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.53",
+      "source_port": 33207,
+      "destination_port": 53,
+      "application_name": "dns",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet3"
+          },
+          {
+            "key": "zone_pair",
+            "value": "ZP_user_wan_fw-pol"
+          },
+          {
+            "key": "class",
+            "value": "fw-pol-seq-11-cm_"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-SESS_AUDIT_TRAIL",
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.53",
+      "source_port": 33207,
+      "destination_port": 53,
+      "application_name": "dns",
+      "flow_action": "FW_ALLOWED",
+      "tx_byte_count": 48,
+      "rx_byte_count": 112,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet3"
+          },
+          {
+            "key": "zone_pair",
+            "value": "ZP_user_wan_fw-pol"
+          },
+          {
+            "key": "class",
+            "value": "fw-pol-seq-11-cm_"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_IOSXE_ZBFW_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco IOS XE",
+      "event_time_usec": 1792056310000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FW-6-DROP_PKT",
+      "source_address": "2001:db8:100::25",
+      "destination_address": "2001:db8:200::53",
+      "source_port": 5353,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/1"
+          },
+          {
+            "key": "zone_pair",
+            "value": "INSIDE_OUTSIDE_ZP"
+          },
+          {
+            "key": "class",
+            "value": "class-default"
+          },
+          {
+            "key": "reason",
+            "value": "Policy drop:classify result"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 12,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
