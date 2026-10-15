@@ -1,0 +1,56 @@
+{
+  "vendor": "Linux",
+  "product": "auditd",
+  "versions": [
+    "3.0",
+    "3.1"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://github.com/linux-audit/audit-documentation/blob/main/specs/fields/field-dictionary.csv",
+    "https://github.com/linux-audit/audit-documentation/blob/main/specs/messages/message-dictionary.csv",
+    "https://github.com/linux-audit/audit-userspace/blob/master/audisp/plugins/syslog/audisp-syslog.8",
+    "https://github.com/linux-audit/audit-userspace/blob/master/docs/auditd.conf.5",
+    "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/security_hardening/auditing-the-system_security-hardening",
+    "https://docs.rsyslog.com/doc/rainerscript/global.html"
+  ],
+  "notes": "For Linux hosts running auditd 3.x: turn on the audisp-syslog plugin (active = yes in /etc/audit/plugins.d/syslog.conf) and forward the host's syslog to the data collector, or have rsyslog read /var/log/audit/audit.log. Audit rules decide what is logged, for example -a always,exit -F arch=b64 -S execve -k exec for program executions. Logins and authentications (USER_LOGIN, USER_AUTH) and account and group changes (ADD_USER, DEL_USER, USER_MGMT, ADD_GROUP, DEL_GROUP, GRP_MGMT, USER_CHAUTHTOK, GRP_CHAUTHTOK) go to Auth; execve SYSCALL records (the process, parent, program and user) and EXECVE records (the command line) go to Process; sudo commands (USER_CMD), audit configuration changes (CONFIG_CHANGE) and systemd service starts and stops go to ManagementEvent. Other records, such as PATH, PROCTITLE and AVC, stay generic. Each syslog line is one record: the records of one event share the audit ID (seconds, milliseconds and serial), which the parser keeps as sensor_event_id, so join SYSCALL and EXECVE on it. The parser reads RAW and ENRICHED log formats, with or without node=, and takes user names from the enriched fields when present. auditd hex-encodes values with spaces or special characters: the parser decodes the sudo command, but other encoded values, such as an EXECVE argument with a space, stay hex. The interpret option of audisp-syslog drops the audit ID and isn't supported. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (230 of 230 fields matched the emulator in each of 3 runs), and each child also passed as a separate parser under its parent. In Run Test the engine also keeps sensor_event_id on lines that stay generic, a field the emulator's generic schema leaves out. No built-in parser claimed these lines. Samples are made up in the record formats of the linux-audit project's field dictionary and test data.",
+  "parsers": [
+    {
+      "name": "LINUX_AUDITD_KV_PARENT",
+      "file": "LINUX_AUDITD_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "LINUX_AUDITD_KV_CHILD_AUTH",
+      "file": "LINUX_AUDITD_KV_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "LINUX_AUDITD_KV_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "LINUX_AUDITD_KV_CHILD_PROCESS",
+      "file": "LINUX_AUDITD_KV_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "LINUX_AUDITD_KV_PARENT",
+      "schema": "scwx.process"
+    },
+    {
+      "name": "LINUX_AUDITD_KV_CHILD_MGMT",
+      "file": "LINUX_AUDITD_KV_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "LINUX_AUDITD_KV_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

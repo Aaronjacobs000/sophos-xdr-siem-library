@@ -1,0 +1,568 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025701123000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025701.123:4567",
+      "computer_name": "web01.example.com",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "process_id": "4321",
+      "parent_process_id": "1200",
+      "image_path": "/usr/bin/curl",
+      "username": "jdoe",
+      "process_is_admin": false,
+      "process": "curl"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025701123000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025701.123:4567",
+      "computer_name": "web01.example.com",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "commandline": "curl -s -o /tmp/x",
+      "process": "curl"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025701123000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025710802000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025710.802:4590",
+      "computer_name": "web01.example.com",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "commandline": "bash -c 6964202D75",
+      "process": "bash"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025716044000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "app02.example.com",
+      "sensor_event_id": "1792025716.044:4602",
+      "computer_name": "app02.example.com",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "process_id": "2245",
+      "parent_process_id": "2201",
+      "image_path": "/tmp/runme",
+      "username": "1001",
+      "process_is_admin": false,
+      "process": "runme"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025721500000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025731193000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025731.193:4621",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "jdoe",
+      "source_user_name": "jdoe",
+      "source_address": "203.0.113.50",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/sbin/sshd",
+      "process_id": "5601",
+      "session_id": "12",
+      "auth_system": "sshd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "USER_LOGIN"
+          },
+          {
+            "key": "op",
+            "value": "login"
+          },
+          {
+            "key": "terminal",
+            "value": "/dev/pts/1"
+          },
+          {
+            "key": "id",
+            "value": "1000"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025742818000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025742.818:4633",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "(invalid user)",
+      "source_address": "198.51.100.99",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/sbin/sshd",
+      "process_id": "5655",
+      "auth_system": "sshd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "USER_LOGIN"
+          },
+          {
+            "key": "op",
+            "value": "login"
+          },
+          {
+            "key": "terminal",
+            "value": "sshd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025745020000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025745.020:4640",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "root",
+      "source_address": "198.51.100.99",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/sbin/sshd",
+      "process_id": "5660",
+      "auth_system": "sshd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "USER_AUTH"
+          },
+          {
+            "key": "op",
+            "value": "PAM:authentication"
+          },
+          {
+            "key": "terminal",
+            "value": "ssh"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025761324000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025761.324:4651",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "root",
+      "source_user_name": "jdoe",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/bin/su",
+      "process_id": "9730",
+      "session_id": "3",
+      "auth_system": "su",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "USER_AUTH"
+          },
+          {
+            "key": "op",
+            "value": "PAM:authentication"
+          },
+          {
+            "key": "terminal",
+            "value": "/dev/pts/0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025776940000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025776.940:4660",
+      "target_hostname": "web01.example.com",
+      "client_process_id": 10638,
+      "result": "success",
+      "username": "jdoe",
+      "type": "SUDO",
+      "command": "systemctl stop auditd",
+      "operation_name": "Command run with sudo"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025781005000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "db01",
+      "sensor_event_id": "1792025781.005:812",
+      "target_hostname": "db01",
+      "client_process_id": 7720,
+      "result": "failed",
+      "username": "1002",
+      "type": "SUDO",
+      "command": "su",
+      "operation_name": "Command run with sudo"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025791871000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025791.871:4672",
+      "action": "USER_MANAGEMENT",
+      "action_result": "SUCCESS",
+      "target_user_name": "svc-backup",
+      "source_user_name": "jdoe",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/sbin/useradd",
+      "process_id": "11925",
+      "session_id": "3",
+      "auth_system": "useradd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "ADD_USER"
+          },
+          {
+            "key": "op",
+            "value": "add-user"
+          },
+          {
+            "key": "terminal",
+            "value": "pts/0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025792002000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025792.002:4675",
+      "action": "USER_MANAGEMENT",
+      "action_result": "SUCCESS",
+      "target_user_name": "svc-backup",
+      "source_user_name": "jdoe",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/sbin/groupadd",
+      "process_id": "11926",
+      "session_id": "3",
+      "auth_system": "groupadd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "ADD_GROUP"
+          },
+          {
+            "key": "op",
+            "value": "adding group to /etc/group"
+          },
+          {
+            "key": "terminal",
+            "value": "pts/0"
+          },
+          {
+            "key": "remote_hostname",
+            "value": "web01"
+          },
+          {
+            "key": "id",
+            "value": "1004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025801277000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "app02.example.com",
+      "sensor_event_id": "1792025801.277:2332",
+      "action": "USER_MANAGEMENT",
+      "action_result": "SUCCESS",
+      "target_user_name": "1003",
+      "source_user_name": "admin.jlee",
+      "source_address": "192.0.2.15",
+      "target_host_name": "app02.example.com",
+      "process_filename": "/usr/sbin/userdel",
+      "process_id": "161731",
+      "session_id": "27",
+      "auth_system": "userdel",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "DEL_USER"
+          },
+          {
+            "key": "op",
+            "value": "delete-user"
+          },
+          {
+            "key": "terminal",
+            "value": "pts/1"
+          },
+          {
+            "key": "remote_hostname",
+            "value": "app02"
+          },
+          {
+            "key": "id",
+            "value": "1003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025811860000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025811.860:4690",
+      "action": "USER_MANAGEMENT",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action_result": "SUCCESS",
+      "target_user_name": "svc-backup",
+      "source_user_name": "jdoe",
+      "target_host_name": "web01.example.com",
+      "process_filename": "/usr/bin/passwd",
+      "process_id": "12297",
+      "session_id": "3",
+      "auth_system": "passwd",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record_type",
+            "value": "USER_CHAUTHTOK"
+          },
+          {
+            "key": "op",
+            "value": "PAM:chauthtok"
+          },
+          {
+            "key": "terminal",
+            "value": "pts/0"
+          },
+          {
+            "key": "remote_hostname",
+            "value": "web01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025821923000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025821.923:4700",
+      "target_hostname": "web01.example.com",
+      "result": "success",
+      "username": "jdoe",
+      "command": "op=remove_rule key=exec",
+      "operation": "remove_rule",
+      "operation_name": "Audit configuration changed"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025822015000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025822.015:4701",
+      "target_hostname": "web01.example.com",
+      "client_process_id": 1,
+      "result": "success",
+      "operation": "auditd",
+      "operation_name": "Service stopped"
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025831533000,
+      "host_id": "app02.example.com"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025701123000,
+      "host_id": "web01.example.com"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "LINUX_AUDITD_KV_PARENT > LINUX_AUDITD_KV_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Linux auditd",
+      "event_time_usec": 1792025841066000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01.example.com",
+      "sensor_event_id": "1792025841.066:4720",
+      "computer_name": "web01.example.com",
+      "os": {
+        "os": "OS_LINUX"
+      },
+      "process_id": "4810",
+      "parent_process_id": "1",
+      "image_path": "/usr/sbin/cron",
+      "username": "root",
+      "process_is_admin": true,
+      "process": "cron"
+    }
+  }
+]

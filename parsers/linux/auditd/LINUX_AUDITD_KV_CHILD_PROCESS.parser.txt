@@ -1,0 +1,38 @@
+!SAMPLE=<14>Oct 15 00:55:01 web01.example.com audisp-syslog: type=SYSCALL msg=audit(1792025701.123:4567): arch=c000003e syscall=59 success=yes exit=0 a0=55d0c2a1b2c0 a1=55d0c2a1b300 a2=55d0c2a1b340 a3=0 items=2 ppid=1200 pid=4321 auid=1000 uid=1000 gid=1000 euid=1000 suid=1000 fsuid=1000 egid=1000 sgid=1000 fsgid=1000 tty=pts0 ses=3 comm="curl" exe="/usr/bin/curl" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="exec" ARCH=x86_64 SYSCALL=execve AUID="jdoe" UID="jdoe" GID="jdoe" EUID="jdoe" SUID="jdoe" FSUID="jdoe" EGID="jdoe" SGID="jdoe" FSGID="jdoe"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="process"
+!SCHEMA=scwx.process
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Linux audit records sent to syslog by auditd's audisp-syslog plugin (program audisp-syslog,
+# or audispd when the plugin sets a facility), or read from /var/log/audit/audit.log by rsyslog.
+# Child of LINUX_AUDITD_KV_PARENT: program executions to Process. SYSCALL records of execve and
+# execveat give the process, its parent, the program and the user; the EXECVE record of the same
+# event gives the command line. Join them on sensor_event_id. Audit rules decide what is logged,
+# for example -a always,exit -F arch=b64 -S execve -k exec.
+# rtype, raw, the field variables, auidName, uidName and the $ fields come from the parent.
+
+computerName$ = host
+os$.os$ = "OS_LINUX"
+sys = rtype == "SYSCALL"
+processId$ = IF sys THEN pid ELSE NULL
+parentProcessId$ = IF sys THEN ppidm["v"] ELSE NULL
+imagePath$ = IF sys THEN exe ELSE NULL
+# The login user (auid) started the program; without one, the user it ran as.
+username$ = IF sys AND auidName != "" THEN auidName ELSE NULL
+username$ = IF sys AND auidName == "" THEN uidName ELSE username$
+processIsAdmin$ = IF sys AND euidm["v"] != "" THEN euidm["v"] == "0" ELSE NULL
+
+# EXECVE: argc=<n> a0=... a1=...; a long argument comes as aN_len=<n> aN[0]=... aN[1]=....
+# Quoted arguments are literal; arguments auditd hex-encoded stay hex.
+argv = raw|\sargc=\d+\s+(?P<v>.*?)\s*$
+args = REPLACE_REGEX(argv["v"], "(?:^|\\s)a\\d+_len=\\d+", "")
+args = REPLACE_REGEX(args, "(?:^|\\s)a\\d+(?:\\[\\d+\\])?=", " ")
+args = REPLACE(args, "\"", "")
+cl = args|^\s*(?P<v>.*?)\s*$
+commandline$ = IF sys THEN NULL ELSE cl["v"]
+a0 = raw|\sa0="(?P<v>[^"]*)"
+a0base = a0["v"]|(?P<v>[^/]+)$
+process$ = IF sys THEN comm ELSE a0base["v"]

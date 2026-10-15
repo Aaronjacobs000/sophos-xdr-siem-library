@@ -1,0 +1,142 @@
+!SAMPLE=<14>Oct 15 00:56:16 web01.example.com audisp-syslog: type=USER_CMD msg=audit(1792025776.940:4660): pid=10638 uid=1000 auid=1000 ses=3 subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 msg='cwd="/home/jdoe" cmd=73797374656D63746C2073746F7020617564697464 exe="/usr/bin/sudo" terminal=pts/0 res=success' UID="jdoe" AUID="jdoe"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="mgmt"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Linux audit records sent to syslog by auditd's audisp-syslog plugin (program audisp-syslog,
+# or audispd when the plugin sets a facility), or read from /var/log/audit/audit.log by rsyslog.
+# Child of LINUX_AUDITD_KV_PARENT: USER_CMD (a command run with sudo), CONFIG_CHANGE (audit rule
+# and setting changes) and SERVICE_START and SERVICE_STOP (systemd units) to ManagementEvent.
+# rtype, raw, the field variables, ok, failed, auidName, uidName and the $ fields come from the
+# parent.
+
+targetHostname$ = host
+clientProcessId$ = IF pid != "" THEN pid ELSE NULL
+result$ = IF ok THEN "success" ELSE NULL
+result$ = IF failed THEN "failed" ELSE result$
+username$ = IF rtype == "USER_CMD" THEN uidName ELSE NULL
+username$ = IF rtype != "USER_CMD" AND auidName != "" THEN auidName ELSE username$
+sudo = rtype == "USER_CMD" AND CONTAINS(exe, "sudo")
+type$ = IF sudo THEN "SUDO" ELSE NULL
+
+# USER_CMD: cmd is quoted, or hex when the command has spaces. The hex is decoded here: each byte
+# gets a "|" after it, then each printable byte becomes its character. Bytes outside printable
+# ASCII become "?". | itself (7C) goes last, so no decoded "|" is mistaken for a separator.
+cmdm = raw|[\s']cmd=(?:"(?P<q>[^"]*)"|(?P<u>[0-9A-F]+))[\s']
+cmdText = REPLACE_REGEX(cmdm["u"], "([0-9A-F]{2})", "${1}|")
+cmdText = REPLACE(cmdText, "20|", " ")
+cmdText = REPLACE(cmdText, "21|", "!")
+cmdText = REPLACE(cmdText, "22|", "\"")
+cmdText = REPLACE(cmdText, "23|", "#")
+cmdText = REPLACE(cmdText, "24|", "$")
+cmdText = REPLACE(cmdText, "25|", "%")
+cmdText = REPLACE(cmdText, "26|", "&")
+cmdText = REPLACE(cmdText, "27|", "'")
+cmdText = REPLACE(cmdText, "28|", "(")
+cmdText = REPLACE(cmdText, "29|", ")")
+cmdText = REPLACE(cmdText, "2A|", "*")
+cmdText = REPLACE(cmdText, "2B|", "+")
+cmdText = REPLACE(cmdText, "2C|", ",")
+cmdText = REPLACE(cmdText, "2D|", "-")
+cmdText = REPLACE(cmdText, "2E|", ".")
+cmdText = REPLACE(cmdText, "2F|", "/")
+cmdText = REPLACE(cmdText, "30|", "0")
+cmdText = REPLACE(cmdText, "31|", "1")
+cmdText = REPLACE(cmdText, "32|", "2")
+cmdText = REPLACE(cmdText, "33|", "3")
+cmdText = REPLACE(cmdText, "34|", "4")
+cmdText = REPLACE(cmdText, "35|", "5")
+cmdText = REPLACE(cmdText, "36|", "6")
+cmdText = REPLACE(cmdText, "37|", "7")
+cmdText = REPLACE(cmdText, "38|", "8")
+cmdText = REPLACE(cmdText, "39|", "9")
+cmdText = REPLACE(cmdText, "3A|", ":")
+cmdText = REPLACE(cmdText, "3B|", ";")
+cmdText = REPLACE(cmdText, "3C|", "<")
+cmdText = REPLACE(cmdText, "3D|", "=")
+cmdText = REPLACE(cmdText, "3E|", ">")
+cmdText = REPLACE(cmdText, "3F|", "?")
+cmdText = REPLACE(cmdText, "40|", "@")
+cmdText = REPLACE(cmdText, "41|", "A")
+cmdText = REPLACE(cmdText, "42|", "B")
+cmdText = REPLACE(cmdText, "43|", "C")
+cmdText = REPLACE(cmdText, "44|", "D")
+cmdText = REPLACE(cmdText, "45|", "E")
+cmdText = REPLACE(cmdText, "46|", "F")
+cmdText = REPLACE(cmdText, "47|", "G")
+cmdText = REPLACE(cmdText, "48|", "H")
+cmdText = REPLACE(cmdText, "49|", "I")
+cmdText = REPLACE(cmdText, "4A|", "J")
+cmdText = REPLACE(cmdText, "4B|", "K")
+cmdText = REPLACE(cmdText, "4C|", "L")
+cmdText = REPLACE(cmdText, "4D|", "M")
+cmdText = REPLACE(cmdText, "4E|", "N")
+cmdText = REPLACE(cmdText, "4F|", "O")
+cmdText = REPLACE(cmdText, "50|", "P")
+cmdText = REPLACE(cmdText, "51|", "Q")
+cmdText = REPLACE(cmdText, "52|", "R")
+cmdText = REPLACE(cmdText, "53|", "S")
+cmdText = REPLACE(cmdText, "54|", "T")
+cmdText = REPLACE(cmdText, "55|", "U")
+cmdText = REPLACE(cmdText, "56|", "V")
+cmdText = REPLACE(cmdText, "57|", "W")
+cmdText = REPLACE(cmdText, "58|", "X")
+cmdText = REPLACE(cmdText, "59|", "Y")
+cmdText = REPLACE(cmdText, "5A|", "Z")
+cmdText = REPLACE(cmdText, "5B|", "[")
+cmdText = REPLACE(cmdText, "5C|", "\\")
+cmdText = REPLACE(cmdText, "5D|", "]")
+cmdText = REPLACE(cmdText, "5E|", "^")
+cmdText = REPLACE(cmdText, "5F|", "_")
+cmdText = REPLACE(cmdText, "60|", "`")
+cmdText = REPLACE(cmdText, "61|", "a")
+cmdText = REPLACE(cmdText, "62|", "b")
+cmdText = REPLACE(cmdText, "63|", "c")
+cmdText = REPLACE(cmdText, "64|", "d")
+cmdText = REPLACE(cmdText, "65|", "e")
+cmdText = REPLACE(cmdText, "66|", "f")
+cmdText = REPLACE(cmdText, "67|", "g")
+cmdText = REPLACE(cmdText, "68|", "h")
+cmdText = REPLACE(cmdText, "69|", "i")
+cmdText = REPLACE(cmdText, "6A|", "j")
+cmdText = REPLACE(cmdText, "6B|", "k")
+cmdText = REPLACE(cmdText, "6C|", "l")
+cmdText = REPLACE(cmdText, "6D|", "m")
+cmdText = REPLACE(cmdText, "6E|", "n")
+cmdText = REPLACE(cmdText, "6F|", "o")
+cmdText = REPLACE(cmdText, "70|", "p")
+cmdText = REPLACE(cmdText, "71|", "q")
+cmdText = REPLACE(cmdText, "72|", "r")
+cmdText = REPLACE(cmdText, "73|", "s")
+cmdText = REPLACE(cmdText, "74|", "t")
+cmdText = REPLACE(cmdText, "75|", "u")
+cmdText = REPLACE(cmdText, "76|", "v")
+cmdText = REPLACE(cmdText, "77|", "w")
+cmdText = REPLACE(cmdText, "78|", "x")
+cmdText = REPLACE(cmdText, "79|", "y")
+cmdText = REPLACE(cmdText, "7A|", "z")
+cmdText = REPLACE(cmdText, "7B|", "{")
+cmdText = REPLACE(cmdText, "7D|", "}")
+cmdText = REPLACE(cmdText, "7E|", "~")
+cmdText = REPLACE_REGEX(cmdText, "(?:[0-6][0-9A-F]|7[0-9ABDEF]|[89A-F][0-9A-F])\\|", "?")
+cmdText = REPLACE(cmdText, "7C|", "|")
+command$ = IF cmdm["q"] != "" THEN cmdm["q"] ELSE NULL
+command$ = IF cmdm["u"] != "" THEN cmdText ELSE command$
+
+# CONFIG_CHANGE: op is add_rule, remove_rule and the like, with the rule's key; SERVICE_*: unit.
+keym = raw|\skey=(?:"(?P<q>[^"]*)"|(?P<u>\S+))
+unitm = raw|[\s']unit=(?P<v>[^\s']+)
+operation$ = IF rtype == "CONFIG_CHANGE" THEN op ELSE NULL
+operation$ = IF rtype == "SERVICE_START" OR rtype == "SERVICE_STOP" THEN unitm["v"] ELSE operation$
+operationName$ = "Linux audit " + rtype
+operationName$ = IF sudo THEN "Command run with sudo" ELSE operationName$
+operationName$ = IF rtype == "CONFIG_CHANGE" THEN "Audit configuration changed" ELSE operationName$
+operationName$ = IF rtype == "SERVICE_START" THEN "Service started" ELSE operationName$
+operationName$ = IF rtype == "SERVICE_STOP" THEN "Service stopped" ELSE operationName$
+# For a rule change, the op and the rule's key.
+key = IF keym["q"] != "" THEN keym["q"] ELSE keym["u"]
+cfg = IF key != "" AND key != "(null)" THEN "op=" + op + " key=" + key ELSE "op=" + op
+command$ = IF rtype == "CONFIG_CHANGE" AND op != "" THEN cfg ELSE command$
