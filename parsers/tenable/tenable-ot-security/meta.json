@@ -1,0 +1,41 @@
+{
+  "vendor": "Tenable",
+  "product": "Tenable OT Security",
+  "versions": [],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.tenable.com/quick-reference/ot-security-syslog-integration-guide/Content/PDF/Tenable_OT_Security_Syslog_Integration_Guide.pdf"
+  ],
+  "notes": "In Tenable OT Security, add the data collector under Settings > Servers > Syslog Servers (UDP or TCP; over TCP, Allow syslog message caching keeps events through an outage), then select it in the Syslog section of each policy whose events you want. Policy events (Configuration, SCADA, Network Threats and Network events) go to the third-party alert schema: the event class name as the title, cat as the alert category, externalId as the alert ID, Tenable's severities (None 0, Low 3, Medium 7, High 9) as info, low, medium and high, the addresses, ports and MAC addresses, and outcome (success or failure) as the action. suser and duser name assets (a user-defined name, DNS name or address), not users, so they go to the source and target host names. The event class ID, the protocol Tenable saw (TCP, UDP, MODBUS_TCP, FTP and others; only TCP and UDP get a protocol number) and the custom fields under Tenable's labels (policy_name, value_change, tag, addresses, ports, revision, rule_sid and the rest) go to additional_data. System log events (product Tenable.ot, class 9999), such as a new API key, go to CloudAudit with suser as the user and the free-text message; keep alive messages (class 8888) stay generic. rt has no time zone and is read as UTC, so keep the appliance on UTC or change the layout; system events have no rt, so their time is the syslog header's. Tenable's guide, revised in August 2026, also calls the product Tenable One OT Exposure, and the confirm string takes that name too. Samples follow the guide's samples and field tables with documentation addresses; where the guide's event class IDs and sample lines disagree, they follow the table. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (155 of 155 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (153 of 153 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "TENABLE_OT_CEF_PARENT",
+      "file": "TENABLE_OT_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+      "file": "TENABLE_OT_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "TENABLE_OT_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "TENABLE_OT_CEF_CHILD_CLOUDAUDIT",
+      "file": "TENABLE_OT_CEF_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "TENABLE_OT_CEF_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

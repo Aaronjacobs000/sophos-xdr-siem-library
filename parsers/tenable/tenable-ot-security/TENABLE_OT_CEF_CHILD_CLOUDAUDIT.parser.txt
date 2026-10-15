@@ -1,0 +1,24 @@
+!SAMPLE=<14>Oct 15 11:37:47 192.0.2.50 CEF:0|Tenable|Tenable.ot|3.18.45|9999|SYSTEM_LOG|0|suser=admin msg=New API key 1058322394 created by admin. Role: AdminRole
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="system"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable OT Security system log events over syslog, CEF with the product Tenable.ot, class
+# 9999 and the name SYSTEM_LOG, such as an API key created by an administrator.
+# Child of TENABLE_OT_CEF_PARENT: each one to CloudAudit, with suser as the user and the message,
+# which Tenable writes as free text, in additional_event_data.
+# v, classId, name, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Tenable OT Security"
+eventName$ = name
+managementEvent$ = TRUE
+user = STRING(v["suser"])
+userName$ = IF user != "" THEN user ELSE NULL
+msg = STRING(v["msg"])
+d1.key$ = "message"
+d1.value$ = msg
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF msg != "" THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$

@@ -1,0 +1,31 @@
+!SAMPLE=<14>Oct 15 09:34:04 192.0.2.50 CEF:0|Tenable|Tenable OT Security|3.18.45|1|SIMATIC Code Download|9|dvchost=Tenable OT Security rt=Oct 15 2026 09:34:04 duser=PLC_1511C-1 suser=Eng. Station #359 outcome=success dst=198.51.100.21 dmac=00:00:5e:00:53:21 src=198.51.100.40 smac=00:00:5e:00:53:40 cfp1Label=cluster_log_id cfp1=1530 externalId=1530 cs6Label=policy_name cs6=SIMATIC Code Download cat=ConfigurationEvents
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|Tenable(?: One OT Exposure)?\|(?:Tenable OT Security|Tenable\.ot|Tenable One OT Exposure)\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tenable OT Security (Tenable One OT Exposure) syslog notifications, CEF over UDP or TCP to
+# the data collector, with a BSD header that names the appliance's address:
+#   <14>Oct 15 09:34:04 192.0.2.50 CEF:0|Tenable|Tenable OT Security|3.18.45|1|SIMATIC Code Download|9|...
+# Parent: hands policy events (Configuration, SCADA, Network Threats and Network events) to the
+# Thirdparty child and system log events (Tenable.ot, class 9999) to the CloudAudit child. Keep
+# alive messages (class 8888) stay generic.
+
+v = CEF(originalData$)
+classId = STRING(v[4])
+name = STRING(v[5])
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Tenable OT Security"
+eventType$ = "alert"
+eventType$ = IF classId == "9999" THEN "system" ELSE eventType$
+eventType$ = IF classId == "8888" THEN "keepalive" ELSE eventType$
+
+# rt is when the appliance registered the event, as MMM D YYYY HH:mm:ss with no zone, read as UTC.
+# System events have no rt, so their time is the syslog header's, which has no year.
+rt = STRING(v["rt"])
+rtOk = rt|^(?P<t>[A-Z][a-z]{2} +\d{1,2} \d{4} \d{2}:\d{2}:\d{2})$
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<t>[A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2})\s
+eventTimeUsec$ = IF rtOk["t"] != "" THEN DATETIME(rtOk["t"], "Jan _2 2006 15:04:05") ELSE eventTimeUsec$
+eventTimeUsec$ = IF rtOk["t"] == "" AND hdr["t"] != "" THEN DATETIME(hdr["t"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$

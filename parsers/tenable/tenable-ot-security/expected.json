@@ -1,0 +1,363 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792053267000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Modbus Illegal Function",
+      "alert_id": "1411",
+      "alert_category": "ScadaEvents",
+      "log_type": "policy_event",
+      "source_host_name": "Comm. Adapter #32",
+      "target_host_name": "Eng. Station #135",
+      "summary": "Modbus Illegal Function from Comm. Adapter #32 to Eng. Station #135",
+      "source_address": "198.51.100.40",
+      "destination_address": "198.51.100.12",
+      "vendor_severity": "3",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "120"
+          },
+          {
+            "key": "protocol",
+            "value": "MODBUS_TCP"
+          },
+          {
+            "key": "policy_name",
+            "value": "Modbus Illegal Function"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792056844000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "SIMATIC Code Download",
+      "alert_id": "1530",
+      "alert_category": "ConfigurationEvents",
+      "log_type": "policy_event",
+      "source_host_name": "Eng. Station #359",
+      "target_host_name": "PLC_1511C-1",
+      "summary": "SIMATIC Code Download from Eng. Station #359 to PLC_1511C-1",
+      "source_address": "198.51.100.40",
+      "destination_address": "198.51.100.21",
+      "source_mac": "00:00:5e:00:53:40",
+      "destination_mac": "00:00:5e:00:53:21",
+      "action": "SUCCEEDED",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "1"
+          },
+          {
+            "key": "policy_name",
+            "value": "SIMATIC Code Download"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792056543000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Intrusion Detection",
+      "alert_id": "1519",
+      "alert_category": "NetworkThreats",
+      "log_type": "policy_event",
+      "source_host_name": "Endpoint #315",
+      "target_host_name": "198.51.100.12",
+      "summary": "Intrusion Detection: ET SHELLCODE METASPLOIT BSD Bind shell (Not Encoded 5)",
+      "source_address": "203.0.113.9",
+      "destination_address": "198.51.100.12",
+      "destination_port": 42228,
+      "protocol": 6,
+      "vendor_severity": "7",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "119"
+          },
+          {
+            "key": "protocol",
+            "value": "TCP"
+          },
+          {
+            "key": "policy_name",
+            "value": "Intrusion Detection"
+          },
+          {
+            "key": "rule_sid",
+            "value": "2010395"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792052950000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Port Scan",
+      "alert_id": "1406",
+      "alert_category": "NetworkThreats",
+      "log_type": "policy_event",
+      "source_host_name": "OT Server #131",
+      "target_host_name": "DCS #29",
+      "summary": "Port Scan from OT Server #131 to DCS #29",
+      "source_address": "198.51.100.131",
+      "destination_address": "198.51.100.29",
+      "protocol": 6,
+      "vendor_severity": "3",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "99"
+          },
+          {
+            "key": "protocol",
+            "value": "TCP"
+          },
+          {
+            "key": "policy_name",
+            "value": "SYN Scan Detection"
+          },
+          {
+            "key": "ports",
+            "value": "3945,340,1038,1248,8087,9040,10616,1041,1244,9876 (27 more)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792032645000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Network Baseline Deviation",
+      "alert_id": "1011162",
+      "alert_category": "NetworkEvents",
+      "log_type": "policy_event",
+      "source_host_name": "esx-001.example.com",
+      "target_host_name": "files-001.example.com",
+      "summary": "Network Baseline Deviation from esx-001.example.com to files-001.example.com",
+      "source_address": "198.51.100.16",
+      "destination_address": "198.51.100.15",
+      "destination_port": 2049,
+      "protocol": 6,
+      "vendor_severity": "7",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "115"
+          },
+          {
+            "key": "protocol",
+            "value": "TCP"
+          },
+          {
+            "key": "policy_name",
+            "value": "PLC Baseline Deviation Detection"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792059171000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Change in State",
+      "alert_id": "1544",
+      "alert_category": "ConfigurationEvents",
+      "log_type": "policy_event",
+      "source_host_name": "PLC_1511C-1",
+      "target_host_name": "PLC_1511C-1",
+      "summary": "Change in State on PLC_1511C-1",
+      "source_address": "198.51.100.21",
+      "destination_address": "198.51.100.21",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "110"
+          },
+          {
+            "key": "policy_name",
+            "value": "Controller State Change"
+          },
+          {
+            "key": "value_change",
+            "value": "running->stopped"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792059633000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Telnet failed login",
+      "alert_id": "1552",
+      "alert_category": "NetworkEvents",
+      "log_type": "policy_event",
+      "source_host_name": "Eng. Station #5",
+      "target_host_name": "RTU #12",
+      "summary": "Telnet failed login from Eng. Station #5 to RTU #12",
+      "source_address": "198.51.100.40",
+      "destination_address": "198.51.100.33",
+      "source_mac": "00:00:5e:00:53:40",
+      "destination_mac": "00:00:5e:00:53:33",
+      "destination_port": 23,
+      "protocol": 6,
+      "action": "FAILED",
+      "vendor_severity": "7",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "181"
+          },
+          {
+            "key": "protocol",
+            "value": "TCP"
+          },
+          {
+            "key": "policy_name",
+            "value": "Telnet Login Attempts"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792053780000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Tenable",
+      "provider": "Tenable OT Security",
+      "provider_version": "3.18.45",
+      "title": "Spike in Network Traffic",
+      "alert_id": "1458",
+      "alert_category": "NetworkEvents",
+      "log_type": "policy_event",
+      "summary": "Spike in Network Traffic",
+      "vendor_severity": "3",
+      "severity": "LOW",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_class_id",
+            "value": "123"
+          },
+          {
+            "key": "policy_name",
+            "value": "Traffic Spike"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TENABLE_OT_CEF_PARENT > TENABLE_OT_CEF_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792064267000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "system",
+      "event_source": "Tenable OT Security",
+      "event_name": "SYSTEM_LOG",
+      "management_event": true,
+      "user_name": "admin",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "message",
+            "value": "New API key 1058322394 created by admin. Role: AdminRole"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TENABLE_OT_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Tenable OT Security",
+      "event_time_usec": 1792045864000000
+    }
+  }
+]
