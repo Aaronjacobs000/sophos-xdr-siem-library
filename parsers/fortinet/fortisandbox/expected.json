@@ -1,0 +1,365 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792019564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0103000001",
+      "host_id": "FSA3KE0000000001",
+      "username": "jsmith",
+      "channel": "GUI",
+      "operation_name": "update",
+      "operation": "update",
+      "command": "Remote log server was successfully added",
+      "result": "success"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792020005000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0201000001",
+      "host_id": "FSA3KE0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiSandbox",
+      "alert_category": "malware",
+      "alert_id": "4635327890062625818",
+      "title": "FortiSandbox malware: W32/Example.A!tr",
+      "summary": "W32/Example.A!tr in invoice.doc (High Risk)",
+      "vendor_severity": "High Risk",
+      "severity": "HIGH",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.25",
+      "source_port": 80,
+      "destination_port": 50123,
+      "destination_url": "http://files.example.com/invoice.doc",
+      "source_user_name": "jsmith",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0201000001"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          },
+          {
+            "key": "file_name",
+            "value": "invoice.doc"
+          },
+          {
+            "key": "file_md5",
+            "value": "d41d8cd98f00b204e9800998ecf8427e"
+          },
+          {
+            "key": "file_sha256",
+            "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "key": "malware_name",
+            "value": "W32/Example.A!tr"
+          },
+          {
+            "key": "malware_category",
+            "value": "Trojan"
+          },
+          {
+            "key": "client_device",
+            "value": "FGT60FTK00000001"
+          },
+          {
+            "key": "client_vdom",
+            "value": "root"
+          },
+          {
+            "key": "source_type",
+            "value": "FGT"
+          },
+          {
+            "key": "protocol",
+            "value": "HTTP"
+          },
+          {
+            "key": "vm_os",
+            "value": "WIN10X64VM"
+          },
+          {
+            "key": "job_status",
+            "value": "done"
+          },
+          {
+            "key": "vdom",
+            "value": "root"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792020340000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0202000001",
+      "host_id": "FSA3KE0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiSandbox",
+      "alert_category": "netbotnet",
+      "title": "FortiSandbox botnet connection: Example.Botnet",
+      "summary": "FortiSandbox botnet connection: Example.Botnet",
+      "vendor_severity": "warning",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.44",
+      "destination_address": "203.0.113.66",
+      "source_port": 51515,
+      "destination_port": 443,
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0202000001"
+          },
+          {
+            "key": "level",
+            "value": "warning"
+          },
+          {
+            "key": "job_status",
+            "value": "done"
+          },
+          {
+            "key": "host",
+            "value": "c2.example.com"
+          },
+          {
+            "key": "botnet_name",
+            "value": "Example.Botnet"
+          },
+          {
+            "key": "vdom",
+            "value": "root"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792020662000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0201000001",
+      "host_id": "FSA3KE0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiSandbox",
+      "alert_category": "malware",
+      "alert_id": "4635327890062625901",
+      "title": "FortiSandbox malware: W32/Example.B!tr",
+      "summary": "W32/Example.B!tr in update.exe (Malicious)",
+      "vendor_severity": "Malicious",
+      "severity": "CRITICAL",
+      "source_address": "198.51.100.80",
+      "destination_address": "192.0.2.31",
+      "source_port": 443,
+      "destination_port": 50555,
+      "destination_url": "https://dl.example.net/update.exe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0201000001"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          },
+          {
+            "key": "file_name",
+            "value": "update.exe"
+          },
+          {
+            "key": "file_md5",
+            "value": "0d043e3acbc3af58970d3365b6f91d29"
+          },
+          {
+            "key": "file_sha256",
+            "value": "9a8724dfb4ae1f044a28be30ff3885b7558d1ae00664308ecb11f7164a7a3ddf"
+          },
+          {
+            "key": "malware_name",
+            "value": "W32/Example.B!tr"
+          },
+          {
+            "key": "malware_category",
+            "value": "Ransomware"
+          },
+          {
+            "key": "client_device",
+            "value": "FGT60FTK00000001"
+          },
+          {
+            "key": "client_vdom",
+            "value": "root"
+          },
+          {
+            "key": "source_type",
+            "value": "FGT"
+          },
+          {
+            "key": "protocol",
+            "value": "HTTPS"
+          },
+          {
+            "key": "vm_os",
+            "value": "WIN11X64VM"
+          },
+          {
+            "key": "job_status",
+            "value": "done"
+          },
+          {
+            "key": "vdom",
+            "value": "root"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792020795000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0203000001",
+      "host_id": "FSA3KE0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiSandbox",
+      "alert_category": "netattack",
+      "title": "FortiSandbox network attack: Example.SMB.Exploit",
+      "summary": "FortiSandbox network attack: Example.SMB.Exploit",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.60",
+      "source_port": 4444,
+      "destination_port": 445,
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0203000001"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          },
+          {
+            "key": "job_status",
+            "value": "done"
+          },
+          {
+            "key": "attack_name",
+            "value": "Example.SMB.Exploit"
+          },
+          {
+            "key": "attack_id",
+            "value": "43781"
+          },
+          {
+            "key": "vdom",
+            "value": "root"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792021011000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0204000001",
+      "host_id": "FSA3KE0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiSandbox",
+      "alert_category": "neturl",
+      "title": "FortiSandbox malicious URL: login.example.org",
+      "summary": "FortiSandbox malicious URL: login.example.org",
+      "vendor_severity": "warning",
+      "severity": "MEDIUM",
+      "source_address": "192.0.2.70",
+      "destination_address": "198.51.100.23",
+      "source_port": 52011,
+      "destination_port": 80,
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0204000001"
+          },
+          {
+            "key": "level",
+            "value": "warning"
+          },
+          {
+            "key": "job_status",
+            "value": "done"
+          },
+          {
+            "key": "host",
+            "value": "login.example.org"
+          },
+          {
+            "key": "vdom",
+            "value": "root"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTISANDBOX_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiSandbox",
+      "event_time_usec": 1792021449000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0103000001",
+      "host_id": "FSA3KE0000000001",
+      "username": "admin",
+      "channel": "CLI",
+      "client_hostname": "192.0.2.11",
+      "operation_name": "delete",
+      "operation": "delete",
+      "command": "Failed to delete allowlist entry update.example.net",
+      "result": "failure: object in use"
+    }
+  }
+]
