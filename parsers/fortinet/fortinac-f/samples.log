@@ -1,0 +1,11 @@
+<37>Oct 14 09:12:44 : 2026/10/14 09:12:44 AEDT,1,545570,Admin User Login Success,0,12,,,,,User jsmith logged in.
+<37>Oct 14 09:13:50 : 2026/10/14 09:13:50 AEDT,1,545571,Admin User Login Failure,1,12,,,,,User admin failed to log in.
+<37>Oct 14 09:14:05 : CEF:0|Fortinet|NAC Control Server|7.6.2.0034|6111|Login Failure|1|rt=Oct 14 09:14:05 602 AEDT cat=Network shost=nac01 msg=User qa failed to log in.
+<37>Oct 14 09:20:31 : 2026/10/14 09:20:31 AEDT,1,545602,Authentication Failure,1,4155,jdoe,laptop01.example.com,192.0.2.44,00:00:5E:00:53:01,Unable to verify credentials for user jdoe with the directory.
+<37>Oct 14 09:25:10 : 2026/10/14 09:25:10 AEDT,1,545611,Access Policy Modified,0,12,jsmith,,,,Access policy Staff-Onboarding modified.
+<37>Oct 14 09:26:40 : 2026/10/14 09:26:40 AEDT,1,545613,Admin User Created,0,12,jsmith,,,,Administrative user helpdesk01 created.
+<37>Oct 14 09:31:12 : 2026/10/14 09:31:12 AEDT,3,2587,Security Risk Host,2,1127,,laptop02.example.com,192.0.2.45,00:00:5E:00:53:02,Host laptop02.example.com failed scan policy Windows-Baseline.
+<37>Oct 14 09:33:01 : 2026/10/14 09:33:01 AEDT,2,2591,FortiOS 5.0 High Violation,3,1131,,laptop03.example.com,192.0.2.46,00:00:5E:00:53:03,"Received a high violation from FortiGate fgt01 for host laptop03.example.com, IPS signature Example.Exploit"
+<37>Oct 14 09:35:22 : CEF:0|Bradford Networks|FortiNAC-VM-Control and Application Server|9.4.6.0721|2061|Host At Risk|2|rt=Oct 14 09:35:22 120 AEDT cat=EndStation msg=Host laptop04.example.com marked at risk by scan Windows-Baseline.
+<37>Oct 14 09:40:16 : 2026/10/14 09:40:16 EDT,1,545702,Probe - MAP IP To MAC Failure,0,28,,switch01.example.com,192.0.2.1,,Failed to read IP address mappings from device switch01.example.com.
+<37>Oct 14 09:41:30 : CEF:0|Fortinet|NAC Control Server|7.6.2.0034|426|Adapter Destroyed|1|rt=Oct 14 09:41:30 269 AEDT cat=EndStation msg=Adapter 00:00:5E:00:53:05 Destroyed.

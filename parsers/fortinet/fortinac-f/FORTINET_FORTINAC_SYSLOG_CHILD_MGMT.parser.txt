@@ -1,0 +1,20 @@
+!SAMPLE=<37>Oct 14 09:25:10 : 2026/10/14 09:25:10 AEDT,1,545611,Access Policy Modified,0,12,jsmith,,,,Access policy Staff-Onboarding modified.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="mgmt"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNAC-F events and alarms, Syslog CSV or CEF.
+# Child of FORTINET_FORTINAC_SYSLOG_PARENT: changes to FortiNAC's configuration and administrators,
+# to ManagementEvent: events whose name ends in Modified (such as Access Policy Modified, Admin
+# Profile Modified and Authentication Configuration Modified), Admin User Created and Destroyed,
+# and the changes made through the REST API (names ending in via REST API).
+# eventName, userId, entityName, msg, sensorType$ and eventTimeUsec$ come from the parent.
+
+operationName$ = eventName
+username$ = IF userId != "" THEN userId ELSE NULL
+command$ = IF msg != "" THEN msg ELSE NULL
+targetHostname$ = IF entityName != "" THEN entityName ELSE NULL
+api = eventName|via REST API$
+channel$ = IF api[0] != "" THEN "REST API" ELSE NULL

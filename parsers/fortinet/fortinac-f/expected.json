@@ -1,0 +1,272 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791929564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "545570",
+      "auth_system": "FortiNAC-F",
+      "target_user_name": "jsmith",
+      "logon_application_family": "FortiNAC administration",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Admin User Login Success"
+          },
+          {
+            "key": "message",
+            "value": "User jsmith logged in."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791929630000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "545571",
+      "auth_system": "FortiNAC-F",
+      "target_user_name": "admin",
+      "logon_application_family": "FortiNAC administration",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Admin User Login Failure"
+          },
+          {
+            "key": "message",
+            "value": "User admin failed to log in."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791929645000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6111",
+      "sensor_version": "7.6.2.0034",
+      "auth_system": "FortiNAC-F",
+      "target_user_name": "qa",
+      "logon_application_family": "FortiNAC administration",
+      "target_host_name": "nac01",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Login Failure"
+          },
+          {
+            "key": "message",
+            "value": "User qa failed to log in."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930031000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "545602",
+      "auth_system": "FortiNAC-F",
+      "target_user_name": "jdoe",
+      "source_address": "192.0.2.44",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Authentication Failure"
+          },
+          {
+            "key": "message",
+            "value": "Unable to verify credentials for user jdoe with the directory."
+          },
+          {
+            "key": "source_host",
+            "value": "laptop01.example.com"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5E:00:53:01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930310000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "545611",
+      "operation_name": "Access Policy Modified",
+      "username": "jsmith",
+      "command": "Access policy Staff-Onboarding modified."
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930400000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "545613",
+      "operation_name": "Admin User Created",
+      "username": "jsmith",
+      "command": "Administrative user helpdesk01 created."
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930672000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2587",
+      "vendor": "Fortinet",
+      "provider": "FortiNAC-F",
+      "title": "Security Risk Host",
+      "summary": "Host laptop02.example.com failed scan policy Windows-Baseline.",
+      "alert_id": "2587",
+      "log_type": "Security Alarm",
+      "vendor_severity": "Major",
+      "severity": "HIGH",
+      "source_host_name": "laptop02.example.com",
+      "source_address": "192.0.2.45",
+      "source_mac": "00:00:5e:00:53:02",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "2587"
+          },
+          {
+            "key": "entity_id",
+            "value": "1127"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930781000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2591",
+      "vendor": "Fortinet",
+      "provider": "FortiNAC-F",
+      "title": "FortiOS 5.0 High Violation",
+      "summary": "Received a high violation from FortiGate fgt01 for host laptop03.example.com, IPS signature Example.Exploit",
+      "alert_id": "2591",
+      "log_type": "Alarm",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "source_host_name": "laptop03.example.com",
+      "source_address": "192.0.2.46",
+      "source_mac": "00:00:5e:00:53:03",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "2591"
+          },
+          {
+            "key": "entity_id",
+            "value": "1131"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT > FORTINET_FORTINAC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791930922000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2061",
+      "sensor_version": "9.4.6.0721",
+      "vendor": "Fortinet",
+      "provider": "FortiNAC-F",
+      "title": "Host At Risk",
+      "summary": "Host laptop04.example.com marked at risk by scan Windows-Baseline.",
+      "alert_category": "EndStation",
+      "vendor_severity": "Major",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "2061"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791985216000000,
+      "sensor_event_id": "545702"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "FORTINET_FORTINAC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNAC-F",
+      "event_time_usec": 1791931290000000,
+      "sensor_event_id": "426",
+      "sensor_version": "7.6.2.0034"
+    }
+  }
+]
