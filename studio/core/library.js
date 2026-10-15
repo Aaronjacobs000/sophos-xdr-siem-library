@@ -110,7 +110,7 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
   if (!meta.tested || typeof meta.tested !== 'object') err('meta', 'tested must be an object like {"emulator": "0.1.0", "tenant": null}');
   else if (meta.tested.tenant !== null && meta.tested.tenant !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(meta.tested.tenant)) err('meta', 'tested.tenant must be null or the date (YYYY-MM-DD) the parsers passed Run Test in a tenant');
   if (meta.docs !== undefined && (!Array.isArray(meta.docs) || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u)))) err('meta', 'docs must be a list of https links to the vendor\'s public log format docs');
-  if (meta.notes !== undefined && (typeof meta.notes !== 'string' || meta.notes.length > 2000)) err('meta', 'notes must be text up to 2000 characters');
+  if (meta.notes !== undefined && (typeof meta.notes !== 'string' || meta.notes.length > 2500)) err('meta', 'notes must be text up to 2500 characters');
   const named = (k) => meta[k] !== undefined && meta[k] !== null;
   if (named('collector')) {
     warn('bridge', named('bridge')
