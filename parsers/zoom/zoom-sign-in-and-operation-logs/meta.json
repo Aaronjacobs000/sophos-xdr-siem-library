@@ -1,0 +1,43 @@
+{
+  "vendor": "Zoom",
+  "product": "Zoom sign-in and operation logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://developers.zoom.us/docs/api/meetings/",
+    "https://developers.zoom.us/api-hub/meetings/methods/endpoints.json"
+  ],
+  "notes": "Zoom's webhooks need an endpoint that answers a URL validation challenge within 3 seconds, which HTTP Ingest can't, and the sign-in webhook has no IP address, so these parsers read Zoom's sign-in and sign-out activity report and operation logs, polled from the Reports API by the example bridge in bridges/zoom-report-logs and posted to HTTP Ingest. Both reports need a Pro plan or higher; use a Server-to-Server OAuth app with only the report read scopes. The bridge puts \"zoom_record\" first (signin or operation) and adds account_id. Sign-ins and sign-outs go to Auth with the user's email, the address they signed in from and the Zoom client; the report lists completed sign-ins only, so there are no failures to map. Operation logs go to CloudAudit with the action as the event name, the category as the event type and the operator as the user. operation_detail is free text, which Zoom documents only by the example \"delete user - user2@example.com\"; when it ends in \" - \" and an email address, that becomes the target user. Records carry no ID. Samples follow the response shapes in Zoom's OpenAPI document with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (102 of 102 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (102 of 102 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "ZOOM_REPORTS_JSON_PARENT",
+      "file": "ZOOM_REPORTS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ZOOM_REPORTS_JSON_CHILD_AUTH",
+      "file": "ZOOM_REPORTS_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "ZOOM_REPORTS_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+      "file": "ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "ZOOM_REPORTS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/zoom-report-logs"
+}

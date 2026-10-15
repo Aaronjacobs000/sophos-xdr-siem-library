@@ -1,0 +1,22 @@
+!SAMPLE={"zoom_record":"signin","account_id":"Ex4mpleAcc0untId01","email":"pat@example.com","time":"2026-10-13T01:10:04Z","type":"Sign in","ip_address":"203.0.113.10","client_type":"Browser","version":"6.5.3.12345"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"zoom_record"\s*:\s*"(?:signin|operation)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zoom's sign-in and sign-out activity report and operation logs from the Reports API,
+# pulled by the example bridge in bridges/zoom-report-logs and posted to HTTP Ingest as JSON lines.
+# The bridge puts "zoom_record" first ("signin" or "operation") and adds account_id.
+# Parent: hands sign-ins and sign-outs to the Auth child and operation logs to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Zoom"
+kind = json["$.zoom_record"]
+# time is ISO 8601 in UTC, such as 2026-10-13T01:10:04Z.
+eventTimeUsec$ = DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+eventType$ = IF kind == "signin" THEN "auth" ELSE "audit"

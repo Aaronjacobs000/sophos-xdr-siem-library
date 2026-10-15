@@ -1,0 +1,33 @@
+!SAMPLE={"zoom_record":"operation","account_id":"Ex4mpleAcc0untId01","time":"2026-10-13T02:05:12Z","operator":"sam.admin@example.com","category_type":"user","action":"add","operation_detail":"add user - new.starter@example.com"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zoom's operation logs (GET /report/operationlogs) from the example bridge: who added,
+# changed or deleted users, settings, roles, recordings and other account objects.
+# Child of ZOOM_REPORTS_JSON_PARENT: each one to CloudAudit, with the action as the event name and
+# the category as the event type. operation_detail is free text; when it ends in " - " and an
+# email address, as in Zoom's example "delete user - user2@example.com", that is the target user.
+# json, kind, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Zoom"
+act = json["$.action"]
+eventName$ = act
+eventType$ = json["$.category_type"]
+userName$ = json["$.operator"]
+recipientAccountId$ = json["$.account_id"]
+detail = json["$.operation_detail"]
+target = detail|\s-\s(?P<u>[^\s@]+@[^\s@]+\.[A-Za-z]{2,})\s*$
+targetUserName$ = target["u"]
+managementEvent$ = TRUE
+lact = LOWERCASE(STRING(act))
+readOnly$ = CONTAINS(lact, "view") OR CONTAINS(lact, "export") OR CONTAINS(lact, "download")
+
+d1.key$ = "operation_detail"
+d1.value$ = detail
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF detail THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
