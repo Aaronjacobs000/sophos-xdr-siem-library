@@ -1,0 +1,235 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792019564125581,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiDLP",
+      "alert_id": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d",
+      "sensor_event_id": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d",
+      "host_id": "0f1e2d3c-4b5a-4968-8776-655443322110",
+      "title": "Sensitive file uploaded",
+      "summary": "File upload to \"files.example.net\" from Firefox: q3-forecast.xlsx with size 2MB containing \"confidential\" with at least 1 match.",
+      "alert_category": "AGENT_POLICY",
+      "risk_score": 75,
+      "severity": "HIGH",
+      "source_user_name": "Jo Smith",
+      "source_user_id": "4d3c2b1a-0f9e-4d8c-b7a6-958473625140",
+      "source_host_name": "laptop01.example.com",
+      "source_address": "192.0.2.25",
+      "source_port": 50544,
+      "destination_address": "203.0.113.80",
+      "destination_port": 443,
+      "destination_url": "https://files.example.net/upload",
+      "destination_service_name": "files.example.net",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy_source",
+            "value": "policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a?instance=7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e&name=Sensitive+file+uploaded"
+          },
+          {
+            "key": "tags",
+            "value": "datatracking,web,dataupload"
+          },
+          {
+            "key": "labels",
+            "value": "Finance"
+          },
+          {
+            "key": "file_name",
+            "value": "q3-forecast.xlsx"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\jsmith\\Documents\\q3-forecast.xlsx"
+          },
+          {
+            "key": "application_name",
+            "value": "Firefox"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1567"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792020602500000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiDLP",
+      "alert_id": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+      "sensor_event_id": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+      "host_id": "1a0b2c3d-4e5f-4a6b-9c7d-8e9f0a1b2c3d",
+      "title": "Sensitive file copied to USB",
+      "summary": "File copied to removable storage \"USB DISK\": payroll-oct.csv with size 120KB.",
+      "alert_category": "AGENT_POLICY",
+      "risk_score": 95,
+      "severity": "CRITICAL",
+      "source_user_name": "Sam Lee",
+      "source_user_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5948372615",
+      "source_host_name": "laptop02.example.com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy_source",
+            "value": "policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/6b7c8d9e-0f1a-4b2c-9d3e-4f5a6b?instance=8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f&name=Sensitive+file+copied+to+USB"
+          },
+          {
+            "key": "tags",
+            "value": "datatracking,usb,blocking"
+          },
+          {
+            "key": "file_name",
+            "value": "payroll-oct.csv"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\slee\\Desktop\\payroll-oct.csv"
+          },
+          {
+            "key": "usb_device",
+            "value": "0781:5581 4C530001234567890123"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1052.001"
+          },
+          {
+            "key": "requested_actions",
+            "value": "block"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_INCIDENT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792019570000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiDLP",
+      "alert_id": "7d8e9f0a-1b2c-4d3e-8f4a-5b6c7d8e9f0a",
+      "sensor_event_id": "7d8e9f0a-1b2c-4d3e-8f4a-5b6c7d8e9f0a",
+      "host_id": "0f1e2d3c-4b5a-4968-8776-655443322110",
+      "title": "Sensitive file uploaded by Jo Smith",
+      "status": "created",
+      "alert_category": "Sensitive file uploaded",
+      "risk_score": 75,
+      "severity": "HIGH",
+      "first_event_time_usec": 1792019564125581,
+      "last_event_time_usec": 1792019564125581,
+      "updated_time_usec": 1792019570000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy_source",
+            "value": "policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a?instance=7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e&name=Sensitive+file+uploaded"
+          },
+          {
+            "key": "incident_type",
+            "value": "clustered"
+          },
+          {
+            "key": "detection_count",
+            "value": "1"
+          },
+          {
+            "key": "clustering_rule",
+            "value": "user"
+          },
+          {
+            "key": "generation",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792018682726255,
+      "event_time_fidelity": "MICRO",
+      "operation": "OperatorLogin",
+      "operation_name": "Operator logged in",
+      "username": "aadmin",
+      "client_hostname": "198.51.100.23",
+      "channel": "webapp",
+      "command": "POST /api/v1/admin/login",
+      "target_hostname": "dlp.example.com",
+      "namespace": "example",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792019141104300,
+      "event_time_fidelity": "MICRO",
+      "operation": "PolicyUpdated",
+      "operation_name": "Policy updated",
+      "username": "aadmin",
+      "client_hostname": "198.51.100.23",
+      "channel": "webapp",
+      "command": "PUT /api/v1/policies/groups/1f2e3d4c-5b6a-4789-9a0b-c1d2e3/templates/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a",
+      "target_hostname": "dlp.example.com",
+      "namespace": "example",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT > FORTINET_FORTIDLP_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792019235000000,
+      "event_time_fidelity": "MICRO",
+      "operation": "AccessTokenCreated",
+      "operation_name": "Access token created",
+      "username": "siem-token",
+      "client_hostname": "203.0.113.17",
+      "channel": "api",
+      "command": "POST /api/v1/admin/tokens",
+      "target_hostname": "dlp.example.com",
+      "namespace": "example",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTIDLP_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDLP",
+      "event_time_usec": 1792020603120000
+    }
+  }
+]

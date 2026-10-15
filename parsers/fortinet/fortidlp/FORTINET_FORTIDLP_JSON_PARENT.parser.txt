@@ -1,0 +1,37 @@
+!SAMPLE={"customer":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_id":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_name":"example","tenant_origin":"https://dlp.example.com","agent_uuid":"0f1e2d3c-4b5a-4968-8776-655443322110","agent_hostname":"laptop01.example.com","uuid":"9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d","event_type":"sensor","timestamp":"2026-10-14T23:12:44.125581231Z","sensor_type":"AGENT_POLICY","description":"File upload to \"files.example.net\" from Firefox: q3-forecast.xlsx with size 2MB containing \"confidential\" with at least 1 match.","juid":"4d3c2b1a-0f9e-4d8c-b7a6-958473625140","username":"Jo Smith","score":75,"created_by":"policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a?instance=7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e&name=Sensitive+file+uploaded","tags":["datatracking","web","dataupload"],"anonymised_description":"File upload to \"files.example.net\" from Firefox: [REDACTED] with size 2MB containing \"confidential\" with at least 1 match.","requested_actions":[],"suppressed_actions":[],"label_ids":["2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f"],"label_names":["Finance"],"metadata":{"source_ip":["192.0.2.25"],"source_port":[50544],"destination_ip":["203.0.113.80"],"destination_port":[443],"url":["https://files.example.net/upload"],"host":["files.example.net"],"application_name":["Firefox"],"file_name":["q3-forecast.xlsx"],"file_path":["C:\\Users\\jsmith\\Documents\\q3-forecast.xlsx"],"target_file_name":[],"target_file_path":[],"recipient_mail_address":[],"sender_mail_address":[],"wifi_ssid":[],"wifi_bssid":[],"usb_vid":[],"usb_pid":[],"usb_serial":[],"content_pattern_name":["\"confidential\""],"account_name":[],"certificate_name":[],"mime_type":[],"window_title":["Upload - Example Files"],"file_size":[2097152],"file_extension":["xlsx"]},"process_info":[{"uuid":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","binary_name":"firefox.exe","binary_path":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","username":"EXAMPLE\\jsmith","app_identifier":"v1.0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","signed":true}],"indicators":[{"kind":"mitre","tactic":{"id":"TA0010","title":"Exfiltration"},"technique":{"id":"T1567","title":"Exfiltration Over Web Service"}}]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="tenant_id"\s*:\s*"[^"]*"\s*,\s*"tenant_name"\s*:\s*"[^"]*"\s*,\s*"tenant_origin"\s*:\s*"https://
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDLP webhooks with the JSON payload format and batching off, sent straight to a
+# Sophos NG-SIEM HTTP Ingest integration with an Authorization: Bearer header. One event per
+# request, each starting with tenant_id, tenant_name and tenant_origin.
+# Parent: tells the event types apart and sets eventType$ for the children:
+#   detection  "event_type":"sensor"                to the Thirdparty child
+#   incident   clustering_rule, incident_type, ...  to the incident Thirdparty child
+#   audit      "type" and a "fields" object         to the ManagementEvent child
+#   action     action_uuid and kind                 stays generic
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+sensorType$ = "Fortinet FortiDLP"
+
+etype = STRING(json["$.event_type"])
+inc = originalData$|"(?:clustering_rule|incident_type|sensor_count)"\s*:
+aud = originalData$|"fields"\s*:\s*\{
+act = originalData$|"action_uuid"\s*:
+eventType$ = "other"
+eventType$ = IF act[0] != "" THEN "action" ELSE eventType$
+eventType$ = IF aud[0] != "" AND act[0] == "" THEN "audit" ELSE eventType$
+eventType$ = IF inc[0] != "" THEN "incident" ELSE eventType$
+eventType$ = IF etype == "sensor" THEN "detection" ELSE eventType$
+
+# Times are RFC 3339 in UTC with up to 9 fractional digits: timestamp on detections and actions,
+# fields.timestamp on audit logs, and last_updated on incidents.
+ts = STRING(json["$.timestamp"])
+ts = IF ts == "" THEN STRING(json["$.fields.timestamp"]) ELSE ts
+ts = IF ts == "" THEN STRING(json["$.last_updated"]) ELSE ts
+eventTimeUsec$ = IF ts != "" THEN DATETIME(ts, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$

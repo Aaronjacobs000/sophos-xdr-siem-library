@@ -1,0 +1,75 @@
+!SAMPLE={"tenant_id":"6b0c2a1e-3d4f-4a5b-8c6d-7e8f9a0b1c2d","tenant_name":"example","tenant_origin":"https://dlp.example.com","agent_uuid":"0f1e2d3c-4b5a-4968-8776-655443322110","uuid":"7d8e9f0a-1b2c-4d3e-8f4a-5b6c7d8e9f0a","type":"created","clustering_rule":"user","family":"2e3f4a5b-6c7d-4e8f-9a0b-1c2d3e4f5a6b","created_by":"policy:///1f2e3d4c-5b6a-4789-9a0b-c1d2e3/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a?instance=7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e&name=Sensitive+file+uploaded","description":"Sensitive file uploaded by Jo Smith","anonymised_description":"Sensitive file uploaded by [REDACTED]","generation":0,"status":"2026-10-14T23:12:50.000000000Z","last_updated":"2026-10-14T23:12:50.000000000Z","sensor_count":1,"score":75,"first_detection":"2026-10-14T23:12:44.125581231Z","last_detection":"2026-10-14T23:12:44.125581231Z","cluster_data":{"juid":"4d3c2b1a-0f9e-4d8c-b7a6-958473625140"},"incident_type":"clustered"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="incident"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDLP webhooks, JSON payload format, one event per request.
+# Child of FORTINET_FORTIDLP_JSON_PARENT: incident events (an incident created, resolved, or with
+# a node or user added) to Thirdparty. The description is the title, type (why FortiDLP sent the
+# event) the status, and the policy name the category. The risk score (0 to 100) is risk_score,
+# and the severity is CRITICAL from 90, HIGH from 70, MEDIUM from 40 and LOW below. The first and
+# last detection times are the alert's first and last event times.
+# json, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Fortinet"
+provider$ = "FortiDLP"
+alertId$ = json["$.uuid"]
+sensorEventId$ = json["$.uuid"]
+hostId$ = json["$.agent_uuid"]
+
+desc = STRING(json["$.description"])
+title$ = IF desc != "" THEN desc ELSE "FortiDLP incident"
+why = STRING(json["$.type"])
+status$ = IF why != "" THEN why ELSE NULL
+createdBy = STRING(json["$.created_by"])
+pn = createdBy|[?&]name=(?P<n>[^&]*)
+policy = REPLACE(STRING(pn["n"]), "+", " ")
+alertCategory$ = IF policy != "" THEN policy ELSE NULL
+
+score = json["$.score"]
+riskScore$ = score
+sc = IF score == NULL THEN -1 ELSE score
+severity$ = NULL
+severity$ = IF sc >= 0 THEN "LOW" ELSE severity$
+severity$ = IF sc >= 40 THEN "MEDIUM" ELSE severity$
+severity$ = IF sc >= 70 THEN "HIGH" ELSE severity$
+severity$ = IF sc >= 90 THEN "CRITICAL" ELSE severity$
+
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+first = STRING(json["$.first_detection"])
+last = STRING(json["$.last_detection"])
+updated = STRING(json["$.last_updated"])
+firstEventTimeUsec$ = IF first != "" THEN DATETIME(first, layout) ELSE NULL
+lastEventTimeUsec$ = IF last != "" THEN DATETIME(last, layout) ELSE NULL
+updatedTimeUsec$ = IF updated != "" THEN DATETIME(updated, layout) ELSE NULL
+
+# A node or user added to the incident.
+newName = STRING(json["$.new_entity_name"])
+a1.key$ = "policy_source"
+a1.value$ = createdBy
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "incident_type"
+a2.value$ = STRING(json["$.incident_type"])
+additionalData$.record$ = IF a2.value$ != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "detection_count"
+a3.value$ = STRING(json["$.sensor_count"])
+additionalData$.record$ = IF a3.value$ != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "clustering_rule"
+a4.value$ = STRING(json["$.clustering_rule"])
+additionalData$.record$ = IF a4.value$ != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "new_entity"
+a5.value$ = newName
+additionalData$.record$ = IF newName != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "changed_status_by"
+a6.value$ = STRING(json["$.changed_status_by"])
+additionalData$.record$ = IF a6.value$ != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "changed_status_reason"
+a7.value$ = STRING(json["$.changed_status_reason"])
+additionalData$.record$ = IF a7.value$ != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "generation"
+a8.value$ = STRING(json["$.generation"])
+additionalData$.record$ = IF a8.value$ != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
