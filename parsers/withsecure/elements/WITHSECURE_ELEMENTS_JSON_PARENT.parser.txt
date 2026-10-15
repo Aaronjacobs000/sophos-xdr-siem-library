@@ -14,7 +14,7 @@
 # Parent: hands malware detections (file scanning, manual and real-time scanning, AMSI and
 # DeepGuard) to Antivirus, every other security event (EDR incidents, firewall, web and
 # connection blocks, application and device control, tamper protection, Collaboration
-# Protection, settings) to ThirdPartyAlert, administrator logins to Auth and other audit log
+# Protection, settings) to Thirdparty, administrator logins to Auth and other audit log
 # entries to CloudAudit.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
 

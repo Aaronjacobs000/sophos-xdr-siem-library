@@ -11,7 +11,7 @@
 # "cisco_se_record": "event" first and adds event_id, the 64-bit event ID as text.
 # Parent: hands the compromise events (Cisco's event type IDs 1107296257 to 1107296344, such as
 # Cloud IOC, Executed malware and Vulnerable Application Detected) and network detections (DFC) to
-# the ThirdPartyAlert child; every other event with a severity or a detection (Threat Detected,
+# the Thirdparty child; every other event with a severity or a detection (Threat Detected,
 # Threat Quarantined, Quarantine Failure, Exploit Prevention, Behavioral Protection and the like) to
 # the Antivirus child; and the rest (scans, policy updates, isolation, faults) to the
 # ManagementEvent child. Routing reads the event type ID, since Cisco has renamed event types.

@@ -7,7 +7,7 @@
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Tenable Identity Exposure syslog alerts.
 # Child of TENABLE_IE_SYSLOG_PARENT: Indicator of Attack alerts (type 2), such as DC Sync,
-# DCShadow, Golden Ticket, Kerberoasting and password spraying, to ThirdPartyAlert. After the
+# DCShadow, Golden Ticket, Kerberoasting and password spraying, to Thirdparty. After the
 # common fields come the source hostname (or Unknown), source IP, destination hostname and
 # destination IP, then "name"="value" pairs such as user, dc_name and IOA_url. The codename is
 # the display name ("DC Sync") or the feed name (I-DCSync).
