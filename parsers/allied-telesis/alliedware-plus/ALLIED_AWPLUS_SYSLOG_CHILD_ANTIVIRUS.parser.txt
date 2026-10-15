@@ -1,0 +1,34 @@
+!SAMPLE=<12>Oct 14 09:36:20 ar4050s UTM[1567]: antivirus:Virus EICAR-Test-File detected in http://files.example.com/eicar.com to 192.0.2.45
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="antivirus"
+!SCHEMA=scwx.antivirus
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Allied Telesis AlliedWare Plus proxy antivirus (UTM firewalls), syslog to the data collector:
+#   UTM[<pid>]: antivirus:Virus <virus name> detected in <URL> to <host>
+# Child of ALLIED_AWPLUS_SYSLOG_PARENT: a virus found in a download, which the firewall blocked, to
+# Antivirus. Scan failures, size limits and clean scans aren't claimed.
+# av, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+threatName$ = av["virus"]
+urlString$ = av["url"]
+vendorAlertType$ = "antivirus"
+# The firewall blocks the download, so the threat was a file in transit.
+threatType$ = "FILE"
+actionTaken$ = "BLOCKED"
+computerName$ = hostId$
+
+# AlliedWare Plus calls every detection a virus; a name that says more refines it.
+name = LOWERCASE(STRING(av["virus"]))
+threatCategory$ = "VIRUS"
+threatCategory$ = IF CONTAINS(name, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(name, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(name, "backdoor") THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(name, "miner") THEN "MINER" ELSE threatCategory$
+
+# The host the download was going to has no Antivirus field of its own.
+m1.key$ = "client_address"
+m1.value$ = av["client"]
+eventMetadata$.record$ = [m1]

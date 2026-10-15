@@ -1,0 +1,485 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791969994000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51514,
+      "destination_port": 3389,
+      "protocol": 6,
+      "source_mac": "00:00:5e:00:53:02",
+      "destination_mac": "00:00:5e:00:53:01",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "DENY"
+          },
+          {
+            "key": "firewall_rule",
+            "value": "10"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "out_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "SYN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791923221000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar3050s-akl",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.20",
+      "source_port": 40000,
+      "destination_port": 23,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "DENY"
+          },
+          {
+            "key": "reason",
+            "value": "in policy"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "out_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "SYN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970060000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "203.0.113.61",
+      "destination_address": "192.0.2.21",
+      "source_port": 6000,
+      "destination_port": 21,
+      "protocol": 6,
+      "source_mac": "00:00:5e:00:53:03",
+      "destination_mac": "00:00:5e:00:53:01",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "DENY"
+          },
+          {
+            "key": "reason",
+            "value": "probe FIN"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "out_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "UG PSH FIN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970072000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "198.51.100.2",
+      "destination_address": "203.0.113.1",
+      "protocol": 1,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "PERMIT"
+          },
+          {
+            "key": "firewall_rule",
+            "value": "20"
+          },
+          {
+            "key": "out_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "icmp_type",
+            "value": "8"
+          },
+          {
+            "key": "icmp_code",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970083000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "203.0.113.70",
+      "destination_address": "192.0.2.10",
+      "source_port": 45810,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "DENY"
+          },
+          {
+            "key": "reason",
+            "value": "SYNLIMIT reach."
+          },
+          {
+            "key": "in_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "out_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "SYN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970089000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "192.0.2.45",
+      "destination_address": "203.0.113.53",
+      "source_port": 53112,
+      "destination_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "REJECT"
+          },
+          {
+            "key": "firewall_rule",
+            "value": "30"
+          },
+          {
+            "key": "in_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "out_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "dpi_mark",
+            "value": "0x1053"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970095000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "192.0.2.45",
+      "destination_address": "203.0.113.80",
+      "source_port": 55532,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "tx_packet_count": 12,
+      "tx_byte_count": 1840,
+      "rx_packet_count": 10,
+      "rx_byte_count": 9120,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 55532,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "connection END"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970100000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "192.0.2.46",
+      "destination_address": "203.0.113.1",
+      "protocol": 1,
+      "flow_action": "FW_ALLOWED",
+      "source_nat_address": "198.51.100.2",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "connection NEW"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970502000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "uri_host": "malware.example.com",
+      "uri_path": "/download/setup.exe",
+      "uri_scheme": "http",
+      "source_address": "192.0.2.45",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "url_filter_action",
+            "value": "BLOCK"
+          },
+          {
+            "key": "url_filter_rule",
+            "value": "3"
+          },
+          {
+            "key": "url",
+            "value": "http://malware.example.com/download/setup.exe"
+          },
+          {
+            "key": "categories",
+            "value": "Malware"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970540000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "uri_host": "news.example.org",
+      "uri_path": "/world",
+      "uri_query": "page=2",
+      "uri_scheme": "https",
+      "source_address": "192.0.2.47",
+      "blocked": 0,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "url_filter_action",
+            "value": "ALLOW"
+          },
+          {
+            "key": "url_filter_rule",
+            "value": "7"
+          },
+          {
+            "key": "url",
+            "value": "https://news.example.org/world?page=2"
+          },
+          {
+            "key": "categories",
+            "value": "News,Social Networking"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970580000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "event_type": "antivirus",
+      "threat_name": "EICAR-Test-File",
+      "url_string": "http://files.example.com/eicar.com",
+      "vendor_alert_type": "antivirus",
+      "threat_type": "FILE",
+      "action_taken": "BLOCKED",
+      "computer_name": "ar4050s",
+      "threat_category": "VIRUS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "client_address",
+            "value": "192.0.2.45"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970802000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "username": "manager",
+      "command": "no log host 192.0.2.250",
+      "operation": "no log host 192.0.2.250",
+      "operation_name": "command",
+      "channel": "ttyS0",
+      "target_hostname": "ar4050s"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791924075000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "x530-sw01",
+      "username": "jsmith",
+      "command": "copy running-config startup-config",
+      "operation": "copy running-config startup-config",
+      "operation_name": "command",
+      "channel": "vty1",
+      "target_hostname": "x530-sw01"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 15,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 16,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

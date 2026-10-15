@@ -1,0 +1,39 @@
+!SAMPLE=<12>Oct 14 09:35:02 ar4050s UTM[1567]: Web_Control: BLOCK http://malware.example.com/download/setup.exe requested by 192.0.2.45 Malware, 3
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="web"
+!SCHEMA=scwx.http
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Allied Telesis AlliedWare Plus URL filtering (Web Control), syslog to the data collector:
+#   UTM[<pid>]: Web_Control: <BLOCK|ALLOW> <requested URL> requested by <address> <categories>, <rule ID>
+# Child of ALLIED_AWPLUS_SYSLOG_PARENT: each request that matched a URL filtering rule, to HTTP.
+# web, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+url = STRING(web["url"])
+u = url|^(?:(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*)://)?(?P<host>[^/:?#]+)(?::(?P<port>\d+))?(?P<path>/[^?#]*)?(?:\?(?P<query>[^#]*))?
+uriHost$ = IF u["host"] != "" THEN u["host"] ELSE NULL
+uriPort$ = IF u["port"] != "" THEN u["port"] ELSE NULL
+uriPath$ = IF u["path"] != "" THEN u["path"] ELSE NULL
+uriQuery$ = IF u["query"] != "" THEN u["query"] ELSE NULL
+uriScheme$ = IF u["scheme"] != "" THEN LOWERCASE(u["scheme"]) ELSE NULL
+sourceAddress$ = web["req"]
+
+act = STRING(web["act"])
+blocked$ = IF act == "BLOCK" THEN 1 ELSE 0
+sensorTypeActions$ = IF act == "BLOCK" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+requestDirection$ = "OUTBOUND"
+
+cats = TRIM(STRING(web["cats"]))
+m1.key$ = "url_filter_action"
+m1.value$ = act
+m2.key$ = "url_filter_rule"
+m2.value$ = web["rule"]
+m3.key$ = "url"
+m3.value$ = url
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+m4.key$ = "categories"
+m4.value$ = cats
+eventMetadata$.record$ = IF cats != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$

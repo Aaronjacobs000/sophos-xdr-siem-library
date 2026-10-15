@@ -1,0 +1,21 @@
+!SAMPLE=<13>Oct 14 09:40:02 ar4050s IMISH[3883]: [manager@ttyS0]no log host 192.0.2.250
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="command"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Allied Telesis AlliedWare Plus command log, syslog to the data collector:
+#   IMISH[<pid>]: [<user>@<terminal>]<command>
+# Child of ALLIED_AWPLUS_SYSLOG_PARENT: each command entered at the command line, to Management Event.
+# AlliedWare Plus logs a command when its syntax is valid; the line doesn't say whether it worked.
+# cmd, hostId$, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+username$ = cmd["user"]
+command$ = cmd["cmd"]
+operation$ = cmd["cmd"]
+operationName$ = "command"
+# The terminal the command came from, such as ttyS0 for the console.
+channel$ = cmd["term"]
+targetHostname$ = hostId$

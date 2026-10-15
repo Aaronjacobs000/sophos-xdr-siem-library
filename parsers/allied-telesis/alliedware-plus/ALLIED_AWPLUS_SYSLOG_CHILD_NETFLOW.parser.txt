@@ -1,0 +1,117 @@
+!SAMPLE=<174>Oct 14 09:26:34 ar4050s ulogd[432]: Firewall rule 10: DENY IN=eth1 OUT=vlan1 MAC=00:00:5e:00:53:01:00:00:5e:00:53:02:08:00 SRC=198.51.100.23 DST=192.0.2.10 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=54219 DF PROTO=TCP SPT=51514 DPT=3389 WINDOW=64240 RES=0x00 SYN URGP=0
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="firewall" OR eventType$=="connection"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Allied Telesis AlliedWare Plus firewall logs (facility local5), syslog to the data collector.
+# Child of ALLIED_AWPLUS_SYSLOG_PARENT: firewall rule and filter lines, and connection logs, to Netflow.
+#   Firewall rule 10: DENY IN=eth1 OUT=vlan1 [MAC=<dst>:<src>:<type>] SRC=... DST=... ... PROTO=TCP SPT=... DPT=...
+#   END proto=TCP orig_src=... orig_dst=... orig_sport=... orig_dport=... orig_pkts=... orig_bytes=...
+#     reply_src=... reply_dst=... reply_sport=... reply_dport=... reply_pkts=... reply_bytes=...
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# fw, conn, kv, kvText, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+isConn = eventType$ == "connection"
+
+src = IF isConn THEN STRING(kv["orig_src"]) ELSE STRING(kv["SRC"])
+dst = IF isConn THEN STRING(kv["orig_dst"]) ELSE STRING(kv["DST"])
+sport = IF isConn THEN STRING(kv["orig_sport"]) ELSE STRING(kv["SPT"])
+dport = IF isConn THEN STRING(kv["orig_dport"]) ELSE STRING(kv["DPT"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+
+# protocol takes the IANA number. The firewall logs a name; a connection log a name or a number.
+proto = UPPERCASE(IF isConn THEN STRING(kv["proto"]) ELSE STRING(kv["PROTO"]))
+pnum = proto|^(?P<n>\d+)$
+protocol$ = IF pnum["n"] != "" THEN INT(pnum["n"], 10) ELSE NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+protocol$ = IF proto == "AH" THEN 51 ELSE protocol$
+protocol$ = IF proto == "SCTP" THEN 132 ELSE protocol$
+
+# MAC= is the frame's destination MAC, source MAC and EtherType.
+macText = STRING(kv["MAC"])
+mac = macText|^(?P<d>(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}):(?P<s>(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})
+sourceMac$ = IF mac["s"] != "" THEN mac["s"] ELSE NULL
+destinationMac$ = IF mac["d"] != "" THEN mac["d"] ELSE NULL
+
+# DENY and REJECT drop the packet (REJECT also answers the source), PERMIT passes it, and LOG only
+# logs it, so its outcome is left unset. A tracked connection is one the firewall let through.
+act = STRING(fw["act"])
+flowAction$ = NULL
+flowAction$ = IF act == "DENY" OR act == "REJECT" THEN "FW_BLOCKED" ELSE flowAction$
+flowAction$ = IF act == "PERMIT" OR isConn THEN "FW_ALLOWED" ELSE flowAction$
+
+# Connection logs: the originating side's packets and bytes went out, the reply side's came back.
+# A reply address that differs from the original one shows NAT: the reply goes to the source NAT
+# address, and comes from the real destination behind a port forward.
+opk = STRING(kv["orig_pkts"])
+oby = STRING(kv["orig_bytes"])
+rpk = STRING(kv["reply_pkts"])
+rby = STRING(kv["reply_bytes"])
+txPacketCount$ = IF opk != "" THEN INT(opk, 10) ELSE NULL
+txByteCount$ = IF oby != "" THEN INT(oby, 10) ELSE NULL
+rxPacketCount$ = IF rpk != "" THEN INT(rpk, 10) ELSE NULL
+rxByteCount$ = IF rby != "" THEN INT(rby, 10) ELSE NULL
+rsrc = STRING(kv["reply_src"])
+rdst = STRING(kv["reply_dst"])
+rsport = STRING(kv["reply_sport"])
+rdport = STRING(kv["reply_dport"])
+snat = isConn AND rdst != "" AND rdst != src
+dnat = isConn AND rsrc != "" AND rsrc != dst
+sourceNatAddress$ = IF snat THEN rdst ELSE NULL
+sourceNatPort$ = IF snat AND rdport != "" THEN INT(rdport, 10) ELSE NULL
+destinationNatAddress$ = IF dnat THEN rsrc ELSE NULL
+destinationNatPort$ = IF dnat AND rsport != "" THEN INT(rsport, 10) ELSE NULL
+
+# Fields with no Netflow home go to event_metadata.
+why = TRIM(STRING(fw["why"]))
+rule = STRING(fw["rule"])
+inIf = STRING(kv["IN"])
+outIf = STRING(kv["OUT"])
+flags = kvText|\sRES=\S+\s+(?P<f>[A-Z][A-Z ]*?)\s+URGP=
+tflags = TRIM(STRING(flags["f"]))
+icmpType = STRING(kv["TYPE"])
+icmpCode = STRING(kv["CODE"])
+dpiMark = STRING(kv["MARK"])
+r1.key$ = "log_type"
+r1.value$ = IF isConn THEN "connection " + STRING(conn["ev"]) ELSE "firewall"
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r2.key$ = "firewall_action"
+r2.value$ = act
+eventMetadata$.record$ = IF act != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "firewall_rule"
+r3.value$ = rule
+eventMetadata$.record$ = IF rule != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "reason"
+r4.value$ = why
+eventMetadata$.record$ = IF why != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "in_interface"
+r5.value$ = inIf
+eventMetadata$.record$ = IF inIf != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "out_interface"
+r6.value$ = outIf
+eventMetadata$.record$ = IF outIf != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "tcp_flags"
+r7.value$ = tflags
+eventMetadata$.record$ = IF tflags != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$
+r8.key$ = "icmp_type"
+r8.value$ = icmpType
+eventMetadata$.record$ = IF icmpType != "" THEN eventMetadata$.record$ + [r8] ELSE eventMetadata$.record$
+r9.key$ = "icmp_code"
+r9.value$ = icmpCode
+eventMetadata$.record$ = IF icmpCode != "" THEN eventMetadata$.record$ + [r9] ELSE eventMetadata$.record$
+# The last 3 hex digits of the DPI mark are the DPI application index.
+r10.key$ = "dpi_mark"
+r10.value$ = dpiMark
+eventMetadata$.record$ = IF dpiMark != "" THEN eventMetadata$.record$ + [r10] ELSE eventMetadata$.record$
