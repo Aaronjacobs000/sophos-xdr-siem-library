@@ -1,0 +1,33 @@
+!SAMPLE=<134>Oct 14 23:31:20 wgimporter01 LEEF:1.0|WatchGuard Technologies, Ltd.|paps|02.45.00.0000|exec|sev=1 devTime=2026-10-14 23:31:02.120000 devTimeFormat=yyyy-MM-dd HH:mm:ss.SSS usrName=jdoe domain=EXAMPLE src=192.0.2.47 identSrc=192.0.2.47 identHostName=WS-0147 HostName=WS-0147 LocalDateTime=2026-10-14 23:31:02.118000 PandaTimeStatus=2 Op=Exec ParentHash=AD7FACB2586FC6E966C004D7D1D16B02 ParentDriveType=Fixed ParentPath=SYSTEM|\cmd.exe ParentPID=4120 ParentValidSig=true ParentCompany=Example Corp ParentBroken=false ParentImageType=EXEx64 ParentExeType=Unknown ParentPrevalence=High ParentPrevLastDay=High ParentCat=Goodware ParentMWName= ChildHash=7353F60B1739074EB17C5F4DDDEFE239 ChildDriveType=Fixed ChildPath=SYSTEM|\WindowsPowerShell\v1.0\powershell.exe ChildPID=6644 ChildValidSig=true ChildCompany=Example Corp ChildBroken=false ChildImageType=EXEx64 ChildExeType=DOTNET ChildPrevalence=High ChildPrevLastDay=High ChildCat=Goodware ChildMWName= OCS_Exec=false OCS_Name= OCS_Version= Params=-nop -w hidden -c iwr ToastResult= Action=Allow ServiceLevel=Hardening WinningTech=Cloud DetId=0 MUID=713FC2B45B42902918B53467357AC1B7 TTPs=T1059.001 IOAIds=0 TelemetryType=1
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="exec"
+!SCHEMA=scwx.process
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WatchGuard Endpoint Security SIEMFeeder events, LEEF or CEF.
+# Child of WATCHGUARD_EPS_LEEF_PARENT: process executions (exec), where a parent process runs a
+# child, to Process. Paths keep WatchGuard's folder token, such as SYSTEM|\cmd.exe for
+# %windir%\System32\cmd.exe. Params is the child's command line.
+# v, hostName, account, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+childPath = TRIM(STRING(v["ChildPath"]))
+parentPath = TRIM(STRING(v["ParentPath"]))
+imagePath$ = IF childPath != "" THEN childPath ELSE NULL
+parentImagePath$ = IF parentPath != "" THEN parentPath ELSE NULL
+base = childPath|(?P<b>[^\\|/]+)$
+process$ = IF base["b"] != "" THEN base["b"] ELSE NULL
+childPid = TRIM(STRING(v["ChildPID"]))
+parentPid = TRIM(STRING(v["ParentPID"]))
+processId$ = IF childPid != "" THEN childPid ELSE NULL
+parentProcessId$ = IF parentPid != "" THEN parentPid ELSE NULL
+params = TRIM(STRING(v["Params"]))
+commandline$ = IF params != "" THEN params ELSE NULL
+username$ = IF account != "" THEN account ELSE NULL
+computerName$ = IF hostName != "" THEN hostName ELSE NULL
+hash = TRIM(STRING(v["ChildHash"]))
+md5 = hash|^(?P<h>[0-9A-Fa-f]{32})$
+programHash$.md5$ = IF md5["h"] != "" THEN LOWERCASE(md5["h"]) ELSE NULL
+act = LOWERCASE(TRIM(STRING(v["Action"])))
+blockedAct = act|^(?:block|killprocess)
+wasBlocked$ = blockedAct[0] != ""

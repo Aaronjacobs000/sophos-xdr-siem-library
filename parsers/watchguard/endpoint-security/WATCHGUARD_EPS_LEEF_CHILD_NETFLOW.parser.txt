@@ -1,0 +1,61 @@
+!SAMPLE=<134>Oct 14 23:35:10 wgimporter01 LEEF:1.0|WatchGuard Technologies, Ltd.|paps|02.45.00.0000|socket|sev=1 devTime=2026-10-14 23:34:58.700000 devTimeFormat=yyyy-MM-dd HH:mm:ss.SSS usrName=jdoe domain=EXAMPLE src=192.0.2.47 identSrc=192.0.2.47 identHostName=WS-0147 HostName=WS-0147 LocalDateTime=2026-10-14 23:34:58.698000 PandaTimeStatus=2 Protocol=TCP Localport=50432 Direction=Up LocalIP=192.0.2.47 Hash=7353F60B1739074EB17C5F4DDDEFE239 DriveType=Fixed Path=SYSTEM|\WindowsPowerShell\v1.0\powershell.exe Hostname= IP=203.0.113.80 Port=443 Times=1 Pid=6644 ValidSig=true Company=Example Corp Broken=false imageType=EXEx64 ExeType=DOTNET Prevalence=High PrevLastDay=High Cat=Goodware MWName= MUID=713FC2B45B42902918B53467357AC1B7 TTPs=T1071.001 IOAIds=0 TelemetryType=0
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="socket"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WatchGuard Endpoint Security SIEMFeeder events, LEEF or CEF.
+# Child of WATCHGUARD_EPS_LEEF_PARENT: network connections a process made (socket) to Netflow:
+# the local address and port as the source, the remote address and port (IP, Port) as the
+# destination, and the process path. SIEMFeeder sends one event for the first connection and then
+# an hourly count (Times) of the same connection.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# v, account, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+localIp = TRIM(STRING(v["LocalIP"]))
+remoteIp = TRIM(STRING(v["IP"]))
+sourceAddress$ = IF localIp != "" THEN localIp ELSE NULL
+destinationAddress$ = IF remoteIp != "" THEN remoteIp ELSE NULL
+lpText = TRIM(STRING(v["Localport"]))
+rpText = TRIM(STRING(v["Port"]))
+lp = lpText|^(?P<n>\d{1,5})$
+rp = rpText|^(?P<n>\d{1,5})$
+sourcePort$ = IF lp["n"] != "" THEN INT(lp["n"], 10) ELSE NULL
+destinationPort$ = IF rp["n"] != "" THEN INT(rp["n"], 10) ELSE NULL
+proto = UPPERCASE(TRIM(STRING(v["Protocol"])))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+path = TRIM(STRING(v["Path"]))
+processImagePath$ = IF path != "" THEN path ELSE NULL
+
+# Direction is Up, Down or Both, which WatchGuard doesn't define further.
+n1.key$ = "direction"
+n1.value$ = TRIM(STRING(v["Direction"]))
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1]
+n2.key$ = "times"
+n2.value$ = TRIM(STRING(v["Times"]))
+eventMetadata$.record$ = IF n2.value$ != "" THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "pid"
+n3.value$ = TRIM(STRING(v["Pid"]))
+eventMetadata$.record$ = IF n3.value$ != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "process_hash"
+n4.value$ = TRIM(STRING(v["Hash"]))
+eventMetadata$.record$ = IF n4.value$ != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "remote_host"
+n5.value$ = TRIM(STRING(v["Hostname"]))
+eventMetadata$.record$ = IF n5.value$ != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "process_category"
+n6.value$ = TRIM(STRING(v["Cat"]))
+eventMetadata$.record$ = IF n6.value$ != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "malware_name"
+n7.value$ = TRIM(STRING(v["MWName"]))
+eventMetadata$.record$ = IF n7.value$ != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "user"
+n8.value$ = account
+eventMetadata$.record$ = IF account != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "mitre_ttps"
+n9.value$ = TRIM(STRING(v["TTPs"]))
+eventMetadata$.record$ = IF n9.value$ != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$

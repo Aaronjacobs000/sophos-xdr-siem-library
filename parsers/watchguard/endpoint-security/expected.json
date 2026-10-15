@@ -1,0 +1,439 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792019692200188,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147",
+      "event_type": "alertmalware",
+      "threat_name": "Trj/Example.A",
+      "file_path": "C:\\Users\\jdoe\\Downloads\\invoice.exe",
+      "file_hash": {
+        "md5": "c86854df4f3aec59d523dbad1f5031fd"
+      },
+      "threat_type": "FILE",
+      "threat_category": "MALWARE",
+      "vendor_alert_type": "alertmalware",
+      "agent_priority": "7",
+      "computer_name": "WS-0147",
+      "source_address": "192.0.2.47",
+      "action_taken": "QUARANTINED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "execution_status",
+            "value": "Not executed - Quarantine"
+          },
+          {
+            "key": "threat_type",
+            "value": "Malware"
+          },
+          {
+            "key": "dwell_time_secs",
+            "value": "0"
+          },
+          {
+            "key": "drive_type",
+            "value": "Fixed"
+          },
+          {
+            "key": "service_level",
+            "value": "Hardening"
+          },
+          {
+            "key": "muid",
+            "value": "713FC2B45B42902918B53467357AC1B7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792019781031200,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0161",
+      "event_type": "alertpup",
+      "threat_name": "PUP/Example.Toolbar",
+      "file_path": "C:\\Program Files (x86)\\Example Toolbar\\toolbar.exe",
+      "file_hash": {
+        "md5": "0f5c9a1d7e3b2a4c6d8e0f1a2b3c4d5e"
+      },
+      "threat_type": "FILE",
+      "threat_category": "APPLICATION",
+      "vendor_alert_type": "alertpup",
+      "agent_priority": "6",
+      "computer_name": "WS-0161",
+      "source_address": "192.0.2.61",
+      "action_taken": "NONE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "execution_status",
+            "value": "Executed - Allow"
+          },
+          {
+            "key": "threat_type",
+            "value": "PUP"
+          },
+          {
+            "key": "dwell_time_secs",
+            "value": "86400"
+          },
+          {
+            "key": "drive_type",
+            "value": "Fixed"
+          },
+          {
+            "key": "service_level",
+            "value": "Learning"
+          },
+          {
+            "key": "muid",
+            "value": "1F109BA4E0A1B237F9995D31F0C4D319"
+          },
+          {
+            "key": "version",
+            "value": "4.2.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020011004512,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0152",
+      "event_type": "alertmalware",
+      "threat_name": "Trj/Example.B",
+      "file_path": "C:\\Users\\asmith\\AppData\\Local\\Temp\\svch0st.exe",
+      "file_hash": {
+        "md5": "5d41402abc4b2a76b9719d911017c592"
+      },
+      "threat_type": "FILE",
+      "threat_category": "MALWARE",
+      "vendor_alert_type": "alertmalware",
+      "agent_priority": "7",
+      "computer_name": "WS-0152",
+      "source_address": "192.0.2.52",
+      "action_taken": "TERMINATED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "execution_status",
+            "value": "Executed - KillProcess"
+          },
+          {
+            "key": "threat_type",
+            "value": "Malware"
+          },
+          {
+            "key": "dwell_time_secs",
+            "value": "3600"
+          },
+          {
+            "key": "remote_source_ip",
+            "value": "192.0.2.80"
+          },
+          {
+            "key": "remote_source_machine",
+            "value": "FS01"
+          },
+          {
+            "key": "remote_source_user",
+            "value": "EXAMPLE\\svc-share"
+          },
+          {
+            "key": "drive_type",
+            "value": "Remote"
+          },
+          {
+            "key": "service_level",
+            "value": "Blocking"
+          },
+          {
+            "key": "muid",
+            "value": "2A8C4E6F0B1D3A5C7E9F1B3D5A7C9E1F"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020118000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "SRV-RDS01",
+      "vendor": "WatchGuard",
+      "provider": "WatchGuard Endpoint Security",
+      "title": "RDP attack detected: Exploit/BruteForce_RDP",
+      "alert_category": "RDPAttack",
+      "summary": "Malicious Network RDP Attack",
+      "target_host_name": "SRV-RDS01",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.20",
+      "source_host_name": "ATTACKER01",
+      "source_user_name": "administrator",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "alertrdpattack"
+          },
+          {
+            "key": "execution_status",
+            "value": "Blocked by IP"
+          },
+          {
+            "key": "item_name",
+            "value": "Exploit/BruteForce_RDP"
+          },
+          {
+            "key": "item_path",
+            "value": "Malicious Network RDP Attack"
+          },
+          {
+            "key": "muid",
+            "value": "3B9D5F7A1C2E4B6D8F0A2C4E6B8D0F2A"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020243440000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147",
+      "vendor": "WatchGuard",
+      "provider": "WatchGuard Endpoint Security",
+      "title": "Exploit detected: Exploit/Example.Macro",
+      "alert_category": "Exploit",
+      "summary": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "target_host_name": "WS-0147",
+      "vendor_severity": "9",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "destination_address": "192.0.2.47",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "alertexploit"
+          },
+          {
+            "key": "execution_status",
+            "value": "BlockExploit"
+          },
+          {
+            "key": "item_name",
+            "value": "Exploit/Example.Macro"
+          },
+          {
+            "key": "item_path",
+            "value": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+          },
+          {
+            "key": "item_hash",
+            "value": "9E107D9D372BB6826BD81D3542A419D6"
+          },
+          {
+            "key": "doc_list",
+            "value": "C:\\Users\\jdoe\\Downloads\\report.docm"
+          },
+          {
+            "key": "muid",
+            "value": "713FC2B45B42902918B53467357AC1B7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020581512000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147",
+      "vendor": "WatchGuard",
+      "provider": "WatchGuard Endpoint Security",
+      "title": "Threat hunting indicator: PowerShell download cradle",
+      "alert_category": "thalert",
+      "summary": "ParentPath: C:\\Windows\\explorer.exe CommandLine: powershell -nop -w hidden -c iwr",
+      "target_host_name": "WS-0147",
+      "vendor_severity": "8",
+      "severity": "HIGH",
+      "destination_address": "192.0.2.47",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "thalert"
+          },
+          {
+            "key": "hunting_rule",
+            "value": "PowerShell download cradle"
+          },
+          {
+            "key": "mitre",
+            "value": "T1059.001/TA0002"
+          },
+          {
+            "key": "indicator_severity",
+            "value": "2"
+          },
+          {
+            "key": "times",
+            "value": "1"
+          },
+          {
+            "key": "muid",
+            "value": "713FC2B45B42902918B53467357AC1B7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020662120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147",
+      "image_path": "SYSTEM|\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "parent_image_path": "SYSTEM|\\cmd.exe",
+      "process": "powershell.exe",
+      "process_id": "6644",
+      "parent_process_id": "4120",
+      "commandline": "-nop -w hidden -c iwr",
+      "username": "EXAMPLE\\jdoe",
+      "computer_name": "WS-0147",
+      "program_hash": {
+        "md5": "7353f60b1739074eb17c5f4dddefe239"
+      },
+      "was_blocked": false
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020810250000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0152",
+      "image_path": "SYSTEM|\\rundll32.exe",
+      "parent_image_path": "PROGRAM_FILESX86|\\Example\\updater.exe",
+      "process": "rundll32.exe",
+      "process_id": "7712",
+      "parent_process_id": "2210",
+      "commandline": "shell32.dll,Control_RunDLL",
+      "username": "EXAMPLE\\asmith",
+      "computer_name": "WS-0152",
+      "program_hash": {
+        "md5": "e4d909c290d0fb1ca068ffaddf22cbd0"
+      },
+      "was_blocked": false
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT > WATCHGUARD_EPS_LEEF_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792020898700000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147",
+      "source_address": "192.0.2.47",
+      "destination_address": "203.0.113.80",
+      "source_port": 50432,
+      "destination_port": 443,
+      "protocol": 6,
+      "process_image_path": "SYSTEM|\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "direction",
+            "value": "Up"
+          },
+          {
+            "key": "times",
+            "value": "1"
+          },
+          {
+            "key": "pid",
+            "value": "6644"
+          },
+          {
+            "key": "process_hash",
+            "value": "7353F60B1739074EB17C5F4DDDEFE239"
+          },
+          {
+            "key": "process_category",
+            "value": "Goodware"
+          },
+          {
+            "key": "user",
+            "value": "EXAMPLE\\jdoe"
+          },
+          {
+            "key": "mitre_ttps",
+            "value": "T1071.001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "WATCHGUARD_EPS_LEEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "WatchGuard Endpoint Security",
+      "event_time_usec": 1792021191000628,
+      "sensor_version": "02.45.00.0000",
+      "host_id": "WS-0147"
+    }
+  }
+]

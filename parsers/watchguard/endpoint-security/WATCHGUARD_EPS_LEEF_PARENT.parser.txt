@@ -1,0 +1,64 @@
+!SAMPLE=<134>Oct 14 23:15:07 wgimporter01 LEEF:1.0|WatchGuard Technologies, Ltd.|paps|02.45.00.0000|alertmalware|sev=7 devTime=2026-10-14 23:14:52.200188 devTimeFormat=yyyy-MM-dd HH:mm:ss.SSS src=192.0.2.47 identSrc=192.0.2.47 identHostName=WS-0147 HostName=WS-0147 ThreatType=Malware ExecutionStatus=Not executed - Quarantine DwellTimeSecs=0 MWHash=C86854DF4F3AEC59D523DBAD1F5031FD MWPath=C:\Users\jdoe\Downloads\invoice.exe MWName=Trj/Example.A SourceIP= SourceMachineName= SourceUserName= UrlList= DocList= Version= Vulnerable=false MUID=713FC2B45B42902918B53467357AC1B7 DriveType=Fixed ServiceLevel=Hardening
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:LEEF:1\.0|CEF:1)\|WatchGuard Technologies, Ltd\.\|paps\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WatchGuard Endpoint Security (EDR, EPDR, Advanced EPDR) events from the SIEMFeeder
+# module, which WatchGuard Event Importer downloads and sends over syslog to the data collector:
+#   LEEF:1.0|WatchGuard Technologies, Ltd.|paps|<version>|<event>|sev=7 devTime=... HostName=...
+#   CEF:1|WatchGuard Technologies, Ltd.|paps|<version>|<event>|<event or alert name>|<severity>|Date=...
+# LEEF is the default; CEF is on request from WatchGuard. WatchGuard's examples separate the
+# pairs with spaces, not the LEEF tab, and values hold spaces (User=NT AUTHORITY\SYSTEM), so the
+# parser turns any tab into a space and reads the pairs with CEF(), which ends a value at the
+# next " key=".
+# Parent: hands malware and PUP alerts to the Antivirus child, the other alerts and threat
+# hunting indicators (thalert) to the third-party alert child, exec to the Process child and
+# socket to the Netflow child. Other events stay generic.
+
+h = originalData$|(?P<fmt>LEEF:1\.0|CEF:1)\|WatchGuard Technologies, Ltd\.\|(?P<product>[^|]*)\|(?P<ver>[^|]*)\|(?P<rest>.*)$
+isLeef = h["fmt"] == "LEEF:1.0"
+lh = h["rest"]|^(?P<eid>[^|]*)\|(?P<attrs>.*)$
+ch = h["rest"]|^(?P<name>[^|]*)\|(?P<name2>[^|]*)\|(?P<sev>[^|]*)\|(?P<ext>.*)$
+eventName = IF isLeef THEN lh["eid"] ELSE ch["name"]
+typeWord = eventName|^\s*(?P<w>[A-Za-z]+)
+evType = LOWERCASE(typeWord["w"])
+attrs = IF isLeef THEN lh["attrs"] ELSE ch["ext"]
+flat = REPLACE_REGEX(attrs, "\t", " ")
+v = CEF("CEF:0|WatchGuard|paps|0|" + evType + "|" + evType + "|0|" + flat)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "WatchGuard Endpoint Security"
+sensorVersion$ = IF h["ver"] != "" THEN h["ver"] ELSE NULL
+# CEF puts the alert's name in the header (Name 2); LEEF may add it after the event ID.
+nameRest = eventName|^\s*[A-Za-z]+\s+(?P<n>.+)$
+alertName = IF isLeef THEN nameRest["n"] ELSE ch["name2"]
+sevText = IF isLeef THEN TRIM(STRING(v["sev"])) ELSE TRIM(ch["sev"])
+
+hostName = TRIM(STRING(v["HostName"]))
+hostName = IF hostName != "" THEN hostName ELSE TRIM(STRING(v["identHostName"]))
+hostName = IF hostName != "" THEN hostName ELSE TRIM(STRING(v["MachineName"]))
+hostId$ = IF hostName != "" THEN hostName ELSE NULL
+hostIp = TRIM(STRING(v["HostIp"]))
+hostIp = IF hostIp != "" THEN hostIp ELSE TRIM(STRING(v["MachineIP"]))
+hostIp = IF hostIp != "" THEN hostIp ELSE TRIM(STRING(v["src"]))
+hostIp = IF hostIp != "" THEN hostIp ELSE TRIM(STRING(v["identSrc"]))
+# The account: User (CEF, domain\name) or usrName and domain (LEEF).
+leefUser = TRIM(STRING(v["usrName"]))
+leefDomain = TRIM(STRING(v["domain"]))
+domainPrefix = IF leefDomain != "" THEN leefDomain + "\\" ELSE ""
+account = TRIM(STRING(v["User"]))
+account = IF account == "" AND leefUser != "" THEN domainPrefix + leefUser ELSE account
+
+# devTime (LEEF) or Date (CEF), with microseconds and no zone; read as UTC.
+time = TRIM(STRING(v["devTime"]))
+time = IF time != "" THEN time ELSE TRIM(STRING(v["Date"]))
+timeOk = time|^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}
+eventTimeUsec$ = IF timeOk[0] != "" THEN DATETIME(time, "2006-01-02 15:04:05.999999") ELSE eventTimeUsec$
+
+eventType$ = "other"
+eventType$ = IF evType == "alertmalware" OR evType == "alertpup" THEN "malware" ELSE eventType$
+eventType$ = IF evType == "alertexploit" OR evType == "alertrdpattack" OR evType == "alertdeepinspection" OR evType == "alerteae" OR evType == "alertadvpolicy" OR evType == "alertsecappcontrol" OR evType == "alertprodappcontrol" OR evType == "alertvulnerabledriver" OR evType == "thalert" THEN "alert" ELSE eventType$
+eventType$ = IF evType == "exec" THEN "exec" ELSE eventType$
+eventType$ = IF evType == "socket" THEN "socket" ELSE eventType$

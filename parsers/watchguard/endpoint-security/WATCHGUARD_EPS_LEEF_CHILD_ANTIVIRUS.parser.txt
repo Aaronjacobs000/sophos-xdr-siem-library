@@ -1,0 +1,79 @@
+!SAMPLE=<134>Oct 14 23:20:30 wgimporter01 CEF:1|WatchGuard Technologies, Ltd.|paps|02.45.00.0000|alertmalware|Malware Detected|7|Date=2026-10-14 23:20:11.004512 HostIp=192.0.2.52 HostName=WS-0152 ThreatType=Malware ExecutionStatus=Executed - KillProcess DwellTimeSecs=3600 ItemHash=5D41402ABC4B2A76B9719D911017C592 ItemPath=C:\Users\asmith\AppData\Local\Temp\svch0st.exe ItemName=Trj/Example.B SourceIP=192.0.2.80 SourceMachineName=FS01 SourceUserName=EXAMPLE\svc-share UrlList= DocList= Version= Vulnerable=false MUID=2A8C4E6F0B1D3A5C7E9F1B3D5A7C9E1F DriveType=Remote ServiceLevel=Blocking
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="malware"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WatchGuard Endpoint Security SIEMFeeder events, LEEF or CEF.
+# Child of WATCHGUARD_EPS_LEEF_PARENT: malware (alertmalware) and PUP (alertpup) alerts to
+# Antivirus. LEEF names the item MWName, MWPath and MWHash; CEF names them ItemName, ItemPath
+# and ItemHash. ExecutionStatus is "Executed - <action>" or "Not executed - <action>".
+# v, evType, sevText, hostName, hostIp, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+name = TRIM(STRING(v["MWName"]))
+name = IF name != "" THEN name ELSE TRIM(STRING(v["ItemName"]))
+path = TRIM(STRING(v["MWPath"]))
+path = IF path != "" THEN path ELSE TRIM(STRING(v["ItemPath"]))
+hash = TRIM(STRING(v["MWHash"]))
+hash = IF hash != "" THEN hash ELSE TRIM(STRING(v["ItemHash"]))
+threatType = TRIM(STRING(v["ThreatType"]))
+threatName$ = IF name != "" THEN name ELSE threatType
+filePath$ = IF path != "" THEN path ELSE NULL
+md5 = hash|^(?P<h>[0-9A-Fa-f]{32})$
+fileHash$.md5$ = IF md5["h"] != "" THEN LOWERCASE(md5["h"]) ELSE NULL
+threatType$ = "FILE"
+threatCategory$ = IF evType == "alertpup" THEN "APPLICATION" ELSE "MALWARE"
+vendorAlertType$ = evType
+# The Antivirus schema stores event_type; this child keeps WatchGuard's event name there.
+eventType$ = evType
+agentPriority$ = IF sevText != "" THEN sevText ELSE NULL
+computerName$ = IF hostName != "" THEN hostName ELSE NULL
+sourceAddress$ = IF hostIp != "" THEN hostIp ELSE NULL
+
+status = TRIM(STRING(v["ExecutionStatus"]))
+st = status|^(?:(?P<run>Executed|Not executed)\s*-\s*)?(?P<act>.+)$
+act = LOWERCASE(st["act"])
+allowed = act|^(?:allow|exploitallow|informnewpe|newpe|sonmsigw)
+blockedAct = act|^block
+informed = act|informed$
+actionTaken$ = NULL
+actionTaken$ = IF allowed[0] != "" THEN "NONE" ELSE actionTaken$
+actionTaken$ = IF informed[0] != "" THEN "ALERT" ELSE actionTaken$
+actionTaken$ = IF blockedAct[0] != "" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF act == "quarantine" THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF act == "delete" THEN "DELETED" ELSE actionTaken$
+actionTaken$ = IF act == "killprocess" THEN "TERMINATED" ELSE actionTaken$
+actionTaken$ = IF act == "unquarantine" THEN "RESTORED" ELSE actionTaken$
+
+m1.key$ = "execution_status"
+m1.value$ = status
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "threat_type"
+m2.value$ = threatType
+eventMetadata$.record$ = IF threatType != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "dwell_time_secs"
+m3.value$ = TRIM(STRING(v["DwellTimeSecs"]))
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "remote_source_ip"
+m4.value$ = TRIM(STRING(v["SourceIP"]))
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "remote_source_machine"
+m5.value$ = TRIM(STRING(v["SourceMachineName"]))
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "remote_source_user"
+m6.value$ = TRIM(STRING(v["SourceUserName"]))
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "drive_type"
+m7.value$ = TRIM(STRING(v["DriveType"]))
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "service_level"
+m8.value$ = TRIM(STRING(v["ServiceLevel"]))
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "muid"
+m9.value$ = TRIM(STRING(v["MUID"]))
+eventMetadata$.record$ = IF m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "version"
+m10.value$ = TRIM(STRING(v["Version"]))
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
