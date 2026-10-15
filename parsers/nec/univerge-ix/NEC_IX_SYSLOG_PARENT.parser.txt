@@ -1,0 +1,73 @@
+!SAMPLE=<132>1 2026-10-14T09:20:11.000003+09:00 ixr01 ip-flt - 007 - BLOCK icmp 198.51.100.2 > 192.0.2.254, match wan-in, GigaEthernet0.1 in
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^<\d{1,3}>1\s+\d{4}-\d{2}-\d{2}T\S+\s+\S+\s+(?:ip-flt\s+-\s+00[6-9]\s+-\s+(?:PASS|BLOCK)\s|ids\s+-\s+\d{3}\s+-\s+\[[A-Za-z-]+\]\s|url-flt\s+-\s+0(?:06|08)\s+-\s+(?:PASS|BLOCK)\s|ssh\s+-\s+01[23]\s+-\s+Authentication (?:succeeded|failed) for '|aaa\s+-\s+00[34]\s+-\s+\S+ authentication (?:succeeded|failed), user=|system\s+-\s+0(?:38|40)\s+-\s+User\s+\S+\s+(?:attached to|detached from) CLI\s)|(?:^|[>\s])(?:FLT[\[.]00[6-9]\]?:\s*(?:PASS|BLOCK)\s|IDS[\[.]\d{3}\]?:\s*\[[A-Za-z-]+\]\s|UTM[\[.]\d{3}\]?:\s*(?:AV|IPS|UF|WG)-[a-z]\s+seq\s+\d+,\s*\{))
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX routers, syslog to the data collector, in both series' formats:
+#   IX-R and IX-V, RFC 5424: <PRI>1 <time> <host> <function> - <message ID> - <message>
+#   IX2000 and IX3000: <PRI> <MODULE>[<message ID>]: <message>, with <time> <host> before the module
+#     after syslog timestamp datetime and syslog id hostname
+# Parent: reads either into the function (ip-flt, ids, utm, url-flt, ssh, aaa, system), the message ID
+# and the message, and hands these on:
+#   ip-flt 006 to 009, FLT: PASS|BLOCK <protocol> <flow>, match <list>|not match any filters, <interface> <in|out>
+#                                                                                     to the Netflow child
+#   ids, IDS: [<category>] <attack> <src> > <dst>, <interface>; and UTM IPS logs     to the NIDS child
+#   UTM AV logs (UTM[nnn]: AV-h seq <n>, {JSON})                                      to the Antivirus child
+#   UTM URL filtering and web guard logs (UF, WG); url-flt 006 and 008               to the HTTP child
+#   ssh 012 and 013, aaa 003 and 004, system 038 and 040 (sign-ins and CLI sessions)  to the Auth child
+# The RFC 5424 time carries the router's offset. The IX2000 time has no zone and is read as UTC, and
+# a line without one keeps the ingest time; a UTM log's own time (Unix seconds) wins over both.
+
+r5 = originalData$|^<\d{1,3}>1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?P<tz>Z|[+-]\d{2}:?\d{2})?\s+(?P<host>\S+)\s+(?P<app>[a-z0-9-]+)\s+-\s+(?P<id>\d{3})\s+-\s+(?P<msg>.*?)\s*$
+ix = originalData$|^(?:<\d{1,3}>)?\s?(?:(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?:(?P<host>\S+)\s+)?)?(?P<mod>[A-Z][A-Z0-9]*)[\[.](?P<id>\d{3})\]?:\s*(?P<msg>.*?)\s*$
+isR = r5["app"] != ""
+mod = UPPERCASE(STRING(ix["mod"]))
+# The IX2000 and IX3000 module names, as NEC maps them to the IX-R and IX-V function names.
+fn = STRING(r5["app"])
+fn = IF NOT isR AND mod == "FLT" THEN "ip-flt" ELSE fn
+fn = IF NOT isR AND mod == "IDS" THEN "ids" ELSE fn
+fn = IF NOT isR AND mod == "UTM" THEN "utm" ELSE fn
+id = IF isR THEN STRING(r5["id"]) ELSE STRING(ix["id"])
+msg = IF isR THEN STRING(r5["msg"]) ELSE STRING(ix["msg"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "NEC UNIVERGE IX"
+host = IF isR THEN STRING(r5["host"]) ELSE STRING(ix["host"])
+hostId$ = IF host != "" THEN host ELSE NULL
+iso = STRING(r5["iso"])
+tz = REPLACE(STRING(r5["tz"]), ":", "")
+tz = IF tz == "Z" THEN "+0000" ELSE tz
+bsd = STRING(ix["bsd"])
+eventTimeUsec$ = IF NOT isR AND bsd != "" THEN DATETIME(bsd, "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventTimeUsec$ = IF isR AND tz == "" THEN DATETIME(iso, "2006-01-02T15:04:05.999999999") ELSE eventTimeUsec$
+eventTimeUsec$ = IF isR AND tz != "" THEN DATETIME(iso + tz, "2006-01-02T15:04:05.999999999-0700") ELSE eventTimeUsec$
+
+# IP filter logs. The flow is <src> > <dst>, with :<port> on each side when the protocol has ports.
+flt = msg|^(?P<act>PASS|BLOCK)\s+(?P<proto>\S+)\s+(?P<src>[0-9A-Fa-f.:]+?)(?::(?P<sport>\d+))?\s+>\s+(?P<dst>[0-9A-Fa-f.:]+?)(?::(?P<dport>\d+))?,\s*(?P<how>match dynamic \S+|match \S+|not match any filters|no match),\s*(?P<if>\S+)\s+(?P<dir>in|out)$
+# Intrusion detection: [IP], [IP-opt], [ICMP], [UDP], [TCP] or [FTP], the attack, then the flow.
+ids = msg|^\[(?P<cat>[A-Za-z-]+)\]\s+(?P<text>.+?)\s+(?P<src>[0-9A-Fa-f.:]+?)(?::(?P<sport>\d+))?\s+>\s+(?P<dst>[0-9A-Fa-f.:]+?)(?::(?P<dport>\d+))?,\s*(?P<if>\S+)$
+# UTM security logs: <function>-<h|l> seq <n>, then the record as JSON.
+utm = msg|^(?P<kind>[A-Z]+)-(?P<lvl>[a-z])\s+seq\s+(?P<seq>\d+),\s*(?P<json>\{.*\})$
+isUtm = fn == "utm" AND utm["json"] != ""
+json = JSON(IF isUtm THEN utm["json"] ELSE "{}")
+utype = UPPERCASE(STRING(json["$.type"]))
+utime = STRING(json["$.time"])
+eventTimeUsec$ = IF isUtm AND utime != "" THEN INT(utime, 10) * 1000000 ELSE eventTimeUsec$
+url = msg|^(?P<act>PASS|BLOCK)\s+(?P<src>[0-9A-Fa-f.:]+?)(?::(?P<sport>\d+))?\s+>\s+(?P<dst>[0-9A-Fa-f.:]+?)(?::(?P<dport>\d+))?,\s*match\s+(?P<list>\S+),\s*(?P<if>\S+)\s+(?P<dir>in|out),\s*(?P<url>\S.*)$
+ssh = msg|^Authentication (?P<res>succeeded|failed) for '(?P<who>[^']*)'$
+aaa = msg|^(?P<type>\S+) authentication (?P<res>succeeded|failed), user=(?P<user>[^,]*), addr=(?P<addr>[^,]*), svr=(?P<svr>[^,]*)(?:, cause=(?P<cause>.*))?$
+cli = msg|^User\s+(?P<user>\S+)\s+(?P<io>attached to|detached from) CLI\s+#(?P<n>\d+)$
+
+eventType$ = "other"
+eventType$ = IF fn == "ip-flt" AND flt["act"] != "" THEN "filter" ELSE eventType$
+eventType$ = IF fn == "ids" AND ids["src"] != "" THEN "intrusion" ELSE eventType$
+eventType$ = IF isUtm AND utype == "IPS" THEN "intrusion" ELSE eventType$
+eventType$ = IF isUtm AND utype == "AV" THEN "antivirus" ELSE eventType$
+eventType$ = IF isUtm AND (utype == "UF" OR utype == "WG") THEN "web" ELSE eventType$
+eventType$ = IF fn == "url-flt" AND url["act"] != "" THEN "web" ELSE eventType$
+eventType$ = IF fn == "ssh" AND ssh["res"] != "" THEN "auth" ELSE eventType$
+eventType$ = IF fn == "aaa" AND aaa["res"] != "" THEN "auth" ELSE eventType$
+eventType$ = IF fn == "system" AND cli["io"] != "" THEN "auth" ELSE eventType$

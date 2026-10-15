@@ -1,0 +1,54 @@
+!SAMPLE=<132> UTM[001]: AV-h seq 10, {"type":"AV","src":"203.0.113.10:80","dst":"192.0.2.10:43515","mac":"00:00:5E:00:53:10","proto":"6","L7_proto":"HTTP","virus":"EICAR-Test-File","vid":"2053","file":"eicar.com","severity":"3","act":"Destroy","time":"1792022400"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="antivirus"
+!SCHEMA=scwx.antivirus
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX2000 and IX3000 UTM antivirus logs, syslog to the data collector:
+#   UTM[nnn]: AV-<h|l> seq <n>, {"type":"AV","src":"<ip>:<port>","dst":"<ip>:<port>","mac":...,"proto":"6",
+#     "L7_proto":"HTTP","virus":"<name>","vid":"<ID>","file":"<file>","severity":"<0 to 3>","act":"Destroy",...}
+# Child of NEC_IX_SYSLOG_PARENT: each virus the UTM found, to Antivirus.
+# json, fn, id, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+threatName$ = json["$.virus"]
+file = STRING(json["$.file"])
+filePath$ = IF file != "" THEN file ELSE NULL
+vid = STRING(json["$.vid"])
+vendorSignatureId$ = IF vid != "" THEN INT(vid, 10) ELSE NULL
+vendorAlertType$ = "UTM AV"
+threatType$ = "FILE"
+threatCategory$ = "VIRUS"
+computerName$ = hostId$
+# Destroy: the UTM made the data harmless; Block and Drop stop it; Pass only logs it.
+act = STRING(json["$.act"])
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF act == "Destroy" OR act == "Block" OR act == "Drop" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF act == "Pass" THEN "ALERT" ELSE actionTaken$
+sev = STRING(json["$.severity"])
+agentPriority$ = IF sev != "" THEN sev ELSE NULL
+
+# The client and server, the application protocol and the subject of a mail have no Antivirus field.
+m1.key$ = "source"
+m1.value$ = json["$.src"]
+m2.key$ = "destination"
+m2.value$ = json["$.dst"]
+m3.key$ = "utm_action"
+m3.value$ = act
+m4.key$ = "message_id"
+m4.value$ = fn + " " + id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3, m4]
+l7 = STRING(json["$.L7_proto"])
+m5.key$ = "application_protocol"
+m5.value$ = l7
+eventMetadata$.record$ = IF l7 != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+subj = STRING(json["$.subject"])
+m6.key$ = "mail_subject"
+m6.value$ = subj
+eventMetadata$.record$ = IF subj != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+mac = STRING(json["$.mac"])
+m7.key$ = "mac"
+m7.value$ = mac
+eventMetadata$.record$ = IF mac != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

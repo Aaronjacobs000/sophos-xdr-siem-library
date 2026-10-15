@@ -1,0 +1,59 @@
+!SAMPLE=<131>1 2026-10-14T09:22:05.004512+09:00 ixr01 ssh - 013 - Authentication failed for 'jsmith 198.51.100.23'
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX-R and IX-V sign-in logs, syslog to the data collector:
+#   ssh 012 and 013: Authentication succeeded|failed for '<user and client address>'
+#   aaa 003 and 004: <type> authentication succeeded|failed, user=<user>, addr=<address>, svr=<server>[, cause=<cause>]
+#   system 038 and 040: User <user> attached to|detached from CLI #<n>
+# Child of NEC_IX_SYSLOG_PARENT: SSH and AAA (RADIUS or local) sign-ins and failures, and CLI
+# sessions, to Auth.
+# ssh, aaa, cli, fn, id, host, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# NEC writes the SSH user and client address in one quoted value; the address is read when it
+# follows the user after a space or @.
+who = STRING(ssh["who"])
+w = who|^(?P<user>\S+?)(?:[\s@](?P<addr>[0-9A-Fa-f.:]+))?$
+isSsh = fn == "ssh"
+isAaa = fn == "aaa"
+isCli = fn == "system"
+user = STRING(w["user"])
+user = IF isAaa THEN STRING(aaa["user"]) ELSE user
+user = IF isCli THEN STRING(cli["user"]) ELSE user
+addr = IF isSsh THEN STRING(w["addr"]) ELSE ""
+addr = IF isAaa THEN STRING(aaa["addr"]) ELSE addr
+targetUserName$ = IF user != "" THEN user ELSE NULL
+sourceAddress$ = IF addr != "" AND IS_VALID_IP(addr) THEN addr ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+
+res = IF isSsh THEN STRING(ssh["res"]) ELSE STRING(aaa["res"])
+logoff = isCli AND cli["io"] == "detached from"
+failed = res == "failed"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+cause = STRING(aaa["cause"])
+extraFailurereason$ = IF failed AND cause != "" THEN cause ELSE NULL
+lcause = LOWERCASE(cause)
+failureCategory$ = IF failed AND (CONTAINS(lcause, "reject") OR CONTAINS(lcause, "password")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE NULL
+
+atype = STRING(aaa["type"])
+logonApplicationFamily$ = IF isSsh THEN "SSH" ELSE NULL
+logonApplicationFamily$ = IF isCli THEN "CLI" ELSE logonApplicationFamily$
+logonApplicationFamily$ = IF isAaa AND atype != "" THEN atype ELSE logonApplicationFamily$
+svr = STRING(aaa["svr"])
+authSystem$ = IF isAaa AND svr != "" THEN svr ELSE "NEC UNIVERGE IX"
+
+m1.key$ = "message_id"
+m1.value$ = fn + " " + id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+n = STRING(cli["n"])
+m2.key$ = "cli_session"
+m2.value$ = n
+eventMetadata$.record$ = IF n != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$

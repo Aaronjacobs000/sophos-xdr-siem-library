@@ -1,0 +1,70 @@
+!SAMPLE=<132> UTM[003]: WG-h seq 2, {"type":"WG","src":"192.0.2.40:54505","dst":"203.0.113.40:80","mac":"00:00:5E:00:53:40","proto":"6","url":"www.example.com/download/sample.zip","act":"Block","time":"1792022460"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="web"
+!SCHEMA=scwx.http
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX URL filtering and web guard logs, syslog to the data collector:
+#   UTM[nnn]: UF|WG-<h|l> seq <n>, {"type":"UF|WG","src":"<ip>:<port>","dst":"<ip>:<port>",...,"url":"<URL>",
+#     "cid":"<category>","gid":"<category group>","act":"Block|Pass","time":"<Unix seconds>"}   (IX2000, IX3000)
+#   url-flt 006 and 008: BLOCK|PASS <src> > <dst>, match <list>, <interface> <in|out>, <URL>   (IX-R, IX-V)
+# Child of NEC_IX_SYSLOG_PARENT: each request the URL filter or web guard judged, to HTTP.
+# json, isUtm, utype, url, fn, id, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+usrc = STRING(json["$.src"])
+udst = STRING(json["$.dst"])
+us = usrc|^\s*(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?\s*$
+ud = udst|^\s*(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?\s*$
+src = IF isUtm THEN STRING(us["ip"]) ELSE STRING(url["src"])
+dst = IF isUtm THEN STRING(ud["ip"]) ELSE STRING(url["dst"])
+sport = IF isUtm THEN STRING(us["port"]) ELSE STRING(url["sport"])
+dport = IF isUtm THEN STRING(ud["port"]) ELSE STRING(url["dport"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+up = STRING(json["$.proto"])
+protocol$ = IF isUtm AND up != "" THEN INT(up, 10) ELSE NULL
+
+link = TRIM(IF isUtm THEN STRING(json["$.url"]) ELSE STRING(url["url"]))
+u = link|^(?:(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*)://)?(?P<host>[^/:?#\s]+)(?::(?P<port>\d+))?(?P<path>/[^?#\s]*)?(?:\?(?P<query>[^#\s]*))?
+uriHost$ = IF u["host"] != "" THEN u["host"] ELSE NULL
+uriPort$ = IF u["port"] != "" THEN u["port"] ELSE NULL
+uriPath$ = IF u["path"] != "" THEN u["path"] ELSE NULL
+uriQuery$ = IF u["query"] != "" THEN u["query"] ELSE NULL
+uriScheme$ = IF u["scheme"] != "" THEN LOWERCASE(u["scheme"]) ELSE NULL
+
+# UTM: Block stops the request, Pass only logs it. url-flt: BLOCK or PASS.
+act = IF isUtm THEN UPPERCASE(STRING(json["$.act"])) ELSE STRING(url["act"])
+isBlocked = act == "BLOCK" OR act == "DROP"
+blocked$ = IF isBlocked THEN 1 ELSE 0
+sensorTypeActions$ = IF isBlocked THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+requestDirection$ = "OUTBOUND"
+
+feature = IF isUtm THEN "UTM " + utype ELSE "url-flt"
+m1.key$ = "feature"
+m1.value$ = feature
+m2.key$ = "url"
+m2.value$ = link
+m3.key$ = "message_id"
+m3.value$ = fn + " " + id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3]
+cid = STRING(json["$.cid"])
+m4.key$ = "category_id"
+m4.value$ = cid
+eventMetadata$.record$ = IF cid != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+gid = STRING(json["$.gid"])
+m5.key$ = "category_group_id"
+m5.value$ = gid
+eventMetadata$.record$ = IF gid != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+list = STRING(url["list"])
+m6.key$ = "url_list"
+m6.value$ = list
+eventMetadata$.record$ = IF list != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+iface = STRING(url["if"])
+m7.key$ = "interface"
+m7.value$ = iface + " " + STRING(url["dir"])
+eventMetadata$.record$ = IF iface != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
