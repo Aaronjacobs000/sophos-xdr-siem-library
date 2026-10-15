@@ -1,0 +1,31 @@
+!SAMPLE={"cyberark_epm_record":"raw_event","setId":"0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0","setName":"Acme Workstations","policyName":null,"hash":"5B97884A45C6C05F93B22C4059F3D9189E88E8B7","publisher":"Acme Software Pty Ltd","eventType":"Launch","sourceType":"LocalDisk","sourceName":"Windows Explorer","lastEventDate":"2026-10-14T01:20:16.069Z","firstEventDate":"2026-10-14T01:20:16.069Z","userName":"ACME\\akim","justification":null,"fileName":"reportbuilder.exe","justificationType":null,"jitRequestInterval":null,"originalFileName":"reportbuilder.exe","fileSize":11264,"threatProtectionAction":null,"packageName":"Report Builder","company":"Acme Software Pty Ltd","filePath":"C:\\Program Files\\Acme\\Report Builder\\reportbuilder.exe","fileDescription":"Report Builder","productName":"Report Builder","productVersion":"4.2.0.0","fileVersion":"4.2.0.0","modificationTime":"2026-08-02T04:11:09.164Z","userIsAdmin":false,"agentEventCount":1,"skippedCount":0,"accessAction":null,"accessTargetType":null,"accessTargetName":null,"processCommandLine":null,"sourceProcessCommandLine":null,"sourceProcessUsername":null,"sourceProcessHash":null,"sourceProcessPublisher":null,"sourceProcessSigner":null,"displayName":"Report Builder (reportbuilder.exe)","evidences":null,"owner":"NT AUTHORITY\\SYSTEM","deceptionType":0,"lureUser":null,"sourceWSName":null,"fatherProcess":null,"sourceWSIp":null,"winEventType":0,"winEventRecordId":0,"logonAttemptTypeId":0,"logonStatusId":0,"agentId":"78350d3c-5960-4f39-975a-ed07b53924a4","exposedUsers":null,"arrivalTime":"2026-10-14T01:21:02.512Z","lastEventComputerName":"FIN-LT-041"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="process"
+!SCHEMA=scwx.process
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: CyberArk EPM raw events and policy audit events from the example bridge.
+# Child of CYBERARK_EPM_JSON_PARENT: application events EPM let run (Launch, Trust, Installation,
+# Access and the rest), to Process. The Process schema has no metadata field, so the policy and
+# event type stay in original_data.
+# json, rec, epmType, setName, user, filePath, fileName, sha1, policyName, computer, eventType$,
+# sensorType$ and eventTimeUsec$ come from the parent.
+
+imagePath$ = IF filePath != "" THEN filePath ELSE NULL
+process$ = IF fileName != "" THEN fileName ELSE NULL
+username$ = IF user != "" THEN user ELSE NULL
+programHash$.sha1$ = IF sha1 != "" THEN sha1 ELSE NULL
+computerName$ = IF computer != "" THEN computer ELSE NULL
+hostId$ = IF computer != "" THEN computer ELSE NULL
+# Policy audits carry the arguments; threat protection raw events carry processCommandLine.
+cmd = STRING(json["$.processCommandLine"])
+args = STRING(json["$.arguments"])
+cmd = IF cmd == "" AND args != "" THEN filePath + " " + args ELSE cmd
+commandline$ = IF cmd != "" THEN cmd ELSE NULL
+# userIsAdmin says the user is a local administrator; Elevate means EPM ran the process with
+# administrator rights.
+userIsAdmin$ = json["$.userIsAdmin"]
+pAction = LOWERCASE(STRING(json["$.policyAction"]))
+processIsAdmin$ = IF CONTAINS(pAction, "elevate") THEN TRUE ELSE NULL

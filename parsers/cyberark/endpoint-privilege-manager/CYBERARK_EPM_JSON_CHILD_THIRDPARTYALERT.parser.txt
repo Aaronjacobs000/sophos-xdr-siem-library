@@ -1,0 +1,119 @@
+!SAMPLE={"cyberark_epm_record":"raw_event","setId":"0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0","setName":"Acme Workstations","policyName":"Protect browser stored credentials","hash":"2F3E4D5C6B7A8091A2B3C4D5E6F708192A3B4C5D","publisher":"","eventType":"AttackBlock","sourceType":null,"sourceName":null,"lastEventDate":"2026-10-14T02:05:31.000Z","firstEventDate":"2026-10-14T02:05:31.000Z","userName":"ACME\\akim","justification":null,"fileName":"cookiedump.exe","justificationType":null,"jitRequestInterval":null,"originalFileName":null,"fileSize":null,"threatProtectionAction":"Block","packageName":null,"company":null,"filePath":"C:\\Users\\akim\\AppData\\Local\\Temp\\cookiedump.exe","fileDescription":"","productName":null,"productVersion":null,"fileVersion":null,"modificationTime":null,"userIsAdmin":false,"agentEventCount":1,"skippedCount":0,"accessAction":null,"accessTargetType":null,"accessTargetName":null,"processCommandLine":"cookiedump.exe --browser chrome --out C:\\Users\\akim\\AppData\\Local\\Temp\\c.txt","sourceProcessCommandLine":"\"C:\\Windows\\System32\\cmd.exe\" /c cookiedump.exe --browser chrome","sourceProcessUsername":"ACME\\akim","sourceProcessHash":"8DCA9749CD48D286950E7A9FA1088C937CBCCAD4","sourceProcessPublisher":"Microsoft Windows","sourceProcessSigner":"Microsoft Windows","displayName":"cookiedump.exe","evidences":null,"owner":null,"deceptionType":0,"lureUser":null,"sourceWSName":null,"fatherProcess":null,"sourceWSIp":null,"winEventType":0,"winEventRecordId":0,"logonAttemptTypeId":0,"logonStatusId":0,"agentId":"78350d3c-5960-4f39-975a-ed07b53924a4","exposedUsers":["ACME\\akim"],"arrivalTime":"2026-10-14T02:05:49.870Z","lastEventComputerName":"FIN-LT-041"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: CyberArk EPM raw events and policy audit events from the example bridge.
+# Child of CYBERARK_EPM_JSON_PARENT: threat protection detections (AttackAttempt, AttackBlock,
+# SuspiciousActivityAttempt, SuspiciousActivityBlock), ransomware protection, blocked
+# applications (Block), restricted and detected access (RestrictAccess, DetectAccess) and
+# elevation requests (ElevationRequest, ManualRequest), to ThirdPartyAlert.
+# json, rec, epmType, t, setName, user, filePath, fileName, sha1, policyName, computer, first,
+# last, layout, threat, control, elevation, eventType$, sensorType$ and eventTimeUsec$ come from
+# the parent.
+
+vendor$ = "CyberArk"
+provider$ = "CyberArk Endpoint Privilege Manager"
+logType$ = rec
+alertCategory$ = epmType
+title$ = IF policyName != "" THEN epmType + ": " + policyName ELSE epmType
+display = STRING(json["$.displayName"])
+display = IF display == "" THEN fileName ELSE display
+summary$ = IF display != "" THEN epmType + " " + display ELSE NULL
+targetHostName$ = IF computer != "" THEN computer ELSE NULL
+hostId$ = IF computer != "" THEN computer ELSE NULL
+sourceUserName$ = IF user != "" THEN user ELSE NULL
+firstEventTimeUsec$ = IF first != "" THEN DATETIME(first, layout) ELSE NULL
+lastEventTimeUsec$ = IF last != "" THEN DATETIME(last, layout) ELSE NULL
+# Credential lure and logon events name the workstation the attempt came from.
+wsIp = STRING(json["$.sourceWSIp"])
+sourceAddress$ = IF wsIp != "" THEN wsIp ELSE NULL
+wsName = STRING(json["$.sourceWSName"])
+sourceHostName$ = IF wsName != "" THEN wsName ELSE NULL
+
+# EPM sends no severity, so it comes from the event type: attacks and ransomware HIGH,
+# suspicious activity MEDIUM, blocks and access control LOW, elevation requests INFO.
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF elevation THEN "INFO" ELSE severity$
+severity$ = IF control THEN "LOW" ELSE severity$
+severity$ = IF t == "suspiciousactivityattempt" OR t == "suspiciousactivityblock" THEN "MEDIUM" ELSE severity$
+severity$ = IF t == "attackattempt" OR t == "attackblock" OR t == "ransomware" THEN "HIGH" ELSE severity$
+
+# threatProtectionAction is Block or Detect; policy audits carry policyAction.
+tpa = LOWERCASE(STRING(json["$.threatProtectionAction"]))
+pAction = LOWERCASE(STRING(json["$.policyAction"]))
+action$ = NULL
+action$ = IF t == "attackattempt" OR t == "suspiciousactivityattempt" OR t == "detectaccess" OR tpa == "detect" THEN "ATTEMPTED" ELSE action$
+action$ = IF t == "attackblock" OR t == "suspiciousactivityblock" OR t == "block" OR t == "restrictaccess" OR tpa == "block" OR pAction == "block" THEN "BLOCKED" ELSE action$
+action$ = IF elevation AND CONTAINS(pAction, "elevate") THEN "SUCCEEDED" ELSE action$
+
+d1.key$ = "set_name"
+d1.value$ = setName
+d2.key$ = "set_id"
+d2.value$ = STRING(json["$.setId"])
+d3.key$ = "event_type"
+d3.value$ = epmType
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3]
+d4.key$ = "file_path"
+d4.value$ = filePath
+additionalData$.record$ = IF filePath != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "sha1"
+d5.value$ = sha1
+additionalData$.record$ = IF sha1 != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "publisher"
+d6.value$ = STRING(json["$.publisher"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "policy_name"
+d7.value$ = policyName
+additionalData$.record$ = IF policyName != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "policy_action"
+d8.value$ = STRING(json["$.policyAction"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "threat_protection_action"
+d9.value$ = STRING(json["$.threatProtectionAction"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "justification"
+d10.value$ = STRING(json["$.justification"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+# justificationType 1 is a just-in-time (JIT) request, for jitRequestInterval hours.
+d11.key$ = "jit_request_hours"
+d11.value$ = STRING(json["$.jitRequestInterval"])
+additionalData$.record$ = IF STRING(json["$.justificationType"]) == "1" AND d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "command_line"
+d12.value$ = STRING(json["$.processCommandLine"])
+additionalData$.record$ = IF d12.value$ != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "arguments"
+d13.value$ = STRING(json["$.arguments"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "source_process_command_line"
+d14.value$ = STRING(json["$.sourceProcessCommandLine"])
+additionalData$.record$ = IF d14.value$ != "" THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "source_process_hash"
+d15.value$ = STRING(json["$.sourceProcessHash"])
+additionalData$.record$ = IF d15.value$ != "" THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
+d16.key$ = "lure_user"
+d16.value$ = STRING(json["$.lureUser"])
+additionalData$.record$ = IF d16.value$ != "" THEN additionalData$.record$ + [d16] ELSE additionalData$.record$
+d17.key$ = "logon_status_id"
+d17.value$ = STRING(json["$.logonStatusId"])
+additionalData$.record$ = IF d17.value$ != "" AND d17.value$ != "0" THEN additionalData$.record$ + [d17] ELSE additionalData$.record$
+d18.key$ = "logon_attempt_type_id"
+d18.value$ = STRING(json["$.logonAttemptTypeId"])
+additionalData$.record$ = IF d18.value$ != "" AND d18.value$ != "0" THEN additionalData$.record$ + [d18] ELSE additionalData$.record$
+exposed = json["$.exposedUsers"]
+d19.key$ = "exposed_users"
+d19.value$ = STRING(exposed)
+additionalData$.record$ = IF exposed != NULL AND LENGTH(exposed) != 0 THEN additionalData$.record$ + [d19] ELSE additionalData$.record$
+d20.key$ = "access_target"
+d20.value$ = STRING(json["$.accessTargetName"]) + STRING(json["$.accessTarget"])
+additionalData$.record$ = IF d20.value$ != "" THEN additionalData$.record$ + [d20] ELSE additionalData$.record$
+d21.key$ = "agent_event_count"
+d21.value$ = STRING(json["$.agentEventCount"])
+additionalData$.record$ = IF d21.value$ != "" AND d21.value$ != "0" AND d21.value$ != "1" THEN additionalData$.record$ + [d21] ELSE additionalData$.record$
+d22.key$ = "agent_id"
+d22.value$ = STRING(json["$.agentId"])
+additionalData$.record$ = IF d22.value$ != "" THEN additionalData$.record$ + [d22] ELSE additionalData$.record$

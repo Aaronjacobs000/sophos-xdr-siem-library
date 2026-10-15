@@ -1,0 +1,45 @@
+{
+  "vendor": "CyberArk",
+  "product": "Endpoint Privilege Manager",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://docs.cyberark.com/epm/latest/en/content/webservices/getdetailedrawevents.htm",
+    "https://docs.cyberark.com/epm/latest/en/content/webservices/getpolicyauditraweventdetails.htm",
+    "https://docs.cyberark.com/epm/latest/en/content/webservices/policyactions.htm",
+    "https://docs.cyberark.com/epm/latest/en/content/webservices/webservicesintro.htm"
+  ],
+  "notes": "CyberArk EPM SaaS has no syslog or push for its endpoint events, so these parsers read raw events and policy audit events pulled from the EPM REST API by the example bridge in bridges/cyberark-epm-events and posted to HTTP Ingest. The bridge names each record in cyberark_epm_record and adds setId and setName. Threat protection detections (AttackAttempt, AttackBlock, SuspiciousActivityAttempt, SuspiciousActivityBlock), ransomware protection, blocked applications, restricted and detected access, and elevation requests go to ThirdPartyAlert, with the policy, justification, command lines and lure details in additional_data. EPM sends no severity, so it comes from the event type: attacks and ransomware HIGH, suspicious activity MEDIUM, blocks and access control LOW, elevation requests INFO. Application events EPM let run (Launch, Trust, Installation, Access) go to Process, which has no metadata field, so their policy and event type stay in original_data. Policy audit events name the computer; raw events name the computer of the most recent occurrence. Samples follow the response examples and field lists on CyberArk's Get detailed raw events and Get policy audit raw event details pages, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (122 of 122 fields matched the emulator, in 6 runs), and each child also passed Run Test as a separate parser under its parent. No built-in parser in that tenant claimed these events in 6 Run Tests.",
+  "parsers": [
+    {
+      "name": "CYBERARK_EPM_JSON_PARENT",
+      "file": "CYBERARK_EPM_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CYBERARK_EPM_JSON_CHILD_PROCESS",
+      "file": "CYBERARK_EPM_JSON_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "CYBERARK_EPM_JSON_PARENT",
+      "schema": "scwx.process"
+    },
+    {
+      "name": "CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+      "file": "CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "CYBERARK_EPM_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ],
+  "bridge": "bridges/cyberark-epm-events"
+}
