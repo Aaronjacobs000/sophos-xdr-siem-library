@@ -270,12 +270,13 @@ test('lint: an unclosed call says it is missing its closing ), rather than askin
   assert.deepEqual(lint('CONTAINS(message, "acme-app")', 'x = [1, 2'), [[5, 'the list is missing its closing ]']]);
 });
 
-test('lint: a !PARENT line is a warning, because Sophos Fusion refused to save it, and !PARENT in a comment is fine', () => {
-  // The parser API refused a !PARENT line ("code contains restricted syntax: !PARENT"), with
-  // Override Global Parser on or off, and saved !PARENT in a comment (checked in a lab tenant).
+test('lint: a !PARENT line is a warning, because Sophos Fusion saves it only with Set Global Parent in Parser Script on, and !PARENT in a comment is fine', () => {
+  // Without that option the save refused a !PARENT line ("code contains restricted syntax: !PARENT"),
+  // with Override Global Parser on or off, and saved !PARENT in a comment; with it, the console saved
+  // the line (checked in a lab tenant).
   const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=acmegw\n!SCHEMA=scwx.generic\n';
   const hit = (text) => lintParsers([{ name: 'ACME_GW', text: head + text }]).problems.filter((p) => p.code === 'restricted-syntax').map((p) => `${p.level}:${p.line}`);
   assert.deepEqual(hit('!PARENT=Azure_Monitor_Master\nkind = "a"'), ['warning:4']);
-  assert.match(lintParsers([{ name: 'ACME_GW', text: `${head}!PARENT=Azure_Monitor_Master` }]).problems.find((p) => p.code === 'restricted-syntax').message, /refused to save a parser with a !PARENT line/);
+  assert.match(lintParsers([{ name: 'ACME_GW', text: `${head}!PARENT=Azure_Monitor_Master` }]).problems.find((p) => p.code === 'restricted-syntax').message, /saves a !PARENT line only with Set Global Parent in Parser Script turned on; without it the save fails with "code contains restricted syntax: !PARENT"/);
   assert.deepEqual(hit('# extend a global parser with !PARENT in the console\nkind = "a"'), []);
 });
