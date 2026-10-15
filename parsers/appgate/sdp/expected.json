@@ -1,0 +1,594 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791940811204340,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "f1080080-4b66-4799-b52c-7616113618b8",
+      "host_id": "controller1.example.com",
+      "target_user_name": "jsmith",
+      "target_domain_name": "corp-idp",
+      "source_address": "203.0.113.45",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP",
+      "logon_application_family": "Client",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "authentication_succeeded"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "device_id",
+            "value": "6564323663334831b062313164663239"
+          },
+          {
+            "key": "claims_token_id",
+            "value": "0b9a3c55-5a0e-4f53-9d0f-2f4a8f1e9c11"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791940814877101,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9f02e9be-cbf0-4fd9-bcde-d0ae2c7862a7",
+      "host_id": "controller1.example.com",
+      "target_user_name": "adoe",
+      "target_domain_name": "corp-idp",
+      "source_address": "203.0.113.99",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP",
+      "logon_application_family": "Client",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Invalid username or password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "authentication_failed"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "device_id",
+            "value": "9f2c1e7a0b3d4c5e8f9a0b1c2d3e4f50"
+          },
+          {
+            "key": "device_hostname",
+            "value": "laptop-adoe"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791940840112000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+      "host_id": "controller1.example.com",
+      "target_user_name": "admin",
+      "target_domain_name": "local",
+      "source_address": "192.0.2.10",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP admin",
+      "logon_application_family": "Admin",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "authentication_succeeded"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "device_id",
+            "value": "55c2bc7427c14e458895661909dc3f16"
+          },
+          {
+            "key": "claims_token_id",
+            "value": "7d1e2f30-4a5b-4c6d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791940862010361,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9decc964-00e3-4449-b054-239df450e359",
+      "host_id": "gateway1.example.com",
+      "source_address": "192.0.2.201",
+      "source_port": 56100,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "direction": "CLIENT_TO_SERVER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "user",
+            "value": "jsmith"
+          },
+          {
+            "key": "identity_provider",
+            "value": "corp-idp"
+          },
+          {
+            "key": "client_ip",
+            "value": "203.0.113.45"
+          },
+          {
+            "key": "entitlement",
+            "value": "Intranet#0"
+          },
+          {
+            "key": "rule_name",
+            "value": "intranet-https-0"
+          },
+          {
+            "key": "connection_type",
+            "value": "new"
+          },
+          {
+            "key": "packet_size",
+            "value": "60"
+          },
+          {
+            "key": "device_id",
+            "value": "6564323663334831b062313164663239"
+          },
+          {
+            "key": "gateway",
+            "value": "gateway1.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791940890551203,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "host_id": "gateway1.example.com",
+      "source_address": "192.0.2.201",
+      "source_port": 56122,
+      "destination_address": "198.51.100.31",
+      "destination_port": 3389,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "direction": "CLIENT_TO_SERVER",
+      "connection_end_reason": "no matching rule",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "user",
+            "value": "jsmith"
+          },
+          {
+            "key": "identity_provider",
+            "value": "corp-idp"
+          },
+          {
+            "key": "client_ip",
+            "value": "203.0.113.45"
+          },
+          {
+            "key": "connection_type",
+            "value": "new"
+          },
+          {
+            "key": "packet_size",
+            "value": "60"
+          },
+          {
+            "key": "device_id",
+            "value": "6564323663334831b062313164663239"
+          },
+          {
+            "key": "gateway",
+            "value": "gateway1.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941144330918,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c3d4e5f6-a7b8-4c9d-8e0f-2a3b4c5d6e7f",
+      "host_id": "controller1.example.com",
+      "event_type": "audit",
+      "user_name": "admin",
+      "source_address": "192.0.2.10",
+      "event_name": "device_token_revoked",
+      "event_source": "Appgate SDP",
+      "target_hostname": "controller1.example.com",
+      "management_event": true,
+      "read_only": false,
+      "target_user_name": "jsmith",
+      "resources": [
+        {
+          "resource_id": "CN=6564323663334831b062313164663239,CN=jsmith,OU=corp-idp",
+          "resource_type": "user"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "reason",
+            "value": "Lost laptop"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "identity_provider",
+            "value": "local"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941159118204,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "host_id": "controller1.example.com",
+      "event_type": "audit",
+      "user_name": "admin",
+      "source_address": "192.0.2.10",
+      "event_name": "appliance_remote_command_run",
+      "event_source": "Appgate SDP",
+      "target_hostname": "controller1.example.com",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "5f8a1d2c-3b4e-4f6a-9c7d-8e9f0a1b2c3d"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "command",
+            "value": "tcpdump"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "gateway1"
+          },
+          {
+            "key": "identity_provider",
+            "value": "local"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941170004512,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "d4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80",
+      "host_id": "controller1.example.com",
+      "event_type": "audit",
+      "user_name": "admin",
+      "source_address": "192.0.2.10",
+      "event_name": "denylist_entry_added",
+      "event_source": "Appgate SDP",
+      "target_hostname": "controller1.example.com",
+      "management_event": true,
+      "read_only": false,
+      "target_user_name": "adoe",
+      "resources": [
+        {
+          "resource_id": "CN=adoe,OU=corp-idp",
+          "resource_type": "user"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "reason",
+            "value": "Suspicious sign-ins"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "identity_provider",
+            "value": "local"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941275871002,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091",
+      "host_id": "gateway1.example.com",
+      "target_user_name": "cz",
+      "source_address": "198.51.100.77",
+      "target_host_name": "gateway1.example.com",
+      "auth_system": "Appgate appliance SSH",
+      "logon_application_family": "ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "ssh_access_failed"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-sshd"
+          },
+          {
+            "key": "authentication_method",
+            "value": "password"
+          },
+          {
+            "key": "client_port",
+            "value": "51022"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941300300114,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f8091a2",
+      "host_id": "controller1.example.com",
+      "target_user_name": "contractor1",
+      "target_domain_name": "local",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "local_user_locked"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941381912387,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "a8b9c0d1-e2f3-4a4b-9c5d-7e8f9012a3b4",
+      "host_id": "controller1.example.com",
+      "target_user_name": "jsmith",
+      "target_domain_name": "corp-idp",
+      "source_address": "203.0.113.45",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP remedy action",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Invalid username or OTP",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "otp_authentication_failed"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "device_id",
+            "value": "6564323663334831b062313164663239"
+          },
+          {
+            "key": "claims_token_id",
+            "value": "0b9a3c55-5a0e-4f53-9d0f-2f4a8f1e9c11"
+          },
+          {
+            "key": "claim_name",
+            "value": "step-up-otp"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941402007000,
+      "sensor_event_id": "b9c0d1e2-f3a4-4b5c-8d6e-8f9012a3b4c5",
+      "host_id": "gateway1.example.com"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941478640225,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c0d1e2f3-a4b5-4c6d-9e7f-9012a3b4c5d6",
+      "host_id": "controller1.example.com",
+      "target_user_name": "adoe",
+      "target_domain_name": "corp-idp",
+      "source_address": "203.0.113.99",
+      "target_host_name": "controller1.example.com",
+      "auth_system": "Appgate SDP",
+      "logon_application_family": "Client",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Invalid username or password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type",
+            "value": "authentication_failed"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "device_id",
+            "value": "9f2c1e7a0b3d4c5e8f9a0b1c2d3e4f50"
+          },
+          {
+            "key": "device_hostname",
+            "value": "laptop-adoe"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
+  }
+]

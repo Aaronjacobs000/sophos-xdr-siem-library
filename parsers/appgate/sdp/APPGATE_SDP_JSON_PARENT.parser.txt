@@ -1,0 +1,45 @@
+!SAMPLE={"version":2,"date":"Oct 14 01:26:10","timestamp":"2026-10-14T01:26:10.004Z","hostname":"controller1.example.com","daemon":"cz-controllerd","log":{"client_ip":"192.0.2.10","collective_id":"cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd","distinguished_name":"CN=55c2bc7427c14e458895661909dc3f16,CN=admin,OU=local","distinguished_name_device_id":"55c2bc7427c14e458895661909dc3f16","distinguished_name_ou":"local","distinguished_name_user":"admin","event_type":"denylist_entry_added","id":"d4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80","reason":"Suspicious sign-ins","timestamp":"2026-10-14T01:26:10.004512399Z","user_distinguished_name":"CN=adoe,OU=corp-idp","version":24}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"collective_id"\s*:\s*"[0-9a-f-]{36}".*"event_type"\s*:\s*"[a-z0-9_]+"|"event_type"\s*:\s*"[a-z0-9_]+".*"collective_id"\s*:\s*"[0-9a-f-]{36}")
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Appgate SDP (AppGate ZTNA) audit logs as JSON over TCP, one record per line. Appgate's
+# "Audit log detail" page defines both shapes:
+#   LogForwarder TCP client:  {"version":2,"date":..,"timestamp":..,"hostname":<appliance>,"daemon":<daemon>,"log":{<record>}}
+#   rsyslog [AUDIT] export:   {<record>, "daemon":<daemon>, "log_source":<appliance>}
+# Every record has event_type, id, timestamp, collective_id and version. The JSON is read from the
+# first brace, so a syslog header in front of it is fine.
+# Parent: recognizes the records and hands on:
+#   authentication_succeeded and _failed (clients and admins), password_ and otp_authentication_
+#   succeeded and _failed (remedy actions), ssh_access_succeeded and _failed, local_user_locked  to Auth
+#   ip_access (allow and drop decisions at a Gateway)                                            to Netflow
+#   administrator changes: entity_created, _updated and _deleted, settings updates, denylist
+#   entries, token and certificate revocations, remote commands and appliance actions             to CloudAudit
+# Every other record (authorization, sessions, tunnels, url_access, lists and views) stays in generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+jsonMatch = originalData$|(\{.*\})\s*$
+json = JSON(jsonMatch[1])
+# The LogForwarder wraps the record in "log"; rsyslog and the LogServer don't.
+wrapped = json["$.log.event_type"] != NULL
+ev = IF wrapped THEN JSON(STRING(json["$.log"])) ELSE json
+kind = ev["$.event_type"]
+daemon = json["$.daemon"]
+appliance = IF wrapped THEN json["$.hostname"] ELSE ev["$.log_source"]
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Appgate SDP"
+sensorEventId$ = ev["$.id"]
+hostId$ = appliance
+# The record's own timestamp is ISO 8601 in UTC with nanoseconds.
+eventTimeUsec$ = DATETIME(ev["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+
+signin = kind|^(?:authentication|password_authentication|otp_authentication|ssh_access)_(?:succeeded|failed)$|^local_user_locked$
+change = kind|^(?:entity_(?:created|updated|deleted)|global_settings_updated|auto_update_settings_updated|(?:deny|black)list_entry_(?:added|removed)|(?:device_)?token_revoked|appliance_(?:remote_command_run|seed_exported|rebooted|deactivated)|issued_certificate_revoked|otp_seed_removed|fido2_device_removed|on_boarded_device_deleted|admin_otp_settings_updated|risk_model_updated)$
+eventType$ = "other"
+eventType$ = IF signin[0] != "" THEN "auth" ELSE eventType$
+eventType$ = IF kind == "ip_access" THEN "netflow" ELSE eventType$
+eventType$ = IF change[0] != "" THEN "audit" ELSE eventType$
