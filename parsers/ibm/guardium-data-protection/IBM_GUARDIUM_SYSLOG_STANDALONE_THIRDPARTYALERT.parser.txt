@@ -1,0 +1,139 @@
+!SAMPLE=<25>Oct 14 10:23:44 gcoll01.corp.example.com guard_sender[3432]: LEEF:1.0|IBM|Guardium|12.0|Unauthorized Users on Cardholder Objects - Alert|ruleID=159|ruleDesc=Unauthorized Users on Cardholder Objects - Alert|severity=MED|devTime=2026-10-14 21:23:42|serverType=MS SQL SERVER|classification=Violation|category=PCI|dbProtocolVersion=8.0|usrName=|sourceProgram=REPORTS.EXE|start=1791977022000|dbUser=svc_reports|dst=198.51.100.21|dstPort=1433|src=192.0.2.44|srcPort=60621|protocol=TCP|type=SQL_LANG|violationID=0|sql=SELECT name + '|' + card_number FROM cardholder WHERE region = 'APJ'|error=
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:LEEF:1\.0|CEF:0)\|(?:IBM|Guardium)\|Guardium\|[^|]*\|
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM Guardium Data Protection policy and correlation alerts, sent by syslog (remote log)
+# from a collector, with one of IBM's predefined alert message templates:
+#   LEEF (the QRadar template): LEEF:1.0|IBM|Guardium|<version>|<rule>|ruleID=...|ruleDesc=...|severity=...
+#     with the keys in a fixed order and | between them, as IBM's samples show
+#   CEF (the ArcSight template): CEF:0|Guardium|Guardium|7.0|<rule ID>|<rule>|5|rt=... cs1=<severity> ...
+# Lines from the sniffer come wrapped in subject "SQLGUARD ALERT", "...".
+# Standalone parser for the third-party alert schema: the rule as the title, Guardium's severity, the
+# database client and server addresses and ports, the database user and the server type; the SQL,
+# the error, the request type and the rest go to additional_data.
+
+hdr = originalData$|^(?:<\d{1,3}>)?[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<host>\S+)\s
+fmt = originalData$|(?P<f>LEEF:1\.0|CEF:0)\|(?:IBM|Guardium)\|Guardium\|(?P<ver>[^|]*)\|
+leef = fmt["f"] == "LEEF:1.0"
+body = originalData$|(?:LEEF:1\.0|CEF:0)\|(?:IBM|Guardium)\|Guardium\|(?P<b>.*?)"?\s*$
+
+# LEEF: each key once, in IBM's order, so the first match is the key. IBM's samples put | between
+# the attributes; LEEF's own separator, a tab, works too. sql is read up to the last |error=, since
+# the SQL text may hold | and =.
+l1 = body["b"]|[|\t]ruleID=(?P<v>[^|\t]*)
+l2 = body["b"]|[|\t]ruleDesc=(?P<v>[^|\t]*)
+l3 = body["b"]|[|\t]severity=(?P<v>[^|\t]*)
+l4 = body["b"]|[|\t]serverType=(?P<v>[^|\t]*)
+l5 = body["b"]|[|\t]classification=(?P<v>[^|\t]*)
+l6 = body["b"]|[|\t]category=(?P<v>[^|\t]*)
+l7 = body["b"]|[|\t]usrName=(?P<v>[^|\t]*)
+l8 = body["b"]|[|\t]sourceProgram=(?P<v>[^|\t]*)
+l9 = body["b"]|[|\t]start=(?P<v>\d+)
+l10 = body["b"]|[|\t]dbUser=(?P<v>[^|\t]*)
+l11 = body["b"]|[|\t]dst=(?P<v>[^|\t]*)
+l12 = body["b"]|[|\t]dstPort=(?P<v>\d*)
+l13 = body["b"]|[|\t]src=(?P<v>[^|\t]*)
+l14 = body["b"]|[|\t]srcPort=(?P<v>\d*)
+l15 = body["b"]|[|\t]protocol=(?P<v>[^|\t]*)
+l16 = body["b"]|[|\t]type=(?P<v>[^|\t]*)
+l17 = body["b"]|[|\t]violationID=(?P<v>[^|\t]*)
+l18 = body["b"]|[|\t]sql=(?P<v>.*)[|\t]error=
+l19 = body["b"]|.*[|\t]error=(?P<v>[^|\t]*)
+l20 = body["b"]|[|\t]databaseName=(?P<v>[^|\t]*)
+
+# CEF: the header holds the rule ID and description; msg (the SQL) is the template's last key, so
+# it is read to the end of the line.
+# CEF() reads only CEF lines; a LEEF line gets a stand-in header.
+cefText = IF leef THEN "CEF:0|IBM|Guardium|0|0|0|0|" ELSE "CEF:0|Guardium|Guardium|" + body["b"]
+c = CEF(cefText)
+ch = body["b"]|^[^|]*\|(?P<id>[^|]*)\|(?P<name>[^|]*)\|
+cm = body["b"]|\smsg=(?P<v>.*)$
+
+ruleId = IF leef THEN l1["v"] ELSE ch["id"]
+ruleDesc = IF leef THEN l2["v"] ELSE ch["name"]
+sev = IF leef THEN l3["v"] ELSE STRING(c["cs1"])
+serverType = IF leef THEN l4["v"] ELSE STRING(c["cs2"])
+classification = IF leef THEN l5["v"] ELSE STRING(c["cs3"])
+category = IF leef THEN l6["v"] ELSE STRING(c["cat"])
+appUser = IF leef THEN l7["v"] ELSE STRING(c["suser"])
+sourceProgram = IF leef THEN l8["v"] ELSE STRING(c["sproc"])
+receiptMs = IF leef THEN l9["v"] ELSE STRING(c["rt"])
+dbUser = IF leef THEN l10["v"] ELSE STRING(c["duser"])
+serverIp = IF leef THEN l11["v"] ELSE STRING(c["dst"])
+serverPort = IF leef THEN l12["v"] ELSE STRING(c["dpt"])
+clientIp = IF leef THEN l13["v"] ELSE STRING(c["src"])
+clientPort = IF leef THEN l14["v"] ELSE STRING(c["spt"])
+netProtocol = IF leef THEN l15["v"] ELSE STRING(c["proto"])
+requestType = IF leef THEN l16["v"] ELSE STRING(c["act"])
+violationId = IF leef THEN l17["v"] ELSE STRING(c["externalId"])
+sqlText = IF leef THEN l18["v"] ELSE cm["v"]
+lastError = IF leef THEN l19["v"] ELSE NULL
+dbName = IF leef THEN l20["v"] ELSE NULL
+
+sensorType$ = "IBM Guardium"
+vendor$ = "IBM"
+provider$ = "Guardium Data Protection"
+sensorVersion$ = IF fmt["ver"] != "" THEN fmt["ver"] ELSE NULL
+# The collector that sent the alert.
+hostId$ = IF hdr["host"] != "" THEN hdr["host"] ELSE NULL
+title$ = IF ruleDesc != "" THEN ruleDesc ELSE NULL
+summary$ = IF requestType != "" THEN ruleDesc + " (" + requestType + ")" ELSE title$
+alertCategory$ = IF category != "" THEN category ELSE NULL
+# violationID is the policy violation log entry; 0 when the rule logged none.
+alertId$ = IF violationId != "" AND violationId != "0" THEN violationId ELSE NULL
+
+# start (LEEF) and rt (CEF) are the receipt time in milliseconds since 1970, in UTC.
+timeOk = receiptMs|^\d{10,16}$
+eventTimeUsec$ = IF timeOk[0] != "" THEN INT(receiptMs, 10) * 1000 ELSE eventTimeUsec$
+
+# The rule's severity: INFO, LOW, NONE, MED or HIGH.
+usev = UPPERCASE(sev)
+severity$ = NULL
+severity$ = IF usev == "INFO" OR usev == "NONE" THEN "INFO" ELSE severity$
+severity$ = IF usev == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF usev == "MED" THEN "MEDIUM" ELSE severity$
+severity$ = IF usev == "HIGH" THEN "HIGH" ELSE severity$
+vendorSeverity$ = IF sev != "" THEN sev ELSE NULL
+
+# The database client and the database server.
+sourceAddress$ = IF clientIp != "" THEN clientIp ELSE NULL
+sourcePort$ = IF clientPort != "" THEN INT(clientPort, 10) ELSE NULL
+destinationAddress$ = IF serverIp != "" THEN serverIp ELSE NULL
+destinationPort$ = IF serverPort != "" THEN INT(serverPort, 10) ELSE NULL
+destinationServiceName$ = IF serverType != "" THEN serverType ELSE NULL
+sourceUserName$ = IF dbUser != "" THEN dbUser ELSE NULL
+proto = UPPERCASE(netProtocol)
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+
+g1.key$ = "rule_id"
+g1.value$ = ruleId
+g2.key$ = "request_type"
+g2.value$ = requestType
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [g1, g2]
+g3.key$ = "classification"
+g3.value$ = classification
+additionalData$.record$ = IF classification != "" THEN additionalData$.record$ + [g3] ELSE additionalData$.record$
+g4.key$ = "sql"
+g4.value$ = sqlText
+additionalData$.record$ = IF sqlText != "" THEN additionalData$.record$ + [g4] ELSE additionalData$.record$
+g5.key$ = "last_error"
+g5.value$ = lastError
+additionalData$.record$ = IF lastError != "" THEN additionalData$.record$ + [g5] ELSE additionalData$.record$
+g6.key$ = "source_program"
+g6.value$ = sourceProgram
+additionalData$.record$ = IF sourceProgram != "" THEN additionalData$.record$ + [g6] ELSE additionalData$.record$
+g7.key$ = "app_user_name"
+g7.value$ = appUser
+additionalData$.record$ = IF appUser != "" THEN additionalData$.record$ + [g7] ELSE additionalData$.record$
+g8.key$ = "database_name"
+g8.value$ = dbName
+additionalData$.record$ = IF dbName != "" THEN additionalData$.record$ + [g8] ELSE additionalData$.record$
+g9.key$ = "net_protocol"
+g9.value$ = netProtocol
+additionalData$.record$ = IF netProtocol != "" AND protocol$ == NULL THEN additionalData$.record$ + [g9] ELSE additionalData$.record$
