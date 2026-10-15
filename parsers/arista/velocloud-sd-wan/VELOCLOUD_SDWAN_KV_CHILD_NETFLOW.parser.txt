@@ -1,0 +1,81 @@
+!SAMPLE=<158>Oct 14 21:17:45 b1-edge1 velocloud.sdwan: ACTION=VCF Close SID=1543 SEGMENT=0 SVLAN=10 DVLAN=0 IN="GE2" PROTO=TCP SRC=192.0.2.25 DST=203.0.113.80 SPT=51544 DPT=443 FW_POLICY_NAME=Branch Default SEGMENT_NAME=Global Segment DEST_NAME=Internet-via-GE3 NAT_SRC=198.51.100.2 NAT_SPT=40122 APPLICATION=Microsoft Office 365 BYTES_SENT=18234 BYTES_RECEIVED=402117 DURATION_SECS=95 REASON=Fin-Received
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Arista VeloCloud SD-WAN Edge firewall logs over syslog.
+# Child of VELOCLOUD_SDWAN_KV_PARENT: firewall session lines to Netflow. With the stateful
+# firewall on, an Edge logs Open, Close, Deny and Update for each session; with it off, Allow and
+# Deny. Close lines add the application, bytes, duration and reason.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, vcfAction, src, dst, spt, dpt, ipProto, policy, segName, segment, inName, sensorType$,
+# hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = IF src["v"] != "" THEN src["v"] ELSE NULL
+destinationAddress$ = IF dst["v"] != "" THEN dst["v"] ELSE NULL
+# A port given as text: an empty one leaves the field unset.
+sourcePort$ = spt["v"]
+destinationPort$ = dpt["v"]
+protocol$ = ipProto
+
+flowAction$ = NULL
+flowAction$ = IF vcfAction == "Open" OR vcfAction == "Close" OR vcfAction == "Update" OR vcfAction == "Allow" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF vcfAction == "Deny" OR vcfAction == "Drop" THEN "FW_BLOCKED" ELSE flowAction$
+
+natSrc = kv|\sNAT_SRC=(?P<v>[0-9A-Fa-f.:]+)
+natSpt = kv|\sNAT_SPT=(?P<v>\d{1,5})(?:\s|$)
+sourceNatAddress$ = IF natSrc["v"] != "" THEN natSrc["v"] ELSE NULL
+sourceNatPort$ = natSpt["v"]
+
+app = kv|\sAPPLICATION=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+applicationName$ = IF app["v"] != "" THEN app["v"] ELSE NULL
+sent = kv|\sBYTES_SENT=(?P<v>\d+)
+received = kv|\sBYTES_RECEIVED=(?P<v>\d+)
+txByteCount$ = sent["v"]
+rxByteCount$ = received["v"]
+reason = kv|\sREASON=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+connectionEndReason$ = IF reason["v"] != "" THEN reason["v"] ELSE NULL
+
+sid = kv|\sSID=(?P<v>\d+)
+destName = kv|\sDEST_NAME=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+svlan = kv|\sSVLAN=(?P<v>\d+)
+dvlan = kv|\sDVLAN=(?P<v>\d+)
+duration = kv|\sDURATION_SECS=(?P<v>\d+)
+icmpType = kv|\sTYPE=(?P<v>\d+)
+
+a1.key$ = "vcf_action"
+a1.value$ = vcfAction
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1]
+a2.key$ = "session_id"
+a2.value$ = sid["v"]
+eventMetadata$.record$ = IF sid["v"] != "" THEN eventMetadata$.record$ + [a2] ELSE eventMetadata$.record$
+a3.key$ = "segment_id"
+a3.value$ = segment["v"]
+eventMetadata$.record$ = IF segment["v"] != "" THEN eventMetadata$.record$ + [a3] ELSE eventMetadata$.record$
+a4.key$ = "segment_name"
+a4.value$ = segName["v"]
+eventMetadata$.record$ = IF segName["v"] != "" THEN eventMetadata$.record$ + [a4] ELSE eventMetadata$.record$
+a5.key$ = "firewall_policy"
+a5.value$ = policy["v"]
+eventMetadata$.record$ = IF policy["v"] != "" THEN eventMetadata$.record$ + [a5] ELSE eventMetadata$.record$
+a6.key$ = "in_interface"
+a6.value$ = inName
+eventMetadata$.record$ = IF inName != "" THEN eventMetadata$.record$ + [a6] ELSE eventMetadata$.record$
+a7.key$ = "dest_name"
+a7.value$ = destName["v"]
+eventMetadata$.record$ = IF destName["v"] != "" THEN eventMetadata$.record$ + [a7] ELSE eventMetadata$.record$
+a8.key$ = "source_vlan"
+a8.value$ = svlan["v"]
+eventMetadata$.record$ = IF svlan["v"] != "" THEN eventMetadata$.record$ + [a8] ELSE eventMetadata$.record$
+a9.key$ = "dest_vlan"
+a9.value$ = dvlan["v"]
+eventMetadata$.record$ = IF dvlan["v"] != "" THEN eventMetadata$.record$ + [a9] ELSE eventMetadata$.record$
+a10.key$ = "duration_secs"
+a10.value$ = duration["v"]
+eventMetadata$.record$ = IF duration["v"] != "" THEN eventMetadata$.record$ + [a10] ELSE eventMetadata$.record$
+a11.key$ = "icmp_type"
+a11.value$ = icmpType["v"]
+eventMetadata$.record$ = IF icmpType["v"] != "" THEN eventMetadata$.record$ + [a11] ELSE eventMetadata$.record$

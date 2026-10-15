@@ -1,0 +1,46 @@
+!SAMPLE=<158>Oct 14 21:16:05 b1-edge1 velocloud.sdwan: ACTION=VCF Deny SEGMENT=0 IN="GE3" PROTO=ICMP SRC=198.51.100.23 DST=192.0.2.10 TYPE=8 FW_POLICY_NAME=Branch Default SEGMENT_NAME=Global Segment
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=ACTION=VCF (?:Open|Close|Deny|Drop|Update|Allow|Alert)\s+[A-Z][A-Z_]*[=]
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Arista VeloCloud SD-WAN (formerly VMware SD-WAN) Edge firewall logs, sent by each Edge
+# over syslog to the data collector (Profile or Edge > Device > Telemetry > Syslog, role FIREWALL
+# EVENT, and Syslog Forwarding on the Firewall page):
+#   <158>Oct 14 21:16:05 b1-edge1 velocloud.sdwan: ACTION=VCF Deny SEGMENT=0 IN="GE3" PROTO=ICMP ...
+# The body is KEY=value pairs, and a value can hold spaces (SEGMENT_NAME=Global Segment).
+# Parent: hands firewall session lines (VCF Open, Close, Deny, Drop, Update, Allow) to the Netflow
+# child and IDS/IPS alerts (VCF Alert) to the NIDS child.
+
+m = originalData$|^(?:<\d{1,3}>)?(?:(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s+)?(?:[^\s=]+:\s+)?(?P<kv>ACTION=VCF\s+(?P<act>[A-Za-z]+)\s.*)$
+kv = " " + m["kv"]
+vcfAction = m["act"]
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "VeloCloud SD-WAN Edge"
+hostId$ = IF m["host"] != "" THEN m["host"] ELSE NULL
+# The BSD syslog time has no year or zone: DATETIME picks the year (TRUE) and reads UTC.
+eventTimeUsec$ = IF m["time"] != "" THEN DATETIME(m["time"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+eventType$ = IF vcfAction == "Alert" THEN "alert" ELSE "flow"
+
+# Keys both children read. A value with spaces runs to the next KEY=.
+src = kv|\sSRC=(?P<v>[0-9A-Fa-f.:]+)
+dst = kv|\sDST=(?P<v>[0-9A-Fa-f.:]+)
+spt = kv|\sSPT=(?P<v>\d{1,5})(?:\s|$)
+dpt = kv|\sDPT=(?P<v>\d{1,5})(?:\s|$)
+protoText = kv|\sPROTO=(?P<v>\S+)
+policy = kv|\sFW_POLICY_NAME=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+segName = kv|\sSEGMENT_NAME=(?P<v>.*?)(?:\s+[A-Z][A-Z0-9_]*[=]|$)
+segment = kv|\sSEGMENT=(?P<v>\d+)
+inIf = kv|\sIN=(?:"(?P<q>[^"]*)"|(?P<v>\S+))
+inName = IF inIf["q"] != "" THEN inIf["q"] ELSE inIf["v"]
+
+proto = UPPERCASE(protoText["v"])
+ipProto = NULL
+ipProto = IF proto == "TCP" THEN 6 ELSE ipProto
+ipProto = IF proto == "UDP" THEN 17 ELSE ipProto
+ipProto = IF proto == "ICMP" THEN 1 ELSE ipProto
+ipProto = IF proto == "ICMPV6" THEN 58 ELSE ipProto
+ipProto = IF proto == "GRE" THEN 47 ELSE ipProto
+ipProto = IF proto == "ESP" THEN 50 ELSE ipProto
