@@ -105,6 +105,14 @@ def _require_https(url: str, what: str) -> None:
     raise RelayError(f"{what} must be an https URL")
 
 
+def _refuse_user_info(url: str, what: str) -> None:
+    """urllib sends no user name or password from a URL, and the host isn't found with them in
+    it, so a URL setting that has them can never work."""
+    if "@" in urllib.parse.urlsplit(url).netloc:
+        raise RelayError(f"{what} has a user name or password before the host (user:pass@), which the relay "
+                         "can't use; remove it")
+
+
 def _svix_key(secret: str) -> bytes:
     """Huntress shows the signing secret as whsec_<base64>; the HMAC key is the decoded part."""
     raw = secret[len("whsec_"):] if secret.startswith("whsec_") else secret
@@ -160,6 +168,7 @@ def load_config(env: dict | None = None) -> dict:
                          "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET and FORTICNAPP_PATH_SECRET")
     cfg["split_batches"] = _flag(env, "BRIDGE_SPLIT_BATCHES", False)
     if cfg["ingest_url"]:
+        _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     # The key goes in a request header, and http.client would put a header value it refuses in its error.
     if cfg["ingest_key"] and re.search(r"[\x00-\x1f\x7f]", cfg["ingest_key"]):

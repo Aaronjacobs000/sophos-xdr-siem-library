@@ -139,8 +139,10 @@ def load_config(env: dict | None = None) -> dict:
     if "openai_clp" in cfg["sources"] and not cfg["openai_clp"]["principal_id"]:
         raise BridgeError("OPENAI_CLP_PRINCIPAL_ID (workspace ID, or org- ID) is required for openai_clp")
     for s in cfg["sources"]:
+        _refuse_user_info(cfg[s]["base_url"], f"the {s} base URL")
         _require_https(cfg[s]["base_url"], f"the {s} base URL")
     if cfg["ingest_url"]:
+        _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     return cfg
 
@@ -152,6 +154,14 @@ def _require_https(url: str, what: str) -> None:
     if parts.scheme == "https" or (parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost", "::1")):
         return
     raise BridgeError(f"{what} must be an https URL")
+
+
+def _refuse_user_info(url: str, what: str) -> None:
+    """urllib sends no user name or password from a URL, and the host isn't found with them in
+    it, so a URL setting that has them can never work."""
+    if "@" in urllib.parse.urlsplit(url).netloc:
+        raise BridgeError(f"{what} has a user name or password before the host (user:pass@), which the bridge "
+                          "can't use; remove it")
 
 
 # ---------------------------------------------------------------- HTTP

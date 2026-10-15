@@ -104,6 +104,14 @@ def _require_https(url: str, what: str) -> None:
     raise BridgeError(f"{what} must be an https URL")
 
 
+def _refuse_user_info(url: str, what: str) -> None:
+    """urllib sends no user name or password from a URL, and the host isn't found with them in
+    it, so a URL setting that has them can never work."""
+    if "@" in urllib.parse.urlsplit(url).netloc:
+        raise BridgeError(f"{what} has a user name or password before the host (user:pass@), which the bridge "
+                          "can't use; remove it")
+
+
 def load_config(env: dict | None = None) -> dict:
     env = dict(os.environ if env is None else env)
     cfg = {
@@ -124,8 +132,10 @@ def load_config(env: dict | None = None) -> dict:
     }
     if not cfg["api_key"]:
         raise BridgeError("ITGLUE_API_KEY is required")
+    _refuse_user_info(cfg["api_url"], "ITGLUE_API_URL")
     _require_https(cfg["api_url"], "ITGLUE_API_URL")
     if cfg["ingest_url"]:
+        _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     return cfg
 

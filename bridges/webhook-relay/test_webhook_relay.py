@@ -186,6 +186,17 @@ class RelayTest(unittest.TestCase):
         e.update(extra)
         return {k: v for k, v in e.items() if v is not None}
 
+    def test_a_url_setting_with_user_info_is_refused_at_startup(self):
+        # urllib sends no user name or password from a URL, and the host isn't found with them in it,
+        # so such a setting can never work. The relay stops at startup and doesn't show them.
+        for name in ("NGSIEM_INGEST_URL",):
+            for url in ("https://user:secret@api.example.com/v1", "https://secret@api.example.com"):
+                with self.subTest(name=name, url=url):
+                    with self.assertRaises(r.RelayError) as caught:
+                        r.load_config(self.env(**{name: url}))
+                    self.assertEqual(str(caught.exception), f"{name} has a user name or password before the host "
+                                     "(user:pass@), which the relay can't use; remove it")
+
     def start(self, dry_run=False, out=None, **extra):
         self.relay = r.make_server(r.load_config(self.env(**extra)), dry_run, out)
         threading.Thread(target=self.relay.serve_forever, args=(0.05,), daemon=True).start()

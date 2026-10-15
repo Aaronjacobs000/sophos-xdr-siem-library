@@ -124,6 +124,14 @@ def _require_https(url: str, what: str) -> None:
     raise BridgeError(f"{what} must be an https URL")
 
 
+def _refuse_user_info(url: str, what: str) -> None:
+    """urllib sends no user name or password from a URL, and the host isn't found with them in
+    it, so a URL setting that has them can never work."""
+    if "@" in urllib.parse.urlsplit(url).netloc:
+        raise BridgeError(f"{what} has a user name or password before the host (user:pass@), which the bridge "
+                          "can't use; remove it")
+
+
 def load_config(env: dict | None = None) -> dict:
     env = dict(os.environ if env is None else env)
     cfg = {
@@ -147,6 +155,7 @@ def load_config(env: dict | None = None) -> dict:
     if not cfg["env_url"]:
         raise BridgeError("DYNATRACE_ENV_URL is required: the environment's platform URL, such as "
                           "https://abc12345.apps.dynatrace.com")
+    _refuse_user_info(cfg["env_url"], "DYNATRACE_ENV_URL")
     _require_https(cfg["env_url"], "DYNATRACE_ENV_URL")
     parts = urllib.parse.urlsplit(cfg["env_url"])
     if parts.path or parts.query or parts.fragment or not parts.hostname:
@@ -165,8 +174,10 @@ def load_config(env: dict | None = None) -> dict:
         raise BridgeError("DYNATRACE_ACCOUNT_URN must look like urn:dtaccount:<account UUID>")
     if cfg["lookback_hours"] <= 0:
         raise BridgeError("BRIDGE_LOOKBACK_HOURS must be above 0")
+    _refuse_user_info(cfg["token_url"], "DYNATRACE_TOKEN_URL")
     _require_https(cfg["token_url"], "DYNATRACE_TOKEN_URL")
     if cfg["ingest_url"]:
+        _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     return cfg
 

@@ -119,6 +119,14 @@ def _require_https(url: str, what: str) -> None:
     raise BridgeError(f"{what} must be an https URL")
 
 
+def _refuse_user_info(url: str, what: str) -> None:
+    """urllib sends no user name or password from a URL, and the host isn't found with them in
+    it, so a URL setting that has them can never work."""
+    if "@" in urllib.parse.urlsplit(url).netloc:
+        raise BridgeError(f"{what} has a user name or password before the host (user:pass@), which the bridge "
+                          "can't use; remove it")
+
+
 def _service_account(env: dict) -> dict:
     """The service account's JSON key, from a file or from the variable itself. Neither the key
     nor the file's text ever reaches an error or the log."""
@@ -178,9 +186,12 @@ def load_config(env: dict | None = None) -> dict:
     cfg["apps"] = list(dict.fromkeys(cfg["apps"]))
     if cfg["lookback_hours"] <= 0:
         raise BridgeError("BRIDGE_LOOKBACK_HOURS must be above 0")
+    _refuse_user_info(cfg["api_url"], "GWS_API_URL")
     _require_https(cfg["api_url"], "GWS_API_URL")
+    _refuse_user_info(cfg["token_url"], "GWS_TOKEN_URL")
     _require_https(cfg["token_url"], "GWS_TOKEN_URL")
     if cfg["ingest_url"]:
+        _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     cfg["service_account"] = _service_account(env)
     # Parse the key now, so a bad key stops the bridge before it reads anything.

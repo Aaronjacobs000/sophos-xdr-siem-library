@@ -356,6 +356,23 @@ class BridgeTest(unittest.TestCase):
         e.update(extra)
         return e
 
+    def test_a_url_setting_with_user_info_is_refused_at_startup(self):
+        # urllib sends no user name or password from a URL, and the host isn't found with them in it,
+        # so such a setting can never work. The bridge stops at startup and doesn't show them.
+        for name, what in (
+                ("OPENAI_CLP_BASE_URL", "the openai_clp base URL"),
+                ("OPENAI_API_BASE_URL", "the openai_audit base URL"),
+                ("ANTHROPIC_BASE_URL", "the anthropic base URL"),
+                ("NGSIEM_INGEST_URL", "NGSIEM_INGEST_URL"),
+        ):
+            for url in ("https://user:secret@api.example.com/v1", "https://secret@api.example.com"):
+                with self.subTest(name=name, url=url):
+                    with self.assertRaises(c.BridgeError) as caught:
+                        c.load_config(self.env(**{name: url}, OPENAI_COMPLIANCE_API_KEY=CLP_KEY, OPENAI_CLP_PRINCIPAL_ID=WS,
+                                               OPENAI_ADMIN_KEY=OPENAI_ADMIN_KEY, ANTHROPIC_COMPLIANCE_KEY=ANTHROPIC_KEY))
+                    self.assertEqual(str(caught.exception), f"{what} has a user name or password before the host "
+                                     "(user:pass@), which the bridge can't use; remove it")
+
     def sent(self):
         return [line for post in self.mock.ingested for line in post["lines"]]
 
