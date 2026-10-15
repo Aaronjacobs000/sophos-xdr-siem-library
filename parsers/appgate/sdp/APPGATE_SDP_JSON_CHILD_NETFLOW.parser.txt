@@ -1,0 +1,71 @@
+!SAMPLE={"version":2,"date":"Oct 14 01:21:30","timestamp":"2026-10-14T01:21:30.551Z","hostname":"gateway1.example.com","daemon":"cz-vpnd","log":{"action":"drop","client_ip":"203.0.113.45","client_port":43860,"collective_id":"cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd","connection_type":"new","destination_ip":"198.51.100.31","destination_port":3389,"direction":"up","distinguished_name":"CN=6564323663334831b062313164663239,CN=jsmith,OU=corp-idp","distinguished_name_device_id":"6564323663334831b062313164663239","distinguished_name_ou":"corp-idp","distinguished_name_user":"jsmith","drop-reason":"no matching rule","event_type":"ip_access","id":"b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e","packet_size":60,"protocol":"TCP","source_ip":"192.0.2.201","source_port":56122,"timestamp":"2026-10-14T01:21:30.551203117Z","version":24}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="netflow"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Appgate SDP audit logs as JSON.
+# Child of APPGATE_SDP_JSON_PARENT: ip_access records (cz-vpnd) to Netflow. A Gateway writes one
+# when a client's tunnel opens a connection (connection_type new) and again every 120 seconds while
+# it stays open (established), with the firewall engine's decision in action: allow, or drop with a
+# drop-reason. source_ip is the client's tunnel address and client_ip the address it connects from;
+# direction up is client to endpoint.
+# ev, kind, daemon, appliance, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = ev["$.source_ip"]
+sourcePort$ = ev["$.source_port"]
+destinationAddress$ = ev["$.destination_ip"]
+destinationPort$ = ev["$.destination_port"]
+sourceNatAddress$ = ev["$.nat_src_ip"]
+sourceNatPort$ = ev["$.nat_src_port"]
+
+# protocol takes the IANA number; Appgate sends a name.
+proto = UPPERCASE(STRING(ev["$.protocol"]))
+protocol$ = 0
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+protocol$ = IF proto == "AH" THEN 51 ELSE protocol$
+
+act = LOWERCASE(STRING(ev["$.action"]))
+flowAction$ = "FW_UNKNOWN"
+flowAction$ = IF act == "allow" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "drop" OR act == "block" OR act == "reject" THEN "FW_BLOCKED" ELSE flowAction$
+dir = ev["$.direction"]
+direction$ = "UNKNOWN"
+direction$ = IF dir == "up" THEN "CLIENT_TO_SERVER" ELSE direction$
+direction$ = IF dir == "down" THEN "SERVER_TO_CLIENT" ELSE direction$
+connectionEndReason$ = ev["$['drop-reason']"]
+
+n1.key$ = "user"
+n1.value$ = ev["$.distinguished_name_user"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = IF n1.value$ THEN [n1] ELSE []
+n2.key$ = "identity_provider"
+n2.value$ = ev["$.distinguished_name_ou"]
+eventMetadata$.record$ = IF n2.value$ THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "client_ip"
+n3.value$ = ev["$.client_ip"]
+eventMetadata$.record$ = IF n3.value$ THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "entitlement"
+n4.value$ = ev["$.name"]
+eventMetadata$.record$ = IF n4.value$ THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "rule_name"
+n5.value$ = ev["$.rule_name"]
+eventMetadata$.record$ = IF n5.value$ THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "connection_type"
+n6.value$ = ev["$.connection_type"]
+eventMetadata$.record$ = IF n6.value$ THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "packet_size"
+n7.value$ = STRING(ev["$.packet_size"])
+eventMetadata$.record$ = IF ev["$.packet_size"] != NULL THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "device_id"
+n8.value$ = ev["$.distinguished_name_device_id"]
+eventMetadata$.record$ = IF n8.value$ THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "gateway"
+n9.value$ = appliance
+eventMetadata$.record$ = IF n9.value$ THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
