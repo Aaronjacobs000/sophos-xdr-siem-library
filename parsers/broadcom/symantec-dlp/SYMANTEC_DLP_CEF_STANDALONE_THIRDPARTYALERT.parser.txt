@@ -1,0 +1,108 @@
+!SAMPLE=<134>Oct 14 23:31:05 enforce01 CEF:0|Broadcom|DLP|16.0|ruleID|PCI DSS Credit Card Numbers|5|INCIDENT_ID=104522 APPLICATION_USER= ENDPOINT_MACHINE=WS-0147 ENDPOINT_USERNAME=EXAMPLE\jdoe MACHINE_IP=192.0.2.47 SEVERITY=High BLOCKED=yes
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|(?:Broadcom|Symantec)\|(?:DLP|Data Loss Prevention)\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|.*\bINCIDENT_ID[=]
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Broadcom Symantec Data Loss Prevention incidents, sent by a "Log to a Syslog Server"
+# response rule action on the Enforce Server to the data collector. DLP has no fixed syslog
+# layout: the rule's Message field is free text with $VARIABLE$ tokens. This parser reads the CEF
+# message Broadcom publishes in knowledge base article 256282, and the extra keys in this
+# entry's README, in any order:
+#   CEF:0|Broadcom|DLP|16.0|ruleID|$POLICY$|5|INCIDENT_ID=$INCIDENT_ID$ APPLICATION_USER=... BLOCKED=$BLOCKED$
+# Standalone parser for the third-party alert schema: the policy is the title, $SEVERITY$ the
+# severity, and $BLOCKED$ (yes or no) the action.
+
+v = CEF(originalData$)
+sensorType$ = "Symantec DLP"
+vendor$ = "Broadcom"
+provider$ = "Symantec DLP"
+alertCategory$ = "Data loss prevention"
+
+# The syslog header time: RFC 3164 (no year, read as UTC) or, from 25.1, RFC 5424.
+h = originalData$|^(?:<\d{1,3}>)?(?:1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}))\s+(?P<host>\S+)\s
+eventTimeUsec$ = IF h["iso"] != "" THEN DATETIME(h["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF h["bsd"] != "" THEN DATETIME(h["bsd"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+hostId$ = IF h["host"] != "" THEN h["host"] ELSE NULL
+
+policy = STRING(v[5])
+incident = STRING(v["INCIDENT_ID"])
+alertId$ = IF incident != "" THEN incident ELSE NULL
+title$ = IF policy != "" THEN "DLP incident: " + policy ELSE "DLP incident"
+
+# $SEVERITY$ is the incident severity: High, Medium, Low or Info.
+sevText = STRING(v["SEVERITY"])
+vendorSeverity$ = IF sevText != "" THEN sevText ELSE NULL
+sev = UPPERCASE(sevText)
+severity$ = NULL
+severity$ = IF sev == "INFO" OR sev == "INFORMATIONAL" THEN "INFO" ELSE severity$
+severity$ = IF sev == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF sev == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "HIGH" THEN "HIGH" ELSE severity$
+blockedText = LOWERCASE(STRING(v["BLOCKED"]))
+action$ = IF blockedText == "yes" OR blockedText == "blocked" OR blockedText == "true" THEN "BLOCKED" ELSE NULL
+
+# The endpoint user and machine for Endpoint incidents, the sender for network incidents.
+endpointUser = STRING(v["ENDPOINT_USERNAME"])
+appUser = STRING(v["APPLICATION_USER"])
+sender = STRING(v["SENDER"])
+sourceUserName$ = NULL
+sourceUserName$ = IF sender != "" THEN sender ELSE sourceUserName$
+sourceUserName$ = IF appUser != "" THEN appUser ELSE sourceUserName$
+sourceUserName$ = IF endpointUser != "" THEN endpointUser ELSE sourceUserName$
+machine = STRING(v["ENDPOINT_MACHINE"])
+sourceHostName$ = IF machine != "" THEN machine ELSE NULL
+machineIp = STRING(v["MACHINE_IP"])
+sourceAddress$ = IF machineIp != "" THEN machineIp ELSE NULL
+destIp = STRING(v["DESTINATION_IP"])
+destinationAddress$ = IF destIp != "" THEN destIp ELSE NULL
+location = STRING(v["URL"])
+web = location|^https?://
+destinationUrl$ = IF web[0] != "" THEN location ELSE NULL
+
+protocol = STRING(v["PROTOCOL"])
+rules = STRING(v["RULES"])
+onProtocol = IF protocol != "" THEN " on " + protocol ELSE ""
+violated = IF rules != "" THEN ": " + rules ELSE ""
+summary$ = policy + onProtocol + violated
+
+d1.key$ = "policy"
+d1.value$ = policy
+d2.key$ = "blocked"
+d2.value$ = STRING(v["BLOCKED"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "rules"
+d3.value$ = rules
+additionalData$.record$ = IF rules != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "protocol"
+d4.value$ = protocol
+additionalData$.record$ = IF protocol != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "recipients"
+d5.value$ = STRING(v["RECIPIENTS"])
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "match_count"
+d6.value$ = STRING(v["MATCH_COUNT"])
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "status"
+d7.value$ = STRING(v["STATUS"])
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "detection_server"
+d8.value$ = STRING(v["MONITOR_NAME"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "attachment"
+d9.value$ = STRING(v["ATTACHMENT_FILENAME"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "location"
+d10.value$ = location
+additionalData$.record$ = IF location != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "sender"
+d11.value$ = sender
+additionalData$.record$ = IF sender != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "application_user"
+d12.value$ = appUser
+additionalData$.record$ = IF appUser != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "incident_snapshot"
+d13.value$ = STRING(v["INCIDENT_SNAPSHOT"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$

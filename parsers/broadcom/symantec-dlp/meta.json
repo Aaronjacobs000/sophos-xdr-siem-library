@@ -1,0 +1,37 @@
+{
+  "vendor": "Broadcom",
+  "product": "Symantec DLP",
+  "versions": [
+    "16.0",
+    "16.1",
+    "25.1",
+    "26.1"
+  ],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://knowledge.broadcom.com/external/article/256282/how-to-configure-log-to-a-syslog-server.html",
+    "https://techdocs.broadcom.com/us/en/symantec-security-software/information-security/data-loss-prevention/26-1/response-rules-2/configuring-the-log-to-a-syslog-server-action.html",
+    "https://techdocs.broadcom.com/us/en/symantec-security-software/information-security/data-loss-prevention/26-1/incidents/introducing-remediating-incidents/response-action-variables.html",
+    "https://techdocs.broadcom.com/us/en/symantec-security-software/information-security/data-loss-prevention/26-1/incidents/introducing-remediating-incidents/response-action-variables/general-incident-variables.html",
+    "https://techdocs.broadcom.com/us/en/symantec-security-software/information-security/data-loss-prevention/26-1/incidents/introducing-remediating-incidents/response-action-variables/endpoint-incident-variables.html",
+    "https://knowledge.broadcom.com/external/article/159680/error-code-1807-summary-response-rule.html"
+  ],
+  "notes": "For Symantec DLP incidents sent by a Log to a Syslog Server response rule on the Enforce Server. DLP has no fixed syslog layout: paste the CEF message from Broadcom knowledge base article 256282, or the longer one in README.md, into the rule's Message field. The parser reads the keys in any order and skips any that are missing. Each incident goes to the third-party alert schema: INCIDENT_ID as alert_id, the policy as the title, SEVERITY (High, Medium, Low or Info) as severity, BLOCKED=yes as the BLOCKED action, the endpoint user (or application user or sender), machine and IP as the source, DESTINATION_IP as the destination, and an http or https URL as destination_url. Rules, channel, recipients, match count, status, detection server, attachment, location and the incident snapshot link go to additional_data. The event time is the syslog header time: RFC 5424, or RFC 3164 with no year or zone, read as UTC. DLP doesn't escape the values it fills in, so a | in a policy name breaks the header and a doubled backslash, as in a UNC path, reads as one. Broadcom KB 159680 caps messages at 1,024 characters. System events (Manager.properties syslog) aren't covered. Samples are made up in the shape of the KB 256282 message, with values from Broadcom's response action variable pages. Passed Run Test in a lab tenant on 2026-10-15 (91 of 91 fields matched the emulator, in each of 3 runs). No built-in parser claimed these lines in 6 Run Tests.",
+  "parsers": [
+    {
+      "name": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+      "file": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
