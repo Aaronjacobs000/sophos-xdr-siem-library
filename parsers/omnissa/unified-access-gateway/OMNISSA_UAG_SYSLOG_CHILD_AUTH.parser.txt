@@ -1,0 +1,72 @@
+!SAMPLE=<150>Oct 14 07:28:51 uag01 uag-esmanager_: [jersey-client-async-executor-1]INFO utils.SyslogManager[logMessage: 190][203.0.113.20][jsmith][Horizon][5a0b2c4e-91d3-4f6a-8e1b-0c2d3e4f7cfa] - Authentication successful for user jsmith. Auth type: RADIUS-AUTH, Sub type: passcode
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Omnissa Unified Access Gateway syslog.
+# Child of OMNISSA_UAG_SYSLOG_PARENT: sign-ins to Auth.
+# Admin UI (uag-admin_uag-audit):
+#   LOGIN_SUCCESS: SOURCE_IP_ADDR=<address> USERNAME=<user>                     a logon
+#   LOGIN_FAILED: SOURCE_IP_ADDR=<address> USERNAME=<user>: REASON=<text>       a failure
+#   LOGOUT_SUCCESS: SOURCE_IP_ADDR=<address> USERNAME=<user>                    a logoff
+# Edge services (uag-esmanager_), such as Horizon, with the user's client address and session:
+#   Authentication successful for user <user>. Auth type: <type>, Sub type: <sub>       a logon
+#   AUTH FAILED for user <user> with error <error>. Auth type: <type>, Sub type: <sub>  a failure
+#   Authentication attempt - FAILED                                                     a failure
+#   HORIZON_SESSION:AUTHENTICATED:<text>                                                a logon
+#   HORIZON_SESSION:TERMINATED:<text>                                                   a logoff
+# hdr, m, es, msg, audit, event, edge, uag, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+kind = edge["kind"]
+admin = event != ""
+ok = event == "LOGIN_SUCCESS" OR kind == "Authentication successful for user " OR kind == "HORIZON_SESSION:AUTHENTICATED"
+logoff = event == "LOGOUT_SUCCESS" OR kind == "HORIZON_SESSION:TERMINATED"
+
+factor = msg|^(?:Authentication successful for user (?P<okuser>.+?)\.|AUTH FAILED for user (?P<failuser>.+?) with error (?P<error>.*?)\.) Auth type: (?P<type>[^,]*), Sub type: (?P<sub>.*)$
+session = msg|^HORIZON_SESSION:[A-Z]+:(?P<text>.*?)(?: - Session count:\s*\d+, Authenticated sessions:\s*\d+)?$
+
+user = IF admin THEN audit["user"] ELSE es["user"]
+user = IF user == "" THEN factor["okuser"] ELSE user
+user = IF user == "" THEN factor["failuser"] ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+addr = IF admin THEN audit["ip"] ELSE es["cip"]
+sourceAddress$ = IF addr != "" THEN addr ELSE NULL
+targetHostName$ = uag
+sessionId$ = IF es["sid"] != "" THEN es["sid"] ELSE NULL
+stype = es["stype"]
+authSystem$ = IF admin THEN "Unified Access Gateway Admin UI" ELSE "Unified Access Gateway edge service"
+authSystem$ = IF NOT admin AND stype != "" THEN "Unified Access Gateway " + stype ELSE authSystem$
+
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "FAILURE"
+action$ = IF ok THEN "LOGON" ELSE action$
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+actionResult$ = IF ok OR logoff THEN "SUCCESS" ELSE "FAILED"
+reason = IF admin THEN audit["reason"] ELSE factor["error"]
+reason = IF reason == "" AND msg == "Authentication attempt - FAILED" THEN msg ELSE reason
+failed = NOT ok AND NOT logoff
+extraFailurereason$ = IF failed AND reason != "" THEN reason ELSE NULL
+lr = LOWERCASE(reason)
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND (CONTAINS(lr, "incorrect password") OR CONTAINS(lr, "invalid credentials")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF failed AND CONTAINS(lr, "locked") THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+
+u1.key$ = "app"
+u1.value$ = hdr["app"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [u1]
+u2.key$ = "event"
+kindName = kind|^(?P<n>.*?)\s*$
+u2.value$ = IF admin THEN event ELSE kindName["n"]
+eventMetadata$.record$ = eventMetadata$.record$ + [u2]
+u3.key$ = "auth_type"
+u3.value$ = factor["type"]
+eventMetadata$.record$ = IF factor["type"] != "" THEN eventMetadata$.record$ + [u3] ELSE eventMetadata$.record$
+u4.key$ = "auth_sub_type"
+u4.value$ = factor["sub"]
+eventMetadata$.record$ = IF factor["sub"] != "" THEN eventMetadata$.record$ + [u4] ELSE eventMetadata$.record$
+u5.key$ = "session_text"
+u5.value$ = session["text"]
+eventMetadata$.record$ = IF session["text"] != "" THEN eventMetadata$.record$ + [u5] ELSE eventMetadata$.record$

@@ -1,0 +1,43 @@
+{
+  "vendor": "Omnissa",
+  "product": "Unified Access Gateway",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.omnissa.com/UnifiedAccessGatewayDeployandConfigure-V2606/SyslogFormatsandEvents",
+    "https://docs.omnissa.com/UnifiedAccessGatewayDeployandConfigure-V2503/SyslogFormatsandEvents",
+    "https://web.archive.org/web/2023/https://docs.vmware.com/en/Unified-Access-Gateway/3.10/com.vmware.uag-310-deploy-config.doc/GUID-76785536-56DF-48B6-A471-F3C60C3A587F.html"
+  ],
+  "notes": "Turn on syslog in the UAG Admin UI (Advanced Settings > System Configuration > Syslog) and send it to the data collector. UAG writes the formats on Omnissa's Syslog Formats and Events page: admin audit events (uag-admin_uag-audit), admin system events (uag-admin_) and edge service events (uag-esmanager_), which carry the client address, user, session type and session ID in brackets. Admin UI sign-ins (LOGIN_SUCCESS, LOGIN_FAILED with its reason, LOGOUT_SUCCESS) and edge service sign-ins (Authentication successful, AUTH FAILED, Authentication attempt - FAILED, HORIZON_SESSION:AUTHENTICATED and HORIZON_SESSION:TERMINATED) go to Auth with the user, the client address, the UAG and the session ID, and the auth type in event_metadata. Configuration changes (CONFIG_CHANGE with the administrator and their address, and SETTINGS:CONFIG_CHANGED) go to ManagementEvent with the change list as the command. Other edge service lines, such as a created session, desktop access and monitoring warnings, stay in generic. Root console and SSH logins arrive as login and sshd lines, which built-in parsers read. Omnissa's current guide shows no edge service failure line, so the AUTH FAILED and Authentication attempt - FAILED samples follow the UAG 3.10 guide (VMware, archived), which writes only the session ID bracket; the parser reads both layouts. UAG's time has no year and no zone, so it is read as UTC. Horizon Connection Server events aren't covered: Omnissa lists their event types and text but not the syslog line they arrive in. Samples are made up from Omnissa's samples. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (120 of 120 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (111 of 111 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "OMNISSA_UAG_SYSLOG_PARENT",
+      "file": "OMNISSA_UAG_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+      "file": "OMNISSA_UAG_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "OMNISSA_UAG_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "OMNISSA_UAG_SYSLOG_CHILD_MGMT",
+      "file": "OMNISSA_UAG_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "OMNISSA_UAG_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
