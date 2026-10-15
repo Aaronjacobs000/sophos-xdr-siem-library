@@ -12,8 +12,10 @@
 // already belongs to the person who opened it. Right before merging, the pull request's own
 // file list is checked again, so a change to bridges/ or anything else outside parsers/
 // never merges without review, whichever route opened it. A file list that GitHub can't give
-// in full holds the pull request for review. When it merges, pr and merge write
-// merged=true to $GITHUB_OUTPUT and delete the pull request's branch if it is in this repo.
+// in full holds the pull request for review. The merge waits until every other check on the
+// checked commit, CI among them, has finished and passed. When it merges, pr and merge write
+// merged=true to $GITHUB_OUTPUT, clear the "needs review" label, and delete the pull
+// request's branch if it is in this repo.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { reviewReasons } from './lib/merge-rules.mjs';
@@ -35,6 +37,8 @@ const LABELS = {
 // when another merge lands first. Both pass on a retry, so the gate tries again a few times.
 const RETRIES = 3;
 const RETRY_MS = Number(process.env.GATE_RETRY_MS ?? 3000);
+// How often the gate looks again while it waits for checks or for GitHub's auto-merge.
+const POLL_MS = Number(process.env.GATE_POLL_MS ?? 15000);
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function retrying(call, again) {
@@ -105,42 +109,75 @@ async function comment(num, markdown) {
   else await gh('POST', `/repos/${REPO}/issues/${num}/comments`, { body });
 }
 
-// Waits for the other checks on the commit (CI's unit tests, for example) and reports
-// whether they all passed. The workflow that runs this script is left out by job name.
-async function otherChecksPassed(sha, self) {
+// Waits for the other checks on the commit to finish and reports whether they all passed. The
+// workflow that runs this script is left out by job name. On the pull request route (needCI) CI
+// runs on every pull request, so the gate also waits for CI's own run on the commit: a check GitHub
+// hasn't created yet can't be missed. The issue route opens its pull request with GITHUB_TOKEN,
+// which starts no workflows, so there it has no checks to wait for.
+async function otherChecksPassed(sha, self, needCI) {
+  const ok = (r) => ['success', 'skipped', 'neutral'].includes(r.conclusion);
   for (let i = 0; i < 40; i++) {
     const runs = (await gh('GET', `/repos/${REPO}/commits/${sha}/check-runs?per_page=100`)).check_runs.filter((r) => r.name !== self);
-    if (runs.every((r) => r.status === 'completed')) return runs.every((r) => ['success', 'skipped', 'neutral'].includes(r.conclusion));
-    await new Promise((r) => setTimeout(r, 15000));
+    // Newest first, so the first run is the one that counts.
+    const ci = needCI ? (await gh('GET', `/repos/${REPO}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=100`)).workflow_runs : [];
+    const done = runs.every((r) => r.status === 'completed') && (!needCI || (ci.length > 0 && ci.every((r) => r.status === 'completed')));
+    if (done) return runs.every(ok) && (!needCI || ci[0].conclusion === 'success');
+    await pause(POLL_MS);
   }
   return false;
 }
 
-async function merge(pr, sha) {
+// Whether the pull request can still merge on its own at the checked commit, or why not.
+async function holdReason(pr, sha) {
+  const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+  if (p.state !== 'open') return { p, reason: CLOSED };
+  if (p.draft) return { p, reason: 'The pull request is a draft, so it waits.' };
+  if (p.head.sha !== sha) return { p, reason: 'The pull request changed after these checks ran; the next run decides.' };
+  const files = await changedFiles(pr, p);
+  if (files.short) return { p, reason: `Not merged automatically: ${files.short}, so a maintainer will review it.` };
+  const held = reviewReasons(files.names);
+  if (held.length) return { p, reason: `Not merged automatically: this pull request ${held.join('; ')}. A maintainer will review it.` };
+  return { p, reason: null };
+}
+
+const CLOSED = 'The pull request is no longer open.';
+
+async function merge(pr, sha, { needCI = false } = {}) {
   const repo = await gh('GET', `/repos/${REPO}`);
   if (!repo.allow_auto_merge) return 'Auto-merge is off for this repo, so a maintainer will merge it.';
-  const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
-  if (p.draft) return 'The pull request is a draft, so it waits.';
-  if (p.head.sha !== sha) return 'The pull request changed after these checks ran; the next run decides.';
-  const files = await changedFiles(pr, p);
-  if (files.short) return `Not merged automatically: ${files.short}, so a maintainer will review it.`;
-  const held = reviewReasons(files.names);
-  if (held.length) return `Not merged automatically: this pull request ${held.join('; ')}. A maintainer will review it.`;
+  const first = await holdReason(pr, sha);
+  if (first.reason) return first.reason;
+  // Nothing merges until the checks on this commit, CI's tests among them, have all passed. The
+  // wait takes minutes, so everything above is checked again after it.
+  if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate', needCI))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
+  const { p, reason } = await holdReason(pr, sha);
+  if (reason) return reason;
   try {
-    // Native auto-merge waits for any required checks; it needs a branch rule to exist.
+    // Native auto-merge is for a branch rule that holds the pull request, such as a required review.
     await gh('POST', '/graphql', { query: 'mutation($id:ID!,$sha:GitObjectID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH,expectedHeadOid:$sha}){clientMutationId}}', variables: { id: p.node_id, sha } }).then((r) => { if (r.errors) throw new Error(r.errors[0].message); });
-    return 'Auto-merge is on for this pull request.';
   } catch {
-    if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate'))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
     await retrying(() => gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' }), (e) => e.status === 405 && /base branch was modified/i.test(e.message));
     await deleteHeadBranch(p, sha);
     return 'Merged.';
   }
+  // GitHub merges on its own once nothing holds the pull request. The gate waits a short while
+  // for that, so it can delete the branch and start Pages after this merge too.
+  for (let i = 0; i < 8; i++) {
+    await pause(POLL_MS);
+    const now = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+    if (now.merged) {
+      await deleteHeadBranch(p, sha);
+      return 'Merged.';
+    }
+    if (now.state !== 'open') return CLOSED;
+  }
+  return 'Auto-merge is on for this pull request.';
 }
 
-// The repo setting that deletes head branches doesn't act on a merge made with GITHUB_TOKEN,
-// so after its own merge the gate deletes the branch: only one in this repo, never a fork's or
-// main, and only while it still points at the merged commit. A failure here doesn't undo the merge.
+// The repo setting that deletes head branches doesn't act on a merge made with GITHUB_TOKEN, or on
+// native auto-merge the gate turned on, so after a merge the gate deletes the branch: only one in
+// this repo, never a fork's or main, and only while it still points at the merged commit. A failure
+// here doesn't undo the merge.
 async function deleteHeadBranch(p, sha) {
   const head = p.head || {};
   const base = p.base || {};
@@ -177,10 +214,13 @@ if (cmd === 'changed') {
     await setLabels(pr, [LABELS.failed[0]], [LABELS.passed[0], LABELS.auto[0]]);
   } else if (report.eligible) {
     await setLabels(pr, [LABELS.passed[0]], [LABELS.failed[0], LABELS.review[0]]);
-    const outcome = await merge(pr, sha).catch((e) => `Merging failed: ${e.message}`);
+    const outcome = await merge(pr, sha, { needCI: true }).catch((e) => `Merging failed: ${e.message}`);
     await reportMerged(outcome);
-    if (/Merged|Auto-merge is on/.test(outcome)) await setLabels(pr, [LABELS.auto[0]], []);
-    else await setLabels(pr, [LABELS.review[0]], []);
+    // An earlier run, on a commit the pull request has since moved past, may have added "needs
+    // review" while this run waited, so the merge clears it. A pull request that is no longer open
+    // gets no new label.
+    if (/Merged|Auto-merge is on/.test(outcome)) await setLabels(pr, [LABELS.auto[0]], [LABELS.review[0]]);
+    else if (outcome !== CLOSED) await setLabels(pr, [LABELS.review[0]], []);
     md += `\n${outcome}\n`;
   } else {
     await setLabels(pr, [LABELS.passed[0], LABELS.review[0]], [LABELS.failed[0], LABELS.auto[0]]);

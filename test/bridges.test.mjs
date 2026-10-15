@@ -147,7 +147,10 @@ test('review rule: bridge code and other non-library files always need a review'
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length } = {}) {
+// checks, ciRuns and pulls are the answers GitHub gives in turn to each read of the commit's check
+// runs, CI's workflow runs and the pull request; the last answer repeats.
+const PASSED = [{ name: 'tests', status: 'completed', conclusion: 'success' }];
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}] } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const mock = path.join(dir, 'mock-fetch.mjs');
@@ -160,20 +163,24 @@ async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}
 import { appendFileSync } from 'node:fs';
 const files = ${JSON.stringify(files.map((filename) => ({ filename })))};
 let filesErrors = ${filesErrors}, mergeErrors = ${mergeErrors};
+const answers = { checks: ${JSON.stringify(checks)}, ciRuns: ${JSON.stringify(ciRuns)}, pulls: ${JSON.stringify(pulls)} };
+const next = (k) => (answers[k].length > 1 ? answers[k].shift() : answers[k][0]);
 globalThis.fetch = async (url, init = {}) => {
   const method = init.method || 'GET';
-  appendFileSync(${JSON.stringify(log)}, method + ' ' + url + '\\n');
+  // Labels added are logged with their names.
+  appendFileSync(${JSON.stringify(log)}, method + ' ' + url + (method === 'POST' && url.endsWith('/labels') && init.body ? ' ' + init.body : '') + '\\n');
   const u = new URL(url);
   let body = {};
   if (u.pathname === '/repos/o/r/pulls/7/files' && filesErrors > 0) { filesErrors--; return new Response('<html>Server Error</html>', { status: 500 }); }
   if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: 405 }); }
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
-  else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, node_id: 'PR_7', changed_files: ${changedFiles}, ...${JSON.stringify(pull)}, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})} } };
+  else if (u.pathname === '/repos/o/r/pulls/7') { const now = next('pulls'); body = { state: 'open', draft: false, node_id: 'PR_7', changed_files: ${changedFiles}, ...${JSON.stringify(pull)}, ...now, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})}, ...(now.head || {}) } }; }
   // GitHub lists a pull request's files 100 to a page, and at most 3,000 of them.
   else if (u.pathname === '/repos/o/r/pulls/7/files') { const n = Number(u.searchParams.get('per_page') || 30), p = Number(u.searchParams.get('page') || 1); body = files.slice(0, 3000).slice((p - 1) * n, p * n); }
   // Without a branch rule, GitHub refuses native auto-merge and the gate merges the pull request itself.
   else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
-  else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: [{ name: 'tests', status: 'completed', conclusion: 'success' }] };
+  else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: next('checks') };
+  else if (u.pathname === '/repos/o/r/actions/workflows/ci.yml/runs' && u.searchParams.get('head_sha') === 'abc123') body = { workflow_runs: next('ciRuns') };
   else if (method === 'GET' && /\\/(labels|comments)$/.test(u.pathname)) body = [];
   else if (method === 'GET' && u.pathname.startsWith('/repos/o/r/git/ref/heads/')) body = { object: { sha: ${JSON.stringify(refSha)} } };
   else if (method === 'DELETE' && u.pathname.startsWith('/repos/o/r/git/refs/heads/')) return new Response(${deleteStatus} === 204 ? null : JSON.stringify({ message: 'Reference update failed' }), { status: ${deleteStatus} });
@@ -182,7 +189,7 @@ globalThis.fetch = async (url, init = {}) => {
 `);
   const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')]
     : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : ['merge', '--pr', '7', '--sha', 'abc123'];
-  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1', GATE_POLL_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
   const stepOutput = await readFile(output, 'utf8');
   await rm(dir, { recursive: true, force: true });
@@ -272,7 +279,8 @@ test('gate: it retries a 500 while listing files and a 405 "Base branch was modi
   const puts = (r) => r.calls.filter((c) => c === 'PUT https://api.github.com/repos/o/r/pulls/7/merge');
   const listed = await gateMerge(['parsers/acme/pull-api/meta.json'], { filesErrors: 2 });
   assert.equal(listed.out, 'Auto-merge is on for this pull request.');
-  assert.equal(filesCalls(listed).length, 3);
+  // Two failures and a success, then one more read when the list is checked again after the wait for checks.
+  assert.equal(filesCalls(listed).length, 4);
   for (const command of ['pr', 'merge']) {
     const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, autoMerge: false, mergeErrors: 2 });
     assert.equal(puts(merged).length, 3, command);
@@ -282,6 +290,93 @@ test('gate: it retries a 500 while listing files and a 405 "Base branch was modi
   const refused = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, mergeErrors: 1, mergeError: 'Pull Request is not mergeable' });
   assert.equal(puts(refused).length, 1);
   assert.equal(refused.stepOutput, '');
+});
+
+const MERGE_CALLS = /graphql|\/merge$/;
+const firstMergeCall = (r) => r.calls.findIndex((c) => MERGE_CALLS.test(c));
+const checkReads = (r) => r.calls.map((c, i) => [c, i]).filter(([c]) => c.startsWith('GET https://api.github.com/repos/o/r/commits/abc123/check-runs')).map(([, i]) => i);
+
+test('gate: it merges only after every check on the checked commit has finished and passed', async () => {
+  const running = [{ name: 'tests', status: 'in_progress', conclusion: null }, { name: 'validate', status: 'completed', conclusion: 'success' }];
+  for (const autoMerge of [true, false]) {
+    // CI is still running for two looks, then passes: nothing merges, and auto-merge isn't turned on, until it has.
+    const waited = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge, checks: [running, running, PASSED] });
+    const reads = checkReads(waited);
+    assert.equal(reads.length, 3, String(autoMerge));
+    assert.ok(firstMergeCall(waited) > reads[2], waited.calls.join('\n'));
+  }
+  // A failed check, or one still running when the wait ends, stops it with no merge and a "needs review" label.
+  for (const checks of [[[{ name: 'tests', status: 'completed', conclusion: 'failure' }]], [running]]) {
+    for (const command of ['pr', 'merge']) {
+      const held = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, checks });
+      assert.equal(firstMergeCall(held), -1, held.calls.join('\n'));
+      assert.equal(held.stepOutput, '');
+      if (command === 'merge') assert.match(held.out, /^Another check on this commit failed or is still running/);
+      else assert.ok(held.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), held.calls.join('\n'));
+    }
+  }
+});
+
+test('gate: on the pull request route it waits for CI to run on the commit, not just for the checks it can see', async () => {
+  // GitHub hasn't created CI's run yet, so the commit shows only checks that passed. The gate waits for CI.
+  const late = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, ciRuns: [[], [{ status: 'in_progress', conclusion: null }], [{ status: 'completed', conclusion: 'success' }]] });
+  const ciReads = late.calls.map((c, i) => [c, i]).filter(([c]) => c.includes('/actions/workflows/ci.yml/runs?head_sha=abc123')).map(([, i]) => i);
+  assert.equal(ciReads.length, 3);
+  assert.ok(firstMergeCall(late) > ciReads[2]);
+  assert.equal(late.stepOutput, 'merged=true\n');
+  // A CI run that never comes, or fails, holds it.
+  for (const ciRuns of [[[]], [[{ status: 'completed', conclusion: 'failure' }]]]) {
+    const held = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, ciRuns });
+    assert.equal(firstMergeCall(held), -1, JSON.stringify(ciRuns));
+  }
+  // The issue route's pull request starts no workflows, so there it doesn't look for CI and merges.
+  const issue = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'merge', autoMerge: false, ciRuns: [[]], checks: [[]] });
+  assert.equal(issue.out, 'Merged.');
+  assert.ok(!issue.calls.some((c) => c.includes('/actions/workflows/')));
+});
+
+test('gate: a pull request that changed or closed while the gate waited for checks doesn\'t merge', async () => {
+  const moved = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'merge', pulls: [{}, { head: { sha: 'def456' } }] });
+  assert.equal(moved.out, 'The pull request changed after these checks ran; the next run decides.');
+  assert.equal(firstMergeCall(moved), -1);
+  // Already merged by a later run: no merge, and no "needs review" label on the merged pull request.
+  const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', pulls: [{}, { state: 'closed', merged: true, head: { sha: 'def456' } }] });
+  assert.equal(firstMergeCall(merged), -1);
+  assert.ok(!merged.calls.some((c) => c.startsWith('POST https://api.github.com/repos/o/r/issues/7/labels') && c.includes('needs review')), merged.calls.join('\n'));
+});
+
+test('gate: a merge clears the "needs review" label an earlier run added', async () => {
+  const removeReview = 'DELETE https://api.github.com/repos/o/r/issues/7/labels/needs%20review';
+  for (const autoMerge of [false, true]) {
+    // With native auto-merge, GitHub merges the pull request a little after the gate turns it on.
+    const r = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, { state: 'open' }, { state: 'closed', merged: true }] : [{}] });
+    assert.equal(r.stepOutput, 'merged=true\n', String(autoMerge));
+    const mergedAt = firstMergeCall(r);
+    assert.ok(mergedAt >= 0);
+    assert.ok(r.calls.lastIndexOf(removeReview) > mergedAt, r.calls.join('\n'));
+    assert.ok(r.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["auto-merge"]}')));
+  }
+});
+
+test('gate: after native auto-merge merges, it deletes a same-repo head branch, never a fork\'s', async () => {
+  const repo = { id: 1, full_name: 'o/r', default_branch: 'main' };
+  const from = (ref, headRepo = repo) => ({ head: { ref, repo: headRepo }, base: { ref: 'main', repo } });
+  const deletes = (r) => r.calls.filter((c) => c.startsWith('DELETE ') && c.includes('/git/refs/'));
+  const later = [{}, {}, { state: 'open' }, { state: 'closed', merged: true }];
+  for (const command of ['pr', 'merge']) {
+    const own = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, pull: from('library/acme'), pulls: later });
+    assert.ok(own.calls.includes('POST https://api.github.com/graphql'), command);
+    assert.deepEqual(deletes(own), ['DELETE https://api.github.com/repos/o/r/git/refs/heads/library/acme'], command);
+    assert.equal(own.stepOutput, 'merged=true\n', command);
+  }
+  const fork = await gateMerge(['parsers/acme/pull-api/meta.json'], { pull: from('library/acme', { id: 2, full_name: 'someone/r' }), pulls: later });
+  assert.equal(fork.out, 'Merged.');
+  assert.deepEqual(deletes(fork), []);
+  // A branch rule that keeps holding it: auto-merge stays on, and nothing is deleted or reported merged.
+  const held = await gateMerge(['parsers/acme/pull-api/meta.json'], { pull: from('library/acme') });
+  assert.equal(held.out, 'Auto-merge is on for this pull request.');
+  assert.deepEqual(deletes(held), []);
+  assert.equal(held.stepOutput, '');
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {

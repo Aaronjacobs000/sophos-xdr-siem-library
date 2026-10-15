@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOW = await readFile(path.join(ROOT, '.github/workflows/parser-merge.yml'), 'utf8');
+const GATE_SCRIPT = await readFile(path.join(ROOT, 'tools/github-gate.mjs'), 'utf8');
 const LINES = WORKFLOW.split('\n');
 
 // The lines of each job under jobs:, keyed by job name. The workflow uses two-space indents.
@@ -75,4 +76,14 @@ test('merge workflow: the job that merges runs trusted code on the checked commi
   assert.ok(lines.some((l) => /github-gate\.mjs pr --pr "\$PR" --sha "\$HEAD_SHA" /.test(l)));
   assert.ok(lines.some((l) => /\[ "\$SHA" != "\$HEAD_SHA" \]/.test(l)), `${name} matches the pull request to the commit itself`);
   assert.ok(!lines.some((l) => /needs\.[a-z-]+\.outputs\.(number|author)/.test(l)), `${name} takes no pull request number from another job`);
+});
+
+test('merge workflow: the job that merges has time to wait for CI before it merges', () => {
+  // github-gate.mjs waits up to 10 minutes for the other checks on the commit, so a job limit of 10
+  // minutes or less would end the job before the gate could merge or report.
+  const [, lines] = Object.entries(jobs()).find(([, l]) => l.some((x) => /github-gate\.mjs pr /.test(x)));
+  const limit = lines.map((l) => /^ {4}timeout-minutes: (\d+)\s*$/.exec(l)).find(Boolean);
+  assert.ok(limit && Number(limit[1]) > 10, limit ? limit[0] : 'no timeout-minutes');
+  assert.match(GATE_SCRIPT, /for \(let i = 0; i < 40; i\+\+\)/);
+  assert.match(GATE_SCRIPT, /GATE_POLL_MS \?\? 15000/);
 });
