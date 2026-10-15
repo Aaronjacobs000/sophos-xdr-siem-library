@@ -1,0 +1,54 @@
+{
+  "vendor": "QNAP",
+  "product": "QTS and QuTS hero",
+  "versions": [
+    "QTS 5",
+    "QuTS hero 5"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.qnap.com/operating-system/qts/5.1.x/en-us/configuring-log-sender-settings-66DE0C94.html",
+    "https://www.qnap.com/en/how-to/faq/article/what-kind-of-syslog-format-can-qnap-nas-receive-and-send",
+    "https://docs.qnap.com/operating-system/qts/4.2.x/cat2/en-us/system_logs.htm",
+    "https://github.com/elastic/integrations/tree/main/packages/qnap_nas"
+  ],
+  "notes": "In QuLog Center, go to QuLog Service > Log Sender > Send to Syslog Server and add the data collector (UDP, TCP or TLS); QNAP sends these in RFC 3164 format. Pick the connection types to log under Local Device > Log Settings > Access Log Settings. Access log (conn log) sign-ins, failed sign-ins and sign-outs go to Auth with the user (DOMAIN\\user is split into domain and name), the source address and the connection type. QuLog gives no reason for a failed sign-in. File and folder changes (Delete, Write, Add, Create Directory, Rename, Move and Copy) go to FileMod with the path, the action and the user; for a rename or move the file name is the new path. The FileMod schema has no field for the client's address, the connection type or the old path, so they stay in original_data. Reads and opens stay generic. Event log lines made by a user (users created, passwords changed, shared folders and settings) go to Management Event with the user, the address, the app and category, and the event text; event log lines from the system (Users: --- or System) stay generic. The BSD syslog time has no year or zone and is read as UTC; keep the NAS on UTC or change the layout. How sure this is: QNAP documents the transport and the RFC 3164 format, and its QTS manual names the connection log fields (users, source IP, computer name, connection type, accessed resources, action) and the actions, but QNAP doesn't publish the syslog line itself. The labeled layout (conn log: Users: ..., Source IP: ... and event log: ... Application: ..., Category: ..., Content: ...) follows the test logs in Elastic's QNAP NAS integration, read as a format reference only (Elastic License 2.0; nothing was copied). Labels and action names may differ by firmware, so check a few of your own lines with Parse Message first. Samples are made up in that layout. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (112 of 112 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (112 of 112 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "QNAP_QULOG_SYSLOG_PARENT",
+      "file": "QNAP_QULOG_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "QNAP_QULOG_SYSLOG_CHILD_AUTH",
+      "file": "QNAP_QULOG_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "QNAP_QULOG_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+      "file": "QNAP_QULOG_SYSLOG_CHILD_FILEMOD.parser.txt",
+      "role": "child",
+      "parent": "QNAP_QULOG_SYSLOG_PARENT",
+      "schema": "scwx.filemod"
+    },
+    {
+      "name": "QNAP_QULOG_SYSLOG_CHILD_MGMT",
+      "file": "QNAP_QULOG_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "QNAP_QULOG_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

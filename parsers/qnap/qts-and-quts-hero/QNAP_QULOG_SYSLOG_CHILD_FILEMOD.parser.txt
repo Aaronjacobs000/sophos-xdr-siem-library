@@ -1,0 +1,22 @@
+!SAMPLE=<30>Oct 14 09:15:22 nas01 qulogd[14629]: conn log: Users: jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: Samba, Accessed resources: Finance/Reports/q3-forecast.xlsx, Action: Delete
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="file"
+!SCHEMA=scwx.filemod
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: QNAP QuLog Center access log (conn log) lines sent to a syslog server.
+# Child of QNAP_QULOG_SYSLOG_PARENT: file and folder changes (Delete, Write, Add, Create Directory,
+# Rename, Move and Copy) to FileMod, with the path in Accessed resources as the file name, the
+# QuLog action as the action and the user. A rename or move writes "<old path> -> <new path>";
+# the file name is the new path. The FileMod schema has no field for the old path, the client's
+# address or the connection type, so they stay in original_data.
+# user, src, comp, ctype, res, act, lact, nas, eventType$, sensorType$, hostId$ and eventTimeUsec$
+# come from the parent.
+
+moved = res|^(?P<old>.*?) -> (?P<new>.*)$
+fileName$ = IF moved["new"] != "" THEN moved["new"] ELSE res
+action$ = act
+processUsername$ = user
+wasModificationAllowed$ = TRUE

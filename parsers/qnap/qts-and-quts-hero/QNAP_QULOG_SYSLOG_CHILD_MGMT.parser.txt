@@ -1,0 +1,23 @@
+!SAMPLE=<30>Oct 14 09:20:15 nas01 qulogd[14629]: event log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Application: Users, Category: General, Content: [Users] Created user "pnguyen".
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: QNAP QuLog Center event log lines sent to a syslog server.
+# Child of QNAP_QULOG_SYSLOG_PARENT: event log lines that name a user, such as created users,
+# changed passwords and new shared folders, to Management Event, with the user, the address they
+# worked from, the app and category, and the event text as the operation. Event log lines from
+# the system (Users: --- or System) stay generic.
+# user, src, comp, nas, ev, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+channel$ = "QuLog Center event log"
+username$ = user
+clientHostname$ = IF src != "" THEN src ELSE NULL
+targetHostname$ = nas
+app = ev["app"]
+cat = ev["cat"]
+operationName$ = IF cat != "" THEN app + ": " + cat ELSE app
+operation$ = ev["content"]

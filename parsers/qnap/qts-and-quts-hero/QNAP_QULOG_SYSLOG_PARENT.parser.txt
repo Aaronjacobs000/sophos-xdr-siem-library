@@ -1,0 +1,49 @@
+!SAMPLE=<30>Oct 14 09:12:31 nas01 qulogd[14629]: conn log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Connection type: HTTPS, Accessed resources: Administration, Action: Login Success
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sq(?:u)?logd\[\d+\]:\s*(?:conn|event) log: Users:\s
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: QNAP QTS and QuTS hero QuLog Center, Log Sender > Send to Syslog Server (RFC 3164).
+# Parent: recognizes QuLog access log (conn log) and event log lines and reads their labeled fields.
+#   conn log: Users: <user>, Source IP: <address>, Computer name: <name>, Connection type: <type>,
+#             Accessed resources: <path>, Action: <action>
+#   event log: Users: <user>, Source IP: <address>, Computer name: <name>, Application: <app>,
+#              Category: <category>, Content: <text>
+#   Sign-ins and sign-outs              to the Auth child
+#   File changes (delete, write, add, rename, move, copy, new folder)   to the FileMod child
+#   Event log lines made by a user      to the Management Event child
+# Reads, opens and system event log lines stay generic. QuLog writes --- for an empty value.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s+q(?:u)?logd\[\d+\]:\s*(?P<kind>conn|event) log: (?P<body>.*)$
+kind = hdr["kind"]
+body = hdr["body"]
+conn = body|^Users: (?P<user>.*?), Source IP: (?P<src>.*?), Computer name: (?P<comp>.*?), Connection type: (?P<ctype>.*?), Accessed resources: (?P<res>.*), Action: (?P<action>[^,]*?)\s*$
+ev = body|^Users: (?P<user>.*?), Source IP: (?P<src>.*?), Computer name: (?P<comp>.*?), (?:Application: (?P<app>.*?), Category: (?P<cat>.*?), )?Content: (?P<content>.*?)\s*$
+
+# Variables and $ fields set here are visible to every child.
+user = IF kind == "conn" THEN conn["user"] ELSE ev["user"]
+user = IF user == "---" THEN "" ELSE user
+src = IF kind == "conn" THEN conn["src"] ELSE ev["src"]
+src = IF src == "---" THEN "" ELSE src
+comp = IF kind == "conn" THEN conn["comp"] ELSE ev["comp"]
+comp = IF comp == "---" OR comp == "Unknown" THEN "" ELSE comp
+ctype = conn["ctype"]
+res = IF conn["res"] == "---" THEN "" ELSE conn["res"]
+act = conn["action"]
+lact = LOWERCASE(act)
+
+sensorType$ = "QNAP QuLog Center"
+nas = hdr["host"]
+hostId$ = nas
+# The BSD syslog time has no year and no zone: DATETIME picks the year (TRUE) and reads UTC.
+eventTimeUsec$ = DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE)
+
+signin = lact == "login success" OR lact == "login fail" OR lact == "logout"
+change = lact == "delete" OR lact == "write" OR lact == "add" OR lact == "create directory" OR lact == "rename" OR lact == "move" OR lact == "copy"
+eventType$ = "other"
+eventType$ = IF kind == "conn" AND signin THEN "auth" ELSE eventType$
+eventType$ = IF kind == "conn" AND change THEN "file" ELSE eventType$
+eventType$ = IF kind == "event" AND user != "" AND user != "System" THEN "admin" ELSE eventType$

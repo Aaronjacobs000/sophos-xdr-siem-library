@@ -1,0 +1,46 @@
+!SAMPLE=<28>Oct 14 09:13:40 nas01 qulogd[14629]: conn log: Users: EXAMPLE\jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: SAMBA, Accessed resources: ---, Action: Login Fail
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: QNAP QuLog Center access log (conn log) lines sent to a syslog server.
+# Child of QNAP_QULOG_SYSLOG_PARENT: Login Success, Login Fail and Logout to Auth, with the user,
+# the source address and the connection type (Samba, FTP, HTTP or HTTPS, SSH, AFP and others).
+# QuLog gives no reason for a failed sign-in.
+# user, src, comp, ctype, res, act, lact, nas, eventType$, sensorType$, hostId$ and eventTimeUsec$
+# come from the parent.
+
+# A domain user is written DOMAIN\user.
+acct = user|^(?:(?P<dom>[^\\]+)\\)?(?P<name>.+)$
+targetUserName$ = acct["name"]
+targetDomainName$ = acct["dom"]
+sourceAddress$ = src
+targetHostName$ = nas
+authSystem$ = "QNAP " + ctype
+logonApplicationFamily$ = ctype
+
+logout = lact == "logout"
+success = lact == "login success" OR logout
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "FAILURE"
+action$ = IF success THEN "LOGON" ELSE action$
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+
+m1.key$ = "connection_type"
+m1.value$ = ctype
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "computer_name"
+m2.value$ = comp
+eventMetadata$.record$ = IF comp != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "accessed_resources"
+m3.value$ = res
+eventMetadata$.record$ = IF res != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "qnap_action"
+m4.value$ = act
+eventMetadata$.record$ = eventMetadata$.record$ + [m4]

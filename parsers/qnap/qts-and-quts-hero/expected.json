@@ -1,0 +1,268 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969151000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.40",
+      "target_host_name": "nas01",
+      "auth_system": "QNAP HTTPS",
+      "logon_application_family": "HTTPS",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection_type",
+            "value": "HTTPS"
+          },
+          {
+            "key": "accessed_resources",
+            "value": "Administration"
+          },
+          {
+            "key": "qnap_action",
+            "value": "Login Success"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969182000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_user_name": "guest",
+      "source_address": "203.0.113.77",
+      "target_host_name": "nas01",
+      "auth_system": "QNAP SSH",
+      "logon_application_family": "SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection_type",
+            "value": "SSH"
+          },
+          {
+            "key": "qnap_action",
+            "value": "Login Fail"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969220000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_user_name": "jsmith",
+      "target_domain_name": "EXAMPLE",
+      "source_address": "192.0.2.25",
+      "target_host_name": "nas01",
+      "auth_system": "QNAP SAMBA",
+      "logon_application_family": "SAMBA",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection_type",
+            "value": "SAMBA"
+          },
+          {
+            "key": "computer_name",
+            "value": "ws-jsmith"
+          },
+          {
+            "key": "qnap_action",
+            "value": "Login Fail"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969245000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.40",
+      "target_host_name": "nas01",
+      "auth_system": "QNAP HTTPS",
+      "logon_application_family": "HTTPS",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection_type",
+            "value": "HTTPS"
+          },
+          {
+            "key": "qnap_action",
+            "value": "Logout"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969310000000,
+      "host_id": "nas01"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969322000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/Reports/q3-forecast.xlsx",
+      "action": "Delete",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969323000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/Reports/budget.xlsx.locked",
+      "action": "Rename",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969361000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/Archive 2026",
+      "action": "Create Directory",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969464000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Backups/db/nightly.dump",
+      "action": "Write",
+      "process_username": "backup-svc",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969615000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "channel": "QuLog Center event log",
+      "username": "admin",
+      "client_hostname": "192.0.2.40",
+      "target_hostname": "nas01",
+      "operation_name": "Users: General",
+      "operation": "[Users] Created user \"pnguyen\"."
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969662000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "channel": "QuLog Center event log",
+      "username": "admin",
+      "client_hostname": "192.0.2.40",
+      "target_hostname": "nas01",
+      "operation_name": "Users: General",
+      "operation": "[Users] Changed the password of user \"jsmith\"."
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791969757000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "channel": "QuLog Center event log",
+      "username": "admin",
+      "client_hostname": "192.0.2.40",
+      "target_hostname": "nas01",
+      "operation_name": "Shared Folders: General",
+      "operation": "[Shared Folders] Created shared folder \"Projects\"."
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972005000000,
+      "host_id": "nas01"
+    }
+  }
+]
