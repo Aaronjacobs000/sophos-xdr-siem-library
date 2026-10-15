@@ -1,0 +1,417 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933164148824,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "REST",
+      "auth_system": "AOS-CX REST",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "4655"
+          },
+          {
+            "key": "app",
+            "value": "hpe-restd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933182551203,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "REST",
+      "auth_system": "AOS-CX REST",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "4656"
+          },
+          {
+            "key": "app",
+            "value": "hpe-restd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933250004521,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "netops",
+      "source_address": "192.0.2.20",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "SSH",
+      "auth_system": "AOS-CX SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "5209"
+          },
+          {
+            "key": "app",
+            "value": "log-proxyd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933271220158,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "root",
+      "source_address": "203.0.113.45",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "SSH",
+      "auth_system": "AOS-CX SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "during password based authentication",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "5210"
+          },
+          {
+            "key": "app",
+            "value": "log-proxyd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933292876002,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.46",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "SSH",
+      "auth_system": "AOS-CX SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "by SSH server allow-list",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "5222"
+          },
+          {
+            "key": "app",
+            "value": "log-proxyd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933340330671,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "netops",
+      "source_address": "192.0.2.20",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "SSH",
+      "auth_system": "AOS-CX SSH",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "5211"
+          },
+          {
+            "key": "app",
+            "value": "log-proxyd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933365441902,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "802.1x",
+      "auth_system": "AOS-CX 802.1x",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "10531"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:50:56:96:a1:10"
+          },
+          {
+            "key": "port",
+            "value": "1/1/4"
+          },
+          {
+            "key": "radius_server",
+            "value": "192.0.2.50:1812, udp, vrf default"
+          },
+          {
+            "key": "request_id",
+            "value": "24"
+          },
+          {
+            "key": "app",
+            "value": "port-accessd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933369118034,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "target_user_name": "00:50:56:96:b2:20",
+      "target_host_name": "cx-sw01",
+      "logon_application_family": "MAC",
+      "auth_system": "AOS-CX MAC",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Access-Reject",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "10529"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:50:56:96:b2:20"
+          },
+          {
+            "key": "port",
+            "value": "1/1/9"
+          },
+          {
+            "key": "radius_server",
+            "value": "192.0.2.50:1812, udp, vrf default"
+          },
+          {
+            "key": "request_id",
+            "value": "25"
+          },
+          {
+            "key": "app",
+            "value": "port-accessd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933440009311,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "channel": "AOS-CX event log",
+      "event_id": 4609,
+      "target_hostname": "cx-sw01",
+      "username": "admin",
+      "operation": "User admin added netops2 with role operators",
+      "operation_name": "user added",
+      "result": "success"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933461772910,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "channel": "AOS-CX event log",
+      "event_id": 4619,
+      "target_hostname": "cx-sw01",
+      "username": "admin",
+      "operation": "admin modified /rest/v10.15/system/interfaces/1%2F1%2F10",
+      "operation_name": "resource modified",
+      "result": "success"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933482301557,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "channel": "AOS-CX event log",
+      "event_id": 4613,
+      "target_hostname": "cx-sw01",
+      "username": "admin",
+      "operation": "admin has written a new switch configuration to startup-config",
+      "operation_name": "configuration written",
+      "result": "success"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933552660024,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw01",
+      "channel": "AOS-CX event log",
+      "event_id": 1219,
+      "target_hostname": "cx-sw01",
+      "operation": "Remote logging to 192.0.2.250 over default vrf removed.",
+      "operation_name": "remote logging removed",
+      "result": "success"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933627765000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw02",
+      "channel": "AOS-CX accounting log",
+      "target_hostname": "cx-sw02",
+      "username": "netops",
+      "client_hostname": "192.0.2.20",
+      "command": "no logging 192.0.2.250",
+      "operation": "CLI no logging 192.0.2.250 through SSH session",
+      "operation_name": "command",
+      "result": "success"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT > ARUBA_AOSCX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933660612861,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cx-sw02",
+      "target_user_name": "admin",
+      "target_host_name": "cx-sw02",
+      "logon_application_family": "REST",
+      "auth_system": "AOS-CX REST",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "session_id": "ExampleSessionId00==",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_id",
+            "value": "4602"
+          },
+          {
+            "key": "app",
+            "value": "hpe-restd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "ARUBA_AOSCX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS-CX",
+      "event_time_usec": 1791933735004410,
+      "host_id": "cx-sw01"
+    }
+  }
+]
