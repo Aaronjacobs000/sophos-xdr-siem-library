@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask and Juniper Mist webhooks, check
-that each one came from the vendor, and forward the body to a Sophos NG-SIEM HTTP Ingest
-integration with the Authorization: Bearer header that the first four can't add. Python 3
+"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP
+webhooks, check that each one came from the vendor, and forward the body to a Sophos NG-SIEM HTTP
+Ingest integration with the Authorization: Bearer header that all but Mist can't add. Python 3
 standard library only.
 
   POST /huntress                 Svix signature (HMAC-SHA256 over id, timestamp and body)
@@ -9,6 +9,7 @@ standard library only.
   POST /hudu/<secret>            no signing option: a long random secret in the path
   POST /screenconnect/<secret>   no signing option: a long random secret in the path
   POST /mist                     X-Mist-Signature-v2 (HMAC-SHA256 over the body, hex)
+  POST /forticnapp/<secret>      no signing option: a long random secret in the path
 
 Mist sends several events in one body, {"topic": ..., "events": [...]}, for most topics. With
 BRIDGE_SPLIT_BATCHES=1 the relay forwards each event as its own record, in the same envelope with
@@ -62,6 +63,7 @@ VENDORS = {
     "hudu": "path",
     "screenconnect": "path",
     "mist": "mist",
+    "forticnapp": "path",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 # A sender gets this long in all, however slowly it sends, for its request line, headers and body.
@@ -150,11 +152,12 @@ def load_config(env: dict | None = None) -> dict:
         "hudu": _shared_secret(env, "HUDU_PATH_SECRET"),
         "screenconnect": _shared_secret(env, "SCREENCONNECT_PATH_SECRET"),
         "mist": _shared_secret(env, "MIST_WEBHOOK_SECRET"),
+        "forticnapp": _shared_secret(env, "FORTICNAPP_PATH_SECRET"),
     }
     cfg["vendors"] = {name: secret for name, secret in secrets.items() if secret}
     if not cfg["vendors"]:
         raise RelayError("set at least one of HUNTRESS_SIGNING_SECRET, AUTOTASK_SECRET_KEY, HUDU_PATH_SECRET, "
-                         "SCREENCONNECT_PATH_SECRET and MIST_WEBHOOK_SECRET")
+                         "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET and FORTICNAPP_PATH_SECRET")
     cfg["split_batches"] = _flag(env, "BRIDGE_SPLIT_BATCHES", False)
     if cfg["ingest_url"]:
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
@@ -420,8 +423,8 @@ class Handler(BaseHTTPRequestHandler):
         return "webhook-relay"
 
     def log_message(self, format, *args):
-        # The default access log prints the request line, which holds the Hudu and
-        # ScreenConnect path secrets. The relay logs its own lines instead.
+        # The default access log prints the request line, which holds the Hudu, ScreenConnect and
+        # FortiCNAPP path secrets. The relay logs its own lines instead.
         pass
 
     def _reply(self, code: int, text: str) -> None:
@@ -544,7 +547,7 @@ def make_server(cfg: dict, dry_run: bool = False, out=None) -> ThreadingHTTPServ
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask and Juniper Mist webhooks to Sophos NG-SIEM HTTP Ingest.")
+    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP webhooks to Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="check deliveries and print each body; forward nothing")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
     args = ap.parse_args(argv)

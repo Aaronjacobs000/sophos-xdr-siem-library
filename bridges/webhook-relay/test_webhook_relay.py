@@ -3,9 +3,9 @@
 Deliveries are signed the way each vendor documents it: Svix for Huntress (HMAC-SHA256 over
 "<id>.<timestamp>.<body>", base64, "v1," prefix), X-Hook-Signature for Autotask (HMAC-SHA1 over
 the body, base64, "sha1=" prefix), X-Mist-Signature-v2 for Juniper Mist (HMAC-SHA256 over the
-body, hex), and a secret in the path for Hudu and ScreenConnect. The bodies are lines from the
-library entries' samples.log, and Mist batches in the shape of Mist's webhook samples. No real
-service is called.
+body, hex), and a secret in the path for Hudu, ScreenConnect and FortiCNAPP. The bodies are lines
+from the library entries' samples.log, Mist batches in the shape of Mist's webhook samples, and a
+FortiCNAPP alert indented as in Fortinet's example. No real service is called.
 
   python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 """
@@ -36,6 +36,7 @@ AUTOTASK_KEY = "test-autotask-secret-key-not-real-000000"
 HUDU_SECRET = "test-hudu-path-secret-not-real-0000000000"
 SCREENCONNECT_SECRET = "test-screenconnect-path-secret-not-real-00"
 MIST_SECRET = "test-mist-webhook-secret-not-real-000000"
+FORTICNAPP_SECRET = "test-forticnapp-path-secret-not-real-000"
 INGEST_KEY = "test-ngsiem-ingest-key-not-real"
 INGEST_PATH = "/http-endpoint/v1/00000000-example-integration"
 
@@ -64,6 +65,13 @@ MIST_BATCH = json.dumps({"topic": "audits", "events": MIST_EVENTS}).encode()
 MIST_ONE = json.dumps({"topic": "audits", "events": MIST_EVENTS[:1]}, separators=(",", ":")).encode()
 SCREENCONNECT_BODY = (b"ScreenConnect|category=Security|event=LoginAttempt|result=PasswordInvalid|time=10/12/2026 10:41:02 PM"
                       b"|user=admin|source=Internal|address=203.0.113.45")
+# FortiCNAPP posts one alert per request; Fortinet's example shows it indented over several lines.
+FORTICNAPP_ALERT = {
+    "event_title": "Unauthorized API Call", "event_link": "https://example.lacework.net/ui/investigate/Event/120885?startTime=1792008000000&endTime=1792011600000",
+    "lacework_account": "example", "event_source": "AWS",
+    "event_description": "User jsmith made an unauthorized call to ec2:DescribeInstances from 203.0.113.50",
+    "event_timestamp": "14 Oct 2026 09:05 GMT", "event_type": "CloudActivity", "event_id": "120885", "event_severity": "3"}
+FORTICNAPP_BODY = json.dumps(FORTICNAPP_ALERT, indent=1).encode() + b"\n"
 
 
 def svix_headers(body, key=HUNTRESS_KEY, msg_id="msg_2Qx7example000000000000", stamp=None, prefix="svix-", extra_sigs=()):
@@ -174,7 +182,7 @@ class RelayTest(unittest.TestCase):
         e = {"NGSIEM_INGEST_URL": self.ingest_url, "NGSIEM_INGEST_KEY": INGEST_KEY, "BRIDGE_LISTEN_PORT": "0",
              "HUNTRESS_SIGNING_SECRET": HUNTRESS_SECRET, "AUTOTASK_SECRET_KEY": AUTOTASK_KEY,
              "HUDU_PATH_SECRET": HUDU_SECRET, "SCREENCONNECT_PATH_SECRET": SCREENCONNECT_SECRET,
-             "MIST_WEBHOOK_SECRET": MIST_SECRET}
+             "MIST_WEBHOOK_SECRET": MIST_SECRET, "FORTICNAPP_PATH_SECRET": FORTICNAPP_SECRET}
         e.update(extra)
         return {k: v for k, v in e.items() if v is not None}
 
@@ -304,7 +312,9 @@ class RelayTest(unittest.TestCase):
     def test_wrong_or_missing_path_secret_is_404(self):
         self.start()
         for path in ("/hudu", "/hudu/", f"/hudu/{HUDU_SECRET[:-1]}", f"/hudu/{HUDU_SECRET}x", f"/hudu/{SCREENCONNECT_SECRET}",
-                     f"/hudu/{HUDU_SECRET}/extra", "/screenconnect", f"/screenconnect/{HUDU_SECRET}"):
+                     f"/hudu/{HUDU_SECRET}/extra", "/screenconnect", f"/screenconnect/{HUDU_SECRET}", "/forticnapp",
+                     f"/forticnapp/{HUDU_SECRET}", f"/forticnapp/{FORTICNAPP_SECRET}x", f"/forticnapp?api-token={FORTICNAPP_SECRET}",
+                     f"/forticnapp/?api-token={FORTICNAPP_SECRET}"):
             with self.subTest(path):
                 self.assertEqual(self.post(path, HUDU_BODY)[0], 404)
         self.assertEqual(self.bodies(), [])
@@ -321,6 +331,21 @@ class RelayTest(unittest.TestCase):
                                            b"|session_type=Access|data=line one\\nline two\\nline three")
         for post in self.ingest.received:
             self.assertEqual(post["headers"]["Content-Type"], "text/plain")
+
+    def test_forticnapp_path_secret_forwards_an_indented_alert_on_one_line(self):
+        self.start()
+        status, _ = self.post(f"/forticnapp/{FORTICNAPP_SECRET}", FORTICNAPP_BODY, {"Content-Type": "application/json"})
+        self.assertEqual(status, 200)
+        sent = self.bodies()[0]
+        self.assertNotIn(b"\n", sent)
+        self.assertEqual(json.loads(sent), FORTICNAPP_ALERT)
+        self.assertEqual(list(json.loads(sent)), list(FORTICNAPP_ALERT))
+        headers = self.ingest.received[0]["headers"]
+        self.assertEqual((headers["Authorization"], headers["Content-Type"]), (f"Bearer {INGEST_KEY}", "application/json"))
+        # A query string after the path secret, such as a token FortiCNAPP's form suggests, changes nothing.
+        self.assertEqual(self.post(f"/forticnapp/{FORTICNAPP_SECRET}?api-token=unused", FORTICNAPP_BODY)[0], 200)
+        self.assertEqual(self.bodies()[1], sent)
+        self.assertIn("forticnapp: forwarded", self.log.getvalue())
 
     def test_pretty_printed_json_goes_on_one_line_with_the_same_data(self):
         self.start()
@@ -539,6 +564,8 @@ class RelayTest(unittest.TestCase):
         self.post("/autotask", AUTOTASK_BODY, {"X-Hook-Signature": "sha1=AAAA"})
         self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH))
         self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH, key="another-mist-webhook-secret-00000000000"))
+        self.post(f"/forticnapp/{FORTICNAPP_SECRET}", FORTICNAPP_BODY.replace(b"jsmith", marker.encode()))
+        self.post(f"/forticnapp/{FORTICNAPP_SECRET[:-1]}", FORTICNAPP_BODY)
         self.ingest.codes = [401]
         self.post(f"/hudu/{HUDU_SECRET}", hudu)
         logged = self.log.getvalue()
@@ -548,7 +575,8 @@ class RelayTest(unittest.TestCase):
         for secret in (HUNTRESS_SECRET, base64.b64encode(HUNTRESS_KEY).decode(), AUTOTASK_KEY, HUDU_SECRET,
                        SCREENCONNECT_SECRET, INGEST_KEY, INGEST_PATH, "00000000-example-integration", marker,
                        "Acme Dental", "billing@example.com", autotask_sig, MIST_SECRET, "sam.admin@example.com",
-                       mist_headers(MIST_BATCH)["X-Mist-Signature-v2"]):
+                       mist_headers(MIST_BATCH)["X-Mist-Signature-v2"], FORTICNAPP_SECRET, FORTICNAPP_SECRET[:-1],
+                       "ec2:DescribeInstances"):
             self.assertNotIn(secret, logged)
 
     def test_ingest_key_with_a_line_break_is_refused_without_showing_it(self):
@@ -632,17 +660,18 @@ class RelayTest(unittest.TestCase):
             "secret with a space": {"SCREENCONNECT_PATH_SECRET": "with a space " * 4},
             "not a signing secret": {"HUNTRESS_SIGNING_SECRET": "whsec_not base64!"},
             "short Mist secret": {"MIST_WEBHOOK_SECRET": "too-short"},
+            "short FortiCNAPP secret": {"FORTICNAPP_PATH_SECRET": "too-short"},
             "port": {"BRIDGE_LISTEN_PORT": "eighty"},
             "deadline": {"BRIDGE_FORWARD_DEADLINE": "0"},
             "nothing to relay": {"HUNTRESS_SIGNING_SECRET": None, "AUTOTASK_SECRET_KEY": None, "HUDU_PATH_SECRET": None,
-                                 "SCREENCONNECT_PATH_SECRET": None, "MIST_WEBHOOK_SECRET": None},
+                                 "SCREENCONNECT_PATH_SECRET": None, "MIST_WEBHOOK_SECRET": None, "FORTICNAPP_PATH_SECRET": None},
         }
         for name, extra in bad.items():
             with self.subTest(name):
                 with self.assertRaises(r.RelayError):
                     r.load_config(self.env(**extra))
         cfg = r.load_config(self.env(NGSIEM_INGEST_URL=None))
-        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "hudu", "huntress", "mist", "screenconnect"])
+        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "forticnapp", "hudu", "huntress", "mist", "screenconnect"])
         self.assertFalse(cfg["split_batches"])
         self.assertTrue(r.load_config(self.env(BRIDGE_SPLIT_BATCHES="1"))["split_batches"])
         self.assertEqual(cfg["vendors"]["huntress"], HUNTRESS_KEY)
