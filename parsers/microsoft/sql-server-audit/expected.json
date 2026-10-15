@@ -1,0 +1,313 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025101123456,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41201",
+      "host_id": "sql01.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.10",
+      "target_host_name": "sql01.example.com",
+      "service_name": "SQL01",
+      "application_name": "Microsoft SQL Server Management Studio",
+      "extra_workstationname": "WS01",
+      "session_id": "57",
+      "auth_system": "Microsoft SQL Server",
+      "win_event_id": "33205",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "LGIS"
+          },
+          {
+            "key": "database_name",
+            "value": "master"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025130555000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41202",
+      "host_id": "sql01.example.com",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "sa",
+      "source_address": "203.0.113.50",
+      "target_host_name": "sql01.example.com",
+      "service_name": "SQL01",
+      "application_name": "sqlcmd",
+      "extra_workstationname": "scanner01",
+      "auth_system": "Microsoft SQL Server",
+      "win_event_id": "33205",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "extra_failurereason": "Password did not match that for the login provided.",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "LGIF"
+          },
+          {
+            "key": "error_state",
+            "value": "8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025172001000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9033",
+      "host_id": "sql02.example.com",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "svc_report",
+      "target_host_name": "sql02.example.com",
+      "service_name": "SQL02\\FINANCE",
+      "application_name": "Report Runner",
+      "extra_workstationname": "SQL02",
+      "auth_system": "Microsoft SQL Server",
+      "win_event_id": "33205",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "failure_category": "INVALID_ACCOUNT",
+      "extra_failurereason": "Could not find a login matching the name provided.",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "LGIF"
+          },
+          {
+            "key": "error_state",
+            "value": "5"
+          },
+          {
+            "key": "client_ip",
+            "value": "local machine"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792026344900123,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41210",
+      "host_id": "sql01.example.com",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "target_user_name": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.10",
+      "target_host_name": "sql01.example.com",
+      "service_name": "SQL01",
+      "application_name": "Microsoft SQL Server Management Studio",
+      "extra_workstationname": "WS01",
+      "session_id": "57",
+      "auth_system": "Microsoft SQL Server",
+      "win_event_id": "33205",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action_id",
+            "value": "LGO"
+          },
+          {
+            "key": "database_name",
+            "value": "master"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025225777000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "880213",
+      "host_id": "sql01.example.com",
+      "operation": "APRL",
+      "operation_name": "ADD MEMBER",
+      "query": "ALTER SERVER ROLE [sysadmin] ADD MEMBER [EXAMPLE\\temp.admin]",
+      "query_language": "T-SQL",
+      "result": "succeeded",
+      "username": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.10",
+      "client_hostname": "WS01",
+      "target_hostname": "sql01.example.com",
+      "namespace": "master",
+      "remote_operation": true,
+      "channel": "Security",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025290200000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41204",
+      "host_id": "sql01.example.com",
+      "operation": "SL",
+      "operation_name": "SELECT",
+      "query": "SELECT TOP (5000) CustomerID, Email, CardLast4 FROM dbo.Customers WHERE Region = @p0",
+      "query_language": "T-SQL",
+      "result": "succeeded",
+      "username": "app_web",
+      "source_address": "192.0.2.25",
+      "client_hostname": "web01",
+      "target_hostname": "sql01.example.com",
+      "namespace": "Sales",
+      "remote_operation": true,
+      "channel": "Application",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025340045000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41205",
+      "host_id": "sql01.example.com",
+      "operation": "DR",
+      "operation_name": "DROP",
+      "query": "DROP TABLE dbo.AuditTrail",
+      "query_language": "T-SQL",
+      "result": "succeeded",
+      "username": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.10",
+      "client_hostname": "WS01",
+      "target_hostname": "sql01.example.com",
+      "namespace": "Sales",
+      "remote_operation": true,
+      "channel": "Application",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025421660000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41206",
+      "host_id": "sql01.example.com",
+      "operation": "G",
+      "operation_name": "GRANT",
+      "query": "GRANT SELECT ON dbo.Customers TO guest",
+      "query_language": "T-SQL",
+      "result": "failed",
+      "username": "app_web",
+      "source_address": "192.0.2.25",
+      "client_hostname": "web01",
+      "target_hostname": "sql01.example.com",
+      "namespace": "Sales",
+      "remote_operation": true,
+      "channel": "Application",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025493321000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41207",
+      "host_id": "sql01.example.com",
+      "operation": "EX",
+      "operation_name": "EXECUTE",
+      "query": "EXEC master..xp_cmdshell 'whoami /priv'",
+      "query_language": "T-SQL",
+      "result": "succeeded",
+      "username": "sa",
+      "source_address": "198.51.100.77",
+      "client_hostname": "kali",
+      "target_hostname": "sql01.example.com",
+      "namespace": "master",
+      "remote_operation": true,
+      "channel": "Application",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792024200017000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "1201",
+      "host_id": "sql03.example.com",
+      "operation": "AUSC",
+      "operation_name": "AUDIT SESSION CHANGED",
+      "result": "succeeded",
+      "username": "NT SERVICE\\MSSQLSERVER",
+      "target_hostname": "sql03.example.com",
+      "channel": "Application",
+      "event_id": 33205
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
