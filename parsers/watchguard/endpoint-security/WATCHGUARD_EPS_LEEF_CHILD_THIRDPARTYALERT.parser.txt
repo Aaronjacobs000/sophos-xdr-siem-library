@@ -1,0 +1,130 @@
+!SAMPLE=<134>Oct 14 23:22:05 wgimporter01 LEEF:1.0|WatchGuard Technologies, Ltd.|paps|02.45.00.0000|alertrdpattack|sev=9 devTime=2026-10-14 23:21:58.000000 devTimeFormat=yyyy-MM-dd HH:mm:ss.SSS src=192.0.2.20 identSrc=192.0.2.20 identHostName=SRV-RDS01 HostName=SRV-RDS01 ThreatType=RDPAttack ExecutionStatus=Blocked by IP DwellTimeSecs= MWHash= MWName=Exploit/BruteForce_RDP MWPath=Malicious Network RDP Attack SourceIP=203.0.113.99 SourceMachineName=ATTACKER01 SourceUserName=administrator UrlList= DocList= Version= Vulnerable= MUID=3B9D5F7A1C2E4B6D8F0A2C4E6B8D0F2A DriveType=Unknown ServiceLevel=Hardening
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WatchGuard Endpoint Security SIEMFeeder events, LEEF or CEF.
+# Child of WATCHGUARD_EPS_LEEF_PARENT: exploit, network attack (deep inspection), RDP attack,
+# access enforcement, advanced policy, application control, program blocking and vulnerable
+# driver alerts, and threat hunting indicators (thalert: IOAs, IOCs and Orion rules), to the
+# third-party alert schema.
+# v, evType, alertName, sevText, hostName, hostIp, account, sensorType$, hostId$ and
+# eventTimeUsec$ come from the parent.
+
+vendor$ = "WatchGuard"
+provider$ = "WatchGuard Endpoint Security"
+label = "WatchGuard Endpoint Security alert"
+label = IF evType == "alertexploit" THEN "Exploit detected" ELSE label
+label = IF evType == "alertrdpattack" THEN "RDP attack detected" ELSE label
+label = IF evType == "alertdeepinspection" THEN "Network attack detected" ELSE label
+label = IF evType == "alerteae" THEN "Access enforcement" ELSE label
+label = IF evType == "alertadvpolicy" THEN "Advanced security policy detection" ELSE label
+label = IF evType == "alertsecappcontrol" THEN "Application control detection" ELSE label
+label = IF evType == "alertprodappcontrol" THEN "Program blocking detection" ELSE label
+label = IF evType == "alertvulnerabledriver" THEN "Vulnerable driver detected" ELSE label
+label = IF evType == "thalert" THEN "Threat hunting indicator" ELSE label
+
+name = TRIM(STRING(v["MWName"]))
+name = IF name != "" THEN name ELSE TRIM(STRING(v["ItemName"]))
+path = TRIM(STRING(v["MWPath"]))
+path = IF path != "" THEN path ELSE TRIM(STRING(v["ItemPath"]))
+hash = TRIM(STRING(v["MWHash"]))
+hash = IF hash != "" THEN hash ELSE TRIM(STRING(v["ItemHash"]))
+rule = TRIM(STRING(v["THRuleName"]))
+detail = IF rule != "" THEN rule ELSE name
+title$ = IF detail != "" THEN label + ": " + detail ELSE label
+threatType = TRIM(STRING(v["ThreatType"]))
+alertCategory$ = IF threatType != "" THEN threatType ELSE evType
+status = TRIM(STRING(v["ExecutionStatus"]))
+evidence = TRIM(STRING(v["EvidenceData"]))
+summary$ = IF evidence != "" THEN evidence ELSE path
+summary$ = IF summary$ != "" THEN summary$ ELSE NULL
+targetHostName$ = IF hostName != "" THEN hostName ELSE NULL
+
+# sev: higher is worse (10 an exploit let through, 8 or 9 allowed or fixed alerts, 7 blocked).
+# For alerteae it is the connecting computer's status: 5, 6 and 7 are medium, high and
+# critical risk.
+vendorSeverity$ = IF sevText != "" THEN sevText ELSE NULL
+sevNum = sevText|^(?P<n>\d{1,2})$
+sevN = IF sevNum["n"] != "" THEN INT(sevNum["n"], 10) ELSE -1
+eae = evType == "alerteae"
+severity$ = NULL
+severity$ = IF NOT eae AND sevN >= 1 THEN "LOW" ELSE severity$
+severity$ = IF NOT eae AND sevN >= 6 THEN "MEDIUM" ELSE severity$
+severity$ = IF NOT eae AND sevN >= 8 THEN "HIGH" ELSE severity$
+severity$ = IF NOT eae AND sevN >= 10 THEN "CRITICAL" ELSE severity$
+severity$ = IF eae AND sevN >= 0 THEN "LOW" ELSE severity$
+severity$ = IF eae AND sevN == 5 THEN "MEDIUM" ELSE severity$
+severity$ = IF eae AND sevN == 6 THEN "HIGH" ELSE severity$
+severity$ = IF eae AND sevN == 7 THEN "CRITICAL" ELSE severity$
+
+st = status|^(?:(?:Executed|Not executed)\s*-\s*)?(?P<act>.+)$
+act = LOWERCASE(st["act"])
+stopped = act|^(?:block|killprocess|quarantine|delete|disinfect|isolatehost)
+action$ = IF stopped[0] != "" THEN "BLOCKED" ELSE NULL
+
+# The remote computer: where the item came from, the RDP attacker, or for alerteae the computer
+# that tried to connect (RemoteIp), in which case SourceIP is the protected computer.
+remoteIp = TRIM(STRING(v["SourceIP"]))
+remoteIp = IF eae THEN TRIM(STRING(v["RemoteIp"])) ELSE remoteIp
+sourceAddress$ = IF remoteIp != "" THEN remoteIp ELSE NULL
+victimIp = IF eae THEN TRIM(STRING(v["SourceIP"])) ELSE hostIp
+destinationAddress$ = IF victimIp != "" THEN victimIp ELSE NULL
+remotePort = TRIM(STRING(v["RemotePort"]))
+localPort = TRIM(STRING(v["SourcePort"]))
+rp = remotePort|^(?P<n>\d{1,5})$
+lp = localPort|^(?P<n>\d{1,5})$
+sourcePort$ = IF eae AND rp["n"] != "" THEN INT(rp["n"], 10) ELSE NULL
+destinationPort$ = IF eae AND lp["n"] != "" THEN INT(lp["n"], 10) ELSE NULL
+remoteHost = TRIM(STRING(v["SourceMachineName"]))
+sourceHostName$ = IF remoteHost != "" THEN remoteHost ELSE NULL
+remoteUser = TRIM(STRING(v["SourceUserName"]))
+sourceUserName$ = IF remoteUser != "" THEN remoteUser ELSE NULL
+sourceUserName$ = IF remoteUser == "" AND account != "" THEN account ELSE sourceUserName$
+
+a1.key$ = "event_type"
+a1.value$ = evType
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "execution_status"
+a2.value$ = status
+additionalData$.record$ = IF status != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "item_name"
+a3.value$ = name
+additionalData$.record$ = IF name != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "item_path"
+a4.value$ = path
+additionalData$.record$ = IF path != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "item_hash"
+a5.value$ = hash
+additionalData$.record$ = IF hash != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "hunting_rule"
+a6.value$ = rule
+additionalData$.record$ = IF rule != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "mitre"
+a7.value$ = TRIM(STRING(v["Mitre"]))
+additionalData$.record$ = IF a7.value$ != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+# thalert's own Severity: the lower the number, the more severe the indicator.
+a8.key$ = "indicator_severity"
+a8.value$ = TRIM(STRING(v["Severity"]))
+additionalData$.record$ = IF a8.value$ != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "times"
+a9.value$ = TRIM(STRING(v["Times"]))
+additionalData$.record$ = IF a9.value$ != "" THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "doc_list"
+a10.value$ = TRIM(STRING(v["DocList"]))
+additionalData$.record$ = IF a10.value$ != "" THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "url_list"
+a11.value$ = TRIM(STRING(v["UrlList"]))
+additionalData$.record$ = IF a11.value$ != "" THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "attacker_device_id"
+a12.value$ = TRIM(STRING(v["AttackerDeviceId"]))
+additionalData$.record$ = IF a12.value$ != "" THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "muid"
+a13.value$ = TRIM(STRING(v["MUID"]))
+additionalData$.record$ = IF a13.value$ != "" THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "alert_name"
+a14.value$ = TRIM(alertName)
+additionalData$.record$ = IF a14.value$ != "" THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
