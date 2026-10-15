@@ -1,0 +1,229 @@
+!SAMPLE=<174>1 2026-10-14T09:04:33.640218+11:00 nps01.corp.example.com NPSLog - - [NXLOG@14506 EventReceivedTime="2026-10-14 09:04:33" SourceModuleName="NPSIN" SourceModuleType="im_file"] "NPS01","IAS",10/14/2026,09:04:33,2,,"corp.example.com/Staff/John Smith","00-00-5E-00-53-01:CorpWiFi","00-00-5E-00-53-42",,,"wlc01","192.0.2.5",13,0,"192.0.2.5","wlc01",,,19,,,2,5,"Wireless Staff",0,"311 1 192.0.2.10 10/14/2026 09:04:30 1",28800,,,"Microsoft: Secured password (EAP-MSCHAP v2)",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Secure Wireless Connections",1,"Windows",,,
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:"(?:[^"]|"")*","(?:IAS|RAS)",\d{2}/\d{2}/\d{4},\d{2}:\d{2}:\d{2},\d+,|<Event><Timestamp data_type="\d+">\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}|(?:^|\s)[0-9A-Fa-f.:]*,[^,]*,\d{2}/\d{2}/\d{4},\d{2}:\d{2}:\d{2},[A-Za-z]+,[^,]*,\d+,)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Microsoft Network Policy Server (NPS) accounting log files (IN*.log), each record sent
+# unchanged as a syslog message by NXLog (see README.md). NPS writes one of three formats:
+#   database-compatible (ODBC): "NPS01","IAS",10/14/2026,09:04:33,2,... in a fixed column order
+#   IAS: <NAS-IP-Address>,<User-Name>,<date>,<time>,IAS,<server>, then attribute ID,value pairs
+#   DTS Compliant: <Event><Timestamp data_type="4">10/14/2026 09:04:33.473</Timestamp>...</Event>
+# Parent: reads all three into the same variables. Access-Accept, Access-Reject and accounting
+# Start and Stop records go to the Auth child; Access-Request, Interim-Update and the rest stay
+# generic. NPS writes the server's local time with no zone; NXLog's RFC 5424 header carries the
+# local offset, which is added to the record's time. Without that header the event time is the
+# syslog header's or the ingest time.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?P<off>Z|[+-]\d{2}:\d{2})|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s
+
+odbcMatch = originalData$|(?:^|\s)(?P<rec>"(?:[^"]|"")*","(?:IAS|RAS)",\d{2}/\d{2}/\d{4},\d{2}:\d{2}:\d{2},\d+,.*?)\s*$
+dtsMatch = originalData$|(?P<rec><Event><Timestamp data_type="\d+">.*</Event>)
+iasMatch = originalData$|(?:^|\s)(?P<rec>[0-9A-Fa-f.:]*,[^,]*,\d{2}/\d{2}/\d{4},\d{2}:\d{2}:\d{2},[A-Za-z]+,[^,]*,\d+,.*?)\s*$
+fmt = "ias"
+fmt = IF dtsMatch["rec"] != "" THEN "dts" ELSE fmt
+fmt = IF odbcMatch["rec"] != "" THEN "odbc" ELSE fmt
+rec = iasMatch["rec"]
+rec = IF fmt == "dts" THEN dtsMatch["rec"] ELSE rec
+rec = IF fmt == "odbc" THEN odbcMatch["rec"] ELSE rec
+
+# Database-compatible columns, from Microsoft's table (0-based): 0 ComputerName, 1 ServiceName,
+# 2 Record-Date, 3 Record-Time, 4 Packet-Type, 5 User-Name, 6 Fully-Qualified-Distinguished-Name,
+# 7 Called-Station-ID, 8 Calling-Station-ID, 10 Framed-IP-Address, 11 NAS-Identifier,
+# 12 NAS-IP-Address, 15 Client-IP-Address, 16 Client-Friendly-Name, 19 NAS-Port-Type,
+# 23 Authentication-Type, 24 Policy-Name, 25 Reason-Code, 26 Class, 30 EAP-Friendly-Name,
+# 31 Acct-Status-Type, 33 Acct-Input-Octets, 34 Acct-Output-Octets, 35 Acct-Session-Id,
+# 37 Acct-Session-Time, 40 Acct-Terminate-Cause, 60 Proxy-Policy-Name, 61 Provider-Type.
+# Older rows stop after column 59; a column past the end reads as NULL. SPLIT reads the quotes.
+f = SPLIT(rec, ",")
+odbc = fmt == "odbc"
+dts = fmt == "dts"
+ias = fmt == "ias"
+drec = IF dts THEN rec ELSE ""
+irec = IF ias THEN rec ELSE ""
+
+# IAS format: a six-field header, then attribute ID,value pairs in the order the NAS sent them. Each
+# IAS pattern below steps over whole pairs, so an ID is only matched in an ID's place. Values that
+# hold a comma are written in hex, so a value never holds one.
+
+# DTS Compliant: one element per attribute, named as in Microsoft's tables.
+d1 = drec|<Timestamp data_type="\d+">(?P<date>\d{2}/\d{2}/\d{4}) (?P<time>\d{2}:\d{2}:\d{2}(?:\.\d+)?)</Timestamp>
+recDate = IF odbc OR ias THEN f[2] ELSE d1["date"]
+recTime = IF odbc OR ias THEN f[3] ELSE d1["time"]
+d2 = drec|<Computer-Name data_type="\d+">(?P<v>[^<]*)</
+computerName = IF odbc THEN f[0] ELSE NULL
+computerName = IF ias THEN f[5] ELSE computerName
+computerName = IF dts THEN d2["v"] ELSE computerName
+
+d3 = drec|<Packet-Type data_type="\d+">(?P<v>\d+)</
+i1 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4136,(?P<v>\d+)(?:,|$)
+packetType = IF odbc THEN f[4] ELSE NULL
+packetType = IF ias THEN i1["v"] ELSE packetType
+packetType = IF dts THEN d3["v"] ELSE packetType
+
+d4 = drec|<User-Name data_type="\d+">(?P<v>[^<]*)</
+userName = IF odbc THEN f[5] ELSE NULL
+userName = IF ias THEN f[1] ELSE userName
+userName = IF dts THEN d4["v"] ELSE userName
+
+d5 = drec|<SAM-Account-Name data_type="\d+">(?P<v>[^<]*)</
+i2 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4129,(?P<v>[^,]*)
+samAccount = IF ias THEN i2["v"] ELSE NULL
+samAccount = IF dts THEN d5["v"] ELSE samAccount
+
+# The user in canonical form, such as corp.example.com/Staff/John Smith.
+d6 = drec|<Fully-Qualifi?ed-(?:User|Distinguished)-Name data_type="\d+">(?P<v>[^<]*)</
+i3 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4130,(?P<v>[^,]*)
+fqUser = IF odbc THEN f[6] ELSE NULL
+fqUser = IF ias THEN i3["v"] ELSE fqUser
+fqUser = IF dts THEN d6["v"] ELSE fqUser
+
+d7 = drec|<Called-Station-I[Dd] data_type="\d+">(?P<v>[^<]*)</
+i4 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,30,(?P<v>[^,]*)
+calledStation = IF odbc THEN f[7] ELSE NULL
+calledStation = IF ias THEN i4["v"] ELSE calledStation
+calledStation = IF dts THEN d7["v"] ELSE calledStation
+
+d8 = drec|<Calling-Station-I[Dd] data_type="\d+">(?P<v>[^<]*)</
+i5 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,31,(?P<v>[^,]*)
+callingStation = IF odbc THEN f[8] ELSE NULL
+callingStation = IF ias THEN i5["v"] ELSE callingStation
+callingStation = IF dts THEN d8["v"] ELSE callingStation
+
+d9 = drec|<Framed-IP-Address data_type="\d+">(?P<v>[^<]*)</
+i6 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,8,(?P<v>[^,]*)
+framedIp = IF odbc THEN f[10] ELSE NULL
+framedIp = IF ias THEN i6["v"] ELSE framedIp
+framedIp = IF dts THEN d9["v"] ELSE framedIp
+
+d10 = drec|<NAS-Identifier data_type="\d+">(?P<v>[^<]*)</
+i7 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,32,(?P<v>[^,]*)
+nasId = IF odbc THEN f[11] ELSE NULL
+nasId = IF ias THEN i7["v"] ELSE nasId
+nasId = IF dts THEN d10["v"] ELSE nasId
+
+d11 = drec|<NAS-IP-Address data_type="\d+">(?P<v>[^<]*)</
+nasIp = IF odbc THEN f[12] ELSE NULL
+nasIp = IF ias THEN f[0] ELSE nasIp
+nasIp = IF dts THEN d11["v"] ELSE nasIp
+
+d12 = drec|<Client-IP-Address data_type="\d+">(?P<v>[^<]*)</
+i8 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4108,(?P<v>[^,]*)
+clientIp = IF odbc THEN f[15] ELSE NULL
+clientIp = IF ias THEN i8["v"] ELSE clientIp
+clientIp = IF dts THEN d12["v"] ELSE clientIp
+
+d13 = drec|<Client-Friendly-Name data_type="\d+">(?P<v>[^<]*)</
+i9 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4128,(?P<v>[^,]*)
+clientName = IF odbc THEN f[16] ELSE NULL
+clientName = IF ias THEN i9["v"] ELSE clientName
+clientName = IF dts THEN d13["v"] ELSE clientName
+
+d14 = drec|<NAS-Port-Type data_type="\d+">(?P<v>\d+)</
+i10 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,61,(?P<v>\d+)(?:,|$)
+nasPortType = IF odbc THEN f[19] ELSE NULL
+nasPortType = IF ias THEN i10["v"] ELSE nasPortType
+nasPortType = IF dts THEN d14["v"] ELSE nasPortType
+
+d15 = drec|<Authentication-Type data_type="\d+">(?P<v>\d+)</
+i11 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4127,(?P<v>\d+)(?:,|$)
+authType = IF odbc THEN f[23] ELSE NULL
+authType = IF ias THEN i11["v"] ELSE authType
+authType = IF dts THEN d15["v"] ELSE authType
+
+# The network policy that granted or denied access: Policy-Name, or NP-Policy-Name in the IAS and
+# DTS Compliant formats.
+d16 = drec|<NP-Policy-Name data_type="\d+">(?P<v>[^<]*)</
+i12 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4149,(?P<v>[^,]*)
+policyName = IF odbc THEN f[24] ELSE NULL
+policyName = IF ias THEN i12["v"] ELSE policyName
+policyName = IF dts THEN d16["v"] ELSE policyName
+
+d17 = drec|<Proxy-Policy-Name data_type="\d+">(?P<v>[^<]*)</
+proxyPolicy = IF odbc THEN f[60] ELSE NULL
+proxyPolicy = IF dts THEN d17["v"] ELSE proxyPolicy
+
+d18 = drec|<Reason-Code data_type="\d+">(?P<v>\d+)</
+i13 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4142,(?P<v>\d+)(?:,|$)
+reasonCode = IF odbc THEN f[25] ELSE NULL
+reasonCode = IF ias THEN i13["v"] ELSE reasonCode
+reasonCode = IF dts THEN d18["v"] ELSE reasonCode
+
+d19 = drec|<Class data_type="\d+">(?P<v>[^<]*)</
+i14 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,25,(?P<v>[^,]*)
+radiusClass = IF odbc THEN f[26] ELSE NULL
+radiusClass = IF ias THEN i14["v"] ELSE radiusClass
+radiusClass = IF dts THEN d19["v"] ELSE radiusClass
+
+d20 = drec|<EAP-Friendly-Name data_type="\d+">(?P<v>[^<]*)</
+i15 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,4132,(?P<v>[^,]*)
+eapName = IF odbc THEN f[30] ELSE NULL
+eapName = IF ias THEN i15["v"] ELSE eapName
+eapName = IF dts THEN d20["v"] ELSE eapName
+
+d21 = drec|<Acct-Status-Type data_type="\d+">(?P<v>\d+)</
+i16 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,40,(?P<v>\d+)(?:,|$)
+acctStatus = IF odbc THEN f[31] ELSE NULL
+acctStatus = IF ias THEN i16["v"] ELSE acctStatus
+acctStatus = IF dts THEN d21["v"] ELSE acctStatus
+
+d22 = drec|<Acct-Input-Octets data_type="\d+">(?P<v>\d+)</
+i17 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,42,(?P<v>\d+)(?:,|$)
+inOctets = IF odbc THEN f[33] ELSE NULL
+inOctets = IF ias THEN i17["v"] ELSE inOctets
+inOctets = IF dts THEN d22["v"] ELSE inOctets
+
+d23 = drec|<Acct-Output-Octets data_type="\d+">(?P<v>\d+)</
+i18 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,43,(?P<v>\d+)(?:,|$)
+outOctets = IF odbc THEN f[34] ELSE NULL
+outOctets = IF ias THEN i18["v"] ELSE outOctets
+outOctets = IF dts THEN d23["v"] ELSE outOctets
+
+d24 = drec|<Acct-Session-I[Dd] data_type="\d+">(?P<v>[^<]*)</
+i19 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,44,(?P<v>[^,]*)
+acctSession = IF odbc THEN f[35] ELSE NULL
+acctSession = IF ias THEN i19["v"] ELSE acctSession
+acctSession = IF dts THEN d24["v"] ELSE acctSession
+
+d25 = drec|<Acct-Session-Time data_type="\d+">(?P<v>\d+)</
+i20 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,46,(?P<v>\d+)(?:,|$)
+sessionTime = IF odbc THEN f[37] ELSE NULL
+sessionTime = IF ias THEN i20["v"] ELSE sessionTime
+sessionTime = IF dts THEN d25["v"] ELSE sessionTime
+
+d26 = drec|<Acct-Terminate-Cause data_type="\d+">(?P<v>\d+)</
+i21 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,49,(?P<v>\d+)(?:,|$)
+terminateCause = IF odbc THEN f[40] ELSE NULL
+terminateCause = IF ias THEN i21["v"] ELSE terminateCause
+terminateCause = IF dts THEN d26["v"] ELSE terminateCause
+
+# Variables and $ fields set here are visible to the Auth child.
+sensorType$ = "Microsoft NPS"
+hostName = IF hdr["host"] != "" THEN hdr["host"] ELSE computerName
+hostId$ = IF hostName != "" THEN hostName ELSE NULL
+
+# Record-Date and Record-Time (or Timestamp) are the NPS server's local time, with no zone.
+# NXLog's RFC 5424 header gives the local offset when the record is read.
+# The date follows the server's regional settings: month first in Microsoft's examples
+# (10/14/2026), day first on servers set that way (14/10/2026). A part over 12 settles it;
+# otherwise the date in NXLog's header, read moments after NPS wrote the record, does; failing
+# both, month first.
+dp = recDate|^(?P<a>\d{2})/(?P<b>\d{2})/\d{4}$
+hd = originalData$|^(?:<\d{1,3}>)?1 \d{4}-(?P<m>\d{2})-(?P<d>\d{2})T
+dayFirst = dp["a"] == hd["d"] AND dp["b"] == hd["m"]
+dayFirst = IF dp["a"] > 12 THEN TRUE ELSE dayFirst
+dayFirst = IF dp["b"] > 12 THEN FALSE ELSE dayFirst
+layout = IF dayFirst THEN "02/01/2006 15:04:05 Z07:00" ELSE "01/02/2006 15:04:05 Z07:00"
+eventTimeUsec$ = IF hdr["off"] != "" AND recDate != "" THEN DATETIME(recDate + " " + recTime + " " + hdr["off"], layout) ELSE eventTimeUsec$
+
+# Packet-Type: 1 Access-Request, 2 Access-Accept, 3 Access-Reject, 4 Accounting-Request.
+# Acct-Status-Type (RFC 2866): 1 Start, 2 Stop, 3 Interim-Update, 7 Accounting-On, 8 Accounting-Off.
+kind = "other"
+kind = IF packetType == "1" THEN "access_request" ELSE kind
+kind = IF packetType == "2" THEN "access_accept" ELSE kind
+kind = IF packetType == "3" THEN "access_reject" ELSE kind
+kind = IF packetType == "4" THEN "accounting" ELSE kind
+kind = IF packetType == "4" AND acctStatus == "1" THEN "accounting_start" ELSE kind
+kind = IF packetType == "4" AND acctStatus == "2" THEN "accounting_stop" ELSE kind
+eventType$ = IF kind == "access_accept" OR kind == "access_reject" OR kind == "accounting_start" OR kind == "accounting_stop" THEN "auth" ELSE kind

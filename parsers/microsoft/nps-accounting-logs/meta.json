@@ -1,0 +1,44 @@
+{
+  "vendor": "Microsoft",
+  "product": "NPS accounting logs",
+  "versions": [
+    "2016",
+    "2019",
+    "2022",
+    "2025"
+  ],
+  "format": "csv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T10:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc771748(v=ws.10)",
+    "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/dd197432(v=ws.10)",
+    "https://learn.microsoft.com/en-us/windows-server/networking/technologies/nps/nps-accounting-configure",
+    "https://www.rfc-editor.org/rfc/rfc2866",
+    "https://docs.nxlog.co/agent/current/xm/syslog.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft/DHCP/Setup/index.html"
+  ],
+  "notes": "For Network Policy Server accounting log files (IN*.log), read by NXLog and sent record by record as syslog; README.md has the NXLog config. The parent reads all three file formats: DTS Compliant (Microsoft's default, one <Event> per line), ODBC (Legacy) with 60 or 66 columns, and IAS (Legacy) with its attribute ID and value pairs. Access-Accept and Access-Reject go to Auth as LOGON or FAILURE, with the reason code as status, its text as the failure reason and a failure category; an accounting Start is a LOGON and a Stop a LOGOFF. The user is SAM-Account-Name or User-Name split into domain and name (ODBC accepts may carry only the canonical name), the target is the NAS (address and NAS-Identifier or the RADIUS client name), the source address is Framed-IP-Address or an IP calling station, the auth system is the EAP method or the authentication type, and session_id is Acct-Session-Id. Policies, stations, the RADIUS client, NAS-Port-Type, Class (which ties an accept to its accounting records), byte counts, session time, terminate cause and the record's own time go to event_metadata. Access-Request, Interim-Update and Accounting-On or Off records stay generic. NPS writes the server's local time with no zone, in the server's date order. With NXLog's RFC 5424 header the parser adds the header's offset; the order comes from a part over 12, else from the header's date, else month first. Without that header the event time is the ingest time. Samples are made up in the layouts of Microsoft's NPS log format pages, with NXLog's RFC 5424 header. The parent and child, combined into one parser, passed Run Test in a lab tenant on 2026-10-16 (150 of 151 fields matched the emulator in each of 3 runs; the other is the ingest time on the line with a BSD header). The child also passed Run Test as a separate parser under its parent (144 of 145 fields, the same exception, each line taken in 5 of 5 runs), and both generic lines matched. No built-in parser claimed these lines in 3 Run Tests, so the Windows Security log parsers don't compete.",
+  "parsers": [
+    {
+      "name": "MS_NPS_ACCT_PARENT",
+      "file": "MS_NPS_ACCT_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "MS_NPS_ACCT_CHILD_AUTH",
+      "file": "MS_NPS_ACCT_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "MS_NPS_ACCT_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}
