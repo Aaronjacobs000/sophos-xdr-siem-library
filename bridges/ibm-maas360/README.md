@@ -60,7 +60,7 @@ Exit code 0 means every report was read and sent. On an error the bridge logs th
 
 - It authenticates with `POST /auth-apis/auth/2.0/authenticate/customer/{billingId}` (JSON `authRequest.maaS360AdminAuth`) and sends the token as `Authorization: MaaS token="<token>"`. MaaS360 tokens last 60 minutes; on a 401, `Token invalid` or `Token expired` the bridge authenticates again once. A failed authentication can come back as HTTP 200 with an `errorCode`, and the bridge stops on it.
 - For each report it asks for `fromDate` (the cursor minus the overlap) to `toDate` (now), in epoch milliseconds, 250 records a page from `pageNumber` 1 until a page comes back short. A single record can come back as an object rather than a list.
-- It sends the records it hasn't sent, oldest first, then moves the cursor to the newest `loginAttemptTime` or `updateDate`.
+- It sends the records it hasn't sent, oldest first, then moves the cursor to the newest `loginAttemptTime` or `updateDate`, but never past the time of the run, so a record dated in the future can't stop the reads.
 
 IBM doesn't publish a rate limit for these reports. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the MaaS360 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 

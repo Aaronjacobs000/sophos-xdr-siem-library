@@ -502,6 +502,22 @@ class BridgeTest(unittest.TestCase):
         finally:
             r.close()
 
+    def test_openai_audit_event_dated_in_the_future_leaves_the_cursor_at_now(self):
+        # A wrong clock can date an event years ahead. The cursor stays at the run's time, so a
+        # later run still collects the events that come after it.
+        now = int(datetime.now(timezone.utc).timestamp())
+        def ev(i, t):
+            return {"id": f"audit_log-{i:04d}", "type": "login.succeeded", "effective_at": t,
+                    "actor": {"type": "session"}, "login.succeeded": {}}
+        self.mock.audit = [ev(1, now + 10 * 365 * 86400)]
+        cfg = c.load_config(self.env(BRIDGE_SOURCES="openai_audit", OPENAI_ADMIN_KEY=OPENAI_ADMIN_KEY))
+        c.run_once(cfg)
+        self.assertLessEqual(self.saved()["openai_audit"]["since"], int(datetime.now(timezone.utc).timestamp()))
+        self.mock.ingested.clear()
+        self.mock.audit.append(ev(2, now + 5))
+        c.run_once(cfg)
+        self.assertEqual([r["id"] for r in self.sent()], ["audit_log-0002"])
+
 
 class LegacyNameTest(unittest.TestCase):
     """Bridges were called collectors: a setup that still sets the COLLECTOR_ names keeps working."""
@@ -512,6 +528,8 @@ class LegacyNameTest(unittest.TestCase):
         self.assertEqual(c._env({}, "BRIDGE_LOG_LEVEL", "INFO"), "INFO")
         self.assertTrue(c._flag({"COLLECTOR_DRY_RUN": "1"}, "BRIDGE_DRY_RUN", False))
         self.assertFalse(c._flag({"COLLECTOR_DRY_RUN": "1", "BRIDGE_DRY_RUN": "0"}, "BRIDGE_DRY_RUN", False))
+
+
 
 
 class RequestSafetyTest(unittest.TestCase):

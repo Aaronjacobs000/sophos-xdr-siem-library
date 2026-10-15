@@ -329,7 +329,7 @@ def collect_dns_history(cfg: dict, state: dict, sink: Sink, save, client: OnDmar
     already sent by ID. The API filters by whole UTC days, so IDs from that day are remembered."""
     now = datetime.now(timezone.utc)
     cur = state.setdefault("dns_history", {"since": _iso(now - timedelta(hours=cfg["lookback_hours"])), "seen": []})
-    start = _parse_time(cur["since"]) - timedelta(seconds=cfg["overlap_seconds"])
+    start = min(_parse_time(cur["since"]), now) - timedelta(seconds=cfg["overlap_seconds"])
     rows = client.paged("/dns-history", {"from_date": start.date().isoformat(), "sort": "observedAt::asc", "page_size": 1000},
                         "DNS history request")
     seen = set(cur["seen"])
@@ -345,7 +345,9 @@ def collect_dns_history(cfg: dict, state: dict, sink: Sink, save, client: OnDmar
                    key=lambda r: (observed(r), str(r["id"])))
     if fresh:
         sink.send([dns_record(r) for r in fresh])
-    newest = max([observed(r) for r in rows] + [_parse_time(cur["since"])])
+    # A record dated in the future, from a wrong clock, mustn't move the cursor past now: the
+    # next run would ask only for records after it.
+    newest = min(max([observed(r) for r in rows] + [_parse_time(cur["since"])]), now)
     keep_from = datetime.combine((newest - timedelta(seconds=cfg["overlap_seconds"])).date(), datetime.min.time(), timezone.utc)
     cur["seen"] = list(dict.fromkeys(r["id"] for r in rows if observed(r) >= keep_from))[-SEEN_LIMIT:]
     cur["since"] = _iso(newest)

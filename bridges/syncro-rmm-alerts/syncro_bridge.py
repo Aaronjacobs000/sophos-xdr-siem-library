@@ -262,7 +262,7 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: SyncroClient | Non
     client = client or SyncroClient(cfg)
     now = datetime.now(timezone.utc)
     cur = state.setdefault("rmm_alerts", {"since": _iso(now - timedelta(hours=cfg["lookback_hours"])), "seen": []})
-    after = _parse_time(cur["since"]) - timedelta(seconds=cfg["overlap_seconds"])
+    after = min(_parse_time(cur["since"]), now) - timedelta(seconds=cfg["overlap_seconds"])
     rows, page = [], 1
     for _ in range(MAX_REQUESTS):
         body = client.alerts(after, page)
@@ -278,7 +278,9 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: SyncroClient | Non
                    key=lambda r: (_created(r), r.get("id") or 0))
     if fresh:
         sink.send(fresh)
-    newest = max([_created(r) for r in rows] + [_parse_time(cur["since"])])
+    # A record dated in the future, from a wrong clock, mustn't move the cursor past now: the
+    # next run would ask only for records after it.
+    newest = min(max([_created(r) for r in rows] + [_parse_time(cur["since"])]), now)
     cutoff = newest - timedelta(seconds=cfg["overlap_seconds"])
     cur["seen"] = list(dict.fromkeys(r.get("id") for r in rows if r.get("id") is not None and _created(r) >= cutoff))[-SEEN_LIMIT:]
     cur["since"] = _iso(newest)

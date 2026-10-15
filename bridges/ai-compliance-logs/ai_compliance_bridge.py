@@ -409,7 +409,7 @@ def collect_openai_audit(cfg: dict, state: dict, sink: Sink, save) -> int:
     auth = {"Authorization": f"Bearer {src['key']}", "Content-Type": "application/json"}
     now = int(time.time())
     cur = state.setdefault("openai_audit", {"since": now - int(cfg["lookback_hours"] * 3600), "seen": []})
-    gte = cur["since"] - cfg["overlap_seconds"]
+    gte = min(cur["since"], now) - cfg["overlap_seconds"]
     records, after = [], None
     while True:
         params = {"effective_at[gte]": gte, "limit": 100}
@@ -425,7 +425,9 @@ def collect_openai_audit(cfg: dict, state: dict, sink: Sink, save) -> int:
     fresh = sorted((r for r in records if r.get("id") not in seen), key=lambda r: (r.get("effective_at", 0), r.get("id", "")))
     if fresh:
         sink.send(fresh)
-    newest = max([r.get("effective_at", 0) for r in records] + [cur["since"]])
+    # A record dated in the future, from a wrong clock, mustn't move the cursor past now: the
+    # next run would ask only for records after it.
+    newest = min(max([r.get("effective_at", 0) for r in records] + [cur["since"]]), now)
     # The next run re-reads the overlap before `newest`; remember those ids to drop repeats.
     keep = [r["id"] for r in records if r.get("id") and r.get("effective_at", 0) >= newest - cfg["overlap_seconds"]]
     cur["seen"] = _remember([], keep)

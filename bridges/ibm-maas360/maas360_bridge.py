@@ -319,7 +319,7 @@ def collect_report(name: str, cfg: dict, state: dict, sink: Sink, save, client: 
     path = path.format(billing=urllib.parse.quote(cfg["billing_id"], safe=""))
     now = int(time.time() * 1000)
     cur = state.setdefault(name, {"since": now - int(cfg["lookback_hours"] * 3600 * 1000), "seen": []})
-    start = cur["since"] - cfg["overlap_seconds"] * 1000
+    start = min(cur["since"], now) - cfg["overlap_seconds"] * 1000
     rows, page = [], 1
     for _ in range(MAX_REQUESTS):
         data = client.get(path, {"fromDate": start, "toDate": now, "pageSize": PAGE_SIZE, "pageNumber": page},
@@ -338,7 +338,9 @@ def collect_report(name: str, cfg: dict, state: dict, sink: Sink, save, client: 
     fresh = sorted((r for r in rows if _fingerprint(r) not in seen), key=lambda r: _ms(r.get(ts_field)))
     if fresh:
         sink.send([{"maas360_record": name, **r} for r in fresh])
-    newest = max([_ms(r.get(ts_field)) for r in rows] + [cur["since"]])
+    # A record dated in the future, from a wrong clock, mustn't move the cursor past now: the
+    # next run would ask only for records after it.
+    newest = min(max([_ms(r.get(ts_field)) for r in rows] + [cur["since"]]), now)
     cutoff = newest - cfg["overlap_seconds"] * 1000
     cur["seen"] = list(dict.fromkeys(_fingerprint(r) for r in rows if _ms(r.get(ts_field)) >= cutoff))[-SEEN_LIMIT:]
     cur["since"] = newest
