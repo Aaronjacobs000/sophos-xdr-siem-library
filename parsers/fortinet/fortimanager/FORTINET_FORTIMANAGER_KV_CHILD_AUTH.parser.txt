@@ -1,0 +1,71 @@
+!SAMPLE=<134>date=2026-10-14 time=09:12:44 tz="+1000" devname=fmg01 device_id=FMG-VM0000000001 log_id=0001010018 type=event subtype=system pri=information desc="User login/logout successful" user="jsmith" userfrom="GUI(192.0.2.10)" msg="user 'jsmith' with profile 'Super_User' login from GUI(192.0.2.10)" session_id=5108 adminprof="Super_User"
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevice_id=FMG\S*\s+log_id=0001010(?:014|018|019)\s+type=event\s+subtype=system\s
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiManager local event logs sent to a syslog server (config system locallog syslogd
+# setting, csv disabled), key=value:
+#   <PRI>date=<date> time=<time> tz="<+-HHMM>" devname=<name> device_id=<serial> log_id=<10 digits>
+#   type=event subtype=<subtype> pri=<level> <fields>
+# The log_id is the type (2 digits), the subtype (2) and the message ID (6).
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# type=event subtype=system lines and leaves FortiManager's generic. As a sibling of Fortinet_Event
+# under Fortinet_Master_non-cef, a child lost every line in a Run Test once Fortinet_Event took a
+# FortiGate system event. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser
+# reads the whole line itself, not the parents' variables.
+# Administrator sign-ins to Auth: system messages 10018 (login and logout), 10019 (login
+# failure) and 10014 (SSH login failure).
+
+kvm = originalData$|(?P<kv>date=\d{4}-\d{2}-\d{2}\s.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+logId = STRING(kv["log_id"])
+
+sensorType$ = "Fortinet FortiManager"
+sensorEventId$ = logId
+hostId$ = STRING(kv["device_id"])
+
+# date and time are in the FortiManager's zone, which tz gives; without tz they are read as UTC.
+dt = STRING(kv["date"]) + " " + STRING(kv["time"])
+tz = STRING(kv["tz"])
+eventTimeUsec$ = IF tz != "" THEN DATETIME(dt + " " + tz, "2006-01-02 15:04:05 -0700") ELSE DATETIME(dt, "2006-01-02 15:04:05")
+targetHostName$ = STRING(kv["devname"])
+authSystem$ = "FortiManager"
+
+user = STRING(kv["user"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+# userfrom is the interface and the address, such as GUI(192.0.2.10), JSON(...) or ssh(...).
+from = STRING(kv["userfrom"])
+uf = from|^(?P<via>[A-Za-z_-]+)\((?P<ip>[0-9A-Fa-f.:]+)\)$
+sourceAddress$ = IF uf["ip"] != "" THEN uf["ip"] ELSE NULL
+logonApplicationFamily$ = IF uf["via"] != "" THEN uf["via"] ELSE NULL
+sid = STRING(kv["session_id"])
+sessionId$ = IF sid != "" AND sid != "0" THEN sid ELSE NULL
+
+# 10018 is a login or a logout, which msg tells apart; 10019 and 10014 are failures.
+msg = STRING(kv["msg"])
+out = msg|\blogout\b
+failed = logId == "0001010019" OR logId == "0001010014"
+loggedOff = logId == "0001010018" AND out[0] != ""
+authCategory$ = IF loggedOff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "LOGON"
+action$ = IF loggedOff THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+
+# The log ID, description, message and admin profile go to event_metadata.
+m1.key$ = "log_id"
+m1.value$ = logId
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "desc"
+m2.value$ = STRING(kv["desc"])
+eventMetadata$.record$ = IF m2.value$ != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "msg"
+m3.value$ = msg
+eventMetadata$.record$ = IF msg != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "adminprof"
+m4.value$ = STRING(kv["adminprof"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$

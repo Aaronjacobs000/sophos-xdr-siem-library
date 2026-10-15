@@ -1,0 +1,239 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791933164000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0001010018",
+      "host_id": "FMG-VM0000000001",
+      "target_host_name": "fmg01",
+      "auth_system": "FortiManager",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "GUI",
+      "session_id": "5108",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0001010018"
+          },
+          {
+            "key": "desc",
+            "value": "User login/logout successful"
+          },
+          {
+            "key": "msg",
+            "value": "user 'jsmith' with profile 'Super_User' login from GUI(192.0.2.10)"
+          },
+          {
+            "key": "adminprof",
+            "value": "Super_User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791933242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0001010019",
+      "host_id": "FMG-VM0000000001",
+      "target_host_name": "fmg01",
+      "auth_system": "FortiManager",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "logon_application_family": "ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0001010019"
+          },
+          {
+            "key": "desc",
+            "value": "User login/logout failed"
+          },
+          {
+            "key": "msg",
+            "value": "user 'admin' login failed from ssh(203.0.113.45)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791933631000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0021030002",
+      "host_id": "FMG-VM0000000001",
+      "username": "jsmith",
+      "client_hostname": "192.0.2.10",
+      "channel": "GUI",
+      "operation_name": "cdb event log for object changed",
+      "operation": "edit",
+      "command": "type=fw_addr,key=branch-subnet,uuid=6f0c1d2e-3a4b-51c6-8d7e-9f0a1b2c3d4e",
+      "namespace": "root"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791934272000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0012021023",
+      "host_id": "FMG-VM0000000001",
+      "username": "jsmith",
+      "client_hostname": "192.0.2.10",
+      "channel": "GUI",
+      "operation_name": "Policy package install",
+      "operation": "Install policy package",
+      "command": "Install policy package branch-pkg to device FGT-EXAMPLE-01 succeeded",
+      "target_hostname": "FGT-EXAMPLE-01",
+      "namespace": "root",
+      "result": "success"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791934420000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0008017004",
+      "host_id": "FMG-VM0000000001",
+      "username": "jsmith",
+      "operation_name": "Install policy",
+      "operation": "Install policy",
+      "command": "Policy package branch-pkg installed to FGT-EXAMPLE-02",
+      "target_hostname": "FGT-EXAMPLE-02",
+      "namespace": "root",
+      "result": "done"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791934578000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0022031009",
+      "host_id": "FMG-VM0000000001",
+      "username": "jsmith",
+      "client_hostname": "192.0.2.12",
+      "channel": "JSON",
+      "operation_name": "Device Manager dvm log at notice level",
+      "operation": "Add device",
+      "command": "Added device FGT-EXAMPLE-03 (SN FGT60FTK00000003)",
+      "target_hostname": "FGT-EXAMPLE-03",
+      "namespace": "root"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTIMANAGER_SYSTEM_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791934805000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0001010026",
+      "host_id": "FMG-VM0000000001",
+      "username": "admin",
+      "client_hostname": "192.0.2.11",
+      "channel": "ssh",
+      "operation_name": "CLI command",
+      "command": "User admin executed CLI command: config system admin user"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTIMANAGER_SYSTEM_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791934971000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0001010029",
+      "host_id": "FMG-VM0000000001",
+      "username": "admin",
+      "client_hostname": "192.0.2.11",
+      "channel": "GUI",
+      "operation_name": "Setting changed",
+      "command": "User admin changed system admin setting admin-https-redirect from enable to disable"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791961509000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0001010018",
+      "host_id": "FMG-VM0000000001",
+      "target_host_name": "fmg01",
+      "auth_system": "FortiManager",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "GUI",
+      "session_id": "5108",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0001010018"
+          },
+          {
+            "key": "desc",
+            "value": "User login/logout successful"
+          },
+          {
+            "key": "msg",
+            "value": "user 'jsmith' with profile 'Super_User' logout from GUI(192.0.2.10)"
+          },
+          {
+            "key": "adminprof",
+            "value": "Super_User"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

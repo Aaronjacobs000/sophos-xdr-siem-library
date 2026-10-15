@@ -1,0 +1,72 @@
+!SAMPLE=<133>date=2026-10-14 time=09:40:05 tz="+1000" devname=fmg01 device_id=FMG-VM0000000001 log_id=0001010026 type=event subtype=system pri=notice user="admin" userfrom="ssh(192.0.2.11)" session_id=5120 desc="CLI command" msg="User admin executed CLI command: config system admin user" cli_act="config" cmd_from="ssh"
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevice_id=FMG\S*\s+log_id=00010100(?:2[26-9]|3[0-4]|49|50|53|5[6-8]|61|69|72)\s+type=event\s+subtype=system\s
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiManager local event logs sent to a syslog server (config system locallog syslogd
+# setting, csv disabled), key=value:
+#   <PRI>date=<date> time=<time> tz="<+-HHMM>" devname=<name> device_id=<serial> log_id=<10 digits>
+#   type=event subtype=<subtype> pri=<level> <fields>
+# The log_id is the type (2 digits), the subtype (2) and the message ID (6).
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# type=event subtype=system lines and leaves FortiManager's generic. As a sibling of Fortinet_Event
+# under Fortinet_Master_non-cef, a child lost every line in a Run Test once Fortinet_Event took a
+# FortiGate system event. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser
+# reads the whole line itself, not the parents' variables.
+# System messages that record an administrator's action, to ManagementEvent: 10022 (restart to
+# upgrade), 10026 (CLI command), 10027 and 10028 (reboot, shutdown), 10029 (setting changed),
+# 10030 and 10031 (settings backup and restore), 10032 (ADOM lock), 10033 (firmware upgrade),
+# 10034 (policy package install), 10049 and 10050 (shell), 10053 (certificate export), 10056 to
+# 10058 (policy package lock, install target, object rename), 10061 (license key), 10069 (time
+# changed) and 10072 (reset all settings).
+
+kvm = originalData$|(?P<kv>date=\d{4}-\d{2}-\d{2}\s.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+logId = STRING(kv["log_id"])
+
+sensorType$ = "Fortinet FortiManager"
+sensorEventId$ = logId
+hostId$ = STRING(kv["device_id"])
+
+# date and time are in the FortiManager's zone, which tz gives; without tz they are read as UTC.
+dt = STRING(kv["date"]) + " " + STRING(kv["time"])
+tz = STRING(kv["tz"])
+eventTimeUsec$ = IF tz != "" THEN DATETIME(dt + " " + tz, "2006-01-02 15:04:05 -0700") ELSE DATETIME(dt, "2006-01-02 15:04:05")
+
+# The administrator, unless FortiManager itself wrote the event (user system, System or fgfm).
+user = STRING(kv["user"])
+lu = LOWERCASE(user)
+username$ = IF user != "" AND lu != "system" AND lu != "fgfm" THEN user ELSE NULL
+# userfrom is the interface and the address, such as GUI(192.0.2.10), JSON(...) or ssh(...).
+from = STRING(kv["userfrom"])
+uf = from|^(?P<via>[A-Za-z_-]+)\((?P<ip>[0-9A-Fa-f.:]+)\)$
+clientHostname$ = IF uf["ip"] != "" THEN uf["ip"] ELSE NULL
+channel$ = IF uf["via"] != "" THEN uf["via"] ELSE NULL
+
+# What was done (desc and operation), the change (changes, else msg), the managed device it was
+# done to (device or inst_dev, else dev= in performed_on) and the ADOM.
+desc = STRING(kv["desc"])
+op = STRING(kv["operation"])
+changes = STRING(kv["changes"])
+msg = STRING(kv["msg"])
+operationName$ = IF desc != "" THEN desc ELSE STRING(kv["subtype"])
+operation$ = IF op != "" THEN op ELSE NULL
+command$ = IF changes != "" THEN changes ELSE NULL
+command$ = IF command$ == NULL AND msg != "" THEN msg ELSE command$
+on = STRING(kv["performed_on"])
+ondev = on|(?:^|,)dev=(?P<v>[^,]+)
+dev = STRING(kv["device"])
+dev = IF dev == "" THEN STRING(kv["inst_dev"]) ELSE dev
+dev = IF dev == "" AND ondev["v"] != "" AND ondev["v"] != "global" THEN ondev["v"] ELSE dev
+targetHostname$ = IF dev != "" THEN dev ELSE NULL
+adom = STRING(kv["adom"])
+namespace$ = IF adom != "" THEN adom ELSE NULL
+res = STRING(kv["result"])
+res = IF res == "" THEN STRING(kv["state"]) ELSE res
+res = IF res == "" THEN STRING(kv["operstat"]) ELSE res
+result$ = IF res != "" THEN res ELSE NULL
+script = STRING(kv["script"])
+script$ = IF script != "" THEN script ELSE NULL

@@ -1,0 +1,67 @@
+!SAMPLE=<133>date=2026-10-14 time=09:20:31 tz="+1000" devname=fmg01 device_id=FMG-VM0000000001 log_id=0021030002 type=event subtype=objcfg pri=notice adom="root" user="jsmith" userfrom="GUI(192.0.2.10)" session_id=5108 operation="edit" performed_on="dev=global,adom=root" changes="type=fw_addr,key=branch-subnet,uuid=6f0c1d2e-3a4b-51c6-8d7e-9f0a1b2c3d4e" desc="cdb event log for object changed"
+!PARENT=Fortinet_Master_non-cef
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevice_id=FMG\S*\s+log_id=00(?:0[3458]|1[26]|2[12])\d{6}\s+type=event\s
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiManager local event logs sent to a syslog server (config system locallog syslogd
+# setting, csv disabled), key=value:
+#   <PRI>date=<date> time=<time> tz="<+-HHMM>" devname=<name> device_id=<serial> log_id=<10 digits>
+#   type=event subtype=<subtype> pri=<level> <fields>
+# The log_id is the type (2 digits), the subtype (2) and the message ID (6).
+# Child of the global parser Fortinet_Master_non-cef, which claims Fortinet key=value lines and
+# leaves these FortiManager subtypes generic. In Sophos Fusion, turn on Set Global Parent in Parser
+# Script. The parser reads the whole line itself, not the parent's variables.
+# Configuration events to ManagementEvent: the subtypes devcfg (03), glbcfg (04), scrmgr (05),
+# scply (08), dm (12), fmwmgr (16), objcfg (21) and dvm (22). System messages go to
+# FORTINET_FORTIMANAGER_SYSTEM_KV_CHILD_MGMT under Fortinet_Event.
+
+kvm = originalData$|(?P<kv>date=\d{4}-\d{2}-\d{2}\s.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+logId = STRING(kv["log_id"])
+
+sensorType$ = "Fortinet FortiManager"
+sensorEventId$ = logId
+hostId$ = STRING(kv["device_id"])
+
+# date and time are in the FortiManager's zone, which tz gives; without tz they are read as UTC.
+dt = STRING(kv["date"]) + " " + STRING(kv["time"])
+tz = STRING(kv["tz"])
+eventTimeUsec$ = IF tz != "" THEN DATETIME(dt + " " + tz, "2006-01-02 15:04:05 -0700") ELSE DATETIME(dt, "2006-01-02 15:04:05")
+
+# The administrator, unless FortiManager itself wrote the event (user system, System or fgfm).
+user = STRING(kv["user"])
+lu = LOWERCASE(user)
+username$ = IF user != "" AND lu != "system" AND lu != "fgfm" THEN user ELSE NULL
+# userfrom is the interface and the address, such as GUI(192.0.2.10), JSON(...) or ssh(...).
+from = STRING(kv["userfrom"])
+uf = from|^(?P<via>[A-Za-z_-]+)\((?P<ip>[0-9A-Fa-f.:]+)\)$
+clientHostname$ = IF uf["ip"] != "" THEN uf["ip"] ELSE NULL
+channel$ = IF uf["via"] != "" THEN uf["via"] ELSE NULL
+
+# What was done (desc and operation), the change (changes, else msg), the managed device it was
+# done to (device or inst_dev, else dev= in performed_on) and the ADOM.
+desc = STRING(kv["desc"])
+op = STRING(kv["operation"])
+changes = STRING(kv["changes"])
+msg = STRING(kv["msg"])
+operationName$ = IF desc != "" THEN desc ELSE STRING(kv["subtype"])
+operation$ = IF op != "" THEN op ELSE NULL
+command$ = IF changes != "" THEN changes ELSE NULL
+command$ = IF command$ == NULL AND msg != "" THEN msg ELSE command$
+on = STRING(kv["performed_on"])
+ondev = on|(?:^|,)dev=(?P<v>[^,]+)
+dev = STRING(kv["device"])
+dev = IF dev == "" THEN STRING(kv["inst_dev"]) ELSE dev
+dev = IF dev == "" AND ondev["v"] != "" AND ondev["v"] != "global" THEN ondev["v"] ELSE dev
+targetHostname$ = IF dev != "" THEN dev ELSE NULL
+adom = STRING(kv["adom"])
+namespace$ = IF adom != "" THEN adom ELSE NULL
+res = STRING(kv["result"])
+res = IF res == "" THEN STRING(kv["state"]) ELSE res
+res = IF res == "" THEN STRING(kv["operstat"]) ELSE res
+result$ = IF res != "" THEN res ELSE NULL
+script = STRING(kv["script"])
+script$ = IF script != "" THEN script ELSE NULL
