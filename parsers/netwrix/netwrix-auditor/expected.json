@@ -1,0 +1,476 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791940364000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user",
+      "event_name": "Added",
+      "event_source": "Active Directory",
+      "user_name": "CORP\\jsmith",
+      "target_hostname": "dc01.corp.example.com",
+      "sensor_event_id": "20261014011244420B9451771F5964A9EAC0A5F35307EA155",
+      "status": "Success",
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "sAMAccountName",
+            "value": "jlee"
+          },
+          {
+            "key": "userAccountControl",
+            "value": "Normal account"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "\\com\\example\\corp\\Users\\Jordan Lee"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "AD Monitoring"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          },
+          {
+            "key": "workstation",
+            "value": "ws-jsmith.corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791940502000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "group",
+      "event_name": "Modified",
+      "event_source": "Active Directory",
+      "user_name": "CORP\\jsmith",
+      "target_hostname": "dc01.corp.example.com",
+      "sensor_event_id": "20261014011502981C4A2E7B3D9F04E6A1B2C3D4E5F607182",
+      "status": "Success",
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "member",
+            "value": "\\com\\example\\corp\\Users\\Jordan Lee"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "\\com\\example\\corp\\Groups\\Domain Admins"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "AD Monitoring"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          },
+          {
+            "key": "workstation",
+            "value": "ws-jsmith.corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791940833000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user",
+      "event_name": "Modify (Failed Attempt)",
+      "event_source": "Active Directory",
+      "user_name": "CORP\\helpdesk01",
+      "target_hostname": "dc02.corp.example.com",
+      "sensor_event_id": "20261014012033117D2C4E6F8A0B1C3D5E7F9A1B2C3D4E5F6",
+      "source_address": "192.0.2.61",
+      "status": "Failed",
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "userAccountControl",
+            "value": "Access is denied."
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "\\com\\example\\corp\\Users\\Alex Doe"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "AD Monitoring"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          },
+          {
+            "key": "workstation",
+            "value": "192.0.2.61"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791941470000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user",
+      "event_name": "Removed",
+      "event_source": "Entra ID",
+      "user_name": "admin@example.com",
+      "target_hostname": "Entra ID",
+      "sensor_event_id": "20261014013110305E8F1A2B3C4D5E6F7A8B9C0D1E2F3A4B5",
+      "source_address": "203.0.113.24",
+      "status": "Success",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "rtaylor@example.com"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Microsoft 365"
+          },
+          {
+            "key": "item",
+            "value": "example.com (Office 365 tenant)"
+          },
+          {
+            "key": "workstation",
+            "value": "203.0.113.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791941744000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Mailbox",
+      "event_name": "Modified",
+      "event_source": "Exchange Online",
+      "user_name": "admin@example.com",
+      "target_hostname": "Exchange Online",
+      "sensor_event_id": "20261014013544662F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4",
+      "source_address": "203.0.113.24",
+      "status": "Success",
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "FullAccess",
+            "value": "pkumar@example.com"
+          },
+          {
+            "key": "ForwardingSmtpAddress",
+            "value": "smtp:finance@example.com -> smtp:finance-archive@example.net"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "Finance Shared"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Microsoft 365"
+          },
+          {
+            "key": "item",
+            "value": "example.com (Office 365 tenant)"
+          },
+          {
+            "key": "workstation",
+            "value": "203.0.113.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791942012000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "file",
+      "event_name": "Read",
+      "event_source": "File Servers",
+      "user_name": "CORP\\pkumar",
+      "target_hostname": "fs01.corp.example.com",
+      "sensor_event_id": "20261014014012774A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5",
+      "source_address": "192.0.2.44",
+      "status": "Success",
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "\\\\fs01.corp.example.com\\Finance\\Payroll-2026-10.xlsx"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "File Servers"
+          },
+          {
+            "key": "item",
+            "value": "fs01.corp.example.com (Computer)"
+          },
+          {
+            "key": "workstation",
+            "value": "192.0.2.44"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791942305000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Login",
+      "event_name": "Added",
+      "event_source": "SQL Server",
+      "user_name": "CORP\\dbadmin",
+      "target_hostname": "SQL01\\FINANCE",
+      "sensor_event_id": "20261014014505218B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6",
+      "status": "Success",
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "what",
+            "value": "svc_report"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "SQL Servers"
+          },
+          {
+            "key": "item",
+            "value": "SQL01\\FINANCE (SQL Server instance)"
+          },
+          {
+            "key": "workstation",
+            "value": "ws-dba01.corp.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791942601000000,
+      "event_time_fidelity": "MICRO",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "auth_system": "Logon Activity",
+      "sensor_event_id": "20261014015001830C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7",
+      "target_user_name": "jsmith",
+      "target_domain_name": "CORP",
+      "target_host_name": "dc01.corp.example.com",
+      "extra_workstationname": "ws-0147.corp.example.com",
+      "logon_type": "INTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "Interactive Logon"
+          },
+          {
+            "key": "what",
+            "value": "ws-0147.corp.example.com"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Logon Activity"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791942753000000,
+      "event_time_fidelity": "MICRO",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "auth_system": "Logon Activity",
+      "sensor_event_id": "20261014015233146D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7A8",
+      "target_user_name": "adoe",
+      "target_domain_name": "CORP",
+      "target_host_name": "dc01.corp.example.com",
+      "source_address": "192.0.2.88",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "Cause",
+            "value": "Unknown user name or bad password."
+          },
+          {
+            "key": "Count",
+            "value": "5"
+          },
+          {
+            "key": "object_type",
+            "value": "Logon"
+          },
+          {
+            "key": "what",
+            "value": "dc01.corp.example.com"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Logon Activity"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791948004000000,
+      "event_time_fidelity": "MICRO",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "auth_system": "Logon Activity",
+      "sensor_event_id": "20261014032004509E4F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9",
+      "target_user_name": "jsmith",
+      "target_domain_name": "CORP",
+      "target_host_name": "dc01.corp.example.com",
+      "extra_workstationname": "dc01.corp.example.com",
+      "logon_type": "INTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "Interactive Logon"
+          },
+          {
+            "key": "what",
+            "value": "dc01.corp.example.com"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Logon Activity"
+          },
+          {
+            "key": "item",
+            "value": "corp.example.com (Domain)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "NETWRIX_AUDITOR_JSON_PARENT > NETWRIX_AUDITOR_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Netwrix Auditor",
+      "event_time_usec": 1791943030000000,
+      "event_time_fidelity": "MICRO",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "auth_system": "Entra ID",
+      "sensor_event_id": "20261014015710972F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9C0",
+      "target_user_name": "pkumar@example.com",
+      "target_host_name": "Entra ID",
+      "source_address": "198.51.100.73",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "User"
+          },
+          {
+            "key": "what",
+            "value": "pkumar@example.com"
+          },
+          {
+            "key": "monitoring_plan",
+            "value": "Microsoft 365"
+          },
+          {
+            "key": "item",
+            "value": "example.com (Office 365 tenant)"
+          }
+        ]
+      }
+    }
+  }
+]

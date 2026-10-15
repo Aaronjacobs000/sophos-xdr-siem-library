@@ -1,0 +1,94 @@
+!SAMPLE={"netwrix_auditor_record":"activity_record","Action":"Failed Logon","MonitoringPlan":{"ID":"{5A6B7C8D-9E0F-4A1B-8C2D-3E4F5A6B7C8D}","Name":"Logon Activity"},"DataSource":"Logon Activity","Item":{"Name":"corp.example.com (Domain)"},"ObjectType":"Logon","RID":"20261014015233146D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7A8","What":"dc01.corp.example.com","When":"2026-10-14T01:52:33Z","Where":"dc01.corp.example.com","Who":"CORP\\adoe","Workstation":"192.0.2.88","DetailList":[{"PropertyName":"Cause","Before":null,"After":"Unknown user name or bad password."},{"PropertyName":"Count","Before":null,"After":"5"}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Netwrix Auditor activity records from the example bridge: Successful Logon, Failed Logon
+# and Logoff, from Logon Activity, Entra ID, AD FS, SQL Server and VMware.
+# Child of NETWRIX_AUDITOR_JSON_PARENT: each one to Auth. Who is the account, Where the domain
+# controller or service that recorded it and Workstation the computer the user came from.
+# json, act, lact, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+ok = lact == "successful logon"
+failed = lact == "failed logon"
+logoff = lact == "logoff"
+action$ = "LOGON"
+action$ = IF failed THEN "FAILURE" ELSE action$
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+actionResult$ = NULL
+actionResult$ = IF ok THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+authSystem$ = json["$.DataSource"]
+sensorEventId$ = json["$.RID"]
+
+# Who is DOMAIN\user, or a user principal name for Entra ID.
+who = STRING(json["$.Who"])
+parts = who|^(?P<dom>[^\\]+)\\(?P<user>.+)$
+targetUserName$ = IF parts["user"] != "" THEN parts["user"] ELSE who
+targetDomainName$ = IF parts["dom"] != "" THEN parts["dom"] ELSE NULL
+targetHostName$ = json["$.Where"]
+
+ws = STRING(json["$.Workstation"])
+wsIp = IF ws != "" THEN IS_VALID_IP(ws) ELSE FALSE
+sourceAddress$ = IF wsIp THEN ws ELSE NULL
+extraWorkstationname$ = IF ws != "" AND NOT wsIp THEN ws ELSE NULL
+objectType = STRING(json["$.ObjectType"])
+logonType$ = IF objectType == "Interactive Logon" THEN "INTERACTIVE" ELSE NULL
+
+# The cause of a failed logon and the other details, then the record's own keys.
+# The first 5 entries of DetailList, each as its property name and its value: After, or
+# Before -> After when both are set, or Message when neither is.
+eventMetadata$.record$ = []
+prop0 = STRING(json["$.DetailList[0].PropertyName"])
+before0 = STRING(json["$.DetailList[0].Before"])
+after0 = STRING(json["$.DetailList[0].After"])
+note0 = STRING(json["$.DetailList[0].Message"])
+det0.key$ = prop0
+det0.value$ = IF before0 != "" THEN before0 + " -> " + after0 ELSE after0
+det0.value$ = IF after0 == "" AND before0 == "" THEN note0 ELSE det0.value$
+eventMetadata$.record$ = IF prop0 != "" THEN eventMetadata$.record$ + [det0] ELSE eventMetadata$.record$
+prop1 = STRING(json["$.DetailList[1].PropertyName"])
+before1 = STRING(json["$.DetailList[1].Before"])
+after1 = STRING(json["$.DetailList[1].After"])
+note1 = STRING(json["$.DetailList[1].Message"])
+det1.key$ = prop1
+det1.value$ = IF before1 != "" THEN before1 + " -> " + after1 ELSE after1
+det1.value$ = IF after1 == "" AND before1 == "" THEN note1 ELSE det1.value$
+eventMetadata$.record$ = IF prop1 != "" THEN eventMetadata$.record$ + [det1] ELSE eventMetadata$.record$
+prop2 = STRING(json["$.DetailList[2].PropertyName"])
+before2 = STRING(json["$.DetailList[2].Before"])
+after2 = STRING(json["$.DetailList[2].After"])
+note2 = STRING(json["$.DetailList[2].Message"])
+det2.key$ = prop2
+det2.value$ = IF before2 != "" THEN before2 + " -> " + after2 ELSE after2
+det2.value$ = IF after2 == "" AND before2 == "" THEN note2 ELSE det2.value$
+eventMetadata$.record$ = IF prop2 != "" THEN eventMetadata$.record$ + [det2] ELSE eventMetadata$.record$
+prop3 = STRING(json["$.DetailList[3].PropertyName"])
+before3 = STRING(json["$.DetailList[3].Before"])
+after3 = STRING(json["$.DetailList[3].After"])
+note3 = STRING(json["$.DetailList[3].Message"])
+det3.key$ = prop3
+det3.value$ = IF before3 != "" THEN before3 + " -> " + after3 ELSE after3
+det3.value$ = IF after3 == "" AND before3 == "" THEN note3 ELSE det3.value$
+eventMetadata$.record$ = IF prop3 != "" THEN eventMetadata$.record$ + [det3] ELSE eventMetadata$.record$
+prop4 = STRING(json["$.DetailList[4].PropertyName"])
+before4 = STRING(json["$.DetailList[4].Before"])
+after4 = STRING(json["$.DetailList[4].After"])
+note4 = STRING(json["$.DetailList[4].Message"])
+det4.key$ = prop4
+det4.value$ = IF before4 != "" THEN before4 + " -> " + after4 ELSE after4
+det4.value$ = IF after4 == "" AND before4 == "" THEN note4 ELSE det4.value$
+eventMetadata$.record$ = IF prop4 != "" THEN eventMetadata$.record$ + [det4] ELSE eventMetadata$.record$
+m1.key$ = "object_type"
+m1.value$ = objectType
+m2.key$ = "what"
+m2.value$ = STRING(json["$.What"])
+m3.key$ = "monitoring_plan"
+m3.value$ = STRING(json["$.MonitoringPlan.Name"])
+m4.key$ = "item"
+m4.value$ = STRING(json["$.Item.Name"])
+eventMetadata$.record$ = eventMetadata$.record$ + [m1, m2, m3, m4]

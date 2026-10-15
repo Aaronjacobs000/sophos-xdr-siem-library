@@ -1,0 +1,90 @@
+!SAMPLE={"netwrix_auditor_record":"activity_record","Action":"Modified","MonitoringPlan":{"ID":"{9C1D2E3F-4A5B-4C6D-8E7F-0A1B2C3D4E5F}","Name":"Microsoft 365"},"DataSource":"Exchange Online","Item":{"Name":"example.com (Office 365 tenant)"},"ObjectType":"Mailbox","RID":"20261014013544662F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4","What":"Finance Shared","When":"2026-10-14T01:35:44Z","Where":"Exchange Online","Who":"admin@example.com","Workstation":"203.0.113.24","DetailList":[{"PropertyName":"FullAccess","Before":null,"After":"pkumar@example.com"},{"PropertyName":"ForwardingSmtpAddress","Before":"smtp:finance@example.com","After":"smtp:finance-archive@example.net"}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Netwrix Auditor activity records from the example bridge: who changed, read or tried to
+# change what, in Active Directory, Entra ID, Exchange, file servers, SQL Server and the other data
+# sources Netwrix Auditor monitors.
+# Child of NETWRIX_AUDITOR_JSON_PARENT: each one to CloudAudit, with the action as the event name,
+# the object type as the event type, the data source as the event source and Who as the user.
+# DetailList (the before and after values) goes to request_parameters.
+# json, act, lact, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventName$ = act
+eventType$ = json["$.ObjectType"]
+eventSource$ = json["$.DataSource"]
+userName$ = json["$.Who"]
+# Where is the resource the change happened on: a server, a domain, an SQL Server instance or a
+# Microsoft 365 service.
+targetHostname$ = json["$.Where"]
+sensorEventId$ = json["$.RID"]
+
+# Workstation is the originating computer, by name or address.
+ws = STRING(json["$.Workstation"])
+wsIp = IF ws != "" THEN IS_VALID_IP(ws) ELSE FALSE
+sourceAddress$ = IF wsIp THEN ws ELSE NULL
+
+# Netwrix marks a failed attempt in the action, such as "Modify (Failed Attempt)".
+failed = CONTAINS(lact, "(failed attempt)")
+status$ = IF failed THEN "Failed" ELSE "Success"
+readOnly$ = lact == "read" OR lact == "read (failed attempt)"
+
+# The first 5 entries of DetailList, each as its property name and its value: After, or
+# Before -> After when both are set, or Message when neither is.
+requestParameters$.record$ = []
+prop0 = STRING(json["$.DetailList[0].PropertyName"])
+before0 = STRING(json["$.DetailList[0].Before"])
+after0 = STRING(json["$.DetailList[0].After"])
+note0 = STRING(json["$.DetailList[0].Message"])
+det0.key$ = prop0
+det0.value$ = IF before0 != "" THEN before0 + " -> " + after0 ELSE after0
+det0.value$ = IF after0 == "" AND before0 == "" THEN note0 ELSE det0.value$
+requestParameters$.record$ = IF prop0 != "" THEN requestParameters$.record$ + [det0] ELSE requestParameters$.record$
+prop1 = STRING(json["$.DetailList[1].PropertyName"])
+before1 = STRING(json["$.DetailList[1].Before"])
+after1 = STRING(json["$.DetailList[1].After"])
+note1 = STRING(json["$.DetailList[1].Message"])
+det1.key$ = prop1
+det1.value$ = IF before1 != "" THEN before1 + " -> " + after1 ELSE after1
+det1.value$ = IF after1 == "" AND before1 == "" THEN note1 ELSE det1.value$
+requestParameters$.record$ = IF prop1 != "" THEN requestParameters$.record$ + [det1] ELSE requestParameters$.record$
+prop2 = STRING(json["$.DetailList[2].PropertyName"])
+before2 = STRING(json["$.DetailList[2].Before"])
+after2 = STRING(json["$.DetailList[2].After"])
+note2 = STRING(json["$.DetailList[2].Message"])
+det2.key$ = prop2
+det2.value$ = IF before2 != "" THEN before2 + " -> " + after2 ELSE after2
+det2.value$ = IF after2 == "" AND before2 == "" THEN note2 ELSE det2.value$
+requestParameters$.record$ = IF prop2 != "" THEN requestParameters$.record$ + [det2] ELSE requestParameters$.record$
+prop3 = STRING(json["$.DetailList[3].PropertyName"])
+before3 = STRING(json["$.DetailList[3].Before"])
+after3 = STRING(json["$.DetailList[3].After"])
+note3 = STRING(json["$.DetailList[3].Message"])
+det3.key$ = prop3
+det3.value$ = IF before3 != "" THEN before3 + " -> " + after3 ELSE after3
+det3.value$ = IF after3 == "" AND before3 == "" THEN note3 ELSE det3.value$
+requestParameters$.record$ = IF prop3 != "" THEN requestParameters$.record$ + [det3] ELSE requestParameters$.record$
+prop4 = STRING(json["$.DetailList[4].PropertyName"])
+before4 = STRING(json["$.DetailList[4].Before"])
+after4 = STRING(json["$.DetailList[4].After"])
+note4 = STRING(json["$.DetailList[4].Message"])
+det4.key$ = prop4
+det4.value$ = IF before4 != "" THEN before4 + " -> " + after4 ELSE after4
+det4.value$ = IF after4 == "" AND before4 == "" THEN note4 ELSE det4.value$
+requestParameters$.record$ = IF prop4 != "" THEN requestParameters$.record$ + [det4] ELSE requestParameters$.record$
+
+a1.key$ = "what"
+a1.value$ = STRING(json["$.What"])
+a2.key$ = "monitoring_plan"
+a2.value$ = STRING(json["$.MonitoringPlan.Name"])
+a3.key$ = "item"
+a3.value$ = STRING(json["$.Item.Name"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [a1, a2, a3]
+a4.key$ = "workstation"
+a4.value$ = ws
+additionalEventData$.record$ = IF ws != "" THEN additionalEventData$.record$ + [a4] ELSE additionalEventData$.record$

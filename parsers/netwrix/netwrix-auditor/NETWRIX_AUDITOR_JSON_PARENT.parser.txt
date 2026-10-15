@@ -1,0 +1,26 @@
+!SAMPLE={"netwrix_auditor_record":"activity_record","Action":"Added","MonitoringPlan":{"ID":"{42F64379-163E-4A43-A9C5-4514C5A23798}","Name":"AD Monitoring"},"DataSource":"Active Directory","Item":{"Name":"corp.example.com (Domain)"},"ObjectType":"user","RID":"20261014011244420B9451771F5964A9EAC0A5F35307EA155","What":"\\com\\example\\corp\\Users\\Jordan Lee","When":"2026-10-14T01:12:44Z","Where":"dc01.corp.example.com","Who":"CORP\\jsmith","Workstation":"ws-jsmith.corp.example.com","DetailList":[{"PropertyName":"sAMAccountName","Before":null,"After":"jlee"},{"PropertyName":"userAccountControl","Before":null,"After":"Normal account"}]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"netwrix_auditor_record"\s*:\s*"activity_record"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Netwrix Auditor activity records from the Integration API, pulled by the example bridge in
+# bridges/netwrix-auditor-activity-records and posted to HTTP Ingest as JSON lines. The bridge puts
+# "netwrix_auditor_record": "activity_record" first; the rest is the record as Netwrix returns it.
+# Parent: hands logons, failed logons and logoffs to the Auth child, and every other activity
+# record (changes, reads and failed attempts) to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Netwrix Auditor"
+act = STRING(json["$.Action"])
+# Netwrix's tables write some actions in lower case, such as Successful logon, so they are compared
+# in lower case.
+lact = LOWERCASE(act)
+# When is ISO 8601 in UTC (2017-02-14T15:42:34Z) or with an offset.
+eventTimeUsec$ = DATETIME(json["$.When"], "2006-01-02T15:04:05Z07:00")
+eventType$ = IF lact == "successful logon" OR lact == "failed logon" OR lact == "logoff" THEN "auth" ELSE "audit"
