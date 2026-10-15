@@ -215,7 +215,7 @@ class Redirects:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -247,7 +247,7 @@ class Sized:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -291,7 +291,7 @@ class CutShort:
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
 
     def close(self):
         self.server.shutdown()
@@ -327,7 +327,7 @@ class BridgeTest(unittest.TestCase):
         warnings.showwarning = lambda m, c_, *a, **k: self.leaks.append(str(m)) if issubclass(c_, ResourceWarning) else show(m, c_, *a, **k)
         self.mock = Mock()
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), type("H", (Handler,), {"mock": self.mock}))
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.02,), daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
         self.tmp = tempfile.TemporaryDirectory()
         self.state = os.path.join(self.tmp.name, "state.json")
@@ -502,6 +502,9 @@ class BridgeTest(unittest.TestCase):
     def test_calls_to_epm_are_spaced(self):
         client = c.Epm(self.cfg())
         client.sets()
+        # Only the second call is sure to wait: on some platforms time.monotonic() starts near zero
+        # with the process, so the first call can wait too when the suite runs fast.
+        self.slept.clear()
         client.sets()
         gaps = [s for s in self.slept if 0 < s <= c.MIN_CALL_GAP]
         self.assertEqual(len(gaps), 1)
