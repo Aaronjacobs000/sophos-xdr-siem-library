@@ -1,0 +1,151 @@
+!SAMPLE=<174>1 2026-10-14T09:04:33.640218+11:00 nps01.corp.example.com NPSLog - - [NXLOG@14506 EventReceivedTime="2026-10-14 09:04:33" SourceModuleName="NPSIN" SourceModuleType="im_file"] "NPS01","IAS",10/14/2026,09:04:33,2,,"corp.example.com/Staff/John Smith","00-00-5E-00-53-01:CorpWiFi","00-00-5E-00-53-42",,,"wlc01","192.0.2.5",13,0,"192.0.2.5","wlc01",,,19,,,2,5,"Wireless Staff",0,"311 1 192.0.2.10 10/14/2026 09:04:30 1",28800,,,"Microsoft: Secured password (EAP-MSCHAP v2)",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Secure Wireless Connections",1,"Windows",,,
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Microsoft NPS accounting logs, sent by NXLog (see README.md).
+# Child of MS_NPS_ACCT_PARENT: RADIUS decisions and sessions to Auth. Access-Accept is a LOGON that
+# succeeded and Access-Reject a FAILURE, with the reason code; an accounting Start is a LOGON and a
+# Stop a LOGOFF, with the byte counts and session time in event_metadata.
+# The record's variables, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+accept = kind == "access_accept"
+reject = kind == "access_reject"
+stop = kind == "accounting_stop"
+action$ = "LOGON"
+action$ = IF reject THEN "FAILURE" ELSE action$
+action$ = IF stop THEN "LOGOFF" ELSE action$
+authCategory$ = IF stop THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+actionResult$ = NULL
+actionResult$ = IF accept THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF reject THEN "FAILED" ELSE actionResult$
+
+# The account: SAM-Account-Name (IAS and DTS Compliant formats) or User-Name, as DOMAIN\user.
+# Access-Accept rows in the database-compatible format may carry only the canonical name.
+account = IF samAccount != "" THEN samAccount ELSE userName
+account = IF account != "" THEN account ELSE fqUser
+parts = account|^(?P<dom>[^\\]+)\\(?P<user>.+)$
+targetUserName$ = IF parts["user"] != "" THEN parts["user"] ELSE account
+targetDomainName$ = IF parts["dom"] != "" THEN parts["dom"] ELSE NULL
+
+# The NAS (wireless controller, VPN server or switch) that asked: its address and name.
+targetAddress$ = IF nasIp != "" THEN nasIp ELSE clientIp
+nas = IF nasId != "" THEN nasId ELSE clientName
+targetHostName$ = IF nas != "" THEN nas ELSE NULL
+
+# The client: the address NPS or the NAS gave it (Framed-IP-Address), or the calling station when
+# that is an address, as with a VPN. A wireless calling station is a MAC address, kept below.
+framedOk = IF framedIp != "" THEN IS_VALID_IP(framedIp) ELSE FALSE
+callingOk = IF callingStation != "" THEN IS_VALID_IP(callingStation) ELSE FALSE
+sourceAddress$ = NULL
+sourceAddress$ = IF callingOk THEN callingStation ELSE sourceAddress$
+sourceAddress$ = IF framedOk THEN framedIp ELSE sourceAddress$
+sessionId$ = IF acctSession != "" THEN acctSession ELSE NULL
+
+# Authentication-Type: 1 PAP, 2 CHAP, 3 MS-CHAP, 4 MS-CHAP v2, 5 EAP, 7 None, 8 Custom. With EAP,
+# EAP-Friendly-Name names the method.
+authName = NULL
+authName = IF authType == "1" THEN "PAP" ELSE authName
+authName = IF authType == "2" THEN "CHAP" ELSE authName
+authName = IF authType == "3" THEN "MS-CHAP" ELSE authName
+authName = IF authType == "4" THEN "MS-CHAP v2" ELSE authName
+authName = IF authType == "5" THEN "EAP" ELSE authName
+authName = IF authType == "7" THEN "None" ELSE authName
+authName = IF authType == "8" THEN "Custom" ELSE authName
+authSystem$ = IF eapName != "" THEN eapName ELSE authName
+
+# Reason-Code, as Microsoft describes it in the IAS format reference.
+reason = NULL
+reason = IF reasonCode == "0" THEN "Success" ELSE reason
+reason = IF reasonCode == "1" THEN "Internal error" ELSE reason
+reason = IF reasonCode == "2" THEN "Access denied" ELSE reason
+reason = IF reasonCode == "3" THEN "Malformed request" ELSE reason
+reason = IF reasonCode == "4" THEN "Global catalog unavailable" ELSE reason
+reason = IF reasonCode == "5" THEN "Domain unavailable" ELSE reason
+reason = IF reasonCode == "6" THEN "Server unavailable" ELSE reason
+reason = IF reasonCode == "7" THEN "No such domain" ELSE reason
+reason = IF reasonCode == "8" THEN "No such user" ELSE reason
+reason = IF reasonCode == "16" THEN "Authentication failure" ELSE reason
+reason = IF reasonCode == "17" THEN "Password change failure" ELSE reason
+reason = IF reasonCode == "18" THEN "Unsupported authentication type" ELSE reason
+reason = IF reasonCode == "19" THEN "No reversibly encrypted password is stored for the user account" ELSE reason
+reason = IF reasonCode == "32" THEN "Local users only" ELSE reason
+reason = IF reasonCode == "33" THEN "Password must be changed" ELSE reason
+reason = IF reasonCode == "34" THEN "Account disabled" ELSE reason
+reason = IF reasonCode == "35" THEN "Account expired" ELSE reason
+reason = IF reasonCode == "36" THEN "Account locked out" ELSE reason
+reason = IF reasonCode == "37" THEN "Logon hours are not valid" ELSE reason
+reason = IF reasonCode == "38" THEN "Account restriction" ELSE reason
+reason = IF reasonCode == "48" THEN "Did not match network policy" ELSE reason
+reason = IF reasonCode == "49" THEN "Did not match connection request policy" ELSE reason
+reason = IF reasonCode == "64" THEN "Dial-in locked out" ELSE reason
+reason = IF reasonCode == "65" THEN "Dial-in disabled" ELSE reason
+reason = IF reasonCode == "66" THEN "Authentication type is not valid" ELSE reason
+reason = IF reasonCode == "67" THEN "Calling station is not valid" ELSE reason
+reason = IF reasonCode == "68" THEN "Dial-in hours are not valid" ELSE reason
+reason = IF reasonCode == "69" THEN "Called station is not valid" ELSE reason
+reason = IF reasonCode == "70" THEN "Port type is not valid" ELSE reason
+reason = IF reasonCode == "71" THEN "Restriction is not valid" ELSE reason
+reason = IF reasonCode == "80" THEN "No record" ELSE reason
+reason = IF reasonCode == "96" THEN "Session timed out" ELSE reason
+reason = IF reasonCode == "97" THEN "Unexpected request" ELSE reason
+status$ = IF reasonCode != "" AND (accept OR reject) THEN reasonCode ELSE NULL
+extraFailurereason$ = IF reject THEN reason ELSE NULL
+
+failureCategory$ = NULL
+failureCategory$ = IF reject THEN "OTHER_ERROR" ELSE failureCategory$
+failureCategory$ = IF reject AND (reasonCode == "16" OR reasonCode == "17") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF reject AND (reasonCode == "7" OR reasonCode == "8") THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF reject AND reasonCode == "33" THEN "OVERDUE_PASSWORD_CHANGE" ELSE failureCategory$
+failureCategory$ = IF reject AND (reasonCode == "34" OR reasonCode == "65") THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF reject AND (reasonCode == "36" OR reasonCode == "64") THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+failureCategory$ = IF reject AND (reasonCode == "37" OR reasonCode == "68") THEN "OUTSIDE_PERMISSIBLE_HOURS" ELSE failureCategory$
+
+# Keys with no Auth field of their own go to event_metadata.
+m1.key$ = "packet_type"
+m1.value$ = kind
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "network_policy"
+m2.value$ = policyName
+eventMetadata$.record$ = IF policyName != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "connection_request_policy"
+m3.value$ = proxyPolicy
+eventMetadata$.record$ = IF proxyPolicy != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "calling_station_id"
+m4.value$ = callingStation
+eventMetadata$.record$ = IF callingStation != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "called_station_id"
+m5.value$ = calledStation
+eventMetadata$.record$ = IF calledStation != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "radius_client"
+m6.value$ = clientName
+eventMetadata$.record$ = IF clientName != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "nas_port_type"
+m7.value$ = nasPortType
+eventMetadata$.record$ = IF nasPortType != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "fully_qualified_user_name"
+m8.value$ = fqUser
+eventMetadata$.record$ = IF fqUser != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+# Class ties an Access-Accept to the accounting records of the same session.
+m9.key$ = "class"
+m9.value$ = radiusClass
+eventMetadata$.record$ = IF radiusClass != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "acct_input_octets"
+m10.value$ = inOctets
+eventMetadata$.record$ = IF inOctets != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "acct_output_octets"
+m11.value$ = outOctets
+eventMetadata$.record$ = IF outOctets != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "acct_session_time"
+m12.value$ = sessionTime
+eventMetadata$.record$ = IF sessionTime != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "acct_terminate_cause"
+m13.value$ = terminateCause
+eventMetadata$.record$ = IF terminateCause != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+# The time as NPS wrote it, in the server's local time.
+m14.key$ = "record_time"
+m14.value$ = recDate + " " + recTime
+eventMetadata$.record$ = IF recDate != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$

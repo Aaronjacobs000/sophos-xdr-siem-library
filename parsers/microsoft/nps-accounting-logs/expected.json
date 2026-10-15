@@ -1,0 +1,688 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MS_NPS_ACCT_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791929073000000,
+      "host_id": "nps01.corp.example.com"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791929073000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "corp.example.com/Staff/John Smith",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "auth_system": "Microsoft: Secured password (EAP-MSCHAP v2)",
+      "status": "0",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_accept"
+          },
+          {
+            "key": "network_policy",
+            "value": "Wireless Staff"
+          },
+          {
+            "key": "connection_request_policy",
+            "value": "Secure Wireless Connections"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-42"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Staff/John Smith"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:04:30 1"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:04:33"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791929172000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "adoe",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "auth_system": "Microsoft: Secured password (EAP-MSCHAP v2)",
+      "status": "16",
+      "extra_failurereason": "Authentication failure",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_reject"
+          },
+          {
+            "key": "network_policy",
+            "value": "Wireless Staff"
+          },
+          {
+            "key": "connection_request_policy",
+            "value": "Secure Wireless Connections"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-57"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Staff/Alex Doe"
+          },
+          {
+            "key": "record_time",
+            "value": "14/10/2026 09:06:12"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791929560000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "pkumar",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "198.51.100.7",
+      "target_host_name": "vpn01",
+      "source_address": "203.0.113.50",
+      "auth_system": "MS-CHAP v2",
+      "status": "48",
+      "extra_failurereason": "Did not match network policy",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_reject"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "203.0.113.50"
+          },
+          {
+            "key": "called_station_id",
+            "value": "198.51.100.7"
+          },
+          {
+            "key": "radius_client",
+            "value": "vpn01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "5"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Contractors/Priya Kumar"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:12:40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791929075000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "jsmith",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "source_address": "192.0.2.77",
+      "session_id": "5F2A01C3",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "accounting_start"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-42"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:04:30 1"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:04:35"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MS_NPS_ACCT_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791931175000000,
+      "host_id": "nps01.corp.example.com"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791933302000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "target_user_name": "jsmith",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "source_address": "192.0.2.77",
+      "session_id": "5F2A01C3",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "accounting_stop"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-42"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:04:30 1"
+          },
+          {
+            "key": "acct_input_octets",
+            "value": "1048576"
+          },
+          {
+            "key": "acct_output_octets",
+            "value": "5242880"
+          },
+          {
+            "key": "acct_session_time",
+            "value": "4227"
+          },
+          {
+            "key": "acct_terminate_cause",
+            "value": "1"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 10:15:02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791930011000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "mlee",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "auth_system": "Microsoft: Secured password (EAP-MSCHAP v2)",
+      "status": "0",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_accept"
+          },
+          {
+            "key": "network_policy",
+            "value": "Wireless Staff"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-43"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Staff/Morgan Lee"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:20:09 2"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:20:11"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791501300000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "target_user_name": "mlee",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "source_address": "192.0.2.78",
+      "session_id": "5F2A01C4",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "accounting_stop"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-43"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "acct_input_octets",
+            "value": "2097152"
+          },
+          {
+            "key": "acct_output_octets",
+            "value": "8388608"
+          },
+          {
+            "key": "acct_session_time",
+            "value": "3289"
+          },
+          {
+            "key": "acct_terminate_cause",
+            "value": "1"
+          },
+          {
+            "key": "record_time",
+            "value": "09/10/2026 10:15:00"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791930662118000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "target_user_name": "rtaylor",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "auth_system": "Microsoft: Secured password (EAP-MSCHAP v2)",
+      "status": "36",
+      "extra_failurereason": "Account locked out",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_reject"
+          },
+          {
+            "key": "network_policy",
+            "value": "Wireless Staff"
+          },
+          {
+            "key": "connection_request_policy",
+            "value": "Secure Wireless Connections"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-61"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Staff/Riley Taylor"
+          },
+          {
+            "key": "record_time",
+            "value": "14/10/2026 09:31:02.118"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791931518502000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "pkumar",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "198.51.100.7",
+      "target_host_name": "vpn01",
+      "source_address": "203.0.113.50",
+      "auth_system": "MS-CHAP v2",
+      "status": "0",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_accept"
+          },
+          {
+            "key": "network_policy",
+            "value": "VPN Contractors"
+          },
+          {
+            "key": "connection_request_policy",
+            "value": "Remote Access VPN"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "203.0.113.50"
+          },
+          {
+            "key": "called_station_id",
+            "value": "198.51.100.7"
+          },
+          {
+            "key": "radius_client",
+            "value": "vpn01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "5"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Contractors/Priya Kumar"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:45:18 3"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:45:18.502"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791936164795000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "target_user_name": "pkumar",
+      "target_domain_name": "EXAMPLE",
+      "target_address": "198.51.100.7",
+      "target_host_name": "vpn01",
+      "source_address": "192.0.2.201",
+      "session_id": "88",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "accounting_stop"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "203.0.113.50"
+          },
+          {
+            "key": "radius_client",
+            "value": "vpn01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "5"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:45:18 3"
+          },
+          {
+            "key": "acct_input_octets",
+            "value": "15728640"
+          },
+          {
+            "key": "acct_output_octets",
+            "value": "73400320"
+          },
+          {
+            "key": "acct_session_time",
+            "value": "4646"
+          },
+          {
+            "key": "acct_terminate_cause",
+            "value": "1"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 11:02:44.795"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "MS_NPS_ACCT_PARENT > MS_NPS_ACCT_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Microsoft NPS",
+      "event_time_usec": 1791972000000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nps01.corp.example.com",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "target_user_name": "corp.example.com/Staff/Sam Nguyen",
+      "target_address": "192.0.2.5",
+      "target_host_name": "wlc01",
+      "auth_system": "Microsoft: Secured password (EAP-MSCHAP v2)",
+      "status": "0",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "packet_type",
+            "value": "access_accept"
+          },
+          {
+            "key": "network_policy",
+            "value": "Wireless Staff"
+          },
+          {
+            "key": "connection_request_policy",
+            "value": "Secure Wireless Connections"
+          },
+          {
+            "key": "calling_station_id",
+            "value": "00-00-5E-00-53-72"
+          },
+          {
+            "key": "called_station_id",
+            "value": "00-00-5E-00-53-01:CorpWiFi"
+          },
+          {
+            "key": "radius_client",
+            "value": "wlc01"
+          },
+          {
+            "key": "nas_port_type",
+            "value": "19"
+          },
+          {
+            "key": "fully_qualified_user_name",
+            "value": "corp.example.com/Staff/Sam Nguyen"
+          },
+          {
+            "key": "class",
+            "value": "311 1 192.0.2.10 10/14/2026 09:50:05 4"
+          },
+          {
+            "key": "record_time",
+            "value": "10/14/2026 09:50:07"
+          }
+        ]
+      }
+    }
+  }
+]
