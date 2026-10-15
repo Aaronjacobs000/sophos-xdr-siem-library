@@ -12,7 +12,7 @@
 # only that event in events, plus params, the event's parameters keyed by name.
 # Parent: hands sign-ins, sign-outs and sign-in challenges (login and SAML) and ChromeOS sign-ins
 # to the Auth child; Google's account warnings and Chrome's malware, unsafe site, password and
-# data loss events to the ThirdPartyAlert child; and every other event (admin console changes,
+# data loss events to the Thirdparty child; and every other event (admin console changes,
 # OAuth token grants, Drive activity, account setting changes) to the CloudAudit child.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
 
