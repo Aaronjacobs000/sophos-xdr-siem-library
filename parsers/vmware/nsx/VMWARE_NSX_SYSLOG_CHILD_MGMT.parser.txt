@@ -1,0 +1,40 @@
+!SAMPLE=<182>1 2026-10-14T22:23:49.017Z nsxmgr01.example.com NSX 1864 - [nsx@6876 comp="nsx-manager" subcomp="cli" username="admin" level="INFO" audit="true"] CMD: set user admin password-expiration 100 (duration: 2.185s), Operation status: CMD_EXECUTED
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware NSX syslog.
+# Child of VMWARE_NSX_SYSLOG_PARENT: audit messages (audit="true") to ManagementEvent:
+#   policy and manager API calls  UserName="admin", ModuleName="...", Operation="...", Operation status="..."
+#   NSX CLI commands              CMD: <command> (duration: 2.185s), Operation status: CMD_EXECUTED
+#   node API calls                admin 'GET /api/v1/node/...' 200 731 "" "<user agent>" 0.004588
+# NSX audits reads too. Writes carry update="true", which the NSX syslog exporter can filter on
+# (structured-data update="true").
+# ManagementEvent has no event_metadata field, so the request and entity IDs stay in
+# original_data.
+# auditKind, api, cli, napi, sd, sdUser, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetHostname$ = hostId$
+username$ = sdUser["v"]
+username$ = IF auditKind == "api" THEN api["user"] ELSE username$
+username$ = IF auditKind == "napi" AND username$ == "" THEN napi["user"] ELSE username$
+username$ = IF username$ != "" THEN username$ ELSE NULL
+
+operationName$ = NULL
+operationName$ = IF auditKind == "api" THEN api["op"] ELSE operationName$
+operationName$ = IF auditKind == "cli" THEN "NSX CLI command" ELSE operationName$
+operationName$ = IF auditKind == "napi" THEN napi["method"] + " " + napi["path"] ELSE operationName$
+namespace$ = IF auditKind == "api" THEN api["module"] ELSE NULL
+command$ = IF auditKind == "cli" THEN cli["cmd"] ELSE NULL
+result$ = NULL
+result$ = IF auditKind == "api" THEN api["status"] ELSE result$
+result$ = IF auditKind == "cli" THEN cli["status"] ELSE result$
+result$ = IF auditKind == "napi" THEN napi["code"] ELSE result$
+
+# The update flag tells a write (PUT, POST, PATCH, DELETE) from a read.
+update = sd|(?:^|\s)update="(?P<v>[^"]*)"
+operation$ = NULL
+operation$ = IF auditKind == "api" AND update["v"] == "true" THEN "write" ELSE operation$
+operation$ = IF auditKind == "api" AND update["v"] != "true" THEN "read" ELSE operation$
