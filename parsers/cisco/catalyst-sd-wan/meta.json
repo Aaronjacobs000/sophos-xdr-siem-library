@@ -1,0 +1,62 @@
+{
+  "vendor": "Cisco",
+  "product": "Catalyst SD-WAN",
+  "versions": [
+    "17.x",
+    "20.x"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.cisco.com/c/en/us/td/docs/routers/sdwan/configuration/Monitor-And-Maintain/monitor-maintain-book/m-alarms-events-logs.html",
+    "https://www.cisco.com/c/en/us/td/docs/routers/sdwan/configuration/policies/ios-xe-17/policies-book-xe.pdf",
+    "https://www.cisco.com/c/en/us/support/docs/routers/xe-sd-wan-routers/222285-configure-and-verify-url-filtering.html",
+    "https://www.cisco.com/c/en/us/td/docs/routers/sdwan/configuration/security/ios-xe-17/security-book-xe/intrusion-prevention.html",
+    "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/sec_data_utd/configuration/xe-17/sec-data-utd-xe-17-book/snort-ips.html"
+  ],
+  "notes": "Send WAN Edge syslog to the data collector (the Logging feature template or logging host; UDP 514 by default, TLS on 6514), and for UTD alerts set an external syslog server in the security policy (logging host under utd global). Implicit ACL logs (FTMD message 1000026, from Implicit ACL Logging in the policy, which Cisco says logs dropped packets) go to Netflow as blocked flows, in both header layouts: %Cisco-SDWAN-<host>-FTMD-5-NTCE-1000026: before release 20.15, and %SDWAN-5-FTMD : from 20.15, which has no host. UTD alerts go by their event: intrusion prevention signatures to NIDS, URL filtering to HTTP and AMP file reputation to Antivirus, with Drop as blocked; Hostname, System_IP, VRF and policy go to event_metadata. The UTD body is found by its own time, since the syslog header in front of it varies. Other SD-WAN daemon lines (BFD, control connections, notifications) aren't claimed. IOS XE's own messages, including the %FW-6 zone-based firewall logs, which the built-in Cisco IOS parser claims, aren't covered. With high-speed logging on, the firewall exports NetFlow v9 instead of syslog, and from 17.16.1a drop and pass logging produces connection events. Neither time carries a usable zone: the IOS XE time has none, and the UTD time ends in a zone name such as UTC or PDT, so both are read as UTC; keep the devices on UTC. The IOS XE time is read to the second. Cisco's examples show ** around HSL-LOGGING IMPLICIT-ACL and no space before Bytes; both forms are read. Samples are made up in the shapes of Cisco's Monitor and Maintain guide, its URL filtering TechNote and its UTD guides; the IPS, URL filtering and AMP bodies also match Microsoft Sentinel's Cisco SD-WAN sample data. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (130 of 130 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (130 of 130 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "CISCO_SDWAN_SYSLOG_PARENT",
+      "file": "CISCO_SDWAN_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CISCO_SDWAN_SYSLOG_CHILD_NETFLOW",
+      "file": "CISCO_SDWAN_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SDWAN_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "CISCO_SDWAN_SYSLOG_CHILD_NIDS",
+      "file": "CISCO_SDWAN_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SDWAN_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "CISCO_SDWAN_SYSLOG_CHILD_HTTP",
+      "file": "CISCO_SDWAN_SYSLOG_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SDWAN_SYSLOG_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "CISCO_SDWAN_SYSLOG_CHILD_ANTIVIRUS",
+      "file": "CISCO_SDWAN_SYSLOG_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SDWAN_SYSLOG_PARENT",
+      "schema": "scwx.antivirus"
+    }
+  ]
+}

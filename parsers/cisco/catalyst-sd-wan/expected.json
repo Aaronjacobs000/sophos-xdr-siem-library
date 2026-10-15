@@ -1,0 +1,407 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969164000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "source_address": "192.0.2.16",
+      "destination_address": "192.0.2.20",
+      "source_port": 0,
+      "destination_port": 0,
+      "protocol": 1,
+      "tx_packet_count": 1,
+      "tx_byte_count": 114,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vpn",
+            "value": "0"
+          },
+          {
+            "key": "log_reason",
+            "value": "SDWAN_SERV_ICMP_EXCEPT_TS"
+          },
+          {
+            "key": "tos",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969213000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.14",
+      "destination_address": "198.51.100.100",
+      "source_port": 12346,
+      "destination_port": 12346,
+      "protocol": 17,
+      "tx_packet_count": 1,
+      "tx_byte_count": 171,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "vpn",
+            "value": "0"
+          },
+          {
+            "key": "log_reason",
+            "value": "SDWAN_SERV_UDP"
+          },
+          {
+            "key": "tos",
+            "value": "192"
+          },
+          {
+            "key": "ingress_interface",
+            "value": "GigabitEthernet2"
+          },
+          {
+            "key": "egress_interface",
+            "value": "GigabitEthernet2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969362123456,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "generator_id": 1,
+      "signature_id": 58001,
+      "signature_revision": 3,
+      "message": "MALWARE-CNC Win.Trojan.Example outbound connection attempt",
+      "classification": "A Network Trojan was Detected",
+      "priority": 1,
+      "action": "Drop",
+      "blocked": 1,
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.50",
+      "source_port": 49822,
+      "destination_port": 80,
+      "protocol": 6,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "log_type": "UTD IPS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "instance_id",
+            "value": "1"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          },
+          {
+            "key": "policy",
+            "value": "ips-inspect-1"
+          },
+          {
+            "key": "time_zone",
+            "value": "UTC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969400004211,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "generator_id": 1,
+      "signature_id": 41001,
+      "signature_revision": 2,
+      "message": "SERVER-WEBAPP Example admin panel brute force attempt",
+      "classification": "Attempted Administrator Privilege Gain",
+      "priority": 1,
+      "action": "Pass",
+      "blocked": 0,
+      "source_address": "203.0.113.70",
+      "destination_address": "192.0.2.80",
+      "source_port": 51511,
+      "destination_port": 443,
+      "protocol": 6,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "log_type": "UTD IPS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "instance_id",
+            "value": "1"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          },
+          {
+            "key": "vrf",
+            "value": "10"
+          },
+          {
+            "key": "time_zone",
+            "value": "UTC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969425512870,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "uri_host": "downloads.example.org",
+      "uri_path": "/tools/setup.exe",
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.90",
+      "source_port": 40154,
+      "destination_port": 80,
+      "protocol": 6,
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter",
+            "value": "Category/Reputation"
+          },
+          {
+            "key": "category",
+            "value": "Malware Sites"
+          },
+          {
+            "key": "reputation",
+            "value": "10"
+          },
+          {
+            "key": "url",
+            "value": "downloads.example.org/tools/setup.exe"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          },
+          {
+            "key": "vrf",
+            "value": "10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969450002400,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "uri_host": "social.example.net",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.35",
+      "source_port": 55872,
+      "destination_port": 443,
+      "protocol": 6,
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter",
+            "value": "blocklist"
+          },
+          {
+            "key": "url",
+            "value": "social.example.net"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          },
+          {
+            "key": "vrf",
+            "value": "10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969492835924,
+      "event_time_fidelity": "MICRO",
+      "event_type": "UTD AMP",
+      "host_id": "edge-syd-01",
+      "threat_name": "Example.Trojan",
+      "file_hash": {
+        "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4512ffbf651ff0f"
+      },
+      "file_path": "invoice.zip",
+      "threat_type": "FILE",
+      "vendor_alert_type": "UTD AMP DISPOSITION MALICIOUS",
+      "threat_category": "MALWARE",
+      "action_taken": "BLOCKED",
+      "policy_name": "amp-inspect-1",
+      "computer_name": "edge-syd-01",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "disposition",
+            "value": "MALICIOUS"
+          },
+          {
+            "key": "file_type",
+            "value": "ZIP"
+          },
+          {
+            "key": "source_address",
+            "value": "203.0.113.97"
+          },
+          {
+            "key": "source_port",
+            "value": "443"
+          },
+          {
+            "key": "destination_address",
+            "value": "192.0.2.213"
+          },
+          {
+            "key": "destination_port",
+            "value": "45554"
+          },
+          {
+            "key": "protocol",
+            "value": "TCP"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969541200400,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-syd-01",
+      "uri_host": "intranet.example.com",
+      "source_address": "192.0.2.32",
+      "destination_address": "192.0.2.150",
+      "source_port": 55310,
+      "destination_port": 443,
+      "protocol": 6,
+      "blocked": 0,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter",
+            "value": "Allowlist"
+          },
+          {
+            "key": "url",
+            "value": "intranet.example.com"
+          },
+          {
+            "key": "system_ip",
+            "value": "198.51.100.15"
+          },
+          {
+            "key": "vrf",
+            "value": "10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_SDWAN_SYSLOG_PARENT > CISCO_SDWAN_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Cisco Catalyst SD-WAN",
+      "event_time_usec": 1791969615524475,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge-mel-02",
+      "generator_id": 1,
+      "signature_id": 58002,
+      "signature_revision": 1,
+      "message": "PROTOCOL-DNS Example malware domain lookup",
+      "classification": "A Network Trojan was Detected",
+      "priority": 1,
+      "action": "Drop",
+      "blocked": 1,
+      "source_address": "2001:db8:10::10",
+      "destination_address": "2001:db8:20::53",
+      "source_port": 58016,
+      "destination_port": 53,
+      "protocol": 17,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "log_type": "UTD IPS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "instance_id",
+            "value": "1"
+          },
+          {
+            "key": "vrf",
+            "value": "2"
+          },
+          {
+            "key": "time_zone",
+            "value": "UTC"
+          }
+        ]
+      }
+    }
+  }
+]
