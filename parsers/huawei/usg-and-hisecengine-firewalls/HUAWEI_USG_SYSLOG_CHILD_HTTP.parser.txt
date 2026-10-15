@@ -1,0 +1,73 @@
+!SAMPLE=<188>2026-10-15 09:25:18 fw01.example.com %%01URL/4/FILTER(l):CID=2160731923;The URL filtering policy was matched. (SyslogId=7, VSys="public", Policy="trust_untrust", SrcIp=192.0.2.25, DstIp=203.0.113.95, SrcPort=50444, DstPort=80, SrcZone=trust, DstZone=untrust, User="jsmith", Protocol=TCP, Application="HTTP", Profile="default", Type=Pre-defined, EventNum=1, Category="Malware", SubCategory="Malicious Sites", Page="*", Host="bad.example.com", Referer="", Item="", Action=block, UserGroup="/default/staff")
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="url"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: URL filtering logs to HTTP.
+#   URL/4/FILTER: The URL filtering policy was matched. (SyslogId=..., SrcIp=..., ..., Type=...,
+#     Category="...", SubCategory="...", Page="...", Host="...", Referer="...", Item="...", Action=..., ...)
+# The host is the requested host. The firewall replaces the page with asterisks, so a masked
+# page isn't kept as the path. Block is blocked; allow and alert are allowed.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SrcIp"])
+dst = STRING(kv["DstIp"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["SrcPort"])
+destinationPort$ = STRING(kv["DstPort"])
+proto = UPPERCASE(STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+user = STRING(kv["User"])
+sourceUsername$ = IF user != "" AND LOWERCASE(user) != "unknown" THEN user ELSE NULL
+app = STRING(kv["Application"])
+l7Protocol$ = IF app != "" THEN app ELSE NULL
+urlHost = STRING(kv["Host"])
+uriHost$ = IF urlHost != "" THEN urlHost ELSE NULL
+page = STRING(kv["Page"])
+masked = page|^\**$
+uriPath$ = IF page != "" AND STRING(masked[0]) == "" THEN page ELSE NULL
+ref = STRING(kv["Referer"])
+referer$ = IF ref != "" AND ref != "-" THEN ref ELSE NULL
+act = LOWERCASE(STRING(kv["Action"]))
+blocked$ = IF act == "block" THEN 1 ELSE 0
+sensorTypeActions$ = IF act == "block" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+
+# Keys with no HTTP field go to event_metadata.
+u1.key$ = "category"
+u1.value$ = STRING(kv["Category"])
+u2.key$ = "action"
+u2.value$ = act
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [u1, u2]
+u3.key$ = "sub_category"
+u3.value$ = STRING(kv["SubCategory"])
+eventMetadata$.record$ = IF u3.value$ != "" THEN eventMetadata$.record$ + [u3] ELSE eventMetadata$.record$
+u4.key$ = "rule_type"
+u4.value$ = STRING(kv["Type"])
+eventMetadata$.record$ = IF u4.value$ != "" THEN eventMetadata$.record$ + [u4] ELSE eventMetadata$.record$
+u5.key$ = "item"
+u5.value$ = STRING(kv["Item"])
+eventMetadata$.record$ = IF u5.value$ != "" THEN eventMetadata$.record$ + [u5] ELSE eventMetadata$.record$
+u6.key$ = "policy"
+u6.value$ = STRING(kv["Policy"])
+eventMetadata$.record$ = IF u6.value$ != "" THEN eventMetadata$.record$ + [u6] ELSE eventMetadata$.record$
+u7.key$ = "profile"
+u7.value$ = STRING(kv["Profile"])
+eventMetadata$.record$ = IF u7.value$ != "" THEN eventMetadata$.record$ + [u7] ELSE eventMetadata$.record$
+u8.key$ = "source_zone"
+u8.value$ = STRING(kv["SrcZone"])
+eventMetadata$.record$ = IF u8.value$ != "" THEN eventMetadata$.record$ + [u8] ELSE eventMetadata$.record$
+u9.key$ = "destination_zone"
+u9.value$ = STRING(kv["DstZone"])
+eventMetadata$.record$ = IF u9.value$ != "" THEN eventMetadata$.record$ + [u9] ELSE eventMetadata$.record$
+u10.key$ = "user_group"
+u10.value$ = STRING(kv["UserGroup"])
+eventMetadata$.record$ = IF u10.value$ != "" THEN eventMetadata$.record$ + [u10] ELSE eventMetadata$.record$

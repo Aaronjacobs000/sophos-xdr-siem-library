@@ -1,0 +1,26 @@
+!SAMPLE=<190>2026-10-15 09:43:12 fw01.example.com %%01POLICY/6/POLICYMODIFY(l):CID=2160731923;User-name=netadmin user-ip=192.0.2.10 rule-name=allow_rdp rule-id=12 modify-type=added, action=permit service-name=rdp application-name=RDP from source-ip=192.0.2.0/24 to destination-ip=192.0.2.15.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: security policy rule changes to Management Event.
+#   POLICY/6/POLICYMODIFY: User-name=<user> user-ip=<address> rule-name=<rule> rule-id=<id>
+#     modify-type=<added|deleted|modified|All rules deleted>, action=<action> service-name=<service>
+#     application-name=<application> from source-ip=<source> to destination-ip=<destination>.
+# The administrator goes to username, the change to operation_name and the whole message to operation.
+# body, host, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+pm = body|^User-name=(?P<user>\S*)\s+user-ip=(?P<ip>\S*)\s+rule-name=(?P<rule>.*?)\s+rule-id=(?P<rid>\S*)\s+modify-type=(?P<type>[^,]*),
+user = STRING(pm["user"])
+username$ = IF user != "" THEN user ELSE NULL
+ip = STRING(pm["ip"])
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+targetHostname$ = IF host != "" THEN host ELSE NULL
+change = TRIM(STRING(pm["type"]))
+operationName$ = IF change != "" THEN "security policy rule " + change ELSE "security policy rule change"
+operation$ = body
+channel$ = "Huawei USG security policy"
+result$ = "success"

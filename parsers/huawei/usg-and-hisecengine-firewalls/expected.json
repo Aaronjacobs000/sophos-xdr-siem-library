@@ -1,0 +1,952 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056011000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "POLICY/6/POLICYDENY",
+      "host_id": "fw01.example.com",
+      "source_address": "198.51.100.44",
+      "destination_address": "192.0.2.10",
+      "source_port": 51544,
+      "destination_port": 22,
+      "source_mac": "00:00:5e:00:53:11",
+      "destination_mac": "00:00:5e:00:53:01",
+      "application_name": "SSH",
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "dmz"
+          },
+          {
+            "key": "rule_name",
+            "value": "deny_ssh_inbound"
+          },
+          {
+            "key": "vsys",
+            "value": "public"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056040000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "POLICY/6/POLICYPERMIT",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 50123,
+      "destination_port": 443,
+      "source_mac": "00:00:5e:00:53:25",
+      "destination_mac": "00:00:5e:00:53:01",
+      "application_name": "HTTPS",
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "rule_name",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "user_name",
+            "value": "jsmith"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          },
+          {
+            "key": "vsys",
+            "value": "public"
+          },
+          {
+            "key": "host",
+            "value": "www.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792020100000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECLOG/6/SESSION_TEARDOWN",
+      "host_id": "fw02.example.com",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 50123,
+      "destination_port": 443,
+      "source_nat_address": "198.51.100.2",
+      "destination_nat_address": "203.0.113.80",
+      "source_nat_port": 2048,
+      "destination_nat_port": 443,
+      "tx_packet_count": 42,
+      "tx_byte_count": 5120,
+      "rx_packet_count": 60,
+      "rx_byte_count": 88200,
+      "application_name": "HTTPS",
+      "protocol": 6,
+      "connection_end_reason": "tcp-fin",
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "rule_name",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "user_name",
+            "value": "jsmith"
+          },
+          {
+            "key": "begin_time",
+            "value": "1792020040"
+          },
+          {
+            "key": "end_time",
+            "value": "1792020100"
+          },
+          {
+            "key": "ip_version",
+            "value": "4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792020115000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECLOG/6/SESSION_TEARDOWN",
+      "host_id": "fw02.example.com",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.53",
+      "source_port": 40001,
+      "destination_port": 53,
+      "tx_packet_count": 1,
+      "tx_byte_count": 74,
+      "rx_packet_count": 0,
+      "rx_byte_count": 0,
+      "application_name": "DNS",
+      "protocol": 17,
+      "connection_end_reason": "default-policy-deny",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "dmz"
+          },
+          {
+            "key": "rule_name",
+            "value": "default"
+          },
+          {
+            "key": "begin_time",
+            "value": "1792020110"
+          },
+          {
+            "key": "end_time",
+            "value": "1792020115"
+          },
+          {
+            "key": "ip_version",
+            "value": "4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056121000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECLOG/6/SESSION_BUILT",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.53",
+      "source_port": 53110,
+      "destination_port": 53,
+      "source_nat_address": "198.51.100.2",
+      "destination_nat_address": "203.0.113.53",
+      "source_nat_port": 3101,
+      "destination_nat_port": 53,
+      "protocol": 17,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "rule_name",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "user_name",
+            "value": "akim"
+          },
+          {
+            "key": "begin_time",
+            "value": "1792020121"
+          },
+          {
+            "key": "end_time",
+            "value": "1792020121"
+          },
+          {
+            "key": "ip_version",
+            "value": "4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056135000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECLOG/4/SESSION_DROP_RECORD",
+      "host_id": "fw01.example.com",
+      "source_address": "203.0.113.14",
+      "destination_address": "192.0.2.40",
+      "source_port": 40002,
+      "destination_port": 161,
+      "protocol": 17,
+      "connection_end_reason": "default filter",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "trust"
+          },
+          {
+            "key": "ip_version",
+            "value": "4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056185000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "IPS/4/DETECT",
+      "host_id": "fw01.example.com",
+      "source_address": "203.0.113.66",
+      "destination_address": "192.0.2.10",
+      "source_port": 40122,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "message": "Generic SQL Injection Attempt",
+      "classification": "Injection",
+      "signature_id": 1000001,
+      "action": "block",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "priority": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "DETECT"
+          },
+          {
+            "key": "severity",
+            "value": "high"
+          },
+          {
+            "key": "policy",
+            "value": "untrust_dmz"
+          },
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "dmz"
+          },
+          {
+            "key": "target",
+            "value": "server"
+          },
+          {
+            "key": "reference",
+            "value": "CVE-2026-0001"
+          },
+          {
+            "key": "event_count",
+            "value": "1"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056210000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "IPS/4/BOTNET",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.99",
+      "source_port": 50210,
+      "destination_port": 8080,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "source_username": "akim",
+      "message": "Generic Botnet Command and Control Beacon",
+      "classification": "Botnet",
+      "signature_id": 1000002,
+      "action": "alert",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "priority": 2,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "BOTNET"
+          },
+          {
+            "key": "severity",
+            "value": "medium"
+          },
+          {
+            "key": "policy",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "target",
+            "value": "client"
+          },
+          {
+            "key": "botnet_role",
+            "value": "4"
+          },
+          {
+            "key": "event_count",
+            "value": "3"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056224000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "IPS/4/DOMAIN",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.53",
+      "source_port": 53111,
+      "destination_port": 53,
+      "protocol": 17,
+      "application_name": "DNS",
+      "source_username": "akim",
+      "message": "Malicious Domain: c2.example.net",
+      "classification": "Botnet",
+      "action": "block",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "priority": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "DOMAIN"
+          },
+          {
+            "key": "severity",
+            "value": "high"
+          },
+          {
+            "key": "policy",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "event_count",
+            "value": "1"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "WAF/4/CONSTRAINT",
+      "host_id": "fw01.example.com",
+      "source_address": "203.0.113.70",
+      "destination_address": "192.0.2.12",
+      "source_port": 41555,
+      "destination_port": 443,
+      "protocol": 6,
+      "message": "Cross Site Scripting Attempt",
+      "classification": "XSS",
+      "signature_id": 2000101,
+      "action": "Block",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "priority": 2,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "CONSTRAINT"
+          },
+          {
+            "key": "severity",
+            "value": "medium"
+          },
+          {
+            "key": "policy",
+            "value": "untrust_dmz"
+          },
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "dmz"
+          },
+          {
+            "key": "event_count",
+            "value": "1"
+          },
+          {
+            "key": "profile",
+            "value": "web_default"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056270000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AV/4/VIRUS",
+      "host_id": "fw01.example.com",
+      "event_type": "virus",
+      "threat_name": "EICAR-Test-File",
+      "threat_type": "FILE",
+      "file_path": "eicar.com",
+      "user_name": "jsmith",
+      "policy_name": "trust_untrust",
+      "agent_priority": "high",
+      "vendor_signature_id": 297842,
+      "vendor_alert_type": "full-scan virus detect",
+      "source_address": "203.0.113.90",
+      "file_hash": {
+        "sha1": "3395856ce81f2b7382dee72602f798b642f14140"
+      },
+      "action_taken": "BLOCKED",
+      "threat_category": "VIRUS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "destination_address",
+            "value": "192.0.2.25"
+          },
+          {
+            "key": "direction",
+            "value": "download"
+          },
+          {
+            "key": "file_type",
+            "value": "COM"
+          },
+          {
+            "key": "application",
+            "value": "HTTP"
+          },
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "trust"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056291000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AV/4/REPUTATION",
+      "host_id": "fw01.example.com",
+      "event_type": "virus",
+      "threat_name": "Trojan.Generic",
+      "threat_type": "FILE",
+      "user_name": "akim",
+      "policy_name": "trust_untrust",
+      "vendor_alert_type": "Trojan",
+      "source_address": "203.0.113.91",
+      "file_hash": {
+        "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
+      },
+      "action_taken": "BLOCKED",
+      "threat_category": "TROJAN",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "destination_address",
+            "value": "192.0.2.26"
+          },
+          {
+            "key": "direction",
+            "value": "download"
+          },
+          {
+            "key": "file_type",
+            "value": "EXE"
+          },
+          {
+            "key": "application",
+            "value": "HTTPS"
+          },
+          {
+            "key": "source_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "trust"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056318000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "URL/4/FILTER",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.95",
+      "source_port": 50444,
+      "destination_port": 80,
+      "protocol": 6,
+      "source_username": "jsmith",
+      "l7_protocol": "HTTP",
+      "uri_host": "bad.example.com",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Malware"
+          },
+          {
+            "key": "action",
+            "value": "block"
+          },
+          {
+            "key": "sub_category",
+            "value": "Malicious Sites"
+          },
+          {
+            "key": "rule_type",
+            "value": "Pre-defined"
+          },
+          {
+            "key": "policy",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056362000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSLVPN/6/USERLOGINSUCC",
+      "host_id": "fw01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "198.51.100.71",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG SSL VPN",
+      "logon_application_family": "SSL VPN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSLVPN/6/USERLOGINSUCC"
+          },
+          {
+            "key": "virtual_gateway",
+            "value": "vpn01"
+          },
+          {
+            "key": "virtual_ip",
+            "value": "192.0.2.200"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:21"
+          },
+          {
+            "key": "vsys",
+            "value": "public"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056400000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSLVPN/4/USERLOGINFAIL",
+      "host_id": "fw01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.77",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG SSL VPN",
+      "logon_application_family": "SSL VPN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "User name and password authentication fails",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSLVPN/4/USERLOGINFAIL"
+          },
+          {
+            "key": "virtual_gateway",
+            "value": "vpn01"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:22"
+          },
+          {
+            "key": "vsys",
+            "value": "public"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792057270000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSLVPN/6/USERLOGOUT",
+      "host_id": "fw01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "198.51.100.71",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG SSL VPN",
+      "logon_application_family": "SSL VPN",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSLVPN/6/USERLOGOUT"
+          },
+          {
+            "key": "virtual_gateway",
+            "value": "vpn01"
+          },
+          {
+            "key": "virtual_ip",
+            "value": "192.0.2.200"
+          },
+          {
+            "key": "vsys",
+            "value": "public"
+          },
+          {
+            "key": "logout_reason",
+            "value": "The user proactively goes offline"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792057320000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "WEBM/6/LOGINSUCC",
+      "host_id": "fw01.example.com",
+      "target_user_name": "netadmin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG web management",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "WEBM/6/LOGINSUCC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792021351000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "WEBM/5/LOGINFAIL",
+      "host_id": "fw01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.78",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG web management",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "The password is incorrect",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "WEBM/5/LOGINFAIL"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792057392000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "POLICY/6/POLICYMODIFY",
+      "host_id": "fw01.example.com",
+      "username": "netadmin",
+      "source_address": "192.0.2.10",
+      "target_hostname": "fw01.example.com",
+      "operation_name": "security policy rule added",
+      "operation": "User-name=netadmin user-ip=192.0.2.10 rule-name=allow_rdp rule-id=12 modify-type=added, action=permit service-name=rdp application-name=RDP from source-ip=192.0.2.0/24 to destination-ip=192.0.2.15.",
+      "channel": "Huawei USG security policy",
+      "result": "success"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792057440000000,
+      "sensor_event_id": "POLICY/2/POLICYSENDFAIL",
+      "host_id": "fw01.example.com"
+    }
+  }
+]
