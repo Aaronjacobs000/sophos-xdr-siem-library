@@ -1,0 +1,722 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933164000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0602000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR Botnet: botnet Example",
+      "classification": "Botnet",
+      "priority": 1,
+      "source_address": "192.0.2.25",
+      "destination_address": "198.51.100.53",
+      "source_port": 50000,
+      "destination_port": 53,
+      "protocol": 17,
+      "application_name": "DNS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0602000001"
+          },
+          {
+            "key": "severity",
+            "value": "high"
+          },
+          {
+            "key": "session_id",
+            "value": "63313"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "hostname",
+            "value": "c2.example.com"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:01"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933200000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0605000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR IOC: CoinMiner",
+      "classification": "IOC",
+      "priority": 1,
+      "source_address": "192.0.2.198",
+      "destination_address": "203.0.113.205",
+      "source_port": 49304,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0605000001"
+          },
+          {
+            "key": "severity",
+            "value": "critical"
+          },
+          {
+            "key": "session_id",
+            "value": "19906026"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "hostname",
+            "value": "pool.example.net"
+          },
+          {
+            "key": "url",
+            "value": "/"
+          },
+          {
+            "key": "md5",
+            "value": "52bea59cf17d9fd5dedd2835fd8e1afe"
+          },
+          {
+            "key": "cipher",
+            "value": "TLS_AES_128_GCM_SHA256"
+          },
+          {
+            "key": "tls_version",
+            "value": "7"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:03"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933245000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0604000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR IPS attack: DNS.Amplification.Detection",
+      "classification": "Anomaly",
+      "priority": 3,
+      "source_address": "192.0.2.145",
+      "destination_address": "198.51.100.33",
+      "source_port": 57325,
+      "destination_port": 53,
+      "protocol": 17,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0604000001"
+          },
+          {
+            "key": "severity",
+            "value": "low"
+          },
+          {
+            "key": "session_id",
+            "value": "9237954"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:04"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933280000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0603000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR Encrypted: sality",
+      "classification": "Encrypted",
+      "priority": 1,
+      "source_address": "192.0.2.140",
+      "destination_address": "203.0.113.98",
+      "source_port": 5326,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "TLS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0603000001"
+          },
+          {
+            "key": "severity",
+            "value": "critical"
+          },
+          {
+            "key": "session_id",
+            "value": "11554817"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "ja3",
+            "value": "74927e242d6c3febf8cb9cab10a7f889"
+          },
+          {
+            "key": "ja3s",
+            "value": "80b3a14bccc8598a1f3bbe83e71f735f"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:05"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933310000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0606000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR Weak cipher: weak version",
+      "classification": "Weak cipher",
+      "priority": 2,
+      "source_address": "192.0.2.171",
+      "destination_address": "192.0.2.119",
+      "source_port": 10001,
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "SMB",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0606000001"
+          },
+          {
+            "key": "severity",
+            "value": "medium"
+          },
+          {
+            "key": "session_id",
+            "value": "570387"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "md5",
+            "value": "9a157673907688965992b40304f50a1e"
+          },
+          {
+            "key": "cipher",
+            "value": "TLS_RSA_WITH_AES_256_GCM_SHA384"
+          },
+          {
+            "key": "tls_version",
+            "value": "1"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:06"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:07"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933339000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0608000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR ML",
+      "classification": "ML",
+      "priority": 3,
+      "source_address": "192.0.2.185",
+      "destination_address": "192.0.2.119",
+      "source_port": 35546,
+      "destination_port": 389,
+      "protocol": 6,
+      "application_name": "DNS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0608000001"
+          },
+          {
+            "key": "severity",
+            "value": "low"
+          },
+          {
+            "key": "session_id",
+            "value": "1135774"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:08"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:07"
+          },
+          {
+            "key": "reasons",
+            "value": "Device IP,Session packet size,Transport layer protocol,Source port number"
+          },
+          {
+            "key": "sensor",
+            "value": "fndr-sensor-01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933362000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0521000001",
+      "host_id": "FAIVMSTM00000001",
+      "vendor": "Fortinet",
+      "provider": "FortiNDR",
+      "alert_category": "Malware",
+      "title": "FortiNDR malware: W32/Example.A!tr",
+      "summary": "W32/Example.A!tr in a PE file from http://files.example.com/data/payload.bin",
+      "vendor_severity": "medium",
+      "severity": "MEDIUM",
+      "source_address": "203.0.113.2",
+      "destination_address": "192.0.2.76",
+      "source_port": 80,
+      "destination_port": 10578,
+      "destination_url": "http://files.example.com/data/payload.bin",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0521000001"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          },
+          {
+            "key": "file_md5",
+            "value": "d41d8cd98f00b204e9800998ecf8427e"
+          },
+          {
+            "key": "file_sha1",
+            "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+          },
+          {
+            "key": "file_sha256",
+            "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "key": "file_type",
+            "value": "PE"
+          },
+          {
+            "key": "file_size",
+            "value": "3132"
+          },
+          {
+            "key": "file_id",
+            "value": "435387294"
+          },
+          {
+            "key": "confidence",
+            "value": "low"
+          },
+          {
+            "key": "detection_types",
+            "value": "trojan"
+          },
+          {
+            "key": "device_type",
+            "value": "sniffer"
+          },
+          {
+            "key": "eventtime",
+            "value": "1792019762019287"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791933785000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0500000001",
+      "host_id": "FAIVMSTM00000001",
+      "vendor": "Fortinet",
+      "provider": "FortiNDR",
+      "alert_category": "Attack Chain",
+      "title": "FortiNDR attack chain: Botnet",
+      "summary": "FortiNDR attack chain: Botnet",
+      "alert_id": "7255021",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0500000001"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          },
+          {
+            "key": "scenario",
+            "value": "Botnet"
+          },
+          {
+            "key": "discovery_date",
+            "value": "2026-10-14 09:13:27"
+          },
+          {
+            "key": "file_list",
+            "value": "435387294"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791934211000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0400000001",
+      "host_id": "FAIVMSTM00000001",
+      "auth_system": "FortiNDR",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "GUI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0400000001"
+          },
+          {
+            "key": "msg",
+            "value": "User jsmith login successfully from GUI(192.0.2.10)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791934300000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0400000001",
+      "host_id": "FAIVMSTM00000001",
+      "auth_system": "FortiNDR",
+      "target_user_name": "guest",
+      "source_address": "203.0.113.45",
+      "logon_application_family": "ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0400000001"
+          },
+          {
+            "key": "msg",
+            "value": "User guest login failed from ssh(203.0.113.45)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791934322000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0400000001",
+      "host_id": "FAIVMSTM00000001",
+      "auth_system": "FortiNDR",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "logon_application_family": "ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0400000001"
+          },
+          {
+            "key": "msg",
+            "value": "User admin login blocked from ssh(203.0.113.45) due to try_too_many_times"
+          },
+          {
+            "key": "block_reason",
+            "value": "try_too_many_times"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791934852000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0400000001",
+      "host_id": "FAIVMSTM00000001",
+      "username": "admin",
+      "channel": "ssh",
+      "client_hostname": "192.0.2.11",
+      "operation_name": "changed settings",
+      "namespace": "system ndr settings",
+      "command": "changed settings of 'ips-dbs' for 'system ndr settings' (user: admin, from: ssh(192.0.2.11))"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791935118000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0400000001",
+      "host_id": "FAIVMSTM00000001",
+      "auth_system": "FortiNDR",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0400000001"
+          },
+          {
+            "key": "msg",
+            "value": "User jsmith logout from 192.0.2.10."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791935419000000,
+      "sensor_event_id": "0802001914",
+      "host_id": "FAIVMSTM00000001"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791935520000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0602000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR NetFlow suspicious-activity: Phishing",
+      "classification": "suspicious-activity",
+      "priority": 1,
+      "source_address": "203.0.113.138",
+      "destination_address": "192.0.2.78",
+      "source_port": 7033,
+      "destination_port": 63294,
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0602000001"
+          },
+          {
+            "key": "severity",
+            "value": "high"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:00:00:00:00"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:00:00:00:00"
+          },
+          {
+            "key": "flow_type",
+            "value": "NETFLOW_V5"
+          },
+          {
+            "key": "flow_exporter",
+            "value": "192.0.2.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "FORTINET_FORTINDR_KV_PARENT > FORTINET_FORTINDR_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Fortinet FortiNDR",
+      "event_time_usec": 1791936331000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0602000001",
+      "host_id": "FAIVMSTM00000001",
+      "message": "FortiNDR Botnet: Example.Botnet",
+      "classification": "Botnet",
+      "priority": 1,
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.66",
+      "source_port": 50122,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "HTTP",
+      "vlan": 12,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0602000001"
+          },
+          {
+            "key": "severity",
+            "value": "high"
+          },
+          {
+            "key": "session_id",
+            "value": "63401"
+          },
+          {
+            "key": "behavior",
+            "value": "CONN"
+          },
+          {
+            "key": "hostname",
+            "value": "c2.example.org"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:01"
+          },
+          {
+            "key": "destination_mac",
+            "value": "00:00:5e:00:53:02"
+          }
+        ]
+      }
+    }
+  }
+]
