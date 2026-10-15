@@ -190,7 +190,7 @@ class Sized:
 
 # Every numeric setting: its name, config key, default, a normal value, type, and highest value.
 NUMBERS = [
-    ("VSA95_PAGE_SIZE", "page_size", 1000, 100, int, 10 ** 9),
+    ("VSA95_PAGE_SIZE", "page_size", 1000, 100, int, 10000),
     ("BRIDGE_BATCH_BYTES", "batch_bytes", 100000, 50000, int, 10 ** 9),
     ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 10 ** 6),
     ("BRIDGE_OVERLAP_SECONDS", "overlap_seconds", 300, 600, int, 10 ** 9),
@@ -472,6 +472,30 @@ class RequestSafetyTest(unittest.TestCase):
         finally:
             c.time.sleep = saved
         self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
+
+
+class RangeTest(unittest.TestCase):
+    """A number outside its range stops the bridge with an error that gives the range."""
+
+    def load(self, **extra):
+        env = {"VSA95_API_URL": "https://vsa.example.com/api/odata/1.0", "VSA95_USERNAME": USER,
+               "VSA95_USER_TOKEN": TOKEN}
+        env.update(extra)
+        return c.load_config(env)
+
+    def test_http_timeout_must_be_more_than_zero(self):
+        for value in ("0", "0.0", "-1"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    c.BridgeError, r"^BRIDGE_HTTP_TIMEOUT must be between 0\.001 and 1,000,000,000$"):
+                self.load(BRIDGE_HTTP_TIMEOUT=value)
+        self.assertEqual(self.load(BRIDGE_HTTP_TIMEOUT="0.5")["timeout"], 0.5)
+
+    def test_page_size_out_of_range_gives_its_range(self):
+        for value in ("-1", "0", "10001"):
+            with self.subTest(value=value), self.assertRaisesRegex(c.BridgeError, r"^VSA95_PAGE_SIZE must be between 1 and 10,000$"):
+                self.load(VSA95_PAGE_SIZE=value)
+        self.assertEqual(self.load(VSA95_PAGE_SIZE="1")["page_size"], 1)
+        self.assertEqual(self.load(VSA95_PAGE_SIZE="10000")["page_size"], 10000)
 
 
 class IntervalTest(unittest.TestCase):

@@ -70,7 +70,7 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
     """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
     value = _env(env, name, default)
     try:
@@ -78,8 +78,8 @@ def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
     except ValueError:
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
-    if not 0 <= number <= high:
-        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -100,13 +100,13 @@ def load_config(env: dict | None = None) -> dict:
         "api_url": (_env(env, "VSA10_API_URL") or "").rstrip("/"),
         "token_id": _env(env, "VSA10_TOKEN_ID"),
         "token_secret": _env(env, "VSA10_TOKEN_SECRET"),
-        "page_size": _number(env, "VSA10_PAGE_SIZE", "1000"),
+        "page_size": _number(env, "VSA10_PAGE_SIZE", "1000", low=1, high=5000),
         "start_id": _env(env, "VSA10_START_ID"),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "kaseya_vsa10_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
         "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
-        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
     for name, key in (("VSA10_API_URL", "api_url"), ("VSA10_TOKEN_ID", "token_id"), ("VSA10_TOKEN_SECRET", "token_secret")):
         if not cfg[key]:
@@ -114,8 +114,6 @@ def load_config(env: dict | None = None) -> dict:
     _require_https(cfg["api_url"], "VSA10_API_URL")
     if cfg["ingest_url"]:
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
-    if not 1 <= cfg["page_size"] <= 5000:
-        raise BridgeError("VSA10_PAGE_SIZE must be between 1 and 5000")
     if cfg["start_id"] is not None and not cfg["start_id"].isdigit():
         raise BridgeError("VSA10_START_ID must be a whole number")
     return cfg

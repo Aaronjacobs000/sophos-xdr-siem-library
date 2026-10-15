@@ -448,6 +448,22 @@ class RequestSafetyTest(unittest.TestCase):
         self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
 
 
+class RangeTest(unittest.TestCase):
+    """A number outside its range stops the bridge with an error that gives the range."""
+
+    def load(self, **extra):
+        env = {"SYNCRO_API_URL": "https://acme.example.com/api/v1", "SYNCRO_API_TOKEN": TOKEN}
+        env.update(extra)
+        return c.load_config(env)
+
+    def test_http_timeout_must_be_more_than_zero(self):
+        for value in ("0", "0.0", "-1"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    c.BridgeError, r"^BRIDGE_HTTP_TIMEOUT must be between 0\.001 and 1,000,000,000$"):
+                self.load(BRIDGE_HTTP_TIMEOUT=value)
+        self.assertEqual(self.load(BRIDGE_HTTP_TIMEOUT="0.5")["timeout"], 0.5)
+
+
 class IntervalTest(unittest.TestCase):
     """main with --interval: an unexpected error is logged by type and line, never its message,
     and polling goes on. A BridgeError still stops the bridge, and a single run still raises."""

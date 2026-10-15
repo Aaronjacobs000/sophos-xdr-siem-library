@@ -183,7 +183,7 @@ class Sized:
 
 # Every numeric setting: its name, config key, default, a normal value, type, and highest value.
 NUMBERS = [
-    ("NORDPASS_PER_PAGE", "per_page", 100, 50, int, 10 ** 9),
+    ("NORDPASS_PER_PAGE", "per_page", 100, 50, int, 100),
     ("BRIDGE_BATCH_BYTES", "batch_bytes", 100000, 50000, int, 10 ** 9),
     ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 10 ** 6),
     ("BRIDGE_OVERLAP_SECONDS", "overlap_seconds", 600, 300, int, 10 ** 9),
@@ -406,6 +406,19 @@ class BridgeTest(unittest.TestCase):
             with self.subTest(size=size), self.assertRaisesRegex(c.BridgeError, "sent more than 1 MB"):
                 self.request_sized(size, code=400)
 
+    def test_retried_status_is_retried_whatever_the_size_of_its_body(self):
+        # A 503 whose body is over the limit is retried like any other, and ends in the same error.
+        saved, c.MAX_RESPONSE_BYTES = c.MAX_RESPONSE_BYTES, 1024 * 1024
+        server = Sized(2 * 1024 * 1024, 503)
+        try:
+            with self.assertRaises(c.HttpStatus) as caught:
+                c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+        finally:
+            server.close()
+            c.MAX_RESPONSE_BYTES = saved
+        self.assertEqual(caught.exception.code, 503)
+        self.assertEqual(self.logbuf.getvalue().count("returned 503; retrying"), c.MAX_ATTEMPTS - 1)
+
     def test_bad_numbers_stop_with_one_plain_error(self):
         for name, _, _, _, cast, high in NUMBERS:
             for value in ["abc", "nan", "inf", "-1", str(high + 1)] + (["1.5"] if cast is int else []):
@@ -455,6 +468,29 @@ class RequestSafetyTest(unittest.TestCase):
         finally:
             c.time.sleep = saved
         self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
+
+
+class RangeTest(unittest.TestCase):
+    """A number outside its range stops the bridge with an error that gives the range."""
+
+    def load(self, **extra):
+        env = {"NORDPASS_TOKEN": TOKEN}
+        env.update(extra)
+        return c.load_config(env)
+
+    def test_http_timeout_must_be_more_than_zero(self):
+        for value in ("0", "0.0", "-1"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    c.BridgeError, r"^BRIDGE_HTTP_TIMEOUT must be between 0\.001 and 1,000,000,000$"):
+                self.load(BRIDGE_HTTP_TIMEOUT=value)
+        self.assertEqual(self.load(BRIDGE_HTTP_TIMEOUT="0.5")["timeout"], 0.5)
+
+    def test_page_size_out_of_range_gives_its_range(self):
+        for value in ("-1", "0", "101"):
+            with self.subTest(value=value), self.assertRaisesRegex(c.BridgeError, r"^NORDPASS_PER_PAGE must be between 1 and 100$"):
+                self.load(NORDPASS_PER_PAGE=value)
+        self.assertEqual(self.load(NORDPASS_PER_PAGE="1")["per_page"], 1)
+        self.assertEqual(self.load(NORDPASS_PER_PAGE="100")["per_page"], 100)
 
 
 class IntervalTest(unittest.TestCase):
