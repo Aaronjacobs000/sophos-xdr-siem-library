@@ -156,13 +156,18 @@ _OPENER = urllib.request.build_opener(_NoRedirect)
 
 def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
     """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
-    use up memory."""
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first."""
     limit = limit or MAX_RESPONSE_BYTES
-    body = resp.read(limit + 1)
-    if len(body) > limit:
-        raise BridgeError(f"{what} to {_host(url)} sent more than {limit // 1048576} MB, which the bridge "
-                          "refuses so a bad response can't use up memory")
-    return body
+    chunks, size = [], 0
+    while True:
+        chunk = resp.read(min(1048576, limit + 1 - size))
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+        size += len(chunk)
+        if size > limit:
+            raise BridgeError(f"{what} to {_host(url)} sent more than {limit // 1048576} MB, which the bridge "
+                              "refuses so a bad response can't use up memory")
 
 
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
