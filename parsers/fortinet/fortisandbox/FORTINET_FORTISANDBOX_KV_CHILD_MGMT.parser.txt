@@ -1,0 +1,47 @@
+!SAMPLE=<14>2026-10-14T23:12:44 devhost=fsa01 devid=FSA3KE0000000001 tzone=36000 tz=AEST date=2026-10-14 time=23:12:44 logid=0103000001 type=event subtype=system level=information user=jsmith ui=GUI action=update status=success reason=none letype=9 msg="Remote log server was successfully added"
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevid="?FSA[^\s"]*"?\s.*\stype="?event"?\s+subtype="?system"?\s.*\suser="?(?:[^s\s"]|s[^y\s"]|sy[^s\s"]|sys[^t\s"]|syst[^e\s"]|syste[^m\s"]|system[^\s"])
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiSandbox logs sent to a remote log server of type syslog, key=value:
+#   <PRI><time> devhost=<name> devid=<serial> tzone=<seconds> tz=<zone> date=<date> time=<time>
+#   logid=<id> type=<type> subtype=<subtype> level=<level> <fields>
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# type=event subtype=system lines and stores only the sensor type FORTIGATE_FW. In Sophos Fusion,
+# turn on Set Global Parent in Parser Script. The parser reads the whole line itself, not the
+# parents' variables.
+# System events an administrator caused (user is not system) to ManagementEvent: the user, the
+# interface (ui), the action, the message and the status. FortiSandbox's own events stay with
+# Fortinet_Event.
+
+kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+logId = STRING(kv["logid"])
+
+sensorType$ = "Fortinet FortiSandbox"
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# A syslog server gets date and time in UTC; tz and tzone name the FortiSandbox's own zone.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+eventTimeUsec$ = IF d != "" AND t != "" THEN DATETIME(d + " " + t, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+
+user = STRING(kv["user"])
+username$ = IF user != "" THEN user ELSE NULL
+ui = STRING(kv["ui"])
+channel$ = IF ui != "" THEN ui ELSE NULL
+cip = STRING(kv["cip"])
+clientHostname$ = IF cip != "" THEN cip ELSE NULL
+act = STRING(kv["action"])
+msg = STRING(kv["msg"])
+operationName$ = IF act != "" THEN act ELSE "system"
+operation$ = IF act != "" THEN act ELSE NULL
+command$ = IF msg != "" THEN msg ELSE NULL
+status = STRING(kv["status"])
+reason = STRING(kv["reason"])
+res = IF status != "" AND reason != "" AND LOWERCASE(reason) != "none" THEN status + ": " + reason ELSE status
+result$ = IF res != "" THEN res ELSE NULL

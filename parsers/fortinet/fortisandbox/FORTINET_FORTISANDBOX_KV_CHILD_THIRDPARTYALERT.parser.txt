@@ -1,0 +1,158 @@
+!SAMPLE=<9>2026-10-14T23:20:05 devhost=fsa01 devid=FSA3KE0000000001 tzone=36000 tz=AEST date=2026-10-14 time=23:20:05 logid=0201000001 type=malware subtype=malware level=alert clientdev=FGT60FTK00000001 clientvd=root fname="invoice.doc" jobid=4635327890062625818 md5=d41d8cd98f00b204e9800998ecf8427e sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 mname="W32/Example.A!tr" proto=HTTP risk="High Risk" scanstart=1792019996 scaned=1792020005 srcip=203.0.113.50 srcport=80 dstip=192.0.2.25 dstport=50123 stype=FGT suser=jsmith url="http://files.example.com/invoice.doc" vd=root vmos="WIN10X64VM" jstatus=done malwarecategory="Trojan"
+!PARENT=Fortinet_Master_non-cef
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevid="?FSA[^\s"]*"?\s.*\stype="?(?:alert|malware|netalert|Alert|Malware|Netalert)"?\s+subtype="?(?:malware|netattack|netbotnet|neturl|Malware|Netattack|Netbotnet|Neturl)"?(?:\s|$)
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiSandbox logs sent to a remote log server of type syslog, key=value:
+#   <PRI><time> devhost=<name> devid=<serial> tzone=<seconds> tz=<zone> date=<date> time=<time>
+#   logid=<id> type=<type> subtype=<subtype> level=<level> <fields>
+# Child of the global parser Fortinet_Master_non-cef, which claims these lines and stores nothing
+# from them. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads the
+# whole line itself, not the parent's variables.
+# Alert logs to the third-party alert schema: malware (a file the sandbox rated), and the network
+# alerts netattack, netbotnet and neturl. Fortinet's log reference names the alert type both alert
+# and malware or netalert, so the parser takes any of them.
+
+kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
+kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+logId = STRING(kv["logid"])
+sub = LOWERCASE(STRING(kv["subtype"]))
+
+sensorType$ = "Fortinet FortiSandbox"
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# A syslog server gets date and time in UTC; tz and tzone name the FortiSandbox's own zone.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+eventTimeUsec$ = IF d != "" AND t != "" THEN DATETIME(d + " " + t, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+
+vendor$ = "Fortinet"
+provider$ = "FortiSandbox"
+alertCategory$ = sub
+level = LOWERCASE(STRING(kv["level"]))
+risk = STRING(kv["risk"])
+mname = STRING(kv["mname"])
+fname = STRING(kv["fname"])
+host = STRING(kv["host"])
+attack = STRING(kv["attackname"])
+botnet = STRING(kv["botnetname"])
+url = STRING(kv["url"])
+jobId = STRING(kv["jobid"])
+alertId$ = IF jobId != "" THEN jobId ELSE NULL
+
+# The title names the malware, the attack, the botnet or the URL's host.
+what = ""
+what = IF sub == "malware" THEN mname ELSE what
+what = IF sub == "netattack" THEN attack ELSE what
+what = IF sub == "netbotnet" AND botnet != "" THEN botnet ELSE what
+what = IF sub == "netbotnet" AND botnet == "" THEN host ELSE what
+what = IF sub == "neturl" THEN host ELSE what
+kind = "FortiSandbox alert"
+kind = IF sub == "malware" THEN "FortiSandbox malware" ELSE kind
+kind = IF sub == "netattack" THEN "FortiSandbox network attack" ELSE kind
+kind = IF sub == "netbotnet" THEN "FortiSandbox botnet connection" ELSE kind
+kind = IF sub == "neturl" THEN "FortiSandbox malicious URL" ELSE kind
+title$ = IF what != "" THEN kind + ": " + what ELSE kind
+summary$ = IF sub == "malware" AND mname != "" AND fname != "" THEN mname + " in " + fname ELSE title$
+summary$ = IF risk != "" THEN summary$ + " (" + risk + ")" ELSE summary$
+
+# The rating (risk) sets the severity: Malicious, High Risk, Medium Risk, Low Risk or Clean.
+# Without one, the log level does.
+r = LOWERCASE(risk)
+vendorSeverity$ = IF risk != "" THEN risk ELSE level
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF level == "emergency" OR level == "alert" OR level == "critical" THEN "HIGH" ELSE severity$
+severity$ = IF level == "error" OR level == "warning" THEN "MEDIUM" ELSE severity$
+severity$ = IF level == "notice" THEN "LOW" ELSE severity$
+severity$ = IF level == "information" OR level == "debug" THEN "INFO" ELSE severity$
+severity$ = IF r == "malicious" THEN "CRITICAL" ELSE severity$
+severity$ = IF r == "high risk" THEN "HIGH" ELSE severity$
+severity$ = IF r == "medium risk" THEN "MEDIUM" ELSE severity$
+severity$ = IF r == "low risk" THEN "LOW" ELSE severity$
+severity$ = IF r == "clean" THEN "INFO" ELSE severity$
+
+# Malware logs carry srcip, srcport, dstip and dstport; network alerts carry srcipport and
+# dstipport as address:port.
+src = STRING(kv["srcip"])
+dst = STRING(kv["dstip"])
+sptText = STRING(kv["srcport"])
+dptText = STRING(kv["dstport"])
+sip = STRING(kv["srcipport"])
+dip = STRING(kv["dstipport"])
+sm = sip|^\[?(?P<ip>.+?)\]?:(?P<port>\d{1,5})$
+dm = dip|^\[?(?P<ip>.+?)\]?:(?P<port>\d{1,5})$
+src = IF src == "" THEN sm["ip"] ELSE src
+dst = IF dst == "" THEN dm["ip"] ELSE dst
+sptText = IF sptText == "" THEN sm["port"] ELSE sptText
+dptText = IF dptText == "" THEN dm["port"] ELSE dptText
+spt = sptText|^(?P<n>\d{1,5})$
+dpt = dptText|^(?P<n>\d{1,5})$
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+destinationUrl$ = IF url != "" THEN url ELSE NULL
+suser = STRING(kv["suser"])
+sourceUserName$ = IF suser != "" THEN suser ELSE NULL
+
+d1.key$ = "log_id"
+d1.value$ = logId
+d2.key$ = "level"
+d2.value$ = level
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "file_name"
+d3.value$ = fname
+additionalData$.record$ = IF fname != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "file_md5"
+d4.value$ = LOWERCASE(STRING(kv["md5"]))
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_sha256"
+d5.value$ = LOWERCASE(STRING(kv["sha256"]))
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "malware_name"
+d6.value$ = mname
+additionalData$.record$ = IF mname != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "malware_category"
+d7.value$ = STRING(kv["malwarecategory"])
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "client_device"
+d8.value$ = STRING(kv["clientdev"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "client_vdom"
+d9.value$ = STRING(kv["clientvd"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "source_type"
+d10.value$ = STRING(kv["stype"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "protocol"
+d11.value$ = STRING(kv["proto"])
+additionalData$.record$ = IF d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "vm_os"
+d12.value$ = STRING(kv["vmos"])
+additionalData$.record$ = IF d12.value$ != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "job_status"
+d13.value$ = STRING(kv["jstatus"])
+additionalData$.record$ = IF d13.value$ != "" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "host"
+d14.value$ = host
+additionalData$.record$ = IF host != "" THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "attack_name"
+d15.value$ = attack
+additionalData$.record$ = IF attack != "" THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
+d16.key$ = "attack_id"
+d16.value$ = STRING(kv["attackid"])
+additionalData$.record$ = IF d16.value$ != "" AND d16.value$ != "0" THEN additionalData$.record$ + [d16] ELSE additionalData$.record$
+d17.key$ = "botnet_name"
+d17.value$ = botnet
+additionalData$.record$ = IF botnet != "" THEN additionalData$.record$ + [d17] ELSE additionalData$.record$
+d18.key$ = "virus_id"
+d18.value$ = STRING(kv["virusid"])
+additionalData$.record$ = IF d18.value$ != "" AND d18.value$ != "0" THEN additionalData$.record$ + [d18] ELSE additionalData$.record$
+d19.key$ = "vdom"
+d19.value$ = STRING(kv["vd"])
+additionalData$.record$ = IF d19.value$ != "" THEN additionalData$.record$ + [d19] ELSE additionalData$.record$
