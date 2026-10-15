@@ -1,0 +1,40 @@
+!SAMPLE=<187>Oct 14 09:12:44 web01 nginx: 2026/10/14 09:12:44 [error] 1234#1234: *5 open() "/usr/share/nginx/html/wp-login.php" failed (2: No such file or directory), client: 203.0.113.50, server: www.example.com, request: "GET /wp-login.php HTTP/1.1", host: "www.example.com"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|\s)\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[(?:emerg|alert|crit|error|warn|notice|info|debug)\] \d+#\d+:
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: nginx error log lines, sent with error_log syslog:server=<collector> (tag nginx, facility
+# local7) or forwarded from the error log file by the host's syslog daemon. nginx documents the
+# levels and the syslog target but not the line, so the layout follows its source (ngx_log.c,
+# ngx_syslog.c and the HTTP error handler in ngx_http_request.c):
+#   <time> [<level>] <pid>#<tid>: *<connection> <message>[ while <action>], client: <address>,
+#   server: <name>, request: "<request line>", upstream: "<url>", host: "<host>", referrer: "<url>"
+# Parent: recognizes every error log line and hands the ones with an HTTP request on:
+#   user "<name>": password mismatch, user "<name>" was not found in "<file>"   to Auth
+#   any other line with a request (denied, rate limited, not found, upstream errors)  to HTTP
+# Lines with no request, such as TLS handshake failures and process messages, stay in generic.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?P<off>Z|[+-]\d{2}:\d{2})\s+(?P<host5>\S+)\s+\S+|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<host>\S+)\s+[^\s:\[]+(?:\[\d+\])?:)\s
+m = originalData$|(?:^|\s)(?P<time>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>[a-z]+)\] (?P<pid>\d+)#(?P<tid>\d+): (?:\*(?P<conn>\d+) )?(?P<msg>.*)$
+# The HTTP error handler adds the request's context after the message, in this order.
+ctx = m["msg"]|^(?P<text>.*?)(?:, client: (?P<client>[^,\s]+))?(?:, server: (?P<server>[^,\s]*))?(?:, request: "(?P<request>(?:[^"\\]|\\.)*)")?(?:, subrequest: "(?P<sub>[^"]*)")?(?:, upstream: "(?P<upstream>[^"]*)")?(?:, host: "(?P<host>[^"]*)")?(?:, referrer: "(?P<referrer>[^"]*)")?\s*$
+text = ctx["text"]
+level = m["level"]
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "nginx"
+hostId$ = IF hdr["host"] != "" THEN hdr["host"] ELSE hdr["host5"]
+# The error log's time is the server's local time with no zone. Read it with the zone of an RFC 5424
+# header when there is one (a forwarder may add it), otherwise as UTC.
+zone = IF hdr["off"] != "" THEN hdr["off"] ELSE "Z"
+eventTimeUsec$ = DATETIME(m["time"] + " " + zone, "2006/01/02 15:04:05 Z07:00")
+
+basic = text|^user "(?P<user>(?:[^"\\]|\\.)*)"(?:: (?P<mismatch>password mismatch)| was not found in "(?P<file>[^"]*)")$
+eventType$ = "other"
+eventType$ = IF ctx["request"] != "" THEN "http" ELSE eventType$
+eventType$ = IF ctx["request"] != "" AND basic["user"] != "" THEN "auth" ELSE eventType$
+
+# The request line, split for the children: method, path, query and version.
+req = ctx["request"]|^(?P<method>[A-Z]+)\s+(?P<path>[^?\s]*)(?:\?(?P<query>\S*))?(?:\s+(?P<version>HTTP/[\d.]+))?$

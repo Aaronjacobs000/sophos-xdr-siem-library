@@ -1,0 +1,39 @@
+!SAMPLE=<187>Oct 14 09:16:18 web01 nginx: 2026/10/14 09:16:18 [error] 1236#1236: *31 user "admin": password mismatch, client: 203.0.113.77, server: www.example.com, request: "GET /admin/ HTTP/1.1", host: "www.example.com"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: nginx error log lines sent by syslog.
+# Child of NGINX_ERROR_SYSLOG_PARENT: failed HTTP basic authentication (ngx_http_auth_basic_module)
+# to Auth, as a failed logon by the user the client named:
+#   user "<name>": password mismatch                  the password was wrong
+#   user "<name>" was not found in "<file>"           no such user in the password file
+# nginx logs no line for a sign-in that worked.
+# m, ctx, text, level, basic, req, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = basic["user"]
+sourceAddress$ = ctx["client"]
+targetHostName$ = IF ctx["host"] != "" THEN ctx["host"] ELSE ctx["server"]
+authSystem$ = "nginx basic authentication"
+logonApplicationFamily$ = "http"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = "FAILURE"
+actionResult$ = "FAILED"
+extraFailurereason$ = text
+failureCategory$ = IF basic["mismatch"] != "" THEN "INCORRECT_USER_OR_PASSWORD" ELSE "INVALID_ACCOUNT"
+
+a1.key$ = "request"
+a1.value$ = ctx["request"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1]
+a2.key$ = "level"
+a2.value$ = level
+eventMetadata$.record$ = eventMetadata$.record$ + [a2]
+a3.key$ = "server"
+a3.value$ = ctx["server"]
+eventMetadata$.record$ = IF ctx["server"] != "" THEN eventMetadata$.record$ + [a3] ELSE eventMetadata$.record$
+a4.key$ = "password_file"
+a4.value$ = basic["file"]
+eventMetadata$.record$ = IF basic["file"] != "" THEN eventMetadata$.record$ + [a4] ELSE eventMetadata$.record$
