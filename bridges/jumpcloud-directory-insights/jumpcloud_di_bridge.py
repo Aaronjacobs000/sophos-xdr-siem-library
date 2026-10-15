@@ -1,0 +1,575 @@
+#!/usr/bin/env python3
+"""Pull JumpCloud Directory Insights events from the Directory Insights API and send them to a
+Sophos NG-SIEM HTTP Ingest integration, one JSON record per line. Python 3 standard library only.
+
+JumpCloud offers its Directory Insights events (Admin Portal and User Portal sign-ins and changes,
+SSO, RADIUS, LDAP and device sign-ins, MDM and more) through its REST API, which is pull only, so
+this script reads them with an administrator's API key:
+
+  POST https://api.jumpcloud.com/insights/directory/v1/events   (x-api-key, and x-org-id for an MSP)
+
+Each event goes out with "jumpcloud_record" first ("directory_insights"), so the library parsers in
+parsers/jumpcloud/directory-insights can recognize and normalize it.
+
+Each run reads each organization from the end of its last window, less an overlap, to a minute
+before now, oldest first, following the X-Search_after response header, and drops events it
+already sent by their id. The request and response shapes follow JumpCloud's Directory Insights API
+reference. Configuration comes from environment variables (see README.md). A window's end only
+moves after HTTP Ingest accepted every event in it. --dry-run prints what would be sent and changes
+nothing.
+"""
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import http.client
+import json
+import logging
+import os
+import random
+import re
+import socket
+import sys
+import tempfile
+import time
+import traceback
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+
+__version__ = "0.1.0"
+LOG = logging.getLogger("jumpcloud_di_bridge")
+USER_AGENT = f"parser-studio-jumpcloud-di-bridge/{__version__}"
+RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# 501 and 505 say the server will never take the request as it is sent, so they aren't retried.
+UNSUPPORTED_STATUS = {501: "the server doesn't support this request",
+                      505: "the server doesn't support HTTP/1.1, the version the bridge uses"}
+# The opener doesn't follow these (see _NoRedirect), so the error names them as refused.
+REDIRECT_STATUS = {301, 302, 303, 307, 308}
+MAX_ATTEMPTS = 6
+# A response body over this stops the run, so a broken or hostile endpoint can't use up memory.
+MAX_RESPONSE_BYTES = 64 * 1024 * 1024
+MAX_PAGES = 10000
+EVENTS_PATH = "/insights/directory/v1/events"
+RECORD_KEY = "jumpcloud_record"
+RECORD = "directory_insights"
+# JumpCloud keeps Directory Insights events for 90 days.
+RETENTION_DAYS = 90
+# A window ends this long before now, so a clock a little ahead of JumpCloud's never asks for the future.
+END_MARGIN_SECONDS = 60
+SEEN_LIMIT = 200000
+# The state key for the API key's own organization, when JUMPCLOUD_ORG_IDS is empty.
+OWN_ORG = "_"
+ORG_ID = re.compile(r"^[A-Za-z0-9]{1,64}$")
+SERVICE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+
+
+class BridgeError(Exception):
+    """A failure that stops the run without moving a window past unsent data."""
+
+
+class NetworkError(BridgeError):
+    """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
+    bridge logs it and tries again at the next interval."""
+
+
+class HostNotFound(NetworkError):
+    """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
+    it stops the bridge even with --interval, since it is most likely a mistyped URL."""
+
+
+# ---------------------------------------------------------------- configuration
+
+def _env(env: dict, name: str, default: str | None = None) -> str | None:
+    value = env.get(name)
+    if not (value and value.strip()) and name.startswith("BRIDGE_"):
+        # Bridges were called collectors, so the old COLLECTOR_ names still work.
+        value = env.get("COLLECTOR_" + name[len("BRIDGE_"):])
+    return value.strip() if value and value.strip() else default
+
+
+def _flag(env: dict, name: str, default: bool) -> bool:
+    value = _env(env, name)
+    if value is None:
+        return default
+    return value.lower() not in ("0", "false", "no", "off")
+
+
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
+    """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
+    value = _env(env, name, default)
+    try:
+        number = cast(value)
+    except ValueError:
+        raise BridgeError(f"{name} must be a number") from None
+    # NaN fails every comparison, so it lands here too.
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
+    return number
+
+
+def _require_https(url: str, what: str) -> None:
+    """Keys travel with every request, so only https is allowed (plain http to this machine is
+    allowed for local testing)."""
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme == "https" or (parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost", "::1")):
+        return
+    raise BridgeError(f"{what} must be an https URL")
+
+
+def _list(env: dict, name: str, default: str = "") -> list[str]:
+    return list(dict.fromkeys(x.strip() for x in (_env(env, name, default) or "").split(",") if x.strip()))
+
+
+def load_config(env: dict | None = None) -> dict:
+    env = dict(os.environ if env is None else env)
+    cfg = {
+        "ingest_url": _env(env, "NGSIEM_INGEST_URL"),
+        "ingest_key": _env(env, "NGSIEM_INGEST_KEY"),
+        "api_url": (_env(env, "JUMPCLOUD_API_URL", "https://api.jumpcloud.com") or "").rstrip("/"),
+        "api_key": _env(env, "JUMPCLOUD_API_KEY"),
+        "org_ids": _list(env, "JUMPCLOUD_ORG_IDS"),
+        "services": [s.lower() for s in _list(env, "JUMPCLOUD_SERVICES", "all")],
+        "page_limit": _number(env, "JUMPCLOUD_PAGE_LIMIT", "1000", low=1, high=10000),
+        "state_file": _env(env, "BRIDGE_STATE_FILE", "jumpcloud_di_state.json"),
+        "gzip": _flag(env, "BRIDGE_GZIP", True),
+        "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
+        "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=RETENTION_DAYS * 24),
+        "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "900"),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
+    }
+    if not cfg["api_key"]:
+        raise BridgeError("JUMPCLOUD_API_KEY is required: the API key of a JumpCloud administrator with API access turned on")
+    if any(not ORG_ID.match(o) for o in cfg["org_ids"]):
+        raise BridgeError("JUMPCLOUD_ORG_IDS takes organization IDs, separated by commas")
+    if not cfg["services"] or any(not SERVICE.match(s) for s in cfg["services"]):
+        raise BridgeError("JUMPCLOUD_SERVICES takes service names such as all, directory, sso, radius, ldap or systems, "
+                          "separated by commas")
+    if cfg["lookback_hours"] <= 0:
+        raise BridgeError("BRIDGE_LOOKBACK_HOURS must be above 0")
+    _require_https(cfg["api_url"], "JUMPCLOUD_API_URL")
+    if cfg["ingest_url"]:
+        _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
+    return cfg
+
+
+# ---------------------------------------------------------------- HTTP
+
+def _host(url: str) -> str:
+    """The host and port, for log lines and errors. A user name or password in the URL is a
+    credential, so it shows as [redacted]."""
+    _, at, host = urllib.parse.urlsplit(url).netloc.rpartition("@")
+    return f"[redacted]@{host}" if at else host
+
+
+def _retry_delay(attempt: int, retry_after: str | None) -> float:
+    if retry_after:
+        try:
+            # Honor the server's wait for up to five minutes, so a bad value can't stall the bridge.
+            return min(300.0, max(0.0, float(retry_after)))
+        except ValueError:
+            pass
+    return min(60.0, 2 ** attempt) + random.uniform(0, 1)
+
+
+class HttpStatus(BridgeError):
+    def __init__(self, what: str, url: str, code: int, body: bytes = b""):
+        if code in REDIRECT_STATUS:
+            message = (f"{what} to {_host(url)} answered with a redirect (HTTP {code}), which the bridge refuses "
+                       "so the key or token never goes to another URL; check the URL setting")
+        elif code in UNSUPPORTED_STATUS:
+            message = (f"{what} to {_host(url)} failed with HTTP {code}: {UNSUPPORTED_STATUS[code]}, and a retry "
+                       "won't change that; check the URL setting")
+        else:
+            message = f"{what} to {_host(url)} failed with HTTP {code}"
+        super().__init__(message)
+        self.code = code
+        self.body = body
+
+
+class RetriedStatus(HttpStatus, NetworkError):
+    """A 408, 429, 500, 502, 503 or 504 that outlasted the retries. It is a NetworkError too, so with --interval
+    the bridge logs it and tries again at the next interval."""
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Following a redirect would send the request's key or token to another URL, so it isn't
+    followed: the redirect fails like any other status."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
+    """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first.
+    A body that ends short of its Content-Length raises IncompleteRead, like a cut-off chunked one."""
+    limit = limit or MAX_RESPONSE_BYTES
+    chunks, size = [], 0
+    while True:
+        chunk = resp.read(min(1048576, limit + 1 - size))
+        if not chunk:
+            # read(n) returns nothing, with no error, when the connection closes before the
+            # Content-Length is reached. http.client still counts the bytes it was promised.
+            owed = getattr(resp, "length", None)
+            if owed:
+                raise http.client.IncompleteRead(b"", owed)
+            return b"".join(chunks)
+        chunks.append(chunk)
+        size += len(chunk)
+        if size > limit:
+            raise BridgeError(f"{what} to {_host(url)} sent more than {limit // 1048576} MB, which the bridge "
+                              "refuses so a bad response can't use up memory")
+
+
+# Retried, then a NetworkError. On Python 3.9 a read timeout is socket.timeout, which isn't a
+# TimeoutError yet, and IncompleteRead means the connection closed partway through an answer.
+_NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError, http.client.IncompleteRead)
+
+
+def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
+    """Send a request, retrying 408, 429, 500, 502, 503 and 504 with backoff. Returns (status, headers, body)."""
+    for attempt in range(MAX_ATTEMPTS):
+        req = urllib.request.Request(url, data=body, method=method, headers={**headers, "User-Agent": USER_AGENT})
+        try:
+            with _OPENER.open(req, timeout=timeout) as resp:
+                return resp.status, resp.headers, _read(resp, what, url)
+        except urllib.error.HTTPError as e:
+            # Read the body, then close the error response so its socket is released now, not
+            # when the error is garbage collected. A status that is retried is retried whatever
+            # its body, so a body over the limit only stops the run for the other statuses.
+            try:
+                error_body = _read(e, what, url)
+            except BridgeError:
+                if e.code not in RETRY_STATUS:
+                    raise
+                error_body = b""
+            except _NETWORK_ERRORS:
+                # The body was cut short or timed out: the status still decides what happens.
+                error_body = b""
+            finally:
+                e.close()
+            if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
+                delay = _retry_delay(attempt, e.headers.get("Retry-After") if e.headers else None)
+                LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
+                time.sleep(delay)
+                continue
+            if e.code in RETRY_STATUS:
+                raise RetriedStatus(what, url, e.code, error_body) from None
+            raise HttpStatus(what, url, e.code, error_body) from None
+        except _NETWORK_ERRORS as e:
+            if attempt < MAX_ATTEMPTS - 1:
+                delay = _retry_delay(attempt, None)
+                LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
+                time.sleep(delay)
+                continue
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
+                                   "check the URL setting") from None
+            raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+        except ValueError:
+            # http.client puts a header value it refuses, such as a key with a line break in it,
+            # in its error, so that error isn't passed on.
+            raise BridgeError(f"{what} to {_host(url)} couldn't be sent: a key or token has a line break or "
+                              "another character a request header can't carry") from None
+        except http.client.HTTPException as e:
+            raise BridgeError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+    raise BridgeError(f"{what} to {_host(url)} failed")
+
+
+def _json(body: bytes, what: str):
+    try:
+        return json.loads(body)
+    except ValueError:
+        raise BridgeError(f"{what} returned a body that is not JSON") from None
+
+
+def _error_message(body: bytes) -> str:
+    """The API answers errors with {"message": ...}. Keep the message short."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return "no message"
+    message = (data.get("message") or data.get("error") or "") if isinstance(data, dict) else ""
+    return str(message)[:200] or "no message"
+
+
+# ---------------------------------------------------------------- Directory Insights API
+
+class DirectoryInsights:
+    """Calls the Directory Insights API with the key in 'x-api-key' and, for an MSP, the client
+    organization in 'x-org-id'."""
+
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+
+    def events(self, org: str | None, query: dict) -> tuple[list, object]:
+        """One page of events and the response headers, which carry the paging values."""
+        url = f"{self.cfg['api_url']}{EVENTS_PATH}"
+        headers = {"x-api-key": self.cfg["api_key"], "Content-Type": "application/json", "Accept": "application/json"}
+        if org:
+            headers["x-org-id"] = org
+        body = json.dumps(query, separators=(",", ":")).encode()
+        where = f" for organization {org}" if org else ""
+        try:
+            _, resp_headers, raw = _request("POST", url, headers, body, self.cfg["timeout"], "events request")
+        except HttpStatus as e:
+            if e.code == 401:
+                raise BridgeError(f"JumpCloud refused the API key{where} (HTTP 401): {_error_message(e.body)}; check "
+                                  "JUMPCLOUD_API_KEY, that API access is turned on for the administrator and the key hasn't "
+                                  "expired, and that JUMPCLOUD_API_URL is the API URL for the organization's region") from None
+            if e.code == 402:
+                raise BridgeError(f"JumpCloud answered that Directory Insights is not enabled{where} (HTTP 402)") from None
+            if e.code == 403:
+                raise BridgeError(f"JumpCloud refused the events request{where} (HTTP 403): {_error_message(e.body)}; the "
+                                  "administrator's role must be able to view Directory Insights, and an MSP key needs "
+                                  "access to each organization in JUMPCLOUD_ORG_IDS") from None
+            if e.code == 400:
+                raise BridgeError(f"JumpCloud rejected the events request{where} (HTTP 400): {_error_message(e.body)}") from None
+            raise
+        data = _json(raw, "events request")
+        if not isinstance(data, list):
+            raise BridgeError("events request returned JSON that is not a list")
+        return data, resp_headers
+
+
+# ---------------------------------------------------------------- HTTP Ingest
+
+class Sink:
+    """Batches records as NDJSON and posts them to HTTP Ingest, or prints them in dry-run."""
+
+    def __init__(self, cfg: dict, dry_run: bool, out=None):
+        self.cfg, self.dry_run = cfg, dry_run
+        self.out = out or sys.stdout
+        self.sent = 0
+        self.batches = 0
+        if not dry_run and not (cfg["ingest_url"] and cfg["ingest_key"]):
+            raise BridgeError("NGSIEM_INGEST_URL and NGSIEM_INGEST_KEY are required unless --dry-run is set")
+
+    def send(self, records: list[dict]) -> None:
+        batch, size = [], 0
+        for rec in records:
+            line = json.dumps(rec, separators=(",", ":"), ensure_ascii=False)
+            n = len(line.encode("utf-8")) + 1
+            if batch and size + n > self.cfg["batch_bytes"]:
+                self._post(batch)
+                batch, size = [], 0
+            batch.append(line)
+            size += n
+        if batch:
+            self._post(batch)
+
+    def _post(self, lines: list[str]) -> None:
+        body = ("\n".join(lines) + "\n").encode("utf-8")
+        if self.dry_run:
+            self.out.write(body.decode("utf-8"))
+            self.out.flush()
+        else:
+            headers = {"Authorization": f"Bearer {self.cfg['ingest_key']}", "Content-Type": "application/json"}
+            if self.cfg["gzip"]:
+                body = gzip.compress(body)
+                headers["Content-Encoding"] = "gzip"
+            _request("POST", self.cfg["ingest_url"], headers, body, self.cfg["timeout"], "HTTP Ingest POST")
+        self.sent += len(lines)
+        self.batches += 1
+
+
+# ---------------------------------------------------------------- collection
+
+def _fromisoformat(text: str) -> datetime:
+    """datetime.fromisoformat, the same on Python 3.9 to 3.13. Before 3.11 it takes no Z, only 3 or 6
+    fraction digits and only +HH:MM offsets (no version takes z), so the text is rewritten first."""
+    if text[-1:] in ("Z", "z"):
+        text = text[:-1] + "+00:00"
+    if "." in text:
+        head, rest = text.split(".", 1)
+        # The fraction is the digits right after the point. An offset after them keeps its place.
+        tail = rest.lstrip("0123456789")
+        text = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
+    if text[-5:-4] in ("+", "-") and text[-4:].isdigit():
+        text = text[:-2] + ":" + text[-2:]  # +1000 becomes +10:00
+    return datetime.fromisoformat(text)
+
+
+def _parse_time(value) -> float | None:
+    """timestamp is RFC 3339 in UTC, such as 2026-10-14T00:12:44.123Z."""
+    v = str(value or "").strip()
+    try:
+        dt = _fromisoformat(v)
+    except ValueError:
+        return None
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).timestamp()
+
+
+def _di_time(epoch: float) -> str:
+    """start_time and end_time take RFC 3339 in UTC, sent here in whole seconds."""
+    return datetime.fromtimestamp(int(epoch), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _key(event: dict) -> str:
+    """Every event has a unique id. One without an id is known by the hash of the whole event."""
+    if isinstance(event.get("id"), str) and event["id"]:
+        return "id:" + event["id"]
+    return hashlib.sha256(json.dumps(event, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:32]
+
+
+def _header_int(headers, name: str) -> int | None:
+    try:
+        return int(str(headers.get(name)).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _search_after(headers) -> list | None:
+    """X-Search_after holds a JSON array, such as [1576181718000, "DZrPyW8BNsa9iKWoOm7h"], that goes
+    back as search_after to read the next page."""
+    try:
+        value = json.loads(headers.get("X-Search_after") or "")
+    except ValueError:
+        return None
+    return value if isinstance(value, list) and value else None
+
+
+def _org_label(org: str | None) -> str:
+    return f"organization {org}" if org else "the key's organization"
+
+
+def collect(org: str | None, cfg: dict, state: dict, sink: Sink, save, client: DirectoryInsights, now: float) -> int:
+    """Reads one organization from the end of its last window, less the overlap, to a minute before
+    now, oldest first, and sends the events not sent before. JumpCloud says a page that holds fewer
+    rows than X-Limit is the last one; until then each page is read with the X-Search_after value of
+    the page before. The window's end is saved only after every page of it was sent."""
+    cur = state.setdefault("orgs", {}).setdefault(org or OWN_ORG, {})
+    since = cur.get("until")
+    end = now - END_MARGIN_SECONDS
+    # A saved end later than now (the clock went back) counts as now.
+    start = (min(since, end) - cfg["overlap_seconds"]) if isinstance(since, (int, float)) else (now - cfg["lookback_hours"] * 3600)
+    # JumpCloud keeps events for 90 days, so a window never starts before that.
+    start = min(max(start, now - RETENTION_DAYS * 86400), end - 1)
+    seen = {k: t for k, t in (cur.get("seen") or {}).items() if isinstance(t, (int, float)) and t >= start - 60}
+    cur["seen"] = seen
+    query = {"service": cfg["services"], "start_time": _di_time(start), "end_time": _di_time(end),
+             "limit": cfg["page_limit"], "sort": "ASC"}
+    sent = 0
+    for _ in range(MAX_PAGES):
+        rows, headers = client.events(org, query)
+        fresh = {}
+        for e in rows:
+            if not isinstance(e, dict):
+                continue
+            k = _key(e)
+            if k not in seen and k not in fresh:
+                t = _parse_time(e.get("timestamp"))
+                fresh[k] = (t if t is not None else now, e)
+        if fresh:
+            sink.send([{RECORD_KEY: RECORD, **{f: v for f, v in e.items() if f != RECORD_KEY}} for _, e in fresh.values()])
+            # Only now that HTTP Ingest took them do they count as sent.
+            seen.update({k: t for k, (t, _) in fresh.items()})
+            if len(seen) > SEEN_LIMIT:
+                cur["seen"] = seen = dict(sorted(seen.items(), key=lambda kv: kv[1])[-SEEN_LIMIT:])
+            sent += len(fresh)
+            save()
+        count = _header_int(headers, "X-Result-Count")
+        limit = _header_int(headers, "X-Limit") or cfg["page_limit"]
+        if not rows or (len(rows) if count is None else count) < limit:
+            break
+        after = _search_after(headers)
+        if after is None:
+            raise BridgeError("events request returned a full page without an X-Search_after header for the next one")
+        if after == query.get("search_after"):
+            raise BridgeError("events request returned the same X-Search_after value twice, so the next page can't be read")
+        query = {**query, "search_after": after}
+    else:
+        LOG.warning("%s: stopped after %d pages; the next run reads the same window again", _org_label(org), MAX_PAGES)
+        return sent
+    cur["until"] = end
+    save()
+    LOG.info("%s: %d sent", _org_label(org), sent)
+    return sent
+
+
+# ---------------------------------------------------------------- state and main
+
+def load_state(path: str) -> dict:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {}
+
+
+def save_state(path: str, state: dict) -> None:
+    folder = os.path.dirname(os.path.abspath(path))
+    fd, tmp = tempfile.mkstemp(prefix=".state-", dir=folder)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(state, fh, separators=(",", ":"))
+    os.replace(tmp, path)
+
+
+def run_once(cfg: dict, dry_run: bool = False, out=None) -> int:
+    state = load_state(cfg["state_file"])
+    sink = Sink(cfg, dry_run, out)
+    save = (lambda: None) if dry_run else (lambda: save_state(cfg["state_file"], state))
+    client = DirectoryInsights(cfg)
+    now = time.time()
+    count = sum(collect(org, cfg, state, sink, save, client, now) for org in (cfg["org_ids"] or [None]))
+    LOG.info("run finished: %d records sent in %d batches%s", sink.sent, sink.batches, " (dry run, nothing sent)" if dry_run else "")
+    return count
+
+
+def _where(e: BaseException) -> str:
+    """Where in this script an unexpected error came from: the line and function, never a value,
+    so no key or record reaches the log."""
+    frames = traceback.extract_tb(e.__traceback__)
+    mine = [f for f in frames if os.path.basename(f.filename) == os.path.basename(__file__)]
+    f = (mine or frames)[-1]
+    return f"line {f.lineno} in {f.name}"
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Send JumpCloud Directory Insights events to Sophos NG-SIEM HTTP Ingest.")
+    ap.add_argument("--dry-run", action="store_true", help="print the NDJSON that would be sent; send and save nothing")
+    ap.add_argument("--interval", type=int, default=0, help="poll every N seconds instead of running once")
+    ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
+    args = ap.parse_args(argv)
+    if args.interval < 0:
+        ap.error("--interval must be 0 or more")
+    logging.basicConfig(level=args.log_level.upper(), stream=sys.stderr, format="%(asctime)s %(levelname)s %(message)s")
+    dry_run = args.dry_run or _flag(dict(os.environ), "BRIDGE_DRY_RUN", False)
+    try:
+        cfg = load_config()
+        worked = False
+        while True:
+            try:
+                run_once(cfg, dry_run)
+                worked = True
+            except NetworkError as e:
+                # A host name that doesn't resolve before any run has worked is most likely a
+                # mistyped URL, so it stops the bridge.
+                if not args.interval or (isinstance(e, HostNotFound) and not worked):
+                    raise
+                LOG.error("%s; trying again in %d seconds", e, args.interval)
+            except BridgeError:
+                raise
+            except Exception as e:
+                if not args.interval:
+                    raise
+                LOG.error("the run failed with an unexpected %s at %s; trying again in %d seconds",
+                          type(e).__name__, _where(e), args.interval)
+            if not args.interval:
+                return 0
+            time.sleep(args.interval)
+    except BridgeError as e:
+        LOG.error("%s", e)
+        return 1
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())
