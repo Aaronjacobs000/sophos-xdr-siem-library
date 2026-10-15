@@ -88,7 +88,7 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
     """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
     value = _env(env, name, default)
     try:
@@ -96,8 +96,8 @@ def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
     except ValueError:
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
-    if not 0 <= number <= high:
-        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -148,14 +148,14 @@ def load_config(env: dict | None = None) -> dict:
         "admin_email": _env(env, "GWS_ADMIN_EMAIL"),
         "customer_id": _env(env, "GWS_CUSTOMER_ID"),
         "apps": [a.strip() for a in (_env(env, "GWS_APPLICATIONS", DEFAULT_APPS) or "").split(",") if a.strip()],
-        "page_size": _number(env, "GWS_PAGE_SIZE", "1000"),
+        "page_size": _number(env, "GWS_PAGE_SIZE", "1000", low=1, high=1000),
         "token_overlap_seconds": _number(env, "GWS_TOKEN_OVERLAP_SECONDS", "14400"),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "google_workspace_audit_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
         "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
         "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "3600"),
-        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
     if not cfg["admin_email"] or not re.fullmatch(r"[^@\s]+@[^@\s]+", cfg["admin_email"]):
         raise BridgeError("GWS_ADMIN_EMAIL is required: the administrator the service account acts as")
@@ -167,8 +167,6 @@ def load_config(env: dict | None = None) -> dict:
     if bad:
         raise BridgeError("GWS_APPLICATIONS takes Reports API application names in lowercase, such as login,admin,token")
     cfg["apps"] = list(dict.fromkeys(cfg["apps"]))
-    if not 1 <= cfg["page_size"] <= 1000:
-        raise BridgeError("GWS_PAGE_SIZE must be from 1 to 1000")
     if cfg["lookback_hours"] <= 0:
         raise BridgeError("BRIDGE_LOOKBACK_HOURS must be above 0")
     _require_https(cfg["api_url"], "GWS_API_URL")
@@ -339,9 +337,14 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 return resp.status, _read(resp, what, url)
         except urllib.error.HTTPError as e:
             # Read the body, then close the error response so its socket is released now, not
-            # when the error is garbage collected.
+            # when the error is garbage collected. A status that is retried is retried whatever
+            # its body, so a body over the limit only stops the run for the other statuses.
             try:
                 error_body = _read(e, what, url)
+            except BridgeError:
+                if e.code not in RETRY_STATUS:
+                    raise
+                error_body = b""
             finally:
                 e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
