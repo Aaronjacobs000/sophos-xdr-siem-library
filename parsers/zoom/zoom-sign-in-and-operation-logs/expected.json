@@ -1,0 +1,276 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791853804000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Zoom",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "status": "Sign in",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "Browser",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_id",
+            "value": "Ex4mpleAcc0untId01"
+          },
+          {
+            "key": "client_version",
+            "value": "6.5.3.12345"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791853960000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Zoom",
+      "target_user_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "status": "Sign in",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "Windows",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_id",
+            "value": "Ex4mpleAcc0untId01"
+          },
+          {
+            "key": "client_version",
+            "value": "6.5.3.12345"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791854413000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Zoom",
+      "target_user_name": "sam.admin@example.com",
+      "source_address": "2001:db8::25",
+      "status": "Sign in",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "iOS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_id",
+            "value": "Ex4mpleAcc0untId01"
+          },
+          {
+            "key": "client_version",
+            "value": "6.5.2.31002"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791856721000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Zoom",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "status": "Sign out",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "logon_application_family": "Browser",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account_id",
+            "value": "Ex4mpleAcc0untId01"
+          },
+          {
+            "key": "client_version",
+            "value": "6.5.3.12345"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791857112000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user",
+      "event_source": "Zoom",
+      "event_name": "add",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "target_user_name": "new.starter@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "add user - new.starter@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791857278000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user",
+      "event_source": "Zoom",
+      "event_name": "delete",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "target_user_name": "former.staff@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "delete user - former.staff@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791857490000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "role",
+      "event_source": "Zoom",
+      "event_name": "update",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "target_user_name": "lee@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "update role - lee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791858022000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "account",
+      "event_source": "Zoom",
+      "event_name": "update",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "update account settings - Acme"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791858669000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user_settings",
+      "event_source": "Zoom",
+      "event_name": "update",
+      "user_name": "lee@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "target_user_name": "lee@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "update user settings - lee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ZOOM_REPORTS_JSON_PARENT > ZOOM_REPORTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom",
+      "event_time_usec": 1791859244000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "recording",
+      "event_source": "Zoom",
+      "event_name": "delete",
+      "user_name": "pat@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "delete recording - Weekly project sync"
+          }
+        ]
+      }
+    }
+  }
+]
