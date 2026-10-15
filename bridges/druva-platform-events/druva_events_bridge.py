@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import random
+import socket
 import sys
 import tempfile
 import time
@@ -54,6 +55,11 @@ class BridgeError(Exception):
 class NetworkError(BridgeError):
     """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
     bridge logs it and tries again at the next interval."""
+
+
+class HostNotFound(NetworkError):
+    """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
+    it stops the bridge even with --interval, since it is most likely a mistyped URL."""
 
 
 # ---------------------------------------------------------------- configuration
@@ -147,6 +153,11 @@ class HttpStatus(BridgeError):
         self.body = body
 
 
+class RetriedStatus(HttpStatus, NetworkError):
+    """A 408, 429 or 5xx that outlasted the retries. It is a NetworkError too, so with --interval
+    the bridge logs it and tries again at the next interval."""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Following a redirect would send the request's key or token to another URL, so it isn't
     followed: the redirect fails like any other status."""
@@ -174,6 +185,11 @@ def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
                               "refuses so a bad response can't use up memory")
 
 
+# Retried, then a NetworkError. On Python 3.9 a read timeout is socket.timeout, which isn't a
+# TimeoutError yet, and IncompleteRead means the connection closed partway through an answer.
+_NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError, http.client.IncompleteRead)
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
@@ -191,6 +207,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 if e.code not in RETRY_STATUS:
                     raise
                 error_body = b""
+            except _NETWORK_ERRORS:
+                # The body was cut short or timed out: the status still decides what happens.
+                error_body = b""
             finally:
                 e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
@@ -198,13 +217,18 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
+            if e.code in RETRY_STATUS:
+                raise RetriedStatus(what, url, e.code, error_body) from None
             raise HttpStatus(what, url, e.code, error_body) from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        except _NETWORK_ERRORS as e:
             if attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, None)
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
+                                   "check the URL setting") from None
             raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
         except ValueError:
             # http.client puts a header value it refuses, such as a key with a line break in it,
@@ -348,6 +372,21 @@ class Sink:
 
 # ---------------------------------------------------------------- collection
 
+def _fromisoformat(text: str) -> datetime:
+    """datetime.fromisoformat, the same on Python 3.9 to 3.13. Before 3.11 it takes no Z, only 3 or 6
+    fraction digits and only +HH:MM offsets (no version takes z), so the text is rewritten first."""
+    if text[-1:] in ("Z", "z"):
+        text = text[:-1] + "+00:00"
+    if "." in text:
+        head, rest = text.split(".", 1)
+        # The fraction is the digits right after the point. An offset after them keeps its place.
+        tail = rest.lstrip("0123456789")
+        text = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
+    if text[-5:-4] in ("+", "-") and text[-4:].isdigit():
+        text = text[:-2] + ":" + text[-2:]  # +1000 becomes +10:00
+    return datetime.fromisoformat(text)
+
+
 def event_time(event: dict) -> datetime | None:
     """timeStamp is epoch seconds in the v3 reference; some Druva examples send RFC 3339 text."""
     value = event.get("timeStamp")
@@ -358,7 +397,7 @@ def event_time(event: dict) -> datetime | None:
             text = value.strip()
             if text.isdigit():
                 return datetime.fromtimestamp(float(text), timezone.utc)
-            dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            dt = _fromisoformat(text)
             return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except (ValueError, OverflowError, OSError):
         return None
@@ -424,11 +463,17 @@ def save_state(path: str, state: dict) -> None:
     os.replace(tmp, path)
 
 
-def run_once(cfg: dict, dry_run: bool = False, out=None, reset: bool = False) -> int:
+def run_once(cfg: dict, dry_run: bool = False, out=None, reset: bool = False, saved=None) -> int:
+    """saved, if given, is called each time a page token is saved to the state file."""
     state = load_state(cfg["state_file"])
     sink = Sink(cfg, dry_run, out)
-    save = (lambda: None) if dry_run else (lambda: save_state(cfg["state_file"], state))
-    sent = collect(cfg, state, sink, save, DruvaClient(cfg), reset)
+
+    def save():
+        save_state(cfg["state_file"], state)
+        if saved:
+            saved()
+
+    sent = collect(cfg, state, sink, (lambda: None) if dry_run else save, DruvaClient(cfg), reset)
     LOG.info("run finished: %d records sent in %d batches%s", sink.sent, sink.batches, " (dry run, nothing sent)" if dry_run else "")
     return sent
 
@@ -456,11 +501,22 @@ def main(argv: list[str] | None = None) -> int:
     try:
         cfg = load_config()
         reset = args.reset
+
+        def saved():
+            # --reset holds until a run has saved a page token, so a run that fails before then
+            # doesn't leave the next one on the old token. A dry run never saves, so it keeps resetting.
+            nonlocal reset
+            reset = False
+
+        worked = False
         while True:
             try:
-                run_once(cfg, dry_run, reset=reset)
+                run_once(cfg, dry_run, reset=reset, saved=saved)
+                worked = True
             except NetworkError as e:
-                if not args.interval:
+                # A host name that doesn't resolve before any run has worked is most likely a
+                # mistyped URL, so it stops the bridge.
+                if not args.interval or (isinstance(e, HostNotFound) and not worked):
                     raise
                 LOG.error("%s; trying again in %d seconds", e, args.interval)
             except BridgeError:
@@ -470,7 +526,6 @@ def main(argv: list[str] | None = None) -> int:
                     raise
                 LOG.error("the run failed with an unexpected %s at %s; trying again in %d seconds",
                           type(e).__name__, _where(e), args.interval)
-            reset = False
             if not args.interval:
                 return 0
             time.sleep(args.interval)

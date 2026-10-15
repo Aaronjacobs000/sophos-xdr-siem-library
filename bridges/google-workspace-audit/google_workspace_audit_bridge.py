@@ -32,6 +32,7 @@ import logging
 import os
 import random
 import re
+import socket
 import sys
 import tempfile
 import time
@@ -69,6 +70,11 @@ class BridgeError(Exception):
 class NetworkError(BridgeError):
     """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
     bridge logs it and tries again at the next interval."""
+
+
+class HostNotFound(NetworkError):
+    """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
+    it stops the bridge even with --interval, since it is most likely a mistyped URL."""
 
 
 # ---------------------------------------------------------------- configuration
@@ -301,6 +307,11 @@ class HttpStatus(BridgeError):
         self.body = body
 
 
+class RetriedStatus(HttpStatus, NetworkError):
+    """A 408, 429 or 5xx that outlasted the retries. It is a NetworkError too, so with --interval
+    the bridge logs it and tries again at the next interval."""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Following a redirect would send the request's key or token to another URL, so it isn't
     followed: the redirect fails like any other status."""
@@ -328,6 +339,11 @@ def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
                               "refuses so a bad response can't use up memory")
 
 
+# Retried, then a NetworkError. On Python 3.9 a read timeout is socket.timeout, which isn't a
+# TimeoutError yet, and IncompleteRead means the connection closed partway through an answer.
+_NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError, http.client.IncompleteRead)
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
@@ -345,6 +361,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 if e.code not in RETRY_STATUS:
                     raise
                 error_body = b""
+            except _NETWORK_ERRORS:
+                # The body was cut short or timed out: the status still decides what happens.
+                error_body = b""
             finally:
                 e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
@@ -352,13 +371,18 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
                 time.sleep(delay)
                 continue
+            if e.code in RETRY_STATUS:
+                raise RetriedStatus(what, url, e.code, error_body) from None
             raise HttpStatus(what, url, e.code, error_body) from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        except _NETWORK_ERRORS as e:
             if attempt < MAX_ATTEMPTS - 1:
                 delay = _retry_delay(attempt, None)
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
+                                   "check the URL setting") from None
             raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
         except ValueError:
             # http.client puts a header value it refuses, such as a key with a line break in it,
@@ -510,6 +534,21 @@ class Sink:
 
 # ---------------------------------------------------------------- collection
 
+def _fromisoformat(text: str) -> datetime:
+    """datetime.fromisoformat, the same on Python 3.9 to 3.13. Before 3.11 it takes no Z, only 3 or 6
+    fraction digits and only +HH:MM offsets (no version takes z), so the text is rewritten first."""
+    if text[-1:] in ("Z", "z"):
+        text = text[:-1] + "+00:00"
+    if "." in text:
+        head, rest = text.split(".", 1)
+        # The fraction is the digits right after the point. An offset after them keeps its place.
+        tail = rest.lstrip("0123456789")
+        text = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
+    if text[-5:-4] in ("+", "-") and text[-4:].isdigit():
+        text = text[:-2] + ":" + text[-2:]  # +1000 becomes +10:00
+    return datetime.fromisoformat(text)
+
+
 def _parse_time(value) -> float | None:
     """id.time is RFC 3339 in UTC in Google's samples, such as 2026-10-13T01:10:04.218Z; the
     reference also calls it epoch seconds, so plain numbers work too."""
@@ -518,14 +557,8 @@ def _parse_time(value) -> float | None:
     v = str(value or "").strip()
     if re.fullmatch(r"\d+(\.\d+)?", v):
         return float(v)
-    v = v.replace("Z", "+00:00")
-    if "." in v:  # fromisoformat before 3.11 takes 3 or 6 fraction digits only
-        head, rest = v.split(".", 1)
-        # The fraction is the digits right after the point. An offset after them keeps its place.
-        tail = rest.lstrip("0123456789")
-        v = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
     try:
-        dt = datetime.fromisoformat(v)
+        dt = _fromisoformat(v)
     except ValueError:
         return None
     return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).timestamp()
@@ -671,11 +704,15 @@ def main(argv: list[str] | None = None) -> int:
     dry_run = args.dry_run or _flag(dict(os.environ), "BRIDGE_DRY_RUN", False)
     try:
         cfg = load_config()
+        worked = False
         while True:
             try:
                 run_once(cfg, dry_run)
+                worked = True
             except NetworkError as e:
-                if not args.interval:
+                # A host name that doesn't resolve before any run has worked is most likely a
+                # mistyped URL, so it stops the bridge.
+                if not args.interval or (isinstance(e, HostNotFound) and not worked):
                     raise
                 LOG.error("%s; trying again in %d seconds", e, args.interval)
             except BridgeError:
