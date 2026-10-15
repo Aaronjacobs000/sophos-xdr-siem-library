@@ -1,0 +1,667 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/5/LOGIN",
+      "host_id": "sw01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "sw01.example.com",
+      "logon_application_family": "VTY",
+      "auth_system": "Huawei VRP VTY",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SHELL/5/LOGIN"
+          },
+          {
+            "key": "line",
+            "value": "VTY0"
+          },
+          {
+            "key": "authentication_method",
+            "value": "Password"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019582000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/4/LOGINFAILED",
+      "host_id": "sw01.example.com",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.23",
+      "target_host_name": "sw01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SHELL/4/LOGINFAILED"
+          },
+          {
+            "key": "failure_count",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019650000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/5/CMDRECORD",
+      "host_id": "sw01.example.com",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "sw01.example.com",
+      "command": "undo info-center loghost 192.0.2.50",
+      "operation_name": "command",
+      "operation": "undo info-center loghost 192.0.2.50",
+      "channel": "Huawei VRP command record",
+      "result": "success"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019720000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/5/LOGOUT",
+      "host_id": "sw01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "sw01.example.com",
+      "logon_application_family": "VTY",
+      "auth_system": "Huawei VRP VTY",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SHELL/5/LOGOUT"
+          },
+          {
+            "key": "line",
+            "value": "VTY0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019762000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSH/4/SSH_FAIL",
+      "host_id": "sw01.example.com",
+      "target_user_name": "root",
+      "source_address": "203.0.113.45",
+      "target_host_name": "sw01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Password authentication failed",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSH/4/SSH_FAIL"
+          },
+          {
+            "key": "failure_count",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019850000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AAA/6/LOCALACCOUNT_LOCK",
+      "host_id": "sw01.example.com",
+      "target_user_name": "guest01",
+      "source_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "sw01.example.com",
+      "logon_application_family": "local account",
+      "auth_system": "Huawei VRP local account",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "action_result": "FAILED",
+      "extra_failurereason": "Local account locked",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "AAA/6/LOCALACCOUNT_LOCK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019875000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AAA/6/LOCALACCOUNT_CREATE_SUCCESS",
+      "host_id": "sw01.example.com",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "sw01.example.com",
+      "operation_name": "local account created",
+      "operation": "Local account netops2 create success.",
+      "channel": "Huawei VRP local account",
+      "result": "success"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019900000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AAA/6/LOCALACCOUNT_MODIFY",
+      "host_id": "sw01.example.com",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "sw01.example.com",
+      "operation_name": "local account password changed",
+      "operation": "Local account netops2 password has been modified.",
+      "channel": "Huawei VRP local account",
+      "result": "success"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019925000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECE/4/ARPMISS",
+      "host_id": "sw01.example.com",
+      "source_address": "198.51.100.9",
+      "message": "Arp Miss Attack",
+      "classification": "attack defense",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SECE/4/ARPMISS"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/3"
+          },
+          {
+            "key": "packets_per_second",
+            "value": "120"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019945000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECE/4/GWCONFLICT",
+      "host_id": "sw01.example.com",
+      "message": "Gateway Attack",
+      "classification": "attack defense",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "vlan": 20,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SECE/4/GWCONFLICT"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/5"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:44"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019970000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECE/4/STRACK_DENY",
+      "host_id": "sw01.example.com",
+      "source_address": "203.0.113.88",
+      "message": "Some packets are dropped because an attack is detected.",
+      "classification": "attack defense",
+      "blocked": 1,
+      "action": "deny",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SECE/4/STRACK_DENY"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792019991000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SECE/4/USER_ATTACK",
+      "host_id": "sw01.example.com",
+      "message": "User attack occurred.",
+      "classification": "attack defense",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "vlan": 30,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SECE/4/USER_ATTACK"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet0/0/9"
+          },
+          {
+            "key": "source_mac",
+            "value": "00:00:5e:00:53:46"
+          },
+          {
+            "key": "attack_protocol",
+            "value": "ARP"
+          },
+          {
+            "key": "packets_per_second",
+            "value": "210"
+          },
+          {
+            "key": "slot",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020031000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/LOGINFAILED",
+      "host_id": "ce01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.77",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Authentication failed",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "CLI/5/LOGINFAILED"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020062000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/LOGIN",
+      "host_id": "ce01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "CLI/5/LOGIN"
+          },
+          {
+            "key": "line",
+            "value": "VTY1"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          },
+          {
+            "key": "authentication_method",
+            "value": "Local-user"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020104000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/CMDRECORD",
+      "host_id": "ce01.example.com",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "ce01.example.com",
+      "command": "undo info-center enable",
+      "operation_name": "command",
+      "operation": "undo info-center enable",
+      "channel": "Huawei VRP command record",
+      "result": "success"
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020130000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/LOGOUT",
+      "host_id": "ce01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "CLI/5/LOGOUT"
+          },
+          {
+            "key": "line",
+            "value": "VTY1"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          },
+          {
+            "key": "logout_reason",
+            "value": "User logout"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020180000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSH/5/SSH_USER_LOGIN",
+      "host_id": "ce01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSH/5/SSH_USER_LOGIN"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          },
+          {
+            "key": "service_type",
+            "value": "stelnet"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020220000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSH/5/SSH_USER_LOGIN_FAIL",
+      "host_id": "ce01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.77",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Password authentication failed",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSH/5/SSH_USER_LOGIN_FAIL"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          },
+          {
+            "key": "service_type",
+            "value": "stelnet"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020255000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSH/5/SSH_USER_LOGOUT",
+      "host_id": "ce01.example.com",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_address": "192.0.2.1",
+      "target_host_name": "ce01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSH/5/SSH_USER_LOGOUT"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          },
+          {
+            "key": "service_type",
+            "value": "stelnet"
+          },
+          {
+            "key": "logout_reason",
+            "value": "User exit"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792056310000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/LOGINFAILED",
+      "host_id": "fw01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.78",
+      "target_address": "192.0.2.1",
+      "target_host_name": "fw01.example.com",
+      "logon_application_family": "SSH",
+      "auth_system": "Huawei VRP SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Authentication failed",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "CLI/5/LOGINFAILED"
+          },
+          {
+            "key": "vpn_instance",
+            "value": "_public_"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020360000000,
+      "sensor_event_id": "SHELL/5/TIMEOUT",
+      "host_id": "sw01.example.com"
+    }
+  }
+]

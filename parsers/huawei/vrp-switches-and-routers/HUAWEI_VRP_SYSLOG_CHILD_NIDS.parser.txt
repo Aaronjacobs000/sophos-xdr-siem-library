@@ -1,0 +1,61 @@
+!SAMPLE=<188>Oct 15 2026 09:18:45+10:00 sw01.example.com %%01SECE/4/ARPMISS(l)[8]:Attack occurred. (AttackType=Arp Miss Attack, SourceInterface=GigabitEthernet0/0/3, SourceIP=198.51.100.9, AttackPackets=120 packets per second)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="attack"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei VRP info-center syslog (S series switches).
+# Child of HUAWEI_VRP_SYSLOG_PARENT: attack defense messages to NIDS.
+#   SECE/4/ARPMISS, GWCONFLICT: Attack occurred. (AttackType=..., SourceInterface=..., SourceIP=... or SourceMAC=..., ...)
+#   SECE/4/STRACK_DENY: Some packets are dropped because an attack is detected. (Interface=..., SourceIP=... or SourceMAC=...)
+#   SECE/4/PORT_ATTACK, USER_ATTACK: Port|User attack occurred. (Slot=..., SourceAttackInterface=...,
+#     OuterVlan/InnerVlan=.../..., [UserMacAddress=...,] AttackProtocol=..., AttackPackets=... packets per second)
+#   SECE/4/SPECIFY_SIP_ATTACK: The specified source IP address attack occurred. (Slot=..., SourceAttackIP=..., ...)
+# The attack type, or the description, is the message. STRACK_DENY means the switch dropped the packets.
+# Setting source_address lets the IP Watchlist detector use these events.
+# brief, desc, kv, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SourceIP"])
+src = IF src == "" THEN STRING(kv["SourceAttackIP"]) ELSE src
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+atype = STRING(kv["AttackType"])
+message$ = IF atype != "" THEN atype ELSE desc
+classification$ = "attack defense"
+blocked$ = IF brief == "STRACK_DENY" THEN 1 ELSE 0
+action$ = IF brief == "STRACK_DENY" THEN "deny" ELSE NULL
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+vlanText = STRING(kv["PVlanID"])
+vlanText = IF vlanText == "" THEN STRING(kv["PVLAN"]) ELSE vlanText
+ovText = STRING(kv["OuterVlan/InnerVlan"])
+ov = ovText|^(?P<o>\d+)/
+vlanText = IF vlanText == "" THEN STRING(ov["o"]) ELSE vlanText
+# Text into a number field keeps its digits, so an empty VLAN stays unset.
+vlan$ = vlanText
+
+iface = STRING(kv["SourceInterface"])
+iface = IF iface == "" THEN STRING(kv["SourceAttackInterface"]) ELSE iface
+iface = IF iface == "" THEN STRING(kv["Interface"]) ELSE iface
+mac = STRING(kv["SourceMAC"])
+mac = IF mac == "" THEN STRING(kv["UserMacAddress"]) ELSE mac
+rateText = STRING(kv["AttackPackets"])
+rate = rateText|^(?P<n>\d+)
+x1.key$ = "log_name"
+x1.value$ = sensorEventId$
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [x1]
+x2.key$ = "interface"
+x2.value$ = iface
+eventMetadata$.record$ = IF iface != "" THEN eventMetadata$.record$ + [x2] ELSE eventMetadata$.record$
+x3.key$ = "source_mac"
+x3.value$ = mac
+eventMetadata$.record$ = IF mac != "" THEN eventMetadata$.record$ + [x3] ELSE eventMetadata$.record$
+x4.key$ = "attack_protocol"
+x4.value$ = STRING(kv["AttackProtocol"])
+eventMetadata$.record$ = IF x4.value$ != "" THEN eventMetadata$.record$ + [x4] ELSE eventMetadata$.record$
+x5.key$ = "packets_per_second"
+x5.value$ = STRING(rate["n"])
+eventMetadata$.record$ = IF x5.value$ != "" THEN eventMetadata$.record$ + [x5] ELSE eventMetadata$.record$
+x6.key$ = "slot"
+x6.value$ = STRING(kv["Slot"])
+eventMetadata$.record$ = IF x6.value$ != "" THEN eventMetadata$.record$ + [x6] ELSE eventMetadata$.record$
