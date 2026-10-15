@@ -7,8 +7,10 @@
 
 const list = (a) => a.slice(0, 10).join(', ') + (a.length > 10 ? ` and ${a.length - 10} more` : '');
 
+// Paths are compared exactly as GitHub lists them. Trimming would read a top-level folder such as
+// " parsers" as parsers/.
 export function reviewReasons(paths) {
-  const clean = paths.map((p) => String(p || '').trim()).filter(Boolean);
+  const clean = paths.map((p) => String(p || '')).filter(Boolean);
   const bridges = clean.filter((p) => p.startsWith('bridges/'));
   const outside = clean.filter((p) => !p.startsWith('parsers/') && !p.startsWith('bridges/'));
   const out = [];

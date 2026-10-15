@@ -33,7 +33,8 @@ const report = { passed: true, eligible: false, reasons: [], outside: [], entrie
 let targets = library;
 let changed = [];
 if (changedFile) {
-  changed = (await readFile(changedFile, 'utf8')).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  // One path per line, kept exactly: trimming would read a top-level folder such as " parsers" as parsers/.
+  changed = (await readFile(changedFile, 'utf8')).split(/\r?\n/).filter(Boolean);
   report.outside = changed.filter((f) => !f.startsWith('parsers/'));
   const ids = new Set();
   const deleted = new Set();

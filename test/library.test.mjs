@@ -179,30 +179,48 @@ async function ciRun(change, author) {
   return { code, report };
 }
 
+// Adds a valid new entry, parsers/ci-fixture/acme-web-proxy, by octocat, and returns the files it changed.
+async function addFixtureEntry(pr) {
+  const from = path.join(pr, 'parsers/squid/squid');
+  const to = path.join(pr, 'parsers/ci-fixture/acme-web-proxy');
+  await cp(from, to, { recursive: true });
+  const meta = JSON.parse(await readFile(path.join(to, 'meta.json'), 'utf8'));
+  Object.assign(meta, { vendor: 'CI Fixture', product: 'Acme Web Proxy', author: 'octocat' });
+  meta.parsers[0].name = 'ACME_WEB_PROXY_STANDALONE_HTTP';
+  meta.parsers[0].file = 'ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt';
+  await writeFile(path.join(to, 'meta.json'), JSON.stringify(meta, null, 2));
+  const text = (await readFile(path.join(to, 'SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt'), 'utf8')).replace(/squid\(/g, 'acmeproxy(').replace(/squid\(\?:/g, 'acmeproxy(?:');
+  await rm(path.join(to, 'SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt'));
+  await writeFile(path.join(to, 'ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt'), text.replace('squid(?:\\[\\d+\\])?:', 'acmeproxy(?:\\[\\d+\\])?:'));
+  const samples = (await readFile(path.join(to, 'samples.log'), 'utf8')).replace(/squid\[/g, 'acmeproxy[');
+  await writeFile(path.join(to, 'samples.log'), samples);
+  const e = await loadEntryFromDir(to, pr);
+  const res = runParsers(e.parsers, e.samples, { now: e.meta.reference_time });
+  const { expectedFrom } = await import('../studio/core/library.js');
+  await writeFile(path.join(to, 'expected.json'), JSON.stringify(expectedFrom(res), null, 2));
+  return ['parsers/ci-fixture/acme-web-proxy/meta.json', 'parsers/ci-fixture/acme-web-proxy/samples.log'];
+}
+
 test('CI: a new entry from its author passes and can merge without review', async () => {
-  const { code, report } = await ciRun(async (pr) => {
-    const from = path.join(pr, 'parsers/squid/squid');
-    const to = path.join(pr, 'parsers/ci-fixture/acme-web-proxy');
-    await cp(from, to, { recursive: true });
-    const meta = JSON.parse(await readFile(path.join(to, 'meta.json'), 'utf8'));
-    Object.assign(meta, { vendor: 'CI Fixture', product: 'Acme Web Proxy', author: 'octocat' });
-    meta.parsers[0].name = 'ACME_WEB_PROXY_STANDALONE_HTTP';
-    meta.parsers[0].file = 'ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt';
-    await writeFile(path.join(to, 'meta.json'), JSON.stringify(meta, null, 2));
-    const text = (await readFile(path.join(to, 'SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt'), 'utf8')).replace(/squid\(/g, 'acmeproxy(').replace(/squid\(\?:/g, 'acmeproxy(?:');
-    await rm(path.join(to, 'SQUID_ACCESS_SYSLOG_STANDALONE_HTTP.parser.txt'));
-    await writeFile(path.join(to, 'ACME_WEB_PROXY_STANDALONE_HTTP.parser.txt'), text.replace('squid(?:\\[\\d+\\])?:', 'acmeproxy(?:\\[\\d+\\])?:'));
-    const samples = (await readFile(path.join(to, 'samples.log'), 'utf8')).replace(/squid\[/g, 'acmeproxy[');
-    await writeFile(path.join(to, 'samples.log'), samples);
-    const e = await loadEntryFromDir(to, pr);
-    const res = runParsers(e.parsers, e.samples, { now: e.meta.reference_time });
-    const { expectedFrom } = await import('../studio/core/library.js');
-    await writeFile(path.join(to, 'expected.json'), JSON.stringify(expectedFrom(res), null, 2));
-    return ['parsers/ci-fixture/acme-web-proxy/meta.json', 'parsers/ci-fixture/acme-web-proxy/samples.log'];
-  }, 'octocat');
+  const { code, report } = await ciRun(addFixtureEntry, 'octocat');
   assert.equal(code, 0, JSON.stringify(report.entries.map((e) => e.problems), null, 1));
   assert.equal(report.passed, true);
   assert.equal(report.eligible, true);
+});
+
+test('CI: a file in a top-level folder that only looks like parsers/ needs review', async () => {
+  for (const folder of [' parsers', '\u00a0parsers']) {
+    const hidden = `${folder}/ci-fixture/acme-web-proxy/notes.txt`;
+    const { report } = await ciRun(async (pr) => {
+      const changed = await addFixtureEntry(pr);
+      await mkdir(path.join(pr, path.dirname(hidden)), { recursive: true });
+      await writeFile(path.join(pr, hidden), 'not a library file\n');
+      return [...changed, hidden];
+    }, 'octocat');
+    assert.equal(report.eligible, false, JSON.stringify(folder));
+    assert.deepEqual(report.outside, [hidden]);
+    assert.match(report.reasons.join(' '), /changes files outside parsers\//);
+  }
 });
 
 test('CI: a real IP in a sample fails, and changing someone else\'s entry needs review', async () => {

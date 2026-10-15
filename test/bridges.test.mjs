@@ -139,6 +139,10 @@ test('review rule: bridge code and other non-library files always need a review'
   assert.match(reviewReasons(['.github/workflows/ci.yml']).join(), /outside parsers\//);
   // A branch from before the rename can still add code under the old collectors/ folder. It waits too.
   assert.match(reviewReasons(['parsers/acme/pull-api/meta.json', 'collectors/acme-pull/acme_pull.py']).join(), /changes files outside parsers\/: collectors\/acme-pull\/acme_pull.py/);
+  // A top-level folder whose name only looks like parsers/, such as one that starts with a space, is outside it.
+  for (const lookalike of [' parsers/acme/pull-api/notes.txt', '\u00a0parsers/acme/pull-api/notes.txt', '\tparsers/acme/pull-api/notes.txt']) {
+    assert.match(reviewReasons(['parsers/acme/pull-api/meta.json', lookalike]).join(), /changes files outside parsers\//, JSON.stringify(lookalike));
+  }
 });
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
