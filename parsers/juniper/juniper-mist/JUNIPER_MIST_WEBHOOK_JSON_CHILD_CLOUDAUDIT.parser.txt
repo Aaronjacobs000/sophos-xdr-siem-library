@@ -1,0 +1,58 @@
+!SAMPLE={"topic":"audits","events":[{"admin_id":"0a1b2c3d-4e5f-4061-8a7b-000000000011","admin_name":"Sam Admin sam.admin@example.com","after":"{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": 10}}}","before":"{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": null}}}","id":"737909a2-04ff-4aeb-9a1c-000000000001","message":"Update Site Settings","org_id":"6748cfa6-4e12-11e6-9a1c-000000000001","site_id":"4ac1dcf4-9d8b-7211-9a1c-000000000001","site_name":"Head Office","src_ip":"203.0.113.20","timestamp":1791853804.201053,"user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audits"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Juniper Mist audits webhooks: every configuration change made in the Mist portal or API,
+# with the admin, their address and browser, and the settings before and after.
+# Child of JUNIPER_MIST_WEBHOOK_JSON_PARENT: each one to CloudAudit, with the message (such as
+# Update Site Settings) as the event name. admin_name is the admin's name and email in one text;
+# the email becomes the user name. The site and the device become resources.
+# json, topic, ts, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.events[0].id"]
+eventSource$ = "Juniper Mist"
+eventName$ = json["$.events[0].message"]
+eventType$ = "audit"
+org = json["$.events[0].org_id"]
+recipientAccountId$ = org
+admin = json["$.events[0].admin_name"]
+mail = admin|(?P<m>[^\s]+@[^\s]+)\s*$
+userName$ = IF mail["m"] THEN mail["m"] ELSE admin
+userId$ = json["$.events[0].admin_id"]
+sourceAddress$ = json["$.events[0].src_ip"]
+userAgent$ = json["$.events[0].user_agent"]
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+site = json["$.events[0].site_id"]
+r1.resourceId$ = site
+r1.resourceType$ = "site"
+r1.resourceAccountId$ = org
+device = json["$.events[0].device_id"]
+r2.resourceId$ = device
+r2.resourceType$ = "device"
+r2.resourceAccountId$ = org
+resources$ = []
+resources$ = IF site THEN resources$ + [r1] ELSE resources$
+resources$ = IF device THEN resources$ + [r2] ELSE resources$
+
+d1.key$ = "admin_name"
+d1.value$ = admin
+d2.key$ = "site_name"
+d2.value$ = json["$.events[0].site_name"]
+# before and after are objects in Mist's schema but arrive as JSON text in its delivery example;
+# STRING() gives text either way.
+d3.key$ = "before"
+d3.value$ = STRING(json["$.events[0].before"])
+d4.key$ = "after"
+d4.value$ = STRING(json["$.events[0].after"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF admin THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ != "" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
