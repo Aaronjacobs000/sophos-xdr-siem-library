@@ -9,14 +9,22 @@ function span(cls, text) {
   return s;
 }
 
+// A rule is [sticky regex, class, reach]. A rule that can fail after scanning far, such as a
+// string with no closing quote or a key with no "=", has a reach regex: when the rule fails at i,
+// the reach matched at i is a stretch where the rule fails at every later start too, so it isn't
+// tried again until after it. That keeps coloring a line linear in its length.
 function tokens(out, text, rules) {
+  const skipUntil = rules.map(() => 0);
   let i = 0;
   while (i < text.length) {
     let hit = null;
-    for (const [re, cls] of rules) {
+    for (let r = 0; r < rules.length; r++) {
+      if (i < skipUntil[r]) continue;
+      const [re, cls, reach] = rules[r];
       re.lastIndex = i;
       const m = re.exec(text);
       if (m && m.index === i && m[0].length) { hit = [m[0], typeof cls === 'function' ? cls(m, text) : cls]; break; }
+      if (reach) { reach.lastIndex = i; const n = reach.exec(text); if (n) skipUntil[r] = i + n[0].length; }
     }
     if (hit) { out.append(span(hit[1], hit[0])); i += hit[0].length; } else {
       let j = i + 1;
@@ -27,9 +35,13 @@ function tokens(out, text, rules) {
   }
 }
 
+// How far a string scan gets: to its closing quote, or to where it stops without one.
+const DQ_REACH = /"(?:\\.|[^"\\])*/y;
+const SQ_REACH = /'(?:\\.|[^'\\])*/y;
+
 const EXPR_RULES = [
-  [/"(?:\\.|[^"\\])*"/y, 'tk-s'],
-  [/'(?:\\.|[^'\\])*'/y, 'tk-s'],
+  [/"(?:\\.|[^"\\])*"/y, 'tk-s', DQ_REACH],
+  [/'(?:\\.|[^'\\])*'/y, 'tk-s', SQ_REACH],
   [/`[^`]*`/y, 'tk-s'],
   [/#.*/y, 'tk-c'],
   [/\b(?:IF|THEN|ELSE|AND|OR|NOT|TRUE|FALSE|NULL)\b/y, 'tk-kw'],
@@ -75,9 +87,9 @@ export function highlightScript(text) {
 }
 
 const BODY_RULES = [
-  [/"(?:\\.|[^"\\])*"(?=\s*:)/y, 'tk-k'],
-  [/"(?:\\.|[^"\\])*"/y, 'tk-s'],
-  [/[A-Za-z_][\w.-]*(?==)/y, 'tk-k'],
+  [/"(?:\\.|[^"\\])*"(?=\s*:)/y, 'tk-k', DQ_REACH],
+  [/"(?:\\.|[^"\\])*"/y, 'tk-s', DQ_REACH],
+  [/[A-Za-z_][\w.-]*(?==)/y, 'tk-k', /[A-Za-z_][\w.-]*/y],
   [/\b(?:true|false|null)\b/y, 'tk-n'],
   [/-?\b\d+(?:\.\d+)?\b/y, 'tk-n'],
   [/(?:CEF|LEEF):[\d.]+/y, 'tk-h'],
