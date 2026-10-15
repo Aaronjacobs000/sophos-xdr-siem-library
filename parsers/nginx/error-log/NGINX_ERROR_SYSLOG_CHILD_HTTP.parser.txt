@@ -1,0 +1,58 @@
+!SAMPLE=<187>Oct 14 09:13:21 web01 nginx: 2026/10/14 09:13:21 [error] 1234#1234: *9 access forbidden by rule, client: 198.51.100.23, server: www.example.com, request: "GET /admin/config.php?debug=1 HTTP/1.1", host: "www.example.com", referrer: "https://www.example.com/admin/"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="http"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: nginx error log lines sent by syslog.
+# Child of NGINX_ERROR_SYSLOG_PARENT: lines about an HTTP request to HTTP, such as a denied request,
+# a rate limit, a file that wasn't found or an upstream error. The error itself goes to
+# event_metadata. These messages mark the request blocked:
+#   access forbidden by rule                         an allow or deny rule (ngx_http_access_module)
+#   limiting requests, excess: ... by zone "<z>"     limit_req refused it
+#   limiting connections by zone "<z>"               limit_conn refused it
+# A dry run of either limit ("limiting requests, dry run") and a delayed request aren't blocked.
+# m, ctx, text, level, req, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = ctx["client"]
+requestDirection$ = "INBOUND"
+# The Host header, or the server block's name when the request had none.
+uriHost$ = IF ctx["host"] != "" THEN ctx["host"] ELSE ctx["server"]
+referer$ = ctx["referrer"]
+httpMethod$ = req["method"]
+# The log keeps the path and query as the client sent them, still percent-encoded.
+uriPathRaw$ = req["path"]
+uriPath$ = req["path"]
+uriQueryRaw$ = req["query"]
+uriQuery$ = req["query"]
+
+denied = text == "access forbidden by rule" OR (CONTAINS(text, "limiting requests, excess: ") AND NOT CONTAINS(text, "dry run")) OR (CONTAINS(text, "limiting connections by zone ") AND NOT CONTAINS(text, "dry run"))
+sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE NULL
+blocked$ = IF denied THEN 1 ELSE NULL
+
+e1.key$ = "error"
+e1.value$ = text
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [e1]
+e2.key$ = "level"
+e2.value$ = level
+eventMetadata$.record$ = eventMetadata$.record$ + [e2]
+e3.key$ = "server"
+e3.value$ = ctx["server"]
+eventMetadata$.record$ = IF ctx["server"] != "" THEN eventMetadata$.record$ + [e3] ELSE eventMetadata$.record$
+e4.key$ = "upstream"
+e4.value$ = ctx["upstream"]
+eventMetadata$.record$ = IF ctx["upstream"] != "" THEN eventMetadata$.record$ + [e4] ELSE eventMetadata$.record$
+e5.key$ = "http_version"
+e5.value$ = req["version"]
+eventMetadata$.record$ = IF req["version"] != "" THEN eventMetadata$.record$ + [e5] ELSE eventMetadata$.record$
+e6.key$ = "request"
+e6.value$ = ctx["request"]
+eventMetadata$.record$ = IF req["method"] == "" THEN eventMetadata$.record$ + [e6] ELSE eventMetadata$.record$
+e7.key$ = "subrequest"
+e7.value$ = ctx["sub"]
+eventMetadata$.record$ = IF ctx["sub"] != "" THEN eventMetadata$.record$ + [e7] ELSE eventMetadata$.record$
+e8.key$ = "connection"
+e8.value$ = m["conn"]
+eventMetadata$.record$ = IF m["conn"] != "" THEN eventMetadata$.record$ + [e8] ELSE eventMetadata$.record$

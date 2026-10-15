@@ -1,0 +1,361 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969164000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.50",
+      "request_direction": "INBOUND",
+      "uri_host": "www.example.com",
+      "http_method": "GET",
+      "uri_path_raw": "/wp-login.php",
+      "uri_path": "/wp-login.php",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "open() \"/usr/share/nginx/html/wp-login.php\" failed (2: No such file or directory)"
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969201000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "198.51.100.23",
+      "request_direction": "INBOUND",
+      "uri_host": "www.example.com",
+      "referer": "https://www.example.com/admin/",
+      "http_method": "GET",
+      "uri_path_raw": "/admin/config.php",
+      "uri_path": "/admin/config.php",
+      "uri_query_raw": "debug=1",
+      "uri_query": "debug=1",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "access forbidden by rule"
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969242000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.51",
+      "request_direction": "INBOUND",
+      "uri_host": "www.example.com",
+      "http_method": "POST",
+      "uri_path_raw": "/login",
+      "uri_path": "/login",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "limiting requests, excess: 20.500 by zone \"login\""
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "12"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969245000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.51",
+      "request_direction": "INBOUND",
+      "uri_host": "www.example.com",
+      "http_method": "POST",
+      "uri_path_raw": "/login",
+      "uri_path": "/login",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "delaying request, excess: 4.200, by zone \"login\""
+          },
+          {
+            "key": "level",
+            "value": "warn"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "14"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969340000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "192.0.2.99",
+      "request_direction": "INBOUND",
+      "uri_host": "downloads.example.com",
+      "http_method": "GET",
+      "uri_path_raw": "/files/image.iso",
+      "uri_path": "/files/image.iso",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "limiting connections by zone \"addr\""
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "downloads.example.com"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "20"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969378000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.77",
+      "target_host_name": "www.example.com",
+      "auth_system": "nginx basic authentication",
+      "logon_application_family": "http",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "user \"admin\": password mismatch",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "request",
+            "value": "GET /admin/ HTTP/1.1"
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969385000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "target_user_name": "backup",
+      "source_address": "203.0.113.77",
+      "target_host_name": "www.example.com",
+      "auth_system": "nginx basic authentication",
+      "logon_application_family": "http",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "user \"backup\" was not found in \"/etc/nginx/.htpasswd\"",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "request",
+            "value": "GET /admin/ HTTP/1.1"
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "www.example.com"
+          },
+          {
+            "key": "password_file",
+            "value": "/etc/nginx/.htpasswd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT > NGINX_ERROR_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969482000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "192.0.2.10",
+      "request_direction": "INBOUND",
+      "uri_host": "app.example.com",
+      "http_method": "GET",
+      "uri_path_raw": "/api/report",
+      "uri_path": "/api/report",
+      "uri_query_raw": "id=42",
+      "uri_query": "id=42",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "error",
+            "value": "upstream timed out (110: Connection timed out) while reading response header from upstream"
+          },
+          {
+            "key": "level",
+            "value": "error"
+          },
+          {
+            "key": "server",
+            "value": "app.example.com"
+          },
+          {
+            "key": "upstream",
+            "value": "http://192.0.2.80:8080/api/report?id=42"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "connection",
+            "value": "40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969570000000,
+      "host_id": "web01"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NGINX_ERROR_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "nginx",
+      "event_time_usec": 1791969600000000,
+      "host_id": "web01"
+    }
+  }
+]
