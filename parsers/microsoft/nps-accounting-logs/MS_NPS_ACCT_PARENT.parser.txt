@@ -79,13 +79,13 @@ fqUser = IF odbc THEN f[6] ELSE NULL
 fqUser = IF ias THEN i3["v"] ELSE fqUser
 fqUser = IF dts THEN d6["v"] ELSE fqUser
 
-d7 = drec|<(?i:Called-Station-Id) data_type="\d+">(?P<v>[^<]*)</
+d7 = drec|<Called-Station-I[Dd] data_type="\d+">(?P<v>[^<]*)</
 i4 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,30,(?P<v>[^,]*)
 calledStation = IF odbc THEN f[7] ELSE NULL
 calledStation = IF ias THEN i4["v"] ELSE calledStation
 calledStation = IF dts THEN d7["v"] ELSE calledStation
 
-d8 = drec|<(?i:Calling-Station-Id) data_type="\d+">(?P<v>[^<]*)</
+d8 = drec|<Calling-Station-I[Dd] data_type="\d+">(?P<v>[^<]*)</
 i5 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,31,(?P<v>[^,]*)
 callingStation = IF odbc THEN f[8] ELSE NULL
 callingStation = IF ias THEN i5["v"] ELSE callingStation
@@ -180,7 +180,7 @@ outOctets = IF odbc THEN f[34] ELSE NULL
 outOctets = IF ias THEN i18["v"] ELSE outOctets
 outOctets = IF dts THEN d23["v"] ELSE outOctets
 
-d24 = drec|<(?i:Acct-Session-Id) data_type="\d+">(?P<v>[^<]*)</
+d24 = drec|<Acct-Session-I[Dd] data_type="\d+">(?P<v>[^<]*)</
 i19 = irec|^(?:[^,]*,){5}[^,]*(?:,[^,]*,[^,]*)*?,44,(?P<v>[^,]*)
 acctSession = IF odbc THEN f[35] ELSE NULL
 acctSession = IF ias THEN i19["v"] ELSE acctSession
