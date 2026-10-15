@@ -1,0 +1,47 @@
+!SAMPLE=<182>Oct 15 00:41:02 ws01.example.com MSWinEventLog	1	Microsoft-Windows-AppLocker/EXE and DLL	5122	Thu Oct 15 00:41:02 2026	8004	Microsoft-Windows-AppLocker	EXAMPLE\jdoe	User	Error	ws01.example.com	N/A		%OSDRIVE%\USERS\JDOE\DOWNLOADS\INVOICE.EXE was prevented from running.	5122
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\tMicrosoft-Windows-AppLocker/(?:EXE and DLL|MSI and Script)\t[^\t]*\t[^\t]*\t80(?:0[2-7]|2[89])\t
+!SCHEMA=scwx.process
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AppLocker events 8002 to 8007 from the Microsoft-Windows-AppLocker/EXE and DLL and
+# MSI and Script logs, and App Control script events 8028 and 8029, sent in Snare format over
+# syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks and
+# tabs with spaces.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = s["msg"]
+eid = s["eid"]
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+# These events carry no time of their own. The Snare date and time has no zone; Sophos asks you to
+# send it in UTC.
+eventTimeUsec$ = DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+
+sensorType$ = "Windows AppLocker"
+computerName$ = s["computer"]
+os$.os$ = "OS_WINDOWS"
+
+# The rendered message is only the file and the verdict, for example
+# "%OSDRIVE%\USERS\JDOE\DOWNLOADS\INVOICE.EXE was prevented from running." Older Windows says
+# "was not allowed to run." The rule, policy and file hash aren't in the message.
+v = msg|^(?P<path>.+?) was (?P<verdict>allowed to run but would have been prevented|allowed to run|prevented from running|not allowed to run)
+imagePath$ = v["path"]
+base = v["path"]|(?P<v>[^\\/]+)$
+process$ = base["v"]
+# The Snare user is the user who ran the file.
+username$ = s["user"]
+blocked = v["verdict"] == "prevented from running" OR v["verdict"] == "not allowed to run"
+# 8003, 8006 and 8028 are audit mode: the file ran.
+wasBlocked$ = IF v["verdict"] != "" THEN blocked ELSE NULL
