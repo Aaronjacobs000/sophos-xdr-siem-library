@@ -1,0 +1,93 @@
+!SAMPLE={"jumpcloud_record":"directory_insights","id":"6537b1c2e4b0a1b2c3d4e007","event_type":"user_update","service":"directory","timestamp":"2026-10-14T01:02:33.120Z","organization":"5f1a2b3c4d5e6f7a8b9c0d1e","initiated_by":{"id":"5ce434e77128503e528e747c","type":"admin","email":"jlee@example.com"},"resource":{"id":"5f1a2b3c4d5e6f7a8b9c0d1f","type":"user","username":"akim"},"changes":[{"field":"enable_user_portal_multifactor","from":true,"to":false}],"client_ip":"203.0.113.10","auth_method":"session","success":true,"geoip":{"timezone":"Australia/Sydney","country_code":"AU","continent_code":"OC","region_name":"New South Wales","region_code":"NSW"},"useragent":{"patch":"0","minor":"0","major":"141","os":"Mac OS X","name":"Chrome","os_name":"Mac OS X","device":"Mac"},"@version":"1"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: JumpCloud Directory Insights events from the example bridge that aren't sign-ins: admin and
+# user changes, group and application changes, associations, MFA enrollment, password resets, device,
+# MDM, password manager and other service events.
+# Child of JUMPCLOUD_DI_JSON_PARENT: each one to CloudAudit, with event_type as the event name and the
+# service (such as directory) as the event type.
+# json, service, kind, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "JumpCloud"
+eventName$ = kind
+eventType$ = service
+org = json["$.organization"]
+recipientAccountId$ = org
+# Who made the change: initiated_by, an admin's email or a user's username.
+actor = json["$.initiated_by.email"]
+actor = IF actor THEN actor ELSE json["$.initiated_by.username"]
+actor = IF actor THEN actor ELSE json["$.initiated_by.name"]
+userName$ = actor
+userType$ = json["$.initiated_by.type"]
+userId$ = json["$.initiated_by.id"]
+sourceAddress$ = json["$.client_ip"]
+userAgent$ = json["$.useragent.name"]
+mfa = json["$.mfa"]
+mfaUsed$ = IF mfa == NULL THEN NULL ELSE STRING(mfa) == "true"
+
+# The account the change is about, when the resource is a user or an admin.
+rtype = json["$.resource.type"]
+person = rtype == "user" OR rtype == "systemuser" OR rtype == "admin"
+target = json["$.resource.username"]
+target = IF target THEN target ELSE json["$.resource.email"]
+targetUserName$ = IF person THEN target ELSE NULL
+# An association change names the two objects it binds or unbinds, such as a user and a group.
+fromName = json["$.association.connection.from.name"]
+targetUserName$ = IF targetUserName$ == NULL AND json["$.association.connection.from.type"] == "user" THEN fromName ELSE targetUserName$
+
+ok = json["$.success"]
+status$ = IF STRING(ok) == "true" THEN "success" ELSE "failure"
+status$ = IF ok == NULL THEN NULL ELSE status$
+errorMessage$ = json["$.error_message"]
+managementEvent$ = TRUE
+readOnly$ = CONTAINS(kind, "download") OR CONTAINS(kind, "export") OR CONTAINS(kind, "revealed")
+
+r1.resourceId$ = json["$.resource.id"]
+r1.resourceType$ = rtype
+r1.resourceAccountId$ = org
+r2.resourceId$ = json["$.association.connection.from.object_id"]
+r2.resourceType$ = json["$.association.connection.from.type"]
+r2.resourceAccountId$ = org
+r3.resourceId$ = json["$.association.connection.to.object_id"]
+r3.resourceType$ = json["$.association.connection.to.type"]
+r3.resourceAccountId$ = org
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+resources$ = IF r3.resourceId$ THEN resources$ + [r3] ELSE resources$
+
+# changes lists each changed field with its old and new value; the first three go here.
+p1.key$ = json["$.changes[0].field"]
+p1.value$ = STRING(json["$.changes[0].from"]) + " to " + STRING(json["$.changes[0].to"])
+p2.key$ = json["$.changes[1].field"]
+p2.value$ = STRING(json["$.changes[1].from"]) + " to " + STRING(json["$.changes[1].to"])
+p3.key$ = json["$.changes[2].field"]
+p3.value$ = STRING(json["$.changes[2].from"]) + " to " + STRING(json["$.changes[2].to"])
+p4.key$ = "association"
+p4.value$ = STRING(json["$.association.op"]) + " " + STRING(json["$.association.connection.from.type"]) + " " + STRING(fromName) + " to " + STRING(json["$.association.connection.to.type"]) + " " + STRING(json["$.association.connection.to.name"])
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.key$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.key$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.key$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF json["$.association.op"] THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+
+d1.key$ = "auth_method"
+d1.value$ = json["$.auth_method"]
+d2.key$ = "provider"
+d2.value$ = json["$.provider"]
+d3.key$ = "country_code"
+d3.value$ = json["$.geoip.country_code"]
+d4.key$ = "resource_name"
+d4.value$ = json["$.resource.name"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$

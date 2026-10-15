@@ -1,0 +1,96 @@
+!SAMPLE={"jumpcloud_record":"directory_insights","id":"30b03bc3-be76-4919-b341-f9b271a5777e","event_type":"sso_auth","service":"sso","timestamp":"2026-10-14T00:20:11Z","organization":"5f1a2b3c4d5e6f7a8b9c0d1e","initiated_by":{"type":"user","id":"5f1a2b3c4d5e6f7a8b9c0d1f","username":"akim"},"application":{"display_label":"Acme Wiki","id":"5c86b7469fdce00001d38016","name":"acme-wiki","sso_type":"saml"},"client_ip":"192.0.2.25","useragent":{"patch":"0","minor":"0","major":"141","os":"Mac OS X","name":"Chrome","os_name":"Mac OS X","device":"Mac"},"geoip":{"timezone":"Australia/Sydney","country_code":"AU","continent_code":"OC","region_name":"New South Wales","region_code":"NSW"},"idp_initiated":true,"sso_token_success":true,"mfa":true,"@version":"1"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: JumpCloud Directory Insights sign-in events from the example bridge:
+#   admin_login_attempt, user_login_attempt   Admin Portal and User Portal (directory service)
+#   sso_auth                                   SSO applications (sso service)
+#   radius_auth, radius_auth_attempt          RADIUS, for Wi-Fi and VPNs (radius service)
+#   ldap_bind                                  LDAP binds (ldap service)
+#   login_attempt                              device logins through the JumpCloud agent (systems service)
+# Child of JUMPCLOUD_DI_JSON_PARENT: each one to Auth, as a logon or a failure.
+# json, service, kind, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+# Who signed in: the resource for portal sign-ins (an admin's email or a user's username), the
+# initiator for SSO, and username for RADIUS, LDAP and device logins.
+user = json["$.username"]
+user = IF user THEN user ELSE json["$.resource.username"]
+user = IF user THEN user ELSE json["$.resource.email"]
+user = IF user THEN user ELSE json["$.initiated_by.username"]
+user = IF user THEN user ELSE json["$.initiated_by.email"]
+targetUserName$ = user
+
+system = "JumpCloud " + service
+system = IF kind == "admin_login_attempt" THEN "JumpCloud Admin Portal" ELSE system
+system = IF kind == "user_login_attempt" THEN "JumpCloud User Portal" ELSE system
+system = IF service == "sso" THEN "JumpCloud SSO" ELSE system
+system = IF service == "radius" THEN "JumpCloud RADIUS" ELSE system
+system = IF service == "ldap" THEN "JumpCloud LDAP" ELSE system
+system = IF service == "systems" THEN "JumpCloud device login" ELSE system
+authSystem$ = system
+
+# A device login gives the address the login came from in src_ip, and the device's own address,
+# as JumpCloud saw it, in client_ip.
+src = json["$.src_ip"]
+sourceAddress$ = IF src THEN src ELSE json["$.client_ip"]
+targetHostName$ = json["$.system.hostname"]
+logonApplicationFamily$ = json["$.process_name"]
+applicationName$ = json["$.application.display_label"]
+sessionId$ = json["$.connection_id"]
+
+# SSO events report the result in sso_token_success, the others in success.
+ok = json["$.sso_token_success"]
+ok = IF ok == NULL THEN json["$.success"] ELSE ok
+success = STRING(ok) == "true"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+err = json["$.error_message"]
+extraFailurereason$ = IF success THEN NULL ELSE err
+lerr = LOWERCASE(STRING(err))
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND (CONTAINS(lerr, "password") OR CONTAINS(lerr, "credentials") OR CONTAINS(lerr, "response is incorrect") OR CONTAINS(lerr, "digest does not match")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+mfa = json["$.mfa"]
+mfaUsed$ = IF mfa == NULL THEN NULL ELSE STRING(mfa) == "true"
+
+m1.key$ = "organization"
+m1.value$ = json["$.organization"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "event_type"
+m2.value$ = kind
+eventMetadata$.record$ = eventMetadata$.record$ + [m2]
+m3.key$ = "mfa_type"
+m3.value$ = json["$.mfa_meta.type"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "auth_method"
+m4.value$ = json["$.auth_method"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "auth_type"
+m5.value$ = json["$.auth_type"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "eap_type"
+m6.value$ = json["$.eap_type"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "dn"
+m7.value$ = json["$.dn"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "error_code"
+m8.value$ = STRING(json["$.error_code"])
+eventMetadata$.record$ = IF json["$.error_code"] != NULL THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "client_ip"
+m9.value$ = json["$.client_ip"]
+eventMetadata$.record$ = IF src AND m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "country_code"
+m10.value$ = json["$.geoip.country_code"]
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "browser"
+m11.value$ = json["$.useragent.name"]
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "application_id"
+m12.value$ = json["$.application.id"]
+eventMetadata$.record$ = IF m12.value$ THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$

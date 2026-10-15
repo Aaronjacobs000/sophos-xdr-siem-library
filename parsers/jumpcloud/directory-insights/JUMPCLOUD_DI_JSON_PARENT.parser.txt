@@ -1,0 +1,27 @@
+!SAMPLE={"jumpcloud_record":"directory_insights","id":"6537b1c2e4b0a1b2c3d4e001","event_type":"admin_login_attempt","service":"directory","timestamp":"2026-10-14T00:12:44.218Z","organization":"5f1a2b3c4d5e6f7a8b9c0d1e","resource":{"id":"5ce434e77128503e528e747c","type":"admin","email":"jlee@example.com"},"provider":null,"success":true,"mfa":true,"mfa_meta":{"type":"totp"},"auth_method":"session","client_ip":"203.0.113.10","geoip":{"timezone":"Australia/Sydney","country_code":"AU","continent_code":"OC","region_name":"New South Wales","region_code":"NSW"},"useragent":{"patch":"0","minor":"0","major":"141","os":"Mac OS X","name":"Chrome","os_name":"Mac OS X","device":"Mac"},"@version":"1"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"jumpcloud_record"\s*:\s*"directory_insights"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: JumpCloud Directory Insights events from the Directory Insights API, pulled by the example
+# bridge in bridges/jumpcloud-directory-insights and posted to HTTP Ingest as JSON lines. The bridge
+# puts "jumpcloud_record": "directory_insights" first.
+# Parent: hands sign-ins (Admin Portal, User Portal, SSO, RADIUS, LDAP binds and device logins) to the
+# Auth child and every other event to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "JumpCloud Directory Insights"
+sensorEventId$ = json["$.id"]
+service = json["$.service"]
+kind = json["$.event_type"]
+# timestamp is RFC 3339 in UTC, such as 2026-10-14T00:12:44.218Z.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+# JumpCloud's reference names the RADIUS event radius_auth and its event catalog radius_auth_attempt.
+signin = kind == "admin_login_attempt" OR kind == "user_login_attempt" OR kind == "sso_auth" OR kind == "radius_auth" OR kind == "radius_auth_attempt" OR kind == "login_attempt" OR kind == "ldap_bind"
+eventType$ = IF signin THEN "auth" ELSE "audit"
