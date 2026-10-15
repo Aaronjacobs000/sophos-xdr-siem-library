@@ -1,9 +1,10 @@
-# Acts on "Parser checks" with write access. It trusts nothing from that run except the pull
-# request number, which it checks against the head commit. It validates again with the
-# default branch's code, labels the pull request, posts the report, and merges when the repo
-# allows auto-merge and the pull request only adds or updates its author's own entries.
-# Bridge code, and any other file outside parsers/, always waits for a maintainer: see
-# tools/lib/merge-rules.mjs, which github-gate.mjs checks against the real file list.
+# Acts on "Parser checks". It trusts nothing from that run except the pull request number, which
+# it checks against the head commit. The check job validates again with the default branch's
+# code and a read-only token. The gate job, which can write, takes only the report from it: it
+# labels the pull request, posts the report, and merges when the repo allows auto-merge and the
+# pull request only adds or updates its author's own entries. Bridge code, and any other file
+# outside parsers/, always waits for a maintainer: see tools/lib/merge-rules.mjs, which
+# github-gate.mjs checks against the real file list right before it merges the checked commit.
 name: Parser labels and merge
 
 on:
@@ -12,22 +13,23 @@ on:
     types: [completed]
 
 permissions:
-  actions: read
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
 
 concurrency:
   group: parser-merge-${{ github.event.workflow_run.head_sha }}
   cancel-in-progress: false
 
 jobs:
-  gate:
+  check:
     if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
     outputs:
-      merged: ${{ steps.merge.outputs.merged }}
+      skip: ${{ steps.pr.outputs.skip }}
     steps:
       - name: Check out the default branch (trusted code)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,6 +77,61 @@ jobs:
         run: |
           node base/tools/github-gate.mjs changed --pr "$PR" --out changed.txt
           node base/tools/validate-library.mjs --root pr --base base --changed-files changed.txt --author "$AUTHOR" --report report.json --markdown report.md || true
+      - name: Hand the report to the gate job
+        if: steps.pr.outputs.skip == 'false'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-report
+          path: |
+            report.json
+            report.md
+          retention-days: 1
+  # The gate job never sees the pull request's files. It matches the pull request to the checked
+  # commit again itself, and takes only the report from the check job.
+  gate:
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
+    steps:
+      - name: Check out the default branch (trusted code)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: base
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parser-checks
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: artifact
+      - name: Match the pull request to the checked commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          PR=$(tr -dc '0-9' < artifact/pr-number.txt)
+          if [ -z "$PR" ]; then echo "no pull request number"; exit 1; fi
+          INFO=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.head.sha, .state] | @tsv')
+          SHA=$(echo "$INFO" | cut -f1); STATE=$(echo "$INFO" | cut -f2)
+          if [ "$SHA" != "$HEAD_SHA" ] || [ "$STATE" != "open" ]; then echo "pull request moved on; skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          { echo "number=$PR"; echo "skip=false"; } >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: steps.pr.outputs.skip == 'false'
+        with:
+          name: gate-report
+          path: report
       - name: Label, report and merge
         id: merge
         if: steps.pr.outputs.skip == 'false'
@@ -82,7 +139,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PR: ${{ steps.pr.outputs.number }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: node base/tools/github-gate.mjs pr --pr "$PR" --sha "$HEAD_SHA" --report report.json --markdown report.md
+        run: node base/tools/github-gate.mjs pr --pr "$PR" --sha "$HEAD_SHA" --report report/report.json --markdown report/report.md
   # A merge made with GITHUB_TOKEN starts no push workflows, so Pages would keep the old library
   # snapshot until its daily run. workflow_dispatch is an event GITHUB_TOKEN may start, and this
   # job's token can do nothing else.
