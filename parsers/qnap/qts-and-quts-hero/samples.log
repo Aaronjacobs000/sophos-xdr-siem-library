@@ -1,0 +1,13 @@
+<30>Oct 14 09:12:31 nas01 qulogd[14629]: conn log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Connection type: HTTPS, Accessed resources: Administration, Action: Login Success
+<28>Oct 14 09:13:02 nas01 qulogd[14629]: conn log: Users: guest, Source IP: 203.0.113.77, Computer name: ---, Connection type: SSH, Accessed resources: ---, Action: Login Fail
+<28>Oct 14 09:13:40 nas01 qulogd[14629]: conn log: Users: EXAMPLE\jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: SAMBA, Accessed resources: ---, Action: Login Fail
+<30>Oct 14 09:14:05 nas01 qulogd[14629]: conn log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Connection type: HTTPS, Accessed resources: ---, Action: Logout
+<30>Oct 14 09:15:10 nas01 qulogd[14629]: conn log: Users: jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: Samba, Accessed resources: Finance/Reports/q3-forecast.xlsx, Action: Read
+<30>Oct 14 09:15:22 nas01 qulogd[14629]: conn log: Users: jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: Samba, Accessed resources: Finance/Reports/q3-forecast.xlsx, Action: Delete
+<30>Oct 14 09:15:23 nas01 qulogd[14629]: conn log: Users: jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: Samba, Accessed resources: Finance/Reports/budget.xlsx -> Finance/Reports/budget.xlsx.locked, Action: Rename
+<30>Oct 14 09:16:01 nas01 qulogd[14629]: conn log: Users: jsmith, Source IP: 192.0.2.25, Computer name: ws-jsmith, Connection type: Samba, Accessed resources: Finance/Archive 2026, Action: Create Directory
+<30>Oct 14 09:17:44 nas01 qulogd[14629]: conn log: Users: backup-svc, Source IP: 198.51.100.12, Computer name: ---, Connection type: FTP, Accessed resources: Backups/db/nightly.dump, Action: Write
+<30>Oct 14 09:20:15 nas01 qulogd[14629]: event log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Application: Users, Category: General, Content: [Users] Created user "pnguyen".
+<30>Oct 14 09:21:02 nas01 qulogd[14629]: event log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Application: Users, Category: General, Content: [Users] Changed the password of user "jsmith".
+<30>Oct 14 09:22:37 nas01 qulogd[14629]: event log: Users: admin, Source IP: 192.0.2.40, Computer name: ---, Application: Shared Folders, Category: General, Content: [Shared Folders] Created shared folder "Projects".
+<30>Oct 14 10:00:05 nas01 qulogd[14629]: event log: Users: ---, Source IP: ---, Computer name: ---, Application: Storage & Snapshots, Category: Snapshot, Content: [Storage & Snapshots] Finished creating scheduled snapshot. Volume: DataVol1.
