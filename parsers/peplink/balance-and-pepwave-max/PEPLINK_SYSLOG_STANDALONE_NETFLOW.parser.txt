@@ -1,0 +1,56 @@
+!SAMPLE=<9>Oct 14 09:47:44 balance: Denied CONN=Ethernet WAN SRC=198.51.100.23 DST=192.0.2.20 LEN=48 PROTO=TCP SPT=2260 DPT=80
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|[>\s])(?:Denied|Allowed)\s+CONN=\S.*?\s+SRC=\d{1,3}(?:\.\d{1,3}){3}\s+DST=\d{1,3}(?:\.\d{1,3}){3}\s+LEN=\d+\s+PROTO=\S+
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Peplink Balance and Pepwave MAX routers, firewall rule logs sent to a remote syslog server
+# (System > Event Log, UDP only), from rules with Event Logging turned on:
+#   Denied|Allowed CONN=<connection> SRC=<ip> DST=<ip> LEN=<length> PROTO=<protocol> [SPT=<port> DPT=<port>]
+# Standalone parser for the Netflow schema. The connection is the WAN, LAN or VPN connection the rule
+# applies to, and its name can hold spaces.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+
+m = originalData$|^(?:<\d{1,3}>)?\s*(?:(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+)?(?:(?P<tag>[^\s:]+):?\s+)?(?P<act>Denied|Allowed)\s+CONN=(?P<conn>\S.*?)\s+SRC=(?P<src>\d{1,3}(?:\.\d{1,3}){3})\s+DST=(?P<dst>\d{1,3}(?:\.\d{1,3}){3})\s+LEN=(?P<len>\d+)\s+PROTO=(?P<proto>\S+)(?P<rest>.*)$
+rest = STRING(m["rest"])
+ports = rest|\sSPT=(?P<spt>\d+)\s+DPT=(?P<dpt>\d+)
+
+sensorType$ = "Peplink"
+# The BSD syslog time is the router's clock, with no year and no zone: DATETIME picks the year (TRUE)
+# and reads UTC. A line without it keeps the ingest time.
+time = STRING(m["time"])
+eventTimeUsec$ = IF time != "" THEN DATETIME(time, "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+
+sourceAddress$ = m["src"]
+destinationAddress$ = m["dst"]
+spt = STRING(ports["spt"])
+dpt = STRING(ports["dpt"])
+sourcePort$ = IF spt != "" THEN INT(spt, 10) ELSE NULL
+destinationPort$ = IF dpt != "" THEN INT(dpt, 10) ELSE NULL
+
+# protocol takes the IANA number; the router logs a name.
+proto = UPPERCASE(STRING(m["proto"]))
+pnum = proto|^(?P<n>\d+)$
+protocol$ = IF pnum["n"] != "" THEN INT(pnum["n"], 10) ELSE NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+
+flowAction$ = IF m["act"] == "Denied" THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+
+# Fields with no Netflow home go to event_metadata. LEN is the size of the one logged packet.
+r1.key$ = "connection"
+r1.value$ = m["conn"]
+r2.key$ = "packet_length"
+r2.value$ = m["len"]
+r3.key$ = "firewall_action"
+r3.value$ = m["act"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+tag = STRING(m["tag"])
+r4.key$ = "syslog_tag"
+r4.value$ = tag
+eventMetadata$.record$ = IF tag != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$

@@ -1,0 +1,192 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Peplink",
+      "event_time_usec": 1791971264000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.20",
+      "source_port": 2260,
+      "destination_port": 80,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection",
+            "value": "Ethernet WAN"
+          },
+          {
+            "key": "packet_length",
+            "value": "48"
+          },
+          {
+            "key": "firewall_action",
+            "value": "Denied"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "balance"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Peplink",
+      "event_time_usec": 1791971290000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.45",
+      "destination_address": "192.0.2.21",
+      "source_port": 40102,
+      "destination_port": 3389,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection",
+            "value": "Cellular 1"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "firewall_action",
+            "value": "Denied"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "balance"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Peplink",
+      "event_time_usec": 1791971310000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.45",
+      "destination_address": "203.0.113.80",
+      "source_port": 51022,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection",
+            "value": "LAN"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "firewall_action",
+            "value": "Allowed"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "balance"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Peplink",
+      "event_time_usec": 1791971342000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.1",
+      "source_port": 5353,
+      "destination_port": 161,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection",
+            "value": "WAN 2"
+          },
+          {
+            "key": "packet_length",
+            "value": "28"
+          },
+          {
+            "key": "firewall_action",
+            "value": "Denied"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "balance"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "PEPLINK_SYSLOG_STANDALONE_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Peplink",
+      "event_time_usec": 1791971360000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.12",
+      "destination_address": "192.0.2.1",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "connection",
+            "value": "Ethernet WAN"
+          },
+          {
+            "key": "packet_length",
+            "value": "84"
+          },
+          {
+            "key": "firewall_action",
+            "value": "Denied"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "balance"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
