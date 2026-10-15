@@ -1,0 +1,432 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791936764218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e001",
+      "target_user_name": "jlee@example.com",
+      "auth_system": "JumpCloud Admin Portal",
+      "source_address": "203.0.113.10",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "admin_login_attempt"
+          },
+          {
+            "key": "mfa_type",
+            "value": "totp"
+          },
+          {
+            "key": "auth_method",
+            "value": "session"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          },
+          {
+            "key": "browser",
+            "value": "Chrome"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791936902456000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e002",
+      "target_user_name": "akim",
+      "auth_system": "JumpCloud User Portal",
+      "source_address": "198.51.100.23",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Invalid username or password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "user_login_attempt"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          },
+          {
+            "key": "browser",
+            "value": "Firefox"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791937211000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "30b03bc3-be76-4919-b341-f9b271a5777e",
+      "target_user_name": "akim",
+      "auth_system": "JumpCloud SSO",
+      "source_address": "192.0.2.25",
+      "application_name": "Acme Wiki",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "sso_auth"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          },
+          {
+            "key": "browser",
+            "value": "Chrome"
+          },
+          {
+            "key": "application_id",
+            "value": "5c86b7469fdce00001d38016"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791937900000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "077ED0A8-1B5F-3EA3-8AAC-E3999451A46D",
+      "target_user_name": "akim",
+      "auth_system": "JumpCloud RADIUS",
+      "source_address": "198.51.100.40",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "mschap: MS-CHAP2-Response is incorrect",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "radius_auth_attempt"
+          },
+          {
+            "key": "mfa_type",
+            "value": "none"
+          },
+          {
+            "key": "auth_type",
+            "value": "eap"
+          },
+          {
+            "key": "eap_type",
+            "value": "MSCHAPv2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791937985000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5B3C1D2E-4F5A-3B6C-9D7E-8F9A0B1C2D3E",
+      "target_user_name": "pnguyen",
+      "auth_system": "JumpCloud RADIUS",
+      "source_address": "198.51.100.40",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "radius_auth"
+          },
+          {
+            "key": "mfa_type",
+            "value": "totp"
+          },
+          {
+            "key": "auth_type",
+            "value": "pap"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791938405000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e005",
+      "target_user_name": "akim",
+      "auth_system": "JumpCloud device login",
+      "source_address": "192.0.2.60",
+      "target_host_name": "build-01",
+      "logon_application_family": "sshd",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "login_attempt"
+          },
+          {
+            "key": "client_ip",
+            "value": "203.0.113.30"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791938719000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e006",
+      "target_user_name": "svc-printer",
+      "auth_system": "JumpCloud LDAP",
+      "source_address": "203.0.113.44",
+      "session_id": "cn-0001f3a2",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "invalid credentials",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization",
+            "value": "5f1a2b3c4d5e6f7a8b9c0d1e"
+          },
+          {
+            "key": "event_type",
+            "value": "ldap_bind"
+          },
+          {
+            "key": "auth_method",
+            "value": "simple"
+          },
+          {
+            "key": "dn",
+            "value": "uid=svc-printer,ou=Users,o=5f1a2b3c4d5e6f7a8b9c0d1e,dc=jumpcloud,dc=com"
+          },
+          {
+            "key": "error_code",
+            "value": "49"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791939753120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e007",
+      "event_type": "directory",
+      "event_source": "JumpCloud",
+      "event_name": "user_update",
+      "recipient_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e",
+      "user_name": "jlee@example.com",
+      "user_type": "admin",
+      "user_id": "5ce434e77128503e528e747c",
+      "source_address": "203.0.113.10",
+      "user_agent": "Chrome",
+      "target_user_name": "akim",
+      "status": "success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "5f1a2b3c4d5e6f7a8b9c0d1f",
+          "resource_type": "user",
+          "resource_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "enable_user_portal_multifactor",
+            "value": "true to false"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "auth_method",
+            "value": "session"
+          },
+          {
+            "key": "country_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791939947902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e008",
+      "event_type": "directory",
+      "event_source": "JumpCloud",
+      "event_name": "user_create",
+      "recipient_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e",
+      "user_name": "jlee@example.com",
+      "user_type": "admin",
+      "user_id": "5ce434e77128503e528e747c",
+      "source_address": "203.0.113.10",
+      "target_user_name": "pnguyen",
+      "status": "success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "6a1b2c3d4e5f6a7b8c9d0e1f",
+          "resource_type": "user",
+          "resource_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "auth_method",
+            "value": "api-key"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "JUMPCLOUD_DI_JSON_PARENT > JUMPCLOUD_DI_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "JumpCloud Directory Insights",
+      "event_time_usec": 1791939972004000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6537b1c2e4b0a1b2c3d4e009",
+      "event_type": "directory",
+      "event_source": "JumpCloud",
+      "event_name": "association_change",
+      "recipient_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e",
+      "user_name": "jlee@example.com",
+      "user_type": "admin",
+      "user_id": "5ce434e77128503e528e747c",
+      "source_address": "203.0.113.10",
+      "target_user_name": "pnguyen",
+      "status": "success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "6a1b2c3d4e5f6a7b8c9d0e1f",
+          "resource_type": "user",
+          "resource_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e"
+        },
+        {
+          "resource_id": "6b2c3d4e5f6a7b8c9d0e1f2a",
+          "resource_type": "user_group",
+          "resource_account_id": "5f1a2b3c4d5e6f7a8b9c0d1e"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "association",
+            "value": "add user pnguyen to user_group Finance"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "auth_method",
+            "value": "session"
+          }
+        ]
+      }
+    }
+  }
+]
