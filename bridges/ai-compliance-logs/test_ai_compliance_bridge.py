@@ -69,6 +69,8 @@ class Mock:
         self.ingest_codes = []       # response codes to return before 200
         self.ingested = []           # [{"headers", "lines"}]
         self.requests = []           # [(method, path, headers)]
+        self.download_location = None  # Location for the download redirect, instead of /signed/...
+        self.signed_redirect = None    # a redirect the signed URL answers with
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -102,7 +104,7 @@ class Handler(BaseHTTPRequestHandler):
                 f = next((f for f in m.clp_files if f["id"] == parts[5]), None)
                 if not f:
                     return self._json({}, 404)
-                return self._send(307, b"", headers={"Location": f"/signed/{f['id']}?sig={SIGNATURE}"})
+                return self._send(307, b"", headers={"Location": m.download_location or f"/signed/{f['id']}?sig={SIGNATURE}"})
             after = q["after"][0]
             limit = int(q.get("limit", ["100"])[0])
             types = set(",".join(q["event_type"]).split(","))
@@ -117,6 +119,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "signed URLs reject an Authorization header"}, 400)
             if q.get("sig") != [SIGNATURE]:
                 return self._json({}, 403)
+            if m.signed_redirect:
+                return self._send(302, b"", headers={"Location": m.signed_redirect})
             f = next(f for f in m.clp_files if f["id"] == parts[1])
             return self._send(200, "".join(json.dumps(r) + "\n" for r in f["records"]).encode(), "application/jsonl")
         if u.path == "/v1/organization/audit_logs":
@@ -296,6 +300,18 @@ class BridgeTest(unittest.TestCase):
         self.mock.ingested.clear()
         c.run_once(cfg)
         self.assertEqual(self.sent(), [])
+
+    def test_signed_url_and_its_redirects_must_be_https(self):
+        # The signed URL is a credential, so it only goes out over https (plain http to this
+        # machine is allowed for these tests), and so does any redirect it answers with.
+        self.add_clp_files()
+        for first, second in (("ftp://127.0.0.1:1/clf-1.jsonl", None), (None, "ftp://127.0.0.1:1/clf-1.jsonl")):
+            with self.subTest(first=first, second=second):
+                self.mock.download_location, self.mock.signed_redirect = first, second
+                with self.assertRaisesRegex(c.BridgeError, "https"):
+                    c.run_once(c.load_config(self.clp_env()))
+                self.assertEqual(self.sent(), [])
+                self.assertNotIn(SIGNATURE, self.log.getvalue())
 
     def test_clp_conversation_redacted_by_default(self):
         self.add_clp_files()

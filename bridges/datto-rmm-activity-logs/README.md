@@ -49,7 +49,7 @@ Exit code 0 means the window was read and sent. On an error the bridge logs the 
 ## How it reads the API
 
 - It requests an access token from `<API URL>/auth/oauth/token` with the password grant, the API key and secret as user name and password, and the OAuth client `public-client` / `public` that Datto documents. Tokens last 100 hours; on a 401 it asks for a new one once.
-- It reads `from` (the cursor minus the overlap) to `until` (now minus the settle time) with `order=asc`, and follows `pageDetails.nextPageUrl` until it is empty. It only follows page links on the configured API host, so the token never goes anywhere else.
+- It reads `from` (the cursor minus the overlap) to `until` (now minus the settle time) with `order=asc`, and follows `pageDetails.nextPageUrl` until it is empty. It only follows page links with the configured API URL's scheme and host, so the token never goes anywhere else or over plain http.
 - It sends the new records oldest first, then saves the cursor and the IDs inside the overlap.
 
 The API and HTTP Ingest both deliver at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.

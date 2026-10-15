@@ -62,13 +62,13 @@ Exit code 0 means every source was read and sent. On an error the bridge logs th
 
 ## How it reads each API
 
-- **openai_clp:** lists files per event type with `after` set to the cursor, follows `has_more` and `last_end_time`, and downloads each file. The download answers with a redirect to a short-lived signed URL; the bridge fetches it without the Admin key and never logs it. The cursor moves after each file is sent. Files expire after 30 days, so run the bridge at least daily.
+- **openai_clp:** lists files per event type with `after` set to the cursor, follows `has_more` and `last_end_time`, and downloads each file. The download answers with a redirect to a short-lived signed URL; the bridge fetches it without the Admin key, only over https (redirects included), and never logs it. The cursor moves after each file is sent. Files expire after 30 days, so run the bridge at least daily.
 - **openai_audit:** reads `effective_at[gte]` from the cursor minus the overlap, pages with `after` and `last_id`, and sends the events oldest first.
 - **anthropic:** reads a window from the cursor minus the overlap to now minus `ANTHROPIC_SETTLE_SECONDS`, with `order=asc`, paging with `after_id` and `last_id`.
 
 All three APIs, and HTTP Ingest, deliver at least once. The bridge drops repeats it has seen recently, but a crash between sending a batch and saving the cursor can send that batch again. HTTP Ingest does not remove duplicates.
 
-Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429 or 5xx the bridge waits (honoring `Retry-After` up to 5 minutes) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429 or 5xx the bridge waits (honoring `Retry-After` up to 5 minutes) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key and only over https, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 ## Privacy
 
