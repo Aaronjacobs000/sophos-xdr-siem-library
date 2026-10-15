@@ -1,0 +1,86 @@
+!SAMPLE={"google_workspace_record":"activity","kind":"audit#activity","id":{"time":"2026-10-13T01:12:40.551Z","uniqueQualifier":"6120983345120934877","applicationName":"login","customerId":"C01b2c3d4"},"actor":{"callerType":"USER","email":"lee@example.com","profileId":"114000000000000000003"},"ownerDomain":"example.com","ipAddress":"198.51.100.23","events":[{"type":"login","name":"login_failure","parameters":[{"name":"login_type","value":"google_password"},{"name":"login_challenge_method","multiValue":["password"]},{"name":"login_failure_type","value":"login_failure_invalid_password"}]}],"params":{"login_type":"google_password","login_challenge_method":["password"],"login_failure_type":"login_failure_invalid_password"},"networkInfo":{"ipAsn":[64500],"regionCode":"AU","subdivisionCode":"AU-NSW"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Google Workspace audit activities from the example bridge: login (login_success,
+# login_failure, logout, login_challenge, login_verification), every SAML sign-in to an app that
+# uses Google as its identity provider, and ChromeOS device sign-ins and sign-outs.
+# Child of GOOGLE_WORKSPACE_AUDIT_JSON_PARENT: each one to Auth.
+# json, app, evName, evType, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id.uniqueQualifier"]
+chrome = app == "chrome"
+authSystem$ = IF chrome THEN "ChromeOS" ELSE "Google Workspace"
+email = json["$.actor.email"]
+deviceUser = json["$.params.DEVICE_USER"]
+targetUserName$ = IF chrome AND deviceUser THEN deviceUser ELSE email
+targetHostName$ = json["$.params.DEVICE_NAME"]
+sourceAddress$ = json["$.ipAddress"]
+# The app a SAML sign-in was for.
+applicationName$ = json["$.params.application_name"]
+status$ = evName
+
+# Challenge and verification events say whether the step passed in login_challenge_status.
+challenge = json["$.params.login_challenge_status"]
+challengeEvent = evName == "login_challenge" OR evName == "login_verification"
+failed = evName == "login_failure" OR evName == "CHROME_OS_LOGIN_FAILURE_EVENT" OR challenge == "Challenge Failed."
+logout = evName == "logout" OR evName == "CHROME_OS_LOGOUT_EVENT"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+actionResult$ = IF challengeEvent AND NOT failed AND challenge != "Challenge Passed." THEN NULL ELSE actionResult$
+
+# login_challenge_method lists every method used in the sign-in, such as password and
+# google_authenticator. Any second-factor method means MFA was used.
+methods = REPLACE_REGEX(STRING(json["$.params.login_challenge_method"]), `[\[\]"]`, "")
+mfa = methods|(?P<m>google_authenticator|google_prompt|security_key|backup_code|idv_preregistered_phone|internal_two_factor|offline_otp|passkey|device_prompt|userless_fido)
+secondFactor = STRING(json["$.params.is_second_factor"]) == "true"
+mfaUsed$ = IF mfa["m"] OR secondFactor THEN TRUE ELSE NULL
+
+reason = json["$.params.login_failure_type"]
+reason = IF reason THEN reason ELSE json["$.params.failure_type"]
+reason = IF reason THEN reason ELSE json["$.params.LOGIN_FAILURE_REASON"]
+subStatus$ = IF reason THEN reason ELSE challenge
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND reason == "login_failure_invalid_password" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF failed AND reason == "login_failure_account_disabled" THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF failed AND challengeEvent AND (secondFactor OR mfa["m"]) THEN "INCORRECT_MFA" ELSE failureCategory$
+
+m1.key$ = "application"
+m1.value$ = app
+m2.key$ = "customer_id"
+m2.value$ = json["$.id.customerId"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "login_type"
+m3.value$ = json["$.params.login_type"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "login_challenge_method"
+m4.value$ = methods
+eventMetadata$.record$ = IF methods THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "is_suspicious"
+m5.value$ = STRING(json["$.params.is_suspicious"])
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "saml_status_code"
+m6.value$ = json["$.params.saml_status_code"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "saml_second_level_status_code"
+m7.value$ = json["$.params.saml_second_level_status_code"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "initiated_by"
+m8.value$ = json["$.params.initiated_by"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "orgunit_path"
+m9.value$ = json["$.params.orgunit_path"]
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "region_code"
+m10.value$ = json["$.networkInfo.regionCode"]
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "profile_id"
+m11.value$ = json["$.actor.profileId"]
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$

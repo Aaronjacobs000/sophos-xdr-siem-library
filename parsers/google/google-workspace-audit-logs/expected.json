@@ -1,0 +1,872 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791853804218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "-8341237771349122047",
+      "auth_system": "Google Workspace",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "status": "login_success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "login"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "login_type",
+            "value": "google_password"
+          },
+          {
+            "key": "login_challenge_method",
+            "value": "password,google_authenticator"
+          },
+          {
+            "key": "is_suspicious",
+            "value": "false"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791853960551000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6120983345120934877",
+      "auth_system": "Google Workspace",
+      "target_user_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "status": "login_failure",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "sub_status": "login_failure_invalid_password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "login"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "login_type",
+            "value": "google_password"
+          },
+          {
+            "key": "login_challenge_method",
+            "value": "password"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791856721502000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "-1209933845571200345",
+      "auth_system": "Google Workspace",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "status": "logout",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "login"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "login_type",
+            "value": "google_password"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791856997090000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "3398120456712098811",
+      "auth_system": "Google Workspace",
+      "target_user_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "status": "login_verification",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "mfa_used": true,
+      "sub_status": "Challenge Failed.",
+      "failure_category": "INCORRECT_MFA",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "login"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "login_type",
+            "value": "google_password"
+          },
+          {
+            "key": "login_challenge_method",
+            "value": "google_prompt"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791858055734000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "-5521098834012345670",
+      "alert_id": "-5521098834012345670",
+      "vendor": "Google",
+      "provider": "Google Workspace",
+      "log_type": "login",
+      "title": "suspicious_login",
+      "alert_category": "account_warning",
+      "target_user_name": "lee@example.com",
+      "user_principal_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "summary": "suspicious_login for lee@example.com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "application",
+            "value": "login"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "actor_email",
+            "value": "lee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791858669112000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7712093456123400981",
+      "auth_system": "Google Workspace",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.10",
+      "application_name": "Example HR",
+      "status": "login_success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "saml"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "saml_status_code",
+            "value": "SUCCESS_URI"
+          },
+          {
+            "key": "initiated_by",
+            "value": "sp"
+          },
+          {
+            "key": "orgunit_path",
+            "value": "/Staff"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791858826874000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "-2290871234501239876",
+      "auth_system": "Google Workspace",
+      "target_user_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "application_name": "Example HR",
+      "status": "login_failure",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "sub_status": "failure_app_not_configured_for_user",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "application",
+            "value": "saml"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "saml_status_code",
+            "value": "REQUESTER_URI"
+          },
+          {
+            "key": "saml_second_level_status_code",
+            "value": "REQUEST_DENIED_URI"
+          },
+          {
+            "key": "initiated_by",
+            "value": "idp"
+          },
+          {
+            "key": "orgunit_path",
+            "value": "/Contractors"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "profile_id",
+            "value": "114000000000000000003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791860712440000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "USER_SETTINGS",
+      "sensor_event_id": "1029384756102938475",
+      "event_source": "admin",
+      "event_name": "GRANT_ADMIN_PRIVILEGE",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "sam.admin@example.com",
+      "user_id": "114000000000000000002",
+      "user_type": "USER",
+      "source_address": "198.51.100.77",
+      "target_user_name": "lee@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791860878201000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "SECURITY_SETTINGS",
+      "sensor_event_id": "-6677889900112233445",
+      "event_source": "admin",
+      "event_name": "ADD_TO_TRUSTED_OAUTH2_APPS",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "sam.admin@example.com",
+      "user_id": "114000000000000000002",
+      "user_type": "USER",
+      "source_address": "198.51.100.77",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "123456789012-exampleapp.apps.googleusercontent.example",
+          "resource_type": "oauth_client",
+          "resource_account_id": "C01b2c3d4"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "org_unit_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "app_name",
+            "value": "Example Backup"
+          },
+          {
+            "key": "client_type",
+            "value": "WEB"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791861090905000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "USER_SETTINGS",
+      "sensor_event_id": "4455667788990011223",
+      "event_source": "admin",
+      "event_name": "SUSPEND_USER",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "sam.admin@example.com",
+      "user_id": "114000000000000000002",
+      "user_type": "USER",
+      "source_address": "198.51.100.77",
+      "target_user_name": "former.staff@example.com",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791861090905000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "USER_SETTINGS",
+      "sensor_event_id": "4455667788990011223",
+      "event_source": "admin",
+      "event_name": "CHANGE_PASSWORD_ON_NEXT_LOGIN",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "sam.admin@example.com",
+      "user_id": "114000000000000000002",
+      "user_type": "USER",
+      "source_address": "198.51.100.77",
+      "target_user_name": "former.staff@example.com",
+      "management_event": true,
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "old_value",
+            "value": "false"
+          },
+          {
+            "key": "new_value",
+            "value": "true"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791862822613000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "auth",
+      "sensor_event_id": "-9988776655443322110",
+      "event_source": "token",
+      "event_name": "authorize",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "pat@example.com",
+      "user_id": "114000000000000000001",
+      "user_type": "USER",
+      "source_address": "203.0.113.10",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "123456789012-examplenotes.apps.googleusercontent.example",
+          "resource_type": "oauth_client",
+          "resource_account_id": "C01b2c3d4"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "app_name",
+            "value": "Example Notes"
+          },
+          {
+            "key": "scope",
+            "value": "https://www.googleapis.com/auth/drive.readonly,openid"
+          },
+          {
+            "key": "client_type",
+            "value": "WEB"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791864129338000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "acl_change",
+      "sensor_event_id": "2233445566778899001",
+      "event_source": "drive",
+      "event_name": "change_user_access",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "pat@example.com",
+      "user_id": "114000000000000000001",
+      "user_type": "USER",
+      "source_address": "203.0.113.10",
+      "target_user_name": "partner@example.net",
+      "management_event": false,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "1q4-board-pack-example-doc-id",
+          "resource_type": "document",
+          "resource_account_id": "C01b2c3d4"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "old_value",
+            "value": "none"
+          },
+          {
+            "key": "new_value",
+            "value": "can_edit"
+          },
+          {
+            "key": "doc_title",
+            "value": "Q4 board pack"
+          },
+          {
+            "key": "visibility",
+            "value": "shared_externally"
+          },
+          {
+            "key": "visibility_change",
+            "value": "external"
+          },
+          {
+            "key": "owner",
+            "value": "pat@example.com"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "primary_event",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791864951007000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "access",
+      "sensor_event_id": "-3344556677889900112",
+      "event_source": "drive",
+      "event_name": "download",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "lee@example.com",
+      "user_id": "114000000000000000003",
+      "user_type": "USER",
+      "source_address": "198.51.100.23",
+      "management_event": false,
+      "read_only": true,
+      "resources": [
+        {
+          "resource_id": "1q4-board-pack-example-doc-id",
+          "resource_type": "document",
+          "resource_account_id": "C01b2c3d4"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "doc_title",
+            "value": "Q4 board pack"
+          },
+          {
+            "key": "visibility",
+            "value": "shared_externally"
+          },
+          {
+            "key": "owner",
+            "value": "pat@example.com"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          },
+          {
+            "key": "primary_event",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791865818642000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5566778899001122334",
+      "alert_id": "5566778899001122334",
+      "vendor": "Google",
+      "provider": "Chrome Enterprise",
+      "log_type": "chrome",
+      "title": "MALWARE_TRANSFER",
+      "alert_category": "MALWARE_TRANSFER_TYPE",
+      "target_user_name": "pat@example.com",
+      "user_principal_name": "pat@example.com",
+      "destination_url": "https://downloads.example.net/invoice_2026.exe",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "target_host_name": "PAT-LAPTOP",
+      "action_reason": "MALWARE_TRANSFER_DANGEROUS",
+      "status": "BLOCKED",
+      "action": "BLOCKED",
+      "summary": "MALWARE_TRANSFER_DANGEROUS at https://downloads.example.net/invoice_2026.exe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "application",
+            "value": "chrome"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "content_name",
+            "value": "invoice_2026.exe"
+          },
+          {
+            "key": "content_hash",
+            "value": "9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8"
+          },
+          {
+            "key": "content_type",
+            "value": "application/x-msdownload"
+          },
+          {
+            "key": "content_size",
+            "value": "482304"
+          },
+          {
+            "key": "trigger_type",
+            "value": "FILE_DOWNLOAD"
+          },
+          {
+            "key": "device_user",
+            "value": "pat"
+          },
+          {
+            "key": "device_platform",
+            "value": "Windows 11"
+          },
+          {
+            "key": "device_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-000000000101"
+          },
+          {
+            "key": "browser_version",
+            "value": "141.0.7390.66"
+          },
+          {
+            "key": "client_type",
+            "value": "CHROME_BROWSER"
+          },
+          {
+            "key": "actor_email",
+            "value": "pat@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791866463995000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "-4455667788990011223",
+      "alert_id": "-4455667788990011223",
+      "vendor": "Google",
+      "provider": "Chrome Enterprise",
+      "log_type": "chrome",
+      "title": "PASSWORD_REUSE",
+      "alert_category": "SAFE_BROWSING_PASSWORD_ALERT",
+      "target_user_name": "lee@example.com",
+      "user_principal_name": "lee@example.com",
+      "destination_url": "https://login.example.org/signin",
+      "target_host_name": "LEE-MACBOOK",
+      "action_reason": "PASSWORD_REUSED_PHISHING_URL",
+      "status": "WARNED",
+      "action": "ATTEMPTED",
+      "summary": "PASSWORD_REUSED_PHISHING_URL at https://login.example.org/signin",
+      "additional_data": {
+        "record": [
+          {
+            "key": "application",
+            "value": "chrome"
+          },
+          {
+            "key": "customer_id",
+            "value": "C01b2c3d4"
+          },
+          {
+            "key": "device_user",
+            "value": "lee"
+          },
+          {
+            "key": "device_platform",
+            "value": "Mac OS X 15.6"
+          },
+          {
+            "key": "browser_version",
+            "value": "141.0.7390.66"
+          },
+          {
+            "key": "client_type",
+            "value": "CHROME_BROWSER"
+          },
+          {
+            "key": "trigger_user",
+            "value": "lee@example.com"
+          },
+          {
+            "key": "actor_email",
+            "value": "lee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT > GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Google Workspace",
+      "event_time_usec": 1791867764310000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "2sv_change",
+      "sensor_event_id": "6677889900112233445",
+      "event_source": "login",
+      "event_name": "2sv_disable",
+      "recipient_account_id": "C01b2c3d4",
+      "user_name": "pat@example.com",
+      "user_id": "114000000000000000001",
+      "user_type": "USER",
+      "source_address": "203.0.113.10",
+      "management_event": false,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "owner_domain",
+            "value": "example.com"
+          },
+          {
+            "key": "region_code",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  }
+]

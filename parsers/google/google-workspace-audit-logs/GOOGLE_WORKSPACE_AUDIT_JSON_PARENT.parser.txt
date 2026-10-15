@@ -1,0 +1,39 @@
+!SAMPLE={"google_workspace_record":"activity","kind":"audit#activity","id":{"time":"2026-10-13T01:10:04.218Z","uniqueQualifier":"-8341237771349122047","applicationName":"login","customerId":"C01b2c3d4"},"actor":{"callerType":"USER","email":"pat@example.com","profileId":"114000000000000000001"},"ownerDomain":"example.com","ipAddress":"203.0.113.10","events":[{"type":"login","name":"login_success","parameters":[{"name":"login_type","value":"google_password"},{"name":"login_challenge_method","multiValue":["password","google_authenticator"]},{"name":"is_suspicious","boolValue":false}]}],"params":{"login_type":"google_password","login_challenge_method":["password","google_authenticator"],"is_suspicious":false},"networkInfo":{"ipAsn":[64500],"regionCode":"AU","subdivisionCode":"AU-NSW"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"google_workspace_record"\s*:\s*"activity"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Google Workspace audit activities from the Admin SDK Reports API, pulled by the example
+# bridge in bridges/google-workspace-audit and posted to HTTP Ingest as JSON lines. The bridge
+# sends one record per event: the activity with "google_workspace_record": "activity" first and
+# only that event in events, plus params, the event's parameters keyed by name.
+# Parent: hands sign-ins, sign-outs and sign-in challenges (login and SAML) and ChromeOS sign-ins
+# to the Auth child; Google's account warnings and Chrome's malware, unsafe site, password and
+# data loss events to the ThirdPartyAlert child; and every other event (admin console changes,
+# OAuth token grants, Drive activity, account setting changes) to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Google Workspace"
+app = json["$.id.applicationName"]
+evName = json["$.events[0].name"]
+evType = json["$.events[0].type"]
+# id.time is RFC 3339 in UTC, with milliseconds.
+eventTimeUsec$ = DATETIME(json["$.id.time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+loginAuth = app == "login" AND (evName == "login_success" OR evName == "login_failure" OR evName == "logout" OR evName == "login_challenge" OR evName == "login_verification")
+chromeAuth = app == "chrome" AND (evName == "CHROME_OS_LOGIN_EVENT" OR evName == "CHROME_OS_LOGIN_FAILURE_EVENT" OR evName == "CHROME_OS_LOGOUT_EVENT")
+authEvent = loginAuth OR app == "saml" OR chromeAuth
+
+loginAlert = app == "login" AND (evType == "account_warning" OR evType == "attack_warning")
+chromeAlert = app == "chrome" AND (evName == "MALWARE_TRANSFER" OR evName == "UNSAFE_SITE_VISIT" OR evName == "PASSWORD_REUSE" OR evName == "PASSWORD_BREACH" OR evName == "SENSITIVE_DATA_TRANSFER" OR evName == "DLP_EVENT")
+alertEvent = loginAlert OR chromeAlert
+
+eventType$ = "audit"
+eventType$ = IF alertEvent THEN "alert" ELSE eventType$
+eventType$ = IF authEvent THEN "auth" ELSE eventType$

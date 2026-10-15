@@ -1,0 +1,57 @@
+{
+  "vendor": "Google",
+  "product": "Google Workspace audit logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://developers.google.com/workspace/admin/reports/reference/rest/v1/activities/list",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/login",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/saml",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/token",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/admin-user-settings",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/admin-security-settings",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/drive",
+    "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/chrome",
+    "https://developers.google.com/workspace/admin/reports/v1/guides/manage-audit-admin"
+  ],
+  "notes": "Google Workspace audit logs reach other tools through the Admin SDK Reports API, which is pull only, so these parsers read activities polled by the example bridge in bridges/google-workspace-audit and posted to HTTP Ingest. Sophos Fusion's Google Workspace integration takes Alert Center alerts only. The bridge uses a service account with domain-wide delegation and only the admin.reports.audit.readonly scope. It sends one record per event, with \"google_workspace_record\": \"activity\" first, only that event in events, and params, the event's parameters keyed by name. Login and SAML sign-ins, sign-outs and challenges, and ChromeOS sign-ins go to Auth. Google's account warnings (suspicious sign-ins, disabled accounts, attack warnings) and Chrome's malware, unsafe site, password and data loss events go to ThirdPartyAlert, with no severity, since Google gives none. Every other event (admin console changes, OAuth token grants, Drive activity, account settings) goes to CloudAudit with the application as the event source. MFA is set when a sign-in's challenge methods include a second factor. Drive needs a Business or Enterprise edition, and Chrome events need event reporting for managed browsers. Samples follow the Activity resource and the per-application event lists in Google's Reports API reference, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (241 of 241 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (241 of 241 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT",
+      "file": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH",
+      "file": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+      "file": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT",
+      "file": "GOOGLE_WORKSPACE_AUDIT_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "GOOGLE_WORKSPACE_AUDIT_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/google-workspace-audit"
+}
