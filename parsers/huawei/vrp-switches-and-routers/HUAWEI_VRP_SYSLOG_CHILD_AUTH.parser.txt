@@ -1,0 +1,99 @@
+!SAMPLE=<189>2026-10-15 09:20:31+10:00 ce01.example.com %%01CLI/5/LOGINFAILED(s):CID=2160731923;The user failed to log in to VTY1. (UserType=SSH, UserName=admin, RemoteIp=203.0.113.77, VpnName=_public_, Reason=Authentication failed, LocalIp=192.0.2.1)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei VRP info-center syslog.
+# Child of HUAWEI_VRP_SYSLOG_PARENT: CLI, SSH, Telnet and console sign-ins, failures and sign-outs, and
+# local account lockouts, to Auth.
+#   SHELL/5/LOGIN, SHELL/5/LOGOUT (V200): The user succeeded in logging in to|out of <line>. (UserType=...,
+#     UserName=..., [AuthenticationMethod="...",] Ip=..., VpnName=...)
+#   SHELL/4/LOGINFAILED, LOGIN_FAIL_FOR_INPUT_TIMEOUT (V200): (Ip=..., UserName=..., Times=..., AccessType=..., VpnName=...)
+#   CLI/5/LOGIN, LOGOUT, LOGINFAILED (V300, V600): (UserType=..., UserName=..., ..., RemoteIp=..., VpnName=...,
+#     [Reason=...,] LocalIp=...)
+#   SSH/5/SSH_USER_LOGIN, SSH_USER_LOGIN_FAIL, SSH_USER_LOGOUT: (ServiceType=..., [FailedReason=... or
+#     LogoutReason=...,] UserName=..., UserAddress=..., LocalAddress=..., VPNInstanceName=...)
+#   SSH/4/SSH_FAIL (V200): (IP=..., VpnInstanceName=..., UserName=..., Times=..., FailedReason=...)
+#   AAA/6/LOCALACCOUNT_LOCK and UNLOCK: Local account <account> has been locked|unlocked.(UserIp=..., OperatorName=...)
+# Huawei writes ** when it can't get the user or address, which is left unset.
+# mod, brief, desc, kv, host, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+acct = desc|^Local account (?P<a>.+?) has been (?P<state>locked|unlocked)
+isAaa = mod == "AAA"
+user = STRING(kv["UserName"])
+user = IF isAaa THEN STRING(acct["a"]) ELSE user
+targetUserName$ = IF user != "" AND user != "**" THEN user ELSE NULL
+operator = STRING(kv["OperatorName"])
+sourceUserName$ = IF isAaa AND operator != "" THEN operator ELSE NULL
+ip = STRING(kv["Ip"])
+ip = IF ip == "" THEN STRING(kv["RemoteIp"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["UserAddress"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["IP"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["UserIp"]) ELSE ip
+sourceAddress$ = IF ip != "" AND ip != "**" THEN ip ELSE NULL
+local = STRING(kv["LocalIp"])
+local = IF local == "" THEN STRING(kv["LocalAddress"]) ELSE local
+targetAddress$ = IF local != "" AND local != "**" THEN local ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+
+# The access channel: SSH for the SSH module, else the user or access type the device logged.
+kind = STRING(kv["UserType"])
+kind = IF kind == "" THEN STRING(kv["AccessType"]) ELSE kind
+kind = IF mod == "SSH" THEN "SSH" ELSE kind
+kind = IF isAaa THEN "local account" ELSE kind
+logonApplicationFamily$ = IF kind != "" THEN kind ELSE NULL
+authSystem$ = IF kind != "" THEN "Huawei VRP " + kind ELSE "Huawei VRP"
+
+logout = brief == "LOGOUT" OR brief == "SSH_USER_LOGOUT"
+locked = brief == "LOCALACCOUNT_LOCK"
+unlocked = brief == "LOCALACCOUNT_UNLOCK"
+success = brief == "LOGIN" OR brief == "SSH_USER_LOGIN" OR logout OR unlocked
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+authCategory$ = IF unlocked THEN "ACCOUNT_UNLOCK" ELSE authCategory$
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF locked OR unlocked THEN "ACCOUNT" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+why = STRING(kv["Reason"])
+why = IF why == "" THEN STRING(kv["FailedReason"]) ELSE why
+why = IF why == "" AND brief == "LOGIN_FAIL_FOR_INPUT_TIMEOUT" THEN "Input timed out" ELSE why
+why = IF locked THEN "Local account locked" ELSE why
+extraFailurereason$ = IF NOT success AND why != "" THEN why ELSE NULL
+lwhy = LOWERCASE(why)
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND (CONTAINS(lwhy, "password") OR CONTAINS(lwhy, "authentication")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+# Huawei gives a wrong user name or password as the cause of SHELL/4/LOGINFAILED, which has no reason field.
+failureCategory$ = IF mod == "SHELL" AND brief == "LOGINFAILED" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+
+# The line, VPN, failure count, sign-in method and SSH service go to event_metadata.
+lineM = desc|(?:logging in to|logging out of)\s+(?P<l>\S+?)\.?$
+vpn = STRING(kv["VpnName"])
+vpn = IF vpn == "" THEN STRING(kv["VPNInstanceName"]) ELSE vpn
+vpn = IF vpn == "" THEN STRING(kv["VpnInstanceName"]) ELSE vpn
+r1.key$ = "log_name"
+r1.value$ = sensorEventId$
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r2.key$ = "line"
+r2.value$ = STRING(lineM["l"])
+eventMetadata$.record$ = IF r2.value$ != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "vpn_instance"
+r3.value$ = vpn
+eventMetadata$.record$ = IF vpn != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "failure_count"
+r4.value$ = STRING(kv["Times"])
+eventMetadata$.record$ = IF r4.value$ != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "authentication_method"
+r5.value$ = STRING(kv["AuthenticationMethod"])
+eventMetadata$.record$ = IF r5.value$ != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "service_type"
+r6.value$ = STRING(kv["ServiceType"])
+eventMetadata$.record$ = IF r6.value$ != "" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "logout_reason"
+r7.value$ = IF logout THEN STRING(kv["Reason"]) + STRING(kv["LogoutReason"]) ELSE ""
+eventMetadata$.record$ = IF r7.value$ != "" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$

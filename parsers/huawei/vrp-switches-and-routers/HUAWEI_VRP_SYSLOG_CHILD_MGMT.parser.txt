@@ -1,0 +1,44 @@
+!SAMPLE=<189>2026-10-15 09:21:44+10:00 ce01.example.com %%01CLI/5/CMDRECORD(s):CID=2160731923;Recorded command information. (Task=VTY1, RemoteIp=192.0.2.25, VpnName=_public_, User=jsmith, AuthenticationMethod="Local-user", Command="undo info-center enable", LocalIp=192.0.2.1)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei VRP info-center syslog.
+# Child of HUAWEI_VRP_SYSLOG_PARENT: command records and local account changes to Management Event.
+#   SHELL/5/CMDRECORD and CMDRECORDFAILED (V200): Recorded command information. (Task=..., Ip=..., VpnName=...,
+#     User=..., AuthenticationMethod="...", Command="..."[, Result=...])
+#   CLI/5/CMDRECORD and CMDRECORDFAILED (V300, V600): Recorded command information. (Task=..., RemoteIp=...,
+#     VpnName=..., User=..., AuthenticationMethod="...", Command="...", [Result=...,] LocalIp=...)
+#   AAA/6/LOCALACCOUNT_CREATE_SUCCESS, LOCALACCOUNT_DELETE: Local account <account> create success. or has
+#     been deleted.(UserIp=..., OperatorName=...)
+#   AAA/6/LOCALACCOUNT_MODIFY: Local account <account> password has been modified.(UserIP=..., UserName=...)
+# The user who acted goes to username, the command to command and operation, and a failed command's
+# result to result. Huawei writes ** when it can't get the user or address, which is left unset.
+# mod, brief, desc, kv, host, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+isCmd = mod == "SHELL" OR mod == "CLI"
+user = IF isCmd THEN STRING(kv["User"]) ELSE STRING(kv["OperatorName"])
+user = IF brief == "LOCALACCOUNT_MODIFY" THEN STRING(kv["UserName"]) ELSE user
+username$ = IF user != "" AND user != "**" THEN user ELSE NULL
+ip = STRING(kv["Ip"])
+ip = IF ip == "" THEN STRING(kv["RemoteIp"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["UserIp"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["UserIP"]) ELSE ip
+sourceAddress$ = IF ip != "" AND ip != "**" THEN ip ELSE NULL
+targetHostname$ = IF host != "" THEN host ELSE NULL
+
+cmd = STRING(kv["Command"])
+command$ = IF cmd != "" THEN cmd ELSE NULL
+op = "command"
+op = IF brief == "LOCALACCOUNT_CREATE_SUCCESS" THEN "local account created" ELSE op
+op = IF brief == "LOCALACCOUNT_DELETE" THEN "local account deleted" ELSE op
+op = IF brief == "LOCALACCOUNT_MODIFY" THEN "local account password changed" ELSE op
+operationName$ = op
+operation$ = IF isCmd THEN cmd ELSE desc
+channel$ = IF isCmd THEN "Huawei VRP command record" ELSE "Huawei VRP local account"
+failedResult = STRING(kv["Result"])
+result$ = "success"
+result$ = IF brief == "CMDRECORDFAILED" THEN "failure" ELSE result$
+result$ = IF failedResult != "" THEN failedResult ELSE result$

@@ -1,0 +1,65 @@
+{
+  "vendor": "Huawei",
+  "product": "VRP Switches and Routers",
+  "versions": [
+    "V200R024C00",
+    "V300R024C10",
+    "V600R025C10"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/ac622f40/introduction",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/70b593ad/shell",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/c1daa4af/ssh",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/7295e8a9/aaa",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/2be4caa1/sece",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/a91516b6/log-format-description",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/fd92ce56/cli-5-login",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/e92bed20/cli-5-loginfailed",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/9d5b0453/cli-5-logout",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/e34f6eab/cli-5-cmdrecord",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/439f7164/ssh-5-ssh_user_login",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/4821ea5f/ssh-5-ssh_user_login_fail",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/5532586c/ssh-5-ssh_user_logout",
+    "https://support.huawei.cn/enterprise/en/doc/EDOC1100335756/39d8e202/information-management-configuration-commands"
+  ],
+  "notes": "Send the info-center logs to the data collector at the informational level; the README has the commands. CLI, SSH, Telnet and console sign-ins, failures and sign-outs, and local account lockouts, go to Auth; command records (successful and failed) and local account creation, deletion and password changes to Management Event, with the command and the user who ran it; switch attack defense messages (ARP miss, gateway conflict, attack tracing drops, port, user and source IP attacks) to NIDS with the source address, interface, MAC and rate. Other messages of the SHELL, CLI, SSH, AAA and SECE modules stay generic. V200 devices (S series, AR) log sign-ins and commands from the SHELL module, and V300 and V600 devices (CloudEngine, newer S series, USG and HiSecEngine firewalls) from the CLI module; both are read, with or without the CID field and the log sequence number. USG and HiSecEngine firewalls send these same messages, so this entry covers their admin sign-ins and commands; the Huawei USG and HiSecEngine firewalls entry reads their firewall messages. The time is read with its zone (date, format-date, rfc-3339 and short-date); without-timezone times are read as UTC. The host is the word after the time, or before the address V200 can add. How sure this is: the header and the message templates come from Huawei's Log References (S series V200R024C00 and CloudEngine V300R024C10) and the info-center timestamp examples in Huawei's command reference, whose pages open only in a browser. Huawei writes ** for a user or address it can't get, which is left unset. Samples are made up from the templates. The parsers passed Run Test in a lab tenant on 2026-10-16: each child combined with the parent into one parser (263 of 263 fields matched the emulator in each of 3 runs), and each child as a separate parser under its parent (259 of 259 fields, each line taken in 5 of 5 runs, and the parent-only line matched). No built-in parser claimed these lines in 3 runs.",
+  "parsers": [
+    {
+      "name": "HUAWEI_VRP_SYSLOG_PARENT",
+      "file": "HUAWEI_VRP_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "HUAWEI_VRP_SYSLOG_CHILD_AUTH",
+      "file": "HUAWEI_VRP_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_VRP_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+      "file": "HUAWEI_VRP_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_VRP_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "HUAWEI_VRP_SYSLOG_CHILD_NIDS",
+      "file": "HUAWEI_VRP_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_VRP_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    }
+  ]
+}

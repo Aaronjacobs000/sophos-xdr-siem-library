@@ -1,0 +1,70 @@
+!SAMPLE=<189>Oct 15 2026 09:12:44+10:00 sw01.example.com %%01SHELL/5/LOGIN(l)[0]:The user succeeded in logging in to VTY0. (UserType=VTY, UserName=jsmith, AuthenticationMethod="Password", Ip=192.0.2.25, VpnName=)
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%%\d{2}(?:SHELL|CLI|SSH|AAA|SECE)/\d/[A-Za-z0-9_]+\([A-Za-z]\)(?:\[\d+\])?:
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei VRP devices (S series and CloudEngine switches, AR and NetEngine routers, and the
+# CLI and SSH messages of USG and HiSecEngine firewalls), info-center logs sent to the data collector:
+#   VRP V200:          <PRI><time> <host> [<IPv4>] %%01<MODULE>/<severity>/<brief>(<type>)[<n>]:<description>
+#   VRP V300 and V600: <PRI><time> <host> %%01<MODULE>/<severity>/<brief>(<type>):CID=<id>;<description>
+# Parent: claims the SHELL, CLI, SSH, AAA and SECE modules and hands them on:
+#   SHELL/5/LOGIN, LOGOUT, SHELL/4/LOGINFAILED and LOGIN_FAIL_FOR_INPUT_TIMEOUT, CLI/5/LOGIN, LOGOUT
+#   and LOGINFAILED, SSH/5/SSH_USER_LOGIN, SSH_USER_LOGIN_FAIL and SSH_USER_LOGOUT, SSH/4/SSH_FAIL,
+#   and AAA/6/LOCALACCOUNT_LOCK and UNLOCK                                    to the Auth child
+#   SHELL/5/CMDRECORD and CMDRECORDFAILED, CLI/5/CMDRECORD and CMDRECORDFAILED, and
+#   AAA/6/LOCALACCOUNT_CREATE_SUCCESS, DELETE and MODIFY                      to the Management Event child
+#   SECE/4/ARPMISS, GWCONFLICT, STRACK_DENY, PORT_ATTACK, USER_ATTACK and SPECIFY_SIP_ATTACK to the NIDS child
+# Other messages of these modules stay generic.
+
+h = originalData$|^(?:<\d{1,3}>)?\s*(?P<pre>.*?)\s*%%(?P<ver>\d{2})(?P<mod>[A-Z][A-Za-z0-9_-]*)/(?P<sev>\d)/(?P<brief>[A-Za-z0-9_]+)\((?P<itype>[A-Za-z])\)(?:\[(?P<seq>\d+)\])?:\s*(?:CID=(?P<cid>[^;]*);)?(?P<body>.*?)\s*$
+pre = h["pre"]
+mod = h["mod"]
+brief = h["brief"]
+body = h["body"]
+
+# The info-center time format is set on the device: date (Oct 15 2026 09:12:44+10:00, the
+# default), format-date (2026-10-15 09:12:44+10:00), rfc-3339 (2026-10-15T09:12:44+10:00) or
+# short-date (Oct 15 09:12:44+10:00), with optional fractions. without-timezone drops the zone,
+# and such a time is read as UTC. Boot time keeps the ingest time.
+ta = pre|^(?P<t>\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:\s?(?P<z>[+-]\d{2}:\d{2}))?(?:\s+(?P<r>.*))?$
+tb = pre|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:\s?(?P<z>[+-]\d{2}:\d{2}))?(?:\s+(?P<r>.*))?$
+tc = pre|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:\s?(?P<z>[+-]\d{2}:\d{2}))?(?:\s+(?P<r>.*))?$
+tboot = pre|^\d+\.\d+(?:\s+(?P<r>.*))?$
+zone = STRING(ta["z"]) + STRING(tb["z"]) + STRING(tc["z"])
+zone = IF zone != "" THEN zone ELSE "+00:00"
+eventTimeUsec$ = IF STRING(ta["t"]) != "" THEN DATETIME(REPLACE(ta["t"], "T", " ") + zone, "2006-01-02 15:04:05Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF STRING(tb["t"]) != "" THEN DATETIME(tb["t"] + zone, "Jan _2 2006 15:04:05Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF STRING(tc["t"]) != "" THEN DATETIME(tc["t"] + zone, "Jan _2 15:04:05Z07:00", TRUE) ELSE eventTimeUsec$
+
+# After the time comes the host name, which V200 can follow with the address it sends from. The
+# host is the last word, or the word before that address.
+timed = STRING(ta["t"]) != "" OR STRING(tb["t"]) != "" OR STRING(tc["t"]) != ""
+rest = STRING(ta["r"]) + STRING(tb["r"]) + STRING(tc["r"]) + STRING(tboot["r"])
+rest = IF NOT timed AND STRING(tboot[0]) == "" THEN pre ELSE rest
+hr = rest|(?P<host>\S+)(?:\s+(?P<ip>\d{1,3}(?:\.\d{1,3}){3}))?$
+host = STRING(hr["host"])
+
+# Most bodies are a description and a (Key=Value, ...) list. Values in double quotes keep their commas.
+pl = body|^(?P<desc>[^()]*?)\s*\((?P<list>.*)\)\s*\.?$
+kv = SPLIT_NAME_VALUES(STRING(pl["list"]), ",", "=", "\"")
+desc = STRING(pl["desc"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Huawei VRP"
+sensorEventId$ = mod + "/" + h["sev"] + "/" + brief
+hostId$ = IF host != "" THEN host ELSE NULL
+
+mb = mod + "/" + brief
+login = mb == "SHELL/LOGIN" OR mb == "SHELL/LOGOUT" OR mb == "SHELL/LOGINFAILED" OR mb == "SHELL/LOGIN_FAIL_FOR_INPUT_TIMEOUT"
+login = login OR mb == "CLI/LOGIN" OR mb == "CLI/LOGOUT" OR mb == "CLI/LOGINFAILED" OR mb == "SSH/SSH_FAIL"
+login = login OR mb == "SSH/SSH_USER_LOGIN" OR mb == "SSH/SSH_USER_LOGIN_FAIL" OR mb == "SSH/SSH_USER_LOGOUT"
+login = login OR mb == "AAA/LOCALACCOUNT_LOCK" OR mb == "AAA/LOCALACCOUNT_UNLOCK"
+admin = mb == "SHELL/CMDRECORD" OR mb == "SHELL/CMDRECORDFAILED" OR mb == "CLI/CMDRECORD" OR mb == "CLI/CMDRECORDFAILED"
+admin = admin OR mb == "AAA/LOCALACCOUNT_CREATE_SUCCESS" OR mb == "AAA/LOCALACCOUNT_DELETE" OR mb == "AAA/LOCALACCOUNT_MODIFY"
+attack = mb == "SECE/ARPMISS" OR mb == "SECE/GWCONFLICT" OR mb == "SECE/STRACK_DENY" OR mb == "SECE/PORT_ATTACK" OR mb == "SECE/USER_ATTACK" OR mb == "SECE/SPECIFY_SIP_ATTACK"
+eventType$ = "other"
+eventType$ = IF login THEN "login" ELSE eventType$
+eventType$ = IF admin THEN "admin" ELSE eventType$
+eventType$ = IF attack THEN "attack" ELSE eventType$
