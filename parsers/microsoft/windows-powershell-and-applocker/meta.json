@@ -1,0 +1,41 @@
+{
+  "vendor": "Microsoft",
+  "product": "Windows PowerShell and AppLocker",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging_windows",
+    "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/applocker/using-event-viewer-with-applocker",
+    "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/operations/event-id-explanations",
+    "https://prophecyinternational.atlassian.net/wiki/spaces/WADOC/pages/1233224043/Appendix+A+-+Windows+Event+Output+Format",
+    "https://docs.nxlog.co/agent/current/xm/syslog.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft/WindowsEventLog/Setup/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For Windows hosts that forward the PowerShell and AppLocker logs in Snare format over syslog, through NXLog or the Snare agent, the feed of the Sophos Windows Event Log integration. Send times in UTC, as Sophos asks: these events have no other time. Turn on PowerShell script block logging (4104) and module logging (4103) by Group Policy. PowerShell 4103 and 4104 events from Windows PowerShell 5.1 and PowerShell 7 go to ManagementEvent: the script block text or the pipeline detail as script, the script path, and for 4103 the cmdlet as operation, the host application's command line as command, the context user, and remote_operation for remoting sessions. Script blocks over 20,000 characters arrive in parts that share a ScriptBlock ID, and operation_name says which part. A 4104 logged at Warning level, which PowerShell uses for suspicious content, gets a possible_cause. AppLocker 8002 to 8007 (EXE and DLL, MSI and Script) and App Control 8028 and 8029 go to Process: the file as image_path, the Snare user, and was_blocked. The message carries only the file path and verdict, not the rule or hash. Each parser is a child of the global parser SNARE_Unsupported, which takes Snare events no other built-in parser handles; as a child of Microsoft_Windows_SNARE_Master it would compete with SNARE_Unsupported (see the Sysmon entry). Save each in the console with Set Global Parent in Parser Script turned on: the parser API refuses code with !PARENT. Each parser passed Run Test in a lab tenant on 2026-10-15, taking all of its lines in each of 15 Run Tests (111 of 111 fields matched the emulator in each of 3 runs). In Run Test the Snare parent also sets os and target_host on PowerShell lines and computer on AppLocker lines, fields the engine stores but the docs' schema tables don't list. Samples are made up in the message formats in Microsoft's docs and PowerShell's source, and the Snare and NXLog output formats.",
+  "parsers": [
+    {
+      "name": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT",
+      "file": "WINDOWS_POWERSHELL_SNARE_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS",
+      "file": "WINDOWS_APPLOCKER_SNARE_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.process"
+    }
+  ]
+}
