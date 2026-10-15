@@ -42,7 +42,7 @@ python3 it_glue_bridge.py                  # one pass, for cron or a systemd tim
 python3 it_glue_bridge.py --interval 300   # keep polling every 5 minutes
 ```
 
-Exit code 0 means the window was read and sent. On an error the bridge logs the step and the HTTP status, stops, and leaves the cursor where it was, so the next run reads the same window again.
+Exit code 0 means the window was read and sent. On an error the bridge logs the step and the HTTP status, stops, and leaves the cursor where it was, so the next run reads the same window again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 
 ## How it reads the API
 

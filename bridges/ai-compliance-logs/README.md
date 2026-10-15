@@ -58,7 +58,7 @@ python3 ai_compliance_bridge.py                  # one pass, for cron or a syste
 python3 ai_compliance_bridge.py --interval 300   # keep polling every 5 minutes
 ```
 
-Exit code 0 means every source was read and sent. On an error the bridge logs the source and the HTTP status, stops, and leaves the cursor where the last accepted batch left it, so the next run picks up from there.
+Exit code 0 means every source was read and sent. On an error the bridge logs the source and the HTTP status, stops, and leaves the cursor where the last accepted batch left it, so the next run picks up from there. An API response over 64 MB, or a log file over 512 MB, also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 
 ## How it reads each API
 
