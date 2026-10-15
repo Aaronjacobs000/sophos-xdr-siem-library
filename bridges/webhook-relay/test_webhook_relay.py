@@ -604,6 +604,25 @@ class RelayTest(unittest.TestCase):
         return s
 
     def test_connections_past_the_limit_get_503_and_slots_come_back(self):
+        self._connections_past_the_limit()
+
+    def test_connections_past_the_limit_when_the_relay_logs_late(self):
+        # On a busy machine the relay's thread can write its "in use" line well after the 503 reaches
+        # the sender. Holding that line up 0.3 s checks the test above allows for it.
+        warning, sleep = r.LOG.warning, self._sleep
+
+        def late(msg, *args, **kwargs):
+            if "connections are in use" in msg:
+                sleep(0.3)
+            return warning(msg, *args, **kwargs)
+
+        r.LOG.warning = late
+        try:
+            self._connections_past_the_limit()
+        finally:
+            del r.LOG.warning
+
+    def _connections_past_the_limit(self):
         self.start(BRIDGE_MAX_CONNECTIONS="2")
         slow = [self.slow_client() for _ in range(2)]
         try:
@@ -616,7 +635,12 @@ class RelayTest(unittest.TestCase):
         finally:
             for s in slow:
                 s.close()
-        self.assertIn("all 2 connections are in use", self.log.getvalue())
+        # The relay's own thread writes this line after it answers 503, so the answer can arrive
+        # before the line does.
+        deadline = time.monotonic() + 5
+        while "all 2 connections are in use" not in self.log.getvalue():
+            self.assertLess(time.monotonic(), deadline, "the relay never logged that its connections were in use")
+            self._sleep(0.02)
         deadline = time.monotonic() + 5
         while self.post(f"/hudu/{HUDU_SECRET}", b'{"a": 1}')[0] != 200:
             self.assertLess(time.monotonic(), deadline, "the slots never came back")
