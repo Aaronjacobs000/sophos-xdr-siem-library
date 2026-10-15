@@ -1,0 +1,80 @@
+!SAMPLE=<188>2026-10-15 09:24:30 fw01.example.com %%01AV/4/VIRUS(l):CID=2160731923;A virus was detected. (SyslogId=5, VSys="public", Policy="trust_untrust", SrcIp=203.0.113.90, DstIp=192.0.2.25, SrcPort=80, DstPort=50444, SrcZone=untrust, DstZone=trust, User="jsmith", Protocol=HTTP, Application="HTTP", Profile="default", EventNum=1, SignatureId=297842, VirusName="EICAR-Test-File", DetectionType="full-scan virus detect", Direction=download, FileName="eicar.com", FileType="COM", Action=block, Hash="3395856ce81f2b7382dee72602f798b642f14140", Severity="high", Extend="", UserGroup="/default/staff")
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="virus"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: files the firewall's antivirus stopped or flagged, to Antivirus.
+#   AV/4/VIRUS: A virus was detected. (..., SignatureId=..., VirusName="...", DetectionType="...",
+#     Direction=..., FileName="...", FileType="...", Action=..., Hash="...", Severity="...", ...)
+#   AV/4/REPUTATION: A virus was detected by file reputation. (..., ThreatType="...", ThreatName="...",
+#     Action=..., FileType="...", Hash="...", ...)
+# The file is one passing through the firewall, so the user is the one the policy matched and the
+# addresses are the session's.
+# brief, kv, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+virusName = STRING(kv["VirusName"])
+threatName = IF virusName != "" THEN virusName ELSE STRING(kv["ThreatName"])
+threatName$ = IF threatName != "" THEN threatName ELSE NULL
+threatType$ = "FILE"
+fname = STRING(kv["FileName"])
+filePath$ = IF fname != "" THEN fname ELSE NULL
+user = STRING(kv["User"])
+userName$ = IF user != "" AND LOWERCASE(user) != "unknown" THEN user ELSE NULL
+policy = STRING(kv["Policy"])
+policyName$ = IF policy != "" THEN policy ELSE NULL
+sev = STRING(kv["Severity"])
+agentPriority$ = IF sev != "" THEN sev ELSE NULL
+vendorSignatureId$ = STRING(kv["SignatureId"])
+kind = IF brief == "VIRUS" THEN STRING(kv["DetectionType"]) ELSE STRING(kv["ThreatType"])
+vendorAlertType$ = IF kind != "" THEN kind ELSE NULL
+src = STRING(kv["SrcIp"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+
+# The hash's length says which kind it is.
+hash = STRING(kv["Hash"])
+md5 = hash|^(?P<h>[0-9A-Fa-f]{32})$
+sha1 = hash|^(?P<h>[0-9A-Fa-f]{40})$
+sha256 = hash|^(?P<h>[0-9A-Fa-f]{64})$
+fileHash$.md5$ = IF STRING(md5["h"]) != "" THEN md5["h"] ELSE NULL
+fileHash$.sha1$ = IF STRING(sha1["h"]) != "" THEN sha1["h"] ELSE NULL
+fileHash$.sha256$ = IF STRING(sha256["h"]) != "" THEN sha256["h"] ELSE NULL
+
+# Enum fields take the enum name. Huawei doesn't list the action values, so anything other than
+# block or alert falls to the UNKNOWN_ member.
+act = LOWERCASE(STRING(kv["Action"]))
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF act == "block" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF act == "alert" THEN "ALERT" ELSE actionTaken$
+tt = LOWERCASE(STRING(kv["ThreatType"]))
+threatCategory$ = IF brief == "VIRUS" THEN "VIRUS" ELSE "MALWARE"
+threatCategory$ = IF CONTAINS(tt, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(tt, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(tt, "backdoor") THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(tt, "miner") THEN "MINER" ELSE threatCategory$
+
+# Keys with no Antivirus field go to event_metadata.
+a1.key$ = "destination_address"
+a1.value$ = STRING(kv["DstIp"])
+a2.key$ = "direction"
+a2.value$ = STRING(kv["Direction"])
+a3.key$ = "file_type"
+a3.value$ = STRING(kv["FileType"])
+a4.key$ = "application"
+a4.value$ = STRING(kv["Application"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1, a2, a3, a4]
+a5.key$ = "source_zone"
+a5.value$ = STRING(kv["SrcZone"])
+eventMetadata$.record$ = IF a5.value$ != "" THEN eventMetadata$.record$ + [a5] ELSE eventMetadata$.record$
+a6.key$ = "destination_zone"
+a6.value$ = STRING(kv["DstZone"])
+eventMetadata$.record$ = IF a6.value$ != "" THEN eventMetadata$.record$ + [a6] ELSE eventMetadata$.record$
+a7.key$ = "profile"
+a7.value$ = STRING(kv["Profile"])
+eventMetadata$.record$ = IF a7.value$ != "" THEN eventMetadata$.record$ + [a7] ELSE eventMetadata$.record$
+a8.key$ = "user_group"
+a8.value$ = STRING(kv["UserGroup"])
+eventMetadata$.record$ = IF a8.value$ != "" THEN eventMetadata$.record$ + [a8] ELSE eventMetadata$.record$

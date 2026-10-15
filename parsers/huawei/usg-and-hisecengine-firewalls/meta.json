@@ -1,0 +1,83 @@
+{
+  "vendor": "Huawei",
+  "product": "USG and HiSecEngine Firewalls",
+  "versions": [
+    "V600R025C10"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/galaxy_loginfo_ref_cfg_0004.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_POLICY_POLICYDENY_6.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_SECLOG_SESSION_TEARDOWN_6.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_SECLOG_SESSION_DROP_RECORD_4.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_IPS_DETECT_4.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_AV_VIRUS_4.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_URL_FILTER_4.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_SSLVPN_USERLOGINFAIL_4.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_WEBM_LOGINFAIL_5.html",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_POLICY_POLICYMODIFY_6.html",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100387632/2ccafdb0/cli-example-for-sending-syslogs-in-default-or-mtn-format-to-a-third-party-log-host",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100387632/8ec499fe/cli-example-for-sending-service-logs-to-a-third-party-log-host",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100387632/48ab9079/cli-example-for-outputting-packet-loss-logs-to-a-third-party-log-host"
+  ],
+  "notes": "Send the info-center logs and the syslog session logs (default format, not MTN, NetFlow or a custom template) to the data collector; the README has the commands. Policy permit and deny logs, SECLOG session builds, teardowns and drop records go to Netflow (deny, drop and policy-deny closes as blocked); IPS detect, botnet, trojan, worm and domain logs and WAF logs to NIDS; AV virus and file reputation logs to Antivirus; URL filtering to HTTP; SSL VPN and web UI sign-ins, failures and sign-outs to Auth; security policy rule changes to Management Event. Other messages of the POLICY, SECLOG, IPS, AV, URL, WAF, SSLVPN and WEBM modules stay generic. CLI and SSH sign-ins and command records are the same VRP messages on every Huawei device, so the Huawei VRP switches and routers entry reads them; add both for full coverage. The time is read with its zone (date, format-date, rfc-3339 and short-date); without-timezone times are read as UTC. How sure this is: the message templates and parameter values come from Huawei's HiSecEngine USG6000F V600R025C10 Log Reference, whose pages open only in a browser. Huawei shows no syslog session log line with its header, so the parser expects the info-center header its Log Reference describes; that part is inferred. Huawei doesn't document the format of BeginTime, EndTime or the policy log's time, so they are kept as sent (session times in event_metadata), and a protocol is read as a number or a name. Samples are made up from the templates. The parsers passed Run Test in a lab tenant on 2026-10-16: each child combined with the parent into one parser (294 of 294 fields matched the emulator in each of 3 runs), and each child as a separate parser under its parent (290 of 290 fields, each line taken in 5 of 5 runs, and the parent-only line matched). No built-in parser claimed these lines in 3 runs. In Sophos NG-SIEM, SPLIT_NAME_VALUES adds an item that has no key to the value before it, so the drop record's reason would join the destination zone; the parser reads that zone from the text.",
+  "parsers": [
+    {
+      "name": "HUAWEI_USG_SYSLOG_PARENT",
+      "file": "HUAWEI_USG_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_NETFLOW",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_NIDS",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_ANTIVIRUS",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_HTTP",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_AUTH",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "HUAWEI_USG_SYSLOG_CHILD_MGMT",
+      "file": "HUAWEI_USG_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "HUAWEI_USG_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+!SAMPLE=<188>2026-10-15 09:26:40 fw01.example.com %%01SSLVPN/4/USERLOGINFAIL(l):CID=2160731923;User login failed. (User Name=admin, Vsys=public, VGName=vpn01, Client-IP=203.0.113.77, Reason=User name and password authentication fails, Client-Mac-Address=00:00:5e:00:53:22).
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: SSL VPN and web UI sign-ins to Auth.
+#   SSLVPN/6/USERLOGINSUCC: User login succeeded. (User Name=..., Vsys=..., VGName=..., Virtual IP= ...,
+#     Client IP=..., Client Mac Address=...).
+#   SSLVPN/4/USERLOGINFAIL: User login failed. (User Name=..., Vsys=..., VGName=..., Client-IP=...,
+#     Reason=..., Client-Mac-Address=...).
+#   SSLVPN/6/USERLOGOUT: The user logged out. (User Name=..., ..., Logout Reason=...).
+#   WEBM/6/LOGINSUCC: User <user> (IP:<address>) login succeeded.
+#   WEBM/5/LOGINFAIL: User failed to login. (User Name=..., IP Address=..., Failed Reason=...)
+# The user is the target user and the client address the source address.
+# mod, brief, body, kv, host, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+vpn = mod == "SSLVPN"
+web = body|^User (?P<user>.+?) \(IP:\s*(?P<ip>[^)\s]+)\) login succeeded
+user = STRING(kv["User Name"])
+user = IF user == "" THEN STRING(web["user"]) ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+ip = STRING(kv["Client IP"])
+ip = IF ip == "" THEN STRING(kv["Client-IP"]) ELSE ip
+ip = IF ip == "" THEN STRING(kv["IP Address"]) ELSE ip
+ip = IF ip == "" THEN STRING(web["ip"]) ELSE ip
+ip = TRIM(ip)
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+authSystem$ = IF vpn THEN "Huawei USG SSL VPN" ELSE "Huawei USG web management"
+logonApplicationFamily$ = IF vpn THEN "SSL VPN" ELSE "Web"
+
+logout = brief == "USERLOGOUT"
+success = brief == "USERLOGINSUCC" OR brief == "LOGINSUCC" OR logout
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+why = STRING(kv["Reason"])
+why = IF why == "" THEN STRING(kv["Failed Reason"]) ELSE why
+extraFailurereason$ = IF NOT success AND why != "" THEN why ELSE NULL
+lwhy = LOWERCASE(why)
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND CONTAINS(lwhy, "password") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF NOT success AND CONTAINS(lwhy, "locked") THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+
+# The SSL VPN gateway, virtual IP, client MAC and logout reason go to event_metadata.
+mac = STRING(kv["Client Mac Address"])
+mac = IF mac == "" THEN STRING(kv["Client-Mac-Address"]) ELSE mac
+s1.key$ = "log_name"
+s1.value$ = sensorEventId$
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [s1]
+s2.key$ = "virtual_gateway"
+s2.value$ = STRING(kv["VGName"])
+eventMetadata$.record$ = IF s2.value$ != "" THEN eventMetadata$.record$ + [s2] ELSE eventMetadata$.record$
+s3.key$ = "virtual_ip"
+s3.value$ = TRIM(STRING(kv["Virtual IP"]))
+eventMetadata$.record$ = IF s3.value$ != "" THEN eventMetadata$.record$ + [s3] ELSE eventMetadata$.record$
+s4.key$ = "client_mac"
+s4.value$ = mac
+eventMetadata$.record$ = IF mac != "" THEN eventMetadata$.record$ + [s4] ELSE eventMetadata$.record$
+s5.key$ = "vsys"
+s5.value$ = STRING(kv["Vsys"])
+eventMetadata$.record$ = IF s5.value$ != "" THEN eventMetadata$.record$ + [s5] ELSE eventMetadata$.record$
+s6.key$ = "logout_reason"
+s6.value$ = STRING(kv["Logout Reason"])
+eventMetadata$.record$ = IF s6.value$ != "" THEN eventMetadata$.record$ + [s6] ELSE eventMetadata$.record$

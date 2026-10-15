@@ -1,0 +1,104 @@
+!SAMPLE=<190>Oct 15 2026 09:21:40+10:00 fw02.example.com %%01SECLOG/6/SESSION_TEARDOWN(l):CID=2160731923;IPVer=4,Protocol=6,SourceIP=192.0.2.25,DestinationIP=203.0.113.80,SourcePort=50123,DestinationPort=443,SourceNatIP=198.51.100.2,SourceNatPort=2048,DestinationNatIP=203.0.113.80,DestinationNatPort=443,BeginTime=1792020040,EndTime=1792020100,SendPkts=42,SendBytes=5120,RcvPkts=60,RcvBytes=88200,SourceVpnID=0,DestinationVpnID=0,SourceZone=trust,DestinationZone=untrust,PolicyName=trust_untrust,CloseReason=tcp-fin,ApplicationName=HTTPS,UserName=jsmith
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: security policy and session logs to Netflow.
+#   POLICY/6/POLICYPERMIT and POLICYDENY: vsys=..., protocol=..., source-ip=..., ... referer=...
+#   SECLOG/6/SESSION_BUILT and SESSION_TEARDOWN (syslog session logs in the default format):
+#     IPVer=...,Protocol=...,SourceIP=...,... ,CloseReason=...,ApplicationName=...,UserName=...
+#   SECLOG/4/SESSION_DROP_RECORD (packet loss logs): IPVer=..., ..., DestinationZone=..., <drop reason>
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# mod, brief, body, kv, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+isPolicy = mod == "POLICY"
+src = IF isPolicy THEN STRING(kv["source-ip"]) ELSE STRING(kv["SourceIP"])
+dst = IF isPolicy THEN STRING(kv["destination-ip"]) ELSE STRING(kv["DestinationIP"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = IF isPolicy THEN STRING(kv["source-port"]) ELSE STRING(kv["SourcePort"])
+destinationPort$ = IF isPolicy THEN STRING(kv["destination-port"]) ELSE STRING(kv["DestinationPort"])
+sourceMac$ = IF isPolicy AND STRING(kv["source-mac"]) != "" THEN kv["source-mac"] ELSE NULL
+destinationMac$ = IF isPolicy AND STRING(kv["destination-mac"]) != "" THEN kv["destination-mac"] ELSE NULL
+snat = STRING(kv["SourceNatIP"])
+dnat = STRING(kv["DestinationNatIP"])
+sourceNatAddress$ = IF snat != "" THEN snat ELSE NULL
+destinationNatAddress$ = IF dnat != "" THEN dnat ELSE NULL
+sourceNatPort$ = STRING(kv["SourceNatPort"])
+destinationNatPort$ = STRING(kv["DestinationNatPort"])
+# The device's sent and received counts, from the session's initiator side.
+txPacketCount$ = STRING(kv["SendPkts"])
+txByteCount$ = STRING(kv["SendBytes"])
+rxPacketCount$ = STRING(kv["RcvPkts"])
+rxByteCount$ = STRING(kv["RcvBytes"])
+app = IF isPolicy THEN STRING(kv["application-name"]) ELSE STRING(kv["ApplicationName"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+
+# protocol takes the IANA number. Huawei documents the value only as the protocol, so a number is
+# kept and a name is mapped.
+proto = UPPERCASE(IF isPolicy THEN STRING(kv["protocol"]) ELSE STRING(kv["Protocol"]))
+num = proto|^(?P<n>\d{1,3})$
+protocol$ = IF STRING(num["n"]) != "" THEN num["n"] ELSE NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+protocol$ = IF proto == "SCTP" THEN 132 ELSE protocol$
+
+# The drop record ends with the reason as text, such as "default filter" or "policy filter".
+dr = body|,\s*(?P<why>[^,=]+?)\s*$
+dropWhy = IF brief == "SESSION_DROP_RECORD" THEN TRIM(STRING(dr["why"])) ELSE ""
+close = STRING(kv["CloseReason"])
+why = IF dropWhy != "" THEN dropWhy ELSE close
+connectionEndReason$ = IF why != "" THEN why ELSE NULL
+lclose = LOWERCASE(close)
+blocked = brief == "POLICYDENY" OR brief == "SESSION_DROP_RECORD" OR lclose == "policy-deny" OR lclose == "default-policy-deny" OR lclose == "block"
+flowAction$ = IF blocked THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+
+# Keys with no Netflow field go to event_metadata. Huawei doesn't document the format of the
+# session begin and end times, so they are kept as sent.
+vsys = IF isPolicy THEN STRING(kv["vsys"]) ELSE ""
+szone = IF isPolicy THEN STRING(kv["source-zone"]) ELSE STRING(kv["SourceZone"])
+dzone = IF isPolicy THEN STRING(kv["destination-zone"]) ELSE STRING(kv["DestinationZone"])
+# In a drop record the reason follows the last pair with no key, and Sophos NG-SIEM adds it to
+# the value before it, so the zone is read from the text.
+dz = body|DestinationZone=(?P<z>[^,]*)
+dzone = IF brief == "SESSION_DROP_RECORD" THEN TRIM(STRING(dz["z"])) ELSE dzone
+rule = IF isPolicy THEN STRING(kv["rule-name"]) ELSE STRING(kv["PolicyName"])
+user = IF isPolicy THEN STRING(kv["user-name"]) ELSE STRING(kv["UserName"])
+m1.key$ = "source_zone"
+m1.value$ = szone
+m2.key$ = "destination_zone"
+m2.value$ = dzone
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "rule_name"
+m3.value$ = rule
+eventMetadata$.record$ = IF rule != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "user_name"
+m4.value$ = user
+eventMetadata$.record$ = IF user != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "user_group"
+m5.value$ = STRING(kv["user-group"])
+eventMetadata$.record$ = IF isPolicy AND m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "vsys"
+m6.value$ = vsys
+eventMetadata$.record$ = IF vsys != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "host"
+m7.value$ = STRING(kv["host"])
+eventMetadata$.record$ = IF isPolicy AND m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "begin_time"
+m8.value$ = STRING(kv["BeginTime"])
+eventMetadata$.record$ = IF NOT isPolicy AND m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "end_time"
+m9.value$ = STRING(kv["EndTime"])
+eventMetadata$.record$ = IF NOT isPolicy AND m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "ip_version"
+m10.value$ = STRING(kv["IPVer"])
+eventMetadata$.record$ = IF NOT isPolicy AND m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$

@@ -1,0 +1,94 @@
+!SAMPLE=<188>2026-10-15 09:23:05 fw01.example.com %%01IPS/4/DETECT(l):CID=2160731923;An intrusion was detected. (SyslogId=1, VSys="public", Policy="untrust_dmz", SrcIp=203.0.113.66, DstIp=192.0.2.10, SrcPort=40122, DstPort=80, SrcZone=untrust, DstZone=dmz, User="unknown", Protocol=TCP, Application="HTTP", Profile="default", SignName="Generic SQL Injection Attempt", SignId=1000001, EventNum=1, Target=server, Severity=high, Os=all, Category=Injection, Reference=CVE-2026-0001, Action=block, Extend="", UserGroup="")
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ips"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Huawei USG and HiSecEngine firewall syslog.
+# Child of HUAWEI_USG_SYSLOG_PARENT: intrusion prevention and web application firewall logs to NIDS.
+#   IPS/4/DETECT, BOTNET, TROJAN and WORM: <description> (SyslogId=..., SrcIp=..., ..., SignName="...",
+#     SignId=..., ..., Severity=..., Category=..., Action=..., ...)
+#   IPS/4/DOMAIN: the same with DomainName, EventName and Category instead of a signature
+#   WAF/4/CONSTRAINT: the same with the WAF signature or rule
+# The signature (or event) name is the message, the category the classification, the signature
+# ID the signature ID and the action the action, with block as blocked.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# brief, desc, kv, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SrcIp"])
+dst = STRING(kv["DstIp"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["SrcPort"])
+destinationPort$ = STRING(kv["DstPort"])
+proto = UPPERCASE(STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+app = STRING(kv["Application"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+user = STRING(kv["User"])
+sourceUsername$ = IF user != "" AND LOWERCASE(user) != "unknown" THEN user ELSE NULL
+
+sign = STRING(kv["SignName"])
+event = STRING(kv["EventName"])
+domain = STRING(kv["DomainName"])
+name = IF sign != "" THEN sign ELSE event
+name = IF brief == "DOMAIN" AND domain != "" THEN name + ": " + domain ELSE name
+message$ = IF name != "" THEN name ELSE desc
+cat = STRING(kv["Category"])
+classification$ = IF cat != "" THEN cat ELSE NULL
+signatureId$ = STRING(kv["SignId"])
+act = STRING(kv["Action"])
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF LOWERCASE(act) == "block" THEN 1 ELSE 0
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+# Huawei's severities, as priorities with 1 the highest: high 1, medium 2, low 3, information 4.
+sev = LOWERCASE(STRING(kv["Severity"]))
+priority$ = NULL
+priority$ = IF sev == "high" THEN 1 ELSE priority$
+priority$ = IF sev == "medium" THEN 2 ELSE priority$
+priority$ = IF sev == "low" THEN 3 ELSE priority$
+priority$ = IF sev == "information" THEN 4 ELSE priority$
+
+# Keys with no NIDS field go to event_metadata.
+n1.key$ = "log_type"
+n1.value$ = brief
+n2.key$ = "severity"
+n2.value$ = sev
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1, n2]
+n3.key$ = "policy"
+n3.value$ = STRING(kv["Policy"])
+eventMetadata$.record$ = IF n3.value$ != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "source_zone"
+n4.value$ = STRING(kv["SrcZone"])
+eventMetadata$.record$ = IF n4.value$ != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "destination_zone"
+n5.value$ = STRING(kv["DstZone"])
+eventMetadata$.record$ = IF n5.value$ != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "target"
+n6.value$ = STRING(kv["Target"])
+eventMetadata$.record$ = IF n6.value$ != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "reference"
+n7.value$ = STRING(kv["Reference"])
+eventMetadata$.record$ = IF n7.value$ != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "botnet_role"
+n8.value$ = STRING(kv["Role"])
+eventMetadata$.record$ = IF n8.value$ != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "event_count"
+n9.value$ = STRING(kv["EventNum"])
+eventMetadata$.record$ = IF n9.value$ != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
+n10.key$ = "profile"
+n10.value$ = STRING(kv["Profile"])
+eventMetadata$.record$ = IF n10.value$ != "" THEN eventMetadata$.record$ + [n10] ELSE eventMetadata$.record$
+n11.key$ = "user_group"
+n11.value$ = STRING(kv["UserGroup"])
+eventMetadata$.record$ = IF n11.value$ != "" THEN eventMetadata$.record$ + [n11] ELSE eventMetadata$.record$
+n12.key$ = "extend"
+n12.value$ = STRING(kv["Extend"])
+eventMetadata$.record$ = IF n12.value$ != "" THEN eventMetadata$.record$ + [n12] ELSE eventMetadata$.record$
