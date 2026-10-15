@@ -90,6 +90,7 @@ WantedBy=multi-user.target
 - Both reports are rated Heavy: Zoom allows 10 requests a second on Pro and 40 on Business and higher, with a daily cap shared by all of an account's apps (30,000 on Pro). The bridge retries a per-second 429, 408, 500, 502, 503 and 504 with backoff, honoring `Retry-After`, up to 6 times. Zoom's daily limit lasts until the next day, so the run stops with an error that says so, and with `--interval` the bridge tries again at the next interval. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Zoom or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the client secret, the access token, the HTTP Ingest key, or the HTTP Ingest URL path.
 

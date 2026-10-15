@@ -93,6 +93,7 @@ WantedBy=multi-user.target
 - Cisco limits API requests per hour and sends `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (seconds until the limit resets). On 429 the bridge waits until the reset when that is at most 5 minutes away; otherwise the run stops with an error that says when the limit resets, and with `--interval` the bridge tries again at the next interval. It retries 408, 500, 502, 503 and 504 with backoff, up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Cisco or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the API key, the HTTP Ingest key, or the HTTP Ingest URL path.
 

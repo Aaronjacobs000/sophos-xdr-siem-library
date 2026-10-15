@@ -98,6 +98,7 @@ WantedBy=multi-user.target
 - The Reports API allows 2,400 queries a minute per user per Google Cloud project, and answers 503 when that is used up. The bridge retries 503, 429, 408, 500, 502 and 504 with backoff from about 5 seconds, as Google advises, up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Google or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the service account key, the access token, the HTTP Ingest key, or the HTTP Ingest URL path.
 

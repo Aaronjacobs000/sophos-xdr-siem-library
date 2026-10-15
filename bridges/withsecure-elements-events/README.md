@@ -92,6 +92,7 @@ WantedBy=multi-user.target
 WithSecure documents the event fields per event type, and the API returns them in `details`, mostly as text. The engine names in the API (such as `emailScan` and `amsi`) differ from the event type reference (`collaborationProtectionEmailScan`, `AMSI`); the library parsers read both. Audit log entries describe each action in `description`, in English unless the API is asked for another language; the bridge doesn't ask.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the client ID, secret, access token, HTTP Ingest key, or the HTTP Ingest URL path.
 
