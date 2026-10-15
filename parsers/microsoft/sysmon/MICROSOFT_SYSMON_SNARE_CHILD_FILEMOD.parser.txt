@@ -1,0 +1,61 @@
+!SAMPLE=<182>Oct 15 00:16:20 ws01.example.com MSWinEventLog	1	Microsoft-Windows-Sysmon/Operational	2823	Thu Oct 15 00:16:20 2026	11	Microsoft-Windows-Sysmon	SYSTEM	User	Information	ws01.example.com	File created (rule: FileCreate)		File created: RuleName: technique_id=T1105,technique_name=Ingress Tool Transfer UtcTime: 2026-10-15 00:16:20.330 ProcessGuid: {5c7b1d2e-6a5c-6710-1d00-000000000700} ProcessId: 7788 Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe TargetFilename: C:\Users\svc-deploy\AppData\Local\Temp\upd.exe CreationUtcTime: 2026-10-15 00:16:20.330 User: EXAMPLE\svc-deploy	2823
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\tMicrosoft-Windows-Sysmon/Operational\t[^\t]*\t[^\t]*\t(?:11|2[36789])\tMicrosoft-Windows-Sysmon\t
+!SCHEMA=scwx.filemod
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Sysmon events 11 (File created), 23 (File Delete archived), 26 (File Delete
+# logged), 27 (File Block Executable), 28 (File Block Shredding) and 29 (File Executable Detected) from the Microsoft-Windows-Sysmon/Operational log, sent in Snare format over
+# syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks with
+# spaces, so each "Label: value" pair ends where the next label starts.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = " " + s["msg"] + " "
+
+sensorType$ = "Microsoft Sysmon"
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+
+# UtcTime is UTC with milliseconds. Without it, read the Snare date and time, which Sophos asks
+# you to send in UTC.
+utc = msg|\sUtcTime: (?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF utc["v"] != "" THEN DATETIME(utc["v"], "2006-01-02 15:04:05.999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+
+# Event 11 lists RuleName, UtcTime, ProcessGuid, ProcessId, Image, TargetFilename,
+# CreationUtcTime, User. Events 23, 26, 27, 28 and 29 list RuleName, UtcTime, ProcessGuid,
+# ProcessId, User, Image, TargetFilename, Hashes, then IsExecutable (23, 26, 28) and Archived (23).
+eid = s["eid"]
+guid = msg|\sProcessGuid: (?P<v>\{[^}\s]*\})
+pid = msg|\sProcessId: (?P<v>\d+)\s
+image = msg|\sImage: (?P<v>.*?)\s+(?:TargetFilename|User):
+user = msg|\sUser: (?P<v>.*?)\s+(?:Image:|$)
+file = msg|\sTargetFilename: (?P<v>.*?)\s+(?:CreationUtcTime|Hashes|User):
+hashes = msg|\sHashes: (?P<v>\S+)\s
+
+fileName$ = file["v"]
+processId$ = pid["v"]
+processCorrelationId$ = guid["v"]
+processImagePath$ = image["v"]
+processUsername$ = user["v"]
+
+md5 = hashes["v"]|(?:^|,)MD5=(?P<v>[0-9A-Fa-f]{32})
+sha1 = hashes["v"]|(?:^|,)SHA1=(?P<v>[0-9A-Fa-f]{40})
+sha256 = hashes["v"]|(?:^|,)SHA256=(?P<v>[0-9A-Fa-f]{64})
+fileHash$.md5$ = md5["v"]
+fileHash$.sha1$ = sha1["v"]
+fileHash$.sha256$ = sha256["v"]
+
+# 27 and 28 are Sysmon blocking the write; the others record what happened.
+action$ = IF eid == "11" OR eid == "27" OR eid == "29" THEN "created" ELSE "deleted"
+wasModificationAllowed$ = IF eid == "27" OR eid == "28" THEN FALSE ELSE TRUE

