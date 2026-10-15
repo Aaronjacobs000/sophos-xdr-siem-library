@@ -1,0 +1,53 @@
+{
+  "vendor": "Arctic Wolf",
+  "product": "Aurora Protect Desktop (CylancePROTECT)",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide",
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide/aurora-endpoint-security-syslog-forwarding/configure-aurora-endpoint-security-syslog-forwarding",
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide/aurora-protect-desktop-event-types/aurora-protect-desktop-threats",
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide/aurora-protect-desktop-event-types/aurora-protect-desktop-memory-protection",
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide/aurora-protect-desktop-event-types/aurora-protect-desktop-script-control",
+    "https://arcticwolf.portal.heretto.com/en/developer-and-oem/aurora-syslog-guide/aurora-protect-desktop-event-types/aurora-protect-desktop-audit-log"
+  ],
+  "notes": "In the Aurora Endpoint Security console, go to Settings > Application, select Syslog/SIEM and the Aurora Protect Desktop event types, and send to the data collector over TCP with TLS, or UDP. Events come from Arctic Wolf's cloud, from the source addresses listed for your region (Asia-Pacific Southeast covers Australia), so the collector needs a listener they can reach. Threats, memory protection (ExploitAttempt) and script control events go to Antivirus: the classification as the threat name (or the file name, the violation type or the script's name), Path and File Name as the file path, SHA256 and MD5, the device, the policy, Cylance Score as the confidence score, Status as the priority, and the action taken from the status, the action or the event name. Console sign-ins (LoginSuccess, LoginFailure) go to Auth, and the rest of the audit log goes to CloudAudit, with the console user's email address as the user and the message in additional_event_data. Device, device control, application control and threat classification events stay generic. Each value runs from its \"Key: \" to the next \", Key: \", so commas inside a value, such as an address list, are kept. The event time is the RFC 5424 header's, when Arctic Wolf sent the event; a threat's Found Date has no documented time zone, so it goes to event_metadata. Arctic Wolf's examples show only the message, so the samples' header (<46>1, sysloghost, CylancePROTECT) follows Splunk Connect for Syslog; the parser doesn't rely on it. Arctic Wolf shows no sign-in message, so Provider and Source IP are read when present, as Microsoft Sentinel's CylancePROTECT parser reads them. Arctic Wolf doesn't show where the tenant identifier option puts its fields. Sophos Fusion's CylanceOPTICS integration polls Aurora Focus detections and doesn't take this feed. Samples are made up from the field tables and examples in Arctic Wolf's Aurora syslog guide. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (149 of 149 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (141 of 141 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "CYLANCEPROTECT_SYSLOG_PARENT",
+      "file": "CYLANCEPROTECT_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS",
+      "file": "CYLANCEPROTECT_SYSLOG_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "CYLANCEPROTECT_SYSLOG_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "CYLANCEPROTECT_SYSLOG_CHILD_AUTH",
+      "file": "CYLANCEPROTECT_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "CYLANCEPROTECT_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "CYLANCEPROTECT_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "CYLANCEPROTECT_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "CYLANCEPROTECT_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

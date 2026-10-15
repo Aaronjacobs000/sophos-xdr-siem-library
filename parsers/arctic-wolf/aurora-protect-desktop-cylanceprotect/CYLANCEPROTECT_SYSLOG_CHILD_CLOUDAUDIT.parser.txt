@@ -1,0 +1,42 @@
+!SAMPLE=<46>1 2026-10-15T02:15:02.000000Z sysloghost CylancePROTECT - - - Event Type: AuditLog, Event Name: ThreatGlobalQuarantine, Message: SHA256: AF68C74FBB69025C74CFC01213269C878B370FAA3F19ED0A0E16A55C11D23657, F2BAD753DC1349EDA81408013D8565945AB52341CD05DD46D9C2B582FCB8B5F0; Reason: Confirmed malicious by the SOC., User: Jane Smith (jsmith@example.com)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="AuditLog"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Aurora Protect Desktop (CylancePROTECT) audit log over syslog: what console users and
+# API applications did in the Aurora Endpoint Security console, such as policy, zone, user, global
+# list and device changes. Sign-ins go to the Auth child.
+# Child of CYLANCEPROTECT_SYSLOG_PARENT: each audit event to CloudAudit, with the event name (such
+# as PolicyEdit or ThreatGlobalQuarantine) as the event name and the console user as the user.
+# evType, evName, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Aurora Endpoint Security"
+eventName$ = evName
+managementEvent$ = TRUE
+lname = LOWERCASE(evName)
+readOnly$ = CONTAINS(lname, "download") OR CONTAINS(lname, "show") OR lname == "focusdataadd"
+
+# Message runs to the last ", User: ", which names the console user: a name and the email address
+# in parentheses, or the address alone. An Eco Id can follow the address inside the parentheses.
+# Changes made through the API have no console user.
+msg = originalData$|, Message: (?P<v>.*), User:
+u = originalData$|.*, User: (?P<name>[^(,]*?)\s*\(\s*(?P<email>[^,)\s]+)
+userName$ = IF u["email"] != "" THEN u["email"] ELSE NULL
+userType$ = IF u["email"] != "" THEN "User" ELSE NULL
+# User changes name the user they changed in the message, as "User: <name>".
+tgt = msg["v"]|^User: (?P<v>.+)$
+targetUserName$ = IF (lname == "useradd" OR lname == "useredit" OR lname == "userremove") AND tgt["v"] != "" THEN tgt["v"] ELSE NULL
+src = originalData$|, Source IP: (?P<v>[0-9A-Fa-f.:]+)
+sourceAddress$ = IF src["v"] != "" THEN src["v"] ELSE NULL
+
+d1.key$ = "message"
+d1.value$ = msg["v"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF msg["v"] != "" THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+eco = originalData$|, Eco Id: (?P<v>[^,)\s]+)
+d2.key$ = "eco_id"
+d2.value$ = eco["v"]
+additionalEventData$.record$ = IF eco["v"] != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
