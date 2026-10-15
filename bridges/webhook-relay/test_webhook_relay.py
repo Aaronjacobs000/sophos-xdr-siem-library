@@ -2,8 +2,10 @@
 
 Deliveries are signed the way each vendor documents it: Svix for Huntress (HMAC-SHA256 over
 "<id>.<timestamp>.<body>", base64, "v1," prefix), X-Hook-Signature for Autotask (HMAC-SHA1 over
-the body, base64, "sha1=" prefix), and a secret in the path for Hudu and ScreenConnect. The
-bodies are lines from the library entries' samples.log. No real service is called.
+the body, base64, "sha1=" prefix), X-Mist-Signature-v2 for Juniper Mist (HMAC-SHA256 over the
+body, hex), and a secret in the path for Hudu and ScreenConnect. The bodies are lines from the
+library entries' samples.log, and Mist batches in the shape of Mist's webhook samples. No real
+service is called.
 
   python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 """
@@ -32,6 +34,7 @@ HUNTRESS_SECRET = "whsec_" + base64.b64encode(HUNTRESS_KEY).decode()
 AUTOTASK_KEY = "test-autotask-secret-key-not-real-000000"
 HUDU_SECRET = "test-hudu-path-secret-not-real-0000000000"
 SCREENCONNECT_SECRET = "test-screenconnect-path-secret-not-real-00"
+MIST_SECRET = "test-mist-webhook-secret-not-real-000000"
 INGEST_KEY = "test-ngsiem-ingest-key-not-real"
 INGEST_PATH = "/http-endpoint/v1/00000000-example-integration"
 
@@ -48,6 +51,16 @@ AUTOTASK_BODY = (b'{"Action":"Update","Guid":"0a7c3e91-2b5d-4f8e-a6c1-9d4b2e7f1a
 HUDU_BODY = (b'{"source":"Hudu","alert":"record","action":"update","record_type":"AssetPassword",'
              b'"record_name":"Acme Dental - Domain Admin","record_id":"4412","company_name":"Acme Dental","company_id":"31",'
              b'"user":"Alex Kim","url":"https://docs.example.com/a/4412","asset_layout_id":""}')
+MIST_EVENTS = [
+    {"admin_name": "Sam Admin sam.admin@example.com", "id": "8e00dd48-b918-4d9b-9a1c-000000000001", "message": "Update Site Settings",
+     "org_id": "2818e386-8dec-2562-9a1c-000000000001", "site_id": "4ac1dcf4-9d8b-7211-9a1c-000000000001", "src_ip": "203.0.113.20",
+     "timestamp": 1791853804.201053},
+    {"admin_name": "Sam Admin sam.admin@example.com", "id": "8e00dd48-b918-4d9b-9a1c-000000000002", "message": "Update Device \"Reception\"",
+     "org_id": "2818e386-8dec-2562-9a1c-000000000001", "device_id": "00000000-0000-0000-1000-5c5b35000001",
+     "src_ip": "203.0.113.20", "timestamp": 1791853806.5},
+]
+MIST_BATCH = json.dumps({"topic": "audits", "events": MIST_EVENTS}).encode()
+MIST_ONE = json.dumps({"topic": "audits", "events": MIST_EVENTS[:1]}, separators=(",", ":")).encode()
 SCREENCONNECT_BODY = (b"ScreenConnect|category=Security|event=LoginAttempt|result=PasswordInvalid|time=10/12/2026 10:41:02 PM"
                       b"|user=admin|source=Internal|address=203.0.113.45")
 
@@ -56,6 +69,12 @@ def svix_headers(body, key=HUNTRESS_KEY, msg_id="msg_2Qx7example000000000000", s
     stamp = str(int(time.time()) if stamp is None else stamp)
     sig = base64.b64encode(hmac.new(key, f"{msg_id}.{stamp}.".encode() + body, hashlib.sha256).digest()).decode()
     return {f"{prefix}id": msg_id, f"{prefix}timestamp": stamp, f"{prefix}signature": " ".join([*extra_sigs, f"v1,{sig}"])}
+
+
+def mist_headers(body, key=MIST_SECRET):
+    return {"Content-Type": "application/json", "User-Agent": "Mist-webhook",
+            "X-Mist-Signature-v2": hmac.new(key.encode(), body, hashlib.sha256).hexdigest(),
+            "X-Mist-Signature": hmac.new(key.encode(), body, hashlib.sha1).hexdigest()}
 
 
 def autotask_headers(body, key=AUTOTASK_KEY):
@@ -144,7 +163,8 @@ class RelayTest(unittest.TestCase):
     def env(self, **extra):
         e = {"NGSIEM_INGEST_URL": self.ingest_url, "NGSIEM_INGEST_KEY": INGEST_KEY, "BRIDGE_LISTEN_PORT": "0",
              "HUNTRESS_SIGNING_SECRET": HUNTRESS_SECRET, "AUTOTASK_SECRET_KEY": AUTOTASK_KEY,
-             "HUDU_PATH_SECRET": HUDU_SECRET, "SCREENCONNECT_PATH_SECRET": SCREENCONNECT_SECRET}
+             "HUDU_PATH_SECRET": HUDU_SECRET, "SCREENCONNECT_PATH_SECRET": SCREENCONNECT_SECRET,
+             "MIST_WEBHOOK_SECRET": MIST_SECRET}
         e.update(extra)
         return {k: v for k, v in e.items() if v is not None}
 
@@ -303,6 +323,69 @@ class RelayTest(unittest.TestCase):
         # A trailing line break alone doesn't count as a second record, so the body goes on as is.
         self.assertEqual(r.one_record(HUDU_BODY + b"\r\n"), (HUDU_BODY + b"\r\n", "application/json"))
 
+    # -------------------------------------------------------------- Juniper Mist
+
+    def test_mist_valid_signature_forwards_a_batch_unchanged_by_default(self):
+        self.start()
+        self.assertEqual(self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH))[0], 200)
+        self.assertEqual(self.bodies(), [MIST_BATCH])
+        sent = self.ingest.received[0]["headers"]
+        self.assertEqual((sent["Authorization"], sent["Content-Type"]), (f"Bearer {INGEST_KEY}", "application/json"))
+        self.assertFalse(any(k.lower().startswith("x-mist") for k in sent))
+
+    def test_mist_batch_is_split_into_one_record_per_event_when_turned_on(self):
+        self.start(BRIDGE_SPLIT_BATCHES="1")
+        self.assertEqual(self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH))[0], 200)
+        self.assertEqual(len(self.ingest.received), 1)
+        lines = self.bodies()[0].split(b"\n")
+        self.assertEqual([json.loads(x) for x in lines], [{"topic": "audits", "events": [e]} for e in MIST_EVENTS])
+        self.assertEqual(self.ingest.received[0]["headers"]["Content-Type"], "application/json")
+        # The numbers go on exactly as Mist sent them.
+        self.assertIn(b'"timestamp":1791853804.201053', lines[0])
+        # A body with one event already is one record, and goes on byte for byte.
+        self.assertEqual(self.post("/mist", MIST_ONE, mist_headers(MIST_ONE))[0], 200)
+        self.assertEqual(self.bodies()[1], MIST_ONE)
+        self.assertIn("mist: split a batch of 2 events", self.log.getvalue())
+
+    def test_splitting_leaves_other_vendors_alone(self):
+        self.start(BRIDGE_SPLIT_BATCHES="1")
+        hudu = json.dumps({"events": [{"a": 1}, {"a": 2}]}).encode()
+        self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", hudu)[0], 200)
+        self.assertEqual(self.bodies(), [hudu])
+
+    def test_split_batch_only_takes_a_batch_of_two_or_more(self):
+        for body in (b"not json", b"[1, 2]", b'{"topic": "audits"}', b'{"topic": "audits", "events": {"a": 1}}',
+                     b'{"topic": "audits", "events": []}', MIST_ONE):
+            with self.subTest(body=body[:30]):
+                self.assertIsNone(r.split_batch(body))
+        self.assertEqual(r.split_batch(MIST_BATCH)[1], 2)
+        with self.assertRaises(r.BodyError):
+            r.split_batch(b"[" * 100000 + b"]" * 100000)
+
+    def test_mist_rejects_unverified_deliveries(self):
+        self.start(BRIDGE_SPLIT_BATCHES="1")
+        good = mist_headers(MIST_BATCH)
+        cases = {
+            "wrong key": mist_headers(MIST_BATCH, key="another-mist-webhook-secret-00000000000"),
+            "tampered body": mist_headers(MIST_BATCH.replace(b"Reception", b"Lobby")),
+            "sha1 only": {"X-Mist-Signature": good["X-Mist-Signature"]},
+            "base64 digest": {"X-Mist-Signature-v2": base64.b64encode(hmac.new(MIST_SECRET.encode(), MIST_BATCH, hashlib.sha256).digest()).decode()},
+            "missing": {},
+        }
+        for name, headers in cases.items():
+            with self.subTest(name):
+                self.assertEqual(self.post("/mist", MIST_BATCH, headers)[0], 401)
+        self.assertEqual(self.bodies(), [])
+        # An upper-case hex digest is the same digest.
+        self.assertEqual(self.post("/mist", MIST_BATCH, {**good, "X-Mist-Signature-v2": good["X-Mist-Signature-v2"].upper()})[0], 200)
+
+    def test_mist_dry_run_prints_each_event(self):
+        out = io.StringIO()
+        self.start(dry_run=True, out=out, NGSIEM_INGEST_URL=None, NGSIEM_INGEST_KEY=None, BRIDGE_SPLIT_BATCHES="1")
+        self.assertEqual(self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH))[0], 200)
+        self.assertEqual([json.loads(x)["events"][0]["id"] for x in out.getvalue().splitlines()], [e["id"] for e in MIST_EVENTS])
+        self.assertEqual(self.bodies(), [])
+
     # -------------------------------------------------------------- requests the relay refuses
 
     def test_unconfigured_vendor_and_unknown_path_are_404(self):
@@ -406,6 +489,8 @@ class RelayTest(unittest.TestCase):
         self.post("/huntress", HUNTRESS_BODY, svix_headers(HUNTRESS_BODY, key=b"some-other-signing-key-000000000"))
         self.post("/autotask", AUTOTASK_BODY, autotask_headers(AUTOTASK_BODY))
         self.post("/autotask", AUTOTASK_BODY, {"X-Hook-Signature": "sha1=AAAA"})
+        self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH))
+        self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH, key="another-mist-webhook-secret-00000000000"))
         self.ingest.codes = [401]
         self.post(f"/hudu/{HUDU_SECRET}", hudu)
         logged = self.log.getvalue()
@@ -414,7 +499,8 @@ class RelayTest(unittest.TestCase):
         autotask_sig = autotask_headers(AUTOTASK_BODY)["X-Hook-Signature"][5:]
         for secret in (HUNTRESS_SECRET, base64.b64encode(HUNTRESS_KEY).decode(), AUTOTASK_KEY, HUDU_SECRET,
                        SCREENCONNECT_SECRET, INGEST_KEY, INGEST_PATH, "00000000-example-integration", marker,
-                       "Acme Dental", "billing@example.com", autotask_sig):
+                       "Acme Dental", "billing@example.com", autotask_sig, MIST_SECRET, "sam.admin@example.com",
+                       mist_headers(MIST_BATCH)["X-Mist-Signature-v2"]):
             self.assertNotIn(secret, logged)
 
     def test_ingest_key_with_a_line_break_is_refused_without_showing_it(self):
@@ -497,17 +583,20 @@ class RelayTest(unittest.TestCase):
             "long Autotask key": {"AUTOTASK_SECRET_KEY": "k" * 65},
             "secret with a space": {"SCREENCONNECT_PATH_SECRET": "with a space " * 4},
             "not a signing secret": {"HUNTRESS_SIGNING_SECRET": "whsec_not base64!"},
+            "short Mist secret": {"MIST_WEBHOOK_SECRET": "too-short"},
             "port": {"BRIDGE_LISTEN_PORT": "eighty"},
             "deadline": {"BRIDGE_FORWARD_DEADLINE": "0"},
             "nothing to relay": {"HUNTRESS_SIGNING_SECRET": None, "AUTOTASK_SECRET_KEY": None, "HUDU_PATH_SECRET": None,
-                                 "SCREENCONNECT_PATH_SECRET": None},
+                                 "SCREENCONNECT_PATH_SECRET": None, "MIST_WEBHOOK_SECRET": None},
         }
         for name, extra in bad.items():
             with self.subTest(name):
                 with self.assertRaises(r.RelayError):
                     r.load_config(self.env(**extra))
         cfg = r.load_config(self.env(NGSIEM_INGEST_URL=None))
-        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "hudu", "huntress", "screenconnect"])
+        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "hudu", "huntress", "mist", "screenconnect"])
+        self.assertFalse(cfg["split_batches"])
+        self.assertTrue(r.load_config(self.env(BRIDGE_SPLIT_BATCHES="1"))["split_batches"])
         self.assertEqual(cfg["vendors"]["huntress"], HUNTRESS_KEY)
         self.assertEqual((cfg["host"], cfg["max_body"]), ("127.0.0.1", 524288))
         with self.assertRaises(r.RelayError):
