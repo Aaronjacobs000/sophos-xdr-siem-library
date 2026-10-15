@@ -1,0 +1,67 @@
+!SAMPLE=<186>Oct 14 09:12:44 apic1 %LOG_LOCAL7-2-SYSTEM_MSG [F1543][raised][node-inactive][critical][topology/pod-1/node-102/fault-F1543] Node 102 with hostname leaf102 is inactive and not reachable.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco ACI syslog from the APIC and the fabric switches.
+# Child of CISCO_ACI_SYSLOG_PARENT: faults, and process-crash events, to Thirdparty.
+#   [<code>][<lifecycle>][<cause>][<severity>][<DN>] <text>     a fault
+#   [<code>][process-crash][<severity>][<DN>] <text>              a process that cored
+# A fault's DN names the object it is raised on and ends in fault-<code>, so it identifies the fault.
+# Lifecycle: soaking, raised, soaking-clearing, raised-clearing, retaining. A fault with severity
+# cleared, or in retaining, has cleared. The severity in the brackets is the one ACI gives the fault;
+# the number in %LOG_LOCALn-<n>- is the syslog severity, and Cisco's examples don't always match
+# the table that maps one to the other, so only the brackets are read.
+# fault, event, m, node, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+isFault = fault["code"] != ""
+code = IF isFault THEN fault["code"] ELSE event["code"]
+cause = IF isFault THEN fault["cause"] ELSE event["cause"]
+sev = IF isFault THEN fault["sev"] ELSE event["sev"]
+dn = IF isFault THEN fault["dn"] ELSE event["dn"]
+text = IF isFault THEN fault["text"] ELSE event["text"]
+life = fault["life"]
+
+vendor$ = "Cisco"
+provider$ = "Cisco ACI"
+title$ = code + " " + cause
+summary$ = IF text != "" THEN text ELSE NULL
+alertId$ = dn
+alertCategory$ = IF isFault THEN "fault" ELSE "event"
+logType$ = IF isFault THEN "fault" ELSE "event"
+status$ = IF isFault THEN life ELSE NULL
+vendorSeverity$ = sev
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "info" OR sev == "cleared" THEN "INFO" ELSE severity$
+severity$ = IF sev == "warning" THEN "LOW" ELSE severity$
+severity$ = IF sev == "minor" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "major" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+cleared = isFault AND (sev == "cleared" OR life == "retaining")
+closedTimeUsec$ = IF cleared THEN eventTimeUsec$ ELSE NULL
+
+# The switch a fault is raised on: node-<id> in the DN, or the core file's name for a crash.
+nodeId = dn|(?:^|/|-)node-(?P<id>\d+)(?:/|-|$)
+targetHostName$ = IF nodeId["id"] != "" THEN "node-" + nodeId["id"] ELSE node
+
+a1.key$ = "code"
+a1.value$ = code
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "cause"
+a2.value$ = cause
+additionalData$.record$ = additionalData$.record$ + [a2]
+a3.key$ = "dn"
+a3.value$ = dn
+additionalData$.record$ = additionalData$.record$ + [a3]
+a4.key$ = "lifecycle"
+a4.value$ = life
+additionalData$.record$ = IF isFault THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "syslog_facility"
+a5.value$ = m["fac"]
+additionalData$.record$ = IF m["fac"] != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "syslog_severity"
+a6.value$ = m["sev"]
+additionalData$.record$ = additionalData$.record$ + [a6]

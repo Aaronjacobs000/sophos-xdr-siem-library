@@ -1,0 +1,12 @@
+<186>Oct 14 09:12:44 apic1 %LOG_LOCAL7-2-SYSTEM_MSG [F1543][raised][node-inactive][critical][topology/pod-1/node-102/fault-F1543] Node 102 with hostname leaf102 is inactive and not reachable.
+<187>Oct 14 09:14:02 leaf101 %LOG_LOCAL7-3-SYSTEM_MSG [F1394][soaking][interface-physical-down][minor][topology/pod-1/node-101/sys/phys-[eth1/49]/phys/fault-F1394] Port is down, reason: link-not-connected (none), used by: fabric
+<190>Oct 14 09:31:16 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [F1543][retaining][node-inactive][cleared][topology/pod-1/node-102/fault-F1543] Node 102 with hostname leaf102 is inactive and not reachable.
+<187>Oct 14 09:20:35 apic1 %LOG_LOCAL7-3-SYSTEM_MSG [E4208395][process-crash][major][subj-[dbgs/cores/node-102-card-1-svc-policyelem-ts-2026-10-14T09:20:30.000+00:00]/rec-12884905092] Process policyelem cored
+<190>Oct 14 09:21:10 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [E4208219][link-state-change][info][subj-[topology/pod-1/lnkcnt-1/lnk-101-1-49-to-1-1-3]/rec-4294968577] Link State of Fabric Link is set to ok
+<190>Oct 14 09:30:11 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [E4205038][transition][info][subj-[uni/fabric/slgroup-ngsiem-syslog/rdst-198.51.100.20]/mod-4294981149] Syslog Remote Destination 198.51.100.20 modified by user admin, change set: severity (Old: warnings, New: information)
+<190>Oct 14 09:32:40 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [E4211093][transition][info][subj-[uni/userext/user-jsmith]/mod-4294967339] User jsmith created
+<190>Oct 14 09:35:51 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [login,session][info][subj-[uni/userext/user-admin]/sess-4297292524] From-192.0.2.10-client-type-REST-Success
+<190>Oct 14 09:36:05 leaf101 %LOG_LOCAL7-6-SYSTEM_MSG [login,session][info][subj-[uni/userext/remoteuser-jsmith]/sess-433791698575] [user jsmith] From-203.0.113.30-client-type-ssh-Success
+<190>Oct 14 09:41:51 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [refresh,session][info][subj-[uni/userext/user-admin]/sess-4297292524] From-192.0.2.10-client-type-REST-Success
+<187>Oct 14 09:44:12 leaf101 %LOG_LOCAL7-3-SYSTEM_MSG [E4204936][transition][major][sys] %ETH_PORT_CHANNEL-3-COMPAT_CHECK_FAILURE: speed is not compatible
+<188>Oct 14 09:50:02.517 UTC+1000 leaf103 %LOG_LOCAL7-4-SYSTEM_MSG [F0546][raised][interface-physical-down][warning][topology/pod-1/node-103/sys/phys-[eth1/12]/phys/fault-F0546] Port is down, reason: admin-down (none), used by: discovery
