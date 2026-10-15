@@ -1,0 +1,94 @@
+!SAMPLE={"dynatrace_record":"audit","dynatrace_environment":"abc12345","timestamp":"2026-10-15T01:25:23.987000000Z","event.kind":"AUDIT_EVENT","event.id":"5547782627070661074_1792027523000","event.provider":"SETTINGS","event.type":"PUT","event.outcome":"success","event.version":"1.0.0","user.id":"3f2a1b0c-9d8e-4f7a-b6c5-d4e3f2a1b0c9","user.name":"jsmith@example.com","user.organization":"CUSTOMER","origin.type":"REST","origin.address":"203.0.113.45","origin.session":"node0hfznc8w2kq1","request.source":"BROWSER","resource":"vu9U3hXa3q0AAAABABhidWlsdGluOmFsZXJ0aW5n","details.dt.settings.schema_id":"builtin:alerting.profile","details.json_before":"{\"name\":\"Default\",\"enabled\":true}","details.json_after":"{\"name\":\"Default\",\"enabled\":false}"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{\s*"dynatrace_record"\s*:\s*"audit"\s*,
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Dynatrace audit events (dt.system.events, event.kind AUDIT_EVENT) read from Grail by the
+# example bridge in bridges/dynatrace-audit-events and posted to HTTP Ingest as JSON lines. Keys are
+# flat and dotted, such as event.provider, so they are read in brackets. The bridge puts
+# "dynatrace_record" first and adds dynatrace_environment, the environment ID.
+# Standalone parser for CloudAudit: settings changes, API gateway and classic API requests, and the
+# other audit providers, with the provider as the event type and event.type (PUT, POST, GET, DELETE
+# and so on) as the event name.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Dynatrace"
+eventSource$ = "Dynatrace"
+# timestamp is ISO 8601 in UTC with nine fraction digits.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+env = STRING(json["$.dynatrace_environment"])
+recipientAccountId$ = IF env != "" THEN env ELSE NULL
+sensorEventId$ = json["$['event.id']"]
+
+provider = STRING(json["$['event.provider']"])
+kind = STRING(json["$['event.type']"])
+eventType$ = IF provider != "" THEN provider ELSE NULL
+eventName$ = IF kind != "" THEN kind ELSE NULL
+readOnly$ = kind == "GET"
+managementEvent$ = kind != "GET"
+
+# user.id is always there; user.name, the email address, depends on the environment.
+uid = STRING(json["$['user.id']"])
+uname = STRING(json["$['user.name']"])
+userName$ = IF uname != "" THEN uname ELSE NULL
+userName$ = IF uname == "" AND uid != "" THEN uid ELSE userName$
+userId$ = IF uid != "" THEN uid ELSE NULL
+# authentication.type is OAUTH2, TOKEN, DEVOPSTOKEN or NONE. A token's public identifier, or an
+# OAuth client's ID, names the credential.
+authType = STRING(json["$['authentication.type']"])
+userType$ = IF authType != "" THEN authType ELSE NULL
+tok = STRING(json["$['authentication.token']"])
+client = STRING(json["$['authentication.client.id']"])
+accessKey$ = IF tok != "" THEN tok ELSE NULL
+accessKey$ = IF tok == "" AND client != "" THEN client ELSE accessKey$
+src = STRING(json["$['origin.address']"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+
+# event.outcome is success or failure, or the HTTP status of an API request. event.reason says why
+# a request was refused.
+outcome = STRING(json["$['event.outcome']"])
+status$ = IF outcome != "" THEN outcome ELSE NULL
+failed = outcome|^(?P<c>failure|[45]\d\d)$
+errorCode$ = IF failed["c"] != "" THEN failed["c"] ELSE NULL
+reason = STRING(json["$['event.reason']"])
+errorMessage$ = IF reason != "" THEN reason ELSE NULL
+
+# resource is the REST resource or a settings object ID; a settings change names its schema.
+resource = STRING(json["$.resource"])
+schema = STRING(json["$['details.dt.settings.schema_id']"])
+res.resourceId$ = resource
+res.resourceType$ = IF schema != "" THEN schema ELSE provider
+res.resourceAccountId$ = env
+resources$ = [res]
+
+# The docs name the app field both dt.app.id and app.id, so read both.
+app = STRING(json["$['dt.app.id']"])
+app = IF app == "" THEN STRING(json["$['app.id']"]) ELSE app
+d1.key$ = "origin_type"
+d1.value$ = STRING(json["$['origin.type']"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ != "" THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+d2.key$ = "request_source"
+d2.value$ = STRING(json["$['request.source']"])
+additionalEventData$.record$ = IF d2.value$ != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "app_id"
+d3.value$ = app
+additionalEventData$.record$ = IF app != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "grant_type"
+d4.value$ = STRING(json["$['authentication.grant.type']"])
+additionalEventData$.record$ = IF d4.value$ != "" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "settings_schema_id"
+d5.value$ = schema
+additionalEventData$.record$ = IF schema != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "json_before"
+d6.value$ = STRING(json["$['details.json_before']"])
+additionalEventData$.record$ = IF d6.value$ != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "json_after"
+d7.value$ = STRING(json["$['details.json_after']"])
+additionalEventData$.record$ = IF d7.value$ != "" THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
