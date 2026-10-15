@@ -79,3 +79,8 @@ Bridges are code that people download and run, so the maintainer reviews every b
 ## Changes to the studio
 
 Open an issue first for anything large. Keep the page free of runtime dependencies and network calls other than reading the library, add tests under `test/`, and run `npm test` before you open the pull request. Code changes always get a review.
+
+## Notes for maintainers
+
+- **CI that takes over 10 minutes.** The gate stops waiting, and its report on the pull request says it is waiting for CI. When CI finishes, the gate runs again for that commit, with every check, and merges it if CI passed or labels it "needs review" if not.
+- **A branch rule that holds pull requests.** None does today. If you add one, such as a required review, the gate turns on GitHub's auto-merge for a library pull request whose checks passed. If GitHub merges it within the gate's 2-minute wait, the gate deletes the branch and starts Pages as usual. If it merges later, for example after your review, nothing runs: GitHub starts no workflow for an event the workflow token caused, so neither the merge's push nor the pull request closing starts one, and the repo holds no other token. Delete the branch, and run Pages from the Actions tab or let its daily run publish the change.

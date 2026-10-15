@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { validateMeta, bridgeScripts, hasBridge, bridgeOf, withBridgeKey } from '../studio/core/library.js';
 import { bridgeFolders, bridgeFolder } from '../studio/app/library-client.js';
@@ -148,16 +148,19 @@ test('review rule: bridge code and other non-library files always need a review'
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
 // checks, ciRuns and pulls are the answers GitHub gives in turn to each read of the commit's check
-// runs, CI's workflow runs and the pull request; the last answer repeats.
+// runs, CI's workflow runs and the pull request; the last answer repeats. comments are the pull
+// request's comments, and the result's comments are the report bodies the gate wrote.
 const PASSED = [{ name: 'tests', status: 'completed', conclusion: 'success' }];
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}] } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}], report = { passed: true, eligible: true }, comments = [] } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
+  const written = path.join(dir, 'comments.json');
   const mock = path.join(dir, 'mock-fetch.mjs');
   const output = path.join(dir, 'github-output.txt');
   await writeFile(log, '');
+  await writeFile(written, '');
   await writeFile(output, '');
-  await writeFile(path.join(dir, 'report.json'), JSON.stringify({ passed: true, eligible: true }));
+  await writeFile(path.join(dir, 'report.json'), JSON.stringify(report));
   await writeFile(path.join(dir, 'report.md'), '### Parser library checks: passed\n');
   await writeFile(mock, `
 import { appendFileSync } from 'node:fs';
@@ -170,6 +173,8 @@ globalThis.fetch = async (url, init = {}) => {
   // Labels added are logged with their names.
   appendFileSync(${JSON.stringify(log)}, method + ' ' + url + (method === 'POST' && url.endsWith('/labels') && init.body ? ' ' + init.body : '') + '\\n');
   const u = new URL(url);
+  // The report bodies the gate writes, one JSON string a line.
+  if ((method === 'POST' || method === 'PATCH') && /\\/comments(\\/\\d+)?$/.test(u.pathname)) appendFileSync(${JSON.stringify(written)}, JSON.stringify(JSON.parse(init.body).body) + '\\n');
   let body = {};
   if (u.pathname === '/repos/o/r/pulls/7/files' && filesErrors > 0) { filesErrors--; return new Response('<html>Server Error</html>', { status: 500 }); }
   if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: 405 }); }
@@ -181,6 +186,7 @@ globalThis.fetch = async (url, init = {}) => {
   else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
   else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: next('checks') };
   else if (u.pathname === '/repos/o/r/actions/workflows/ci.yml/runs' && u.searchParams.get('head_sha') === 'abc123') body = { workflow_runs: next('ciRuns') };
+  else if (method === 'GET' && u.pathname === '/repos/o/r/issues/7/comments') body = ${JSON.stringify(comments)};
   else if (method === 'GET' && /\\/(labels|comments)$/.test(u.pathname)) body = [];
   else if (method === 'GET' && u.pathname.startsWith('/repos/o/r/git/ref/heads/')) body = { object: { sha: ${JSON.stringify(refSha)} } };
   else if (method === 'DELETE' && u.pathname.startsWith('/repos/o/r/git/refs/heads/')) return new Response(${deleteStatus} === 204 ? null : JSON.stringify({ message: 'Reference update failed' }), { status: ${deleteStatus} });
@@ -188,12 +194,15 @@ globalThis.fetch = async (url, init = {}) => {
 };
 `);
   const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')]
-    : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : ['merge', '--pr', '7', '--sha', 'abc123'];
-  const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1', GATE_POLL_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : [command, '--pr', '7', '--sha', 'abc123'];
+  const run = spawnSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1', GATE_POLL_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  // waiting answers with its exit code; any other command that fails throws, as execFileSync would.
+  if (run.status !== 0 && command !== 'waiting') throw Object.assign(new Error(`gate exited ${run.status}: ${run.stderr}`), { status: run.status });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
+  const reports = (await readFile(written, 'utf8')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
   const stepOutput = await readFile(output, 'utf8');
   await rm(dir, { recursive: true, force: true });
-  return { out: out.trim(), calls, stepOutput };
+  return { out: run.stdout.trim(), status: run.status, calls, comments: reports, stepOutput };
 }
 
 test('gate: the merge step refuses a pull request with bridge code, from either route', async () => {
@@ -377,6 +386,97 @@ test('gate: after native auto-merge merges, it deletes a same-repo head branch, 
   assert.equal(held.out, 'Auto-merge is on for this pull request.');
   assert.deepEqual(deletes(held), []);
   assert.equal(held.stepOutput, '');
+});
+
+test('gate: a run whose commit is no longer the head, or that ends after the pull request merged or closed, leaves the report alone', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  // The pull request moved on, or another run merged it, while this run waited for checks.
+  for (const later of [{ head: { sha: 'def456' } }, { state: 'closed', merged: true, head: { sha: 'def456' } }, { state: 'closed', merged: true }]) {
+    const r = await gateMerge(entry, { command: 'pr', pulls: [{}, later] });
+    assert.equal(firstMergeCall(r), -1, JSON.stringify(later));
+    assert.deepEqual(r.comments, [], JSON.stringify(later));
+  }
+  // A report that failed the checks, or one that needs a maintainer, from a run that is no longer current.
+  for (const report of [{ passed: false, eligible: false }, { passed: true, eligible: false }]) {
+    for (const now of [{ head: { sha: 'def456' } }, { state: 'closed', merged: true }, { state: 'closed' }]) {
+      assert.deepEqual((await gateMerge(entry, { command: 'pr', report, pulls: [now] })).comments, [], JSON.stringify([report, now]));
+    }
+    // Control: a run that is still current writes it.
+    assert.equal((await gateMerge(entry, { command: 'pr', report })).comments.length, 1, JSON.stringify(report));
+  }
+  // The run that merged the pull request writes its report, though the pull request is now closed.
+  for (const autoMerge of [false, true]) {
+    const own = await gateMerge(entry, { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, { state: 'closed', merged: true }] : [{}] });
+    assert.equal(own.stepOutput, 'merged=true\n', String(autoMerge));
+    assert.equal(own.comments.length, 1, String(autoMerge));
+    assert.match(own.comments[0], /Merged\.\n$/);
+  }
+});
+
+const RUNNING = [{ name: 'tests', status: 'in_progress', conclusion: null }];
+const WAITING_FOR = (sha) => `<!-- parser-studio-waiting-for-ci ${sha} -->`;
+
+test('gate: CI still running when the wait ends: the report says the gate waits for CI, with no maintainer label', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  // CI is running, or GitHub hasn't created its run yet, and no check has failed.
+  for (const [checks, ciRuns] of [[[RUNNING], [[{ status: 'in_progress', conclusion: null }]]], [[PASSED], [[]]]]) {
+    const r = await gateMerge(entry, { command: 'pr', autoMerge: false, checks, ciRuns });
+    assert.equal(firstMergeCall(r), -1);
+    assert.equal(r.stepOutput, '');
+    assert.ok(!r.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), r.calls.join('\n'));
+    assert.equal(r.comments.length, 1);
+    assert.match(r.comments[0], /CI is still running on this commit after 10 minutes, so this waits\. When CI finishes, the gate runs again and merges this pull request if CI passed, with no maintainer needed\./);
+    assert.ok(r.comments[0].trimEnd().endsWith(WAITING_FOR('abc123')), r.comments[0]);
+  }
+  // A check that has already failed, or a check other than CI's still running after CI finished,
+  // holds it for a maintainer as before, with no marker.
+  for (const [checks, ciRuns] of [
+    [[[{ name: 'tests', status: 'completed', conclusion: 'failure' }, { name: 'secrets', status: 'in_progress', conclusion: null }]], [[{ status: 'in_progress', conclusion: null }]]],
+    [[[{ name: 'other', status: 'in_progress', conclusion: null }]], [[{ status: 'completed', conclusion: 'success' }]]],
+  ]) {
+    const held = await gateMerge(entry, { command: 'pr', autoMerge: false, checks, ciRuns });
+    assert.equal(firstMergeCall(held), -1);
+    assert.ok(held.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), held.calls.join('\n'));
+    assert.match(held.comments[0], /Another check on this commit failed or is still running/);
+    assert.ok(!held.comments[0].includes('waiting-for-ci'));
+  }
+  // The issue route has no CI to wait for, so a check still running there holds it for a maintainer.
+  const issue = await gateMerge(entry, { command: 'merge', autoMerge: false, checks: [RUNNING], ciRuns: [[]] });
+  assert.match(issue.out, /^Another check on this commit failed or is still running/);
+});
+
+test('gate: waiting is true only while the gate\'s own report holds this commit for CI', async () => {
+  const report = (sha, extra = '') => `<!-- parser-studio-report -->\n### Parser library checks: passed\n\nCI is still running.\n\n${WAITING_FOR(sha)}\n${extra}`;
+  const bot = { type: 'Bot' };
+  const waiting = async (comments) => (await gateMerge([], { command: 'waiting', comments })).status;
+  assert.equal(await waiting([{ id: 1, body: report('abc123'), user: bot }]), 0);
+  // Another commit's marker, a report the gate has since replaced, a marker that isn't the report's
+  // last line, or one in someone else's comment: no.
+  assert.equal(await waiting([{ id: 1, body: report('def456'), user: bot }]), 1);
+  assert.equal(await waiting([{ id: 1, body: '<!-- parser-studio-report -->\n### Parser library checks: passed\n\nMerged.\n', user: bot }]), 1);
+  assert.equal(await waiting([{ id: 1, body: report('abc123', 'and more\n'), user: bot }]), 1);
+  assert.equal(await waiting([{ id: 1, body: report('abc123'), user: { type: 'User' } }]), 1);
+  assert.equal(await waiting([]), 1);
+});
+
+test('gate: the run CI starts merges a pull request held for CI once CI passed, and holds it if CI failed', async () => {
+  // When CI finishes, the workflow runs the same gate for the commit: it checks the file list and
+  // every check on the commit again, then merges, and the new report has no marker.
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const held = [{ id: 1, body: `<!-- parser-studio-report -->\nCI is still running.\n\n${WAITING_FOR('abc123')}\n`, user: { type: 'Bot' } }];
+  const merged = await gateMerge(entry, { command: 'pr', autoMerge: false, comments: held });
+  assert.equal(merged.stepOutput, 'merged=true\n');
+  assert.ok(merged.calls.includes('PATCH https://api.github.com/repos/o/r/issues/comments/1'), merged.calls.join('\n'));
+  assert.match(merged.comments[0], /Merged\.\n$/);
+  assert.ok(!merged.comments[0].includes('waiting-for-ci'));
+  const failed = await gateMerge(entry, { command: 'pr', autoMerge: false, comments: held, checks: [[{ name: 'tests', status: 'completed', conclusion: 'failure' }]], ciRuns: [[{ status: 'completed', conclusion: 'failure' }]] });
+  assert.equal(firstMergeCall(failed), -1);
+  assert.match(failed.comments[0], /Another check on this commit failed/);
+  assert.ok(failed.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')));
+  // Bridge code is still held, whatever started the run.
+  const bridge = await gateMerge([...entry, 'bridges/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false, comments: held });
+  assert.equal(firstMergeCall(bridge), -1);
+  assert.match(bridge.comments[0], /changes bridge code/);
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {
