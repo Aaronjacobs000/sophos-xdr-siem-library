@@ -1,0 +1,32 @@
+{
+  "vendor": "Snowflake",
+  "product": "Login history",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.snowflake.com/en/sql-reference/account-usage/login_history",
+    "https://docs.snowflake.com/en/developer-guide/sql-api/handling-responses",
+    "https://docs.snowflake.com/en/user-guide/security-mfa",
+    "https://docs.snowflake.com/en/user-guide/errors-saml",
+    "https://docs.snowflake.com/en/user-guide/malicious-ip-protection"
+  ],
+  "notes": "Snowflake login history is pull only, so this parser reads the rows the example bridge in bridges/snowflake-login-history reads from SNOWFLAKE.ACCOUNT_USAGE.LOGIN_HISTORY with the SQL API and posts to HTTP Ingest, with \"snowflake_record\" and the account first, values as the SQL API's strings and EVENT_TIMESTAMP as RFC 3339 in UTC. Give the bridge a service user whose role has the SNOWFLAKE.SECURITY_VIEWER database role and one warehouse, under a network policy, with a role-restricted programmatic access token. The view fills with up to two hours of latency, so the bridge reads up to three hours before now. Access history needs Enterprise edition and isn't read. Every login attempt goes to Auth: the user, the client IP, the reported client type, LOGON or FAILURE, and for a failure the error message as the reason and a failure category from Snowflake's documented error codes (390100 a wrong user name or password, 390120, 390126 and 390127 Duo MFA failures, 390123 locked out of Duo, 390140 an expired identity provider password). mfa_used is true when there was a second factor and false for a password login without one; other first factors leave it unset. The OAuth security integration goes to application_name. The account, both factors, the error code, the client version, the Malicious IP Protection result, risk and categories from LOGIN_DETAILS, and the INTERNAL_SNOWFLAKE_IP/0.0.0.0 client IP Snowflake gives its own logins go to event_metadata. Samples follow the LOGIN_HISTORY column table and the factor values and error codes in Snowflake's docs, with made-up values. Snowflake's tables don't give the error name for 390100, so that sample's INCORRECT_USERNAME_PASSWORD is inferred and the parser goes by the code; Snowflake's Malicious IP Protection example shows only LOGIN_DETAILS, so that sample leaves ERROR_CODE and ERROR_MESSAGE empty. Passed Run Test in a lab tenant on 2026-10-16 (83 of 83 fields matched the emulator in each of 3 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+      "file": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.auth"
+    }
+  ],
+  "bridge": "bridges/snowflake-login-history"
+}

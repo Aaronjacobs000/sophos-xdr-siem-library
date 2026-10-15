@@ -1,0 +1,277 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791994364123000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447112",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "JSMITH",
+      "logon_application_family": "SNOWFLAKE_UI",
+      "source_address": "203.0.113.40",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "INCORRECT_USERNAME_PASSWORD",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "PASSWORD"
+          },
+          {
+            "key": "error_code",
+            "value": "390100"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "9.30.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791994382456000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447180",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "JSMITH",
+      "logon_application_family": "SNOWFLAKE_UI",
+      "source_address": "203.0.113.40",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "PASSWORD"
+          },
+          {
+            "key": "second_authentication_factor",
+            "value": "TOTP"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "9.30.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791994811004000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447301",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "SVC_ETL",
+      "logon_application_family": "PYTHON_DRIVER",
+      "source_address": "198.51.100.25",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "PROGRAMMATIC_ACCESS_TOKEN"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "3.12.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791995137880000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447415",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "AKIM",
+      "logon_application_family": "JDBC_DRIVER",
+      "application_name": "BI_OAUTH",
+      "source_address": "192.0.2.77",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "OAUTH_ACCESS_TOKEN"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "3.19.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791995469210000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447522",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "JLEE",
+      "logon_application_family": "SNOWFLAKE_UI",
+      "source_address": "203.0.113.88",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "EXT_AUTHN_DENIED",
+      "failure_category": "INCORRECT_MFA",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "PASSWORD"
+          },
+          {
+            "key": "error_code",
+            "value": "390120"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "9.30.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791996055031000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447690",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "JSMITH",
+      "logon_application_family": "PYTHON_DRIVER",
+      "source_address": "198.51.100.66",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "PASSWORD"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "3.12.0"
+          },
+          {
+            "key": "malicious_ip_result",
+            "value": "BLOCKED"
+          },
+          {
+            "key": "malicious_ip_risk",
+            "value": "HIGH"
+          },
+          {
+            "key": "malicious_ip_categories",
+            "value": "ANONYMOUS_VPN,ANONYMOUS_PROXIES"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SNOWFLAKE_LOGIN_HISTORY_JSON_STANDALONE_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Snowflake",
+      "event_time_usec": 1791996258502000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "31871023447755",
+      "auth_system": "Snowflake",
+      "auth_category": "ACCOUNT_LOGON",
+      "target_user_name": "JSMITH",
+      "logon_application_family": "SNOWFLAKE_UI",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "snowflake_account",
+            "value": "acme-prod"
+          },
+          {
+            "key": "first_authentication_factor",
+            "value": "OAUTH_ACCESS_TOKEN"
+          },
+          {
+            "key": "reported_client_version",
+            "value": "9.30.1"
+          },
+          {
+            "key": "client_ip",
+            "value": "INTERNAL_SNOWFLAKE_IP/0.0.0.0"
+          }
+        ]
+      }
+    }
+  }
+]

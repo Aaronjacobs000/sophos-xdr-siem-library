@@ -1,0 +1,98 @@
+!SAMPLE={"snowflake_record":"login_history","snowflake_account":"acme-prod","EVENT_ID":"31871023447112","EVENT_TIMESTAMP":"2026-10-14T16:12:44.123Z","EVENT_TYPE":"LOGIN","USER_NAME":"JSMITH","CLIENT_IP":"203.0.113.40","REPORTED_CLIENT_TYPE":"SNOWFLAKE_UI","REPORTED_CLIENT_VERSION":"9.30.1","FIRST_AUTHENTICATION_FACTOR":"PASSWORD","SECOND_AUTHENTICATION_FACTOR":null,"IS_SUCCESS":"NO","ERROR_CODE":"390100","ERROR_MESSAGE":"INCORRECT_USERNAME_PASSWORD","RELATED_EVENT_ID":"0","CONNECTION":null,"CLIENT_PRIVATE_LINK_ID":null,"FIRST_AUTHENTICATION_FACTOR_ID":null,"SECOND_AUTHENTICATION_FACTOR_ID":null,"LOGIN_DETAILS":null,"AUTHORIZING_INTEGRATION_NAME":null}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"snowflake_record"\s*:\s*"login_history"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Snowflake login history (SNOWFLAKE.ACCOUNT_USAGE.LOGIN_HISTORY), read with the SQL API by
+# the example bridge in bridges/snowflake-login-history and posted to HTTP Ingest as JSON lines. The
+# bridge puts "snowflake_record": "login_history" and the account first, keeps every value as the
+# SQL API's string, and writes EVENT_TIMESTAMP as RFC 3339 in UTC.
+# Standalone: every login attempt, failed or successful, to Auth.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Snowflake"
+sensorEventId$ = json["$.EVENT_ID"]
+eventTimeUsec$ = DATETIME(json["$.EVENT_TIMESTAMP"], "2006-01-02T15:04:05.999999999Z07:00")
+authSystem$ = "Snowflake"
+authCategory$ = "ACCOUNT_LOGON"
+# USER_NAME is null when Snowflake couldn't tell who was signing in.
+targetUserName$ = json["$.USER_NAME"]
+# REPORTED_CLIENT_TYPE (such as SNOWFLAKE_UI, JDBC_DRIVER or PYTHON_DRIVER) is what the client says it
+# is; Snowflake doesn't check it.
+logonApplicationFamily$ = json["$.REPORTED_CLIENT_TYPE"]
+# The security integration that authorized an OAuth login.
+applicationName$ = json["$.AUTHORIZING_INTEGRATION_NAME"]
+
+# Snowflake gives INTERNAL_SNOWFLAKE_IP/0.0.0.0 for logins it makes itself, such as a Snowsight
+# worksheet's session. That isn't an address, so it goes to event_metadata instead.
+ip = json["$.CLIENT_IP"]
+internal = CONTAINS(STRING(ip), "INTERNAL_SNOWFLAKE_IP")
+sourceAddress$ = IF internal THEN NULL ELSE ip
+
+ok = json["$.IS_SUCCESS"] == "YES"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+extraFailurereason$ = IF ok THEN NULL ELSE json["$.ERROR_MESSAGE"]
+# Snowflake's documented error codes: 390100 a wrong user name or password, 390120 Duo denied,
+# 390126 Duo timed out, 390127 a wrong passcode, 390123 locked out of Duo, 390140 the identity
+# provider's password expired.
+code = STRING(json["$.ERROR_CODE"])
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT ok AND code == "390100" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND (code == "390120" OR code == "390126" OR code == "390127") THEN "INCORRECT_MFA" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND code == "390123" THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND code == "390140" THEN "EXPIRED_PASSWORD" ELSE failureCategory$
+
+# SECOND_AUTHENTICATION_FACTOR is null when no MFA was used. A password login without one is a
+# login with no MFA; other first factors (key pair, OAuth, SAML, access token) leave mfa_used unset.
+first = json["$.FIRST_AUTHENTICATION_FACTOR"]
+second = json["$.SECOND_AUTHENTICATION_FACTOR"]
+mfaUsed$ = IF second != NULL THEN TRUE ELSE NULL
+mfaUsed$ = IF second == NULL AND first == "PASSWORD" THEN FALSE ELSE mfaUsed$
+
+m1.key$ = "snowflake_account"
+m1.value$ = json["$.snowflake_account"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "first_authentication_factor"
+m2.value$ = first
+eventMetadata$.record$ = IF first THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "second_authentication_factor"
+m3.value$ = second
+eventMetadata$.record$ = IF second THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "error_code"
+m4.value$ = code
+eventMetadata$.record$ = IF json["$.ERROR_CODE"] != NULL THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "reported_client_version"
+m5.value$ = json["$.REPORTED_CLIENT_VERSION"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "client_ip"
+m6.value$ = ip
+eventMetadata$.record$ = IF internal THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "connection"
+m7.value$ = json["$.CONNECTION"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "client_private_link_id"
+m8.value$ = json["$.CLIENT_PRIVATE_LINK_ID"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+
+# LOGIN_DETAILS is JSON in a string, and its Malicious IP Protection result is JSON in a string
+# again: {"malicious_ip_protection_info": "{\"result\":\"BLOCKED\",\"riskClassification\":\"HIGH\",...}"}.
+detailsText = json["$.LOGIN_DETAILS"]
+details = IF detailsText THEN JSON(detailsText) ELSE NULL
+mipText = IF detailsText THEN details["$.malicious_ip_protection_info"] ELSE NULL
+mip = IF mipText THEN JSON(mipText) ELSE NULL
+m9.key$ = "malicious_ip_result"
+m9.value$ = IF mipText THEN mip["$.result"] ELSE NULL
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "malicious_ip_risk"
+m10.value$ = IF mipText THEN mip["$.riskClassification"] ELSE NULL
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "malicious_ip_categories"
+m11.value$ = IF mipText THEN REPLACE_REGEX(STRING(mip["$.categories"]), `[\[\]"]`, "") ELSE NULL
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
