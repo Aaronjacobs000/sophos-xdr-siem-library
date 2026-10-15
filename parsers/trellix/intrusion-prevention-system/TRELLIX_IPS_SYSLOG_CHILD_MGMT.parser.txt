@@ -1,0 +1,23 @@
+!SAMPLE=<165>Oct 14 23:20:00 TRELLIX_IPS=audit|AUDIT_TIME=Oct 14, 2026 23:20:00|AUDIT_USER=admin|AUDIT_DOMAIN=Example Org|AUDIT_CATEGORY=Policy|AUDIT_ACTION=IPS policy updated|AUDIT_RESULT=Successful|AUDIT_MESSAGE=Policy Default Prevention was updated and pushed to IPS-DMZ-01 [Oct 14, 2026 23:20:00]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trellix Intrusion Prevention System syslog from the Manager.
+# Child of TRELLIX_IPS_SYSLOG_PARENT: user activity (the Manager's audit log), sent with the
+# README's audit template, to ManagementEvent: the user, the action, its category, the result
+# and the message.
+# kv, sensorType$ and eventTimeUsec$ come from the parent.
+
+user = STRING(kv["AUDIT_USER"])
+username$ = IF user != "" THEN user ELSE NULL
+action = STRING(kv["AUDIT_ACTION"])
+operationName$ = IF action != "" THEN action ELSE "Trellix IPS user activity"
+category = STRING(kv["AUDIT_CATEGORY"])
+namespace$ = IF category != "" THEN category ELSE NULL
+result = STRING(kv["AUDIT_RESULT"])
+result$ = IF result != "" THEN result ELSE NULL
+detail = STRING(kv["AUDIT_MESSAGE"])
+operation$ = IF detail != "" THEN detail ELSE NULL

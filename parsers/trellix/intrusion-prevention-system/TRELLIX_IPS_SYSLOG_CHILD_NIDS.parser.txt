@@ -1,0 +1,109 @@
+!SAMPLE=<162>Oct 14 23:05:41 IPS-DMZ-01 detected Inbound attack HTTP: SQL Injection Attempt (severity = Medium). 203.0.113.50:51515 -> 192.0.2.10:80 (result = Attack Blocked) [Oct 14, 2026 23:05:41]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trellix Intrusion Prevention System syslog from the Manager.
+# Child of TRELLIX_IPS_SYSLOG_PARENT: IPS alerts to NIDS, from the README's alert template or the
+# Manager's default alert message. The attack name is the message, the category the
+# classification, the attack ID the signature ID, and the result the action.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, d, tpl, sensorType$ and eventTimeUsec$ come from the parent.
+
+isTemplate = tpl["kind"] == "alert"
+sensor = IF isTemplate THEN STRING(kv["SENSOR_NAME"]) ELSE d["sensor"]
+hostId$ = IF sensor != "" THEN sensor ELSE NULL
+src = IF isTemplate THEN STRING(kv["SOURCE_IP"]) ELSE d["src"]
+dst = IF isTemplate THEN STRING(kv["DESTINATION_IP"]) ELSE d["dst"]
+sourceAddress$ = IF src != "" AND src != "N/A" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" AND dst != "N/A" THEN dst ELSE NULL
+sptText = IF isTemplate THEN STRING(kv["SOURCE_PORT"]) ELSE d["sport"]
+dptText = IF isTemplate THEN STRING(kv["DESTINATION_PORT"]) ELSE d["dport"]
+spt = sptText|^(?P<n>\d{1,5})$
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+
+name = IF isTemplate THEN STRING(kv["ATTACK_NAME"]) ELSE d["name"]
+message$ = IF name != "" THEN name ELSE NULL
+category = STRING(kv["CATEGORY"])
+classification$ = IF category != "" THEN category ELSE NULL
+attackIdText = STRING(kv["ATTACK_ID"])
+attackId = attackIdText|^(?P<n>\d{1,10})$
+signatureId$ = IF attackId["n"] != "" THEN INT(attackId["n"], 10) ELSE NULL
+result = IF isTemplate THEN STRING(kv["RESULT_STATUS"]) ELSE d["result"]
+action$ = IF result != "" THEN result ELSE NULL
+resultLower = LOWERCASE(result)
+blockWord = resultLower|block
+blocked$ = IF blockWord[0] != "" THEN 1 ELSE 0
+dirRaw = IF isTemplate THEN STRING(kv["DIRECTION"]) ELSE d["dir"]
+dirText = LOWERCASE(dirRaw)
+direction$ = NULL
+direction$ = IF dirText == "inbound" THEN "INBOUND" ELSE direction$
+direction$ = IF dirText == "outbound" THEN "OUTBOUND" ELSE direction$
+proto = UPPERCASE(STRING(kv["NETWORK_PROTOCOL"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+app = STRING(kv["APPLICATION_PROTOCOL"])
+applicationName$ = IF app != "" AND app != "N/A" THEN app ELSE NULL
+vlanText = STRING(kv["VLAN_ID"])
+vlanNum = vlanText|^(?P<n>\d{1,4})$
+vlan$ = IF vlanNum["n"] != "" THEN INT(vlanNum["n"], 10) ELSE NULL
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+# The template sends the numeric severity (0 informational, 1 to 3 low, 4 to 6 medium, 7 to 9
+# high); the default message sends the name.
+sev = IF isTemplate THEN STRING(kv["ATTACK_SEVERITY"]) ELSE d["sev"]
+n1.key$ = "severity"
+n1.value$ = sev
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1]
+n2.key$ = "alert_id"
+n2.value$ = STRING(kv["ALERT_ID"])
+eventMetadata$.record$ = IF n2.value$ != "" THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "confidence"
+n3.value$ = STRING(kv["ATTACK_CONFIDENCE"])
+eventMetadata$.record$ = IF n3.value$ != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "sub_category"
+n4.value$ = STRING(kv["SUB_CATEGORY"])
+eventMetadata$.record$ = IF n4.value$ != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "detection_mechanism"
+n5.value$ = STRING(kv["DETECTION_MECHANISM"])
+eventMetadata$.record$ = IF n5.value$ != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "attack_count"
+n6.value$ = STRING(kv["ATTACK_COUNT"])
+eventMetadata$.record$ = IF n6.value$ != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "interface"
+n7.value$ = STRING(kv["INTERFACE"])
+eventMetadata$.record$ = IF n7.value$ != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "admin_domain"
+n8.value$ = STRING(kv["ADMIN_DOMAIN"])
+eventMetadata$.record$ = IF n8.value$ != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "attack_signature"
+n9.value$ = STRING(kv["ATTACK_SIGNATURE"])
+eventMetadata$.record$ = IF n9.value$ != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
+n10.key$ = "mitre_technique_id"
+n10.value$ = STRING(kv["TTPID"])
+eventMetadata$.record$ = IF n10.value$ != "" THEN eventMetadata$.record$ + [n10] ELSE eventMetadata$.record$
+n11.key$ = "mitre_tactic"
+n11.value$ = STRING(kv["TACTIC"])
+eventMetadata$.record$ = IF n11.value$ != "" THEN eventMetadata$.record$ + [n11] ELSE eventMetadata$.record$
+n12.key$ = "mitre_technique"
+n12.value$ = STRING(kv["TECHNIQUE"])
+eventMetadata$.record$ = IF n12.value$ != "" THEN eventMetadata$.record$ + [n12] ELSE eventMetadata$.record$
+n13.key$ = "malware_file"
+n13.value$ = STRING(kv["MALWARE_FILE_NAME"])
+eventMetadata$.record$ = IF n13.value$ != "" THEN eventMetadata$.record$ + [n13] ELSE eventMetadata$.record$
+n14.key$ = "malware_sha256"
+n14.value$ = STRING(kv["MALWARE_FILE_SHA256_HASH"])
+eventMetadata$.record$ = IF n14.value$ != "" THEN eventMetadata$.record$ + [n14] ELSE eventMetadata$.record$
+n15.key$ = "cc_domain"
+n15.value$ = STRING(kv["CC_DOMAIN"])
+eventMetadata$.record$ = IF n15.value$ != "" THEN eventMetadata$.record$ + [n15] ELSE eventMetadata$.record$
+n16.key$ = "attack_time"
+n16.value$ = STRING(kv["ATTACK_TIME"])
+eventMetadata$.record$ = IF n16.value$ != "" THEN eventMetadata$.record$ + [n16] ELSE eventMetadata$.record$

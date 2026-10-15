@@ -1,0 +1,409 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792018863000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-DMZ-01",
+      "source_address": "192.0.2.30",
+      "destination_address": "198.51.100.161",
+      "source_port": 1024,
+      "destination_port": 161,
+      "message": "SNMP: Microsoft V2 Bulk Request ValueList Overflow",
+      "action": "Inconclusive",
+      "blocked": 0,
+      "direction": "OUTBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "High"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792019141000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-DMZ-01",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.10",
+      "source_port": 51515,
+      "destination_port": 80,
+      "message": "HTTP: SQL Injection Attempt",
+      "action": "Attack Blocked",
+      "blocked": 1,
+      "direction": "INBOUND",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "Medium"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792019412000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-DMZ-01",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.10",
+      "source_port": 51515,
+      "destination_port": 8080,
+      "message": "HTTP: Apache Struts Remote Code Execution (CVE-2017-5638)",
+      "classification": "Exploit",
+      "signature_id": 4196352,
+      "action": "Attack Blocked",
+      "blocked": 1,
+      "direction": "INBOUND",
+      "protocol": 6,
+      "application_name": "HTTP",
+      "vlan": 20,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "alert_id",
+            "value": "6241235817432617891"
+          },
+          {
+            "key": "confidence",
+            "value": "6"
+          },
+          {
+            "key": "sub_category",
+            "value": "code-execution"
+          },
+          {
+            "key": "detection_mechanism",
+            "value": "signature"
+          },
+          {
+            "key": "attack_count",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "2A-2B"
+          },
+          {
+            "key": "admin_domain",
+            "value": "Example Org"
+          },
+          {
+            "key": "attack_signature",
+            "value": "6124"
+          },
+          {
+            "key": "mitre_technique_id",
+            "value": "T1190"
+          },
+          {
+            "key": "mitre_tactic",
+            "value": "Initial Access"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "Exploit Public-Facing Application"
+          },
+          {
+            "key": "attack_time",
+            "value": "Oct 14, 2026 23:10:11"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792019560000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-CORE-02",
+      "source_address": "192.0.2.47",
+      "destination_address": "203.0.113.80",
+      "source_port": 50432,
+      "destination_port": 443,
+      "message": "MALWARE: Callback to known C&C domain",
+      "classification": "Malware",
+      "signature_id": 4718593,
+      "action": "Inconclusive",
+      "blocked": 0,
+      "direction": "OUTBOUND",
+      "protocol": 6,
+      "application_name": "SSL",
+      "vlan": 10,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "7"
+          },
+          {
+            "key": "alert_id",
+            "value": "6241235817432617944"
+          },
+          {
+            "key": "confidence",
+            "value": "7"
+          },
+          {
+            "key": "sub_category",
+            "value": "bot"
+          },
+          {
+            "key": "detection_mechanism",
+            "value": "callback-detector"
+          },
+          {
+            "key": "attack_count",
+            "value": "3"
+          },
+          {
+            "key": "interface",
+            "value": "3A-3B"
+          },
+          {
+            "key": "admin_domain",
+            "value": "Example Org"
+          },
+          {
+            "key": "mitre_technique_id",
+            "value": "T1071.001"
+          },
+          {
+            "key": "mitre_tactic",
+            "value": "Command and Control"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "Application Layer Protocol"
+          },
+          {
+            "key": "cc_domain",
+            "value": "c2.example.net"
+          },
+          {
+            "key": "attack_time",
+            "value": "Oct 14, 2026 23:12:39"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792019705000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-DMZ-01",
+      "source_address": "198.51.100.99",
+      "destination_address": "192.0.2.0",
+      "message": "TCP: SYN Port Scan",
+      "classification": "Reconnaissance",
+      "signature_id": 4209920,
+      "action": "Inconclusive",
+      "blocked": 0,
+      "direction": "INBOUND",
+      "protocol": 6,
+      "vlan": 20,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "3"
+          },
+          {
+            "key": "alert_id",
+            "value": "6241235817432618002"
+          },
+          {
+            "key": "confidence",
+            "value": "5"
+          },
+          {
+            "key": "sub_category",
+            "value": "port-scan"
+          },
+          {
+            "key": "detection_mechanism",
+            "value": "threshold"
+          },
+          {
+            "key": "attack_count",
+            "value": "120"
+          },
+          {
+            "key": "interface",
+            "value": "2A-2B"
+          },
+          {
+            "key": "admin_domain",
+            "value": "Example Org"
+          },
+          {
+            "key": "mitre_technique_id",
+            "value": "T1046"
+          },
+          {
+            "key": "mitre_tactic",
+            "value": "Discovery"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "Network Service Discovery"
+          },
+          {
+            "key": "attack_time",
+            "value": "Oct 14, 2026 23:15:04"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792019851000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "IPS-CORE-02",
+      "source_address": "198.51.100.20",
+      "destination_address": "192.0.2.55",
+      "source_port": 80,
+      "destination_port": 49822,
+      "message": "MALWARE: Malicious file transfer detected",
+      "classification": "Malware",
+      "signature_id": 4950528,
+      "action": "Attack Blocked",
+      "blocked": 1,
+      "direction": "INBOUND",
+      "protocol": 6,
+      "application_name": "HTTP",
+      "vlan": 10,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "alert_id",
+            "value": "6241235817432618050"
+          },
+          {
+            "key": "confidence",
+            "value": "7"
+          },
+          {
+            "key": "sub_category",
+            "value": "virus"
+          },
+          {
+            "key": "detection_mechanism",
+            "value": "file-reputation"
+          },
+          {
+            "key": "attack_count",
+            "value": "1"
+          },
+          {
+            "key": "interface",
+            "value": "3A-3B"
+          },
+          {
+            "key": "admin_domain",
+            "value": "Example Org"
+          },
+          {
+            "key": "mitre_technique_id",
+            "value": "T1105"
+          },
+          {
+            "key": "mitre_tactic",
+            "value": "Command and Control"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "Ingress Tool Transfer"
+          },
+          {
+            "key": "malware_file",
+            "value": "http://files.example.org/update.exe"
+          },
+          {
+            "key": "malware_sha256",
+            "value": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"
+          },
+          {
+            "key": "attack_time",
+            "value": "Oct 14, 2026 23:17:30"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792020000000000,
+      "event_time_fidelity": "MICRO",
+      "username": "admin",
+      "operation_name": "IPS policy updated",
+      "namespace": "Policy",
+      "result": "Successful",
+      "operation": "Policy Default Prevention was updated and pushed to IPS-DMZ-01"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792020134000000,
+      "event_time_fidelity": "MICRO",
+      "username": "jdoe",
+      "operation_name": "User login",
+      "namespace": "User",
+      "result": "Failed",
+      "operation": "Login failed for user jdoe from 192.0.2.20"
+    }
+  }
+]

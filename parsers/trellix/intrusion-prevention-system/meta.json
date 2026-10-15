@@ -1,0 +1,48 @@
+{
+  "vendor": "Trellix",
+  "product": "Intrusion Prevention System",
+  "versions": [
+    "10.1",
+    "11.1"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://docs.trellix.com/network-and-platform/docs/add-a-syslog-notification-profile-to-forward-alerts-7",
+    "https://docs.trellix.com/network-and-platform/docs/forward-audit-information-to-syslog-server-3",
+    "https://docs.trellix.com/network-and-platform/docs/templates-for-syslog-email-and-pager-2",
+    "https://docs.trellix.com/network-and-platform/docs/add-a-syslog-server-profile",
+    "https://docs.trellix.com/network-and-platform/docs/syslog-notifications"
+  ],
+  "notes": "For the Trellix Intrusion Prevention System Manager (formerly McAfee Network Security Platform) sending syslog to the data collector. The Manager builds each message from $IV_ variables, and Trellix recommends a custom template, so README.md gives one for IPS alerts and one for user activity, each KEY=value pairs joined by | and starting TRELLIX_IPS=alert| or TRELLIX_IPS=audit|. The parser also reads the Manager's default alert message, with fewer fields. Alerts go to NIDS: the attack name as the message, the category as the classification, the attack ID as signature_id, the result as the action with blocked set when it says Blocked, direction, addresses, ports, protocol, application protocol and VLAN. Alert ID, severity, confidence, sub-category, detection mechanism, count, interface, domain, MITRE tactic and technique, malware file and hash, and C&C domain go to event_metadata. User activity goes to ManagementEvent with the user, action, category, result and message. From 11.1 Update 5 the Manager adds a [Mmm dd, yyyy hh:mm:ss] time to every message; the parser removes it and uses it as the event time, or the syslog time before that release. Both are read as UTC. Faults, firewall access events and quarantine events aren't covered. Samples are made up from Trellix's variable tables and default message templates. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (106 of 106 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (8 of 8 lines, 106 of 106 fields). No built-in parser claimed these lines in 12 Run Tests.",
+  "parsers": [
+    {
+      "name": "TRELLIX_IPS_SYSLOG_PARENT",
+      "file": "TRELLIX_IPS_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TRELLIX_IPS_SYSLOG_CHILD_NIDS",
+      "file": "TRELLIX_IPS_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "TRELLIX_IPS_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "TRELLIX_IPS_SYSLOG_CHILD_MGMT",
+      "file": "TRELLIX_IPS_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "TRELLIX_IPS_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
