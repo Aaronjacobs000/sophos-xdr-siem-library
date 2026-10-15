@@ -1,0 +1,41 @@
+{
+  "vendor": "Microsoft",
+  "product": "Azure SQL auditing",
+  "versions": [],
+  "format": "json",
+  "ship_method": "azure",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/azure/azure-sql/database/audit-log-format",
+    "https://learn.microsoft.com/en-us/azure/azure-sql/database/auditing-setup",
+    "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/auditing-configure",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/system-functions/sys-fn-get-audit-file-transact-sql",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/mssqlserver-18456-database-engine-error",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/MicrosoftAzure/EventHubs/Setup/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For Azure SQL Database, SQL Managed Instance and Synapse SQL auditing sent to an event hub: in the portal, turn on auditing with Event Hub as the destination (Managed Instance needs a diagnostic setting with SQLSecurityAuditEvents and a server audit TO EXTERNAL_MONITOR), and read the hub with a Sophos NG-SIEM Azure Event Hubs integration. Logins and logouts (DBAS and DBAF from Azure SQL Database's default policy, LGIS, LGIF and LGO from Managed Instance, and DBL) go to Auth, with the login, client address, workstation, database and application, and for a failed SQL login the 18456 error state mapped to a failure category. Failed Microsoft Entra logins never reach the audit log. Every other action, such as BATCH COMPLETED and RPC COMPLETED from the default BATCH_COMPLETED_GROUP, goes to CloudAudit: the action name as event name, the login as user, the subscription as recipient account, the database or instance as a resource, and the statement as a request parameter. Statements over 4,000 characters are cut or split by Azure. The event time is properties.event_time, in UTC. Both parsers are children of the global parser Azure_Monitor_Master, which claims these records but keeps them in the generic schema. Save each in the console with Set Global Parent in Parser Script turned on: the parser API refuses code with !PARENT. Each parser passed Run Test in a lab tenant on 2026-10-15, taking all of its lines in each of 15 Run Tests (84 of 84 fields matched the emulator in each of 3 runs). Samples follow the property names of real Event Hubs records (succeeded and is_column_permission are strings, action_id is padded to four characters) with made-up values; Microsoft's format page lists the Log Analytics names, which add type suffixes such as action_id_s.",
+  "parsers": [
+    {
+      "name": "AZURE_SQL_JSON_CHILD_AUTH",
+      "file": "AZURE_SQL_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "Azure_Monitor_Master",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "AZURE_SQL_JSON_CHILD_CLOUDAUDIT",
+      "file": "AZURE_SQL_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "Azure_Monitor_Master",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}

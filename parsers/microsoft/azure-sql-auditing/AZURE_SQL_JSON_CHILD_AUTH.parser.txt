@@ -1,0 +1,84 @@
+!SAMPLE={"originalEventTimestamp":"2026-10-15T00:46:12.0021000Z","time":"2026-10-15T00:46:12.0021000Z","resourceId":"/SUBSCRIPTIONS/3F2A1B4C-5D6E-4F70-8A9B-0C1D2E3F4A5B/RESOURCEGROUPS/RG-DATA/PROVIDERS/MICROSOFT.SQL/SERVERS/SQL-EXAMPLE/DATABASES/SALESDB","category":"SQLSecurityAuditEvents","operationName":"AuditEvent","properties":{"audit_schema_version":1,"event_time":"2026-10-15T00:46:12.002Z","sequence_number":1,"action_id":"DBAF","action_name":"DATABASE AUTHENTICATION FAILED","succeeded":"false","is_column_permission":"false","session_id":0,"server_principal_id":0,"database_principal_id":0,"target_server_principal_id":0,"target_database_principal_id":0,"object_id":0,"user_defined_event_id":0,"transaction_id":0,"class_type":"DB","class_type_description":"DATABASE","securable_class_type":"DATABASE","duration_milliseconds":0,"response_rows":0,"affected_rows":0,"client_tls_version":771,"database_transaction_id":0,"ledger_start_sequence_number":0,"is_local_secondary_replica":"false","client_ip":"203.0.113.50","permission_bitmask":"00000000000000000000000000000000","sequence_group_id":"8E6B1C2D-3A4F-4B5C-9D8E-7F6A5B4C3D2E","session_server_principal_name":"","server_principal_name":"sqladmin","server_principal_sid":"","database_principal_name":"","target_server_principal_name":"","target_server_principal_sid":"","target_database_principal_name":"","server_instance_name":"sql-example","database_name":"salesdb","schema_name":"","object_name":"salesdb","statement":"","additional_information":"<login_information><error_code>18456</error_code><error_state>8</error_state></login_information>","user_defined_information":"","application_name":"sqlcmd","connection_id":"5C4B3A29-1807-4F6E-8D5C-4B3A29180706","data_sensitivity_information":"","host_name":"scanner01","session_context":"","client_tls_version_name":"1.2","external_policy_permissions_checked":"","obo_middle_tier_app_id":"","is_server_level_audit":"true","event_id":"2B3C4D5E-6F70-4182-93A4-B5C6D7E8F901"},"location":"australiaeast","LogicalServerName":"sql-example","SubscriptionId":"3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b","ResourceGroup":"rg-data"}
+!PARENT=Azure_Monitor_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"category"\s*:\s*"SQLSecurityAuditEvents".*"action_id"\s*:\s*"(?:DBAS|DBAF|LGIS|LGIF|LGO|DBL)\s*"|"action_id"\s*:\s*"(?:DBAS|DBAF|LGIS|LGIF|LGO|DBL)\s*".*"category"\s*:\s*"SQLSecurityAuditEvents")
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Azure SQL Database, SQL Managed Instance and Synapse SQL auditing (category
+# SQLSecurityAuditEvents), streamed by a diagnostic setting to an event hub that a Sophos NG-SIEM
+# Azure Event Hubs integration reads. Each record of the hub's {"records": [...]} batch reaches
+# the parsers as its own message.
+# Child of the global parser Azure_Monitor_Master, which claims Azure resource log records but
+# keeps these in the generic schema. In Sophos Fusion, turn on Set Global Parent in Parser Script.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+p = "$.properties."
+sensorType$ = "Azure SQL"
+# event_time is UTC; time is when Azure logged the record.
+et = json[p + "event_time"]
+eventTimeUsec$ = IF et != NULL AND et != "" THEN DATETIME(et, "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+# action_id is padded to four characters with spaces.
+aidRaw = STRING(json[p + "action_id"])
+aidm = aidRaw|^\s*(?P<v>\S+)
+aid = aidm["v"]
+ok = STRING(json[p + "succeeded"])
+principal = json[p + "server_principal_name"]
+ip = json[p + "client_ip"]
+db = json[p + "database_name"]
+server = json["$.LogicalServerName"]
+app = json[p + "application_name"]
+client = json[p + "host_name"]
+rid = json["$.resourceId"]
+# resourceId is /SUBSCRIPTIONS/<id>/RESOURCEGROUPS/<group>/PROVIDERS/<provider>/<type>/<name>, with
+# /DATABASES/<name> after a SQL Database server.
+ridParts = rid|(?i)^/SUBSCRIPTIONS/(?P<sub>[^/]+)/RESOURCEGROUPS/(?P<rg>[^/]+)/PROVIDERS/(?P<prov>[^/]+)/(?P<kind>[^/]+)/[^/]+(?:/(?P<kind2>[^/]+)/[^/]+)?
+
+# Logins and logouts go to Auth: DBAS and DBAF (Azure SQL Database's default policy), LGIS, LGIF and
+# LGO (server logins on Managed Instance), and DBL. Every other action goes to the CloudAudit parser.
+login = aid == "DBAS" OR aid == "DBAF" OR aid == "LGIS" OR aid == "LGIF"
+action$ = IF login THEN (IF ok == "true" THEN "LOGON" ELSE "FAILURE") ELSE "LOGOFF"
+authCategory$ = IF login THEN "ACCOUNT_LOGON" ELSE "ACCOUNT_LOGOFF"
+actionResult$ = IF ok == "true" THEN "SUCCESS" ELSE "FAILED"
+
+targetUserName$ = principal
+sourceAddress$ = ip
+targetHostName$ = server
+serviceName$ = db
+applicationName$ = app
+# host_name is the client's workstation name.
+extraWorkstationname$ = client
+sid = STRING(json[p + "session_id"])
+sessionId$ = IF sid != "" AND sid != "0" THEN sid ELSE NULL
+authSystem$ = "Azure SQL"
+
+# A failed SQL login carries the error 18456 state in additional_information. Microsoft's error
+# 18456 page lists the states: 2 and 5 an unknown login, 7 a disabled login, 8 and 9 a wrong
+# password, 18 a password that must be changed. Failed Microsoft Entra logins never reach the audit.
+info = STRING(json[p + "additional_information"])
+st = info|<(?:error_state|state)>(?P<v>\d+)</
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] != "" THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF actionResult$ == "FAILED" AND (st["v"] == "2" OR st["v"] == "5") THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] == "7" THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND (st["v"] == "8" OR st["v"] == "9") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] == "18" THEN "OVERDUE_PASSWORD_CHANGE" ELSE failureCategory$
+reason = info|<failure_reason>(?P<v>[^<]*)</
+extraFailurereason$ = reason["v"]
+
+r1.key$ = "action_id"
+r1.value$ = aid
+r2.key$ = "subscription_id"
+r2.value$ = ridParts["sub"]
+r3.key$ = "resource_id"
+r3.value$ = rid
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2, r3]
+r4.key$ = "error_state"
+r4.value$ = st["v"]
+eventMetadata$.record$ = IF st["v"] != "" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "event_id"
+r5.value$ = json[p + "event_id"]
+eventMetadata$.record$ = IF r5.value$ != NULL AND r5.value$ != "" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
