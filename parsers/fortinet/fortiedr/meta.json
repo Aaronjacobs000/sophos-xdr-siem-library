@@ -1,0 +1,49 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiEDR",
+  "versions": [
+    "7.2"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/syslog-message-reference/492798",
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/syslog-message-reference/999316/syslog-information",
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/syslog-message-reference/707512/security-event",
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/syslog-message-reference/541721/system-event",
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/syslog-message-reference/439419/audit-trail",
+    "https://docs.fortinet.com/document/fortiedr/7.2.3/administration-guide/109591/syslog",
+    "https://docs.fortinet.com/document/fortisiem/7.1.6/external-systems-configuration-guide/990413"
+  ],
+  "notes": "For FortiEDR (FortiEndpoint) syslog from the Central Manager in the default Semicolon format (Administration > Export Settings > Syslog). Security events go out only for devices whose Collector Group has a Playbook with Send Syslog Notification ticked, which the default Playbook doesn't. A cloud-hosted Central Manager sends from Fortinet's cloud, so the data collector must be reachable from there; prefer TCP with TLS. Security events go to the third-party alert schema: the Event ID as alert_id, the rules list as the title, the classification as the category, the legacy Severity as severity, Blocked as the action, the device, user, IP and MAC, the destination address or URL, and first and last seen. The process, hash, threat, MITRE techniques, target, command line and script go to additional_data. FortiEDR sends one message per raw data item, so the items of one security event share alert_id. Audit trail records go to ManagementEvent with the user, sub-system and description. System events stay generic. Fields are read by name, so any selection or order works. FortiEDR's own times are read as UTC in the 18-Sep-2019, 02:42:18 layout of Fortinet's sample or the DD-MM-YYYY layout of the reference. The CEF, LEEF and FAZ formats aren't covered; the built-in Fortinet CEF parser claims FortiEDR's CEF lines. In Run Test, SPLIT_NAME_VALUES kept the space after each colon, where the emulator drops it, so the parser trims every value. Samples are made up from the field tables in the FortiEDR Syslog Message Reference 7.2.3 and the sample in Fortinet's FortiSIEM guide. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (74 of 74 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (5 of 5 lines, 71 of 71 fields, and the generic line matched). No built-in parser claimed these lines in 12 Run Tests.",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTIEDR_KV_PARENT",
+      "file": "FORTINET_FORTIEDR_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTIEDR_KV_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FORTINET_FORTIEDR_KV_CHILD_MGMT",
+      "file": "FORTINET_FORTIEDR_KV_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTIEDR_KV_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

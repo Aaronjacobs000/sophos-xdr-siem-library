@@ -1,0 +1,134 @@
+!SAMPLE=<133>1 2026-10-14T23:05:18.000Z 198.51.100.20 enSilo - - - Organization: Example Org;Organization ID: 156646;Event ID: 458478;Raw Data ID: 1270886879;Device Name: WS-0147;Device State: Running;Operating System: Windows 11 Pro;Process Name: invoice.exe;Process Path: \Device\HarddiskVolume3\Users\jdoe\Downloads\invoice.exe;Process Type: 64bit;Severity: Critical;Classification: Malicious;Destination: File Creation;First Seen: 14-Oct-2026, 23:05:12;Last Seen: 14-Oct-2026, 23:05:17;Action: Blocked;Count: 3;Certificate: no;Rules List: File Encryptor - Suspicious file modification;Users: EXAMPLE\jdoe;MAC Address: 00-00-5E-00-53-47;Script: N/A;Script Path: N/A;Autonomous System: N/A;Country: N/A;Process Hash: 3395856CE81F2B7382DEE72602F798B642F14140;Source IP: 192.0.2.47;Threat Name: N/A;Threat Family: N/A;Threat Type: N/A;MITRE Techniques: T1486;Target: C:\Users\jdoe\Documents\budget.xlsx;Command line: "C:\Users\jdoe\Downloads\invoice.exe";Remote Connection: N/A;Deployment: edr-manager
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="security"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fortinet FortiEDR syslog, Semicolon format.
+# Child of FORTINET_FORTIEDR_KV_PARENT: security events to the third-party alert schema. FortiEDR
+# sends one message per raw data item; items of the same security event share the Event ID,
+# which becomes alert_id. The rules that fired are the title, the classification (Malicious,
+# Suspicious, PUP, Inconclusive, Likely Safe, Safe) the alert category, and Blocked the action.
+# kv, monthName, monthNumber, sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Fortinet"
+provider$ = "FortiEDR"
+alertId$ = TRIM(STRING(kv["Event ID"]))
+device = TRIM(STRING(kv["Device Name"]))
+hostId$ = IF device != "" THEN device ELSE hostId$
+targetHostName$ = IF device != "" THEN device ELSE NULL
+
+# FortiEDR writes N/A for a field that has no value.
+rules = TRIM(STRING(kv["Rules List"]))
+rules = IF rules == "N/A" THEN "" ELSE rules
+classification = TRIM(STRING(kv["Classification"]))
+process = TRIM(STRING(kv["Process Name"]))
+destination = TRIM(STRING(kv["Destination"]))
+title$ = IF rules != "" THEN rules ELSE "FortiEDR security event"
+alertCategory$ = IF classification != "" THEN classification ELSE NULL
+onDevice = IF device != "" THEN " on " + device ELSE ""
+summary$ = classification + " event" + onDevice + ": " + process + ", " + destination
+
+# Severity is a legacy field: Critical, High, Medium or Low.
+sevText = TRIM(STRING(kv["Severity"]))
+vendorSeverity$ = IF sevText != "" THEN sevText ELSE NULL
+sev = UPPERCASE(sevText)
+severity$ = NULL
+severity$ = IF sev == "LOW" THEN "LOW" ELSE severity$
+severity$ = IF sev == "MEDIUM" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "HIGH" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "CRITICAL" THEN "CRITICAL" ELSE severity$
+# Action is logged or blocked.
+act = LOWERCASE(TRIM(STRING(kv["Action"])))
+action$ = IF act == "blocked" THEN "BLOCKED" ELSE NULL
+
+users = TRIM(STRING(kv["Users"]))
+sourceUserName$ = IF users != "" AND users != "N/A" THEN users ELSE NULL
+ip = TRIM(STRING(kv["Source IP"]))
+sourceAddress$ = IF ip != "" AND ip != "N/A" THEN ip ELSE NULL
+mac = TRIM(STRING(kv["MAC Address"]))
+sourceMac$ = IF mac != "" AND mac != "N/A" THEN LOWERCASE(REPLACE(mac, "-", ":")) ELSE NULL
+# Destination is an address, a URL or an operation such as File Creation.
+destIp = destination|^(?P<ip>\d{1,3}(?:\.\d{1,3}){3})(?::(?P<port>\d{1,5}))?$
+destinationAddress$ = IF destIp["ip"] != "" THEN destIp["ip"] ELSE NULL
+destinationPort$ = destIp["port"]
+destUrl = destination|^[A-Za-z][A-Za-z0-9+.-]*://
+destinationUrl$ = IF destUrl[0] != "" THEN destination ELSE NULL
+
+first = TRIM(STRING(kv["First Seen"]))
+last = TRIM(STRING(kv["Last Seen"]))
+firstNamed = first|^\d{1,2}-[A-Za-z]{3}-\d{4}
+lastNamed = last|^\d{1,2}-[A-Za-z]{3}-\d{4}
+firstEventTimeUsec$ = IF first != "" THEN DATETIME(first, IF firstNamed[0] != "" THEN monthName ELSE monthNumber) ELSE NULL
+lastEventTimeUsec$ = IF last != "" THEN DATETIME(last, IF lastNamed[0] != "" THEN monthName ELSE monthNumber) ELSE NULL
+
+e1.key$ = "classification"
+e1.value$ = classification
+e2.key$ = "raw_data_id"
+e2.value$ = TRIM(STRING(kv["Raw Data ID"]))
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [e1, e2]
+e3.key$ = "organization"
+e3.value$ = TRIM(STRING(kv["Organization"]))
+additionalData$.record$ = IF e3.value$ != "" THEN additionalData$.record$ + [e3] ELSE additionalData$.record$
+e4.key$ = "process_name"
+e4.value$ = process
+additionalData$.record$ = IF process != "" THEN additionalData$.record$ + [e4] ELSE additionalData$.record$
+e5.key$ = "process_path"
+e5.value$ = TRIM(STRING(kv["Process Path"]))
+additionalData$.record$ = IF e5.value$ != "" THEN additionalData$.record$ + [e5] ELSE additionalData$.record$
+e6.key$ = "process_hash"
+e6.value$ = TRIM(STRING(kv["Process Hash"]))
+additionalData$.record$ = IF e6.value$ != "" AND e6.value$ != "N/A" THEN additionalData$.record$ + [e6] ELSE additionalData$.record$
+e7.key$ = "destination"
+e7.value$ = destination
+additionalData$.record$ = IF destination != "" THEN additionalData$.record$ + [e7] ELSE additionalData$.record$
+e8.key$ = "action"
+e8.value$ = TRIM(STRING(kv["Action"]))
+additionalData$.record$ = IF e8.value$ != "" THEN additionalData$.record$ + [e8] ELSE additionalData$.record$
+e9.key$ = "count"
+e9.value$ = TRIM(STRING(kv["Count"]))
+additionalData$.record$ = IF e9.value$ != "" THEN additionalData$.record$ + [e9] ELSE additionalData$.record$
+e10.key$ = "certificate"
+e10.value$ = TRIM(STRING(kv["Certificate"]))
+additionalData$.record$ = IF e10.value$ != "" THEN additionalData$.record$ + [e10] ELSE additionalData$.record$
+e11.key$ = "operating_system"
+e11.value$ = TRIM(STRING(kv["Operating System"]))
+additionalData$.record$ = IF e11.value$ != "" THEN additionalData$.record$ + [e11] ELSE additionalData$.record$
+e12.key$ = "device_state"
+e12.value$ = TRIM(STRING(kv["Device State"]))
+additionalData$.record$ = IF e12.value$ != "" THEN additionalData$.record$ + [e12] ELSE additionalData$.record$
+e13.key$ = "threat_name"
+e13.value$ = TRIM(STRING(kv["Threat Name"]))
+additionalData$.record$ = IF e13.value$ != "" AND e13.value$ != "N/A" THEN additionalData$.record$ + [e13] ELSE additionalData$.record$
+e14.key$ = "threat_family"
+e14.value$ = TRIM(STRING(kv["Threat Family"]))
+additionalData$.record$ = IF e14.value$ != "" AND e14.value$ != "N/A" THEN additionalData$.record$ + [e14] ELSE additionalData$.record$
+e15.key$ = "threat_type"
+e15.value$ = TRIM(STRING(kv["Threat Type"]))
+additionalData$.record$ = IF e15.value$ != "" AND e15.value$ != "N/A" THEN additionalData$.record$ + [e15] ELSE additionalData$.record$
+e16.key$ = "mitre_techniques"
+e16.value$ = TRIM(STRING(kv["MITRE Techniques"]))
+additionalData$.record$ = IF e16.value$ != "" AND e16.value$ != "N/A" THEN additionalData$.record$ + [e16] ELSE additionalData$.record$
+e17.key$ = "target"
+e17.value$ = TRIM(STRING(kv["Target"]))
+additionalData$.record$ = IF e17.value$ != "" AND e17.value$ != "N/A" THEN additionalData$.record$ + [e17] ELSE additionalData$.record$
+e18.key$ = "command_line"
+e18.value$ = TRIM(STRING(kv["Command line"]))
+additionalData$.record$ = IF e18.value$ != "" AND e18.value$ != "N/A" THEN additionalData$.record$ + [e18] ELSE additionalData$.record$
+e19.key$ = "script"
+e19.value$ = TRIM(STRING(kv["Script"]))
+additionalData$.record$ = IF e19.value$ != "" AND e19.value$ != "N/A" THEN additionalData$.record$ + [e19] ELSE additionalData$.record$
+e20.key$ = "script_path"
+e20.value$ = TRIM(STRING(kv["Script Path"]))
+additionalData$.record$ = IF e20.value$ != "" AND e20.value$ != "N/A" THEN additionalData$.record$ + [e20] ELSE additionalData$.record$
+e21.key$ = "remote_connection"
+e21.value$ = TRIM(STRING(kv["Remote Connection"]))
+additionalData$.record$ = IF e21.value$ != "" AND e21.value$ != "N/A" THEN additionalData$.record$ + [e21] ELSE additionalData$.record$
+e22.key$ = "country"
+e22.value$ = TRIM(STRING(kv["Country"]))
+additionalData$.record$ = IF e22.value$ != "" AND e22.value$ != "N/A" THEN additionalData$.record$ + [e22] ELSE additionalData$.record$
+e23.key$ = "autonomous_system"
+e23.value$ = TRIM(STRING(kv["Autonomous System"]))
+additionalData$.record$ = IF e23.value$ != "" AND e23.value$ != "N/A" THEN additionalData$.record$ + [e23] ELSE additionalData$.record$

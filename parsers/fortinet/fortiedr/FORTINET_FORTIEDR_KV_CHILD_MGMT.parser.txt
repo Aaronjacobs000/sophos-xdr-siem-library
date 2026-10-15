@@ -1,0 +1,19 @@
+!SAMPLE=<133>1 2026-10-14T23:12:41.000Z 198.51.100.20 enSilo - - - Message Type: Audit;Organization: Example Org;Server Name: edr-manager.example.com;Date and Time: 14-Oct-2026, 23:12:41;Sub-system: Security Policies;User Name: admin;Description: Policy Ransomware Prevention was set to Simulation mode
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fortinet FortiEDR syslog, Semicolon format.
+# Child of FORTINET_FORTIEDR_KV_PARENT: audit trail records (the console's audit log) to
+# ManagementEvent: the user, the sub-system (module) and the description of the action.
+# kv, server, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+user = TRIM(STRING(kv["User Name"]))
+username$ = IF user != "" THEN user ELSE NULL
+description = TRIM(STRING(kv["Description"]))
+operationName$ = IF description != "" THEN description ELSE "FortiEDR audit record"
+subsystem = TRIM(STRING(kv["Sub-system"]))
+namespace$ = IF subsystem != "" THEN subsystem ELSE NULL
+targetHostname$ = IF server != "" THEN server ELSE NULL
