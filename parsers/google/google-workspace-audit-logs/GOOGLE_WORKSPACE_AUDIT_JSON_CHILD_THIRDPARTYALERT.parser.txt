@@ -10,7 +10,7 @@
 # from the login application (suspicious sign-ins, accounts disabled for a leaked password or
 # hijacking, government-backed attack warnings), and Chrome's security events (malware and unsafe
 # site visits, password reuse and breach warnings, sensitive data transfer and DLP rule hits).
-# Child of GOOGLE_WORKSPACE_AUDIT_JSON_PARENT: each one to ThirdPartyAlert, with the event name as
+# Child of GOOGLE_WORKSPACE_AUDIT_JSON_PARENT: each one to Thirdparty, with the event name as
 # the title and the event type as the category. Google gives these events no severity.
 # json, app, evName, evType, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
 

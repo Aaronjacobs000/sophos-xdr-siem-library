@@ -10,7 +10,7 @@
 # Child of CYBERARK_EPM_JSON_PARENT: threat protection detections (AttackAttempt, AttackBlock,
 # SuspiciousActivityAttempt, SuspiciousActivityBlock), ransomware protection, blocked
 # applications (Block), restricted and detected access (RestrictAccess, DetectAccess) and
-# elevation requests (ElevationRequest, ManualRequest), to ThirdPartyAlert.
+# elevation requests (ElevationRequest, ManualRequest), to Thirdparty.
 # json, rec, epmType, t, setName, user, filePath, fileName, sha1, policyName, computer, first,
 # last, layout, threat, control, elevation, eventType$, sensorType$ and eventTimeUsec$ come from
 # the parent.

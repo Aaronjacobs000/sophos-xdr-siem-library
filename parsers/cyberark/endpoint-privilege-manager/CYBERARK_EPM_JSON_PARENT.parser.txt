@@ -12,7 +12,7 @@
 # "cyberark_epm_record" (raw_event from Get detailed raw events, policy_audit from Get policy
 # audit raw event details) and adds the set it came from (setId, setName).
 # Parent: hands threat protection detections, blocks, restricted access, ransomware protection
-# and elevation requests to ThirdPartyAlert, and every other application event (launch, trust,
+# and elevation requests to Thirdparty, and every other application event (launch, trust,
 # installation, access) to Process.
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
 
