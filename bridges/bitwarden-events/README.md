@@ -63,6 +63,29 @@ With `--interval`, a network error that outlasts the retries is logged, naming o
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
+As a systemd service that polls, with the variables in `/etc/bitwarden-events.env` (owned by root, mode 600):
+
+```ini
+[Unit]
+Description=Bitwarden event logs bridge to Sophos NG-SIEM HTTP Ingest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/bitwarden-events/bitwarden_events_bridge.py --interval 300
+EnvironmentFile=/etc/bitwarden-events.env
+DynamicUser=yes
+StateDirectory=bitwarden-events
+WorkingDirectory=/var/lib/bitwarden-events
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet.
+
 ## How it reads the API
 
 - It gets an access token from `POST /connect/token` on the identity server (form fields `grant_type=client_credentials`, `scope=api.organization`, `client_id` and `client_secret`) and sends it as `Authorization: Bearer`. Tokens last an hour; the bridge gets a new one a minute before that, and once more if the API answers 401.

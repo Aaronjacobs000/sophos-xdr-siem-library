@@ -63,6 +63,29 @@ With `--interval`, a network error that outlasts the retries is logged, naming o
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
+As a systemd service that polls, with the variables in `/etc/cisco-secure-endpoint-events.env` (owned by root, mode 600):
+
+```ini
+[Unit]
+Description=Cisco Secure Endpoint events bridge to Sophos NG-SIEM HTTP Ingest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/cisco-secure-endpoint-events/cisco_secure_endpoint_bridge.py --interval 300
+EnvironmentFile=/etc/cisco-secure-endpoint-events.env
+DynamicUser=yes
+StateDirectory=cisco-secure-endpoint-events
+WorkingDirectory=/var/lib/cisco-secure-endpoint-events
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet.
+
 ## How it reads the API
 
 - Each run asks `/v1/events` for events from the end of the last window, less the overlap (`start_date`, ISO 8601, which Cisco includes), and reads every page. Cisco lists the newest first and pages by offset, so an event that arrives during the walk moves the rest along and appears twice; the bridge drops repeats by event ID. It works out each page's offset itself rather than following `links.next`, so the credential only goes to `CISCO_SE_API_URL`. A window's end is saved only after every page of it was sent.

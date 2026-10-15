@@ -66,6 +66,31 @@ With `--interval`, a network error that outlasts the retries is logged, naming o
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
+As a systemd service that polls, with the variables in `/etc/google-workspace-audit.env` (owned by root, mode 600) and the key file at `/etc/google-workspace-audit/key.json`. systemd hands the key to the bridge and sets `GWS_SERVICE_ACCOUNT_KEY_FILE`, so leave that variable out of the file:
+
+```ini
+[Unit]
+Description=Google Workspace audit log bridge to Sophos NG-SIEM HTTP Ingest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/google-workspace-audit/google_workspace_audit_bridge.py --interval 300
+EnvironmentFile=/etc/google-workspace-audit.env
+LoadCredential=key.json:/etc/google-workspace-audit/key.json
+Environment=GWS_SERVICE_ACCOUNT_KEY_FILE=%d/key.json
+DynamicUser=yes
+StateDirectory=google-workspace-audit
+WorkingDirectory=/var/lib/google-workspace-audit
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet.
+
 ## How it reads the API
 
 - The bridge signs a JWT with the service account's key (issuer the service account, subject `GWS_ADMIN_EMAIL`, only the read-only audit scope) and trades it at the token endpoint for an access token, which lasts an hour. It renews the token a minute before it expires, and once more if Google refuses it.

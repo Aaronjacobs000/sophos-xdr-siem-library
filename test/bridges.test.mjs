@@ -2,7 +2,7 @@
 // code, the site build, and the README renderer the entry page uses.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -477,6 +477,31 @@ test('gate: the run CI starts merges a pull request held for CI once CI passed, 
   const bridge = await gateMerge([...entry, 'bridges/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false, comments: held });
   assert.equal(firstMergeCall(bridge), -1);
   assert.match(bridge.comments[0], /changes bridge code/);
+});
+
+test('bridge READMEs: each service example restarts on failure after a delay, and says why', async () => {
+  // A bridge started before the network is up stops when a host name doesn't resolve, since no run
+  // has worked yet. The service manager starts it again, so each README's systemd unit restarts on
+  // failure, after a delay, and the README says why.
+  const names = (await readdir(path.join(ROOT, 'bridges'), { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name);
+  assert.ok(names.includes('webhook-relay') && names.length >= 23, names.join());
+  for (const name of names) {
+    const readme = await readFile(path.join(ROOT, 'bridges', name, 'README.md'), 'utf8');
+    const units = [...readme.matchAll(/```ini\n([\s\S]*?)```/g)].map((m) => m[1]).filter((u) => u.includes('[Service]'));
+    assert.equal(units.length, 1, name);
+    const [unit] = units;
+    for (const line of [/^Restart=on-failure$/m, /^RestartSec=[1-9]\d*$/m, /^After=network-online\.target$/m, /^Wants=network-online\.target$/m]) {
+      assert.match(unit, line, name);
+    }
+    assert.match(readme, /^`Restart=on-failure` starts the (bridge|relay) again .+ after it stops, for example when it started before /m, name);
+    if (name === 'webhook-relay') continue;
+    // A polling bridge runs with --interval, from a state directory that keeps its cursor.
+    const exec = /^ExecStart=\/usr\/bin\/python3 \/opt\/([a-z0-9-]+)\/(\S+\.py) --interval \d+$/m.exec(unit);
+    assert.ok(exec && exec[1] === name, name);
+    assert.ok((await readdir(path.join(ROOT, 'bridges', name))).includes(exec[2]), name);
+    assert.match(unit, new RegExp(`^StateDirectory=${name}\n`, 'm'), name);
+    assert.match(unit, new RegExp(`^WorkingDirectory=/var/lib/${name}\n`, 'm'), name);
+  }
 });
 
 test('README markdown: HTML stays text and only https links survive', () => {
