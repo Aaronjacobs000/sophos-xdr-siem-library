@@ -1,0 +1,33 @@
+{
+  "vendor": "BeyondTrust",
+  "product": "Password Safe",
+  "versions": [
+    "25.1",
+    "25.2"
+  ],
+  "format": "leef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.beyondtrust.com/bips/docs/on-prem-bi-event-forwarder-message-fields",
+    "https://docs.beyondtrust.com/bips/docs/on-prem-bi-sample-syslog-output",
+    "https://docs.beyondtrust.com/bips/docs/bi-ibm-qradar-integration",
+    "https://docs.beyondtrust.com/bips/docs/cloud-event-forwarder-message-fields"
+  ],
+  "notes": "For BeyondTrust Password Safe events (agent pbps) that BeyondInsight, or Password Safe Cloud, forwards in LEEF through an IBM QRadar connector (LEEF Format V1, Event Filters: Password Safe) over syslog to the data collector; the README has the steps. Each event goes to CloudAudit: the object type and operation as the event name (Password Retrieve, Functional Account Add; Password Change for a password change record), the category (System or Change) as the event type, the user, user ID and IPAddress, and the asset and account from Target (or AccountName) as the target host and user. Failed=True or Result=F makes the status failed, with the comment or details as the error message. Retrievals, reads, views and downloads are read-only; account, system and setting changes and password changes are management events, and requests, approvals and sessions are not. The object, managed account and managed system IDs go to resources; the role, target, details, request and release IDs, change reason (with BeyondTrust's meaning for each letter), comment and workgroup go to additional_event_data. LEEF's doubled backslash in a user name (EXAMPLE\\\\jdoe) is read as one. The event time is devTime (UTC, MMM dd yyyy HH:mm:ss), else LogTime as documented (MM/dd/yyyy HH:mm:ss). The outcome comes from Failed and Result, not sev, which has been inverted in some releases. Application audit logins (agent appaudit) and other BeyondInsight events aren't read. Inferred: BeyondTrust documents its LEEF layout only with a Discovery Scanner event and lists the Password Safe keys in its QRadar connector and event forwarder tables, without a Password Safe line, so the samples put those keys after the common LEEF keys, tab separated as the scanner example is. Object types and operations beyond the documented examples (Functional Account, System, Session; Add, Update, Approve) are made up in the samples. No built-in parser claimed these lines in 3 Run Tests. The parser passed Run Test in a lab tenant on 2026-10-16 (106 of 106 fields matched the emulator in each of 3 runs, and it took no other line).",
+  "parsers": [
+    {
+      "name": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT",
+      "file": "BEYONDTRUST_PASSWORDSAFE_LEEF_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
