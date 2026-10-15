@@ -1,0 +1,20 @@
+<132>1 2026-10-14T09:20:11.000003+09:00 ixr01 ip-flt - 007 - BLOCK icmp 198.51.100.2 > 192.0.2.254, match wan-in, GigaEthernet0.1 in
+<134>1 2026-10-14T09:20:20.104512+09:00 ixr01 ip-flt - 006 - PASS tcp 192.0.2.30:51022 > 203.0.113.80:443, match lan-out, GigaEthernet0.1 out
+<132>1 2026-10-14T09:20:31.220115+09:00 ixr01 ip-flt - 008 - BLOCK udp 203.0.113.70:53000 > 192.0.2.10:161, not match any filters, GigaEthernet0.1 in
+<132> FLT[007]: BLOCK icmp 198.51.100.3 > 192.0.2.254, match wan-in, GigaEthernet0.0 in
+<132>Oct 14 09:20:30 ix2215 FLT[008]: BLOCK icmp 203.0.113.50 > 192.0.2.1, no match, GigaEthernet0.0 in
+<131>1 2026-10-14T09:21:40.552901+09:00 ixr01 ids - 004 - [IP] Land attack packet was detected 192.0.2.1 > 192.0.2.1, GigaEthernet0.1
+<131>1 2026-10-14T09:21:52.010334+09:00 ixr01 ids - 203 - [TCP] SYN and FIN was detected 203.0.113.9:40000 > 192.0.2.10:80, GigaEthernet0.1
+<131> IDS[003]: [IP] Unknown protocol packet was detected (protocol 180) 198.51.100.7 > 192.0.2.10, GigaEthernet0.0
+<132> UTM[002]: IPS-l seq 11, {"type":"IPS","src":"203.0.113.20:443","dst":"192.0.2.20:54176","mac":"00:00:5E:00:53:20","proto":"6","msg":"TCP RST Scan","sid":"80600001","severity":"3","act":"Drop","time":"1792022340"}
+<132> UTM[001]: AV-h seq 10, {"type":"AV","src":"203.0.113.10:80","dst":"192.0.2.10:43515","mac":"00:00:5E:00:53:10","proto":"6","L7_proto":"HTTP","virus":"EICAR-Test-File","vid":"2053","file":"eicar.com","severity":"3","act":"Destroy","time":"1792022400"}
+<132> UTM[003]: WG-h seq 2, {"type":"WG","src":"192.0.2.40:54505","dst":"203.0.113.40:80","mac":"00:00:5E:00:53:40","proto":"6","url":"www.example.com/download/sample.zip","act":"Block","time":"1792022460"}
+<133> UTM[004]: UF-l seq 12, {"type":"UF","src":"192.0.2.30:54521","dst":"203.0.113.30:443","mac":"00:00:5E:00:53:30","proto":"6","url":"social.example.org","cid":"46000","gid":"15","act":"Block","time":"1792022520"}
+<131>1 2026-10-14T09:24:10.330120+09:00 ixr01 url-flt - 006 - BLOCK 192.0.2.35:51500 > 203.0.113.90:80, match url-list1, GigaEthernet0.1 out, bad.example.net/path/index.html
+<131>1 2026-10-14T09:22:05.004512+09:00 ixr01 ssh - 013 - Authentication failed for 'jsmith 198.51.100.23'
+<134>1 2026-10-14T09:22:40.118904+09:00 ixr01 ssh - 012 - Authentication succeeded for 'jsmith 192.0.2.25'
+<132>1 2026-10-14T09:23:01.774512+09:00 ixr01 aaa - 004 - login authentication failed, user=jsmith, addr=198.51.100.23, svr=192.0.2.50, cause=access-reject
+<132>1 2026-10-14T09:22:41.551200+09:00 ixr01 system - 038 - User jsmith attached to CLI #1
+<132>1 2026-10-14T09:31:12.006622+09:00 ixr01 system - 040 - User jsmith detached from CLI #1
+<132>1 2026-10-14T09:25:03.200114+09:00 ixr01 l2tpv2 - 002 - Tunnel1.0 is connected to 203.0.113.10, 1701/udp
+<132> GW[079]: System woke up by reload, caused by command execution. System started at Oct 14-Wed-2026 09:15:02 JST

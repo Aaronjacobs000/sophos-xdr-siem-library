@@ -1,0 +1,69 @@
+!SAMPLE=<131>1 2026-10-14T09:21:40.552901+09:00 ixr01 ids - 203 - [TCP] SYN and FIN was detected 203.0.113.9:40000 > 192.0.2.10:80, GigaEthernet0.1
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="intrusion"
+!SCHEMA=scwx.nids
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX intrusion detection and UTM IPS logs, syslog to the data collector:
+#   ids, IDS: [<category>] <attack> was detected [(<detail>)] <src>[:<port>] > <dst>[:<port>], <interface>
+#   UTM[nnn]: IPS-<h|l> seq <n>, {"type":"IPS","src":"<ip>:<port>","dst":"<ip>:<port>","mac":...,"proto":"6",
+#     "msg":"<signature>","sid":"<signature ID>","severity":"<0 to 3>","act":"Drop|Pass","time":"<Unix seconds>"}
+# Child of NEC_IX_SYSLOG_PARENT: each detection, to NIDS.
+# ids, json, isUtm, fn, id, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# UTM records give "<ip>:<port>" for each end.
+usrc = STRING(json["$.src"])
+udst = STRING(json["$.dst"])
+us = usrc|^\s*(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?\s*$
+ud = udst|^\s*(?P<ip>[0-9A-Fa-f.:]+?)(?::(?P<port>\d+))?\s*$
+src = IF isUtm THEN STRING(us["ip"]) ELSE STRING(ids["src"])
+dst = IF isUtm THEN STRING(ud["ip"]) ELSE STRING(ids["dst"])
+sport = IF isUtm THEN STRING(us["port"]) ELSE STRING(ids["sport"])
+dport = IF isUtm THEN STRING(ud["port"]) ELSE STRING(ids["dport"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+
+text = STRING(ids["text"])
+cat = STRING(ids["cat"])
+message$ = IF isUtm THEN STRING(json["$.msg"]) ELSE "[" + cat + "] " + text
+classification$ = IF isUtm THEN "UTM IPS" ELSE "IDS " + cat
+logType$ = IF isUtm THEN "UTM IPS" ELSE "intrusion detection"
+sid = STRING(json["$.sid"])
+signatureId$ = IF sid != "" THEN INT(sid, 10) ELSE NULL
+sev = STRING(json["$.severity"])
+# UTM severity: 0 unset, 1 low, 2 medium, 3 high. Priority 1 is the highest, so 3 becomes 1.
+priority$ = IF sev == "3" THEN 1 ELSE NULL
+priority$ = IF sev == "2" THEN 2 ELSE priority$
+priority$ = IF sev == "1" THEN 3 ELSE priority$
+uact = STRING(json["$.act"])
+action$ = IF isUtm AND uact != "" THEN uact ELSE NULL
+blocked$ = IF isUtm AND (uact == "Drop" OR uact == "Block") THEN 1 ELSE NULL
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+# protocol takes the IANA number: the UTM record gives it; an IDS category names it.
+up = STRING(json["$.proto"])
+protocol$ = IF isUtm AND up != "" THEN INT(up, 10) ELSE NULL
+protocol$ = IF NOT isUtm AND cat == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF NOT isUtm AND (cat == "UDP") THEN 17 ELSE protocol$
+protocol$ = IF NOT isUtm AND cat == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF NOT isUtm AND cat == "FTP" THEN 6 ELSE protocol$
+
+iface = STRING(ids["if"])
+mac = STRING(json["$.mac"])
+m1.key$ = "message_id"
+m1.value$ = fn + " " + id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "interface"
+m2.value$ = iface
+eventMetadata$.record$ = IF iface != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "mac"
+m3.value$ = mac
+eventMetadata$.record$ = IF mac != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "utm_severity"
+m4.value$ = sev
+eventMetadata$.record$ = IF sev != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
