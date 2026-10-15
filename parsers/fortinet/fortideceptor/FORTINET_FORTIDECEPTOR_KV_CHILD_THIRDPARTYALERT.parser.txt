@@ -1,0 +1,117 @@
+!SAMPLE=<9>2026-10-14T23:20:31 devhost=FDC-VM0000000001 devid=FDC-VM0000000001 logver=25 tzone=36000 tz=AEST date=2026-10-14 time=23:20:31 logid=0106000001 type=event subtype=system level=alert user=system ui=GUI action=update status=success EventID=3011256137575066001 IncidentID=3011256354125025001 Tagkey=203.0.113.83:57190:192.0.2.21:22:3000000000000000001-00000000-0000-4000-8000-000000000001 DecoyGroup=IT_Decoy DecoyType=Ubuntu22 AttackerIP=203.0.113.83 AttackerPort=57190 VictimIP=192.0.2.21 VictimPort=22 Operation=Authentication_Failure Service=SSH Username=root Password=NA Description="User root SSH login failed"
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevid="?FDC[^\s"]*"?\s.*\stype="?event"?\s+subtype="?system"?\s.*(?:\smsg="(?:EventID|Service|Operation)=[^"]*\sAttacker[Ii][Pp]=|[^:]\s(?:EventID=\d+\s+IncidentID=|Operation=\S+\s+Attacker[Ii][Pp]=))
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDeceptor logs sent to a remote log server of type syslog, key=value:
+#   <PRI><time> devhost=<name> devid=<serial> logver=<n> tzone=<seconds> tz=<zone> date=<date>
+#   time=<time> logid=<id> type=event subtype=system level=<level> user=<user> ui=<ui>
+#   action=<action> status=<status> <fields>
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# every FortiDeceptor line (all are type=event subtype=system) and stores only the sensor type
+# FORTIGATE_FW. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads
+# the whole line itself, not the parents' variables.
+# Decoy events (regular, IPS, web filtering and port scan) to the third-party alert schema.
+# Releases before 4.3 put the decoy fields in msg (AttackerIp=...); the log reference since 5.0
+# lists them as fields of their own (EventID=... AttackerIP=...). The parser reads either.
+# FortiDeceptor's "SNMP TRAP sent out:" copy of an event is left alone.
+
+kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM, and it ends an unquoted value at the next " key=".
+kv = CEF("CEF:0|Fortinet|FortiDeceptor|0|kv|kv|0|" + kvm["kv"])
+logId = STRING(kv["logid"])
+
+sensorType$ = "Fortinet FortiDeceptor"
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# date and time are read as UTC, as FortiSandbox documents for the same header; tz and tzone
+# name the FortiDeceptor's own zone.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+eventTimeUsec$ = IF d != "" AND t != "" THEN DATETIME(d + " " + t, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+
+# The decoy fields, from msg or from the line. Values hold spaces (Operation=Authentication
+# Failure, Attack=tools: ...), which CEF() keeps.
+msg = STRING(kv["msg"])
+inMsg = msg|(?:^|\s)Attacker[Ii][Pp]=
+e = IF inMsg[0] != "" THEN CEF("CEF:0|Fortinet|FortiDeceptor|0|decoy|decoy|0|" + msg) ELSE kv
+
+attacker = STRING(e["AttackerIP"])
+attacker = IF attacker == "" THEN STRING(e["AttackerIp"]) ELSE attacker
+victim = STRING(e["VictimIP"])
+victim = IF victim == "" THEN STRING(e["VictimIp"]) ELSE victim
+op = TRIM(STRING(e["Operation"]))
+service = TRIM(STRING(e["Service"]))
+user = TRIM(STRING(e["Username"]))
+desc = REPLACE_REGEX(TRIM(STRING(e["Description"])), `^"(.*)"$`, "${1}")
+attack = TRIM(STRING(e["Attack"]))
+host = TRIM(STRING(e["Host"]))
+url = TRIM(STRING(e["URL"]))
+eventId = TRIM(STRING(e["EventID"]))
+
+vendor$ = "Fortinet"
+provider$ = "FortiDeceptor"
+alertId$ = IF eventId != "" THEN eventId ELSE NULL
+alertCategory$ = IF op != "" THEN op ELSE "decoy"
+what = IF attack != "" THEN attack ELSE op
+what = IF service != "" AND attack == "" THEN service + " " + op ELSE what
+title$ = IF what != "" THEN "FortiDeceptor decoy: " + what ELSE "FortiDeceptor decoy event"
+summary$ = IF desc != "" THEN desc ELSE title$
+summary$ = IF victim != "" THEN summary$ + " (decoy " + victim + ")" ELSE summary$
+
+level = LOWERCASE(STRING(kv["level"]))
+vendorSeverity$ = IF level != "" THEN level ELSE NULL
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF level == "emergency" OR level == "alert" OR level == "critical" THEN "HIGH" ELSE severity$
+severity$ = IF level == "error" OR level == "warning" THEN "MEDIUM" ELSE severity$
+severity$ = IF level == "notice" OR level == "information" THEN "LOW" ELSE severity$
+severity$ = IF level == "debug" THEN "INFO" ELSE severity$
+
+sourceAddress$ = IF attacker != "" THEN attacker ELSE NULL
+destinationAddress$ = IF victim != "" THEN victim ELSE NULL
+spText = TRIM(STRING(e["AttackerPort"]))
+dpText = TRIM(STRING(e["VictimPort"]))
+spm = spText|^(?P<n>\d{1,5})$
+dpm = dpText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spm["n"] != "" THEN INT(spm["n"], 10) ELSE NULL
+destinationPort$ = IF dpm["n"] != "" THEN INT(dpm["n"], 10) ELSE NULL
+destinationServiceName$ = IF service != "" THEN service ELSE NULL
+# The account the attacker tried, unless FortiDeceptor wrote NA. The password it tried is not copied.
+targetUserName$ = IF user != "" AND user != "NA" THEN user ELSE NULL
+destinationUrl$ = IF url != "" THEN host + url ELSE NULL
+
+d1.key$ = "log_id"
+d1.value$ = logId
+d2.key$ = "operation"
+d2.value$ = op
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "incident_id"
+d3.value$ = TRIM(STRING(e["IncidentID"]))
+additionalData$.record$ = IF d3.value$ != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "decoy_group"
+d4.value$ = TRIM(STRING(e["DecoyGroup"]))
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "decoy_type"
+d5.value$ = TRIM(STRING(e["DecoyType"]))
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "tag_key"
+d6.value$ = TRIM(STRING(e["Tagkey"]))
+additionalData$.record$ = IF d6.value$ != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "attack"
+d7.value$ = attack
+additionalData$.record$ = IF attack != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "category"
+d8.value$ = TRIM(STRING(e["Category"]))
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "description"
+d9.value$ = desc
+additionalData$.record$ = IF desc != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "level"
+d10.value$ = level
+additionalData$.record$ = IF level != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$

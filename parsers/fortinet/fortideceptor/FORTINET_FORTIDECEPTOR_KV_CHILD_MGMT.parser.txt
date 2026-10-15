@@ -1,0 +1,45 @@
+!SAMPLE=<14>2026-10-14T23:31:02 devhost=FDC-VM0000000001 devid=FDC-VM0000000001 logver=25 tzone=36000 tz=AEST date=2026-10-14 time=23:31:02 logid=0106000001 type=event subtype=system level=information user=jsmith ui=GUI action=update status=success msg="Decoy win11-hr was successfully deployed."
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevid="?FDC[^\s"]*"?\s.*\stype="?event"?\s+subtype="?system"?\s.*\suser="?(?:[^s\s"]|s[^y\s"]|sy[^s\s"]|sys[^t\s"]|syst[^e\s"]|syste[^m\s"]|system[^\s"]).*\saction="?(?:[^L\s"]|L[^o\s"]|Lo[^g\s"]|Log[^i\s"]|Logi[^n\s"]|Login[^\s"]).*\smsg="(?:[^AS"]|A[^d"]|Ad[^m"]|S[^e"]|Se[^s"])
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDeceptor logs sent to a remote log server of type syslog, key=value:
+#   <PRI><time> devhost=<name> devid=<serial> logver=<n> tzone=<seconds> tz=<zone> date=<date>
+#   time=<time> logid=<id> type=event subtype=system level=<level> user=<user> ui=<ui>
+#   action=<action> status=<status> msg="<message>"
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# every FortiDeceptor line and stores only the sensor type FORTIGATE_FW. In Sophos Fusion, turn
+# on Set Global Parent in Parser Script. The parser reads the whole line itself.
+# Events an administrator caused (user is not system), such as decoy deployments, network, mail,
+# fabric, token and dashboard changes, to ManagementEvent. Sign-ins (action Login, or a message
+# that starts with "Administrator" or "Session timeout") go to FORTINET_FORTIDECEPTOR_KV_CHILD_AUTH.
+
+kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM, and it ends an unquoted value at the next " key=".
+kv = CEF("CEF:0|Fortinet|FortiDeceptor|0|kv|kv|0|" + kvm["kv"])
+logId = STRING(kv["logid"])
+
+sensorType$ = "Fortinet FortiDeceptor"
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# date and time are read as UTC, as FortiSandbox documents for the same header.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+eventTimeUsec$ = IF d != "" AND t != "" THEN DATETIME(d + " " + t, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+
+user = STRING(kv["user"])
+username$ = IF user != "" THEN user ELSE NULL
+ui = STRING(kv["ui"])
+channel$ = IF ui != "" THEN ui ELSE NULL
+act = STRING(kv["action"])
+msg = STRING(kv["msg"])
+operationName$ = IF act != "" THEN act ELSE "system"
+operation$ = IF act != "" THEN act ELSE NULL
+command$ = IF msg != "" THEN msg ELSE NULL
+status = STRING(kv["status"])
+result$ = IF status != "" THEN status ELSE NULL

@@ -1,0 +1,72 @@
+!SAMPLE=<14>2026-10-14T23:12:44 devhost=FDC-VM0000000001 devid=FDC-VM0000000001 logver=25 tzone=36000 tz=AEST date=2026-10-14 time=23:12:44 logid=0106000001 type=event subtype=system level=information user=jsmith ui=GUI action=Login status=success msg="Administrator jsmith logged into website successfully from 192.0.2.10 by username and password."
+!PARENT=Fortinet_Event
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\sdevid="?FDC[^\s"]*"?\s.*\stype="?event"?\s+subtype="?system"?\s.*(?:\saction="?Login"?\s|\smsg="(?:Administrator\s|Session timeout, administrator\s))
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiDeceptor logs sent to a remote log server of type syslog, key=value:
+#   <PRI><time> devhost=<name> devid=<serial> logver=<n> tzone=<seconds> tz=<zone> date=<date>
+#   time=<time> logid=<id> type=event subtype=system level=<level> user=<user> ui=<ui>
+#   action=<action> status=<status> msg="<message>"
+# Child of the global parser Fortinet_Event, the child of Fortinet_Master_non-cef that claims
+# every FortiDeceptor line and stores only the sensor type FORTIGATE_FW. In Sophos Fusion, turn
+# on Set Global Parent in Parser Script. The parser reads the whole line itself.
+# Administrator sign-ins to Auth: the web and CLI login and logout messages ("Administrator
+# <user> logged into website successfully from <address> ...", "... logged out CLI successfully
+# from ssh(<address>)", "Session timeout, administrator <user> logged out from <address>."), and
+# action=Login lines whose status isn't success, which count as failures.
+
+kvm = originalData$|(?P<kv>(?:devhost|devid)=.*)$
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM, and it ends an unquoted value at the next " key=".
+kv = CEF("CEF:0|Fortinet|FortiDeceptor|0|kv|kv|0|" + kvm["kv"])
+logId = STRING(kv["logid"])
+
+sensorType$ = "Fortinet FortiDeceptor"
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# date and time are read as UTC, as FortiSandbox documents for the same header.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+eventTimeUsec$ = IF d != "" AND t != "" THEN DATETIME(d + " " + t, "2006-01-02 15:04:05") ELSE eventTimeUsec$
+host = STRING(kv["devhost"])
+targetHostName$ = IF host != "" THEN host ELSE NULL
+authSystem$ = "FortiDeceptor"
+
+msg = STRING(kv["msg"])
+user = STRING(kv["user"])
+mu = msg|^(?:Session timeout, )?[Aa]dministrator\s+(?P<u>\S+)
+user = IF user == "" OR LOWERCASE(user) == "system" THEN mu["u"] ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+
+# The address, and the interface when the message gives one, such as ssh(192.0.2.11).
+from = msg|\bfrom\s+(?:(?P<via>[A-Za-z]+)\()?(?P<ip>[0-9A-Fa-f.:]*[0-9A-Fa-f])\)?
+sourceAddress$ = IF from["ip"] != "" THEN from["ip"] ELSE NULL
+ui = STRING(kv["ui"])
+via = IF from["via"] != "" THEN from["via"] ELSE ui
+logonApplicationFamily$ = IF via != "" THEN via ELSE NULL
+
+status = LOWERCASE(STRING(kv["status"]))
+act = LOWERCASE(STRING(kv["action"]))
+out = msg|\blogged out\b|^Session timeout
+loggedOff = out[0] != "" OR act == "logout"
+failed = act == "login" AND status != "" AND status != "success"
+authCategory$ = IF loggedOff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "LOGON"
+action$ = IF loggedOff THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+
+m1.key$ = "log_id"
+m1.value$ = logId
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "msg"
+m2.value$ = msg
+eventMetadata$.record$ = IF msg != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "status"
+m3.value$ = status
+eventMetadata$.record$ = IF status != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

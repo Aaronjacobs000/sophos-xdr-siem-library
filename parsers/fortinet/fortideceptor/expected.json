@@ -1,0 +1,453 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792019564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "target_host_name": "FDC-VM0000000001",
+      "auth_system": "FortiDeceptor",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "GUI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "msg",
+            "value": "Administrator jsmith logged into website successfully from 192.0.2.10 by username and password."
+          },
+          {
+            "key": "status",
+            "value": "success"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020031000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiDeceptor",
+      "alert_id": "3011256137575066001",
+      "alert_category": "Authentication_Failure",
+      "title": "FortiDeceptor decoy: SSH Authentication_Failure",
+      "summary": "User root SSH login failed (decoy 192.0.2.21)",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "203.0.113.83",
+      "destination_address": "192.0.2.21",
+      "source_port": 57190,
+      "destination_port": 22,
+      "destination_service_name": "SSH",
+      "target_user_name": "root",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "operation",
+            "value": "Authentication_Failure"
+          },
+          {
+            "key": "incident_id",
+            "value": "3011256354125025001"
+          },
+          {
+            "key": "decoy_group",
+            "value": "IT_Decoy"
+          },
+          {
+            "key": "decoy_type",
+            "value": "Ubuntu22"
+          },
+          {
+            "key": "tag_key",
+            "value": "203.0.113.83:57190:192.0.2.21:22:3000000000000000001-00000000-0000-4000-8000-000000000001"
+          },
+          {
+            "key": "description",
+            "value": "User root SSH login failed"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020125000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiDeceptor",
+      "alert_id": "3011388922094660002",
+      "alert_category": "IPS_attack",
+      "title": "FortiDeceptor decoy: tools: Nmap.Script.Scanner (#1 in pkt 5754)",
+      "summary": "tools: Nmap.Script.Scanner (#1 in pkt 5754) (decoy 192.0.2.27)",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "192.0.2.26",
+      "destination_address": "192.0.2.27",
+      "source_port": 50226,
+      "destination_port": 3389,
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "operation",
+            "value": "IPS_attack"
+          },
+          {
+            "key": "incident_id",
+            "value": "3011389064053784002"
+          },
+          {
+            "key": "decoy_group",
+            "value": "IT_Decoy"
+          },
+          {
+            "key": "decoy_type",
+            "value": "Windows11"
+          },
+          {
+            "key": "tag_key",
+            "value": "192.0.2.26:50226:192.0.2.27:3389:3000000000000000001-00000000-0000-4000-8000-000000000002"
+          },
+          {
+            "key": "attack",
+            "value": "tools: Nmap.Script.Scanner (#1 in pkt 5754)"
+          },
+          {
+            "key": "description",
+            "value": "tools: Nmap.Script.Scanner (#1 in pkt 5754)"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020280000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiDeceptor",
+      "alert_category": "Authentication Failure",
+      "title": "FortiDeceptor decoy: SMB Authentication Failure",
+      "summary": "jdoe (decoy 192.0.2.21)",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "192.0.2.83",
+      "destination_address": "192.0.2.21",
+      "source_port": 50112,
+      "destination_port": 445,
+      "destination_service_name": "SMB",
+      "target_user_name": "jdoe",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "operation",
+            "value": "Authentication Failure"
+          },
+          {
+            "key": "description",
+            "value": "jdoe"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020372000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiDeceptor",
+      "alert_category": "Port_Scan",
+      "title": "FortiDeceptor decoy: Port_Scan",
+      "summary": "Port.Scanning (decoy 192.0.2.21)",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "192.0.2.90",
+      "destination_address": "192.0.2.21",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "operation",
+            "value": "Port_Scan"
+          },
+          {
+            "key": "description",
+            "value": "Port.Scanning"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020530000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "vendor": "Fortinet",
+      "provider": "FortiDeceptor",
+      "alert_id": "3001014396436619003",
+      "alert_category": "FortiGuard_Web_Filtering",
+      "title": "FortiDeceptor decoy: FortiGuard_Web_Filtering",
+      "summary": "198.51.100.18/sample/eicar.tgz (decoy 198.51.100.18)",
+      "vendor_severity": "alert",
+      "severity": "HIGH",
+      "source_address": "192.0.2.47",
+      "destination_address": "198.51.100.18",
+      "source_port": 62677,
+      "destination_port": 80,
+      "destination_url": "198.51.100.18/sample/eicar.tgz",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "operation",
+            "value": "FortiGuard_Web_Filtering"
+          },
+          {
+            "key": "incident_id",
+            "value": "3001014743178499003"
+          },
+          {
+            "key": "decoy_group",
+            "value": "IT_Decoy"
+          },
+          {
+            "key": "decoy_type",
+            "value": "Windows10"
+          },
+          {
+            "key": "tag_key",
+            "value": "192.0.2.47:62677:198.51.100.18:80:3000000000000000001-00000000-0000-4000-8000-000000000003"
+          },
+          {
+            "key": "category",
+            "value": "Unknown"
+          },
+          {
+            "key": "description",
+            "value": "198.51.100.18/sample/eicar.tgz"
+          },
+          {
+            "key": "level",
+            "value": "alert"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020662000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "username": "jsmith",
+      "channel": "GUI",
+      "operation_name": "update",
+      "operation": "update",
+      "command": "Decoy win11-hr was successfully deployed.",
+      "result": "success"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020795000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "target_host_name": "FDC-VM0000000001",
+      "auth_system": "FortiDeceptor",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.11",
+      "logon_application_family": "ssh",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "msg",
+            "value": "Administrator admin logged into CLI successfully from ssh(192.0.2.11)."
+          },
+          {
+            "key": "status",
+            "value": "success"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792020940000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "target_host_name": "FDC-VM0000000001",
+      "auth_system": "FortiDeceptor",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "logon_application_family": "GUI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "msg",
+            "value": "Administrator admin failed to log into website from 203.0.113.45."
+          },
+          {
+            "key": "status",
+            "value": "failure"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "FORTINET_FORTIDECEPTOR_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fortinet FortiDeceptor",
+      "event_time_usec": 1792021218000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0106000001",
+      "host_id": "FDC-VM0000000001",
+      "target_host_name": "FDC-VM0000000001",
+      "auth_system": "FortiDeceptor",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "GUI",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_id",
+            "value": "0106000001"
+          },
+          {
+            "key": "msg",
+            "value": "Administrator jsmith logged out website successfully from 192.0.2.10"
+          },
+          {
+            "key": "status",
+            "value": "success"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
