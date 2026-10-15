@@ -1,0 +1,320 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019118000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-0147",
+      "vendor": "Fortinet",
+      "provider": "FortiEDR",
+      "alert_id": "458478",
+      "target_host_name": "WS-0147",
+      "title": "File Encryptor - Suspicious file modification",
+      "alert_category": "Malicious",
+      "summary": "Malicious event on WS-0147: invoice.exe, File Creation",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.47",
+      "source_mac": "00:00:5e:00:53:47",
+      "first_event_time_usec": 1792019112000000,
+      "last_event_time_usec": 1792019117000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "classification",
+            "value": "Malicious"
+          },
+          {
+            "key": "raw_data_id",
+            "value": "1270886879"
+          },
+          {
+            "key": "organization",
+            "value": "Example Org"
+          },
+          {
+            "key": "process_name",
+            "value": "invoice.exe"
+          },
+          {
+            "key": "process_path",
+            "value": "\\Device\\HarddiskVolume3\\Users\\jdoe\\Downloads\\invoice.exe"
+          },
+          {
+            "key": "process_hash",
+            "value": "3395856CE81F2B7382DEE72602F798B642F14140"
+          },
+          {
+            "key": "destination",
+            "value": "File Creation"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "count",
+            "value": "3"
+          },
+          {
+            "key": "certificate",
+            "value": "no"
+          },
+          {
+            "key": "operating_system",
+            "value": "Windows 11 Pro"
+          },
+          {
+            "key": "device_state",
+            "value": "Running"
+          },
+          {
+            "key": "mitre_techniques",
+            "value": "T1486"
+          },
+          {
+            "key": "target",
+            "value": "C:\\Users\\jdoe\\Documents\\budget.xlsx"
+          },
+          {
+            "key": "command_line",
+            "value": "C:\\Users\\jdoe\\Downloads\\invoice.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019261000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "SRV-APP01",
+      "vendor": "Fortinet",
+      "provider": "FortiEDR",
+      "alert_id": "458502",
+      "target_host_name": "SRV-APP01",
+      "title": "Suspicious Script Execution - Connection attempt to a suspicious host",
+      "alert_category": "Suspicious",
+      "summary": "Suspicious event on SRV-APP01: powershell.exe, 203.0.113.80",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "source_user_name": "EXAMPLE\\svc-app",
+      "source_address": "192.0.2.21",
+      "source_mac": "00:00:5e:00:53:21",
+      "destination_address": "203.0.113.80",
+      "first_event_time_usec": 1792019250000000,
+      "last_event_time_usec": 1792019260000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "classification",
+            "value": "Suspicious"
+          },
+          {
+            "key": "raw_data_id",
+            "value": "1270886955"
+          },
+          {
+            "key": "organization",
+            "value": "Example Org"
+          },
+          {
+            "key": "process_name",
+            "value": "powershell.exe"
+          },
+          {
+            "key": "process_path",
+            "value": "\\Device\\HarddiskVolume2\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "process_hash",
+            "value": "6CBCE4A295C163791B60FC23D285E6D84F28EE4C"
+          },
+          {
+            "key": "destination",
+            "value": "203.0.113.80"
+          },
+          {
+            "key": "action",
+            "value": "Logged"
+          },
+          {
+            "key": "count",
+            "value": "2"
+          },
+          {
+            "key": "certificate",
+            "value": "yes"
+          },
+          {
+            "key": "operating_system",
+            "value": "Windows Server 2022"
+          },
+          {
+            "key": "device_state",
+            "value": "Running"
+          },
+          {
+            "key": "mitre_techniques",
+            "value": "T1059.001,T1071.001"
+          },
+          {
+            "key": "command_line",
+            "value": "powershell.exe -ExecutionPolicy Bypass -File C:\\ProgramData\\update.ps1"
+          },
+          {
+            "key": "script",
+            "value": "update.ps1"
+          },
+          {
+            "key": "script_path",
+            "value": "C:\\ProgramData\\update.ps1"
+          },
+          {
+            "key": "country",
+            "value": "Australia"
+          },
+          {
+            "key": "autonomous_system",
+            "value": "AS64500"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019342000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-0152",
+      "vendor": "Fortinet",
+      "provider": "FortiEDR",
+      "alert_id": "458519",
+      "target_host_name": "WS-0152",
+      "title": "Unmapped Executable - Executable file without a corresponding mapped image",
+      "alert_category": "PUP",
+      "summary": "PUP event on WS-0152: tool.exe, File Read",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\asmith",
+      "source_address": "192.0.2.52",
+      "source_mac": "00:00:5e:00:53:52",
+      "first_event_time_usec": 1792019335000000,
+      "last_event_time_usec": 1792019335000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "classification",
+            "value": "PUP"
+          },
+          {
+            "key": "raw_data_id",
+            "value": "1270887010"
+          },
+          {
+            "key": "organization",
+            "value": "Example Org"
+          },
+          {
+            "key": "process_name",
+            "value": "tool.exe"
+          },
+          {
+            "key": "process_path",
+            "value": "\\Device\\HarddiskVolume3\\Users\\asmith\\AppData\\Local\\Temp\\tool.exe"
+          },
+          {
+            "key": "destination",
+            "value": "File Read"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "certificate",
+            "value": "no"
+          },
+          {
+            "key": "operating_system",
+            "value": "Windows 10 Enterprise"
+          },
+          {
+            "key": "device_state",
+            "value": "Running"
+          },
+          {
+            "key": "threat_name",
+            "value": "Example.Downloader"
+          },
+          {
+            "key": "threat_family",
+            "value": "Downloader"
+          },
+          {
+            "key": "threat_type",
+            "value": "PUP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019400000000,
+      "host_id": "edr-manager.example.com"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019561000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edr-manager.example.com",
+      "username": "admin",
+      "operation_name": "Policy Ransomware Prevention was set to Simulation mode",
+      "namespace": "Security Policies",
+      "target_hostname": "edr-manager.example.com"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019595000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edr-manager.example.com",
+      "username": "jdoe",
+      "operation_name": "User jdoe was added to the Local Admin role",
+      "namespace": "Administration",
+      "target_hostname": "edr-manager.example.com"
+    }
+  }
+]
