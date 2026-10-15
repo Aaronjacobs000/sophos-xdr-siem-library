@@ -1,0 +1,100 @@
+!SAMPLE=<13>2026-10-14T22:11:28.131Z esx01.example.com FIREWALL-PKTLOG[1057591]: b569cb6a INET TERM PASS 1048 IN TCP FIN 192.0.2.7/58786->198.51.100.156/443 25/76 1802/225600
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware NSX syslog.
+# Child of VMWARE_NSX_SYSLOG_PARENT: distributed and gateway firewall packet logs to Netflow.
+# Only rules with logging on write them. The fields are space separated:
+#   <AF> <reason> <action> <rule set/rule id> <IN|OUT> <length> <protocol> <src>/<port>-><dst>/<port> <TCP flags>
+# TERM lines close a session: TCP adds RST, FIN or TIMEOUT, and DFW adds the packet and byte
+# counts (client to server / server to client). NAT shows the translated address, then -OR and
+# the original. A DFW line can end with an FQDN rule's domain, an APP_ application, or the user's
+# AD SID (Identity Firewall).
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# pkt, logType, dfw, gfw, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+p = pkt|^(?P<af>INET6?)\s+(?:reason-)?(?P<reason>[A-Za-z][A-Za-z-]*)\s+(?:(?P<act>[A-Z][A-Z_]*)\s+)?(?P<rule>(?:[^\s/]+/)?\d+)\s+(?P<dir>IN|OUT)\s+(?:(?P<len>\d+)\s+)?(?P<proto>TCP|UDP|ICMP|PROTO\s+\d+)\s+(?:(?P<end>RST|FIN|TIMEOUT)\s+)?(?P<src>[0-9A-Fa-f.:]+)(?:/(?P<spt>\d+))?(?:-OR\s+(?P<osrc>[0-9A-Fa-f.:]+)(?:/(?P<ospt>\d+))?)?->(?P<dst>[0-9A-Fa-f.:]+)(?:/(?P<dpt>\d+))?(?:-OR\s+(?P<odst>[0-9A-Fa-f.:]+)(?:/(?P<odpt>\d+))?)?(?:\s+(?P<rest>.*?))?\s*$
+
+# With NAT, source_address and destination_address keep the original addresses and the
+# translated ones go to the NAT fields.
+natSrc = p["osrc"] != ""
+natDst = p["odst"] != ""
+sourceAddress$ = IF natSrc THEN p["osrc"] ELSE p["src"]
+sourcePort$ = IF natSrc THEN p["ospt"] ELSE p["spt"]
+destinationAddress$ = IF natDst THEN p["odst"] ELSE p["dst"]
+destinationPort$ = IF natDst THEN p["odpt"] ELSE p["dpt"]
+sourceNatAddress$ = IF natSrc THEN p["src"] ELSE NULL
+sourceNatPort$ = IF natSrc THEN p["spt"] ELSE NULL
+destinationNatAddress$ = IF natDst THEN p["dst"] ELSE NULL
+destinationNatPort$ = IF natDst THEN p["dpt"] ELSE NULL
+sourceAddress$ = IF sourceAddress$ != "" THEN sourceAddress$ ELSE NULL
+destinationAddress$ = IF destinationAddress$ != "" THEN destinationAddress$ ELSE NULL
+
+proto = p["proto"]
+protoNum = proto|^PROTO\s+(?P<n>\d{1,3})$
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" AND p["af"] == "INET" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMP" AND p["af"] == "INET6" THEN 58 ELSE protocol$
+protocol$ = IF protoNum["n"] != "" THEN INT(protoNum["n"], 10) ELSE protocol$
+
+# PASS lets the packet through; DROP and REJECT stop it. A TERM line with no action (NSX 4.1 and
+# earlier) closes a session that was passed. NAT, RDR, PBR and the rest stay unset.
+act = p["act"]
+reason = p["reason"]
+flowAction$ = NULL
+flowAction$ = IF act == "PASS" OR (reason == "TERM" AND act == "") THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "DROP" OR act == "REJECT" THEN "FW_BLOCKED" ELSE flowAction$
+connectionEndReason$ = IF p["end"] != "" THEN p["end"] ELSE NULL
+
+rest = p["rest"]
+counts = rest|(?:^|\s)(?P<pin>\d+)/(?P<pout>\d+)\s+(?P<bin>\d+)/(?P<bout>\d+)(?:\s|$)
+txPacketCount$ = counts["pin"]
+rxPacketCount$ = counts["pout"]
+txByteCount$ = counts["bin"]
+rxByteCount$ = counts["bout"]
+flags = rest|^(?P<v>[SAFPRUEWC]+)(?:\s|$)
+app = rest|(?:^|\s)(?P<v>APP_[A-Za-z0-9_]+)
+applicationName$ = IF app["v"] != "" THEN app["v"] ELSE NULL
+fqdn = rest|==LOG-FQDN-RULE==\s+(?P<v>\S+)
+fqdnOld = rest|(?:^|\s)(?P<v>[A-Za-z0-9.-]+\.[A-Za-z]{2,})\([0-9A-Fa-f-]{36}\)
+domain = IF fqdn["v"] != "" THEN fqdn["v"] ELSE fqdnOld["v"]
+sid = rest|(?:^|\s)(?P<v>S-1-[0-9][0-9-]*)
+
+f1.key$ = "log_type"
+f1.value$ = logType
+f2.key$ = "reason"
+f2.value$ = reason
+f3.key$ = "rule"
+f3.value$ = p["rule"]
+f4.key$ = "nsx_direction"
+f4.value$ = p["dir"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [f1, f2, f3, f4]
+f5.key$ = "nsx_action"
+f5.value$ = act
+eventMetadata$.record$ = IF act != "" THEN eventMetadata$.record$ + [f5] ELSE eventMetadata$.record$
+f6.key$ = "packet_length"
+f6.value$ = p["len"]
+eventMetadata$.record$ = IF p["len"] != "" THEN eventMetadata$.record$ + [f6] ELSE eventMetadata$.record$
+f7.key$ = "tcp_flags"
+f7.value$ = flags["v"]
+eventMetadata$.record$ = IF flags["v"] != "" THEN eventMetadata$.record$ + [f7] ELSE eventMetadata$.record$
+f8.key$ = "vif_id"
+f8.value$ = dfw["vif"]
+eventMetadata$.record$ = IF dfw["vif"] != "" THEN eventMetadata$.record$ + [f8] ELSE eventMetadata$.record$
+f9.key$ = "vrf_id"
+f9.value$ = gfw["vrf"]
+f10.key$ = "interface_id"
+f10.value$ = gfw["ifid"]
+eventMetadata$.record$ = IF gfw["vrf"] != "" THEN eventMetadata$.record$ + [f9, f10] ELSE eventMetadata$.record$
+f11.key$ = "fqdn"
+f11.value$ = domain
+eventMetadata$.record$ = IF domain != "" THEN eventMetadata$.record$ + [f11] ELSE eventMetadata$.record$
+f12.key$ = "user_sid"
+f12.value$ = sid["v"]
+eventMetadata$.record$ = IF sid["v"] != "" THEN eventMetadata$.record$ + [f12] ELSE eventMetadata$.record$

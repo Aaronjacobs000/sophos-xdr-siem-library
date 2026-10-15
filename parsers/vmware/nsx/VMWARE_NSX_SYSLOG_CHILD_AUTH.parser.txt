@@ -1,0 +1,34 @@
+!SAMPLE=<182>1 2026-10-14T22:21:20.339Z nsxmgr01.example.com NSX 1513 SYSTEM [nsx@6876 audit="true" comp="nsx-manager" level="INFO" subcomp="http"] UserName="jdoe@corp.example.com", ModuleName="ACCESS_CONTROL", Operation="LOGIN", Operation status="failure"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: VMware NSX syslog.
+# Child of VMWARE_NSX_SYSLOG_PARENT: NSX Manager UI and API logins and logouts (audit messages
+# with ModuleName ACCESS_CONTROL and Operation LOGIN or LOGOUT) to Auth.
+# api, comp, subcomp, reqId, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = IF api["user"] != "" THEN api["user"] ELSE NULL
+targetHostName$ = hostId$
+authSystem$ = "NSX Manager"
+
+loginOp = api["op"] == "LOGIN"
+ok = LOWERCASE(api["status"]) == "success"
+authCategory$ = IF loginOp THEN "ACCOUNT_LOGON" ELSE "ACCOUNT_LOGOFF"
+action$ = IF loginOp THEN "LOGON" ELSE "LOGOFF"
+action$ = IF loginOp AND NOT ok THEN "FAILURE" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+
+u1.key$ = "module"
+u1.value$ = api["module"]
+u2.key$ = "operation"
+u2.value$ = api["op"]
+u3.key$ = "component"
+u3.value$ = comp["v"] + "/" + subcomp["v"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [u1, u2, u3]
+u4.key$ = "request_id"
+u4.value$ = reqId["v"]
+eventMetadata$.record$ = IF reqId["v"] != "" THEN eventMetadata$.record$ + [u4] ELSE eventMetadata$.record$

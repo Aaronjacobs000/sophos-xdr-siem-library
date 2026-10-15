@@ -1,0 +1,855 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792015801019000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "192.0.2.7",
+      "source_port": 42946,
+      "destination_address": "203.0.113.116",
+      "destination_port": 80,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1045"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "packet_length",
+            "value": "48"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vif_id",
+            "value": "b569cb6a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792015802093000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "192.0.2.7",
+      "source_port": 49676,
+      "destination_address": "192.0.2.44",
+      "destination_port": 445,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1052"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "DROP"
+          },
+          {
+            "key": "packet_length",
+            "value": "52"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vif_id",
+            "value": "b569cb6a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792015888131000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "192.0.2.7",
+      "source_port": 58786,
+      "destination_address": "198.51.100.156",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "connection_end_reason": "FIN",
+      "tx_packet_count": 25,
+      "rx_packet_count": 76,
+      "tx_byte_count": 1802,
+      "rx_byte_count": 225600,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "TERM"
+          },
+          {
+            "key": "rule",
+            "value": "1048"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "vif_id",
+            "value": "b569cb6a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792015863313000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "192.0.2.7",
+      "source_port": 58787,
+      "destination_address": "198.51.100.156",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1048"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "packet_length",
+            "value": "48"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vif_id",
+            "value": "b569cb6a"
+          },
+          {
+            "key": "fqdn",
+            "value": "www.example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792015952240000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "192.0.2.16",
+      "source_port": 49818,
+      "destination_address": "203.0.113.202",
+      "destination_port": 80,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "application_name": "APP_HTTP",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1034"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "OUT"
+          },
+          {
+            "key": "nsx_action",
+            "value": "REJECT"
+          },
+          {
+            "key": "packet_length",
+            "value": "48"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vif_id",
+            "value": "c1d2e3f4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016032644000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "source_address": "2001:db8:abcd:12::7",
+      "destination_address": "2001:db8:abcd:12:2::5",
+      "protocol": 58,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1043"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "packet_length",
+            "value": "128"
+          },
+          {
+            "key": "vif_id",
+            "value": "913401b9"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016092240000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx02.example.com",
+      "source_address": "192.0.2.21",
+      "source_port": 50719,
+      "destination_address": "192.0.2.22",
+      "destination_port": 69,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "2028"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "OUT"
+          },
+          {
+            "key": "nsx_action",
+            "value": "DROP"
+          },
+          {
+            "key": "packet_length",
+            "value": "52"
+          },
+          {
+            "key": "vif_id",
+            "value": "98e0d800"
+          },
+          {
+            "key": "user_sid",
+            "value": "S-1-5-21-1004336348-1177238915-682003330-1105"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016130585000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx02.example.com",
+      "source_address": "192.0.2.3",
+      "source_port": 49627,
+      "destination_address": "192.0.2.4",
+      "destination_port": 49153,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "connection_end_reason": "RST",
+      "tx_packet_count": 20,
+      "rx_packet_count": 16,
+      "tx_byte_count": 1718,
+      "rx_byte_count": 76308,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "dfw"
+          },
+          {
+            "key": "reason",
+            "value": "TERM"
+          },
+          {
+            "key": "rule",
+            "value": "mainrs/1024"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "OUT"
+          },
+          {
+            "key": "vif_id",
+            "value": "7396c504"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016172080427,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge01.example.com",
+      "source_address": "192.0.2.10",
+      "source_port": 45120,
+      "destination_address": "198.51.100.38",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "gfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1005"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "OUT"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vrf_id",
+            "value": "1"
+          },
+          {
+            "key": "interface_id",
+            "value": "55f1af2f487544e9:b0e059132ad7753d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016200552013,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge01.example.com",
+      "source_address": "203.0.113.40",
+      "source_port": 60613,
+      "destination_address": "192.0.2.10",
+      "destination_port": 161,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "gfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "1007"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "DROP"
+          },
+          {
+            "key": "packet_length",
+            "value": "328"
+          },
+          {
+            "key": "vrf_id",
+            "value": "1"
+          },
+          {
+            "key": "interface_id",
+            "value": "55f1af2f487544e9:b0e059132ad7753d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016244203615,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge01.example.com",
+      "source_address": "192.0.2.10",
+      "source_port": 49974,
+      "destination_address": "203.0.113.40",
+      "destination_port": 22,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 37305,
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "gfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "536870914"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "OUT"
+          },
+          {
+            "key": "nsx_action",
+            "value": "NAT"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vrf_id",
+            "value": "1"
+          },
+          {
+            "key": "interface_id",
+            "value": "55f1af2f487544e9:b0e059132ad7753d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016280978192,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge01.example.com",
+      "source_address": "203.0.113.40",
+      "source_port": 40082,
+      "destination_address": "198.51.100.3",
+      "destination_port": 22,
+      "destination_nat_address": "192.0.2.11",
+      "destination_nat_port": 22,
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "gfw"
+          },
+          {
+            "key": "reason",
+            "value": "match"
+          },
+          {
+            "key": "rule",
+            "value": "536870913"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "RDR"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "S"
+          },
+          {
+            "key": "vrf_id",
+            "value": "1"
+          },
+          {
+            "key": "interface_id",
+            "value": "55f1af2f487544e9:b0e059132ad7753d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016325036957,
+      "event_time_fidelity": "MICRO",
+      "host_id": "edge01.example.com",
+      "source_address": "203.0.113.40",
+      "destination_address": "192.0.2.10",
+      "protocol": 1,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "gfw"
+          },
+          {
+            "key": "reason",
+            "value": "TERM"
+          },
+          {
+            "key": "rule",
+            "value": "1005"
+          },
+          {
+            "key": "nsx_direction",
+            "value": "IN"
+          },
+          {
+            "key": "nsx_action",
+            "value": "PASS"
+          },
+          {
+            "key": "vrf_id",
+            "value": "1"
+          },
+          {
+            "key": "interface_id",
+            "value": "55f1af2f487544e9:b0e059132ad7753d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016401339000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_user_name": "admin",
+      "target_host_name": "nsxmgr01.example.com",
+      "auth_system": "NSX Manager",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "ACCESS_CONTROL"
+          },
+          {
+            "key": "operation",
+            "value": "LOGIN"
+          },
+          {
+            "key": "component",
+            "value": "nsx-manager/http"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016480339000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_user_name": "jdoe@corp.example.com",
+      "target_host_name": "nsxmgr01.example.com",
+      "auth_system": "NSX Manager",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "ACCESS_CONTROL"
+          },
+          {
+            "key": "operation",
+            "value": "LOGIN"
+          },
+          {
+            "key": "component",
+            "value": "nsx-manager/http"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016758779000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_user_name": "admin",
+      "target_host_name": "nsxmgr01.example.com",
+      "auth_system": "NSX Manager",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "module",
+            "value": "ACCESS_CONTROL"
+          },
+          {
+            "key": "operation",
+            "value": "LOGOUT"
+          },
+          {
+            "key": "component",
+            "value": "nsx-manager/http"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016526324000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_hostname": "nsxmgr01.example.com",
+      "username": "admin",
+      "operation_name": "UpdateSecurityRule",
+      "namespace": "DfwSecurityPolicy",
+      "result": "success",
+      "operation": "write"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016629017000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_hostname": "nsxmgr01.example.com",
+      "username": "admin",
+      "operation_name": "NSX CLI command",
+      "command": "set user admin password-expiration 100",
+      "result": "CMD_EXECUTED"
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT > VMWARE_NSX_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016678803000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nsxmgr01.example.com",
+      "target_hostname": "nsxmgr01.example.com",
+      "username": "admin",
+      "operation_name": "GET /api/v1/node/services/syslog/exporters",
+      "result": "200"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016810466000,
+      "host_id": "nsxmgr01.example.com"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "VMWARE_NSX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "VMware NSX",
+      "event_time_usec": 1792016820114000,
+      "host_id": "nsxmgr01.example.com"
+    }
+  }
+]
