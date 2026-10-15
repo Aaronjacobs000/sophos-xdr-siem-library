@@ -1,0 +1,63 @@
+!SAMPLE=<14>Oct 15 08:05:10 rtx01 Login succeeded for SSH via RADIUS: 192.0.2.25 jsmith
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Yamaha RTX and NVR routers, login messages (INFO level), syslog to the data collector:
+#   Login succeeded for <type>[ via RADIUS]: <address> <user>[ as <role>]
+#   Login failed for <type>[: <address> [<user>]]
+#   Logout from <type>: <address>[ <user>]
+#   'administrator' succeeded for <type>[ user][ via RADIUS]: <address> <user>   (administrator mode)
+#   Login access from <type> was restricted. [: <address>]                      (locked out)
+# <type> is TELNET, SSH, HTTP, Serial or Remote; Serial and Remote lines name no address.
+# Child of YAMAHA_RTX_SYSLOG_PARENT: sign-ins, failures, sign-outs, administrator mode and lockouts,
+# to Auth.
+# login, host, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+svc = STRING(login["svc"])
+rest = STRING(login["rest"])
+r = rest|^(?:\s+user)?(?P<radius>\s+via RADIUS)?(?P<locked>\s+was restricted\.)?\s*(?::\s*(?P<a>\S+)(?:\s+(?P<b>\S+))?(?:\s+as\s+(?P<role>.+?))?)?\s*$
+a = STRING(r["a"])
+b = STRING(r["b"])
+# The first value after the colon is the address, except on Serial and Remote lines, which name
+# only the user.
+hasIp = a != "" AND IS_VALID_IP(a)
+ip = IF hasIp THEN a ELSE ""
+user = IF hasIp THEN b ELSE a
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+targetUserName$ = IF user != "" THEN user ELSE NULL
+targetHostName$ = IF host != "" THEN host ELSE NULL
+logonApplicationFamily$ = svc
+viaRadius = r["radius"] != ""
+authSystem$ = IF viaRadius THEN "RADIUS" ELSE "Yamaha RTX"
+
+admin = login["adm"] != ""
+logout = login["out"] != ""
+locked = r["locked"] != ""
+failed = login["res"] == "failed"
+action$ = "LOGON"
+action$ = IF admin THEN "PRIVILEGE" ELSE action$
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+authCategory$ = IF admin THEN NULL ELSE "ACCOUNT_LOGON"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+actionResult$ = IF failed OR locked THEN "FAILED" ELSE "SUCCESS"
+# A failed sign-in gives no reason. Too many failures lock the login type out for a while.
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE NULL
+
+role = STRING(r["role"])
+m1.key$ = "login_type"
+m1.value$ = svc
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "role"
+m2.value$ = role
+eventMetadata$.record$ = IF role != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "administrator_mode"
+m3.value$ = "true"
+eventMetadata$.record$ = IF admin THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
