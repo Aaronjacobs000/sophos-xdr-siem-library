@@ -151,7 +151,7 @@ test('review rule: bridge code and other non-library files always need a review'
 // runs, CI's workflow runs and the pull request; the last answer repeats. comments are the pull
 // request's comments, and the result's comments are the report bodies the gate wrote.
 const PASSED = [{ name: 'tests', status: 'completed', conclusion: 'success' }];
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}], report = { passed: true, eligible: true }, comments = [] } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}], report = { passed: true, eligible: true }, comments = [], extra = [] } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const written = path.join(dir, 'comments.json');
@@ -194,7 +194,7 @@ globalThis.fetch = async (url, init = {}) => {
 };
 `);
   const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')]
-    : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : [command, '--pr', '7', '--sha', 'abc123'];
+    : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : [command, '--pr', '7', '--sha', 'abc123', ...extra];
   const run = spawnSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1', GATE_POLL_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   // waiting answers with its exit code; any other command that fails throws, as execFileSync would.
   if (run.status !== 0 && command !== 'waiting') throw Object.assign(new Error(`gate exited ${run.status}: ${run.stderr}`), { status: run.status });
@@ -405,12 +405,35 @@ test('gate: a run whose commit is no longer the head, or that ends after the pul
     assert.equal((await gateMerge(entry, { command: 'pr', report })).comments.length, 1, JSON.stringify(report));
   }
   // The run that merged the pull request writes its report, though the pull request is now closed.
+  // The first read of the pull request is the check before the run labels it.
   for (const autoMerge of [false, true]) {
-    const own = await gateMerge(entry, { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, { state: 'closed', merged: true }] : [{}] });
+    const own = await gateMerge(entry, { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, {}, { state: 'closed', merged: true }] : [{}] });
     assert.equal(own.stepOutput, 'merged=true\n', String(autoMerge));
     assert.equal(own.comments.length, 1, String(autoMerge));
     assert.match(own.comments[0], /Merged\.\n$/);
   }
+});
+
+test('gate: a run whose commit was replaced changes no labels, and failed checks clear "needs review"', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const labelCalls = (r) => r.calls.filter((c) => c.includes('/issues/7/labels'));
+  // The pull request moved on while this run waited for checks: the run adds no "needs review".
+  const moved = await gateMerge(entry, { command: 'pr', pulls: [{}, { head: { sha: 'def456' } }] });
+  assert.equal(firstMergeCall(moved), -1);
+  assert.ok(!moved.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), moved.calls.join('\n'));
+  // Moved on, or closed, before the run labeled anything: no label is added or removed, whatever the report says.
+  for (const report of [{ passed: true, eligible: true }, { passed: true, eligible: false }, { passed: false, eligible: false }]) {
+    for (const now of [{ head: { sha: 'def456' } }, { state: 'closed' }]) {
+      assert.deepEqual(labelCalls(await gateMerge(entry, { command: 'pr', report, pulls: [now] })), [], JSON.stringify([report, now]));
+    }
+  }
+  // A run that is still current and whose checks failed removes the "needs review" an earlier run added.
+  const failed = await gateMerge(entry, { command: 'pr', report: { passed: false, eligible: false } });
+  assert.ok(failed.calls.includes('DELETE https://api.github.com/repos/o/r/issues/7/labels/needs%20review'), failed.calls.join('\n'));
+  assert.ok(failed.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["library checks failed"]}')));
+  // Control: a current run that needs a maintainer still gets "needs review".
+  const review = await gateMerge(entry, { command: 'pr', report: { passed: true, eligible: false } });
+  assert.ok(review.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["library checks passed","needs review"]}')), review.calls.join('\n'));
 });
 
 const RUNNING = [{ name: 'tests', status: 'in_progress', conclusion: null }];
@@ -477,6 +500,39 @@ test('gate: the run CI starts merges a pull request held for CI once CI passed, 
   const bridge = await gateMerge([...entry, 'bridges/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false, comments: held });
   assert.equal(firstMergeCall(bridge), -1);
   assert.match(bridge.comments[0], /changes bridge code/);
+});
+
+test('gate: a check that failed holds the commit with a marker, and a CI re-run that passes runs the gate again', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const FAILED_FOR = (sha) => `<!-- parser-studio-check-failed ${sha} -->`;
+  const bot = { type: 'Bot' };
+  // CI failed on the commit: the report says a re-run of CI starts the gate again, and ends with the marker.
+  const failed = await gateMerge(entry, { command: 'pr', autoMerge: false, checks: [[{ name: 'tests', status: 'completed', conclusion: 'failure' }]], ciRuns: [[{ status: 'completed', conclusion: 'failure' }]] });
+  assert.equal(firstMergeCall(failed), -1);
+  assert.ok(failed.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')));
+  assert.match(failed.comments[0], /Another check on this commit failed or is still running, so a maintainer will look at it\. If a re-run of CI passes, the gate runs again for this commit\./);
+  assert.ok(failed.comments[0].trimEnd().endsWith(FAILED_FOR('abc123')), failed.comments[0]);
+  assert.ok(!failed.comments[0].includes('waiting-for-ci'));
+  // waiting: with that report, CI finishing on the commit starts the gate again only when CI passed.
+  const report = (sha) => `<!-- parser-studio-report -->\n### Parser library checks: passed\n\nAnother check failed.\n\n${FAILED_FOR(sha)}\n`;
+  const waiting = async (comments, ci) => (await gateMerge([], { command: 'waiting', comments, extra: ci === undefined ? [] : ['--ci', ci] })).status;
+  assert.equal(await waiting([{ id: 1, body: report('abc123'), user: bot }], 'success'), 0);
+  for (const ci of ['failure', 'cancelled', 'timed_out', '', undefined]) assert.equal(await waiting([{ id: 1, body: report('abc123'), user: bot }], ci), 1, String(ci));
+  // Another commit's marker, or one in someone else's comment: no.
+  assert.equal(await waiting([{ id: 1, body: report('def456'), user: bot }], 'success'), 1);
+  assert.equal(await waiting([{ id: 1, body: report('abc123'), user: { type: 'User' } }], 'success'), 1);
+  // A report held for CI still running goes on whatever CI's conclusion, as before.
+  const held = `<!-- parser-studio-report -->\nCI is still running.\n\n${WAITING_FOR('abc123')}\n`;
+  for (const ci of ['success', 'failure']) assert.equal(await waiting([{ id: 1, body: held, user: bot }], ci), 0, ci);
+  // The run the re-run starts checks the files and every check again, then merges; its report has no marker.
+  const rerun = await gateMerge(entry, { command: 'pr', autoMerge: false, comments: [{ id: 1, body: report('abc123'), user: bot }] });
+  assert.equal(rerun.stepOutput, 'merged=true\n');
+  assert.ok(rerun.calls.includes('PATCH https://api.github.com/repos/o/r/issues/comments/1'));
+  assert.match(rerun.comments[0], /Merged\.\n$/);
+  assert.ok(rerun.calls.includes('DELETE https://api.github.com/repos/o/r/issues/7/labels/needs%20review'));
+  // Bridge code is still held, whatever started the run.
+  const bridge = await gateMerge([...entry, 'bridges/acme-pull/acme_pull.py'], { command: 'pr', autoMerge: false, comments: [{ id: 1, body: report('abc123'), user: bot }] });
+  assert.equal(firstMergeCall(bridge), -1);
 });
 
 test('bridge READMEs: each service example restarts on failure after a delay, and says why', async () => {

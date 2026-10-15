@@ -7,8 +7,9 @@
 # outside parsers/, always waits for a maintainer: see tools/lib/merge-rules.mjs, which
 # github-gate.mjs checks against the real file list right before it merges the checked commit.
 # CI finishing on a pull request starts it too, but it goes on only when the gate's report says
-# it held that commit because CI was still running. It then takes the pull request number from the
-# Parser checks run on the same commit and runs the whole gate again. It trusts nothing from CI's run.
+# it held that commit because CI was still running, or because a check failed and CI's run (a
+# re-run) has now passed. It then takes the pull request number from the Parser checks run on the
+# same commit and runs the whole gate again. It trusts nothing from CI's run but its conclusion.
 name: Parser labels and merge
 
 on:
@@ -76,14 +77,16 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_PATH: ${{ github.event.workflow_run.path }}
+          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           PR=$(tr -dc '0-9' < artifact/pr-number.txt)
           if [ -z "$PR" ]; then echo "no pull request number"; exit 1; fi
           INFO=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.head.sha, .user.login, .state] | @tsv')
           SHA=$(echo "$INFO" | cut -f1); AUTHOR=$(echo "$INFO" | cut -f2); STATE=$(echo "$INFO" | cut -f3)
           if [ "$SHA" != "$HEAD_SHA" ] || [ "$STATE" != "open" ]; then echo "pull request moved on; skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          # Started by CI: go on only if the gate held this commit because CI was still running.
-          if [ "$RUN_PATH" != ".github/workflows/parser-checks.yml" ] && ! node base/tools/github-gate.mjs waiting --pr "$PR" --sha "$HEAD_SHA"; then
+          # Started by CI: go on only if the gate held this commit because CI was still running, or
+          # because a check failed and this CI run passed.
+          if [ "$RUN_PATH" != ".github/workflows/parser-checks.yml" ] && ! node base/tools/github-gate.mjs waiting --pr "$PR" --sha "$HEAD_SHA" --ci "$CI_CONCLUSION"; then
             echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           { echo "number=$PR"; echo "author=$AUTHOR"; echo "skip=false"; } >> "$GITHUB_OUTPUT"
