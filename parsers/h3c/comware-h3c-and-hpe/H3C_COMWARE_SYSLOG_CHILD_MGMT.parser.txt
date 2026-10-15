@@ -1,0 +1,33 @@
+!SAMPLE=<190>Oct 15 09:15:00 2026 sw01 %%10SHELL/6/SHELL_CMD: -DevIP=192.0.2.1; -Line=vty0-IPAddr=192.0.2.25-User=jsmith; Command is undo info-center loghost 192.0.2.50
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C and HPE Comware system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: commands and configuration changes to Management Event.
+#   SHELL_CMD:         -Line=<line>-IPAddr=<address>-User=<user>; Command is <command>
+#   CFGMAN_CFGCHANGED: -EventIndex=<n>-CommandSource=<n>-ConfigSource=<n>-ConfigDestination=<n>; Configuration changed.
+# Comware writes ** when it can't get the line, address or user, which is left unset.
+# mn, body, host, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+cmdM = body|^-Line=(?P<line>[^-;]*)-IPAddr=(?P<ip>[^-;]*)-User=(?P<user>[^;]*);\s*Command is (?P<cmd>.*)$
+cfg = body|^-EventIndex=(?P<idx>\d+)-CommandSource=(?P<src>[^-;]*)-ConfigSource=(?P<from>[^-;]*)-ConfigDestination=(?P<to>[^-;]*);\s*(?P<text>.*?)\.?$
+isCmd = mn == "SHELL_CMD"
+user = STRING(cmdM["user"])
+username$ = IF user != "" AND user != "**" THEN user ELSE NULL
+ip = STRING(cmdM["ip"])
+sourceAddress$ = IF ip != "" AND ip != "**" THEN ip ELSE NULL
+targetHostname$ = IF host != "" THEN host ELSE NULL
+cmd = STRING(cmdM["cmd"])
+command$ = IF cmd != "" THEN cmd ELSE NULL
+operationName$ = IF isCmd THEN "command" ELSE "configuration changed"
+# A configuration change carries the event index and the numeric source and destination codes.
+change = "Configuration changed (command source " + STRING(cfg["src"]) + ", configuration source " + STRING(cfg["from"]) + ", configuration destination " + STRING(cfg["to"]) + ")"
+operation$ = IF isCmd THEN cmd ELSE change
+eventId$ = IF STRING(cfg["idx"]) != "" THEN cfg["idx"] ELSE NULL
+cline = STRING(cmdM["line"])
+channel$ = IF isCmd AND cline != "" AND cline != "**" THEN "Comware CLI " + cline ELSE "Comware configuration"
+channel$ = IF isCmd AND (cline == "" OR cline == "**") THEN "Comware CLI" ELSE channel$
+result$ = "success"

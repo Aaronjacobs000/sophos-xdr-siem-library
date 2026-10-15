@@ -1,0 +1,88 @@
+!SAMPLE=<189>Oct 15 09:12:44 2026 sw01 %%10SHELL/5/SHELL_LOGIN: -DevIP=192.0.2.1; jsmith logged in from 192.0.2.25.
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%%\d{2}\s?(?:SN:\S+\s+)?(?:VsysId:\S+\s+)?(?:SHELL|LOGIN|SSHS|AAA|CFGMAN|WEB|DOT1X|MACA|SESSION|FILTER|IPS|ATK|UFLT|ANTI-VIR)/\d/[A-Z][A-Z0-9_]*:
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Comware 7 devices from H3C (switches, routers and SecPath firewalls) and HPE (FlexNetwork and
+# FlexFabric switches), system logs sent to the data collector in the default (non-customized) format,
+# and SecPath fast log output in the standard format:
+#   <PRI><time> <sysname> %%10<MODULE>/<severity>/<MNEMONIC>: [-DevIP=<address>; ]<content>
+#   <PRI><time> <sysname> %%10 [SN:<sn> ]VsysId:<id> <MODULE>/<severity>/<MNEMONIC>:<content>
+# Parent: claims these modules and hands them on:
+#   SHELL_LOGIN, SHELL_LOGOUT, LOGIN_FAILED, LOGIN_INVALID_USERNAME_PWD, SSHS_AUTH_SUCCESS, SSHS_AUTH_FAIL,
+#   SSHS_LOG, WEB LOGIN, LOGIN_FAILED and LOGOUT, AAA_SUCCESS and AAA_FAILURE for authentication, and
+#   DOT1X and MACA logins and failures                                        to the Auth child
+#   SHELL_CMD and CFGMAN_CFGCHANGED                                          to the Management Event child
+#   SESSION_IPV4_FLOW, SESSION_IPV6_FLOW and the FILTER execution messages    to the Netflow child
+#   IPS_IPV4_INTERZONE, IPS_IPV6_INTERZONE and ATK attack defense messages    to the NIDS child
+#   UFLT_MATCH_IPV4_LOG and UFLT_MATCH_IPV6_LOG                               to the HTTP child
+#   ANTIVIRUS_IPV4_INTERZONE and ANTIVIRUS_IPV6_INTERZONE                    to the Antivirus child
+# Other messages of these modules stay generic.
+
+h = originalData$|^(?:<\d{1,3}>)?\s*(?P<pre>.*?)\s*%%(?P<ver>\d{2})\s?(?:SN:\S+\s+)?(?:VsysId:\S+\s+)?(?P<mod>[A-Z][A-Z0-9_-]*)/(?P<sev>\d)/(?P<mn>[A-Z][A-Z0-9_]*):\s*(?P<rest>.*?)\s*$
+pre = h["pre"]
+mod = h["mod"]
+mn = h["mn"]
+# The location element (-DevIP=..., -Slot=..., -Context=...) comes before the content, ending in a semicolon.
+lc = h["rest"]|^(?P<loc>-(?:DevI[Pp]|MDC|Slot|Chassis|Context)=[^;]*);\s*(?P<body>.*)$
+body = IF STRING(lc["loc"]) != "" THEN lc["body"] ELSE h["rest"]
+locText = STRING(lc["loc"])
+dv = locText|-DevI[Pp]=(?P<ip>[^\s-]+)
+devIp = STRING(dv["ip"])
+
+# The log host time format is set with info-center timestamp loghost: date (Oct 15 09:12:44 2026,
+# the default, with optional milliseconds), iso (2026-10-15T09:12:44, with an optional zone) or
+# no-year-date (Oct 15 09:12:44). Fast log output uses Oct 15 09:12:44 2026 or 2026 Oct 15 09:12:44.
+# Times without a zone are read as UTC. No time keeps the ingest time.
+ta = pre|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:[.:]\d+)?\s+(?P<y>\d{4})(?:\s+(?P<r>.*))?$
+tb = pre|^(?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:Z|(?P<zs>[+-]\d{2}):?(?P<zm>\d{2}))?(?:\s+(?P<r>.*))?$
+tc = pre|^(?P<y>\d{4})\s+(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\s+(?P<r>.*))?$
+td = pre|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:\s+(?P<r>.*))?$
+hasA = STRING(ta["t"]) != ""
+hasB = STRING(tb["t"]) != ""
+hasC = STRING(tc["t"]) != ""
+hasD = NOT hasA AND NOT hasC AND STRING(td["t"]) != ""
+zone = IF STRING(tb["zs"]) != "" THEN tb["zs"] + ":" + tb["zm"] ELSE "Z"
+eventTimeUsec$ = IF hasA THEN DATETIME(ta["t"] + " " + ta["y"], "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+eventTimeUsec$ = IF hasB THEN DATETIME(tb["t"] + zone, "2006-01-02T15:04:05Z07:00") ELSE eventTimeUsec$
+eventTimeUsec$ = IF hasC THEN DATETIME(tc["t"] + " " + tc["y"], "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+eventTimeUsec$ = IF hasD THEN DATETIME(td["t"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+rest = STRING(ta["r"]) + STRING(tb["r"]) + STRING(tc["r"])
+rest = IF hasD THEN STRING(td["r"]) ELSE rest
+rest = IF NOT hasA AND NOT hasB AND NOT hasC AND NOT hasD THEN pre ELSE rest
+hn = rest|^(?P<host>\S+)
+host = STRING(hn["host"])
+
+# Firewall logs are Keyword(ID)=Value pairs joined by semicolons. The IDs are taken off the keys.
+kb = body|^(?P<l>.*?)[;.]?$
+kvText = REPLACE_REGEX(STRING(kb["l"]), "\\(\\d+\\)=", "=")
+kv = SPLIT_NAME_VALUES(kvText, ";", "=", "\\")
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Comware"
+sensorEventId$ = mod + "/" + h["sev"] + "/" + mn
+hostId$ = IF host != "" THEN host ELSE NULL
+
+aaa = body|^-AAAType=(?P<type>[^-;]*)-AAADomain=(?P<domain>.*?)-Service=(?P<svc>.*?)-UserName=(?P<user>[^;]*);\s*AAA (?P<res>\w+)
+login = mod == "SHELL" AND (mn == "SHELL_LOGIN" OR mn == "SHELL_LOGOUT")
+login = login OR (mod == "LOGIN" AND (mn == "LOGIN_FAILED" OR mn == "LOGIN_INVALID_USERNAME_PWD"))
+login = login OR (mod == "SSHS" AND (mn == "SSHS_AUTH_SUCCESS" OR mn == "SSHS_AUTH_FAIL" OR mn == "SSHS_LOG"))
+login = login OR (mod == "WEB" AND (mn == "LOGIN" OR mn == "LOGIN_FAILED" OR mn == "LOGOUT"))
+login = login OR (mod == "AAA" AND (mn == "AAA_SUCCESS" OR mn == "AAA_FAILURE") AND aaa["type"] == "AUTHEN")
+login = login OR (mod == "DOT1X" AND (mn == "DOT1X_LOGIN_SUCC" OR mn == "DOT1X_LOGIN_FAILURE"))
+login = login OR (mod == "MACA" AND (mn == "MACA_LOGIN_SUCC" OR mn == "MACA_LOGIN_FAILURE"))
+admin = (mod == "SHELL" AND mn == "SHELL_CMD") OR (mod == "CFGMAN" AND mn == "CFGMAN_CFGCHANGED")
+flow = mod == "SESSION" AND (mn == "SESSION_IPV4_FLOW" OR mn == "SESSION_IPV6_FLOW")
+flow = flow OR (mod == "FILTER" AND (mn == "FILTER_ZONE_IPV4_EXECUTION" OR mn == "FILTER_ZONE_IPV6_EXECUTION" OR mn == "FILTER_IPV4_EXECUTION" OR mn == "FILTER_IPV6_EXECUTION"))
+ips = (mod == "IPS" AND (mn == "IPS_IPV4_INTERZONE" OR mn == "IPS_IPV6_INTERZONE")) OR mod == "ATK"
+url = mod == "UFLT" AND (mn == "UFLT_MATCH_IPV4_LOG" OR mn == "UFLT_MATCH_IPV6_LOG")
+virus = mod == "ANTI-VIR" AND (mn == "ANTIVIRUS_IPV4_INTERZONE" OR mn == "ANTIVIRUS_IPV6_INTERZONE")
+eventType$ = "other"
+eventType$ = IF login THEN "login" ELSE eventType$
+eventType$ = IF admin THEN "admin" ELSE eventType$
+eventType$ = IF flow THEN "flow" ELSE eventType$
+eventType$ = IF ips THEN "ips" ELSE eventType$
+eventType$ = IF url THEN "url" ELSE eventType$
+eventType$ = IF virus THEN "virus" ELSE eventType$

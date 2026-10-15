@@ -1,0 +1,759 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/5/SHELL_LOGIN",
+      "host_id": "sw01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "CLI",
+      "auth_system": "Comware CLI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SHELL/5/SHELL_LOGIN"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055585000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "LOGIN/5/LOGIN_FAILED",
+      "host_id": "sw01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.23",
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "CLI",
+      "auth_system": "Comware CLI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "LOGIN/5/LOGIN_FAILED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055586000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "LOGIN/5/LOGIN_INVALID_USERNAME_PWD",
+      "host_id": "sw01",
+      "source_address": "198.51.100.23",
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "CLI",
+      "auth_system": "Comware CLI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Invalid username or password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "LOGIN/5/LOGIN_INVALID_USERNAME_PWD"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055650000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSHS/6/SSHS_AUTH_SUCCESS",
+      "host_id": "sw01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "source_port_number": 51022,
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "SSH",
+      "auth_system": "Comware SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSHS/6/SSHS_AUTH_SUCCESS"
+          },
+          {
+            "key": "authentication_method",
+            "value": "password"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055670000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SSHS/6/SSHS_LOG",
+      "host_id": "sw01",
+      "target_user_name": "root",
+      "source_address": "203.0.113.45",
+      "source_port_number": 40122,
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "SSH",
+      "auth_system": "Comware SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "invalid username or wrong password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SSHS/6/SSHS_LOG"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055700000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/6/SHELL_CMD",
+      "host_id": "sw01",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "sw01",
+      "command": "undo info-center loghost 192.0.2.50",
+      "operation_name": "command",
+      "operation": "undo info-center loghost 192.0.2.50",
+      "channel": "Comware CLI vty0",
+      "result": "success"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055740000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/5/SHELL_LOGOUT",
+      "host_id": "sw01",
+      "target_user_name": "jsmith",
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "CLI",
+      "auth_system": "Comware CLI",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "SHELL/5/SHELL_LOGOUT"
+          },
+          {
+            "key": "line",
+            "value": "vty0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055790000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CFGMAN/5/CFGMAN_CFGCHANGED",
+      "host_id": "sw01",
+      "target_hostname": "sw01",
+      "operation_name": "configuration changed",
+      "operation": "Configuration changed (command source 1, configuration source 2, configuration destination 3)",
+      "event_id": 12,
+      "channel": "Comware configuration",
+      "result": "success"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055832000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AAA/5/AAA_FAILURE",
+      "host_id": "sw01",
+      "target_user_name": "admin",
+      "target_host_name": "sw01",
+      "target_address": "192.0.2.1",
+      "logon_application_family": "AAA login",
+      "auth_system": "Comware AAA login",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "AAA/5/AAA_FAILURE"
+          },
+          {
+            "key": "aaa_domain",
+            "value": "system"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055882000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "DOT1X/6/DOT1X_LOGIN_SUCC",
+      "host_id": "sw02",
+      "target_user_name": "jsmith",
+      "target_host_name": "sw02",
+      "target_address": "192.0.2.3",
+      "logon_application_family": "802.1X",
+      "auth_system": "Comware 802.1X",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "DOT1X/6/DOT1X_LOGIN_SUCC"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet1/0/4"
+          },
+          {
+            "key": "client_mac",
+            "value": "0000-5e00-5310"
+          },
+          {
+            "key": "vlan",
+            "value": "10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055920000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "DOT1X/6/DOT1X_LOGIN_FAILURE",
+      "host_id": "sw02",
+      "target_user_name": "jdoe",
+      "target_host_name": "sw02",
+      "target_address": "192.0.2.3",
+      "logon_application_family": "802.1X",
+      "auth_system": "Comware 802.1X",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "VLAN authorization failed",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "DOT1X/6/DOT1X_LOGIN_FAILURE"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet1/0/5"
+          },
+          {
+            "key": "client_mac",
+            "value": "0000-5e00-5311"
+          },
+          {
+            "key": "vlan",
+            "value": "10"
+          },
+          {
+            "key": "error_code",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055955000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "MACA/6/MACA_LOGIN_SUCC",
+      "host_id": "sw02",
+      "target_user_name": "0000-5e00-5320",
+      "target_host_name": "sw02",
+      "target_address": "192.0.2.3",
+      "logon_application_family": "MAC authentication",
+      "auth_system": "Comware MAC authentication",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "MACA/6/MACA_LOGIN_SUCC"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet1/0/9"
+          },
+          {
+            "key": "client_mac",
+            "value": "0000-5e00-5320"
+          },
+          {
+            "key": "vlan",
+            "value": "30"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792055990000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "WEB/5/LOGIN_FAILED",
+      "host_id": "fw01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.78",
+      "target_host_name": "fw01",
+      "target_address": "192.0.2.2",
+      "logon_application_family": "Web",
+      "auth_system": "Comware Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "WEB/5/LOGIN_FAILED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056011000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SESSION/6/SESSION_IPV4_FLOW",
+      "host_id": "fw01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 50123,
+      "destination_port": 443,
+      "source_nat_address": "198.51.100.2",
+      "destination_nat_address": "203.0.113.80",
+      "source_nat_port": 2048,
+      "destination_nat_port": 443,
+      "tx_packet_count": 1,
+      "tx_byte_count": 60,
+      "rx_packet_count": 0,
+      "rx_byte_count": 0,
+      "application_name": "https",
+      "protocol": 6,
+      "start_timestamp_usec": 1792056011000000,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "Session created"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056020000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "FILTER/6/FILTER_ZONE_IPV4_EXECUTION",
+      "host_id": "fw01",
+      "source_address": "198.51.100.44",
+      "destination_address": "192.0.2.10",
+      "source_port": 51544,
+      "destination_port": 22,
+      "application_name": "ssh",
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "Deny"
+          },
+          {
+            "key": "source_zone",
+            "value": "Untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "DMZ"
+          },
+          {
+            "key": "policy",
+            "value": "untrust-dmz"
+          },
+          {
+            "key": "rule_id",
+            "value": "5"
+          },
+          {
+            "key": "match_count",
+            "value": "1"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056065000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "IPS/4/IPS_IPV4_INTERZONE",
+      "host_id": "fw01",
+      "source_address": "203.0.113.66",
+      "destination_address": "192.0.2.10",
+      "source_port": 40122,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "http",
+      "message": "WEB_SERVER_Generic_SQL_Injection",
+      "classification": "Vulnerability",
+      "signature_id": 5707,
+      "action": "Reset & Logging",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "priority": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "IPS/4/IPS_IPV4_INTERZONE"
+          },
+          {
+            "key": "severity",
+            "value": "HIGH"
+          },
+          {
+            "key": "source_zone",
+            "value": "Untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "DMZ"
+          },
+          {
+            "key": "policy",
+            "value": "ips"
+          },
+          {
+            "key": "cve",
+            "value": "CVE-2026-0001"
+          },
+          {
+            "key": "sub_category",
+            "value": "SQL Injection"
+          },
+          {
+            "key": "protected_object",
+            "value": "Web Server"
+          },
+          {
+            "key": "hit_direction",
+            "value": "original"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056160000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UFLT/6/UFLT_MATCH_IPV4_LOG",
+      "host_id": "fw01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.90",
+      "source_port": 50444,
+      "destination_port": 80,
+      "protocol": 6,
+      "l7_protocol": "http",
+      "source_username": "jsmith",
+      "source_mac": "00-00-5e-00-53-25",
+      "destination_mac": "00-00-5e-00-53-01",
+      "uri_host": "bad.example.com",
+      "uri_path": "/download",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "url_category",
+            "value": "Malware"
+          },
+          {
+            "key": "action",
+            "value": "Drop"
+          },
+          {
+            "key": "policy",
+            "value": "policy1"
+          },
+          {
+            "key": "source_zone",
+            "value": "Trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "Untrust"
+          },
+          {
+            "key": "vlan",
+            "value": "400"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056190000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "ANTI-VIR/4/ANTIVIRUS_IPV4_INTERZONE",
+      "host_id": "fw01",
+      "event_type": "virus",
+      "threat_name": "EICAR-Test-File",
+      "threat_type": "FILE",
+      "file_path": "eicar.com",
+      "file_hash": {
+        "md5": "44d88612fea8a8f36de82e1278abb02f"
+      },
+      "user_name": "jsmith",
+      "policy_name": "av",
+      "agent_priority": "MEDIUM",
+      "vendor_signature_id": 95,
+      "vendor_alert_type": "Trojan",
+      "source_address": "203.0.113.90",
+      "action_taken": "BLOCKED",
+      "threat_category": "TROJAN",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "destination_address",
+            "value": "192.0.2.25"
+          },
+          {
+            "key": "action",
+            "value": "Reset & Logging"
+          },
+          {
+            "key": "application",
+            "value": "http"
+          },
+          {
+            "key": "file_type",
+            "value": "com"
+          },
+          {
+            "key": "hit_direction",
+            "value": "reply"
+          },
+          {
+            "key": "source_zone",
+            "value": "Untrust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "Trust"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056235000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "ATK/3/ATK_IP4_PORTSCAN",
+      "host_id": "fw01",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "protocol": 6,
+      "message": "ATK_IP4_PORTSCAN",
+      "classification": "attack defense",
+      "action": "logging,block-source",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "ATK/3/ATK_IP4_PORTSCAN"
+          },
+          {
+            "key": "interface",
+            "value": "GigabitEthernet1/0/2"
+          },
+          {
+            "key": "attack_begin_time",
+            "value": "20261015092355"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792020602000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "SHELL/6/SHELL_CMD",
+      "host_id": "ff5950-01",
+      "username": "netops",
+      "source_address": "192.0.2.26",
+      "target_hostname": "ff5950-01",
+      "command": "local-user guest class manage",
+      "operation_name": "command",
+      "operation": "local-user guest class manage",
+      "channel": "Comware CLI vty1",
+      "result": "success"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056660000000,
+      "sensor_event_id": "SHELL/6/SHELL_CMD_CONFIRM",
+      "host_id": "sw01"
+    }
+  }
+]
