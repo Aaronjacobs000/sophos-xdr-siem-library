@@ -195,12 +195,17 @@ test('merge workflow: a run CI started goes on only if the gate\'s report holds 
   const { env, run } = jobStep(jobs().check, 'Match the pull request to the checked commit');
   assert.equal(env.RUN_PATH, '${{ github.event.workflow_run.path }}');
   assert.equal(env.GITHUB_TOKEN, '${{ github.token }}');
-  const base = { HEAD_SHA: 'abc123', GH_ANSWER: 'abc123\\toctocat\\topen' };
+  // CI's conclusion goes to the gate, which starts again after a failed check only when CI passed.
+  assert.equal(env.CI_CONCLUSION, '${{ github.event.workflow_run.conclusion }}');
+  const base = { HEAD_SHA: 'abc123', GH_ANSWER: 'abc123\\toctocat\\topen', CI_CONCLUSION: 'success' };
   // Started by CI, and the report holds the commit for CI: go on.
   const held = await runStep(run, { ...base, RUN_PATH: CI, NODE_EXIT: '0' });
   assert.equal(held.status, 0, held.out);
   assert.deepEqual(held.output, { number: '7', author: 'octocat', skip: 'false' });
-  assert.ok(held.calls.includes('node base/tools/github-gate.mjs waiting --pr 7 --sha abc123'), held.calls.join('\n'));
+  assert.ok(held.calls.includes('node base/tools/github-gate.mjs waiting --pr 7 --sha abc123 --ci success'), held.calls.join('\n'));
+  const failed = await runStep(run, { ...base, RUN_PATH: CI, CI_CONCLUSION: 'failure', NODE_EXIT: '1' });
+  assert.ok(failed.calls.includes('node base/tools/github-gate.mjs waiting --pr 7 --sha abc123 --ci failure'), failed.calls.join('\n'));
+  assert.deepEqual(failed.output, { skip: 'true' });
   // Started by CI, and the report doesn't: skip.
   const not = await runStep(run, { ...base, RUN_PATH: CI, NODE_EXIT: '1' });
   assert.equal(not.status, 0, not.out);
