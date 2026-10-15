@@ -1,0 +1,590 @@
+#!/usr/bin/env python3
+"""Pull CyberArk Endpoint Privilege Manager (EPM SaaS) raw events and policy audit events from the
+EPM REST API and send them to a Sophos NG-SIEM HTTP Ingest integration, one JSON record per line.
+Python 3 standard library only.
+
+EPM SaaS has no syslog or push for its endpoint events, so this script signs in through Idira
+Identity Security Platform Shared Services (ISPSS) with a service user and a custom EPM API web
+app, and reads every set it can see:
+
+  POST https://<sub-domain>.id.cyberark.cloud/oauth2/token/<app id>    (client_credentials)
+  GET  https://api-<region>.epm.cyberark.cloud/API/Sets
+  POST https://api-<region>.epm.cyberark.cloud/API/Sets/<set id>/Events/Search
+  POST https://api-<region>.epm.cyberark.cloud/API/Sets/<set id>/policyaudits/search
+
+Each event goes out with "cyberark_epm_record" first (raw_event or policy_audit), then setId and
+setName, so the library parsers in parsers/cyberark/endpoint-privilege-manager can recognize and
+normalize it. CyberArk says the standalone EPM console works alongside ISPSS only until 31 December
+2026, so the bridge signs in through ISPSS, not the EPM logon API.
+
+Each run reads each set and source from the end of its last window, less an overlap, to now, by
+arrivalTime (when EPM received the event), following nextCursor, and drops events it already
+sent. The request and response shapes follow CyberArk's EPM web services reference. Configuration
+comes from environment variables (see README.md). A window's end only moves after HTTP Ingest
+accepted every event in it. --dry-run prints what would be sent and changes nothing.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import gzip
+import hashlib
+import http.client
+import json
+import logging
+import os
+import random
+import re
+import sys
+import tempfile
+import time
+import traceback
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+
+__version__ = "0.1.0"
+LOG = logging.getLogger("cyberark_epm_bridge")
+USER_AGENT = f"parser-studio-cyberark-epm-bridge/{__version__}"
+RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# The opener doesn't follow these (see _NoRedirect), so the error names them as refused.
+REDIRECT_STATUS = {301, 302, 303, 307, 308}
+MAX_ATTEMPTS = 6
+# A response body over this stops the run, so a broken or hostile endpoint can't use up memory.
+MAX_RESPONSE_BYTES = 64 * 1024 * 1024
+MAX_PAGES = 10000
+RECORD_KEY = "cyberark_epm_record"
+SOURCES = {"raw_events": ("raw_event", "Events/Search"), "policy_audits": ("policy_audit", "policyaudits/search")}
+SET_PAGE = 1000
+# EPM allows 5 event API calls a second (and 1,000 in 5 minutes), so calls are at least this far apart.
+MIN_CALL_GAP = 0.25
+# A window ends this long before now, so a clock a little ahead of EPM's never asks for the future.
+END_MARGIN_SECONDS = 60
+SEEN_LIMIT = 200000
+SET_ID = re.compile(r"^[A-Za-z0-9-]{1,64}$")
+APP_ID = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
+EVENT_TYPE = re.compile(r"^[A-Za-z]{2,40}$")
+
+
+class BridgeError(Exception):
+    """A failure that stops the run without moving a window past unsent data."""
+
+
+class NetworkError(BridgeError):
+    """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
+    bridge logs it and tries again at the next interval."""
+
+
+# ---------------------------------------------------------------- configuration
+
+def _env(env: dict, name: str, default: str | None = None) -> str | None:
+    value = env.get(name)
+    if not (value and value.strip()) and name.startswith("BRIDGE_"):
+        # Bridges were called collectors, so the old COLLECTOR_ names still work.
+        value = env.get("COLLECTOR_" + name[len("BRIDGE_"):])
+    return value.strip() if value and value.strip() else default
+
+
+def _flag(env: dict, name: str, default: bool) -> bool:
+    value = _env(env, name)
+    if value is None:
+        return default
+    return value.lower() not in ("0", "false", "no", "off")
+
+
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
+    """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
+    value = _env(env, name, default)
+    try:
+        number = cast(value)
+    except ValueError:
+        raise BridgeError(f"{name} must be a number") from None
+    # NaN fails every comparison, so it lands here too.
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
+    return number
+
+
+def _require_https(url: str, what: str) -> None:
+    """Keys travel with every request, so only https is allowed (plain http to this machine is
+    allowed for local testing)."""
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme == "https" or (parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost", "::1")):
+        return
+    raise BridgeError(f"{what} must be an https URL")
+
+
+def _list(env: dict, name: str, default: str = "") -> list[str]:
+    return list(dict.fromkeys(x.strip() for x in (_env(env, name, default) or "").split(",") if x.strip()))
+
+
+def load_config(env: dict | None = None) -> dict:
+    env = dict(os.environ if env is None else env)
+    cfg = {
+        "ingest_url": _env(env, "NGSIEM_INGEST_URL"),
+        "ingest_key": _env(env, "NGSIEM_INGEST_KEY"),
+        "identity_url": (_env(env, "CYBERARK_IDENTITY_URL") or "").rstrip("/"),
+        "app_id": _env(env, "CYBERARK_APP_ID"),
+        "client_id": _env(env, "CYBERARK_CLIENT_ID"),
+        "client_secret": _env(env, "CYBERARK_CLIENT_SECRET"),
+        "api_url": (_env(env, "CYBERARK_EPM_API_URL") or "").rstrip("/"),
+        "set_ids": _list(env, "CYBERARK_EPM_SET_IDS"),
+        "sources": [s.lower() for s in _list(env, "CYBERARK_EPM_SOURCES", "raw_events,policy_audits")],
+        "event_types": _list(env, "CYBERARK_EPM_EVENT_TYPES"),
+        "page_size": _number(env, "CYBERARK_EPM_PAGE_SIZE", "1000", low=1, high=1000),
+        "state_file": _env(env, "BRIDGE_STATE_FILE", "cyberark_epm_state.json"),
+        "gzip": _flag(env, "BRIDGE_GZIP", True),
+        "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
+        "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
+        "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "900"),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
+    }
+    if not cfg["identity_url"]:
+        raise BridgeError("CYBERARK_IDENTITY_URL is required: https://<sub-domain>.id.cyberark.cloud")
+    if not cfg["app_id"] or not APP_ID.match(cfg["app_id"]):
+        raise BridgeError("CYBERARK_APP_ID is required: the application ID of the EPM API web app in Identity Administration")
+    if not cfg["client_id"] or not cfg["client_secret"]:
+        raise BridgeError("CYBERARK_CLIENT_ID and CYBERARK_CLIENT_SECRET (the service user and its password) are required")
+    if not cfg["api_url"]:
+        raise BridgeError("CYBERARK_EPM_API_URL is required: the API regional subdomain, such as https://api-au.epm.cyberark.cloud")
+    if any(not SET_ID.match(s) for s in cfg["set_ids"]):
+        raise BridgeError("CYBERARK_EPM_SET_IDS takes set IDs from Get sets list, separated by commas")
+    if not cfg["sources"] or any(s not in SOURCES for s in cfg["sources"]):
+        raise BridgeError("CYBERARK_EPM_SOURCES takes raw_events, policy_audits or both, separated by a comma")
+    if any(not EVENT_TYPE.match(t) for t in cfg["event_types"]):
+        raise BridgeError("CYBERARK_EPM_EVENT_TYPES takes event types such as AttackBlock,ElevationRequest,Block, separated by commas")
+    if cfg["lookback_hours"] <= 0:
+        raise BridgeError("BRIDGE_LOOKBACK_HOURS must be above 0")
+    _require_https(cfg["identity_url"], "CYBERARK_IDENTITY_URL")
+    _require_https(cfg["api_url"], "CYBERARK_EPM_API_URL")
+    if cfg["ingest_url"]:
+        _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
+    return cfg
+
+
+# ---------------------------------------------------------------- HTTP
+
+def _host(url: str) -> str:
+    return urllib.parse.urlsplit(url).netloc
+
+
+def _retry_delay(attempt: int, retry_after: str | None) -> float:
+    if retry_after:
+        try:
+            # Honor the server's wait for up to five minutes, so a bad value can't stall the bridge.
+            return min(300.0, max(0.0, float(retry_after)))
+        except ValueError:
+            pass
+    return min(60.0, 2 ** attempt) + random.uniform(0, 1)
+
+
+class HttpStatus(BridgeError):
+    def __init__(self, what: str, url: str, code: int, body: bytes = b""):
+        if code in REDIRECT_STATUS:
+            message = (f"{what} to {_host(url)} answered with a redirect (HTTP {code}), which the bridge refuses "
+                       "so the key or token never goes to another URL; check the URL setting")
+        else:
+            message = f"{what} to {_host(url)} failed with HTTP {code}"
+        super().__init__(message)
+        self.code = code
+        self.body = body
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Following a redirect would send the request's key or token to another URL, so it isn't
+    followed: the redirect fails like any other status."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
+    """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first."""
+    limit = limit or MAX_RESPONSE_BYTES
+    chunks, size = [], 0
+    while True:
+        chunk = resp.read(min(1048576, limit + 1 - size))
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+        size += len(chunk)
+        if size > limit:
+            raise BridgeError(f"{what} to {_host(url)} sent more than {limit // 1048576} MB, which the bridge "
+                              "refuses so a bad response can't use up memory")
+
+
+def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
+    """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
+    for attempt in range(MAX_ATTEMPTS):
+        req = urllib.request.Request(url, data=body, method=method, headers={**headers, "User-Agent": USER_AGENT})
+        try:
+            with _OPENER.open(req, timeout=timeout) as resp:
+                return resp.status, _read(resp, what, url)
+        except urllib.error.HTTPError as e:
+            # Read the body, then close the error response so its socket is released now, not
+            # when the error is garbage collected. A status that is retried is retried whatever
+            # its body, so a body over the limit only stops the run for the other statuses.
+            try:
+                error_body = _read(e, what, url)
+            except BridgeError:
+                if e.code not in RETRY_STATUS:
+                    raise
+                error_body = b""
+            finally:
+                e.close()
+            if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
+                delay = _retry_delay(attempt, e.headers.get("Retry-After") if e.headers else None)
+                LOG.warning("%s to %s returned %s; retrying in %.1fs", what, _host(url), e.code, delay)
+                time.sleep(delay)
+                continue
+            raise HttpStatus(what, url, e.code, error_body) from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            if attempt < MAX_ATTEMPTS - 1:
+                delay = _retry_delay(attempt, None)
+                LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
+                time.sleep(delay)
+                continue
+            raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+        except ValueError:
+            # http.client puts a header value it refuses, such as a key with a line break in it,
+            # in its error, so that error isn't passed on.
+            raise BridgeError(f"{what} to {_host(url)} couldn't be sent: a key or token has a line break or "
+                              "another character a request header can't carry") from None
+        except http.client.HTTPException as e:
+            raise BridgeError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+    raise BridgeError(f"{what} to {_host(url)} failed")
+
+
+def _json(body: bytes, what: str):
+    try:
+        return json.loads(body)
+    except ValueError:
+        raise BridgeError(f"{what} returned a body that is not JSON") from None
+
+
+def _error_message(body: bytes) -> str:
+    """EPM answers errors with [{"ErrorCode", "ErrorMessage"}] or one such object; the Identity
+    token endpoint with {"error", "error_description"}. Keep the message short."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return "no message"
+    if isinstance(data, list):
+        data = data[0] if data and isinstance(data[0], dict) else {}
+    if not isinstance(data, dict):
+        return "no message"
+    message = data.get("ErrorMessage") or data.get("error_description") or data.get("message") or data.get("error") or ""
+    code = data.get("ErrorCode")
+    text = f"{code}: {message}" if code and message else str(message or code or "")
+    return text[:200] or "no message"
+
+
+# ---------------------------------------------------------------- EPM API
+
+class Epm:
+    """Gets an access token from the Identity tenant with the client credentials grant (the
+    service user's name and password, sent with Basic authentication) and calls the EPM API with
+    'Authorization: Bearer <token>'. A token is renewed a minute before it expires, and once more
+    if EPM refuses it. Calls to EPM are spaced to stay under 5 a second."""
+
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+        self._token = None
+        self._expires = 0.0
+        self._last_call = 0.0
+
+    def _new_token(self) -> str:
+        url = f"{self.cfg['identity_url']}/oauth2/token/{urllib.parse.quote(self.cfg['app_id'], safe='')}"
+        basic = base64.b64encode(f"{self.cfg['client_id']}:{self.cfg['client_secret']}".encode()).decode()
+        headers = {"Authorization": f"Basic {basic}", "Content-Type": "application/x-www-form-urlencoded",
+                   "Accept": "application/json"}
+        body = urllib.parse.urlencode({"grant_type": "client_credentials"}).encode()
+        try:
+            _, raw = _request("POST", url, headers, body, self.cfg["timeout"], "token request")
+        except HttpStatus as e:
+            if e.code in (400, 401, 403, 404):
+                raise BridgeError(f"CyberArk Identity refused the token request (HTTP {e.code}): {_error_message(e.body)}; "
+                                  "check CYBERARK_CLIENT_ID and CYBERARK_CLIENT_SECRET (the service user), CYBERARK_APP_ID "
+                                  "and that the web app is deployed with the service user in its permissions") from None
+            raise
+        data = _json(raw, "token request")
+        token = data.get("access_token") if isinstance(data, dict) else None
+        if not token or not isinstance(token, str):
+            raise BridgeError("token request returned no access_token")
+        try:
+            lifetime = float(data.get("expires_in") or 3600)
+        except (TypeError, ValueError):
+            lifetime = 3600.0
+        self._token = token
+        self._expires = time.monotonic() + max(60.0, lifetime - 60.0)
+        return token
+
+    def token(self, renew: bool = False) -> str:
+        if renew or not self._token or time.monotonic() >= self._expires:
+            return self._new_token()
+        return self._token
+
+    def _call(self, method: str, path: str, query: str, body: dict | None, what: str):
+        url = f"{self.cfg['api_url']}{path}?{query}"
+        data = json.dumps(body, separators=(",", ":")).encode() if body is not None else None
+        for renew in (False, True):
+            wait = self._last_call + MIN_CALL_GAP - time.monotonic()
+            if wait > 0:
+                time.sleep(wait)
+            self._last_call = time.monotonic()
+            headers = {"Authorization": f"Bearer {self.token(renew)}", "Accept": "application/json"}
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+            try:
+                _, raw = _request(method, url, headers, data, self.cfg["timeout"], what)
+                break
+            except HttpStatus as e:
+                if e.code == 401 and not renew:
+                    LOG.info("%s returned 401; renewing the access token", what)
+                    continue
+                if e.code in (401, 403):
+                    raise BridgeError(f"EPM refused the {what} (HTTP {e.code}): {_error_message(e.body)}; check that the "
+                                      "service user's EPM role can view events in the set, and the daily limit of "
+                                      "100,000 events a category") from None
+                if e.code in (400, 404):
+                    raise BridgeError(f"EPM rejected the {what} (HTTP {e.code}): {_error_message(e.body)}") from None
+                raise
+        return _json(raw, what)
+
+    def sets(self) -> list[dict]:
+        """Every set the service user can view, from Get sets list, a page at a time."""
+        out = []
+        for page in range(1000):
+            query = urllib.parse.urlencode({"offset": page * SET_PAGE, "limit": SET_PAGE})
+            data = self._call("GET", "/API/Sets", query, None, "sets request")
+            rows = data.get("Sets") if isinstance(data, dict) else None
+            if not isinstance(rows, list):
+                raise BridgeError("sets request returned no Sets list")
+            out += [{"Id": str(s["Id"]), "Name": s.get("Name")} for s in rows if isinstance(s, dict) and s.get("Id")]
+            if len(rows) < SET_PAGE:
+                break
+        return out
+
+    def search(self, source: str, set_id: str, flt: str, cursor: str) -> dict:
+        _, path = SOURCES[source]
+        # The cursor is opaque and goes back as EPM sent it. EPM doesn't take + & or % in URL
+        # parameter values, so only those (and spaces) are encoded.
+        query = "nextCursor=" + urllib.parse.quote(cursor, safe="=/:._-~!*'(),;$@") + f"&limit={self.cfg['page_size']}"
+        what = "events request" if source == "raw_events" else "policy audits request"
+        data = self._call("POST", f"/API/Sets/{urllib.parse.quote(set_id, safe='')}/{path}", query, {"filter": flt}, what)
+        if not isinstance(data, dict):
+            raise BridgeError(f"{what} returned JSON that is not an object")
+        return data
+
+
+# ---------------------------------------------------------------- HTTP Ingest
+
+class Sink:
+    """Batches records as NDJSON and posts them to HTTP Ingest, or prints them in dry-run."""
+
+    def __init__(self, cfg: dict, dry_run: bool, out=None):
+        self.cfg, self.dry_run = cfg, dry_run
+        self.out = out or sys.stdout
+        self.sent = 0
+        self.batches = 0
+        if not dry_run and not (cfg["ingest_url"] and cfg["ingest_key"]):
+            raise BridgeError("NGSIEM_INGEST_URL and NGSIEM_INGEST_KEY are required unless --dry-run is set")
+
+    def send(self, records: list[dict]) -> None:
+        batch, size = [], 0
+        for rec in records:
+            line = json.dumps(rec, separators=(",", ":"), ensure_ascii=False)
+            n = len(line.encode("utf-8")) + 1
+            if batch and size + n > self.cfg["batch_bytes"]:
+                self._post(batch)
+                batch, size = [], 0
+            batch.append(line)
+            size += n
+        if batch:
+            self._post(batch)
+
+    def _post(self, lines: list[str]) -> None:
+        body = ("\n".join(lines) + "\n").encode("utf-8")
+        if self.dry_run:
+            self.out.write(body.decode("utf-8"))
+            self.out.flush()
+        else:
+            headers = {"Authorization": f"Bearer {self.cfg['ingest_key']}", "Content-Type": "application/json"}
+            if self.cfg["gzip"]:
+                body = gzip.compress(body)
+                headers["Content-Encoding"] = "gzip"
+            _request("POST", self.cfg["ingest_url"], headers, body, self.cfg["timeout"], "HTTP Ingest POST")
+        self.sent += len(lines)
+        self.batches += 1
+
+
+# ---------------------------------------------------------------- collection
+
+def _parse_time(value) -> float | None:
+    """EPM's dates are ISO 8601 in UTC, such as 2023-01-31T05:49:01.641Z."""
+    v = str(value or "").strip().replace("Z", "+00:00")
+    if "." in v:  # fromisoformat before 3.11 takes 3 or 6 fraction digits only
+        head, rest = v.split(".", 1)
+        # The fraction is the digits right after the point. An offset after them keeps its place.
+        tail = rest.lstrip("0123456789")
+        v = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
+    try:
+        dt = datetime.fromisoformat(v)
+    except ValueError:
+        return None
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).timestamp()
+
+
+def _epm_time(epoch: float) -> str:
+    """The filter takes YYYY-MM-DDThh:mm:ssZ, in whole seconds."""
+    return datetime.fromtimestamp(int(epoch), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _key(event: dict) -> str:
+    """Raw events and policy audits carry no ID, so a repeat is found by the hash of the whole event."""
+    return hashlib.sha256(json.dumps(event, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:32]
+
+
+def collect(source: str, s: dict, cfg: dict, state: dict, sink: Sink, save, client: Epm, now: float) -> int:
+    """Reads one source of one set from the end of its last window, less the overlap, to now, by
+    arrivalTime, following nextCursor, and sends the events not sent before. The window's end is
+    saved only after every page of it was sent."""
+    record, _ = SOURCES[source]
+    cur = state.setdefault(source, {}).setdefault(s["Id"], {})
+    since = cur.get("until")
+    # A saved end later than now (the clock went back) counts as now.
+    start = (min(since, now - END_MARGIN_SECONDS) - cfg["overlap_seconds"]) if isinstance(since, (int, float)) \
+        else (now - cfg["lookback_hours"] * 3600)
+    end = now - END_MARGIN_SECONDS
+    start = min(start, end - 1)
+    seen = {k: t for k, t in (cur.get("seen") or {}).items() if isinstance(t, (int, float)) and t >= start - 60}
+    cur["seen"] = seen
+    flt = f"arrivalTime GE {_epm_time(start)} AND arrivalTime LE {_epm_time(end)}"
+    if cfg["event_types"]:
+        flt += " AND eventType IN " + ",".join(cfg["event_types"])
+    sent, cursor = 0, "start"
+    for _ in range(MAX_PAGES):
+        data = client.search(source, s["Id"], flt, cursor)
+        events = data.get("events") or []
+        if not isinstance(events, list):
+            raise BridgeError(f"{source} request returned events that are not a list")
+        fresh = {}
+        for e in events:
+            if not isinstance(e, dict):
+                continue
+            k = _key(e)
+            if k not in seen and k not in fresh:
+                t = _parse_time(e.get("arrivalTime"))
+                fresh[k] = (t if t is not None else now, e)
+        if fresh:
+            sink.send([{RECORD_KEY: record, "setId": s["Id"], "setName": s.get("Name"), **e} for _, e in fresh.values()])
+            # Only now that HTTP Ingest took them do they count as sent.
+            seen.update({k: t for k, (t, _) in fresh.items()})
+            if len(seen) > SEEN_LIMIT:
+                cur["seen"] = seen = dict(sorted(seen.items(), key=lambda kv: kv[1])[-SEEN_LIMIT:])
+            sent += len(fresh)
+            save()
+        cursor = data.get("nextCursor")
+        if not cursor or not isinstance(cursor, str) or not events:
+            break
+    else:
+        LOG.warning("%s, set %s: stopped after %d pages; the next run reads the same window again", source, s.get("Name"), MAX_PAGES)
+        return sent
+    cur["until"] = end
+    save()
+    LOG.info("%s, set %s: %d sent", source, s.get("Name"), sent)
+    return sent
+
+
+# ---------------------------------------------------------------- state and main
+
+def load_state(path: str) -> dict:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {}
+
+
+def save_state(path: str, state: dict) -> None:
+    folder = os.path.dirname(os.path.abspath(path))
+    fd, tmp = tempfile.mkstemp(prefix=".state-", dir=folder)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(state, fh, separators=(",", ":"))
+    os.replace(tmp, path)
+
+
+def run_once(cfg: dict, dry_run: bool = False, out=None, client: Epm | None = None) -> int:
+    state = load_state(cfg["state_file"])
+    sink = Sink(cfg, dry_run, out)
+    save = (lambda: None) if dry_run else (lambda: save_state(cfg["state_file"], state))
+    client = client or Epm(cfg)
+    sets = client.sets()
+    if cfg["set_ids"]:
+        known = {s["Id"]: s for s in sets}
+        missing = [i for i in cfg["set_ids"] if i not in known]
+        if missing:
+            raise BridgeError(f"CYBERARK_EPM_SET_IDS names {len(missing)} set(s) the service user can't view")
+        sets = [known[i] for i in cfg["set_ids"]]
+    if not sets:
+        LOG.warning("the service user can't view any set; nothing to read")
+    now = time.time()
+    count = sum(collect(src, s, cfg, state, sink, save, client, now) for s in sets for src in cfg["sources"])
+    LOG.info("run finished: %d records sent in %d batches%s", sink.sent, sink.batches, " (dry run, nothing sent)" if dry_run else "")
+    return count
+
+
+def _where(e: BaseException) -> str:
+    """Where in this script an unexpected error came from: the line and function, never a value,
+    so no key or record reaches the log."""
+    frames = traceback.extract_tb(e.__traceback__)
+    mine = [f for f in frames if os.path.basename(f.filename) == os.path.basename(__file__)]
+    f = (mine or frames)[-1]
+    return f"line {f.lineno} in {f.name}"
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Send CyberArk EPM raw events and policy audit events to Sophos NG-SIEM HTTP Ingest.")
+    ap.add_argument("--dry-run", action="store_true", help="print the NDJSON that would be sent; send and save nothing")
+    ap.add_argument("--interval", type=int, default=0, help="poll every N seconds instead of running once")
+    ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
+    args = ap.parse_args(argv)
+    if args.interval < 0:
+        ap.error("--interval must be 0 or more")
+    logging.basicConfig(level=args.log_level.upper(), stream=sys.stderr, format="%(asctime)s %(levelname)s %(message)s")
+    dry_run = args.dry_run or _flag(dict(os.environ), "BRIDGE_DRY_RUN", False)
+    try:
+        cfg = load_config()
+        # One client for every run, so its token lasts across runs.
+        client = Epm(cfg)
+        while True:
+            try:
+                run_once(cfg, dry_run, client=client)
+            except NetworkError as e:
+                if not args.interval:
+                    raise
+                LOG.error("%s; trying again in %d seconds", e, args.interval)
+            except BridgeError:
+                raise
+            except Exception as e:
+                if not args.interval:
+                    raise
+                LOG.error("the run failed with an unexpected %s at %s; trying again in %d seconds",
+                          type(e).__name__, _where(e), args.interval)
+            if not args.interval:
+                return 0
+            time.sleep(args.interval)
+    except BridgeError as e:
+        LOG.error("%s", e)
+        return 1
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())
