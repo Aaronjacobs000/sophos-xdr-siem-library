@@ -1,0 +1,72 @@
+!SAMPLE=<188>Oct 15 09:23:10 2026 fw01 %%10ANTI-VIR/4/ANTIVIRUS_IPV4_INTERZONE: -Context=1;Protocol(1001)=TCP;Application(1002)=http;SrcIPAddr(1003)=203.0.113.90;SrcPort(1004)=80;DstIPAddr(1007)=192.0.2.25;DstPort(1008)=50444;RcvVPNInstance(1042)=;SrcZoneName(1025)=Untrust;DstZoneName(1035)=Trust;UserName(1113)=jsmith;PolicyName(1079)=av;VirusName(1085)=EICAR-Test-File;VirusID(1086)=95;VirusCategory(1182)=Trojan;Severity(1087)=MEDIUM;MD5(1129)=44d88612fea8a8f36de82e1278abb02f;Action(1053)=Reset & Logging;HitDirection(1115)=reply;RealSrcIP(1100)=;FileName(1097)=eicar.com;FileType(1096)=com;VlanID(1175)=400;VNI(1213)=--;
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="virus"
+!SCHEMA=scwx.antivirus
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C SecPath and Comware firewall system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: antivirus detections to Antivirus.
+#   ANTIVIRUS_IPV4_INTERZONE, ANTIVIRUS_IPV6_INTERZONE: ...;SrcIPAddr(1003)=...;...;UserName(1113)=...;
+#     PolicyName(1079)=...;VirusName(1085)=...;VirusID(1086)=...;VirusCategory(1182)=...;Severity(1087)=...;
+#     MD5(1129)=...;Action(1053)=...;HitDirection(1115)=...;...;FileName(1097)=...;FileType(1096)=...;...
+# The file is one passing through the firewall. Reset & Logging and Redirect & Logging count as
+# blocked, and Permit & Logging as an alert.
+# kv, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+virus = STRING(kv["VirusName"])
+threatName$ = IF virus != "" THEN virus ELSE NULL
+threatType$ = "FILE"
+fname = STRING(kv["FileName"])
+filePath$ = IF fname != "" THEN fname ELSE NULL
+md5 = STRING(kv["MD5"])
+fileHash$.md5$ = IF md5 != "" THEN md5 ELSE NULL
+user = STRING(kv["UserName"])
+userName$ = IF user != "" THEN user ELSE NULL
+policy = STRING(kv["PolicyName"])
+policyName$ = IF policy != "" THEN policy ELSE NULL
+sev = STRING(kv["Severity"])
+agentPriority$ = IF sev != "" THEN sev ELSE NULL
+vendorSignatureId$ = STRING(kv["VirusID"])
+vcat = STRING(kv["VirusCategory"])
+vendorAlertType$ = IF vcat != "" THEN vcat ELSE NULL
+src = STRING(kv["SrcIPAddr"])
+src = IF src == "" THEN STRING(kv["SrcIPv6Addr"]) ELSE src
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+
+act = LOWERCASE(STRING(kv["Action"]))
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF CONTAINS(act, "reset") OR CONTAINS(act, "redirect") THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF CONTAINS(act, "permit") THEN "ALERT" ELSE actionTaken$
+lcat = LOWERCASE(vcat)
+threatCategory$ = "MALWARE"
+threatCategory$ = IF CONTAINS(lcat, "virus") OR CONTAINS(lcat, "worm") THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(lcat, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(lcat, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(lcat, "backdoor") THEN "BACKDOOR" ELSE threatCategory$
+
+# Keys with no Antivirus field go to event_metadata.
+v1.key$ = "destination_address"
+v1.value$ = STRING(kv["DstIPAddr"]) + STRING(kv["DstIPv6Addr"])
+v2.key$ = "action"
+v2.value$ = STRING(kv["Action"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [v1, v2]
+v3.key$ = "application"
+v3.value$ = STRING(kv["Application"])
+eventMetadata$.record$ = IF v3.value$ != "" THEN eventMetadata$.record$ + [v3] ELSE eventMetadata$.record$
+v4.key$ = "file_type"
+v4.value$ = STRING(kv["FileType"])
+eventMetadata$.record$ = IF v4.value$ != "" THEN eventMetadata$.record$ + [v4] ELSE eventMetadata$.record$
+v5.key$ = "hit_direction"
+v5.value$ = STRING(kv["HitDirection"])
+eventMetadata$.record$ = IF v5.value$ != "" THEN eventMetadata$.record$ + [v5] ELSE eventMetadata$.record$
+v6.key$ = "source_zone"
+v6.value$ = STRING(kv["SrcZoneName"])
+eventMetadata$.record$ = IF v6.value$ != "" THEN eventMetadata$.record$ + [v6] ELSE eventMetadata$.record$
+v7.key$ = "destination_zone"
+v7.value$ = STRING(kv["DstZoneName"])
+eventMetadata$.record$ = IF v7.value$ != "" THEN eventMetadata$.record$ + [v7] ELSE eventMetadata$.record$
+v8.key$ = "device_ip"
+v8.value$ = devIp
+eventMetadata$.record$ = IF devIp != "" THEN eventMetadata$.record$ + [v8] ELSE eventMetadata$.record$

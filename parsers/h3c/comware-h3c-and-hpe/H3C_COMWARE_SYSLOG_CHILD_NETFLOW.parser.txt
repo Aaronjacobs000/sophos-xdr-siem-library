@@ -1,0 +1,101 @@
+!SAMPLE=<190>2026-10-15T09:20:20 fw01 %%10FILTER/6/FILTER_ZONE_IPV4_EXECUTION: -DevIP=192.0.2.2; SrcZoneName(1025)=Untrust;DstZoneName(1035)=DMZ;Type(1067)=IPv4;ObjectPolicy(1072)=untrust-dmz;RuleID(1078)=5;Protocol(1001)=TCP;Application(1002)=ssh;SrcIPAddr(1003)=198.51.100.44;SrcPort(1004)=51544;DstIPAddr(1007)=192.0.2.10;DstPort(1008)=22;MatchCount(1069)=1;Event(1048)=Deny;
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: H3C SecPath and Comware firewall system logs.
+# Child of H3C_COMWARE_SYSLOG_PARENT: session logs and packet filter matches to Netflow.
+#   SESSION_IPV4_FLOW, SESSION_IPV6_FLOW: Protocol(1001)=...;Application(1002)=...;SrcIPAddr(1003)=...;...;
+#     InitPktCount(1044)=...;InitByteCount(1046)=...;RplyPktCount(1045)=...;RplyByteCount(1047)=...;...;
+#     BeginTime_e(1013)=<MMDDYYYYhhmmss>;EndTime_e(1014)=...;Event(1048)=(<id>)<event>;
+#   FILTER_ZONE_IPV4_EXECUTION, FILTER_IPV4_EXECUTION (and IPv6): SrcZoneName(1025)=... or RcvIfName(1023)=...;
+#     ...;RuleID(1078)=...;Protocol(1001)=...;...;MatchCount(1069)=...;Event(1048)=Permit|Deny;
+# Session logs are allowed sessions; a filter match is blocked when its event is deny. The initiator's
+# counts are sent and the reply's received.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# mod, kv, devIp, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+src = STRING(kv["SrcIPAddr"])
+src = IF src == "" THEN STRING(kv["SrcIPv6Addr"]) ELSE src
+dst = STRING(kv["DstIPAddr"])
+dst = IF dst == "" THEN STRING(kv["DstIPv6Addr"]) ELSE dst
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port or count stays unset.
+sourcePort$ = STRING(kv["SrcPort"])
+destinationPort$ = STRING(kv["DstPort"])
+snat = STRING(kv["NATSrcIPAddr"])
+snat = IF snat == "" THEN STRING(kv["NATSrcIPv6Addr"]) ELSE snat
+dnat = STRING(kv["NATDstIPAddr"])
+dnat = IF dnat == "" THEN STRING(kv["NATDstIPv6Addr"]) ELSE dnat
+sourceNatAddress$ = IF snat != "" THEN snat ELSE NULL
+destinationNatAddress$ = IF dnat != "" THEN dnat ELSE NULL
+sourceNatPort$ = STRING(kv["NATSrcPort"])
+destinationNatPort$ = STRING(kv["NATDstPort"])
+txPacketCount$ = STRING(kv["InitPktCount"])
+txByteCount$ = STRING(kv["InitByteCount"])
+rxPacketCount$ = STRING(kv["RplyPktCount"])
+rxByteCount$ = STRING(kv["RplyByteCount"])
+app = STRING(kv["Application"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+proto = UPPERCASE(STRING(kv["Protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+protocol$ = IF proto == "ICMPV6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "GRE" THEN 47 ELSE protocol$
+protocol$ = IF proto == "ESP" THEN 50 ELSE protocol$
+protocol$ = IF proto == "SCTP" THEN 132 ELSE protocol$
+
+# Session times are MMDDYYYYhhmmss, read as UTC.
+beginT = STRING(kv["BeginTime_e"])
+endT = STRING(kv["EndTime_e"])
+bm = beginT|^(?P<t>\d{14})$
+em = endT|^(?P<t>\d{14})$
+startTimestampUsec$ = IF STRING(bm["t"]) != "" THEN DATETIME(bm["t"], "01022006150405") ELSE NULL
+endTimestampUsec$ = IF STRING(em["t"]) != "" THEN DATETIME(em["t"], "01022006150405") ELSE NULL
+
+eventRaw = STRING(kv["Event"])
+ev = eventRaw|^(?:\((?P<id>\d+)\))?(?P<text>.*)$
+evText = TRIM(STRING(ev["text"]))
+isFilter = mod == "FILTER"
+blocked = isFilter AND LOWERCASE(evText) == "deny"
+flowAction$ = IF blocked THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+connectionEndReason$ = IF NOT isFilter AND evText != "" AND evText != "Session created" THEN evText ELSE NULL
+
+# Keys with no Netflow field go to event_metadata.
+f1.key$ = "event"
+f1.value$ = evText
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [f1]
+f2.key$ = "source_zone"
+f2.value$ = STRING(kv["SrcZoneName"])
+eventMetadata$.record$ = IF f2.value$ != "" THEN eventMetadata$.record$ + [f2] ELSE eventMetadata$.record$
+f3.key$ = "destination_zone"
+f3.value$ = STRING(kv["DstZoneName"])
+eventMetadata$.record$ = IF f3.value$ != "" THEN eventMetadata$.record$ + [f3] ELSE eventMetadata$.record$
+f4.key$ = "policy"
+f4.value$ = STRING(kv["ObjectPolicy"])
+f4.value$ = IF f4.value$ == "" THEN STRING(kv["Acl"]) ELSE f4.value$
+eventMetadata$.record$ = IF f4.value$ != "" THEN eventMetadata$.record$ + [f4] ELSE eventMetadata$.record$
+f5.key$ = "rule_id"
+f5.value$ = STRING(kv["RuleID"])
+eventMetadata$.record$ = IF f5.value$ != "" THEN eventMetadata$.record$ + [f5] ELSE eventMetadata$.record$
+f6.key$ = "match_count"
+f6.value$ = STRING(kv["MatchCount"])
+eventMetadata$.record$ = IF f6.value$ != "" THEN eventMetadata$.record$ + [f6] ELSE eventMetadata$.record$
+f7.key$ = "interface"
+f7.value$ = STRING(kv["RcvIfName"])
+eventMetadata$.record$ = IF f7.value$ != "" THEN eventMetadata$.record$ + [f7] ELSE eventMetadata$.record$
+f8.key$ = "category"
+f8.value$ = STRING(kv["Category"])
+eventMetadata$.record$ = IF f8.value$ != "" THEN eventMetadata$.record$ + [f8] ELSE eventMetadata$.record$
+f9.key$ = "vpn_instance"
+f9.value$ = STRING(kv["RcvVPNInstance"])
+eventMetadata$.record$ = IF f9.value$ != "" THEN eventMetadata$.record$ + [f9] ELSE eventMetadata$.record$
+f10.key$ = "device_ip"
+f10.value$ = devIp
+eventMetadata$.record$ = IF devIp != "" THEN eventMetadata$.record$ + [f10] ELSE eventMetadata$.record$
