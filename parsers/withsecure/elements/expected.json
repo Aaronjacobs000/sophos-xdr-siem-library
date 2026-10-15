@@ -1,0 +1,793 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791940325000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "fileScanning",
+      "sensor_event_id": "6f1e2d3c-4b5a-3968-8776-a5b4c3d2e1f0_0",
+      "threat_name": "Trojan:W32/Agent.ZQX",
+      "file_path": "C:\\Users\\akim\\Downloads\\invoice_0412.exe",
+      "file_hash": {
+        "sha1": "5b97884a45c6c05f93b22c4059f3d9189e88e8b7"
+      },
+      "url_string": "https://files.example.net/invoice_0412.exe",
+      "user_name": "FIN-LT-041\\akim",
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "agent_device_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912",
+      "agent_priority": "critical",
+      "vendor_alert_type": "on_access_scanner.file_infection.quarantined",
+      "policy_name": "Acme Workstations",
+      "action_taken": "QUARANTINED",
+      "threat_type": "FILE",
+      "threat_category": "TROJAN",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "fileScanning"
+          },
+          {
+            "key": "action",
+            "value": "quarantined"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "message",
+            "value": "Real-time scanning detected infection 'Trojan:W32/Agent.ZQX' in file 'C:\\Users\\akim\\Downloads\\invoice_0412.exe' and quarantined it"
+          },
+          {
+            "key": "host_ip_address",
+            "value": "192.0.2.41/24"
+          },
+          {
+            "key": "details",
+            "value": "{\"accessOperation\":\"close\",\"alertType\":\"on_access_scanner.file_infection.quarantined\",\"clientTimestamp\":\"1791940325000\",\"creator\":\"C:\\\\Program Files\\\\Mozilla Firefox\\\\firefox.exe\",\"fileScanningType\":\"fileInfection\",\"hostIpAddress\":\"192.0.2.41/24\",\"infectionName\":\"Trojan:W32/Agent.ZQX\",\"infectionType\":\"virus\",\"path\":\"C:\\\\Users\\\\akim\\\\Downloads\\\\invoice_0412.exe\",\"prevalence\":\"1\",\"profileId\":\"73633559\",\"profileName\":\"Acme Workstations\",\"profileVersion\":\"1791900000\",\"quarantineId\":\"-1849302217\",\"reputation\":\"95\",\"sha1\":\"5b97884a45c6c05f93b22c4059f3d9189e88e8b7\",\"size\":\"482304\",\"throttledCount\":\"0\",\"url\":\"https://files.example.net/invoice_0412.exe\",\"userName\":\"FIN-LT-041\\\\akim\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791941441000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "manualScanning",
+      "sensor_event_id": "7a2b3c4d-5e6f-3a7b-8c9d-0e1f2a3b4c5d_0",
+      "threat_name": "Riskware:W32/CoinMiner.B",
+      "file_path": "D:\\shares\\tools\\xmr.exe",
+      "user_name": "OPS-SRV-07\\svc-backup",
+      "computer_name": "OPS-SRV-07",
+      "host_id": "OPS-SRV-07",
+      "agent_device_id": "7e8f9012-3a4b-4c5d-9e6f-7a8b9c0d1e2f",
+      "agent_priority": "critical",
+      "vendor_alert_type": "riskware",
+      "policy_name": "Contoso Servers",
+      "action_taken": "DELETED",
+      "threat_type": "FILE",
+      "threat_category": "MINER",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "manualScanning"
+          },
+          {
+            "key": "action",
+            "value": "deleted"
+          },
+          {
+            "key": "organization_name",
+            "value": "Contoso Pty Ltd"
+          },
+          {
+            "key": "organization_id",
+            "value": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d"
+          },
+          {
+            "key": "message",
+            "value": "Manual scan detected infection 'Riskware:W32/CoinMiner.B' in file 'D:\\shares\\tools\\xmr.exe'"
+          },
+          {
+            "key": "host_ip_address",
+            "value": "198.51.100.17/24"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertSource\":\"sp.evt.fixinf.alert\",\"alertType\":\"riskware\",\"clientTimestamp\":\"1791941441000\",\"filePath\":\"D:\\\\shares\\\\tools\\\\xmr.exe\",\"fileScanningType\":\"riskware\",\"hostIpAddress\":\"198.51.100.17/24\",\"name\":\"Riskware:W32/CoinMiner.B\",\"profileId\":\"29250511\",\"profileName\":\"Contoso Servers\",\"profileVersion\":\"1791800000\",\"quarantineId\":\"-619094204\",\"userName\":\"OPS-SRV-07\\\\svc-backup\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791943516000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "amsi",
+      "sensor_event_id": "8b3c4d5e-6f70-3b8c-9d0e-1f2a3b4c5d6e_0",
+      "threat_name": "Trojan-Downloader:JS/Nemucod.K",
+      "file_path": "C:\\Users\\akim\\AppData\\Local\\Temp\\update.js",
+      "process_name": "C:\\Windows\\System32\\wscript.exe",
+      "file_hash": {
+        "sha1": "1aef59dac1e2328b402d6fee5b5f76439ce98f43"
+      },
+      "user_name": "FIN-LT-041\\akim",
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "agent_device_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912",
+      "agent_priority": "warning",
+      "vendor_alert_type": "amsi.infection.block",
+      "policy_name": "Acme Workstations",
+      "action_taken": "BLOCKED",
+      "threat_type": "FILE",
+      "threat_category": "TROJAN",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "amsi"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "message",
+            "value": "AMSI detected virus in 'C:\\Users\\akim\\AppData\\Local\\Temp\\update.js'"
+          },
+          {
+            "key": "host_ip_address",
+            "value": "192.0.2.41/24"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertType\":\"amsi.infection.block\",\"appName\":\"JScript\",\"clientTimestamp\":\"1791943516000\",\"contentName\":\"C:\\\\Users\\\\akim\\\\AppData\\\\Local\\\\Temp\\\\update.js\",\"hostIpAddress\":\"192.0.2.41/24\",\"infectionName\":\"Trojan-Downloader:JS/Nemucod.K\",\"path\":\"C:\\\\Windows\\\\System32\\\\wscript.exe\",\"profileId\":\"73633559\",\"profileName\":\"Acme Workstations\",\"profileVersion\":\"1791900000\",\"sha1\":\"1aef59dac1e2328b402d6fee5b5f76439ce98f43\",\"throttledCount\":\"0\",\"userName\":\"FIN-LT-041\\\\akim\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791944329000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "deepGuard",
+      "sensor_event_id": "9c4d5e6f-7081-3c9d-0e1f-2a3b4c5d6e7f_0",
+      "file_path": "C:\\Users\\akim\\AppData\\Roaming\\svch0st.exe",
+      "file_hash": {
+        "sha1": "e17865289c80d63673b09124b5a50f2915599478"
+      },
+      "user_name": "FIN-LT-041\\akim",
+      "computer_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "agent_device_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912",
+      "agent_priority": "warning",
+      "vendor_alert_type": "deep_guard.admin.block",
+      "action_taken": "BLOCKED",
+      "threat_type": "FILE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "deepGuard"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "message",
+            "value": "Rare application was detected in file 'C:\\Users\\akim\\AppData\\Roaming\\svch0st.exe' and it was blocked"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertType\":\"deep_guard.admin.block\",\"clientTimestamp\":\"1791944329000\",\"commandLine\":\"\\\"C:\\\\Users\\\\akim\\\\AppData\\\\Roaming\\\\svch0st.exe\\\" -k netsvcs\",\"filePath\":\"C:\\\\Users\\\\akim\\\\AppData\\\\Roaming\\\\svch0st.exe\",\"rarity\":\"rare\",\"reputation\":\"unknown\",\"sha1\":\"e17865289c80d63673b09124b5a50f2915599478\",\"userName\":\"FIN-LT-041\\\\akim\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791945663208000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "a05e6f70-8192-3dae-1f2a-3b4c5d6e7f80_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "edr",
+      "log_type": "security_event",
+      "alert_id": "11355-92710",
+      "title": "Endpoint Detection and Response (EDR) event",
+      "summary": "A new incident '11355-92710' was created",
+      "alert_category": "PERSISTENCE",
+      "status": "created",
+      "vendor_severity": "critical",
+      "severity": "HIGH",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "first_event_time_usec": 1791944460000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "edr"
+          },
+          {
+            "key": "action",
+            "value": "created"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "device_id",
+            "value": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"categories\":\"PERSISTENCE\",\"clientTimestamp\":\"1791944462000\",\"fingerprint\":\"aa77e49047798bd8efe373fdcf7bb65954083664\",\"incidentId\":\"9f003dcb-528b-43e2-8ea5-f09d7eda2fe9\",\"incidentPublicId\":\"11355-92710\",\"initialDetectionTimestamp\":\"1791944460000\",\"readableIncidentId\":\"11355-92710\",\"risk\":\"HIGH\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791946957540000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b16f7081-92a3-3ebf-2a3b-4c5d6e7f8091_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "edr",
+      "log_type": "security_event",
+      "alert_id": "11355-92710",
+      "title": "Endpoint Detection and Response (EDR) event",
+      "summary": "Incident '11355-92710' status changed from NEW to IN_PROGRESS",
+      "alert_category": "PERSISTENCE",
+      "status": "IN_PROGRESS",
+      "vendor_severity": "critical",
+      "severity": "HIGH",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "target_user_name": "secops@example.com",
+      "first_event_time_usec": 1791944460000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "edr"
+          },
+          {
+            "key": "action",
+            "value": "updated"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "device_id",
+            "value": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"action\":\"UPDATE\",\"categories\":\"PERSISTENCE\",\"clientTimestamp\":\"1791945757000\",\"incidentId\":\"9f003dcb-528b-43e2-8ea5-f09d7eda2fe9\",\"incidentPublicId\":\"11355-92710\",\"initialDetectionTimestamp\":\"1791944460000\",\"resolution\":\"UNCONFIRMED\",\"resolutionBefore\":\"UNCONFIRMED\",\"risk\":\"HIGH\",\"status\":\"IN_PROGRESS\",\"statusBefore\":\"NEW\",\"userName\":\"secops@example.com\",\"userSam\":\"secops@example.com\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791947710000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c2708192-a3b4-3fc0-3b4c-5d6e7f8091a2_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "firewall",
+      "log_type": "security_event",
+      "alert_id": "c2708192-a3b4-3fc0-3b4c-5d6e7f8091a2_0",
+      "title": "Firewall event",
+      "summary": "C:\\Tools\\wget.exe was blocked from connecting to '203.0.113.80'",
+      "alert_category": "firewall",
+      "status": "blocked",
+      "vendor_severity": "info",
+      "severity": "INFO",
+      "action": "BLOCKED",
+      "target_host_name": "OPS-SRV-07",
+      "host_id": "OPS-SRV-07",
+      "target_user_name": "OPS-SRV-07\\svc-backup",
+      "direction": "OUTBOUND",
+      "source_address": "198.51.100.17",
+      "destination_address": "203.0.113.80",
+      "source_port": 50021,
+      "destination_port": 443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "firewall"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "organization_name",
+            "value": "Contoso Pty Ltd"
+          },
+          {
+            "key": "organization_id",
+            "value": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d"
+          },
+          {
+            "key": "alert_type",
+            "value": "firewall.fs_rule_triggered.block"
+          },
+          {
+            "key": "device_id",
+            "value": "7e8f9012-3a4b-4c5d-9e6f-7a8b9c0d1e2f"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertType\":\"firewall.fs_rule_triggered.block\",\"clientTimestamp\":\"1791947710000\",\"hostIpAddress\":\"198.51.100.17/24\",\"ipProtocol\":\"TCP(6)\",\"layerName\":\"ALE Connect v4 Layer\",\"localAddress\":\"198.51.100.17\",\"localPort\":\"50021\",\"process\":\"C:\\\\Tools\\\\wget.exe\",\"profileId\":\"29250511\",\"profileName\":\"Contoso Servers\",\"profileVersion\":\"1791800000\",\"remoteAddress\":\"203.0.113.80\",\"remotePort\":\"443\",\"ruleDirection\":\"outbound\",\"ruleGroupName\":\"WithSecure Firewall\",\"ruleName\":\"Block wget outbound\",\"throttledCount\":\"0\",\"userName\":\"OPS-SRV-07\\\\svc-backup\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791948463000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "d38192a3-b4c5-30d1-4c5d-6e7f8091a2b3_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "reputationBasedBrowsing",
+      "log_type": "security_event",
+      "alert_id": "d38192a3-b4c5-30d1-4c5d-6e7f8091a2b3_0",
+      "title": "Browsing Protection event",
+      "summary": "Webpage 'http://login-update.example.org/' was blocked due to reputation rated harmful",
+      "alert_category": "reputationBasedBrowsing",
+      "status": "blocked",
+      "vendor_severity": "warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "target_host_name": "FIN-LT-041",
+      "host_id": "FIN-LT-041",
+      "target_user_name": "FIN-LT-041\\akim",
+      "destination_url": "http://login-update.example.org/",
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "reputationBasedBrowsing"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "alert_type",
+            "value": "online_safety.harmful_page.block"
+          },
+          {
+            "key": "device_id",
+            "value": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertType\":\"online_safety.harmful_page.block\",\"clientTimestamp\":\"1791948463000\",\"hostIpAddress\":\"192.0.2.41/24\",\"process\":\"chrome.exe\",\"profileId\":\"73633559\",\"profileName\":\"Acme Workstations\",\"profileVersion\":\"1791900000\",\"reason\":\"BP_Harmful\",\"throttledCount\":\"2\",\"url\":\"http://login-update.example.org/\",\"userName\":\"FIN-LT-041\\\\akim\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791949228000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e492a3b4-c5d6-31e2-5d6e-7f8091a2b3c4_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "tamperProtection",
+      "log_type": "security_event",
+      "alert_id": "e492a3b4-c5d6-31e2-5d6e-7f8091a2b3c4_0",
+      "title": "Tamper Protection event",
+      "summary": "C:\\Users\\Public\\remove.exe was blocked from uninstalling the product",
+      "alert_category": "tamperProtection",
+      "status": "blocked",
+      "vendor_severity": "warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "target_host_name": "OPS-SRV-07",
+      "host_id": "OPS-SRV-07",
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "tamperProtection"
+          },
+          {
+            "key": "action",
+            "value": "blocked"
+          },
+          {
+            "key": "organization_name",
+            "value": "Contoso Pty Ltd"
+          },
+          {
+            "key": "organization_id",
+            "value": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d"
+          },
+          {
+            "key": "alert_type",
+            "value": "tamper_protection.uninstall.block"
+          },
+          {
+            "key": "device_id",
+            "value": "7e8f9012-3a4b-4c5d-9e6f-7a8b9c0d1e2f"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"actionType\":\"uninstall\",\"alertType\":\"tamper_protection.uninstall.block\",\"clientTimestamp\":\"1791949228000\",\"command\":\"msiexec.exe /X{0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9} /qn\",\"initiator\":\"C:\\\\Users\\\\Public\\\\remove.exe\",\"initiator_hash\":\"6cf8830575acbefb83c361a6b719bdd15f0b1245\",\"initiator_signer_name\":\"\",\"throttledCount\":\"0\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791950477336000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "f5a3b4c5-d6e7-32f3-6e7f-8091a2b3c4d5_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "emailScan",
+      "log_type": "security_event",
+      "alert_id": "f5a3b4c5-d6e7-32f3-6e7f-8091a2b3c4d5_0",
+      "title": "Email scanning event",
+      "summary": "An email 'Overdue invoice 4471' from 'billing@example.net' was detected as 'harmful'. Action taken: 'Quarantined'",
+      "alert_category": "emailScan",
+      "status": "quarantined",
+      "vendor_severity": "warning",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "user_principal_name": "pat.example@acme.example.com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "emailScan"
+          },
+          {
+            "key": "action",
+            "value": "quarantined"
+          },
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "target_name",
+            "value": "pat.example@acme.example.com"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"category\":\"harmfulContent\",\"created\":\"1791950475000\",\"eventId\":\"30ff8adf-3190-4bab-8923-2caaf954836a\",\"internetMessageId\":\"\\u003c4471.20261014@mail.example.net\\u003e\",\"itemDateTimeReceived\":\"1791950470000\",\"itemParentFolderName\":\"Inbox\",\"itemSender\":\"billing@example.net\",\"itemSize\":\"48211\",\"itemSubject\":\"Overdue invoice 4471\",\"itemType\":\"EmailMessage\",\"quarantineId\":\"7c8bf2ab-cdd8-4ef9-9e83-dbf13ecbd070\",\"serviceId\":\"c2a12a65-bd79-4f08-b83e-621ff907a245\",\"serviceType\":\"o365-exchange\",\"severity\":\"medium\",\"unsafeAttachmentCount\":\"1\",\"unsafeUrlCount\":\"0\",\"userPrincipalName\":\"pat.example@acme.example.com\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791951172000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0617b8c9-d0e1-33a4-7f80-91a2b3c4d5e6_0",
+      "vendor": "WithSecure",
+      "provider": "WithSecure Elements",
+      "sub_provider": "setting",
+      "log_type": "security_event",
+      "alert_id": "0617b8c9-d0e1-33a4-7f80-91a2b3c4d5e6_0",
+      "title": "Setting event",
+      "summary": "Real-time scanning was turned off",
+      "alert_category": "setting",
+      "status": "reported",
+      "vendor_severity": "info",
+      "severity": "INFO",
+      "target_host_name": "OPS-SRV-07",
+      "host_id": "OPS-SRV-07",
+      "target_user_name": "OPS-SRV-07\\Administrator",
+      "additional_data": {
+        "record": [
+          {
+            "key": "engine",
+            "value": "setting"
+          },
+          {
+            "key": "action",
+            "value": "reported"
+          },
+          {
+            "key": "organization_name",
+            "value": "Contoso Pty Ltd"
+          },
+          {
+            "key": "organization_id",
+            "value": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d"
+          },
+          {
+            "key": "alert_type",
+            "value": "product.setting.changed"
+          },
+          {
+            "key": "device_id",
+            "value": "7e8f9012-3a4b-4c5d-9e6f-7a8b9c0d1e2f"
+          },
+          {
+            "key": "acknowledged",
+            "value": "false"
+          },
+          {
+            "key": "details",
+            "value": "{\"alertType\":\"product.setting.changed\",\"clientTimestamp\":\"1791951172000\",\"hostIpAddress\":\"198.51.100.17/24\",\"isRemoteChange\":\"false\",\"newValue\":\"false\",\"oldValue\":\"true\",\"profileId\":\"29250511\",\"profileName\":\"Contoso Servers\",\"profileVersion\":\"1791800000\",\"settingName\":\"windows.realtime_scanning.scanning_enabled\",\"throttledCount\":\"0\",\"userName\":\"OPS-SRV-07\\\\Administrator\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791939482117000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "3e1c9a7b-2d4f-4e6a-8b0c-1d2e3f4a5b6c",
+      "auth_system": "WithSecure Elements Security Center",
+      "target_user_name": "it.admin@example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "login",
+      "source_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "organization_id",
+            "value": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+          },
+          {
+            "key": "namespace",
+            "value": "elements-core"
+          },
+          {
+            "key": "org_path",
+            "value": "00000000-0000-0000-0000-000000000000/1c2d3e4f-5a6b-4c7d-8e9f-a0b1c2d3e4f5/5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f/"
+          },
+          {
+            "key": "transaction_id",
+            "value": "0000-gwsbcqbdo43qdl2u"
+          },
+          {
+            "key": "description",
+            "value": "Administrator \"it.admin@example.com\" (\"it.admin@example.com\") logged in from IP \"203.0.113.45\" using web browser \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36\""
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791947140662000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "epp",
+      "sensor_event_id": "4f2dab8c-3e5a-4f7b-9c1d-2e3f4a5b6c7d",
+      "event_source": "WithSecure Elements",
+      "event_name": "isolateFromNetwork",
+      "user_name": "it.admin@example.com",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912",
+          "resource_account_id": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "description",
+            "value": "Administrator \"it.admin@example.com\" isolated device \"FIN-LT-041\" from the network"
+          },
+          {
+            "key": "target_name",
+            "value": "FIN-LT-041"
+          },
+          {
+            "key": "org_path",
+            "value": "00000000-0000-0000-0000-000000000000/1c2d3e4f-5a6b-4c7d-8e9f-a0b1c2d3e4f5/5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f/"
+          },
+          {
+            "key": "transaction_id",
+            "value": "0000-d405b4e300fa44d8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "WITHSECURE_ELEMENTS_JSON_PARENT > WITHSECURE_ELEMENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "WithSecure Elements",
+      "event_time_usec": 1791952211090000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "epp",
+      "sensor_event_id": "5a3ebc9d-4f6b-4a8c-8d2e-3f4a5b6c7d8e",
+      "event_source": "WithSecure Elements",
+      "event_name": "assignProfile",
+      "user_name": "it.admin@example.com",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912",
+          "resource_account_id": "5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "organization_name",
+            "value": "Acme Corp"
+          },
+          {
+            "key": "description",
+            "value": "Administrator \"it.admin@example.com\" assigned profile \"Acme Workstations\" to device \"FIN-LT-041\""
+          },
+          {
+            "key": "target_name",
+            "value": "FIN-LT-041"
+          },
+          {
+            "key": "org_path",
+            "value": "00000000-0000-0000-0000-000000000000/1c2d3e4f-5a6b-4c7d-8e9f-a0b1c2d3e4f5/5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f/"
+          },
+          {
+            "key": "transaction_id",
+            "value": "0000-d405b4e300fa44d9"
+          }
+        ]
+      }
+    }
+  }
+]
