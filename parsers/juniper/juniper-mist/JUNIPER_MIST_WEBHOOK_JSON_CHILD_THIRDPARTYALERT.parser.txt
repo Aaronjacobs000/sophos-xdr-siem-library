@@ -1,0 +1,85 @@
+!SAMPLE={"topic":"alarms","events":[{"aps":["5c5b35000001"],"bssids":["02005e000101","02005e000102"],"count":2,"group":"security","hostnames":["AP-RECEPTION"],"id":"59be9221-1e26-4466-9a1c-000000000003","last_seen":1791854400,"org_id":"6748cfa6-4e12-11e6-9a1c-000000000001","severity":"critical","site_id":"4ac1dcf4-9d8b-7211-9a1c-000000000001","ssids":["Free Guest WiFi","DIRECT-printer"],"timestamp":1791854400,"type":"rogue_ap","update":false}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alarms"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Juniper Mist alarms webhooks: security alarms (rogue AP, rogue client, honeypot SSID,
+# spoofing and flooding attacks, repeated authentication failures, gateway malware, IDP and URL
+# blocks), infrastructure alarms (devices offline) and Marvis alarms.
+# Child of JUNIPER_MIST_WEBHOOK_JSON_PARENT: each one to ThirdPartyAlert, with the alarm type (such
+# as rogue_ap) as the title, the alarm group (security, infrastructure or marvis) as the category,
+# and Mist's severity: critical is Critical, warn is Medium and info is Info. Mist lists up to 10
+# APs, BSSIDs, SSIDs and other entities per alarm; they go to additional data.
+# json, topic, ts, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.events[0].id"]
+alertId$ = json["$.events[0].id"]
+vendor$ = "Juniper"
+provider$ = "Juniper Mist"
+atype = json["$.events[0].type"]
+title$ = atype
+group = json["$.events[0].group"]
+alertCategory$ = group
+sev = LOWERCASE(STRING(json["$.events[0].severity"]))
+vendorSeverity$ = json["$.events[0].severity"]
+severity$ = NULL
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+severity$ = IF sev == "warn" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "info" THEN "INFO" ELSE severity$
+
+hosts = REPLACE_REGEX(STRING(json["$.events[0].hostnames"]), `[\[\]"]`, "")
+count = STRING(json["$.events[0].count"])
+summary$ = atype
+summary$ = IF hosts THEN summary$ + " on " + hosts ELSE summary$
+summary$ = IF count THEN summary$ + " (" + count + " in the interval)" ELSE summary$
+targetHostName$ = json["$.events[0].hostnames[0]"]
+
+# Gateway alarms name the addresses involved.
+src = json["$.events[0].src_ips[0]"]
+src = IF src THEN src ELSE json["$.events[0].attacker_ips[0]"]
+sourceAddress$ = src
+destinationAddress$ = json["$.events[0].dst_ips[0]"]
+destinationUrl$ = json["$.events[0].urls[0]"]
+
+a1.key$ = "org_id"
+a1.value$ = json["$.events[0].org_id"]
+a2.key$ = "site_id"
+a2.value$ = json["$.events[0].site_id"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "count"
+a3.value$ = count
+additionalData$.record$ = IF count THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "aps"
+a4.value$ = REPLACE_REGEX(STRING(json["$.events[0].aps"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "bssids"
+a5.value$ = REPLACE_REGEX(STRING(json["$.events[0].bssids"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "ssids"
+a6.value$ = REPLACE_REGEX(STRING(json["$.events[0].ssids"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "hostnames"
+a7.value$ = hosts
+additionalData$.record$ = IF hosts THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "client_macs"
+a8.value$ = REPLACE_REGEX(STRING(json["$.events[0].client_macs"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "files"
+a9.value$ = REPLACE_REGEX(STRING(json["$.events[0].files"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "gateways"
+a10.value$ = REPLACE_REGEX(STRING(json["$.events[0].gateways"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "attacks"
+a11.value$ = REPLACE_REGEX(STRING(json["$.events[0].attacks"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "cve_ids"
+a12.value$ = REPLACE_REGEX(STRING(json["$.events[0].cve_ids"]), `[\[\]"]`, "")
+additionalData$.record$ = IF a12.value$ THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "update"
+a13.value$ = STRING(json["$.events[0].update"])
+additionalData$.record$ = IF a13.value$ != "" THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
