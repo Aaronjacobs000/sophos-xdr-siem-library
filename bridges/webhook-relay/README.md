@@ -1,8 +1,8 @@
-# Webhook relay for Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP
+# Webhook relay for Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and PingOne
 
-> **Unofficial, and tested against documented request shapes only.** This relay has not received real Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist or FortiCNAPP webhooks, or sent to a real Sophos NG-SIEM HTTP Ingest integration. Its unit tests sign deliveries the way each vendor documents and post to a local mock of HTTP Ingest. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented request shapes only.** This relay has not received real Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP or PingOne webhooks, or sent to a real Sophos NG-SIEM HTTP Ingest integration. Its unit tests sign deliveries the way each vendor documents and post to a local mock of HTTP Ingest. Run it with `--dry-run` first and check what it would send.
 
-Huntress, ScreenConnect, Hudu, Autotask and FortiCNAPP push webhooks, but none of them can add the `Authorization: Bearer` header that Sophos NG-SIEM HTTP Ingest needs. Juniper Mist can add the header, but sends most topics as a batch of events in one body, which HTTP Ingest would store as one record; with `BRIDGE_SPLIT_BATCHES=1` the relay forwards each event as its own record. Run this relay where the vendors can reach it over HTTPS. It takes each vendor's webhook on its own path, checks that the delivery came from that vendor, and forwards the body to HTTP Ingest with the header.
+Huntress, ScreenConnect, Hudu, Autotask and FortiCNAPP push webhooks, but none of them can add the `Authorization: Bearer` header that Sophos NG-SIEM HTTP Ingest needs. Juniper Mist can add the header, but sends most topics as a batch of events in one body, which HTTP Ingest would store as one record; with `BRIDGE_SPLIT_BATCHES=1` the relay forwards each event as its own record. PingOne can add the header too, but sends events in batches of up to 500, by default as one JSON array; the relay always forwards each event as its own record. Run this relay where the vendors can reach it over HTTPS. It takes each vendor's webhook on its own path, checks that the delivery came from that vendor, and forwards the body to HTTP Ingest with the header.
 
 | Vendor | Path | How the relay checks a delivery | Library entry |
 | --- | --- | --- | --- |
@@ -12,6 +12,7 @@ Huntress, ScreenConnect, Hudu, Autotask and FortiCNAPP push webhooks, but none o
 | ConnectWise ScreenConnect | `/screenconnect/<secret>` | Secret in the path. Perform Web Request has only URL, method, content type and body. | `parsers/connectwise/screenconnect` |
 | Juniper Mist | `/mist` | `X-Mist-Signature-v2`: HMAC-SHA256 over the body with the webhook's secret, in hex | `parsers/juniper/juniper-mist` |
 | FortiCNAPP (Lacework) | `/forticnapp/<secret>` | Secret in the path. A custom webhook alert channel has only a URL. | `parsers/fortinet/forticnapp` |
+| PingOne | `/pingone` | `Authorization: Bearer <token>`, a custom header set on the webhook. PingOne can't sign deliveries. | `parsers/ping-identity/pingone` |
 
 Configure only the vendors you use; the other paths answer 404.
 
@@ -23,7 +24,7 @@ Python 3.9 or later, standard library only. One file: `webhook_relay.py`.
 
 **A public HTTPS name.** The vendors post from the internet, so the relay needs a DNS name with a TLS certificate in front of it (see Put TLS in front, below).
 
-**Secrets.** Generate the Autotask key and each path secret separately. The relay refuses shared secrets shorter than 32 characters.
+**Secrets.** Generate the Autotask key, the PingOne token and each path secret separately. The relay refuses shared secrets shorter than 32 characters.
 
 ```bash
 python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
@@ -41,6 +42,8 @@ python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
 
 **FortiCNAPP.** Sign in to the FortiCNAPP console as an administrator and go to Settings > Notifications > Channels. Choose + Add new, then Webhook, then Next. Name the channel and set Webhook URL to `https://<relay name>/forticnapp/<FORTICNAPP_PATH_SECRET>`; FortiCNAPP takes only https. Fortinet's docs show a token in the query string, but the relay reads the secret from the path, so put it there. Save, then under Alert rules route the alerts you want to the channel. The [FortiCNAPP entry's README](../../parsers/fortinet/forticnapp/README.md) has what the parser reads.
 
+**PingOne.** In the PingOne admin console, go to Integrations > Webhooks and add a webhook. Set Protocol to HTTPS and Destination URL to `https://<relay name>/pingone`, and leave Allow TLS connection with untrusted certificates off. Under Headers, choose Add Custom HTTP Headers with Key `Authorization` and Value `Bearer <PINGONE_WEBHOOK_TOKEN>`. Set Payload Format to JSON array with Pretty Print off (NDJSON works too) and Event Schema to Ping Activity Format. Set Payload Limit to Limit by Size with a size no bigger than `BRIDGE_MAX_BODY_BYTES` (500 KB with the default): PingOne resends a delivery until it gets 200, so one the relay refuses as too large holds up every later event. Turn on Include IP address and Include User Agent, choose Next, pick the event types, and save. The [PingOne entry's README](../../parsers/ping-identity/pingone/README.md) has the event types the parsers read.
+
 **ScreenConnect.** Under Administration > Automations, create the security and session automations in the [ScreenConnect entry's README](../../parsers/connectwise/screenconnect/README.md). Set each Perform Web Request action to HTTP Method POST, Content Type `text/plain`, and URL `https://<relay name>/screenconnect/<SCREENCONNECT_PATH_SECRET>`.
 
 ## Configuration
@@ -57,7 +60,8 @@ Everything comes from environment variables. Keep secrets in a secrets manager o
 | `SCREENCONNECT_PATH_SECRET` | none | The secret in the ScreenConnect web request URL. Turns on `/screenconnect/<secret>`. |
 | `MIST_WEBHOOK_SECRET` | none | The Secret on your Mist webhook, at least 32 characters. Turns on `/mist`. |
 | `FORTICNAPP_PATH_SECRET` | none | The secret in the FortiCNAPP webhook URL. Turns on `/forticnapp/<secret>`. |
-| `BRIDGE_SPLIT_BATCHES` | `0` | Forward each event of a Mist batch, `{"topic": ..., "events": [...]}`, as its own record, in the same envelope with one event. Only Mist sends batches. |
+| `PINGONE_WEBHOOK_TOKEN` | none | The token in the `Authorization: Bearer` header set on your PingOne webhook, at least 32 characters. Turns on `/pingone`. |
+| `BRIDGE_SPLIT_BATCHES` | `0` | Forward each event of a Mist batch, `{"topic": ..., "events": [...]}`, as its own record, in the same envelope with one event. PingOne batches are split whatever this says. |
 | `BRIDGE_LISTEN_HOST` | `127.0.0.1` | Address to listen on. Keep it on loopback behind the TLS proxy. |
 | `BRIDGE_LISTEN_PORT` | `8080` | Port to listen on. |
 | `BRIDGE_MAX_BODY_BYTES` | `524288` | Larger deliveries get 413. HTTP Ingest recommends records under about 500 KB. |
@@ -145,7 +149,8 @@ The timeouts above make the proxy, not the relay, wait on a slow sender. nginx a
 ## What it sends and answers
 
 - The body goes to HTTP Ingest unchanged, with `Authorization: Bearer` and `Content-Type: application/json` for a JSON object or `text/plain` for anything else. The vendor's headers are not passed on.
-- With `BRIDGE_SPLIT_BATCHES=1`, a Mist body with two or more events goes to HTTP Ingest in one request with one line per event, `{"topic": "<topic>", "events": [<event>]}`. A body with one event, and every other vendor's body, goes on as one record.
+- With `BRIDGE_SPLIT_BATCHES=1`, a Mist body with two or more events goes to HTTP Ingest in one request with one line per event, `{"topic": "<topic>", "events": [<event>]}`. A body with one event, and every other vendor's body but PingOne's, goes on as one record.
+- A PingOne body, a JSON array of events (pretty-printed or not) or one event per line (NDJSON), goes to HTTP Ingest in one request with one line per event, whatever `BRIDGE_SPLIT_BATCHES` says. A body with one event goes on as one record. An empty array gets 200 and sends nothing.
 - HTTP Ingest reads every line as a separate record, so a body with line breaks inside is put on one line first. In JSON they become spaces (JSON only allows them between values, so the data is the same). In text, such as a multi-line ScreenConnect `{Event.Data}`, each becomes the two characters `\n`.
 - HTTP Ingest 408, 429, 500, 502, 503, 504 and connection errors are retried with backoff, honoring `Retry-After`, until `BRIDGE_FORWARD_DEADLINE`. Other answers (400, 401, 403, 413 and redirects) are not retried.
 - A reply from HTTP Ingest cut off partway is retried the same way, and the sender always gets an answer. 501 and 505 aren't retried, since a retry won't change them, and the log says what they mean. A user name or password before the host in `NGSIEM_INGEST_URL` (`user:pass@`) stops the relay at startup, since it can't use them.
@@ -153,21 +158,22 @@ The timeouts above make the proxy, not the relay, wait on a slow sender. nginx a
 | The relay answers | When |
 | --- | --- |
 | 200 | HTTP Ingest took the delivery, or `--dry-run` checked it. |
-| 401 | The Huntress, Autotask or Mist signature is missing or wrong, or the Huntress timestamp is more than 5 minutes off. |
+| 401 | The Huntress, Autotask or Mist signature or the PingOne token is missing or wrong, or the Huntress timestamp is more than 5 minutes off. |
 | 404 | Unknown path, vendor not configured, or wrong path secret. |
 | 400, 405, 411, 413 | Empty body or JSON nested too deeply to read, not POST, no `Content-Length` (chunked), or body over `BRIDGE_MAX_BODY_BYTES`. |
 | 502 | HTTP Ingest refused the delivery. Check the key and URL. |
 | 503 | HTTP Ingest stayed unavailable until the deadline, or `BRIDGE_MAX_CONNECTIONS` requests were already in progress. |
 
-After a non-2xx answer, Huntress (Svix) tries again after 5 seconds, 5 minutes, 30 minutes, then 2, 5, 10 and 10 hours. Autotask tries 5 times in 2 minutes, keeps the payload in its Webhook Error Log for 30 days, and turns the webhook off after 25 consecutive failures over more than 4 hours. Hudu, ScreenConnect, Mist and FortiCNAPP don't document retries, so a delivery the relay can't forward may be lost.
+After a non-2xx answer, Huntress (Svix) tries again after 5 seconds, 5 minutes, 30 minutes, then 2, 5, 10 and 10 hours. Autotask tries 5 times in 2 minutes, keeps the payload in its Webhook Error Log for 30 days, and turns the webhook off after 25 consecutive failures over more than 4 hours. PingOne resends the current delivery until it gets 200 and sends nothing newer until then; it keeps events for up to 7 days. Hudu, ScreenConnect, Mist and FortiCNAPP don't document retries, so a delivery the relay can't forward may be lost.
 
 HTTP Ingest delivers at least once and does not remove duplicates, so a vendor retry after a lost 200 sends the record again.
 
 ## Security notes
 
 - Huntress, Autotask and Mist sign every delivery. The relay recomputes the HMAC and compares it in constant time. Autotask and Mist sign only the body, with no timestamp, so a captured delivery could be replayed; TLS is what stops capture.
+- PingOne can't sign either, but sends its token in a header, which stays out of URLs and proxy logs. The relay compares it in constant time. Like Autotask and Mist, a captured delivery could be replayed; TLS is what stops capture.
 - Hudu, ScreenConnect and FortiCNAPP can't sign, so the path secret is the only check, and it is weaker: anyone who sees the URL (in the vendor's settings, a proxy log or a screenshot) can post records. Rotate a secret that leaks: change the variable, restart the relay, and update the vendor.
-- The relay never logs secrets, the HTTP Ingest key, the HTTP Ingest URL path or bodies. It logs the vendor, the outcome, the size, Huntress delivery IDs, and the connecting address on rejections (the proxy's, behind a proxy).
+- The relay never logs secrets, the PingOne token, the HTTP Ingest key, the HTTP Ingest URL path or bodies. It logs the vendor, the outcome, the size, Huntress delivery IDs, and the connecting address on rejections (the proxy's, behind a proxy).
 - It verifies the HTTP Ingest certificate and doesn't follow redirects, so the key only goes to the configured host.
 - It handles at most `BRIDGE_MAX_CONNECTIONS` requests at once and gives each 30 seconds in all to arrive, so slow or numerous connections can't use up its threads and files. While they last they can still keep it busy, so set the proxy timeouts above.
 
@@ -177,7 +183,7 @@ HTTP Ingest delivers at least once and does not remove duplicates, so a vendor r
 python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 ```
 
-The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor, and a FortiCNAPP secret in the query string, which the relay refuses; splitting a Mist batch into one record per event, and only when turned on; the size limit; line-break handling; retries, the deadline and refusals; the connection limit and the time limit for a slow sender; dry-run; and that no secret or body reaches the log.
+The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor, and a FortiCNAPP secret in the query string, which the relay refuses; the PingOne token, right, wrong, missing or under another scheme; splitting a Mist batch into one record per event, and only when turned on; splitting every PingOne batch, as a JSON array, pretty-printed or as NDJSON, and an empty one; the size limit; line-break handling; retries, the deadline and refusals; the connection limit and the time limit for a slow sender; dry-run; and that no secret or body reaches the log.
 
 ## References
 
@@ -192,6 +198,8 @@ The tests sign deliveries the way each vendor documents, post them to the relay,
 - Juniper Mist webhooks (secret, X-Mist-Signature-v2, custom headers): https://www.juniper.net/documentation/us/en/software/mist/automation-integration/topics/task/webhooks-add-portal.html
 - Juniper Mist webhook messages (the batch envelope): https://www.juniper.net/documentation/us/en/software/mist/automation-integration/topics/topic-map/webhook-messages.html
 - FortiCNAPP custom webhook alert channel (URL only, the payload): https://docs.fortinet.com/document/forticnapp/latest/administration-guide/465696/custom-webhook-alert-channel
+- PingOne, creating a webhook (custom headers, payload format and limit, Ping Activity Format): https://docs.pingidentity.com/pingone/integrations/p1_create_webhook.html
+- PingOne subscriptions data model (httpEndpoint.headers, payloadOptions, retries until 200): https://developer.pingidentity.com/pingone-api/platform/subscriptions-webhooks/index.html
 - ScreenConnect session automations (Perform Web Request): https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/Create_a_new_session_automation
 - Sophos Fusion HTTP Ingest setup: https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/HTTPIngest/Setup/index.html
 - HTTP Ingest API contract (bearer header, one record per line, size limits, status codes), in the Taegis docs for the same platform: https://docs.taegis.secureworks.com/apis/using_http_ingest_api/

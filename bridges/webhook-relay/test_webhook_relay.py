@@ -3,9 +3,11 @@
 Deliveries are signed the way each vendor documents it: Svix for Huntress (HMAC-SHA256 over
 "<id>.<timestamp>.<body>", base64, "v1," prefix), X-Hook-Signature for Autotask (HMAC-SHA1 over
 the body, base64, "sha1=" prefix), X-Mist-Signature-v2 for Juniper Mist (HMAC-SHA256 over the
-body, hex), and a secret in the path for Hudu, ScreenConnect and FortiCNAPP. The bodies are lines
-from the library entries' samples.log, Mist batches in the shape of Mist's webhook samples, and a
-FortiCNAPP alert indented as in Fortinet's example. No real service is called.
+body, hex), a secret in the path for Hudu, ScreenConnect and FortiCNAPP, and the custom
+Authorization: Bearer header set on a PingOne webhook. The bodies are lines from the library
+entries' samples.log, Mist batches in the shape of Mist's webhook samples, a FortiCNAPP alert
+indented as in Fortinet's example, and PingOne batches of Ping Activity Format events as a JSON
+array and as NDJSON. No real service is called.
 
   python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 """
@@ -37,6 +39,7 @@ HUDU_SECRET = "test-hudu-path-secret-not-real-0000000000"
 SCREENCONNECT_SECRET = "test-screenconnect-path-secret-not-real-00"
 MIST_SECRET = "test-mist-webhook-secret-not-real-000000"
 FORTICNAPP_SECRET = "test-forticnapp-path-secret-not-real-000"
+PINGONE_TOKEN = "test-pingone-webhook-token-not-real-0000"
 INGEST_KEY = "test-ngsiem-ingest-key-not-real"
 INGEST_PATH = "/http-endpoint/v1/00000000-example-integration"
 
@@ -72,12 +75,40 @@ FORTICNAPP_ALERT = {
     "event_description": "User jsmith made an unauthorized call to ec2:DescribeInstances from 203.0.113.50",
     "event_timestamp": "14 Oct 2026 09:05 GMT", "event_type": "CloudActivity", "event_id": "120885", "event_severity": "3"}
 FORTICNAPP_BODY = json.dumps(FORTICNAPP_ALERT, indent=1).encode() + b"\n"
+# PingOne posts up to 500 Ping Activity Format events in one body: a JSON array by default, or one
+# event per line with NDJSON.
+PINGONE_EVENTS = [
+    {"_embedded": {}, "id": "5a2b3c4d-0000-4e5f-8a9b-000000000001", "recordedAt": "2026-10-14T09:12:44.123Z",
+     "createdAt": "2026-10-14T09:12:44.130Z", "correlationId": "c0a80001-0000-4000-8000-000000000001",
+     "actors": {"client": {"id": "a1b2c3d4-0000-4000-8000-00000000000c", "name": "Example Portal", "type": "CLIENT"},
+                "user": {"id": "u1u1u1u1-0000-4000-8000-000000000001", "name": "jsmith@example.com", "type": "USER"}},
+     "action": {"type": "PASSWORD.CHECK_FAILED", "description": "Password Check Failed"},
+     "resources": [{"type": "USER", "id": "u1u1u1u1-0000-4000-8000-000000000001", "name": "jsmith@example.com"}],
+     "result": {"status": "FAILED", "description": "Invalid credentials"},
+     "source": {"ipAddress": "203.0.113.45", "userAgent": "Mozilla/5.0"}},
+    {"_embedded": {}, "id": "5a2b3c4d-0000-4e5f-8a9b-000000000002", "recordedAt": "2026-10-14T09:13:02.5Z",
+     "actors": {"user": {"id": "u1u1u1u1-0000-4000-8000-000000000001", "name": "jsmith@example.com", "type": "USER"}},
+     "action": {"type": "OTP.CHECK_SUCCESS", "description": "OTP Check Succeeded"},
+     "resources": [{"type": "USER", "id": "u1u1u1u1-0000-4000-8000-000000000001", "name": "jsmith@example.com"}],
+     "result": {"status": "SUCCESS", "description": "Passed OTP check"}, "score": 0.25},
+    {"_embedded": {}, "id": "5a2b3c4d-0000-4e5f-8a9b-000000000003", "recordedAt": "2026-10-14T09:20:31Z",
+     "actors": {"user": {"id": "u2u2u2u2-0000-4000-8000-000000000002", "name": "admin@example.com", "type": "USER"}},
+     "action": {"type": "ROLE_ASSIGNMENT.CREATED", "description": "Role Assignment Created"},
+     "resources": [{"type": "USER", "id": "u1u1u1u1-0000-4000-8000-000000000001", "name": "jsmith@example.com"}],
+     "result": {"status": "SUCCESS", "description": "Assigned role Environment Admin"}},
+]
+PINGONE_ARRAY = json.dumps(PINGONE_EVENTS).encode()
+PINGONE_NDJSON = b"\n".join(json.dumps(e).encode() for e in PINGONE_EVENTS) + b"\n"
 
 
 def svix_headers(body, key=HUNTRESS_KEY, msg_id="msg_2Qx7example000000000000", stamp=None, prefix="svix-", extra_sigs=()):
     stamp = str(int(time.time()) if stamp is None else stamp)
     sig = base64.b64encode(hmac.new(key, f"{msg_id}.{stamp}.".encode() + body, hashlib.sha256).digest()).decode()
     return {f"{prefix}id": msg_id, f"{prefix}timestamp": stamp, f"{prefix}signature": " ".join([*extra_sigs, f"v1,{sig}"])}
+
+
+def pingone_headers(token=PINGONE_TOKEN, scheme="Bearer"):
+    return {"Content-Type": "application/json", "Authorization": f"{scheme} {token}"}
 
 
 def mist_headers(body, key=MIST_SECRET):
@@ -182,7 +213,8 @@ class RelayTest(unittest.TestCase):
         e = {"NGSIEM_INGEST_URL": self.ingest_url, "NGSIEM_INGEST_KEY": INGEST_KEY, "BRIDGE_LISTEN_PORT": "0",
              "HUNTRESS_SIGNING_SECRET": HUNTRESS_SECRET, "AUTOTASK_SECRET_KEY": AUTOTASK_KEY,
              "HUDU_PATH_SECRET": HUDU_SECRET, "SCREENCONNECT_PATH_SECRET": SCREENCONNECT_SECRET,
-             "MIST_WEBHOOK_SECRET": MIST_SECRET, "FORTICNAPP_PATH_SECRET": FORTICNAPP_SECRET}
+             "MIST_WEBHOOK_SECRET": MIST_SECRET, "FORTICNAPP_PATH_SECRET": FORTICNAPP_SECRET,
+             "PINGONE_WEBHOOK_TOKEN": PINGONE_TOKEN}
         e.update(extra)
         return {k: v for k, v in e.items() if v is not None}
 
@@ -432,11 +464,98 @@ class RelayTest(unittest.TestCase):
         self.assertEqual([json.loads(x)["events"][0]["id"] for x in out.getvalue().splitlines()], [e["id"] for e in MIST_EVENTS])
         self.assertEqual(self.bodies(), [])
 
+    # -------------------------------------------------------------- PingOne
+
+    def test_pingone_array_goes_as_one_record_per_event_with_the_ingest_key(self):
+        # BRIDGE_SPLIT_BATCHES is off: a PingOne batch is split whatever it says.
+        self.start()
+        self.assertEqual(self.post("/pingone", PINGONE_ARRAY, pingone_headers()), (200, "forwarded\n"))
+        self.assertEqual(len(self.ingest.received), 1)
+        lines = self.bodies()[0].split(b"\n")
+        self.assertEqual([json.loads(x) for x in lines], PINGONE_EVENTS)
+        self.assertEqual([list(json.loads(x)) for x in lines], [list(e) for e in PINGONE_EVENTS])
+        # Numbers go on as PingOne sent them.
+        self.assertIn(b'"score":0.25', lines[1])
+        sent = self.ingest.received[0]["headers"]
+        self.assertEqual((sent["Authorization"], sent["Content-Type"]), (f"Bearer {INGEST_KEY}", "application/json"))
+        self.assertIn("pingone: split a batch of 3 events", self.log.getvalue())
+
+    def test_pingone_ndjson_and_pretty_printed_arrays_are_split_too(self):
+        self.start(BRIDGE_SPLIT_BATCHES="1")
+        pretty = json.dumps(PINGONE_EVENTS, indent=2).encode()
+        for name, body in (("ndjson", PINGONE_NDJSON), ("ndjson with CRLF", PINGONE_NDJSON.replace(b"\n", b"\r\n")),
+                           ("pretty array", pretty)):
+            with self.subTest(name):
+                self.ingest.received.clear()
+                self.assertEqual(self.post("/pingone", body, pingone_headers())[0], 200)
+                self.assertEqual([json.loads(x) for x in self.bodies()[0].split(b"\n")], PINGONE_EVENTS)
+
+    def test_pingone_single_event_goes_on_unchanged_and_an_empty_batch_sends_nothing(self):
+        self.start()
+        one = json.dumps(PINGONE_EVENTS[0]).encode()
+        self.assertEqual(self.post("/pingone", one, pingone_headers())[0], 200)
+        self.assertEqual(self.bodies(), [one])
+        # One event on its own line (NDJSON with a batch of one) is the same record.
+        self.assertEqual(self.post("/pingone", one + b"\n", pingone_headers())[0], 200)
+        self.assertEqual(self.bodies()[1], one + b"\n")
+        # A batch of one in a JSON array goes on as that event alone.
+        self.assertEqual(self.post("/pingone", json.dumps(PINGONE_EVENTS[:1]).encode(), pingone_headers())[0], 200)
+        self.assertEqual(json.loads(self.bodies()[2]), PINGONE_EVENTS[0])
+        self.assertIn("pingone: split a batch of 1 event\n", self.log.getvalue())
+        # PingOne waits for a 200 before it sends the next batch, so an empty one gets 200.
+        self.assertEqual(self.post("/pingone", b"[]", pingone_headers()), (200, "no events\n"))
+        self.assertEqual(len(self.bodies()), 3)
+        self.assertIn("pingone: the delivery held no events", self.log.getvalue())
+
+    def test_pingone_rejects_a_missing_or_wrong_token(self):
+        self.start()
+        cases = {
+            "no header": {"Content-Type": "application/json"},
+            "wrong token": pingone_headers(token="another-pingone-token-not-real-00000000"),
+            "token without Bearer": {"Authorization": PINGONE_TOKEN},
+            "basic": pingone_headers(scheme="Basic"),
+            "Bearer only": {"Authorization": "Bearer"},
+            "token cut short": pingone_headers(token=PINGONE_TOKEN[:-1]),
+            "token run on": pingone_headers(token=PINGONE_TOKEN + "x"),
+        }
+        for name, headers in cases.items():
+            with self.subTest(name):
+                self.assertEqual(self.post("/pingone", PINGONE_ARRAY, headers), (401, "authenticity check failed\n"))
+        self.assertEqual(self.bodies(), [])
+        # The scheme is case-insensitive, as HTTP's are.
+        self.assertEqual(self.post("/pingone", PINGONE_ARRAY, pingone_headers(scheme="bearer"))[0], 200)
+        # The token goes in a header, never in the path.
+        self.assertEqual(self.post(f"/pingone/{PINGONE_TOKEN}", PINGONE_ARRAY, pingone_headers())[0], 404)
+
+    def test_pingone_dry_run_prints_each_event(self):
+        out = io.StringIO()
+        self.start(dry_run=True, out=out, NGSIEM_INGEST_URL=None, NGSIEM_INGEST_KEY=None)
+        self.assertEqual(self.post("/pingone", PINGONE_ARRAY, pingone_headers())[0], 200)
+        self.assertEqual([json.loads(x)["id"] for x in out.getvalue().splitlines()], [e["id"] for e in PINGONE_EVENTS])
+        self.assertEqual(self.bodies(), [])
+
+    def test_pingone_deeply_nested_json_gets_400(self):
+        self.start()
+        deep = b"[" * 100000 + b"]" * 100000
+        self.assertEqual(self.post("/pingone", deep, pingone_headers()), (400, "body can't be read\n"))
+        lines = b"{}\n" + b"[" * 100000 + b"]" * 100000
+        self.assertEqual(self.post("/pingone", lines, pingone_headers()), (400, "body can't be read\n"))
+        self.assertEqual(self.bodies(), [])
+
+    def test_split_events_takes_arrays_and_ndjson_only(self):
+        for body in (b"not json", b'{"id": "a"}', b'{"id": "a"}\n', b'{"id": "a"}\nnot json\n', b"1\n2 3\n"):
+            with self.subTest(body=body[:30]):
+                self.assertIsNone(r.split_events(body))
+        self.assertEqual(r.split_events(b"[]"), (b"", 0))
+        self.assertEqual(r.split_events(b'[{"a": 1}, {"b": "\\u00e9"}]'), ('{"a":1}\n{"b":"\u00e9"}'.encode(), 2))
+        self.assertEqual(r.split_events(b'{"a": 1}\n\n{"b": 2}\n')[1], 2)
+
     # -------------------------------------------------------------- requests the relay refuses
 
     def test_unconfigured_vendor_and_unknown_path_are_404(self):
-        self.start(HUNTRESS_SIGNING_SECRET=None)
+        self.start(HUNTRESS_SIGNING_SECRET=None, PINGONE_WEBHOOK_TOKEN=None)
         self.assertEqual(self.post("/huntress", HUNTRESS_BODY, svix_headers(HUNTRESS_BODY))[0], 404)
+        self.assertEqual(self.post("/pingone", PINGONE_ARRAY, pingone_headers())[0], 404)
         self.assertEqual(self.post("/", HUDU_BODY)[0], 404)
         self.assertEqual(self.post("/other", HUDU_BODY)[0], 404)
         self.assertEqual(self.post("/autotask/extra", AUTOTASK_BODY, autotask_headers(AUTOTASK_BODY))[0], 404)
@@ -577,6 +696,8 @@ class RelayTest(unittest.TestCase):
         self.post("/mist", MIST_BATCH, mist_headers(MIST_BATCH, key="another-mist-webhook-secret-00000000000"))
         self.post(f"/forticnapp/{FORTICNAPP_SECRET}", FORTICNAPP_BODY.replace(b"jsmith", marker.encode()))
         self.post(f"/forticnapp/{FORTICNAPP_SECRET[:-1]}", FORTICNAPP_BODY)
+        self.post("/pingone", PINGONE_ARRAY.replace(b"jsmith", marker.encode()), pingone_headers())
+        self.post("/pingone", PINGONE_ARRAY, pingone_headers(token="another-pingone-token-not-real-00000000"))
         self.ingest.codes = [401]
         self.post(f"/hudu/{HUDU_SECRET}", hudu)
         logged = self.log.getvalue()
@@ -587,7 +708,8 @@ class RelayTest(unittest.TestCase):
                        SCREENCONNECT_SECRET, INGEST_KEY, INGEST_PATH, "00000000-example-integration", marker,
                        "Acme Dental", "billing@example.com", autotask_sig, MIST_SECRET, "sam.admin@example.com",
                        mist_headers(MIST_BATCH)["X-Mist-Signature-v2"], FORTICNAPP_SECRET, FORTICNAPP_SECRET[:-1],
-                       "ec2:DescribeInstances"):
+                       "ec2:DescribeInstances", PINGONE_TOKEN, "another-pingone-token-not-real-00000000",
+                       "Invalid credentials", "admin@example.com"):
             self.assertNotIn(secret, logged)
 
     def test_ingest_key_with_a_line_break_is_refused_without_showing_it(self):
@@ -696,17 +818,20 @@ class RelayTest(unittest.TestCase):
             "not a signing secret": {"HUNTRESS_SIGNING_SECRET": "whsec_not base64!"},
             "short Mist secret": {"MIST_WEBHOOK_SECRET": "too-short"},
             "short FortiCNAPP secret": {"FORTICNAPP_PATH_SECRET": "too-short"},
+            "short PingOne token": {"PINGONE_WEBHOOK_TOKEN": "too-short"},
+            "PingOne token with a space": {"PINGONE_WEBHOOK_TOKEN": "with a space " * 4},
             "port": {"BRIDGE_LISTEN_PORT": "eighty"},
             "deadline": {"BRIDGE_FORWARD_DEADLINE": "0"},
             "nothing to relay": {"HUNTRESS_SIGNING_SECRET": None, "AUTOTASK_SECRET_KEY": None, "HUDU_PATH_SECRET": None,
-                                 "SCREENCONNECT_PATH_SECRET": None, "MIST_WEBHOOK_SECRET": None, "FORTICNAPP_PATH_SECRET": None},
+                                 "SCREENCONNECT_PATH_SECRET": None, "MIST_WEBHOOK_SECRET": None, "FORTICNAPP_PATH_SECRET": None,
+                                 "PINGONE_WEBHOOK_TOKEN": None},
         }
         for name, extra in bad.items():
             with self.subTest(name):
                 with self.assertRaises(r.RelayError):
                     r.load_config(self.env(**extra))
         cfg = r.load_config(self.env(NGSIEM_INGEST_URL=None))
-        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "forticnapp", "hudu", "huntress", "mist", "screenconnect"])
+        self.assertEqual(sorted(cfg["vendors"]), ["autotask", "forticnapp", "hudu", "huntress", "mist", "pingone", "screenconnect"])
         self.assertFalse(cfg["split_batches"])
         self.assertTrue(r.load_config(self.env(BRIDGE_SPLIT_BATCHES="1"))["split_batches"])
         self.assertEqual(cfg["vendors"]["huntress"], HUNTRESS_KEY)
