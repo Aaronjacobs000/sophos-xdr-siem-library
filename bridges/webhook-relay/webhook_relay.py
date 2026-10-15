@@ -62,6 +62,10 @@ class RelayError(Exception):
     """A configuration problem that stops the relay before it listens."""
 
 
+class BodyError(Exception):
+    """A delivery body the relay can't read, refused with 400."""
+
+
 # ---------------------------------------------------------------- configuration
 
 def _env(env: dict, name: str, default: str | None = None) -> str | None:
@@ -169,7 +173,12 @@ def verify_svix(key: bytes, headers, body: bytes, now: float | None = None) -> s
         sent = int(stamp)
     except ValueError:
         return "timestamp is not a number"
-    if abs((time.time() if now is None else now) - sent) > SVIX_TOLERANCE_SECONDS:
+    try:
+        skew = abs((time.time() if now is None else now) - sent)
+    except OverflowError:
+        # Too large for a float, so far outside the window.
+        skew = float("inf")
+    if skew > SVIX_TOLERANCE_SECONDS:
         return "timestamp is more than 5 minutes from this machine's clock"
     signed = f"{msg_id}.{stamp}.".encode("utf-8") + body
     expected = base64.b64encode(hmac.new(key, signed, hashlib.sha256).digest())
@@ -206,6 +215,8 @@ def one_record(body: bytes) -> tuple[bytes, str]:
     doesn't change), and text gets each line break replaced with the two characters \\n."""
     try:
         is_json = isinstance(json.loads(body), dict)
+    except RecursionError:
+        raise BodyError("its JSON is nested too deeply") from None
     except ValueError:
         is_json = False
     ctype = "application/json" if is_json else "text/plain"
@@ -408,7 +419,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._reply(400, "empty body")
         # Huntress asks receivers to log the delivery ID, to match View Delivery Attempts.
         delivery = f" (delivery {_safe_id(self.headers.get('svix-id') or self.headers.get('webhook-id'))})" if vendor == "huntress" else ""
-        code, text = relay.forward(vendor, body)
+        try:
+            code, text = relay.forward(vendor, body)
+        except BodyError as e:
+            LOG.warning("%s: rejected a delivery from %s: %s", vendor, peer, e)
+            return self._reply(400, "body can't be read")
         if code == 200:
             LOG.info("%s: %s %d bytes%s", vendor, "checked" if relay.dry_run else "forwarded", size, delivery)
         else:

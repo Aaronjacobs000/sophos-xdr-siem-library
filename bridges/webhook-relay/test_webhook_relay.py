@@ -215,6 +215,32 @@ class RelayTest(unittest.TestCase):
         self.assertEqual(self.bodies(), [])
         self.assertIn("timestamp is more than 5 minutes", self.log.getvalue())
 
+    def test_huge_timestamp_and_deeply_nested_json_get_a_4xx_and_one_log_line(self):
+        # Neither may end the request with a traceback and no answer.
+        self.start()
+        errors = io.StringIO()
+        stderr, sys.stderr = sys.stderr, errors
+        try:
+            for stamp in ("9" * 400, "-" + "9" * 400):
+                with self.subTest(stamp=stamp[:5]):
+                    self.assertEqual(self.post("/huntress", HUNTRESS_BODY, svix_headers(HUNTRESS_BODY, stamp=stamp))[0], 401)
+            deep = b"[" * 100000 + b"]" * 100000
+            deliveries = {
+                "huntress": ("/huntress", svix_headers(deep)),
+                "autotask": ("/autotask", autotask_headers(deep)),
+                "hudu": (f"/hudu/{HUDU_SECRET}", {}),
+            }
+            for name, (path, headers) in deliveries.items():
+                with self.subTest(name):
+                    self.assertEqual(self.post(path, deep, headers), (400, "body can't be read\n"))
+        finally:
+            sys.stderr = stderr
+        self.assertNotIn("Traceback", errors.getvalue())
+        self.assertEqual(self.bodies(), [])
+        lines = self.log.getvalue().splitlines()
+        self.assertEqual(len([l for l in lines if "timestamp is more than 5 minutes" in l]), 2)
+        self.assertEqual(len([l for l in lines if "nested too deeply" in l]), 3)
+
     # -------------------------------------------------------------- Autotask
 
     def test_autotask_valid_signature_forwards(self):
