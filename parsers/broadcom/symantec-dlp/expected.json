@@ -1,0 +1,331 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792020665000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104522",
+      "title": "DLP incident: PCI DSS Credit Card Numbers",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "source_host_name": "WS-0147",
+      "source_address": "192.0.2.47",
+      "summary": "PCI DSS Credit Card Numbers",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "PCI DSS Credit Card Numbers"
+          },
+          {
+            "key": "blocked",
+            "value": "yes"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792021211000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104530",
+      "title": "DLP incident: HIPAA Patient Data",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "source_user_name": "EXAMPLE\\asmith",
+      "source_host_name": "WS-0152",
+      "source_address": "192.0.2.52",
+      "summary": "HIPAA Patient Data",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "HIPAA Patient Data"
+          },
+          {
+            "key": "blocked",
+            "value": "no"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792021522000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104541",
+      "title": "DLP incident: Confidential Documents",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "jdoe@example.com",
+      "destination_address": "198.51.100.25",
+      "summary": "Confidential Documents on SMTP: Keyword Match Project Falcon, Attachment Type",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "Confidential Documents"
+          },
+          {
+            "key": "blocked",
+            "value": "yes"
+          },
+          {
+            "key": "rules",
+            "value": "Keyword Match Project Falcon, Attachment Type"
+          },
+          {
+            "key": "protocol",
+            "value": "SMTP"
+          },
+          {
+            "key": "recipients",
+            "value": "partner@example.net, ceo@example.org"
+          },
+          {
+            "key": "match_count",
+            "value": "4"
+          },
+          {
+            "key": "status",
+            "value": "New"
+          },
+          {
+            "key": "detection_server",
+            "value": "Network Prevent for Email"
+          },
+          {
+            "key": "attachment",
+            "value": "roadmap.docx"
+          },
+          {
+            "key": "sender",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "incident_snapshot",
+            "value": "https://enforce01.example.com/ProtectManager/IncidentDetail.do?value=104541"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792021960000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104550",
+      "title": "DLP incident: Customer List Export",
+      "vendor_severity": "Low",
+      "severity": "LOW",
+      "source_user_name": "EXAMPLE\\mlee",
+      "source_host_name": "WS-0161",
+      "source_address": "192.0.2.61",
+      "summary": "Customer List Export on Removable Storage Device: Customer Records EDM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "Customer List Export"
+          },
+          {
+            "key": "blocked",
+            "value": "no"
+          },
+          {
+            "key": "rules",
+            "value": "Customer Records EDM"
+          },
+          {
+            "key": "protocol",
+            "value": "Removable Storage Device"
+          },
+          {
+            "key": "match_count",
+            "value": "250"
+          },
+          {
+            "key": "status",
+            "value": "New"
+          },
+          {
+            "key": "detection_server",
+            "value": "Endpoint Prevent"
+          },
+          {
+            "key": "attachment",
+            "value": "customers.csv"
+          },
+          {
+            "key": "location",
+            "value": "E:\\exports\\customers.csv"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792022283000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104562",
+      "title": "DLP incident: Source Code Upload",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\pnguyen",
+      "source_host_name": "WS-0170",
+      "source_address": "192.0.2.70",
+      "destination_address": "203.0.113.88",
+      "destination_url": "https://upload.example.net/files",
+      "summary": "Source Code Upload on HTTPS: Source Code Fingerprint",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "Source Code Upload"
+          },
+          {
+            "key": "blocked",
+            "value": "yes"
+          },
+          {
+            "key": "rules",
+            "value": "Source Code Fingerprint"
+          },
+          {
+            "key": "protocol",
+            "value": "HTTPS"
+          },
+          {
+            "key": "match_count",
+            "value": "12"
+          },
+          {
+            "key": "status",
+            "value": "New"
+          },
+          {
+            "key": "detection_server",
+            "value": "Endpoint Prevent"
+          },
+          {
+            "key": "attachment",
+            "value": "build.zip"
+          },
+          {
+            "key": "location",
+            "value": "https://upload.example.net/files"
+          },
+          {
+            "key": "sender",
+            "value": "EXAMPLE\\pnguyen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SYMANTEC_DLP_CEF_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Symantec DLP",
+      "event_time_usec": 1792022747000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Broadcom",
+      "provider": "Symantec DLP",
+      "alert_category": "Data loss prevention",
+      "host_id": "enforce01",
+      "alert_id": "104570",
+      "title": "DLP incident: Payroll Data at Rest",
+      "vendor_severity": "Info",
+      "severity": "INFO",
+      "summary": "Payroll Data at Rest on File System: Salary Keywords",
+      "additional_data": {
+        "record": [
+          {
+            "key": "policy",
+            "value": "Payroll Data at Rest"
+          },
+          {
+            "key": "blocked",
+            "value": "no"
+          },
+          {
+            "key": "rules",
+            "value": "Salary Keywords"
+          },
+          {
+            "key": "protocol",
+            "value": "File System"
+          },
+          {
+            "key": "match_count",
+            "value": "31"
+          },
+          {
+            "key": "status",
+            "value": "New"
+          },
+          {
+            "key": "detection_server",
+            "value": "Network Discover"
+          },
+          {
+            "key": "attachment",
+            "value": "salaries.xlsx"
+          },
+          {
+            "key": "location",
+            "value": "\\fs01.example.com\\hr\\salaries.xlsx"
+          }
+        ]
+      }
+    }
+  }
+]
