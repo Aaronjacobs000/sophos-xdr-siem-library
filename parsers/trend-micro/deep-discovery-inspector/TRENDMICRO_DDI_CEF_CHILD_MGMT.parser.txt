@@ -1,0 +1,24 @@
+!SAMPLE=<134>Oct 15 10:18:40 ddi01 CEF:0|Trend Micro|Deep Discovery Inspector|7.0.1225|300102|Virtual Analyzer settings were changed.|2|dvc=192.0.2.32 dvcmac=00:00:5E:00:53:BD dvchost=ddi01.example.com deviceExternalId=E9A3FA433916-4738984C-A4BF-84A0-D603 rt=Oct 15 2026 10:18:40 GMT+10:00 duser=admin outcome=Success src=192.0.2.10 eventDetail=Enable Virtual Analyzer. Type: internal.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="system"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Deep Discovery Inspector CEF syslog.
+# Child of TRENDMICRO_DDI_CEF_PARENT: system logs (300102 and 300999) to ManagementEvent: the
+# change, who made it (duser, "Action by"), from where (src, the user's IP), the outcome and
+# the details.
+# v, sigText, evName, appliance, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+operationName$ = evName
+user = STRING(v["duser"])
+username$ = IF user != "" THEN user ELSE NULL
+ip = STRING(v["src"])
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+outcome = STRING(v["outcome"])
+result$ = IF outcome != "" THEN outcome ELSE NULL
+detail = STRING(v["eventDetail"])
+operation$ = IF detail != "" THEN detail ELSE NULL
+targetHostname$ = IF appliance != "" THEN appliance ELSE NULL
+eventId$ = INT(sigText, 10)

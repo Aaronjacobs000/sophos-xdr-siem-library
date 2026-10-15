@@ -1,0 +1,133 @@
+!SAMPLE=<134>Oct 15 09:50:12 ddi01 CEF:0|Trend Micro|Deep Discovery Inspector|7.0.1225|1645|C&C callback attempt - HTTP (Request)|8|dvc=192.0.2.32 dvcmac=00:00:5E:00:53:BD dvchost=ddi01.example.com deviceExternalId=E9A3FA433916-4738984C-A4BF-84A0-D603 rt=Oct 15 2026 09:50:12 GMT+10:00 app=HTTP deviceDirection=1 dhost=c2.example.net dst=203.0.113.80 dpt=80 shost=ws47.example.com src=192.0.2.47 spt=50432 cs3Label=HostName_Ext cs3=c2.example.net cs2Label=DetectionName cs2=CCCA_HTTP_REQUEST requestClientApplication=Mozilla/5.0 act=not blocked cn3Label=Threat Type cn3=1 cn1Label=CCCA_Detection cn1=1 cs5Label=CCCA_DetectionSource cs5=GLOBAL_INTELLIGENCE destinationTranslatedAddress=203.0.113.80 sourceTranslatedAddress=192.0.2.47 cnt=3 cat=Callback cs6Label=pAttackPhase cs6=Command and Control Communication request=http://c2.example.net/gate.php devicePayloadId=1:2201:P
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="network"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Deep Discovery Inspector CEF syslog.
+# Child of TRENDMICRO_DDI_CEF_PARENT: threat logs (malware, C&C callbacks, exploits, suspicious
+# behavior and grayware), web reputation logs (100101) and disruptive application logs (100120)
+# to NIDS. The detection is the message, and the signature id is the header event id.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# v, sigText, evName, sevText, threatType, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# IPv6 traffic has its addresses in c6a2 (source) and c6a3 (destination) instead of src and dst.
+src = STRING(v["src"])
+dst = STRING(v["dst"])
+src6 = STRING(v["c6a2"])
+dst6 = STRING(v["c6a3"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+sourceAddress$ = IF src == "" AND src6 != "" THEN src6 ELSE sourceAddress$
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+destinationAddress$ = IF dst == "" AND dst6 != "" THEN dst6 ELSE destinationAddress$
+sptText = STRING(v["spt"])
+spt = sptText|^(?P<n>\d{1,5})$
+dptText = STRING(v["dpt"])
+dpt = dptText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spt["n"] != "" THEN INT(spt["n"], 10) ELSE NULL
+destinationPort$ = IF dpt["n"] != "" THEN INT(dpt["n"], 10) ELSE NULL
+app = STRING(v["app"])
+applicationName$ = IF app != "" THEN app ELSE NULL
+sigNum = sigText|^(?P<n>\d{1,10})$
+signatureId$ = IF sigNum["n"] != "" THEN INT(sigNum["n"], 10) ELSE NULL
+message$ = evName
+
+# The detection name (cs2) on threat logs, the URL category (cs2) on web reputation logs.
+detection = STRING(v["cs2"])
+category = STRING(v["cat"])
+classification$ = IF detection != "" THEN detection ELSE NULL
+classification$ = IF detection == "" AND category != "" THEN category ELSE classification$
+act = LOWERCASE(STRING(v["act"]))
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF act == "blocked" THEN 1 ELSE 0
+user = STRING(v["suid"])
+sourceUsername$ = IF user != "" THEN user ELSE NULL
+vlanText = STRING(v["flexNumber1"])
+vlanNum = vlanText|^(?P<n>\d{1,4})$
+vlan$ = IF vlanNum["n"] != "" THEN INT(vlanNum["n"], 10) ELSE NULL
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+# deviceDirection: 0 the source is external, 1 the source is internal, 2 unknown.
+dir = STRING(v["deviceDirection"])
+direction$ = NULL
+direction$ = IF dir == "0" THEN "INBOUND" ELSE direction$
+direction$ = IF dir == "1" THEN "OUTBOUND" ELSE direction$
+
+threatName = ""
+threatName = IF threatType == "0" THEN "Malicious content" ELSE threatName
+threatName = IF threatType == "1" THEN "Malicious behavior" ELSE threatName
+threatName = IF threatType == "2" THEN "Suspicious behavior" ELSE threatName
+threatName = IF threatType == "3" THEN "Exploit" ELSE threatName
+threatName = IF threatType == "4" THEN "Grayware" ELSE threatName
+threatName = IF threatType == "5" THEN "Web reputation" ELSE threatName
+threatName = IF threatType == "6" THEN "Disruptive application" ELSE threatName
+# Web reputation logs carry the attack phase in cs4; threat logs carry it in cs6.
+phase = IF sigText == "100101" THEN STRING(v["cs4"]) ELSE STRING(v["cs6"])
+
+t1.key$ = "severity"
+t1.value$ = sevText
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [t1]
+t2.key$ = "threat_type"
+t2.value$ = threatName
+eventMetadata$.record$ = IF threatName != "" THEN eventMetadata$.record$ + [t2] ELSE eventMetadata$.record$
+t3.key$ = "category"
+t3.value$ = category
+eventMetadata$.record$ = IF category != "" THEN eventMetadata$.record$ + [t3] ELSE eventMetadata$.record$
+t4.key$ = "attack_phase"
+t4.value$ = phase
+eventMetadata$.record$ = IF phase != "" THEN eventMetadata$.record$ + [t4] ELSE eventMetadata$.record$
+t5.key$ = "url"
+t5.value$ = STRING(v["request"])
+eventMetadata$.record$ = IF t5.value$ != "" THEN eventMetadata$.record$ + [t5] ELSE eventMetadata$.record$
+t6.key$ = "host_name"
+t6.value$ = STRING(v["cs3"])
+eventMetadata$.record$ = IF t6.value$ != "" THEN eventMetadata$.record$ + [t6] ELSE eventMetadata$.record$
+t7.key$ = "file_name"
+t7.value$ = STRING(v["fname"])
+eventMetadata$.record$ = IF t7.value$ != "" THEN eventMetadata$.record$ + [t7] ELSE eventMetadata$.record$
+t8.key$ = "file_sha1"
+t8.value$ = STRING(v["fileHash"])
+eventMetadata$.record$ = IF t8.value$ != "" THEN eventMetadata$.record$ + [t8] ELSE eventMetadata$.record$
+t9.key$ = "file_in_archive"
+t9.value$ = IF sigText == "100101" THEN "" ELSE STRING(v["cs4"])
+eventMetadata$.record$ = IF t9.value$ != "" THEN eventMetadata$.record$ + [t9] ELSE eventMetadata$.record$
+t10.key$ = "ccca_detection"
+t10.value$ = STRING(v["cn1"])
+eventMetadata$.record$ = IF t10.value$ != "" THEN eventMetadata$.record$ + [t10] ELSE eventMetadata$.record$
+t11.key$ = "ccca_source"
+t11.value$ = STRING(v["cs5"])
+eventMetadata$.record$ = IF t11.value$ != "" THEN eventMetadata$.record$ + [t11] ELSE eventMetadata$.record$
+t12.key$ = "wrs_score"
+t12.value$ = IF sigText == "100101" THEN STRING(v["cn2"]) ELSE ""
+eventMetadata$.record$ = IF t12.value$ != "" THEN eventMetadata$.record$ + [t12] ELSE eventMetadata$.record$
+t13.key$ = "user_agent"
+t13.value$ = STRING(v["requestClientApplication"])
+eventMetadata$.record$ = IF t13.value$ != "" THEN eventMetadata$.record$ + [t13] ELSE eventMetadata$.record$
+t14.key$ = "interested_ip"
+t14.value$ = STRING(v["sourceTranslatedAddress"])
+eventMetadata$.record$ = IF t14.value$ != "" THEN eventMetadata$.record$ + [t14] ELSE eventMetadata$.record$
+t15.key$ = "peer_ip"
+t15.value$ = STRING(v["destinationTranslatedAddress"])
+eventMetadata$.record$ = IF t15.value$ != "" THEN eventMetadata$.record$ + [t15] ELSE eventMetadata$.record$
+t16.key$ = "source_host"
+t16.value$ = STRING(v["shost"])
+eventMetadata$.record$ = IF t16.value$ != "" THEN eventMetadata$.record$ + [t16] ELSE eventMetadata$.record$
+t17.key$ = "destination_host"
+t17.value$ = STRING(v["dhost"])
+eventMetadata$.record$ = IF t17.value$ != "" THEN eventMetadata$.record$ + [t17] ELSE eventMetadata$.record$
+t18.key$ = "count"
+t18.value$ = STRING(v["cnt"])
+eventMetadata$.record$ = IF t18.value$ != "" THEN eventMetadata$.record$ + [t18] ELSE eventMetadata$.record$
+t19.key$ = "mail_subject"
+t19.value$ = STRING(v["cs1"])
+eventMetadata$.record$ = IF t19.value$ != "" THEN eventMetadata$.record$ + [t19] ELSE eventMetadata$.record$
+t20.key$ = "mail_sender"
+t20.value$ = STRING(v["suser"])
+eventMetadata$.record$ = IF t20.value$ != "" THEN eventMetadata$.record$ + [t20] ELSE eventMetadata$.record$
+t21.key$ = "mail_recipient"
+t21.value$ = STRING(v["duser"])
+eventMetadata$.record$ = IF t21.value$ != "" THEN eventMetadata$.record$ + [t21] ELSE eventMetadata$.record$
+t22.key$ = "payload_id"
+t22.value$ = STRING(v["devicePayloadId"])
+eventMetadata$.record$ = IF t22.value$ != "" THEN eventMetadata$.record$ + [t22] ELSE eventMetadata$.record$

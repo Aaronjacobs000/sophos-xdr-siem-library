@@ -1,0 +1,540 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792021367000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "198.51.100.54",
+      "destination_address": "192.0.2.5",
+      "source_port": 80,
+      "destination_port": 57908,
+      "application_name": "HTTP",
+      "signature_id": 8,
+      "message": "Eicar_test_file - HTTP (Response)",
+      "classification": "Eicar_test_file",
+      "action": "not blocked",
+      "blocked": 0,
+      "vlan": 4095,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "threat_type",
+            "value": "Malicious content"
+          },
+          {
+            "key": "category",
+            "value": "Malware"
+          },
+          {
+            "key": "attack_phase",
+            "value": "Point of Entry"
+          },
+          {
+            "key": "url",
+            "value": "http://www.example.net/eicarcom2.zip"
+          },
+          {
+            "key": "host_name",
+            "value": "www.example.net"
+          },
+          {
+            "key": "file_name",
+            "value": "eicarcom2.zip"
+          },
+          {
+            "key": "file_sha1",
+            "value": "BEC1B52D350D721C7E22A6D4BB0A92909893A3AE"
+          },
+          {
+            "key": "file_in_archive",
+            "value": "eicar.com"
+          },
+          {
+            "key": "user_agent",
+            "value": "Wget/1.21"
+          },
+          {
+            "key": "interested_ip",
+            "value": "192.0.2.5"
+          },
+          {
+            "key": "peer_ip",
+            "value": "198.51.100.54"
+          },
+          {
+            "key": "source_host",
+            "value": "www.example.net"
+          },
+          {
+            "key": "destination_host",
+            "value": "ws05.example.com"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "payload_id",
+            "value": "0:143:P"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792021812000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "192.0.2.47",
+      "destination_address": "203.0.113.80",
+      "source_port": 50432,
+      "destination_port": 80,
+      "application_name": "HTTP",
+      "signature_id": 1645,
+      "message": "C&C callback attempt - HTTP (Request)",
+      "classification": "CCCA_HTTP_REQUEST",
+      "action": "not blocked",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "threat_type",
+            "value": "Malicious behavior"
+          },
+          {
+            "key": "category",
+            "value": "Callback"
+          },
+          {
+            "key": "attack_phase",
+            "value": "Command and Control Communication"
+          },
+          {
+            "key": "url",
+            "value": "http://c2.example.net/gate.php"
+          },
+          {
+            "key": "host_name",
+            "value": "c2.example.net"
+          },
+          {
+            "key": "ccca_detection",
+            "value": "1"
+          },
+          {
+            "key": "ccca_source",
+            "value": "GLOBAL_INTELLIGENCE"
+          },
+          {
+            "key": "user_agent",
+            "value": "Mozilla/5.0"
+          },
+          {
+            "key": "interested_ip",
+            "value": "192.0.2.47"
+          },
+          {
+            "key": "peer_ip",
+            "value": "203.0.113.80"
+          },
+          {
+            "key": "source_host",
+            "value": "ws47.example.com"
+          },
+          {
+            "key": "destination_host",
+            "value": "c2.example.net"
+          },
+          {
+            "key": "count",
+            "value": "3"
+          },
+          {
+            "key": "payload_id",
+            "value": "1:2201:P"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792022551000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.40",
+      "source_port": 49822,
+      "destination_port": 445,
+      "application_name": "SMB2",
+      "signature_id": 2367,
+      "message": "MS17-010 SMB Remote Code Execution Exploit - SMB2 (Request)",
+      "classification": "CVE-2017-0144",
+      "action": "blocked",
+      "blocked": 1,
+      "vlan": 20,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "threat_type",
+            "value": "Exploit"
+          },
+          {
+            "key": "category",
+            "value": "Exploit"
+          },
+          {
+            "key": "attack_phase",
+            "value": "Lateral Movement"
+          },
+          {
+            "key": "interested_ip",
+            "value": "192.0.2.40"
+          },
+          {
+            "key": "peer_ip",
+            "value": "203.0.113.99"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "payload_id",
+            "value": "3:2214:P"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792022710000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "2001:db8:200::80",
+      "destination_address": "2001:db8:100::25",
+      "source_port": 80,
+      "destination_port": 51120,
+      "application_name": "HTTP",
+      "signature_id": 42,
+      "message": "Grayware download - HTTP (Response)",
+      "classification": "ADW_EXAMPLE.A",
+      "action": "not blocked",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "INBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "4"
+          },
+          {
+            "key": "threat_type",
+            "value": "Grayware"
+          },
+          {
+            "key": "category",
+            "value": "Grayware"
+          },
+          {
+            "key": "attack_phase",
+            "value": "Point of Entry"
+          },
+          {
+            "key": "url",
+            "value": "http://downloads.example.org/setup_toolbar.exe"
+          },
+          {
+            "key": "file_name",
+            "value": "setup_toolbar.exe"
+          },
+          {
+            "key": "file_sha1",
+            "value": "0F5C9A1D7E3B2A4C6D8E0F1A2B3C4D5E6F7A8B9C"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "payload_id",
+            "value": "4:2230:"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792022417000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "192.0.2.15",
+      "destination_address": "198.51.100.115",
+      "source_port": 41757,
+      "destination_port": 80,
+      "application_name": "HTTP",
+      "signature_id": 100101,
+      "message": "Ransomware URL in Web Reputation Services database - HTTP (Request)",
+      "classification": "Ransomware",
+      "blocked": 0,
+      "vlan": 4095,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "8"
+          },
+          {
+            "key": "threat_type",
+            "value": "Web reputation"
+          },
+          {
+            "key": "attack_phase",
+            "value": "Command and Control Communication"
+          },
+          {
+            "key": "url",
+            "value": "http://bad.example.org/"
+          },
+          {
+            "key": "host_name",
+            "value": "bad.example.org"
+          },
+          {
+            "key": "ccca_detection",
+            "value": "1"
+          },
+          {
+            "key": "wrs_score",
+            "value": "49"
+          },
+          {
+            "key": "user_agent",
+            "value": "Wget/1.21"
+          },
+          {
+            "key": "interested_ip",
+            "value": "192.0.2.15"
+          },
+          {
+            "key": "peer_ip",
+            "value": "198.51.100.115"
+          },
+          {
+            "key": "source_host",
+            "value": "192.0.2.15"
+          },
+          {
+            "key": "destination_host",
+            "value": "198.51.100.115"
+          },
+          {
+            "key": "payload_id",
+            "value": "5:17:"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792022784000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.223",
+      "source_port": 39933,
+      "destination_port": 4662,
+      "application_name": "eDonkey",
+      "signature_id": 100120,
+      "message": "Deep Discovery Inspector detected the protocol in your monitored network.",
+      "blocked": 0,
+      "vlan": 4095,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "severity",
+            "value": "2"
+          },
+          {
+            "key": "threat_type",
+            "value": "Disruptive application"
+          },
+          {
+            "key": "interested_ip",
+            "value": "192.0.2.31"
+          },
+          {
+            "key": "peer_ip",
+            "value": "198.51.100.223"
+          },
+          {
+            "key": "source_host",
+            "value": "192.0.2.31"
+          },
+          {
+            "key": "destination_host",
+            "value": "198.51.100.223"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "payload_id",
+            "value": "6:11:P"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792023368000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "operation_name": "The system time setting has been changed.",
+      "username": "admin",
+      "source_address": "192.0.2.10",
+      "result": "Success",
+      "target_hostname": "ddi01.example.com",
+      "event_id": 300999
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792023520000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "operation_name": "Virtual Analyzer settings were changed.",
+      "username": "admin",
+      "source_address": "192.0.2.10",
+      "result": "Success",
+      "operation": "Enable Virtual Analyzer. Type: internal.",
+      "target_hostname": "ddi01.example.com",
+      "event_id": 300102
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT > TRENDMICRO_DDI_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792023706000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ddi01.example.com",
+      "vendor": "Trend Micro",
+      "provider": "Deep Discovery Inspector",
+      "alert_category": "Virtual Analyzer",
+      "title": "Sandbox analysis: invoice_0915.rar",
+      "summary": "Sample file sandbox analysis is finished: VAN_DROPPER.UMXX",
+      "severity": "HIGH",
+      "vendor_severity": "ROZ 3",
+      "additional_data": {
+        "record": [
+          {
+            "key": "file_name",
+            "value": "invoice_0915.rar"
+          },
+          {
+            "key": "file_sha1",
+            "value": "1E4677A1EF1FBAD11F8D06A9DAD8103C2CE861A9"
+          },
+          {
+            "key": "malware_name",
+            "value": "VAN_DROPPER.UMXX"
+          },
+          {
+            "key": "file_type",
+            "value": "RAR"
+          },
+          {
+            "key": "file_size",
+            "value": "131372"
+          },
+          {
+            "key": "sandbox_image",
+            "value": "win10x64"
+          },
+          {
+            "key": "grid_known_good",
+            "value": "-1"
+          },
+          {
+            "key": "appliance_guid",
+            "value": "E9A3FA433916-4738984C-A4BF-84A0-D603"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TRENDMICRO_DDI_CEF_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Trend Micro Deep Discovery Inspector",
+      "event_time_usec": 1792023945000000,
+      "host_id": "ddi01.example.com"
+    }
+  }
+]
