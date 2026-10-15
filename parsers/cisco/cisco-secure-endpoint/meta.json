@@ -1,0 +1,53 @@
+{
+  "vendor": "Cisco",
+  "product": "Cisco Secure Endpoint",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-14T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://developer.cisco.com/docs/secure-endpoint/v1-api-reference-event/",
+    "https://pubhub.devnetcloud.com/media/secure-endpoint-api/docs/legacy-apis/v1/event_oas.yaml",
+    "https://pubhub.devnetcloud.com/media/secure-endpoint-api/docs/legacy-apis/v1/event_type_oas.yaml",
+    "https://pubhub.devnetcloud.com/media/secure-endpoint-api/docs/legacy-apis/v1/computer_oas.yaml",
+    "https://docs.amp.cisco.com/en/SecureEndpoint/Secure%20Endpoint%20User%20Guide.pdf"
+  ],
+  "notes": "Cisco Secure Endpoint (formerly AMP for Endpoints) has no syslog output and no webhook to an arbitrary HTTPS endpoint, and its event streams are AMQP queues, so these parsers read events polled from the API v1 events list by the example bridge in bridges/cisco-secure-endpoint-events and posted to HTTP Ingest. Use a read-only API credential and the API host for the organization's region (North America, APJC or EU). The bridge puts \"cisco_se_record\": \"event\" first and adds event_id, the 64-bit event ID as text, which the parsers use, since the engine reads numbers as 64-bit floats. Routing reads event_type_id, since Cisco has renamed event types. The compromise event IDs (1107296257 to 1107296344 in Cisco's event type list, such as Cloud IOC, Executed malware and Vulnerable Application Detected) and events with network_info (DFC Threat Detected) go to ThirdPartyAlert, with Cisco's severity and the connection. Every other event with a severity or a detection goes to Antivirus: the detection is the threat name, and the action taken comes from the event type (quarantined, blocked, terminated by Behavioral Protection, none on a quarantine failure). A detection and its quarantine are separate events that share detection_id. Events with neither (scans, policy updates, isolation, faults) go to ManagementEvent. File paths in the \\\\?\\C:\\ and /C:/ forms both become C:\\. Samples follow the event shapes in Cisco's API v1 OpenAPI files and examples, with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (161 of 161 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (161 of 161 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "CISCO_SE_EVENTS_JSON_PARENT",
+      "file": "CISCO_SE_EVENTS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+      "file": "CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SE_EVENTS_JSON_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "CISCO_SE_EVENTS_JSON_CHILD_THIRDPARTYALERT",
+      "file": "CISCO_SE_EVENTS_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SE_EVENTS_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "CISCO_SE_EVENTS_JSON_CHILD_MGMT",
+      "file": "CISCO_SE_EVENTS_JSON_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "CISCO_SE_EVENTS_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ],
+  "bridge": "bridges/cisco-secure-endpoint-events"
+}

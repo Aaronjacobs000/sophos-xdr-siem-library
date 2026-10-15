@@ -1,0 +1,92 @@
+!SAMPLE={"cisco_se_record":"event","event_id":"6180351977805855838","id":6180351977805855838,"timestamp":1791853805,"timestamp_nanoseconds":619000000,"date":"2026-10-13T01:10:05+00:00","event_type":"Threat Quarantined","event_type_id":553648143,"detection_id":"6180351977805840385","connector_guid":"538738f5-3a14-4449-933b-86142553de06","group_guids":["e766a0e9-96da-41b9-b1e8-87dd010d6b68"],"severity":"High","computer":{"connector_guid":"538738f5-3a14-4449-933b-86142553de06","hostname":"WS-EXAMPLE-01","external_ip":"203.0.113.40","user":"pat@WS-EXAMPLE-01","active":true,"network_addresses":[{"ip":"192.0.2.10","mac":"00:00:5e:00:53:01"}]},"file":{"disposition":"Malicious","file_name":"invoice_2026.exe","file_path":"\\\\?\\C:\\Users\\pat\\Downloads\\invoice_2026.exe","identity":{"sha256":"9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8"}}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="detection"
+!SCHEMA=scwx.antivirus
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Secure Endpoint events from the example bridge that carry a severity or a
+# detection: Threat Detected, Threat Quarantined, Quarantine Failure, Retrospective Detection,
+# Execution Blocked, Exploit Prevention, System Process Protection, Malicious Activity Protection,
+# Behavioral Protection (Threat Detection) and Script Protection (Fileless Threat Blocked).
+# Child of CISCO_SE_EVENTS_JSON_PARENT: each one to Antivirus, with the detection as the threat
+# name, the event type as the alert type and what the connector did as the action taken. A
+# detection and its quarantine are separate events that share detection_id.
+# json, eid, host, user, sev, det, detId, eventType$, sensorType$ and eventTimeUsec$ come from
+# the parent.
+
+sensorEventId$ = json["$.event_id"]
+eventType$ = json["$.event_type"]
+vendorAlertType$ = json["$.event_type"]
+threatName$ = IF det THEN det ELSE NULL
+agentPriority$ = sev
+computerName$ = host
+agentDeviceId$ = json["$.connector_guid"]
+userName$ = user
+
+# Cisco writes paths as \\?\C:\... or as /C:/...; both become C:\...
+raw = json["$.file.file_path"]
+path = REPLACE_REGEX(STRING(raw), `^\\\\\?\\`, "")
+slashed = path|^/(?P<d>[A-Za-z]):(?P<rest>/.*)$
+path = IF slashed["d"] THEN slashed["d"] + ":" + REPLACE(slashed["rest"], "/", "\\") ELSE path
+filePath$ = IF path THEN path ELSE NULL
+fileHash$.sha256$ = json["$.file.identity.sha256"]
+fileHash$.sha1$ = json["$.file.identity.sha1"]
+fileHash$.md5$ = json["$.file.identity.md5"]
+hasFile = json["$.file.identity.sha256"] OR json["$.file.file_name"]
+threatType$ = IF hasFile THEN "FILE" ELSE "PROCESS"
+# The process behind the event: the file's parent, or the first process Behavioral Protection saw.
+parentName = json["$.file.parent.file_name"]
+processName$ = IF parentName THEN parentName ELSE json["$.bp_data.observables.file[0].name"]
+
+bpAction = json["$.bp_data.details.actions[0].action"]
+actionTaken$ = "ALERT"
+actionTaken$ = IF eid == 553648143 OR eid == 553648155 THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF eid == 2164260880 OR eid == 2164260893 THEN "NONE" ELSE actionTaken$
+actionTaken$ = IF eid == 553648168 OR eid == 553648199 OR eid == 553648225 OR eid == 1090519103 OR eid == 1090519112 THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF eid == 553648146 OR eid == 553648149 OR eid == 553648154 THEN "RESTORED" ELSE actionTaken$
+actionTaken$ = IF bpAction == "end_process" THEN "TERMINATED" ELSE actionTaken$
+disposition = json["$.file.disposition"]
+threatCategory$ = IF disposition == "Malicious" THEN "MALWARE" ELSE NULL
+threatCategory$ = IF eid == 1090519103 THEN "EXPLOIT" ELSE threatCategory$
+
+m1.key$ = "event_type_id"
+m1.value$ = STRING(eid)
+m2.key$ = "connector_guid"
+m2.value$ = json["$.connector_guid"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "detection_id"
+m3.value$ = detId
+eventMetadata$.record$ = IF detId THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "disposition"
+m4.value$ = disposition
+eventMetadata$.record$ = IF disposition THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "file_name"
+m5.value$ = json["$.file.file_name"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "parent_sha256"
+m6.value$ = json["$.file.parent.identity.sha256"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "parent_process_id"
+m7.value$ = STRING(json["$.file.parent.process_id"])
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "external_ip"
+m8.value$ = json["$.computer.external_ip"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "local_ip"
+m9.value$ = json["$.computer.network_addresses[0].ip"]
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "tactics"
+m10.value$ = REPLACE_REGEX(STRING(json["$.tactics"]), `[\[\]"]`, "")
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "techniques"
+m11.value$ = REPLACE_REGEX(STRING(json["$.techniques"]), `[\[\]"]`, "")
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "error"
+m12.value$ = json["$.error.description"]
+eventMetadata$.record$ = IF m12.value$ THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "bp_signature"
+m13.value$ = json["$.bp_data.detection"]
+eventMetadata$.record$ = IF m13.value$ THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
