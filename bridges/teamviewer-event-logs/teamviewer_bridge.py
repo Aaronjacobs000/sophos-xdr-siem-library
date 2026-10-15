@@ -216,8 +216,9 @@ def _parse_time(value: str) -> datetime:
     v = value.strip().replace("Z", "+00:00")
     if "." in v:  # fromisoformat before 3.11 takes 3 or 6 fraction digits only
         head, rest = v.split(".", 1)
-        digits = "".join(ch for ch in rest if ch.isdigit())
-        v = head + "." + (digits + "000000")[:6] + rest[len(digits):]
+        # The fraction is the digits right after the point. An offset after them keeps its place.
+        tail = rest.lstrip("0123456789")
+        v = head + "." + (rest[:len(rest) - len(tail)] + "000000")[:6] + tail
     dt = datetime.fromisoformat(v)
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 

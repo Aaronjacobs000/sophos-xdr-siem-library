@@ -412,6 +412,29 @@ class BridgeTest(unittest.TestCase):
                     self.assertEqual((value, type(value)), (expected, cast))
 
 
+class TimeTest(unittest.TestCase):
+    """Times with and without fractional seconds and offsets read the same on Python 3.9 to 3.13."""
+
+    def test_fractions_and_offsets(self):
+        at = datetime(2026, 10, 15, 10, 0, 0, tzinfo=timezone.utc)
+        ms, us = timedelta(milliseconds=123), timedelta(microseconds=123456)
+        cases = {
+            "2026-10-15T10:00:00Z": at,
+            "2026-10-15T10:00:00": at,
+            "2026-10-15T20:00:00+10:00": at,
+            "2026-10-15T10:00:00.123Z": at + ms,
+            "2026-10-15T10:00:00.123": at + ms,
+            "2026-10-15T20:00:00.123+10:00": at + ms,
+            "2026-10-15T05:30:00.123-04:30": at + ms,
+            "2026-10-15T10:00:00.5+00:00": at + timedelta(milliseconds=500),
+            "2026-10-15T10:00:00.1234567Z": at + us,
+            "2026-10-15T20:00:00.1234567+10:00": at + us,
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(c._parse_time(text), expected)
+
+
 class LegacyNameTest(unittest.TestCase):
     """Bridges were called collectors: a setup that still sets the COLLECTOR_ names keeps working."""
 
