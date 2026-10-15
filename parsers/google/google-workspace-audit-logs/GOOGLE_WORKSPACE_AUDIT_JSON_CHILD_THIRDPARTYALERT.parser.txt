@@ -1,0 +1,96 @@
+!SAMPLE={"google_workspace_record":"activity","kind":"audit#activity","id":{"time":"2026-10-13T04:30:18.642Z","uniqueQualifier":"5566778899001122334","applicationName":"chrome","customerId":"C01b2c3d4"},"actor":{"callerType":"USER","email":"pat@example.com","profileId":"114000000000000000001"},"ownerDomain":"example.com","events":[{"type":"MALWARE_TRANSFER_TYPE","name":"MALWARE_TRANSFER","parameters":[{"name":"BROWSER_VERSION","value":"141.0.7390.66"},{"name":"CLIENT_TYPE","value":"CHROME_BROWSER"},{"name":"CONTENT_HASH","value":"9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8"},{"name":"CONTENT_NAME","value":"invoice_2026.exe"},{"name":"CONTENT_SIZE","intValue":"482304"},{"name":"CONTENT_TYPE","value":"application/x-msdownload"},{"name":"DEVICE_ID","value":"0f1e2d3c-4b5a-4968-8776-000000000101"},{"name":"DEVICE_NAME","value":"PAT-LAPTOP"},{"name":"DEVICE_PLATFORM","value":"Windows 11"},{"name":"DEVICE_USER","value":"pat"},{"name":"EVENT_REASON","value":"MALWARE_TRANSFER_DANGEROUS"},{"name":"EVENT_RESULT","value":"BLOCKED"},{"name":"PROFILE_USER_NAME","value":"pat@example.com"},{"name":"TIMESTAMP","intValue":"1791866218642"},{"name":"TRIGGER_TYPE","value":"FILE_DOWNLOAD"},{"name":"URL","value":"https://downloads.example.net/invoice_2026.exe"},{"name":"USER_AGENT","value":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}]}],"params":{"BROWSER_VERSION":"141.0.7390.66","CLIENT_TYPE":"CHROME_BROWSER","CONTENT_HASH":"9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8","CONTENT_NAME":"invoice_2026.exe","CONTENT_SIZE":"482304","CONTENT_TYPE":"application/x-msdownload","DEVICE_ID":"0f1e2d3c-4b5a-4968-8776-000000000101","DEVICE_NAME":"PAT-LAPTOP","DEVICE_PLATFORM":"Windows 11","DEVICE_USER":"pat","EVENT_REASON":"MALWARE_TRANSFER_DANGEROUS","EVENT_RESULT":"BLOCKED","PROFILE_USER_NAME":"pat@example.com","TIMESTAMP":"1791866218642","TRIGGER_TYPE":"FILE_DOWNLOAD","URL":"https://downloads.example.net/invoice_2026.exe","USER_AGENT":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Google Workspace audit activities from the example bridge: Google's account warnings
+# from the login application (suspicious sign-ins, accounts disabled for a leaked password or
+# hijacking, government-backed attack warnings), and Chrome's security events (malware and unsafe
+# site visits, password reuse and breach warnings, sensitive data transfer and DLP rule hits).
+# Child of GOOGLE_WORKSPACE_AUDIT_JSON_PARENT: each one to ThirdPartyAlert, with the event name as
+# the title and the event type as the category. Google gives these events no severity.
+# json, app, evName, evType, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id.uniqueQualifier"]
+alertId$ = json["$.id.uniqueQualifier"]
+chrome = app == "chrome"
+vendor$ = "Google"
+provider$ = IF chrome THEN "Chrome Enterprise" ELSE "Google Workspace"
+logType$ = app
+title$ = evName
+alertCategory$ = evType
+
+email = json["$.actor.email"]
+affected = json["$.params.affected_email_address"]
+profile = json["$.params.PROFILE_USER_NAME"]
+targetUserName$ = IF affected THEN affected ELSE profile
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE email
+userPrincipalName$ = IF profile THEN profile ELSE email
+sourceAddress$ = json["$.ipAddress"]
+url = json["$.params.URL"]
+destinationUrl$ = url
+userAgent$ = json["$.params.USER_AGENT"]
+targetHostName$ = json["$.params.DEVICE_NAME"]
+reason = json["$.params.EVENT_REASON"]
+actionReason$ = reason
+
+# EVENT_RESULT says what Chrome did: ALLOWED, BLOCKED, BYPASSED (the user went on after a
+# warning), WARNED, DETECTED or REPORTED.
+result = json["$.params.EVENT_RESULT"]
+status$ = result
+action$ = IF result == "BLOCKED" THEN "BLOCKED" ELSE NULL
+action$ = IF result == "ALLOWED" OR result == "BYPASSED" THEN "SUCCEEDED" ELSE action$
+action$ = IF result == "WARNED" THEN "ATTEMPTED" ELSE action$
+
+what = IF reason THEN reason ELSE evName
+summary$ = IF affected THEN evName + " for " + affected ELSE what
+summary$ = IF url THEN summary$ + " at " + url ELSE summary$
+
+a1.key$ = "application"
+a1.value$ = app
+a2.key$ = "customer_id"
+a2.value$ = json["$.id.customerId"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "content_name"
+a3.value$ = json["$.params.CONTENT_NAME"]
+additionalData$.record$ = IF a3.value$ THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "content_hash"
+a4.value$ = json["$.params.CONTENT_HASH"]
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "content_type"
+a5.value$ = json["$.params.CONTENT_TYPE"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "content_size"
+a6.value$ = STRING(json["$.params.CONTENT_SIZE"])
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "trigger_type"
+a7.value$ = json["$.params.TRIGGER_TYPE"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "device_user"
+a8.value$ = json["$.params.DEVICE_USER"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "device_platform"
+a9.value$ = json["$.params.DEVICE_PLATFORM"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "device_id"
+a10.value$ = json["$.params.DEVICE_ID"]
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "browser_version"
+a11.value$ = json["$.params.BROWSER_VERSION"]
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "client_type"
+a12.value$ = json["$.params.CLIENT_TYPE"]
+additionalData$.record$ = IF a12.value$ THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "trigger_user"
+a13.value$ = json["$.params.TRIGGER_USER"]
+additionalData$.record$ = IF a13.value$ THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "triggered_rules_reason"
+a14.value$ = json["$.params.TRIGGERED_RULES_REASON"]
+additionalData$.record$ = IF a14.value$ THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
+a15.key$ = "actor_email"
+a15.value$ = email
+additionalData$.record$ = IF email THEN additionalData$.record$ + [a15] ELSE additionalData$.record$

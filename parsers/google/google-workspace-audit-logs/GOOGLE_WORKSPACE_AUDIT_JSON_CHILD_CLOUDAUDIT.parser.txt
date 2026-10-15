@@ -1,0 +1,139 @@
+!SAMPLE={"google_workspace_record":"activity","kind":"audit#activity","id":{"time":"2026-10-13T03:05:12.440Z","uniqueQualifier":"1029384756102938475","applicationName":"admin","customerId":"C01b2c3d4"},"actor":{"callerType":"USER","email":"sam.admin@example.com","profileId":"114000000000000000002"},"ownerDomain":"example.com","ipAddress":"198.51.100.77","events":[{"type":"USER_SETTINGS","name":"GRANT_ADMIN_PRIVILEGE","parameters":[{"name":"USER_EMAIL","value":"lee@example.com"}]}],"params":{"USER_EMAIL":"lee@example.com"},"networkInfo":{"ipAsn":[64500],"regionCode":"AU","subdivisionCode":"AU-NSW"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Google Workspace audit activities from the example bridge: every event that isn't a
+# sign-in or an alert. Admin console changes (admin), OAuth token grants, denials and revocations
+# (token), Drive activity and sharing changes (drive), account setting changes such as 2-step
+# verification and passwords (login), and other Chrome events.
+# Child of GOOGLE_WORKSPACE_AUDIT_JSON_PARENT: each one to CloudAudit, with the Reports API
+# application as the event source, the event name and its type (such as USER_SETTINGS). Admin
+# console events are management events; Drive views, downloads and prints are read-only.
+# json, app, evName, evType, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id.uniqueQualifier"]
+eventSource$ = app
+eventName$ = evName
+eventType$ = evType
+customer = json["$.id.customerId"]
+recipientAccountId$ = customer
+
+# The actor is a user (email), or for callerType KEY an OAuth consumer key or robot account.
+email = json["$.actor.email"]
+key = json["$.actor.key"]
+userName$ = IF email THEN email ELSE key
+userName$ = IF userName$ THEN userName$ ELSE json["$.actor.applicationInfo.applicationName"]
+userId$ = json["$.actor.profileId"]
+userType$ = json["$.actor.callerType"]
+sourceAddress$ = json["$.ipAddress"]
+
+target = json["$.params.USER_EMAIL"]
+target = IF target THEN target ELSE json["$.params.target_user"]
+target = IF target THEN target ELSE json["$.params.affected_email_address"]
+targetUserName$ = target
+
+managementEvent$ = app == "admin"
+view = evName == "view" OR evName == "download" OR evName == "print" OR evName == "preview"
+adminRead = app == "admin" AND (CONTAINS(evName, "DOWNLOAD") OR CONTAINS(evName, "VIEW_"))
+readOnly$ = (app == "drive" AND view) OR adminRead
+
+# The Drive item, or the OAuth client a token event or an admin OAuth setting names.
+docId = json["$.params.doc_id"]
+detailId = json["$.resourceDetails[0].id"]
+r1.resourceId$ = IF docId THEN docId ELSE detailId
+r1.resourceType$ = IF docId THEN json["$.params.doc_type"] ELSE json["$.resourceDetails[0].type"]
+r1.resourceAccountId$ = customer
+client = json["$.params.client_id"]
+client = IF client THEN client ELSE json["$.params.OAUTH2_APP_ID"]
+r2.resourceId$ = client
+r2.resourceType$ = "oauth_client"
+r2.resourceAccountId$ = customer
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF client THEN resources$ + [r2] ELSE resources$
+
+# A few parameters can be lists (Drive's old_value and new_value, a token's scope), so they are
+# written out as comma-separated text.
+p1.key$ = "setting_name"
+p1.value$ = json["$.params.SETTING_NAME"]
+# Admin events name them OLD_VALUE and NEW_VALUE, Drive old_value and new_value. A value can be
+# the text "false", so test for empty text rather than truth.
+oldA = REPLACE_REGEX(STRING(json["$.params.OLD_VALUE"]), `[\[\]"]`, "")
+oldD = REPLACE_REGEX(STRING(json["$.params.old_value"]), `[\[\]"]`, "")
+newA = REPLACE_REGEX(STRING(json["$.params.NEW_VALUE"]), `[\[\]"]`, "")
+newD = REPLACE_REGEX(STRING(json["$.params.new_value"]), `[\[\]"]`, "")
+p2.key$ = "old_value"
+p2.value$ = IF oldA != "" THEN oldA ELSE oldD
+p3.key$ = "new_value"
+p3.value$ = IF newA != "" THEN newA ELSE newD
+p4.key$ = "org_unit_name"
+p4.value$ = json["$.params.ORG_UNIT_NAME"]
+p5.key$ = "group_email"
+p5.value$ = json["$.params.GROUP_EMAIL"]
+p6.key$ = "application_name"
+p6.value$ = json["$.params.APPLICATION_NAME"]
+p7.key$ = "app_name"
+p7.value$ = json["$.params.app_name"]
+p7.value$ = IF p7.value$ THEN p7.value$ ELSE json["$.params.OAUTH2_APP_NAME"]
+p8.key$ = "scope"
+p8.value$ = REPLACE_REGEX(STRING(json["$.params.scope"]), `[\[\]"]`, "")
+p9.key$ = "doc_title"
+p9.value$ = json["$.params.doc_title"]
+p10.key$ = "visibility"
+p10.value$ = json["$.params.visibility"]
+p11.key$ = "visibility_change"
+p11.value$ = json["$.params.visibility_change"]
+p12.key$ = "owner"
+p12.value$ = json["$.params.owner"]
+p13.key$ = "target_domain"
+p13.value$ = json["$.params.target_domain"]
+p14.key$ = "domain_name"
+p14.value$ = json["$.params.DOMAIN_NAME"]
+p15.key$ = "role_name"
+p15.value$ = json["$.params.ROLE_NAME"]
+p16.key$ = "client_type"
+p16.value$ = json["$.params.client_type"]
+p16.value$ = IF p16.value$ THEN p16.value$ ELSE json["$.params.OAUTH2_APP_TYPE"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ != "" THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ != "" THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p5.value$ THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p6.value$ THEN requestParameters$.record$ + [p6] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p7.value$ THEN requestParameters$.record$ + [p7] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p8.value$ THEN requestParameters$.record$ + [p8] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p9.value$ THEN requestParameters$.record$ + [p9] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p10.value$ THEN requestParameters$.record$ + [p10] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p11.value$ THEN requestParameters$.record$ + [p11] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p12.value$ THEN requestParameters$.record$ + [p12] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p13.value$ THEN requestParameters$.record$ + [p13] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p14.value$ THEN requestParameters$.record$ + [p14] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p15.value$ THEN requestParameters$.record$ + [p15] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p16.value$ THEN requestParameters$.record$ + [p16] ELSE requestParameters$.record$
+
+d1.key$ = "owner_domain"
+d1.value$ = json["$.ownerDomain"]
+d2.key$ = "region_code"
+d2.value$ = json["$.networkInfo.regionCode"]
+d3.key$ = "oauth_client_id"
+d3.value$ = json["$.actor.applicationInfo.oauthClientId"]
+d4.key$ = "actor_application"
+d4.value$ = json["$.actor.applicationInfo.applicationName"]
+d5.key$ = "impersonation"
+d5.value$ = STRING(json["$.actor.applicationInfo.impersonation"])
+d6.key$ = "primary_event"
+d6.value$ = STRING(json["$.params.primary_event"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
