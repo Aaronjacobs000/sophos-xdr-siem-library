@@ -1,0 +1,272 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "EXTRAHOP_REVEALX_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ExtraHop RevealX",
+      "event_time_usec": 1792026900000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ExtraHop",
+      "provider": "ExtraHop RevealX",
+      "log_type": "detection",
+      "alert_id": "4294967310",
+      "title": "Kerberos Brute Force Activity",
+      "alert_category": "Kerberos Brute Force",
+      "summary": "ws-0142.example.com (192.0.2.20) received Kerberos responses with the KDC_ERR_PREAUTH_FAILED error, indicating an invalid password for a client principal name.",
+      "risk_score": 60,
+      "vendor_severity": "60",
+      "severity": "MEDIUM",
+      "source_host_name": "ws-0142.example.com",
+      "target_host_name": "dc01.example.com",
+      "source_address": "192.0.2.20",
+      "destination_address": "192.0.2.10",
+      "source_user_name": "jsmith",
+      "source_mac": "00:00:5E:00:53:20",
+      "destination_mac": "00:00:5E:00:53:10",
+      "additional_data": {
+        "record": [
+          {
+            "key": "detection_url",
+            "value": "https://revealx.example.com/extrahop/#/detections/detail/4294967310"
+          },
+          {
+            "key": "src_role",
+            "value": "offender"
+          },
+          {
+            "key": "dst_role",
+            "value": "victim"
+          },
+          {
+            "key": "category",
+            "value": "sec.attack"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1110"
+          },
+          {
+            "key": "recommended_for_triage",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "EXTRAHOP_REVEALX_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ExtraHop RevealX",
+      "event_time_usec": 1792027500000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ExtraHop",
+      "provider": "ExtraHop RevealX",
+      "log_type": "detection",
+      "alert_id": "4294967311",
+      "title": "Network Share Enumeration",
+      "alert_category": "Network Share Enumeration",
+      "summary": "ws-0177.example.com enumerated SMB shares on multiple servers.",
+      "risk_score": 30,
+      "vendor_severity": "30",
+      "severity": "LOW",
+      "source_host_name": "ws-0177.example.com",
+      "source_address": "192.0.2.21",
+      "destination_address": "198.51.100.40",
+      "source_user_name": "adoe",
+      "source_mac": "00:00:5E:00:53:21",
+      "additional_data": {
+        "record": [
+          {
+            "key": "detection_url",
+            "value": "https://revealx.example.com/extrahop/#/detections/detail/4294967311"
+          },
+          {
+            "key": "src_role",
+            "value": "offender"
+          },
+          {
+            "key": "dst_role",
+            "value": "victim"
+          },
+          {
+            "key": "category",
+            "value": "sec.recon"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1135"
+          },
+          {
+            "key": "recommended_for_triage",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "EXTRAHOP_REVEALX_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ExtraHop RevealX",
+      "event_time_usec": 1792032012000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ExtraHop",
+      "provider": "ExtraHop RevealX",
+      "log_type": "detection",
+      "alert_id": "4294967312",
+      "title": "Ransomware Activity on fs02",
+      "alert_category": "Ransomware Activity",
+      "summary": "ops-ws-057 renamed and overwrote a large number of files on SMB shares on fs02.example.com, which matches ransomware encryption behavior.",
+      "risk_score": 89,
+      "vendor_severity": "89",
+      "severity": "HIGH",
+      "source_host_name": "ops-ws-057",
+      "target_host_name": "fs02.example.com",
+      "source_address": "192.0.2.57",
+      "destination_address": "192.0.2.12",
+      "source_user_name": "svc-backup",
+      "source_mac": "00:00:5E:00:53:57",
+      "destination_mac": "00:00:5E:00:53:12",
+      "additional_data": {
+        "record": [
+          {
+            "key": "detection_url",
+            "value": "https://revealx.example.com/extrahop/#/detections/detail/4294967312"
+          },
+          {
+            "key": "src_role",
+            "value": "offender"
+          },
+          {
+            "key": "dst_role",
+            "value": "victim"
+          },
+          {
+            "key": "category",
+            "value": "sec.attack"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1486"
+          },
+          {
+            "key": "recommended_for_triage",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "EXTRAHOP_REVEALX_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ExtraHop RevealX",
+      "event_time_usec": 1792033541000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ExtraHop",
+      "provider": "ExtraHop RevealX",
+      "log_type": "detection",
+      "alert_id": "4294967313",
+      "title": "Cobalt Strike C&C Beaconing",
+      "alert_category": "Command-and-Control Beaconing",
+      "summary": "ws-0203.example.com sent periodic HTTPS requests to 203.0.113.80 that match Cobalt Strike beacon traffic.",
+      "risk_score": 83,
+      "vendor_severity": "83",
+      "severity": "HIGH",
+      "source_host_name": "ws-0203.example.com",
+      "target_host_name": "cdn-update.example.net",
+      "source_address": "192.0.2.33",
+      "destination_address": "203.0.113.80",
+      "source_user_name": "pkim",
+      "source_mac": "00:00:5E:00:53:33",
+      "additional_data": {
+        "record": [
+          {
+            "key": "detection_url",
+            "value": "https://revealx.example.com/extrahop/#/detections/detail/4294967313"
+          },
+          {
+            "key": "src_role",
+            "value": "victim"
+          },
+          {
+            "key": "dst_role",
+            "value": "offender"
+          },
+          {
+            "key": "category",
+            "value": "sec.command"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1071"
+          },
+          {
+            "key": "recommended_for_triage",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "EXTRAHOP_REVEALX_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ExtraHop RevealX",
+      "event_time_usec": 1792037529000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "ExtraHop",
+      "provider": "ExtraHop RevealX",
+      "log_type": "detection",
+      "alert_id": "4294967314",
+      "title": "SSH Brute Force",
+      "alert_category": "SSH Brute Force",
+      "summary": "198.51.100.77 made a large number of failed SSH logins to bastion01.example.com.",
+      "risk_score": 45,
+      "vendor_severity": "45",
+      "severity": "MEDIUM",
+      "target_host_name": "bastion01.example.com",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.15",
+      "target_user_name": "root",
+      "destination_mac": "00:00:5E:00:53:15",
+      "additional_data": {
+        "record": [
+          {
+            "key": "detection_url",
+            "value": "https://revealx.example.com/extrahop/#/detections/detail/4294967314"
+          },
+          {
+            "key": "src_role",
+            "value": "offender"
+          },
+          {
+            "key": "dst_role",
+            "value": "victim"
+          },
+          {
+            "key": "category",
+            "value": "sec.attack"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1110"
+          },
+          {
+            "key": "recommended_for_triage",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  }
+]
