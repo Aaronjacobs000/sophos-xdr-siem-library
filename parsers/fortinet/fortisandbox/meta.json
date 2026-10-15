@@ -1,0 +1,43 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiSandbox",
+  "versions": [
+    "5.0",
+    "5.2"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.fortinet.com/document/fortisandbox/5.2.0/log-message-reference/889023/log-information",
+    "https://docs.fortinet.com/document/fortisandbox/5.2.0/log-message-reference/539869/alert",
+    "https://docs.fortinet.com/document/fortisandbox/5.2.0/log-message-reference/183685/event",
+    "https://docs.fortinet.com/document/fortisandbox/5.2.0/administration-guide/323679/log-servers",
+    "https://docs.fortinet.com/document/fortisiem/7.2.1/external-systems-configuration-guide/22683",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For FortiSandbox's own logs sent to the data collector by a remote log server of type syslog (Log & Report > Log Servers); the README has the steps. Alert logs (malware, netattack, netbotnet and neturl) go to Thirdparty: the malware name, attack, botnet or host as the title, the file name and rating as the summary, the job ID as the alert ID, the addresses and ports (srcip and dstip, or srcipport and dstipport), the URL and the user. The rating sets the severity (Malicious critical, High Risk high, Medium Risk medium, Low Risk low, Clean info), else the log level does. Hashes, malware name and category, submitting device and VDOM, protocol, VM, job status, host, attack and botnet go to additional_data. System events an administrator caused (user other than system) go to ManagementEvent with the user, the interface (ui), the action, the message as the command, the status and reason, and cip as the client; FortiSandbox's own events stay generic. Times come from date and time, which FortiSandbox sends to a syslog server in UTC. Lines must carry a FortiSandbox serial (FSA...) in devid. The CEF server type isn't covered. The built-in Fortinet_Master_non-cef claims every line and stores nothing from alert logs, and its child Fortinet_Event claims type=event subtype=system lines and stores only sensor_type FORTIGATE_FW, so the alert parser is a child of Fortinet_Master_non-cef and the management parser a child of Fortinet_Event. To add each in Sophos Fusion, choose Add Custom Parser, tick Set Global Parent in Parser Script and keep Parent parser (default): the parent picker lists only your own parsers, never built-in ones. Paste the whole file, !PARENT line included; its !SCHEMA line sets the schema, whatever the dialog shows. Without that option the save fails with \"code contains restricted syntax: !PARENT\". Fortinet's log reference has field tables but no message catalog or example alert line, so the alert layout is inferred from those tables and the header of Fortinet's example event line. It names the alert type both alert and malware or netalert, so the parser takes any. Log IDs and messages in the samples are made up. Each parser passed Run Test under its built-in parent in a lab tenant on 2026-10-16: 106 of 106 fields matched the emulator, each parser took each of its lines in 15 of 15 runs and in every run with FortiGate traffic, antivirus and admin events between them, and neither took another line.",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTISANDBOX_KV_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "Fortinet_Master_non-cef",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FORTINET_FORTISANDBOX_KV_CHILD_MGMT",
+      "file": "FORTINET_FORTISANDBOX_KV_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "Fortinet_Event",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
