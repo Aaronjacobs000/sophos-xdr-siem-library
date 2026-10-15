@@ -1,0 +1,58 @@
+!SAMPLE=<131>Oct 15 09:18:10 2026 192.0.2.5 wms[2510]: <126002> <2510> <ERRS> <mc01 192.0.2.5>  Rogue AP: The system classified an access point(BSSID 00:00:5e:00:53:40 and SSID free-wifi on CHANNEL 6) as rogue. Additional Info: Matched wired MAC 00:00:5e:00:53:41.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="wids"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS 8 and AOS 10 syslog (wireless intrusion detection).
+# Child of ARUBA_AOS_SYSLOG_PARENT: rogue and interfering access points to Thirdparty.
+#   126000: AP(<radio MAC>@<AP name>): Rogue AP: An AP classified an access point (BSSID <bssid> and SSID <ssid>
+#           on CHANNEL <n>) as rogue because it matched the MAC (<mac>) with IP (<address>).
+#   126002: Rogue AP: The system classified an access point(BSSID <bssid> and SSID <ssid> on CHANNEL <n>) as
+#           rogue. Additional Info: <info>.
+#   127004: AP(<radio MAC>): Interfering AP: An AP detected an interfering access point (BSSID <bssid> and
+#           SSID <ssid> on CHANNEL <n>).
+# A rogue AP is an unauthorized access point on the wired network, so it is high; an interfering AP is
+# a neighbour's, so it is low. The rogue's BSSID goes to source_mac and the wired address it matched
+# to source_address.
+# id, text, m, node, host, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+apRogue = text|^AP\((?P<radio>[0-9A-Fa-f:]+)(?:@(?P<apname>[^)]*))?\): Rogue AP: An AP classified an access point\s*\(BSSID (?P<bssid>\S+) and SSID (?P<ssid>.*?) on CHANNEL (?P<ch>\d+)\) as rogue because it matched the MAC \((?P<mmac>[^)]*)\) with IP \((?P<mip>[^)]*)\)
+sysRogue = text|^Rogue AP: The system classified an access point\s*\(BSSID (?P<bssid>\S+) and SSID (?P<ssid>.*?) on CHANNEL (?P<ch>\d+)\) as rogue\.(?:\s*Additional Info:\s*(?P<info>.*?)\.?)?\s*$
+intf = text|^AP\((?P<radio>[0-9A-Fa-f:]+)(?:@(?P<apname>[^)]*))?\): Interfering AP: An AP detected an interfering access point\s*\(BSSID (?P<bssid>\S+) and SSID (?P<ssid>.*?) on CHANNEL (?P<ch>\d+)\)
+
+rogue = id == "126000" OR id == "126002"
+vendor$ = "HPE Aruba Networking"
+provider$ = "AOS wireless intrusion detection"
+alertCategory$ = "Wireless intrusion detection"
+title$ = IF rogue THEN "Rogue AP" ELSE "Interfering AP"
+summary$ = text
+vendorSeverity$ = STRING(m["sev"])
+severity$ = IF rogue THEN "HIGH" ELSE "LOW"
+bssid = STRING(apRogue["bssid"]) + STRING(sysRogue["bssid"]) + STRING(intf["bssid"])
+sourceMac$ = IF bssid != "" THEN bssid ELSE NULL
+mip = STRING(apRogue["mip"])
+sourceAddress$ = IF mip != "" THEN mip ELSE NULL
+apname = STRING(apRogue["apname"]) + STRING(intf["apname"])
+target = IF node != "" THEN node ELSE host
+targetHostName$ = IF apname != "" THEN apname ELSE target
+targetHostName$ = IF targetHostName$ == "" THEN NULL ELSE targetHostName$
+
+t1.key$ = "message_id"
+t1.value$ = id
+t2.key$ = "ssid"
+t2.value$ = STRING(apRogue["ssid"]) + STRING(sysRogue["ssid"]) + STRING(intf["ssid"])
+t3.key$ = "channel"
+t3.value$ = STRING(apRogue["ch"]) + STRING(sysRogue["ch"]) + STRING(intf["ch"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [t1, t2, t3]
+t4.key$ = "radio_mac"
+t4.value$ = STRING(apRogue["radio"]) + STRING(intf["radio"])
+additionalData$.record$ = IF t4.value$ != "" THEN additionalData$.record$ + [t4] ELSE additionalData$.record$
+t5.key$ = "matched_mac"
+t5.value$ = STRING(apRogue["mmac"])
+additionalData$.record$ = IF t5.value$ != "" THEN additionalData$.record$ + [t5] ELSE additionalData$.record$
+t6.key$ = "additional_info"
+t6.value$ = STRING(sysRogue["info"])
+additionalData$.record$ = IF t6.value$ != "" THEN additionalData$.record$ + [t6] ELSE additionalData$.record$

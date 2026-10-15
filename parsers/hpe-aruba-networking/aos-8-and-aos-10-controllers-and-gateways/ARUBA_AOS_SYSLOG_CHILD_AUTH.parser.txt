@@ -1,0 +1,94 @@
+!SAMPLE=<131>Oct 15 09:13:02 2026 192.0.2.5 authmgr[2435]: <522275> <2435> <ERRS> <mc01 192.0.2.5>  User Authentication failed. username=jdoe userip=192.0.2.51 usermac=00:00:5e:00:53:11 authmethod=802.1x servername=radius01 serverip=198.51.100.10 apname=ap-lvl1-01 bssid=00:00:5e:00:53:20
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS 8 and AOS 10 syslog.
+# Child of ARUBA_AOS_SYSLOG_PARENT: user and management authentication to Auth.
+#   522008: User Authentication Successful: username=... MAC=... IP=... role=... VLAN=... AP=... SSID=...
+#           AAA profile=... auth method=... auth server=...
+#   522275: User Authentication failed. username=... userip=... usermac=... authmethod=... servername=...
+#           serverip=... apname=... bssid=...
+#   522274: Mgmt User Authentication failed. username=... userip=... servername=... serverip=...
+#   522010: MAC=... IP=... User de-authenticated: name=..., cause=...
+#   125023, 125024, 125032: Authentication Succeeded for User <user>, Logged in from <address> port <port>,
+#           Connecting to <address> port <port> connection type <type> (125023: connection type SERIAL)
+#   124025: Administrative user '<user>' authenticated successfully (role=..., privileged=...)
+# A network user's own address is the source address. A management sign-in's source is the admin's address.
+# id, text, host, node, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+ok = text|^User Authentication Successful: username=(?P<user>\S*) MAC=(?P<mac>\S*) IP=(?P<ip>\S*) role=(?P<role>\S*) VLAN=(?P<vlan>\S*) AP=(?P<ap>\S*) SSID=(?P<ssid>.*?) AAA profile=(?P<aaa>\S*) auth method=(?P<meth>\S*) auth server=(?P<srv>.*?)$
+bad = text|^User Authentication failed\. username=(?P<user>\S*) userip=(?P<ip>\S*) usermac=(?P<mac>\S*) authmethod=(?P<meth>\S*) servername=(?P<srv>\S*) serverip=(?P<srvip>\S*) apname=(?P<ap>\S*) bssid=(?P<bssid>\S*)
+mgmtBad = text|^Mgmt User Authentication failed\. username=(?P<user>\S*) userip=(?P<ip>\S*) servername=(?P<srv>\S*) serverip=(?P<srvip>\S*)
+deauth = text|^MAC=(?P<mac>\S*) IP=(?P<ip>\S*) User de-authenticated: name=(?P<user>[^,]*), cause=(?P<cause>.*?)$
+mgmtOk = text|^Authentication Succeeded for User (?P<user>[^,]+), (?:connection type (?P<ct1>\S+)|Logged in from (?P<ip>\S+) port (?P<sport>\d+), Connecting to (?P<dip>\S+) port (?P<dport>\d+) connection type (?P<ct>\S+))
+adm = text|^Administrative user '(?P<user>[^']*)' authenticated successfully\s+\(role=(?P<role>[^,]*), privileged=(?P<priv>\d+)\)
+
+user = STRING(ok["user"]) + STRING(bad["user"]) + STRING(mgmtBad["user"]) + STRING(deauth["user"]) + STRING(mgmtOk["user"]) + STRING(adm["user"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+ip = STRING(ok["ip"]) + STRING(bad["ip"]) + STRING(mgmtBad["ip"]) + STRING(deauth["ip"]) + STRING(mgmtOk["ip"])
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+sourcePortNumber$ = STRING(mgmtOk["sport"])
+dip = STRING(mgmtOk["dip"])
+targetAddress$ = IF dip != "" THEN dip ELSE NULL
+targetPortNumber$ = STRING(mgmtOk["dport"])
+targetHostName$ = IF node != "" THEN node ELSE host
+targetHostName$ = IF targetHostName$ == "" THEN NULL ELSE targetHostName$
+
+mgmt = id == "522274" OR id == "125023" OR id == "125024" OR id == "125032" OR id == "124025"
+meth = STRING(ok["meth"]) + STRING(bad["meth"])
+conn = STRING(mgmtOk["ct"]) + STRING(mgmtOk["ct1"])
+fam = IF meth != "" THEN meth ELSE "network"
+fam = IF mgmt THEN "management" ELSE fam
+fam = IF conn != "" THEN conn ELSE fam
+logonApplicationFamily$ = fam
+authSystem$ = "AOS " + fam
+
+logout = id == "522010"
+success = id == "522008" OR logout OR id == "125023" OR id == "125024" OR id == "125032" OR id == "124025"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+# Aruba's failure messages give no reason.
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+
+a1.key$ = "message_id"
+a1.value$ = id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1]
+a2.key$ = "client_mac"
+a2.value$ = STRING(ok["mac"]) + STRING(bad["mac"]) + STRING(deauth["mac"])
+eventMetadata$.record$ = IF a2.value$ != "" THEN eventMetadata$.record$ + [a2] ELSE eventMetadata$.record$
+a3.key$ = "role"
+a3.value$ = STRING(ok["role"]) + STRING(adm["role"])
+eventMetadata$.record$ = IF a3.value$ != "" THEN eventMetadata$.record$ + [a3] ELSE eventMetadata$.record$
+a4.key$ = "vlan"
+a4.value$ = STRING(ok["vlan"])
+eventMetadata$.record$ = IF a4.value$ != "" THEN eventMetadata$.record$ + [a4] ELSE eventMetadata$.record$
+a5.key$ = "ap_name"
+a5.value$ = STRING(ok["ap"]) + STRING(bad["ap"])
+eventMetadata$.record$ = IF a5.value$ != "" THEN eventMetadata$.record$ + [a5] ELSE eventMetadata$.record$
+a6.key$ = "ssid"
+a6.value$ = STRING(ok["ssid"])
+eventMetadata$.record$ = IF a6.value$ != "" THEN eventMetadata$.record$ + [a6] ELSE eventMetadata$.record$
+a7.key$ = "bssid"
+a7.value$ = STRING(bad["bssid"])
+eventMetadata$.record$ = IF a7.value$ != "" THEN eventMetadata$.record$ + [a7] ELSE eventMetadata$.record$
+a8.key$ = "aaa_profile"
+a8.value$ = STRING(ok["aaa"])
+eventMetadata$.record$ = IF a8.value$ != "" THEN eventMetadata$.record$ + [a8] ELSE eventMetadata$.record$
+a9.key$ = "auth_server"
+a9.value$ = STRING(ok["srv"]) + STRING(bad["srv"]) + STRING(mgmtBad["srv"])
+eventMetadata$.record$ = IF a9.value$ != "" THEN eventMetadata$.record$ + [a9] ELSE eventMetadata$.record$
+a10.key$ = "auth_server_ip"
+a10.value$ = STRING(bad["srvip"]) + STRING(mgmtBad["srvip"])
+eventMetadata$.record$ = IF a10.value$ != "" THEN eventMetadata$.record$ + [a10] ELSE eventMetadata$.record$
+a11.key$ = "cause"
+a11.value$ = STRING(deauth["cause"])
+eventMetadata$.record$ = IF a11.value$ != "" THEN eventMetadata$.record$ + [a11] ELSE eventMetadata$.record$
+a12.key$ = "privileged"
+a12.value$ = STRING(adm["priv"])
+eventMetadata$.record$ = IF a12.value$ != "" THEN eventMetadata$.record$ + [a12] ELSE eventMetadata$.record$
