@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Receive Huntress, ConnectWise ScreenConnect, Hudu and Autotask webhooks, check that each one
-came from the vendor, and forward the body to a Sophos NG-SIEM HTTP Ingest integration with the
-Authorization: Bearer header that none of these webhooks can add. Python 3 standard library only.
+"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask and Juniper Mist webhooks, check
+that each one came from the vendor, and forward the body to a Sophos NG-SIEM HTTP Ingest
+integration with the Authorization: Bearer header that the first four can't add. Python 3
+standard library only.
 
   POST /huntress                 Svix signature (HMAC-SHA256 over id, timestamp and body)
   POST /autotask                 X-Hook-Signature (HMAC-SHA1 over the body, base64)
   POST /hudu/<secret>            no signing option: a long random secret in the path
   POST /screenconnect/<secret>   no signing option: a long random secret in the path
+  POST /mist                     X-Mist-Signature-v2 (HMAC-SHA256 over the body, hex)
+
+Mist sends several events in one body, {"topic": ..., "events": [...]}, for most topics. With
+BRIDGE_SPLIT_BATCHES=1 the relay forwards each event as its own record, in the same envelope with
+one event, so HTTP Ingest stores one record per event.
 
 Configuration comes from environment variables (see README.md). Listen on 127.0.0.1 behind a
 reverse proxy that terminates TLS. --dry-run checks deliveries and prints each body instead of
@@ -51,6 +57,7 @@ VENDORS = {
     "autotask": "autotask",
     "hudu": "path",
     "screenconnect": "path",
+    "mist": "mist",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 # A sender gets this long in all, however slowly it sends, for its request line, headers and body.
@@ -138,11 +145,13 @@ def load_config(env: dict | None = None) -> dict:
         "autotask": _shared_secret(env, "AUTOTASK_SECRET_KEY", AUTOTASK_MAX_KEY_CHARS),
         "hudu": _shared_secret(env, "HUDU_PATH_SECRET"),
         "screenconnect": _shared_secret(env, "SCREENCONNECT_PATH_SECRET"),
+        "mist": _shared_secret(env, "MIST_WEBHOOK_SECRET"),
     }
     cfg["vendors"] = {name: secret for name, secret in secrets.items() if secret}
     if not cfg["vendors"]:
-        raise RelayError("set at least one of HUNTRESS_SIGNING_SECRET, AUTOTASK_SECRET_KEY, HUDU_PATH_SECRET "
-                         "and SCREENCONNECT_PATH_SECRET")
+        raise RelayError("set at least one of HUNTRESS_SIGNING_SECRET, AUTOTASK_SECRET_KEY, HUDU_PATH_SECRET, "
+                         "SCREENCONNECT_PATH_SECRET and MIST_WEBHOOK_SECRET")
+    cfg["split_batches"] = _flag(env, "BRIDGE_SPLIT_BATCHES", False)
     if cfg["ingest_url"]:
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
     # The key goes in a request header, and http.client would put a header value it refuses in its error.
@@ -202,6 +211,16 @@ def verify_autotask(key: str, headers, body: bytes) -> str | None:
     return None if hmac.compare_digest(given.encode("utf-8"), expected) else "signature does not match"
 
 
+def verify_mist(key: str, headers, body: bytes) -> str | None:
+    """Mist sends X-Mist-Signature-v2: HMAC-SHA256 of the body with the webhook's secret, in hex
+    (and X-Mist-Signature with SHA-1, which the relay doesn't use)."""
+    given = (headers.get("X-Mist-Signature-v2") or "").strip().lower()
+    if not given:
+        return "missing X-Mist-Signature-v2"
+    expected = hmac.new(key.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    return None if hmac.compare_digest(given.encode("utf-8"), expected.encode("utf-8")) else "signature does not match"
+
+
 def path_secret_matches(expected: str, given: str) -> bool:
     return hmac.compare_digest(given.encode("utf-8"), expected.encode("utf-8"))
 
@@ -224,6 +243,23 @@ def one_record(body: bytes) -> tuple[bytes, str]:
     if b"\n" not in core and b"\r" not in core:
         return body, ctype
     return LINE_BREAK.sub(b" " if is_json else b"\\\\n", core), ctype
+
+
+def split_batch(body: bytes) -> tuple[bytes, int] | None:
+    """A Mist body, {"topic": ..., "events": [...]}, with two or more events, as one line per
+    event, each in the same envelope with only that event, and the number of lines. None for any
+    other body, which goes on as one record."""
+    try:
+        data = json.loads(body)
+    except RecursionError:
+        raise BodyError("its JSON is nested too deeply") from None
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("events"), list) or len(data["events"]) < 2:
+        return None
+    rest = {k: v for k, v in data.items() if k != "events"}
+    lines = [json.dumps({**rest, "events": [e]}, separators=(",", ":"), ensure_ascii=False) for e in data["events"]]
+    return "\n".join(lines).encode("utf-8"), len(lines)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -275,13 +311,21 @@ class Relay:
             return verify_svix(self.cfg["vendors"][vendor], headers, body)
         if kind == "autotask":
             return verify_autotask(self.cfg["vendors"][vendor], headers, body)
+        if kind == "mist":
+            return verify_mist(self.cfg["vendors"][vendor], headers, body)
         return None  # path secret, already checked in route()
 
     def forward(self, vendor: str, body: bytes) -> tuple[int, str]:
         """Posts one delivery to HTTP Ingest. Returns the status and text for the sender:
         200 when HTTP Ingest took it, 502 when it refused it, 503 when it stayed unavailable
-        until the deadline, so the sender's own retries take over."""
-        record, ctype = one_record(body)
+        until the deadline, so the sender's own retries take over. With BRIDGE_SPLIT_BATCHES, a
+        Mist batch goes as one record per event, in one request."""
+        split = split_batch(body) if self.cfg.get("split_batches") and VENDORS[vendor] == "mist" else None
+        if split:
+            record, ctype = split[0], "application/json"
+            LOG.info("%s: split a batch of %d events", vendor, split[1])
+        else:
+            record, ctype = one_record(body)
         if self.dry_run:
             with self.out_lock:
                 self.out.write(record.decode("utf-8", "replace") + "\n")
@@ -487,7 +531,7 @@ def make_server(cfg: dict, dry_run: bool = False, out=None) -> ThreadingHTTPServ
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu and Autotask webhooks to Sophos NG-SIEM HTTP Ingest.")
+    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask and Juniper Mist webhooks to Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="check deliveries and print each body; forward nothing")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
     args = ap.parse_args(argv)
