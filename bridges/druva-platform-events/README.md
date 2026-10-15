@@ -95,6 +95,7 @@ WantedBy=multi-user.target
 Druva doesn't publish rate limits or how long it keeps events. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Druva or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving its token can send that page again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the Client ID, Secret Key, access token, HTTP Ingest key, or the HTTP Ingest URL path.
 

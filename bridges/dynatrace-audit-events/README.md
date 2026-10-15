@@ -111,6 +111,7 @@ WantedBy=multi-user.target
 Grail stores the user's ID in `user.id`; whether `user.name` (the email address) is filled in depends on the environment. The parser falls back to the ID.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the platform token, the client secret, the access token, the HTTP Ingest key, or the HTTP Ingest URL path.
 

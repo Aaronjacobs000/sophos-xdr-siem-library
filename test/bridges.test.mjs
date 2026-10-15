@@ -560,6 +560,19 @@ test('bridge READMEs: each service example restarts on failure after a delay, an
   }
 });
 
+test('bridge READMEs: each polling bridge says a batch whose HTTP Ingest answer is cut off can arrive twice', async () => {
+  // An answer cut off partway is retried, so a batch HTTP Ingest took before its answer broke is sent
+  // again. Any lost answer, such as a read timeout, does the same, so delivery is at least once.
+  const names = (await readdir(path.join(ROOT, 'bridges'), { withFileTypes: true })).filter((d) => d.isDirectory() && d.name !== 'webhook-relay').map((d) => d.name);
+  assert.ok(names.length >= 25, names.join());
+  for (const name of names) {
+    const readme = await readFile(path.join(ROOT, 'bridges', name, 'README.md'), 'utf8');
+    assert.match(readme, /^If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice[.;]/m, name);
+    const script = (await readdir(path.join(ROOT, 'bridges', name))).find((f) => f.endsWith('.py') && !f.startsWith('test_'));
+    assert.match(await readFile(path.join(ROOT, 'bridges', name, script), 'utf8'), /_request\("POST", self\.cfg\["ingest_url"\], .*"HTTP Ingest POST"\)/, name);
+  }
+});
+
 test('README markdown: HTML stays text and only https links survive', () => {
   const blocks = parseMarkdown('# Title <img src=x onerror=alert(1)>\n\n<script>alert(1)</script>\n\nSee [docs](https://example.com/a) and [bad](javascript:alert) and https://example.org/b.\n');
   assert.deepEqual(blocks.map((b) => b.t), ['h', 'p', 'p']);

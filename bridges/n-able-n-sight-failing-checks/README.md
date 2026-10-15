@@ -79,6 +79,8 @@ WantedBy=multi-user.target
 
 The documentation gives no rate limits. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. An XML result whose status isn't OK, such as a wrong key, stops the run. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the N-sight API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice; HTTP Ingest does not remove duplicates.
+
 The API key is part of every request URL, so the bridge never logs URLs, only host names. It never logs the HTTP Ingest key or URL path either.
 
 ## Tests

@@ -89,6 +89,7 @@ WantedBy=multi-user.target
 The OnDMARC API doesn't publish a rate limit. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 401, 402 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the OnDMARC API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the API key, the HTTP Ingest key, or the HTTP Ingest URL path.
 

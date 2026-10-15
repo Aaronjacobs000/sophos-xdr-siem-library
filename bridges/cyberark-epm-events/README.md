@@ -97,6 +97,7 @@ WantedBy=multi-user.target
 CyberArk doesn't say how long EPM keeps events, so run the bridge at least daily. EPM's admin audit API is deprecated in favor of the platform's SIEM integration API, which this bridge doesn't read.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the service user's name or password, the access token, the HTTP Ingest key, or the HTTP Ingest URL path.
 

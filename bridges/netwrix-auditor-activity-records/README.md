@@ -91,6 +91,7 @@ WantedBy=multi-user.target
 - The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. Netwrix answers 500 when its license has expired, the Archive Service can't be reached or it hit an internal error; one that outlasts the retries is logged with Netwrix's error description. 401 (wrong account or password, or Basic authentication refused), 403, 404, 405 and 400 stop the run with Netwrix's error, and so does a certificate that isn't trusted or doesn't name the host, without a retry. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Netwrix Auditor Server or HTTP Ingest is refused, not followed, so no password or key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the account's name or password, the HTTP Ingest key, or the HTTP Ingest URL path.
 
