@@ -178,7 +178,7 @@ class Sized:
 
 # Every numeric setting: its name, config key, default, a normal value, type, and highest value.
 NUMBERS = [
-    ("ITGLUE_PAGE_SIZE", "page_size", 1000, 100, int, 10 ** 9),
+    ("ITGLUE_PAGE_SIZE", "page_size", 1000, 100, int, 1000),
     ("BRIDGE_BATCH_BYTES", "batch_bytes", 100000, 50000, int, 10 ** 9),
     ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 10 ** 6),
     ("BRIDGE_OVERLAP_SECONDS", "overlap_seconds", 300, 600, int, 10 ** 9),
@@ -442,6 +442,29 @@ class RequestSafetyTest(unittest.TestCase):
         finally:
             c.time.sleep = saved
         self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
+
+
+class RangeTest(unittest.TestCase):
+    """A number outside its range stops the bridge with an error that gives the range."""
+
+    def load(self, **extra):
+        env = {"ITGLUE_API_KEY": API_KEY}
+        env.update(extra)
+        return c.load_config(env)
+
+    def test_http_timeout_must_be_more_than_zero(self):
+        for value in ("0", "0.0", "-1"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    c.BridgeError, r"^BRIDGE_HTTP_TIMEOUT must be between 0\.001 and 1,000,000,000$"):
+                self.load(BRIDGE_HTTP_TIMEOUT=value)
+        self.assertEqual(self.load(BRIDGE_HTTP_TIMEOUT="0.5")["timeout"], 0.5)
+
+    def test_page_size_out_of_range_gives_its_range(self):
+        for value in ("-1", "0", "1001"):
+            with self.subTest(value=value), self.assertRaisesRegex(c.BridgeError, r"^ITGLUE_PAGE_SIZE must be between 1 and 1,000$"):
+                self.load(ITGLUE_PAGE_SIZE=value)
+        self.assertEqual(self.load(ITGLUE_PAGE_SIZE="1")["page_size"], 1)
+        self.assertEqual(self.load(ITGLUE_PAGE_SIZE="1000")["page_size"], 1000)
 
 
 class IntervalTest(unittest.TestCase):

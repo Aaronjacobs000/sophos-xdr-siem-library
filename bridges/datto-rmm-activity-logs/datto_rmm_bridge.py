@@ -71,7 +71,7 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
     """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
     value = _env(env, name, default)
     try:
@@ -79,8 +79,8 @@ def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
     except ValueError:
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
-    if not 0 <= number <= high:
-        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -102,14 +102,14 @@ def load_config(env: dict | None = None) -> dict:
         "api_key": _env(env, "DATTO_RMM_API_KEY"),
         "api_secret": _env(env, "DATTO_RMM_API_SECRET"),
         "entities": _env(env, "DATTO_RMM_ENTITIES", "device,user"),
-        "page_size": _number(env, "DATTO_RMM_PAGE_SIZE", "250"),
+        "page_size": _number(env, "DATTO_RMM_PAGE_SIZE", "250", low=1, high=250),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "datto_rmm_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
         "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
         "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "300"),
         "settle_seconds": _number(env, "BRIDGE_SETTLE_SECONDS", "60"),
-        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
     for name, key in (("DATTO_RMM_API_URL", "api_url"), ("DATTO_RMM_API_KEY", "api_key"), ("DATTO_RMM_API_SECRET", "api_secret")):
         if not cfg[key]:
@@ -117,8 +117,6 @@ def load_config(env: dict | None = None) -> dict:
     _require_https(cfg["api_url"], "DATTO_RMM_API_URL")
     if cfg["ingest_url"]:
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
-    if not 1 <= cfg["page_size"] <= 250:
-        raise BridgeError("DATTO_RMM_PAGE_SIZE must be between 1 and 250")
     return cfg
 
 

@@ -74,7 +74,7 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
     """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
     value = _env(env, name, default)
     try:
@@ -82,8 +82,8 @@ def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
     except ValueError:
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
-    if not 0 <= number <= high:
-        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -116,7 +116,7 @@ def load_config(env: dict | None = None) -> dict:
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
         "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
         "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "3600"),
-        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
     if not cfg["api_key"]:
         raise BridgeError("ONDMARC_API_KEY is required")

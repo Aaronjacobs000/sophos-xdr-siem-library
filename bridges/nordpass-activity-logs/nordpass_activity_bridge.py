@@ -80,7 +80,7 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
-def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+def _number(env: dict, name: str, default: str, cast=int, low: float = 0, high: int = 10 ** 9):
     """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
     value = _env(env, name, default)
     try:
@@ -88,8 +88,8 @@ def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
     except ValueError:
         raise BridgeError(f"{name} must be a number") from None
     # NaN fails every comparison, so it lands here too.
-    if not 0 <= number <= high:
-        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    if not low <= number <= high:
+        raise BridgeError(f"{name} must be between {low:,} and {high:,}")
     return number
 
 
@@ -112,18 +112,16 @@ def load_config(env: dict | None = None) -> dict:
         "ingest_key": _env(env, "NGSIEM_INGEST_KEY"),
         "api_url": (_env(env, "NORDPASS_API_URL") or URLS[region]).rstrip("/"),
         "token": _env(env, "NORDPASS_TOKEN"),
-        "per_page": _number(env, "NORDPASS_PER_PAGE", "100"),
+        "per_page": _number(env, "NORDPASS_PER_PAGE", "100", low=1, high=100),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "nordpass_activity_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
         "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
         "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
         "overlap_seconds": _number(env, "BRIDGE_OVERLAP_SECONDS", "600"),
-        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float, low=0.001),
     }
     if not cfg["token"]:
         raise BridgeError("NORDPASS_TOKEN is required")
-    if not 1 <= cfg["per_page"] <= 100:
-        raise BridgeError("NORDPASS_PER_PAGE must be from 1 to 100")
     if cfg["overlap_seconds"] < 0 or cfg["lookback_hours"] <= 0:
         raise BridgeError("BRIDGE_OVERLAP_SECONDS can't be negative and BRIDGE_LOOKBACK_HOURS must be above 0")
     _require_https(cfg["api_url"], "NORDPASS_API_URL")
@@ -196,9 +194,14 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 return resp.status, _read(resp, what, url)
         except urllib.error.HTTPError as e:
             # Read the body, then close the error response so its socket is released now, not
-            # when the error is garbage collected.
+            # when the error is garbage collected. A status that is retried is retried whatever
+            # its body, so a body over the limit only stops the run for the other statuses.
             try:
                 error_body = _read(e, what, url)
+            except BridgeError:
+                if e.code not in RETRY_STATUS:
+                    raise
+                error_body = b""
             finally:
                 e.close()
             if e.code in RETRY_STATUS and attempt < MAX_ATTEMPTS - 1:
