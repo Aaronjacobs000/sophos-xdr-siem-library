@@ -64,7 +64,7 @@ Exit code 0 means every feature was read and sent. On an error the bridge logs t
 - The first request for a feature is a ResetCursor: `{"limit": 1000, "start_time": "<now minus the lookback>"}`. Every later request sends the `cursor` from the last response. 1Password says the cursor stays valid across sessions, so the bridge saves it and resumes from it on the next run.
 - It reads pages until `has_more` is false, sending each page and then saving its cursor.
 
-1Password allows 600 requests a minute and 30,000 an hour. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Events API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+1Password allows 600 requests a minute and 30,000 an hour. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Events API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving its cursor can send that page again; HTTP Ingest does not remove duplicates.
 

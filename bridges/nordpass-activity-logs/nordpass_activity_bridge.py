@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import http.client
 import json
 import logging
 import os
@@ -127,7 +128,8 @@ def _host(url: str) -> str:
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
     if retry_after:
         try:
-            return max(0.0, float(retry_after))
+            # Honor the server's wait for up to five minutes, so a bad value can't stall the bridge.
+            return min(300.0, max(0.0, float(retry_after)))
         except ValueError:
             pass
     return min(60.0, 2 ** attempt) + random.uniform(0, 1)
@@ -180,6 +182,13 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
+            raise BridgeError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+        except ValueError:
+            # http.client puts a header value it refuses, such as a key with a line break in it,
+            # in its error, so that error isn't passed on.
+            raise BridgeError(f"{what} to {_host(url)} couldn't be sent: a key or token has a line break or "
+                              "another character a request header can't carry") from None
+        except http.client.HTTPException as e:
             raise BridgeError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
     raise BridgeError(f"{what} to {_host(url)} failed")
 

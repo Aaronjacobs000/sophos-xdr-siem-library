@@ -68,7 +68,7 @@ Exit code 0 means every page was read and sent. On an error the bridge logs it w
 - Most events come from Bitwarden's apps, which send them in batches about every 60 seconds and retry when they can't, with the time the event happened on the device. An event that reaches Bitwarden later than the overlap is missed; raise `BRIDGE_OVERLAP_SECONDS` if your users are often offline.
 - The API takes a range of at most 366 days, so the first run's lookback is capped there.
 
-Bitwarden doesn't publish its cloud rate limits; it answers 429 when a client asks too often. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Bitwarden or HTTP Ingest is refused, not followed, so no secret, token or key goes to another URL, and the run stops with an error that says so.
+Bitwarden doesn't publish its cloud rate limits; it answers 429 when a client asks too often. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Bitwarden or HTTP Ingest is refused, not followed, so no secret, token or key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

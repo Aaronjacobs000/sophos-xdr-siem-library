@@ -50,7 +50,7 @@ Exit code 0 means the window was read and sent. On an error the bridge logs the 
 - TeamViewer events have no ID, so repeats inside the overlap are recognized by a hash of the whole event. Two events that are identical in every field are sent once.
 - It sends the new events oldest first, then saves the cursor and the hashes inside the overlap.
 
-TeamViewer doesn't publish rate limits for this endpoint. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the TeamViewer Web API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+TeamViewer doesn't publish rate limits for this endpoint. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the TeamViewer Web API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 The API and HTTP Ingest both deliver at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

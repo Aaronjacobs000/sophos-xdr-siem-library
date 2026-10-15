@@ -136,6 +136,9 @@ def load_config(env: dict | None = None) -> dict:
                          "and SCREENCONNECT_PATH_SECRET")
     if cfg["ingest_url"]:
         _require_https(cfg["ingest_url"], "NGSIEM_INGEST_URL")
+    # The key goes in a request header, and http.client would put a header value it refuses in its error.
+    if cfg["ingest_key"] and re.search(r"[\x00-\x1f\x7f]", cfg["ingest_key"]):
+        raise RelayError("NGSIEM_INGEST_KEY has a line break or another control character")
     if not 0 <= cfg["port"] <= 65535:
         raise RelayError("BRIDGE_LISTEN_PORT must be between 0 and 65535")
     if cfg["max_body"] < 1024:

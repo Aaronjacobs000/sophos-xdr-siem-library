@@ -60,7 +60,7 @@ Exit code 0 means every source was read and sent. On an error the bridge logs th
 - **dns_history:** reads from the UTC day of the cursor minus the overlap, sorted by `observedAt`, and sends the changes it hasn't sent, oldest first. The API filters by whole days, so the bridge remembers the IDs from that day. `diffSegments`, which is for display, is left out.
 - **aggregate:** for each domain and each day from the cursor to `ONDMARC_AGGREGATE_SETTLE_DAYS` ago, reads the raw rows with `from_date` and `to_date` set to that day, pages with `pagination_model`, and adds `ondmarc_domain`. Each day is read once.
 
-The OnDMARC API doesn't publish a rate limit. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After`, and stops on 401, 402 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the OnDMARC API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+The OnDMARC API doesn't publish a rate limit. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 401, 402 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the OnDMARC API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 
