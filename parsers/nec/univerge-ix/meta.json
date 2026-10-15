@@ -1,0 +1,69 @@
+{
+  "vendor": "NEC",
+  "product": "UNIVERGE IX",
+  "versions": [
+    "10.11",
+    "IX-R/IX-V 1.5"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.support.nec.co.jp/DownLoad.aspx?file=FD-ver10.11-1.1.pdf&id=3170102598",
+    "https://www.support.nec.co.jp/DownLoad.aspx?file=CRM-ver10.11-1.1.pdf&id=3170102594",
+    "https://www.necplatforms.co.jp/dl/ix-nrv/manual/slog/",
+    "https://www.necplatforms.co.jp/dl/ix-nrv/manual/crm/cli/maintenance/cli_syslog.html",
+    "https://jpn.nec.com/univerge/ix/faq/filter.html"
+  ],
+  "notes": "For NEC UNIVERGE IX2000 and IX3000 (version 10) and IX-R and IX-V routers. Add the data collector with syslog ip host <address> (port 514). On IX2000 and IX3000, also run syslog timestamp datetime and syslog id hostname, or lines keep the ingest time, and pick the logs with logging subsystem (flt at warn for blocks or info for passes, ids, and utm at notice). IX-R and IX-V always send RFC 5424 with the router's offset; the IX2000 time has no zone and is read as UTC. IP filter logs (PASS and BLOCK, by list, dynamic list or no match) go to Netflow with the interface, direction and list. Intrusion detection and UTM IPS logs go to NIDS with the attack, signature ID, severity and action. UTM antivirus logs go to Antivirus; UTM URL filtering and web guard logs and IX-R url-flt logs go to HTTP. A UTM log's own time is used. SSH and AAA sign-ins and failures and CLI sessions (IX-R and IX-V) go to Auth. Other messages, such as L2TP, IKE and reboots, aren't claimed. How sure this is: NEC's public UNIVERGE IX functional description and command reference (Japanese) give the IX2000 and IX3000 syslog format, the filter and IDS messages and the UTM security log fields, with examples, and the public IX-R/IX-V syslog reference gives the RFC 5424 header and the message templates. NEC's IX Event Log Reference, behind a license agreement, wasn't used. Inferred: the TCP and UDP flow form (<ip>:<port>) in filter and url-flt lines, since NEC shows only ICMP; how the SSH user and address are written together; the AAA type and cause values; and how the time follows the PRI on IX2000 lines. IPv6 isn't handled. Samples are made up in those shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (199 of 201 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (199 of 201 fields, each line taken in 5 of 5 runs). The two differences are the event times of the two IX2000 lines sent without a time: both sides take the ingest time, and the emulator's is reference_time. No built-in parser competed for these lines.",
+  "parsers": [
+    {
+      "name": "NEC_IX_SYSLOG_PARENT",
+      "file": "NEC_IX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "NEC_IX_SYSLOG_CHILD_NETFLOW",
+      "file": "NEC_IX_SYSLOG_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "NEC_IX_SYSLOG_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "NEC_IX_SYSLOG_CHILD_NIDS",
+      "file": "NEC_IX_SYSLOG_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "NEC_IX_SYSLOG_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "NEC_IX_SYSLOG_CHILD_ANTIVIRUS",
+      "file": "NEC_IX_SYSLOG_CHILD_ANTIVIRUS.parser.txt",
+      "role": "child",
+      "parent": "NEC_IX_SYSLOG_PARENT",
+      "schema": "scwx.antivirus"
+    },
+    {
+      "name": "NEC_IX_SYSLOG_CHILD_HTTP",
+      "file": "NEC_IX_SYSLOG_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "NEC_IX_SYSLOG_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "NEC_IX_SYSLOG_CHILD_AUTH",
+      "file": "NEC_IX_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "NEC_IX_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}

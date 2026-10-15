@@ -1,0 +1,665 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937211000003,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "198.51.100.2",
+      "destination_address": "192.0.2.254",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_action",
+            "value": "BLOCK"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "in"
+          },
+          {
+            "key": "match",
+            "value": "match access1"
+          },
+          {
+            "key": "message_id",
+            "value": "ip-flt 007"
+          },
+          {
+            "key": "access_list",
+            "value": "access1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937220104512,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.80",
+      "source_port": 51022,
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_action",
+            "value": "PASS"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "out"
+          },
+          {
+            "key": "match",
+            "value": "match access2"
+          },
+          {
+            "key": "message_id",
+            "value": "ip-flt 006"
+          },
+          {
+            "key": "access_list",
+            "value": "access2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937231220115,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "203.0.113.70",
+      "destination_address": "192.0.2.10",
+      "source_port": 53000,
+      "destination_port": 161,
+      "protocol": 17,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_action",
+            "value": "BLOCK"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1"
+          },
+          {
+            "key": "filter_direction",
+            "value": "in"
+          },
+          {
+            "key": "match",
+            "value": "not match any filters"
+          },
+          {
+            "key": "message_id",
+            "value": "ip-flt 008"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792108800000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.3",
+      "destination_address": "192.0.2.254",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_action",
+            "value": "BLOCK"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.0"
+          },
+          {
+            "key": "filter_direction",
+            "value": "in"
+          },
+          {
+            "key": "match",
+            "value": "match access1"
+          },
+          {
+            "key": "message_id",
+            "value": "ip-flt 007"
+          },
+          {
+            "key": "access_list",
+            "value": "access1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791969630000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ix2215",
+      "source_address": "203.0.113.50",
+      "destination_address": "192.0.2.1",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "filter_action",
+            "value": "BLOCK"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.0"
+          },
+          {
+            "key": "filter_direction",
+            "value": "in"
+          },
+          {
+            "key": "match",
+            "value": "no match"
+          },
+          {
+            "key": "message_id",
+            "value": "ip-flt 008"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937300552901,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "192.0.2.1",
+      "destination_address": "192.0.2.1",
+      "message": "[IP] Land attack packet was detected",
+      "classification": "IDS IP",
+      "log_type": "intrusion detection",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "ids 004"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937312010334,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.10",
+      "source_port": 40000,
+      "destination_port": 80,
+      "message": "[TCP] SYN and FIN was detected",
+      "classification": "IDS TCP",
+      "log_type": "intrusion detection",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "ids 203"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792108800000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.7",
+      "destination_address": "192.0.2.10",
+      "message": "[IP] Unknown protocol packet was detected (protocol 180)",
+      "classification": "IDS IP",
+      "log_type": "intrusion detection",
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "ids 003"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792022340000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.20",
+      "destination_address": "192.0.2.20",
+      "source_port": 443,
+      "destination_port": 54176,
+      "message": "TCP RST Scan",
+      "classification": "UTM IPS",
+      "log_type": "UTM IPS",
+      "signature_id": 80600001,
+      "priority": 1,
+      "action": "Drop",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "utm 002"
+          },
+          {
+            "key": "mac",
+            "value": "00:00:5E:00:53:20"
+          },
+          {
+            "key": "utm_severity",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792022400000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "antivirus",
+      "threat_name": "EICAR-Test-File",
+      "file_path": "eicar.com",
+      "vendor_signature_id": 2053,
+      "vendor_alert_type": "UTM AV",
+      "threat_type": "FILE",
+      "threat_category": "VIRUS",
+      "action_taken": "BLOCKED",
+      "agent_priority": "3",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "source",
+            "value": "203.0.113.10:80"
+          },
+          {
+            "key": "destination",
+            "value": "192.0.2.10:43515"
+          },
+          {
+            "key": "utm_action",
+            "value": "Destroy"
+          },
+          {
+            "key": "message_id",
+            "value": "utm 001"
+          },
+          {
+            "key": "application_protocol",
+            "value": "HTTP"
+          },
+          {
+            "key": "mac",
+            "value": "00:00:5E:00:53:10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792022460000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.40",
+      "destination_address": "203.0.113.40",
+      "source_port": 54505,
+      "destination_port": 80,
+      "protocol": 6,
+      "uri_host": "www.example.com",
+      "uri_path": "/download/sample.zip",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "feature",
+            "value": "UTM WG"
+          },
+          {
+            "key": "url",
+            "value": "www.example.com/download/sample.zip"
+          },
+          {
+            "key": "message_id",
+            "value": "utm 003"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1792022520000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.30",
+      "source_port": 54521,
+      "destination_port": 443,
+      "protocol": 6,
+      "uri_host": "social.example.org",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "feature",
+            "value": "UTM UF"
+          },
+          {
+            "key": "url",
+            "value": "social.example.org"
+          },
+          {
+            "key": "message_id",
+            "value": "utm 004"
+          },
+          {
+            "key": "category_id",
+            "value": "46000"
+          },
+          {
+            "key": "category_group_id",
+            "value": "15"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937450330120,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "source_address": "192.0.2.35",
+      "destination_address": "203.0.113.90",
+      "source_port": 51500,
+      "destination_port": 80,
+      "uri_host": "bad.example.net",
+      "uri_path": "/path/index.html",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "request_direction": "OUTBOUND",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "feature",
+            "value": "url-flt"
+          },
+          {
+            "key": "url",
+            "value": "bad.example.net/path/index.html"
+          },
+          {
+            "key": "message_id",
+            "value": "url-flt 006"
+          },
+          {
+            "key": "url_list",
+            "value": "url-list1"
+          },
+          {
+            "key": "interface",
+            "value": "GigaEthernet0.1 out"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937325004512,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "target_user_name": "jsmith",
+      "source_address": "198.51.100.23",
+      "target_host_name": "ixr01",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "logon_application_family": "SSH",
+      "auth_system": "NEC UNIVERGE IX",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "ssh 013"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937360118904,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "ixr01",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "SSH",
+      "auth_system": "NEC UNIVERGE IX",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "ssh 012"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937381774512,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "target_user_name": "jsmith",
+      "source_address": "198.51.100.23",
+      "target_host_name": "ixr01",
+      "action": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "FAILED",
+      "extra_failurereason": "access-reject",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "logon_application_family": "login",
+      "auth_system": "192.0.2.50",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "aaa 004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937361551200,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "target_user_name": "jsmith",
+      "target_host_name": "ixr01",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "CLI",
+      "auth_system": "NEC UNIVERGE IX",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "system 038"
+          },
+          {
+            "key": "cli_session",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "NEC_IX_SYSLOG_PARENT > NEC_IX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "NEC UNIVERGE IX",
+      "event_time_usec": 1791937872006622,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ixr01",
+      "target_user_name": "jsmith",
+      "target_host_name": "ixr01",
+      "action": "LOGOFF",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action_result": "SUCCESS",
+      "logon_application_family": "CLI",
+      "auth_system": "NEC UNIVERGE IX",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "system 040"
+          },
+          {
+            "key": "cli_session",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 20,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]

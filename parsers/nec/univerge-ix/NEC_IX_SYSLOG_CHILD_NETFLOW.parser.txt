@@ -1,0 +1,58 @@
+!SAMPLE=<132>1 2026-10-14T09:20:11.000003+09:00 ixr01 ip-flt - 007 - BLOCK icmp 198.51.100.2 > 192.0.2.254, match access1, GigaEthernet0.1 in
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="filter"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: NEC UNIVERGE IX IP filter logs (ip-flt on IX-R and IX-V, FLT on IX2000 and IX3000), syslog
+# to the data collector. BLOCK lines log at warn, PASS lines at info:
+#   PASS|BLOCK <protocol> <src>[:<port>] > <dst>[:<port>], match <list>|match dynamic <list>|not match any
+#   filters|no match, <interface> <in|out>
+# Child of NEC_IX_SYSLOG_PARENT: each filtered packet, to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# flt, fn, id, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = flt["src"]
+destinationAddress$ = flt["dst"]
+sport = STRING(flt["sport"])
+dport = STRING(flt["dport"])
+sourcePort$ = IF sport != "" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" THEN INT(dport, 10) ELSE NULL
+
+# protocol takes the IANA number; the router logs a name or, for others, the number.
+proto = LOWERCASE(STRING(flt["proto"]))
+pnum = proto|^(?P<n>\d+)$
+protocol$ = IF pnum["n"] != "" THEN INT(pnum["n"], 10) ELSE NULL
+protocol$ = IF proto == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF proto == "icmpv6" OR proto == "icmp6" THEN 58 ELSE protocol$
+protocol$ = IF proto == "gre" THEN 47 ELSE protocol$
+protocol$ = IF proto == "esp" THEN 50 ELSE protocol$
+protocol$ = IF proto == "ah" THEN 51 ELSE protocol$
+
+act = STRING(flt["act"])
+flowAction$ = IF act == "BLOCK" THEN "FW_BLOCKED" ELSE "FW_ALLOWED"
+
+# Fields with no Netflow home go to event_metadata. A list name comes after "match"; a line that
+# matched no filter was dropped by the default.
+how = STRING(flt["how"])
+list = REPLACE_REGEX(how, `^match (?:dynamic )?`, "")
+list = IF how == "not match any filters" OR how == "no match" THEN "" ELSE list
+m1.key$ = "filter_action"
+m1.value$ = act
+m2.key$ = "interface"
+m2.value$ = flt["if"]
+m3.key$ = "filter_direction"
+m3.value$ = flt["dir"]
+m4.key$ = "match"
+m4.value$ = how
+m5.key$ = "message_id"
+m5.value$ = fn + " " + id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3, m4, m5]
+m6.key$ = "access_list"
+m6.value$ = list
+eventMetadata$.record$ = IF list != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
