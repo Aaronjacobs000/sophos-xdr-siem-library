@@ -1,0 +1,46 @@
+!SAMPLE=<190>Oct 14 09:35:51 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [login,session][info][subj-[uni/userext/user-admin]/sess-4297292524] From-192.0.2.10-client-type-REST-Success
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco ACI syslog from the APIC and the fabric switches.
+# Child of CISCO_ACI_SYSLOG_PARENT: session log records (aaaSessionLR) whose triggers include login
+# or logout, to Auth:
+#   [login,session][<severity>][subj-[uni/userext/user-<name>]/sess-<id>] [user <name>] From-<address>-client-type-<type>-<result>
+# A remote user (one from RADIUS, TACACS+, LDAP or SAML) is uni/userext/remoteuser-<name>. The
+# client type is how they signed in, such as REST, ssh or GUI. Session refreshes stay in the parent.
+# sess, rec, node, trig, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+who = rec["affected"]|^uni/userext/(?P<kind>user|remoteuser)-(?P<name>.+)$
+user = IF sess["user"] != "" THEN sess["user"] ELSE who["name"]
+targetUserName$ = IF user != "" THEN user ELSE NULL
+from = sess["text"]|^From-(?P<addr>.+?)-client-type-(?P<ctype>.+)-(?P<result>[A-Za-z]+)$
+sourceAddress$ = IF from["addr"] != "" THEN from["addr"] ELSE NULL
+logonApplicationFamily$ = IF from["ctype"] != "" THEN from["ctype"] ELSE NULL
+targetHostName$ = node
+sessionId$ = rec["id"]
+authSystem$ = "Cisco ACI"
+
+logout = CONTAINS(trig, "logout")
+ok = LOWERCASE(from["result"]) == "success"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF logout THEN "LOGOFF" ELSE (IF ok THEN "LOGON" ELSE "FAILURE")
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+extraFailurereason$ = IF ok THEN NULL ELSE sess["text"]
+failureCategory$ = IF ok OR logout THEN NULL ELSE "OTHER_ERROR"
+
+s1.key$ = "triggers"
+s1.value$ = trig
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [s1]
+s2.key$ = "user_kind"
+s2.value$ = who["kind"]
+eventMetadata$.record$ = IF who["kind"] != "" THEN eventMetadata$.record$ + [s2] ELSE eventMetadata$.record$
+s3.key$ = "result"
+s3.value$ = from["result"]
+eventMetadata$.record$ = IF from["result"] != "" THEN eventMetadata$.record$ + [s3] ELSE eventMetadata$.record$
+s4.key$ = "dn"
+s4.value$ = sess["dn"]
+eventMetadata$.record$ = eventMetadata$.record$ + [s4]

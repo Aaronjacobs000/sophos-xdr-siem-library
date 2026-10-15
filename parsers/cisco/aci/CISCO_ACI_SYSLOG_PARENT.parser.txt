@@ -1,0 +1,53 @@
+!SAMPLE=<186>Oct 14 09:12:44 apic1 %LOG_LOCAL7-2-SYSTEM_MSG [F1543][raised][node-inactive][critical][topology/pod-1/node-102/fault-F1543] Node 102 with hostname leaf102 is inactive and not reachable.
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%LOG_[A-Z0-9]*-\d-SYSTEM_MSG:?\s+\[(?:[FE]\d+\]\[|[a-z][a-z,]*\]\[[a-z]+\]\[)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco ACI syslog from the APIC and the fabric switches (Fabric > Fabric Policies >
+# Monitoring, or a tenant's monitoring policy, with a syslog source that includes faults, events,
+# audit logs and session logs), in the default aci format. Cisco's System Messages Guide:
+#   <time> <host> %LOG_LOCALn-<severity>-SYSTEM_MSG [<code>][<lifecycle>][<cause>][<severity>][<DN>] <text>   a fault
+#   <time> <host> %LOG_LOCALn-<severity>-SYSTEM_MSG [<code>][<cause>][<severity>][<DN>] <text>                an event
+# An audit log record (aaaModLR) is an event whose DN is subj-[<object>]/mod-<id>. A session log
+# record (aaaSessionLR) has the triggers first: [login,session][<severity>][subj-[<user>]/sess-<id>]
+# From-<address>-client-type-<type>-<result>. Newer releases add [user <name>] after the DN.
+# DNs hold brackets of their own, such as phys-[eth1/49].
+# Parent: recognizes these lines and hands on:
+#   faults, and process-crash events                    to Thirdparty
+#   audit log records                                    to CloudAudit
+#   session log records with a login or logout trigger  to Auth
+# Other events (link state changes, NX-OS messages wrapped as E4204936) and session refreshes
+# stay in generic.
+
+# The time may carry milliseconds and a zone (UTC+1000) when the syslog destination includes them,
+# and some releases send the <PRI> twice. The Enhanced Log option sends an RFC 5424 header, which
+# Cisco doesn't show; the parser reads one with the usual layout.
+hdr = originalData$|^(?:<\d{1,4}>)?(?:<\d{1,4}>)?\s*(?:(?P<mon>[A-Z][a-z]{2})[a-z]*\s+(?P<day>\d{1,2})\s+(?P<hms>\d{2}:\d{2}:\d{2})(?:\.(?P<ms>\d{3}))?(?:\s+UTC(?P<off>[+-]\d{4}))?|1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})))\s+(?P<host>\S+)\s
+m = originalData$|%LOG_(?P<fac>[A-Z0-9]*)-(?P<sev>\d)-SYSTEM_MSG:?\s+(?P<body>.*?)\s*$
+body = m["body"]
+fault = body|^\[(?P<code>F\d+)\]\[(?P<life>[a-z_-]+)\]\[(?P<cause>[^\]]*)\]\[(?P<sev>[a-z]+)\]\[(?P<dn>.*?)\](?:\s+\[user (?P<user>[^\]]*)\])?(?:\s+(?P<text>.*))?$
+event = body|^\[(?P<code>E\d+)\]\[(?P<cause>[^\]]*)\]\[(?P<sev>[a-z]+)\]\[(?P<dn>.*?)\](?:\s+\[user (?P<user>[^\]]*)\])?(?:\s+(?P<text>.*))?$
+sess = body|^\[(?P<trig>[a-z][a-z,]*)\]\[(?P<sev>[a-z]+)\]\[(?P<dn>.*?)\](?:\s+\[user (?P<user>[^\]]*)\])?(?:\s+(?P<text>.*))?$
+# subj-[<affected object>]/mod-<id> (audit), /rec-<id> (event) or /sess-<id> (session).
+subj = sess["dn"]
+subj = IF event["code"] != "" THEN event["dn"] ELSE subj
+rec = subj|^subj-\[(?P<affected>.*)\]/(?P<kind>mod|rec|sess)-(?P<id>\d+)$
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Cisco ACI"
+node = hdr["host"]
+hostId$ = node
+# The default time has no year and no zone: DATETIME picks the year (TRUE, which also drops any
+# milliseconds), and the time is read as UTC unless the line gives a zone. Cisco writes the month in
+# full in some examples (July 22).
+plain = hdr["mon"] + " " + hdr["day"] + " " + hdr["hms"]
+zone = IF hdr["off"] != "" THEN hdr["off"] ELSE "+0000"
+eventTimeUsec$ = IF hdr["iso"] != "" THEN DATETIME(hdr["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE (IF hdr["hms"] != "" THEN DATETIME(plain + " " + zone, "Jan _2 15:04:05 -0700", TRUE) ELSE NULL)
+
+eventType$ = "other"
+eventType$ = IF fault["code"] != "" OR event["cause"] == "process-crash" THEN "alert" ELSE eventType$
+eventType$ = IF event["code"] != "" AND rec["kind"] == "mod" THEN "audit" ELSE eventType$
+trig = sess["trig"]
+eventType$ = IF CONTAINS(trig, "login") OR CONTAINS(trig, "logout") THEN "auth" ELSE eventType$

@@ -1,0 +1,445 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791969164000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "vendor": "Cisco",
+      "provider": "Cisco ACI",
+      "title": "F1543 node-inactive",
+      "summary": "Node 102 with hostname leaf102 is inactive and not reachable.",
+      "alert_id": "topology/pod-1/node-102/fault-F1543",
+      "alert_category": "fault",
+      "log_type": "fault",
+      "status": "raised",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "target_host_name": "node-102",
+      "additional_data": {
+        "record": [
+          {
+            "key": "code",
+            "value": "F1543"
+          },
+          {
+            "key": "cause",
+            "value": "node-inactive"
+          },
+          {
+            "key": "dn",
+            "value": "topology/pod-1/node-102/fault-F1543"
+          },
+          {
+            "key": "lifecycle",
+            "value": "raised"
+          },
+          {
+            "key": "syslog_facility",
+            "value": "LOCAL7"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791969242000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "leaf101",
+      "vendor": "Cisco",
+      "provider": "Cisco ACI",
+      "title": "F1394 interface-physical-down",
+      "summary": "Port is down, reason: link-not-connected (none), used by: fabric",
+      "alert_id": "topology/pod-1/node-101/sys/phys-[eth1/49]/phys/fault-F1394",
+      "alert_category": "fault",
+      "log_type": "fault",
+      "status": "soaking",
+      "vendor_severity": "minor",
+      "severity": "MEDIUM",
+      "target_host_name": "node-101",
+      "additional_data": {
+        "record": [
+          {
+            "key": "code",
+            "value": "F1394"
+          },
+          {
+            "key": "cause",
+            "value": "interface-physical-down"
+          },
+          {
+            "key": "dn",
+            "value": "topology/pod-1/node-101/sys/phys-[eth1/49]/phys/fault-F1394"
+          },
+          {
+            "key": "lifecycle",
+            "value": "soaking"
+          },
+          {
+            "key": "syslog_facility",
+            "value": "LOCAL7"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970276000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "vendor": "Cisco",
+      "provider": "Cisco ACI",
+      "title": "F1543 node-inactive",
+      "summary": "Node 102 with hostname leaf102 is inactive and not reachable.",
+      "alert_id": "topology/pod-1/node-102/fault-F1543",
+      "alert_category": "fault",
+      "log_type": "fault",
+      "status": "retaining",
+      "vendor_severity": "cleared",
+      "severity": "INFO",
+      "closed_time_usec": 1791970276000000,
+      "target_host_name": "node-102",
+      "additional_data": {
+        "record": [
+          {
+            "key": "code",
+            "value": "F1543"
+          },
+          {
+            "key": "cause",
+            "value": "node-inactive"
+          },
+          {
+            "key": "dn",
+            "value": "topology/pod-1/node-102/fault-F1543"
+          },
+          {
+            "key": "lifecycle",
+            "value": "retaining"
+          },
+          {
+            "key": "syslog_facility",
+            "value": "LOCAL7"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791969635000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "vendor": "Cisco",
+      "provider": "Cisco ACI",
+      "title": "E4208395 process-crash",
+      "summary": "Process policyelem cored",
+      "alert_id": "subj-[dbgs/cores/node-102-card-1-svc-policyelem-ts-2026-10-14T09:20:30.000+00:00]/rec-12884905092",
+      "alert_category": "event",
+      "log_type": "event",
+      "vendor_severity": "major",
+      "severity": "HIGH",
+      "target_host_name": "node-102",
+      "additional_data": {
+        "record": [
+          {
+            "key": "code",
+            "value": "E4208395"
+          },
+          {
+            "key": "cause",
+            "value": "process-crash"
+          },
+          {
+            "key": "dn",
+            "value": "subj-[dbgs/cores/node-102-card-1-svc-policyelem-ts-2026-10-14T09:20:30.000+00:00]/rec-12884905092"
+          },
+          {
+            "key": "syslog_facility",
+            "value": "LOCAL7"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791969670000000,
+      "host_id": "apic1"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970211000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "event_type": "audit",
+      "user_name": "admin",
+      "event_name": "modified",
+      "event_source": "Cisco APIC",
+      "target_hostname": "apic1",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "uni/fabric/slgroup-ngsiem-syslog/rdst-198.51.100.20",
+          "resource_type": "Syslog Remote Destination 198.51.100.20"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "change_set",
+            "value": "severity (Old: warnings, New: information)"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Syslog Remote Destination 198.51.100.20 modified by user admin, change set: severity (Old: warnings, New: information)"
+          },
+          {
+            "key": "code",
+            "value": "E4205038"
+          },
+          {
+            "key": "mod_id",
+            "value": "4294981149"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970360000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "event_type": "audit",
+      "event_name": "created",
+      "event_source": "Cisco APIC",
+      "target_hostname": "apic1",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "uni/userext/user-jsmith",
+          "resource_type": "User jsmith"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User jsmith created"
+          },
+          {
+            "key": "code",
+            "value": "E4211093"
+          },
+          {
+            "key": "mod_id",
+            "value": "4294967339"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970551000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "apic1",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "logon_application_family": "REST",
+      "target_host_name": "apic1",
+      "session_id": "4297292524",
+      "auth_system": "Cisco ACI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "triggers",
+            "value": "login,session"
+          },
+          {
+            "key": "user_kind",
+            "value": "user"
+          },
+          {
+            "key": "result",
+            "value": "Success"
+          },
+          {
+            "key": "dn",
+            "value": "subj-[uni/userext/user-admin]/sess-4297292524"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970565000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "leaf101",
+      "target_user_name": "jsmith",
+      "source_address": "203.0.113.30",
+      "logon_application_family": "ssh",
+      "target_host_name": "leaf101",
+      "session_id": "433791698575",
+      "auth_system": "Cisco ACI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "triggers",
+            "value": "login,session"
+          },
+          {
+            "key": "user_kind",
+            "value": "remoteuser"
+          },
+          {
+            "key": "result",
+            "value": "Success"
+          },
+          {
+            "key": "dn",
+            "value": "subj-[uni/userext/remoteuser-jsmith]/sess-433791698575"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791970911000000,
+      "host_id": "apic1"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791971052000000,
+      "host_id": "leaf101"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "CISCO_ACI_SYSLOG_PARENT > CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco ACI",
+      "event_time_usec": 1791935402000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "leaf103",
+      "vendor": "Cisco",
+      "provider": "Cisco ACI",
+      "title": "F0546 interface-physical-down",
+      "summary": "Port is down, reason: admin-down (none), used by: discovery",
+      "alert_id": "topology/pod-1/node-103/sys/phys-[eth1/12]/phys/fault-F0546",
+      "alert_category": "fault",
+      "log_type": "fault",
+      "status": "raised",
+      "vendor_severity": "warning",
+      "severity": "LOW",
+      "target_host_name": "node-103",
+      "additional_data": {
+        "record": [
+          {
+            "key": "code",
+            "value": "F0546"
+          },
+          {
+            "key": "cause",
+            "value": "interface-physical-down"
+          },
+          {
+            "key": "dn",
+            "value": "topology/pod-1/node-103/sys/phys-[eth1/12]/phys/fault-F0546"
+          },
+          {
+            "key": "lifecycle",
+            "value": "raised"
+          },
+          {
+            "key": "syslog_facility",
+            "value": "LOCAL7"
+          },
+          {
+            "key": "syslog_severity",
+            "value": "4"
+          }
+        ]
+      }
+    }
+  }
+]

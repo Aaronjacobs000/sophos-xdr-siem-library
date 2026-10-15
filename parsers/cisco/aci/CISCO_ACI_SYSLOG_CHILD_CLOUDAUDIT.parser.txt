@@ -1,0 +1,49 @@
+!SAMPLE=<190>Oct 14 09:30:11 apic1 %LOG_LOCAL7-6-SYSTEM_MSG [E4205038][transition][info][subj-[uni/fabric/slgroup-ngsiem-syslog/rdst-198.51.100.20]/mod-4294981149] Syslog Remote Destination 198.51.100.20 modified by user admin, change set: severity (Old: warnings, New: information)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco ACI syslog from the APIC and the fabric switches.
+# Child of CISCO_ACI_SYSLOG_PARENT: audit log records (aaaModLR), a configuration object created,
+# modified or deleted, to CloudAudit:
+#   [<code>][transition][info][subj-[<object DN>]/mod-<id>] [user <name>] <description>
+# The description reads like "Tenant <name> created" or "<object> modified by user <name>, change
+# set: <attribute> (Old: <value>, New: <value>)". Older releases name the user only in the
+# description, and some descriptions name none. Audit codes change between releases (user created
+# was E4205213 and is E4211093), so the code goes to additional_event_data as it is.
+# event, rec, node, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+text = event["text"]
+d = text|^(?P<what>.*?)\s+(?P<verb>created|modified|deleted)(?:\s+by user (?P<user>[^,\s]+))?(?:,\s*change set:\s*(?P<changes>.*))?$
+user = IF event["user"] != "" THEN event["user"] ELSE d["user"]
+userName$ = IF user != "" THEN user ELSE NULL
+eventName$ = IF d["verb"] != "" THEN d["verb"] ELSE event["cause"]
+eventType$ = "audit"
+eventSource$ = "Cisco APIC"
+targetHostname$ = node
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+r1.resourceId$ = rec["affected"]
+r1.resourceType$ = d["what"]
+resources$ = []
+resources$ = IF r1.resourceId$ != "" THEN resources$ + [r1] ELSE resources$
+
+p1.key$ = "change_set"
+p1.value$ = d["changes"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF d["changes"] != "" THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+
+x1.key$ = "description"
+x1.value$ = text
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [x1]
+x2.key$ = "code"
+x2.value$ = event["code"]
+additionalEventData$.record$ = additionalEventData$.record$ + [x2]
+x3.key$ = "mod_id"
+x3.value$ = rec["id"]
+additionalEventData$.record$ = additionalEventData$.record$ + [x3]

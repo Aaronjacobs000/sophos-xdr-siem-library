@@ -1,0 +1,52 @@
+{
+  "vendor": "Cisco",
+  "product": "ACI",
+  "versions": [],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://www.cisco.com/c/en/us/td/docs/switches/datacenter/aci/apic/sw/all/syslog/guide/b_ACI_System_Messages_Guide/b_ACI_System_Messages_Guide_chapter_01.html",
+    "https://www.cisco.com/c/en/us/td/docs/switches/datacenter/aci/apic/sw/all/faults/guide/b_APIC_Faults_Errors/b_IFC_Faults_Errors_chapter_011.html",
+    "https://www.cisco.com/c/en/us/td/docs/switches/datacenter/aci/apic/sw/all/faults/guide/b_APIC_Faults_Errors/b_IFC_Faults_Errors_chapter_010.html",
+    "https://www.cisco.com/c/en/us/support/docs/cloud-systems-management/application-policy-infrastructure-controller-apic/225786-configure-and-troubleshoot-syslog-in.html",
+    "https://github.com/datacenter/aci-monitoring-stack"
+  ],
+  "notes": "In the APIC, add a syslog monitoring destination group with the data collector (Admin > External Data Collectors > Monitoring Destinations > Syslog), keep the aci format, and add a syslog source to the fabric and tenant monitoring policies that includes faults, events, audit logs and session logs at the information level. Faults ([code][lifecycle][cause][severity][DN] text) and process-crash events go to Thirdparty, with the code and cause as the title, the DN as the alert ID, the bracketed ACI severity, the lifecycle as the status, the switch node as the target host, and a cleared or retaining fault closed. Audit log records (an event whose DN ends in /mod-<id>) go to CloudAudit with the user, created, modified or deleted as the event name, the object DN as the resource and the change set as a request parameter. Session log records with a login or logout trigger go to Auth with the local or remote user, the client address and type, and the session ID. Other events, the NX-OS messages switches wrap in E4204936, and session refreshes stay in generic. Cisco's guides show fault, event, audit and session lines; they show no logout, failed login or Enhanced Log (RFC 5424) header, and the [user <name>] token only on session lines, so the parser's handling of those is inferred. Cisco's syslog severity numbers don't always match the bracketed severity, so the parser reads the brackets. Times are read as UTC unless the line gives a zone. Samples are made up from Cisco's example lines and fault reference, with current codes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (132 of 132 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (123 of 123 fields, each line taken in 5 of 5 runs). With no custom parser, the built-in Cisco_IOS_Master parser takes the NX-OS line wrapped in E4204936 and normalizes nothing; with this parent present, the parent took that line in 16 of 16 Run Tests. No built-in parser claimed the other lines.",
+  "parsers": [
+    {
+      "name": "CISCO_ACI_SYSLOG_PARENT",
+      "file": "CISCO_ACI_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "CISCO_ACI_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "CISCO_ACI_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "CISCO_ACI_SYSLOG_CHILD_CLOUDAUDIT",
+      "file": "CISCO_ACI_SYSLOG_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "CISCO_ACI_SYSLOG_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "CISCO_ACI_SYSLOG_CHILD_AUTH",
+      "file": "CISCO_ACI_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "CISCO_ACI_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}
