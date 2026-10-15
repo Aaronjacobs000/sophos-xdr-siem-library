@@ -1,0 +1,75 @@
+!SAMPLE=<182>Oct 15 00:15:01 ws01.example.com MSWinEventLog	1	Microsoft-Windows-Sysmon/Operational	2817	Thu Oct 15 00:15:01 2026	1	Microsoft-Windows-Sysmon	SYSTEM	User	Information	ws01.example.com	Process Create (rule: ProcessCreate)		Process Create: RuleName: - UtcTime: 2026-10-15 00:15:01.123 ProcessGuid: {5c7b1d2e-6a10-6710-1a00-000000000700} ProcessId: 4321 Image: C:\Windows\System32\cmd.exe FileVersion: 10.0.22621.4111 (WinBuild.160101.0800) Description: Windows Command Processor Product: Microsoft® Windows® Operating System Company: - OriginalFileName: Cmd.Exe CommandLine: "C:\Windows\system32\cmd.exe" /c whoami /all CurrentDirectory: C:\Users\jdoe\ User: EXAMPLE\jdoe LogonGuid: {5c7b1d2e-69f0-6710-2bd8-080000000000} LogonId: 0x8D82B TerminalSessionId: 1 IntegrityLevel: Medium Hashes: SHA256=0B1C2D3E4F5061728394A5B6C7D8E9F000112233445566778899AABBCCDDEEFF ParentProcessGuid: {5c7b1d2e-69f1-6710-5c00-000000000700} ParentProcessId: 6120 ParentImage: C:\Windows\explorer.exe ParentCommandLine: C:\Windows\Explorer.EXE ParentUser: EXAMPLE\jdoe	2817
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\tMicrosoft-Windows-Sysmon/Operational\t[^\t]*\t[^\t]*\t1\tMicrosoft-Windows-Sysmon\t
+!SCHEMA=scwx.process
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Sysmon event 1 (Process Create) from the Microsoft-Windows-Sysmon/Operational log, sent
+# in Snare format over syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log
+# integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks with
+# spaces, so each "Label: value" pair ends where the next label starts.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = " " + s["msg"] + " "
+
+sensorType$ = "Microsoft Sysmon"
+sensorEventId$ = s["logcounter"]
+computerName$ = s["computer"]
+hostId$ = s["computer"]
+os$.os$ = "OS_WINDOWS"
+
+# UtcTime is UTC with milliseconds. Without it, read the Snare date and time, which Sophos asks
+# you to send in UTC.
+utc = msg|\sUtcTime: (?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF utc["v"] != "" THEN DATETIME(utc["v"], "2006-01-02 15:04:05.999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+processCreateTimeUsec$ = IF utc["v"] != "" THEN eventTimeUsec$ ELSE NULL
+
+# Fields in Sysmon's order: RuleName, UtcTime, ProcessGuid, ProcessId, Image, FileVersion,
+# Description, Product, Company, OriginalFileName, CommandLine, CurrentDirectory, User, LogonGuid,
+# LogonId, TerminalSessionId, IntegrityLevel, Hashes, ParentProcessGuid, ParentProcessId,
+# ParentImage, ParentCommandLine, ParentUser. Releases before schema 4.81 have no ParentUser.
+guid = msg|\sProcessGuid: (?P<v>\{[^}\s]*\})
+pid = msg|\sProcessId: (?P<v>\d+)\s
+image = msg|\sImage: (?P<v>.*?)\s+(?:FileVersion|Description|Product|Company|OriginalFileName|CommandLine):
+cmd = msg|\sCommandLine: (?P<v>.*?)\s+CurrentDirectory:
+user = msg|\sUser: (?P<v>.*?)\s+(?:LogonGuid|LogonId):
+integrity = msg|\sIntegrityLevel: (?P<v>\S+)\s
+hashes = msg|\sHashes: (?P<v>\S+)\s
+pguid = msg|\sParentProcessGuid: (?P<v>\{[^}\s]*\})
+ppid = msg|\sParentProcessId: (?P<v>\d+)\s
+pimage = msg|\sParentImage: (?P<v>.*?)\s+ParentCommandLine:
+
+processCorrelationId$ = guid["v"]
+processId$ = pid["v"]
+imagePath$ = image["v"]
+base = image["v"]|(?P<v>[^\\/]+)$
+process$ = base["v"]
+commandline$ = cmd["v"]
+username$ = user["v"]
+parentProcessCorrelationId$ = pguid["v"]
+parentProcessId$ = ppid["v"]
+parentImagePath$ = pimage["v"]
+
+# Hashes holds the algorithms Sysmon is set to log, for example SHA1=...,MD5=...,SHA256=...,IMPHASH=...
+md5 = hashes["v"]|(?:^|,)MD5=(?P<v>[0-9A-Fa-f]{32})
+sha1 = hashes["v"]|(?:^|,)SHA1=(?P<v>[0-9A-Fa-f]{40})
+sha256 = hashes["v"]|(?:^|,)SHA256=(?P<v>[0-9A-Fa-f]{64})
+programHash$.md5$ = md5["v"]
+programHash$.sha1$ = sha1["v"]
+programHash$.sha256$ = sha256["v"]
+
+# High and System integrity mean an elevated or system token.
+lvl = integrity["v"]
+processIsAdmin$ = IF lvl == "High" OR lvl == "System" THEN TRUE ELSE NULL
+processIsAdmin$ = IF lvl == "Medium" OR lvl == "Low" OR lvl == "AppContainer" OR lvl == "Untrusted" THEN FALSE ELSE processIsAdmin$

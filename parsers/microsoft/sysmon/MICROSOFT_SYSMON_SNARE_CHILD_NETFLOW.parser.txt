@@ -1,0 +1,85 @@
+!SAMPLE=<182>Oct 15 00:15:02 ws01.example.com MSWinEventLog	1	Microsoft-Windows-Sysmon/Operational	2820	Thu Oct 15 00:15:02 2026	3	Microsoft-Windows-Sysmon	SYSTEM	User	Information	ws01.example.com	Network connection detected (rule: NetworkConnect)		Network connection detected: RuleName: - UtcTime: 2026-10-15 00:15:02.456 ProcessGuid: {5c7b1d2e-6a12-6710-1b00-000000000700} ProcessId: 4410 Image: C:\Windows\System32\curl.exe User: EXAMPLE\jdoe Protocol: tcp Initiated: true SourceIsIpv6: false SourceIp: 192.0.2.10 SourceHostname: ws01.example.com SourcePort: 50432 SourcePortName: - DestinationIsIpv6: false DestinationIp: 198.51.100.20 DestinationHostname: - DestinationPort: 443 DestinationPortName: https	2820
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\tMicrosoft-Windows-Sysmon/Operational\t[^\t]*\t[^\t]*\t3\tMicrosoft-Windows-Sysmon\t
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Sysmon event 3 (Network connection detected) from the Microsoft-Windows-Sysmon/Operational log, sent in Snare format over
+# syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks with
+# spaces, so each "Label: value" pair ends where the next label starts.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = " " + s["msg"] + " "
+
+sensorType$ = "Microsoft Sysmon"
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+
+# UtcTime is UTC with milliseconds. Without it, read the Snare date and time, which Sophos asks
+# you to send in UTC.
+utc = msg|\sUtcTime: (?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF utc["v"] != "" THEN DATETIME(utc["v"], "2006-01-02 15:04:05.999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+
+# Fields in Sysmon's order: RuleName, UtcTime, ProcessGuid, ProcessId, Image, User, Protocol,
+# Initiated, SourceIsIpv6, SourceIp, SourceHostname, SourcePort, SourcePortName,
+# DestinationIsIpv6, DestinationIp, DestinationHostname, DestinationPort, DestinationPortName.
+rule = msg|\sRuleName: (?P<v>.*?)\s+UtcTime:
+guid = msg|\sProcessGuid: (?P<v>\{[^}\s]*\})
+pid = msg|\sProcessId: (?P<v>\d+)\s
+image = msg|\sImage: (?P<v>.*?)\s+(?:User|Protocol):
+user = msg|\sUser: (?P<v>.*?)\s+Protocol:
+proto = msg|\sProtocol: (?P<v>\S+)\s
+initiated = msg|\sInitiated: (?P<v>\S+)\s
+src = msg|\sSourceIp: (?P<v>\S+)\s
+srcHost = msg|\sSourceHostname: (?P<v>.*?)\s+SourcePort:
+srcPort = msg|\sSourcePort: (?P<v>\d+)\s
+dst = msg|\sDestinationIp: (?P<v>\S+)\s
+dstHost = msg|\sDestinationHostname: (?P<v>.*?)\s+DestinationPort:
+dstPort = msg|\sDestinationPort: (?P<v>\d+)\s
+dstPortName = msg|\sDestinationPortName: (?P<v>.*?)\s*$
+
+sourceAddress$ = src["v"]
+sourcePort$ = srcPort["v"]
+destinationAddress$ = dst["v"]
+destinationPort$ = dstPort["v"]
+p = LOWERCASE(proto["v"])
+protocol$ = IF p == "tcp" THEN 6 ELSE NULL
+protocol$ = IF p == "udp" THEN 17 ELSE protocol$
+# Initiated is true when the process on this host opened the connection.
+direction$ = IF initiated["v"] == "true" THEN "OUTBOUND" ELSE NULL
+direction$ = IF initiated["v"] == "false" THEN "INBOUND" ELSE direction$
+processImagePath$ = image["v"]
+
+# Sysmon writes "-" for a value it doesn't have.
+r1.key$ = "process_id"
+r1.value$ = pid["v"]
+r2.key$ = "process_guid"
+r2.value$ = guid["v"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1, r2]
+r3.key$ = "user"
+r3.value$ = user["v"]
+eventMetadata$.record$ = IF user["v"] != "" AND user["v"] != "-" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "source_hostname"
+r4.value$ = srcHost["v"]
+eventMetadata$.record$ = IF srcHost["v"] != "" AND srcHost["v"] != "-" THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$
+r5.key$ = "destination_hostname"
+r5.value$ = dstHost["v"]
+eventMetadata$.record$ = IF dstHost["v"] != "" AND dstHost["v"] != "-" THEN eventMetadata$.record$ + [r5] ELSE eventMetadata$.record$
+r6.key$ = "destination_port_name"
+r6.value$ = dstPortName["v"]
+eventMetadata$.record$ = IF dstPortName["v"] != "" AND dstPortName["v"] != "-" THEN eventMetadata$.record$ + [r6] ELSE eventMetadata$.record$
+r7.key$ = "rule_name"
+r7.value$ = rule["v"]
+eventMetadata$.record$ = IF rule["v"] != "" AND rule["v"] != "-" THEN eventMetadata$.record$ + [r7] ELSE eventMetadata$.record$

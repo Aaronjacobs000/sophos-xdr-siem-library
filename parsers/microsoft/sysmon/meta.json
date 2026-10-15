@@ -1,0 +1,62 @@
+{
+  "vendor": "Microsoft",
+  "product": "Sysmon",
+  "versions": [
+    "15"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon",
+    "https://prophecyinternational.atlassian.net/wiki/spaces/WADOC/pages/1233224043/Appendix+A+-+Windows+Event+Output+Format",
+    "https://docs.nxlog.co/agent/current/xm/syslog.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft/WindowsEventLog/Setup/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For Sysmon on Windows hosts that forward the Microsoft-Windows-Sysmon/Operational log in Snare format over syslog, through NXLog or the Snare agent, the feed of the Sophos Windows Event Log integration. Send times in UTC, as Sophos asks. Event 1 goes to Process; 3 to Netflow; 22 to DNS, with the answers and the RCODE; 11, 23, 26, 27, 28 and 29 to FileMod, where 27 and 28 (blocked by Sysmon) have was_modification_allowed false; and 12, 13 and 14 to Registry. Other Sysmon events stay generic. The event time is UtcTime. The Registry schema has no field for the registry event type, image or user, and the DNS schema none for the process, so those stay in original_data. Each parser is a child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that takes Snare events no other built-in parser handles. Save each in the console with Set Global Parent in Parser Script turned on: the parser API refuses code with !PARENT. In a lab tenant on 2026-10-15, a child of Microsoft_Windows_SNARE_Master competed with SNARE_Unsupported, and once SNARE_Unsupported took a line it took every later line in the same Run Test, so a sibling got no Sysmon line that followed another Snare event. Under SNARE_Unsupported each parser took all of its lines in each of 15 Run Tests. Each parser passed Run Test there on 2026-10-15 (169 of 169 fields matched the emulator in each of 3 runs). In Run Test the Snare parent also sets os (Windows) on every line and computer on Process lines, fields the engine stores but the docs' schema tables don't list, so the emulator leaves them out. Samples are made up in Sysmon's schema 4.91 field order and the Snare and NXLog output formats. Older Sysmon releases (schema before 4.81) lack some fields, which stay unset.",
+  "parsers": [
+    {
+      "name": "MICROSOFT_SYSMON_SNARE_CHILD_PROCESS",
+      "file": "MICROSOFT_SYSMON_SNARE_CHILD_PROCESS.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.process"
+    },
+    {
+      "name": "MICROSOFT_SYSMON_SNARE_CHILD_NETFLOW",
+      "file": "MICROSOFT_SYSMON_SNARE_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "MICROSOFT_SYSMON_SNARE_CHILD_DNSQUERY",
+      "file": "MICROSOFT_SYSMON_SNARE_CHILD_DNSQUERY.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.dnsquery"
+    },
+    {
+      "name": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD",
+      "file": "MICROSOFT_SYSMON_SNARE_CHILD_FILEMOD.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.filemod"
+    },
+    {
+      "name": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY",
+      "file": "MICROSOFT_SYSMON_SNARE_CHILD_REGISTRY.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.registry"
+    }
+  ]
+}

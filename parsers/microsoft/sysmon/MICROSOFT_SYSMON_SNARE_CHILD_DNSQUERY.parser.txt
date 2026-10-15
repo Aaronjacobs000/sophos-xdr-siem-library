@@ -1,0 +1,61 @@
+!SAMPLE=<182>Oct 15 00:15:03 ws01.example.com MSWinEventLog	1	Microsoft-Windows-Sysmon/Operational	2821	Thu Oct 15 00:15:03 2026	22	Microsoft-Windows-Sysmon	SYSTEM	User	Information	ws01.example.com	Dns query (rule: DnsQuery)		Dns query: RuleName: - UtcTime: 2026-10-15 00:15:02.789 ProcessGuid: {5c7b1d2e-6a12-6710-1b00-000000000700} ProcessId: 4410 QueryName: updates.example.com QueryStatus: 0 QueryResults: type:  5 cdn.example.net;::ffff:198.51.100.20;::ffff:198.51.100.21; Image: C:\Windows\System32\curl.exe User: EXAMPLE\jdoe	2821
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\tMicrosoft-Windows-Sysmon/Operational\t[^\t]*\t[^\t]*\t22\tMicrosoft-Windows-Sysmon\t
+!SCHEMA=scwx.dnsquery
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Sysmon event 22 (Dns query) from the Microsoft-Windows-Sysmon/Operational log, sent in Snare format over
+# syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter. The agents replace the message's line breaks with
+# spaces, so each "Label: value" pair ends where the next label starts.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = " " + s["msg"] + " "
+
+sensorType$ = "Microsoft Sysmon"
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+
+# UtcTime is UTC with milliseconds. Without it, read the Snare date and time, which Sophos asks
+# you to send in UTC.
+utc = msg|\sUtcTime: (?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF utc["v"] != "" THEN DATETIME(utc["v"], "2006-01-02 15:04:05.999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+
+# Fields in Sysmon's order: RuleName, UtcTime, ProcessGuid, ProcessId, QueryName, QueryStatus,
+# QueryResults, Image, User. The DNS schema has no fields for the process or the user.
+name = msg|\sQueryName: (?P<v>\S+)\s
+status = msg|\sQueryStatus: (?P<v>\d+)\s
+results = msg|\sQueryResults: (?P<v>.*?)\s+Image:
+queryName$ = name["v"]
+
+# QueryStatus is a Windows status code: 0 is success, 9001 to 9023 are DNS_ERROR_RCODE_* (9000
+# plus the DNS RCODE, so 9003 is NXDOMAIN), and 9501 is a name with no records of that type.
+# Other codes, such as 1460 for a timeout, carry no RCODE.
+# A missing QueryStatus reads as -1, which maps to no RCODE.
+stTxt = IF status["v"] != "" THEN status["v"] ELSE "-1"
+st = INT(stTxt, 10)
+responseCode$ = IF st == 0 OR st == 9501 THEN 0 ELSE NULL
+responseCode$ = IF st > 9000 AND st < 9024 THEN st - 9000 ELSE responseCode$
+
+# QueryResults lists the answers, each ending in ";": "type:  5 <name>" for a record that isn't
+# an address, "::ffff:<IPv4>" for an A record and a plain IPv6 address for an AAAA record. "-"
+# means no answers.
+qr = IF results["v"] != "-" THEN results["v"] ELSE ""
+types = REPLACE_REGEX(qr, "type:\\s+(\\d+)\\s+[^;]*", "${1}")
+types = REPLACE_REGEX(types, "::ffff:\\d+\\.\\d+\\.\\d+\\.\\d+", "1")
+types = REPLACE_REGEX(types, "(^|;)[0-9A-Fa-f]*:[0-9A-Fa-f:.]*", "${1}28")
+datas = REPLACE_REGEX(qr, "type:\\s+\\d+\\s+", "")
+datas = REPLACE_REGEX(datas, "::ffff:(\\d+\\.\\d+\\.\\d+\\.\\d+)", "${1}")
+answers = ADDFIELD(NULL, "responseData$", SPLIT(datas, ";", TRUE))
+answers = ADDFIELD(answers, "responseType$", SPLIT(types, ";", TRUE))
+responses$.records$ = IF qr != "" THEN answers ELSE NULL
