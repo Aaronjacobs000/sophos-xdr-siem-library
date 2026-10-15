@@ -1,0 +1,71 @@
+!SAMPLE=<37>1 2026-10-14T09:10:41.557210+11:00 IBMI01.CORP.EXAMPLE.COM - - - - CEF:0|IBM|IBM i|7.5|QSYS-AUDJRN|T=CP|Low|reason=User profile changed, created, or restored suser=QSECOFR sproc=223344/QSECOFR/QPADEV0004 shost=IBMI01 src=192.0.2.80 spt=51544 objName=JSMITH fileType=*USRPRF attrName=SPCAUT attrValue=*ALLOBJ *SECADM oldAttrValue=*NONE
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: IBM i security audit journal (QAUDJRN) entries other than PW, as CEF: authority failures
+# (AF), authority and ownership changes (CA, OW), user profile changes (CP), system value changes
+# (SV), object creation and deletion and the rest.
+# Child of IBM_I_CEF_PARENT: each one to CloudAudit, with the entry's description as the event name,
+# T=<type> as the event type, the job's user as the user, the client address as the source and the
+# system as the target host. The object and attribute keys go to request_parameters.
+# v, h, ibm, entryType, msg, actor, client, clientOk, reason, jobText, hostName, sensorType$,
+# hostId$ and eventTimeUsec$ come from the parent.
+
+eventName$ = reason
+eventType$ = "T=" + entryType
+eventSource$ = "QAUDJRN"
+userName$ = IF actor != "" THEN actor ELSE NULL
+sourceAddress$ = IF clientOk THEN client ELSE NULL
+targetHostname$ = IF hostName != "" THEN hostName ELSE NULL
+# An authority failure (AF) is an attempt the system refused.
+status$ = IF entryType == "AF" THEN "Failed" ELSE "Success"
+
+# IBM's keys for the object and what changed, and Powertech's fname, fileType and duser.
+r1.key$ = "objName"
+r1.value$ = STRING(v["objName"])
+r2.key$ = "fileType"
+r2.value$ = STRING(v["fileType"])
+r3.key$ = "attrName"
+r3.value$ = STRING(v["attrName"])
+r4.key$ = "attrValue"
+r4.value$ = STRING(v["attrValue"])
+r5.key$ = "oldAttrValue"
+r5.value$ = STRING(v["oldAttrValue"])
+r6.key$ = "fname"
+r6.value$ = STRING(v["fname"])
+r7.key$ = "filePath"
+r7.value$ = STRING(v["filePath"])
+r8.key$ = "oldObjName"
+r8.value$ = STRING(v["oldObjName"])
+r9.key$ = "duser"
+r9.value$ = STRING(v["duser"])
+r10.key$ = "dloName"
+r10.value$ = STRING(v["dloName"])
+requestParameters$.record$ = []
+requestParameters$.record$ = IF r1.value$ != "" THEN requestParameters$.record$ + [r1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r2.value$ != "" THEN requestParameters$.record$ + [r2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r3.value$ != "" THEN requestParameters$.record$ + [r3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r4.value$ != "" THEN requestParameters$.record$ + [r4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r5.value$ != "" THEN requestParameters$.record$ + [r5] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r6.value$ != "" THEN requestParameters$.record$ + [r6] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r7.value$ != "" THEN requestParameters$.record$ + [r7] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r8.value$ != "" THEN requestParameters$.record$ + [r8] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r9.value$ != "" THEN requestParameters$.record$ + [r9] ELSE requestParameters$.record$
+requestParameters$.record$ = IF r10.value$ != "" THEN requestParameters$.record$ + [r10] ELSE requestParameters$.record$
+
+a1.key$ = "job"
+a1.value$ = jobText
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF jobText != "" THEN additionalEventData$.record$ + [a1] ELSE additionalEventData$.record$
+a2.key$ = "msg"
+a2.value$ = msg
+additionalEventData$.record$ = IF msg != "" THEN additionalEventData$.record$ + [a2] ELSE additionalEventData$.record$
+a3.key$ = "program"
+a3.value$ = STRING(v["cs3"])
+additionalEventData$.record$ = IF a3.value$ != "" THEN additionalEventData$.record$ + [a3] ELSE additionalEventData$.record$
+a4.key$ = "sequence"
+a4.value$ = STRING(v["cs6"])
+additionalEventData$.record$ = IF a4.value$ != "" THEN additionalEventData$.record$ + [a4] ELSE additionalEventData$.record$
