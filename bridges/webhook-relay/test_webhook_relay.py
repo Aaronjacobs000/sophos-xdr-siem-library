@@ -390,6 +390,11 @@ class RelayTest(unittest.TestCase):
                        "Acme Dental", "billing@example.com", autotask_sig):
             self.assertNotIn(secret, logged)
 
+    def test_ingest_key_with_a_line_break_is_refused_without_showing_it(self):
+        with self.assertRaises(r.RelayError) as caught:
+            r.load_config(self.env(NGSIEM_INGEST_KEY="key-part-one\nkey-part-two"))
+        self.assertNotIn("key-part", str(caught.exception))
+
     def test_config_is_checked(self):
         bad = {
             "plain http ingest": {"NGSIEM_INGEST_URL": "http://ingest.example.com/http-endpoint/v1/x"},

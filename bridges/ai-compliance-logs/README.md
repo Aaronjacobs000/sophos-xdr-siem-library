@@ -68,7 +68,7 @@ Exit code 0 means every source was read and sent. On an error the bridge logs th
 
 All three APIs, and HTTP Ingest, deliver at least once. The bridge drops repeats it has seen recently, but a crash between sending a batch and saving the cursor can send that batch again. HTTP Ingest does not remove duplicates.
 
-Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429 or 5xx the bridge waits (honoring `Retry-After`) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429 or 5xx the bridge waits (honoring `Retry-After` up to 5 minutes) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 ## Privacy
 

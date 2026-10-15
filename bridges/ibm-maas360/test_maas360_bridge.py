@@ -356,5 +356,20 @@ class LegacyNameTest(unittest.TestCase):
         self.assertFalse(c._flag({"COLLECTOR_DRY_RUN": "1", "BRIDGE_DRY_RUN": "0"}, "BRIDGE_DRY_RUN", False))
 
 
+class RequestSafetyTest(unittest.TestCase):
+    def test_retry_after_is_capped_at_five_minutes(self):
+        for value in ("99999999", "1e12", "inf", "nan", "-5"):
+            delay = c._retry_delay(0, value)
+            self.assertTrue(0.0 <= delay <= 300.0, (value, delay))
+
+    def test_key_with_a_line_break_stays_out_of_the_error(self):
+        # http.client refuses the header before it connects, so nothing listens on the port.
+        with self.assertRaises(c.BridgeError) as caught:
+            c._request("GET", "http://127.0.0.1:9/x", {"Authorization": "Bearer key-part-one\nkey-part-two"}, None, 2.0,
+                       what="test request")
+        self.assertNotIn("key-part", str(caught.exception))
+        self.assertIn("line break", str(caught.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
