@@ -1,0 +1,32 @@
+!SAMPLE=<14>date="2026-10-14" time="09:40:52" tz="AEST" logid="0400000001" devid="FAIVMSTM00000001" type="event" subtype="user" level="information" user="admin" ui="ssh(192.0.2.11)" action="none" status="none" msg="changed settings of 'ips-dbs' for 'system ndr settings' (user: admin, from: ssh(192.0.2.11))"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNDR logs in the default syslog format.
+# Child of FORTINET_FORTINDR_KV_PARENT: user events other than logins and logouts, such as
+# settings changes, to ManagementEvent.
+# kv, msg, logId, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from
+# the parent.
+
+user = STRING(kv["user"])
+mu = msg|\(user: (?P<u>[^,)]+)
+user = IF user == "" OR user == "none" THEN mu["u"] ELSE user
+username$ = IF user != "" AND user != "none" THEN user ELSE NULL
+# ui is the interface and, when there is one, the address: GUI(192.0.2.10), ssh(192.0.2.11), init.
+ui = STRING(kv["ui"])
+uim = ui|^(?P<via>[A-Za-z_-]+)(?:\((?P<ip>[0-9A-Fa-f.:]+)\))?$
+channel$ = IF uim["via"] != "" AND uim["via"] != "none" THEN uim["via"] ELSE NULL
+clientHostname$ = IF uim["ip"] != "" THEN uim["ip"] ELSE NULL
+# A settings change names the setting and the configuration path: changed settings of '<attr>'
+# for '<path>'.
+cs = msg|^changed settings of '(?P<attr>[^']*)' for '(?P<path>[^']*)'
+operationName$ = IF cs["path"] != "" THEN "changed settings" ELSE "user event"
+namespace$ = IF cs["path"] != "" THEN cs["path"] ELSE NULL
+command$ = IF msg != "" THEN msg ELSE NULL
+act = STRING(kv["action"])
+operation$ = IF act != "" AND act != "none" THEN act ELSE NULL
+status = STRING(kv["status"])
+result$ = IF status != "" AND status != "none" THEN status ELSE NULL

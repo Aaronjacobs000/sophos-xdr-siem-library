@@ -1,0 +1,69 @@
+!SAMPLE=<14>date="2026-10-14" time="09:12:44" tz="AEST" logid="0602000001" devid="FAIVMSTM00000001" type="ndr" subtype="Botnet" severity="high" sessionid=63313 alproto="DNS" tlproto="UDP" srcip="192.0.2.25" srcport=50000 dstip="198.51.100.53" dstport=53 srcmac="00:00:5e:00:53:01" dstmac="00:00:5e:00:53:02" vlanid=0 behavior="CONN" botname="botnet Example" hostname="c2.example.com"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:^|[\s>])date="\d{4}-\d{2}-\d{2}"\s+time="[\d:]+"\s+tz="[^"]*"\s+logid="\d+"\s.*\bdevid="F(?:AI|ND)[^"]*"\s+type="(?:ndr|attack|event|netflow)"
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNDR (on-premises, formerly FortiAI) logs sent to a syslog server in the default
+# format, key="value" with numbers unquoted:
+#   date="<date>" time="<time>" tz="<zone>" logid="<id>" devid="<serial>" type="<type>"
+#   subtype="<subtype>" <fields>
+# Fortinet's samples show no syslog header, so the parser finds date=" wherever the line starts.
+# Parent: hands NDR and NetFlow detections to the NIDS child, attack logs (malware and attack
+# chains) to the Thirdparty child, administrator logins and logouts to the Auth child and
+# other administrator events to the ManagementEvent child. Other events stay generic.
+
+kvm = originalData$|(?P<kv>date="\d{4}-\d{2}-\d{2}".*)$
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM.
+kv = CEF("CEF:0|Fortinet|FortiNDR|0|kv|kv|0|" + kvm["kv"])
+logType = LOWERCASE(STRING(kv["type"]))
+sub = STRING(kv["subtype"])
+msg = STRING(kv["msg"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Fortinet FortiNDR"
+logId = STRING(kv["logid"])
+sensorEventId$ = IF logId != "" THEN logId ELSE NULL
+hostId$ = STRING(kv["devid"])
+
+# Administrator sign-ins are user events whose message is one of FortiNDR's login and logout texts.
+login = msg|^User \S+ (?:login successfully from|login failed from|login blocked from|logout from|time out on)\s
+eventType$ = logType
+eventType$ = IF logType == "netflow" THEN "ndr" ELSE eventType$
+eventType$ = IF logType == "event" AND LOWERCASE(sub) == "user" THEN "admin" ELSE eventType$
+eventType$ = IF eventType$ == "admin" AND login[0] != "" THEN "login" ELSE eventType$
+
+# date and time are FortiNDR's local time, and tz names its zone. The parser knows the offsets of
+# the zone names below and of numeric zones such as +10 or +0530; for any other zone (including
+# names that mean more than one zone, such as CST, IST and PST) it keeps the time the line arrived.
+d = STRING(kv["date"])
+t = STRING(kv["time"])
+tz = STRING(kv["tz"])
+numTz = tz|^(?P<sign>[+-])(?P<h>\d{2}):?(?P<m>\d{2})?$
+off = ""
+off = IF numTz["sign"] != "" AND numTz["m"] != "" THEN numTz["sign"] + numTz["h"] + numTz["m"] ELSE off
+off = IF numTz["sign"] != "" AND numTz["m"] == "" THEN numTz["sign"] + numTz["h"] + "00" ELSE off
+z = UPPERCASE(tz)
+off = IF z == "UTC" OR z == "GMT" OR z == "Z" OR z == "WET" THEN "+0000" ELSE off
+off = IF z == "AEST" THEN "+1000" ELSE off
+off = IF z == "AEDT" THEN "+1100" ELSE off
+off = IF z == "ACST" THEN "+0930" ELSE off
+off = IF z == "ACDT" THEN "+1030" ELSE off
+off = IF z == "AWST" THEN "+0800" ELSE off
+off = IF z == "NZST" THEN "+1200" ELSE off
+off = IF z == "NZDT" THEN "+1300" ELSE off
+off = IF z == "JST" OR z == "KST" THEN "+0900" ELSE off
+off = IF z == "HKT" OR z == "SGT" THEN "+0800" ELSE off
+off = IF z == "WIB" THEN "+0700" ELSE off
+off = IF z == "PDT" OR z == "MST" THEN "-0700" ELSE off
+off = IF z == "MDT" THEN "-0600" ELSE off
+off = IF z == "CDT" OR z == "EST" THEN "-0500" ELSE off
+off = IF z == "EDT" THEN "-0400" ELSE off
+off = IF z == "BST" OR z == "CET" OR z == "WEST" THEN "+0100" ELSE off
+off = IF z == "CEST" OR z == "EET" THEN "+0200" ELSE off
+off = IF z == "EEST" THEN "+0300" ELSE off
+dateOk = d|^\d{4}-\d{2}-\d{2}$
+timeOk = t|^\d{2}:\d{2}:\d{2}$
+eventTimeUsec$ = IF off != "" AND dateOk[0] != "" AND timeOk[0] != "" THEN DATETIME(d + " " + t + " " + off, "2006-01-02 15:04:05 -0700") ELSE eventTimeUsec$

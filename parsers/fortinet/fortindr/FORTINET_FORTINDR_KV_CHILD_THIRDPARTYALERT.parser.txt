@@ -1,0 +1,108 @@
+!SAMPLE=<9>date="2026-10-14" time="09:16:02" tz="AEST" logid="0521000001" devid="FAIVMSTM00000001" type="attack" subtype="Malware" level="alert" action="none" devicetype="sniffer" fossn="" fosvd="" fileid=435387294 filesize=3132 filetype="PE" md5="d41d8cd98f00b204e9800998ecf8427e" sha1="da39a3ee5e6b4b0d3255bfef95601890afd80709" sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" virusname="W32/Example.A!tr" confidence="low" risklevel="medium" url="http://files.example.com/data/payload.bin" attackerip="203.0.113.2" attackerport=80 victimip="192.0.2.76" victimport=10578 totalproctime=4 detype="N/A" subdetype="N/A" detypelstcnt=1 detypelst="trojan" detypecounts="64" eventtime=1792019762019287
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="attack"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNDR logs in the default syslog format.
+# Child of FORTINET_FORTINDR_KV_PARENT: attack logs, a malware detection (subtype Malware) or an
+# attack chain (subtype Attack Chain), to Thirdparty.
+# kv, logType, sub, logId, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$
+# come from the parent.
+
+vendor$ = "Fortinet"
+provider$ = "FortiNDR"
+alertCategory$ = sub
+virus = TRIM(STRING(kv["virusname"]))
+scenario = STRING(kv["scenariotype"])
+family = STRING(kv["malwarefamily"])
+ftype = STRING(kv["filetype"])
+url = STRING(kv["url"])
+isChain = LOWERCASE(sub) == "attack chain"
+title$ = "FortiNDR " + sub
+title$ = IF virus != "" THEN "FortiNDR malware: " + virus ELSE title$
+title$ = IF isChain AND scenario != "" THEN "FortiNDR attack chain: " + scenario ELSE title$
+summary$ = title$
+summary$ = IF virus != "" AND ftype != "" THEN virus + " in a " + ftype + " file" ELSE summary$
+summary$ = IF virus != "" AND url != "" THEN summary$ + " from " + url ELSE summary$
+summary$ = IF isChain AND family != "" AND family != "N/A" THEN summary$ + " (" + family + ")" ELSE summary$
+eid = STRING(kv["eventid"])
+alertId$ = IF eid != "" THEN eid ELSE NULL
+
+# The risk level sets the severity; without one, the log level does.
+risk = LOWERCASE(TRIM(REPLACE_REGEX(STRING(kv["risklevel"]), `[",]`, "")))
+level = LOWERCASE(STRING(kv["level"]))
+vendorSeverity$ = IF risk != "" THEN risk ELSE level
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF level == "emergency" OR level == "alert" OR level == "critical" THEN "HIGH" ELSE severity$
+severity$ = IF level == "error" OR level == "warning" THEN "MEDIUM" ELSE severity$
+severity$ = IF level == "notice" OR level == "information" THEN "LOW" ELSE severity$
+severity$ = IF risk == "critical" THEN "CRITICAL" ELSE severity$
+severity$ = IF risk == "high" THEN "HIGH" ELSE severity$
+severity$ = IF risk == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF risk == "low" THEN "LOW" ELSE severity$
+
+attacker = STRING(kv["attackerip"])
+victim = STRING(kv["victimip"])
+sourceAddress$ = IF attacker != "" THEN attacker ELSE NULL
+destinationAddress$ = IF victim != "" THEN victim ELSE NULL
+apText = STRING(kv["attackerport"])
+vpText = STRING(kv["victimport"])
+apm = apText|^(?P<n>\d{1,5})$
+vpm = vpText|^(?P<n>\d{1,5})$
+sourcePort$ = IF apm["n"] != "" THEN INT(apm["n"], 10) ELSE NULL
+destinationPort$ = IF vpm["n"] != "" THEN INT(vpm["n"], 10) ELSE NULL
+destinationUrl$ = IF url != "" THEN url ELSE NULL
+
+d1.key$ = "log_id"
+d1.value$ = logId
+d2.key$ = "level"
+d2.value$ = level
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "file_md5"
+d3.value$ = LOWERCASE(TRIM(STRING(kv["md5"])))
+additionalData$.record$ = IF d3.value$ != "" THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "file_sha1"
+d4.value$ = LOWERCASE(TRIM(STRING(kv["sha1"])))
+additionalData$.record$ = IF d4.value$ != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_sha256"
+d5.value$ = LOWERCASE(TRIM(STRING(kv["sha256"])))
+additionalData$.record$ = IF d5.value$ != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+d6.key$ = "file_type"
+d6.value$ = ftype
+additionalData$.record$ = IF ftype != "" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "file_size"
+d7.value$ = STRING(kv["filesize"])
+additionalData$.record$ = IF d7.value$ != "" THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "file_id"
+d8.value$ = STRING(kv["fileid"])
+additionalData$.record$ = IF d8.value$ != "" THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+d9.key$ = "confidence"
+d9.value$ = STRING(kv["confidence"])
+additionalData$.record$ = IF d9.value$ != "" THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "detection_types"
+d10.value$ = STRING(kv["detypelst"])
+additionalData$.record$ = IF d10.value$ != "" THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "device_type"
+d11.value$ = STRING(kv["devicetype"])
+additionalData$.record$ = IF d11.value$ != "" THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "scenario"
+d12.value$ = scenario
+additionalData$.record$ = IF scenario != "" THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "malware_family"
+d13.value$ = family
+additionalData$.record$ = IF family != "" AND family != "N/A" THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "discovery_date"
+d14.value$ = STRING(kv["discoverydate"])
+additionalData$.record$ = IF d14.value$ != "" THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "file_list"
+d15.value$ = STRING(kv["filelist"])
+additionalData$.record$ = IF d15.value$ != "" THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
+d16.key$ = "fortigate_serial"
+d16.value$ = STRING(kv["fossn"])
+additionalData$.record$ = IF d16.value$ != "" THEN additionalData$.record$ + [d16] ELSE additionalData$.record$
+d17.key$ = "eventtime"
+d17.value$ = STRING(kv["eventtime"])
+additionalData$.record$ = IF d17.value$ != "" THEN additionalData$.record$ + [d17] ELSE additionalData$.record$

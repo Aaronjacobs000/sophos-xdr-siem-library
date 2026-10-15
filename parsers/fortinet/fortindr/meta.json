@@ -1,0 +1,64 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiNDR",
+  "versions": [
+    "7.4",
+    "7.6"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.fortinet.com/document/fortindr/7.6.5/administration-guide/35119/ndr-logs-samples",
+    "https://docs.fortinet.com/document/fortindr/7.6.5/administration-guide/452249/av-log-samples",
+    "https://docs.fortinet.com/document/fortindr/7.6.5/administration-guide/17279/system-event-log-types",
+    "https://docs.fortinet.com/document/fortindr/7.6.5/administration-guide/697583/netflow-logs-samples",
+    "https://docs.fortinet.com/document/fortindr/7.6.5/administration-guide/654509/log-settings",
+    "https://docs.fortinet.com/document/fortindr/7.6.0/log-message-reference/418848/fortindr-log-message-reference",
+    "https://docs.fortinet.com/document/fortindr/7.6.5/cli-reference/905332/config-system-syslog1-settings"
+  ],
+  "notes": "For FortiNDR (on-premises, formerly FortiAI) logs sent to the data collector by a syslog server in the default format (config system syslog1 settings, format default); the README has the steps. FortiNDR Cloud, CEF and the FortiAnalyzer and OFTPS outputs aren't covered. NDR detections (Botnet, Encrypted, IOC, IPS attack, Weak cipher, ML) and NetFlow detections go to NIDS with the addresses, ports, protocol, application, VLAN, what was found in the message, the subtype as the classification and the severity as the priority. Attack logs (Malware, Attack Chain) go to Thirdparty with the malware or scenario as the title, attacker and victim, URL, event ID and risk level, and the file hashes in additional_data. Administrator logins, failed and blocked logins, logouts and timeouts (FortiNDR's documented messages) go to Auth; other user events, such as settings changes, go to ManagementEvent. Other events (system, file and performance statistics, automation) stay generic. date and time are local and tz gives only a zone name, so the parent maps numeric zones and a list of unambiguous names (Australian and New Zealand zones, JST, KST, HKT, SGT, WIB, UTC, GMT, common North American and European names) to offsets; for other names, including CST, IST and PST, the event keeps its arrival time. Fortinet's samples show no syslog header, so the parent finds date=\" wherever the line starts; lines that start with a <PRI> and lines with a BSD header both passed. The pairs are read with CEF(), because Sophos NG-SIEM's SPLIT_NAME_VALUES cuts a quoted value that holds \" key=\" text. Fortinet doesn't say whether eventtime, in malware and NetFlow logs, is the detection time, so it goes to additional_data unread. No built-in parser claimed these lines in 3 Run Tests. Samples are made up from Fortinet's FortiNDR 7.6 log samples and log message reference. The children, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (203 of 203 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (199 of 199 fields, each line taken in 5 of 5 runs, no other line taken).",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTINDR_KV_PARENT",
+      "file": "FORTINET_FORTINDR_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "FORTINET_FORTINDR_KV_CHILD_NIDS",
+      "file": "FORTINET_FORTINDR_KV_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINDR_KV_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "FORTINET_FORTINDR_KV_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTINDR_KV_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINDR_KV_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FORTINET_FORTINDR_KV_CHILD_AUTH",
+      "file": "FORTINET_FORTINDR_KV_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINDR_KV_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "FORTINET_FORTINDR_KV_CHILD_MGMT",
+      "file": "FORTINET_FORTINDR_KV_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINDR_KV_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+!SAMPLE=<14>date="2026-10-14" time="09:12:44" tz="AEST" logid="0602000001" devid="FAIVMSTM00000001" type="ndr" subtype="Botnet" severity="high" sessionid=63313 alproto="DNS" tlproto="UDP" srcip="192.0.2.25" srcport=50000 dstip="198.51.100.53" dstport=53 srcmac="00:00:5e:00:53:01" dstmac="00:00:5e:00:53:02" vlanid=0 behavior="CONN" botname="botnet Example" hostname="c2.example.com"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="ndr"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNDR logs in the default syslog format.
+# Child of FORTINET_FORTINDR_KV_PARENT: NDR detections (Botnet, Encrypted, IOC, IPS attack, Weak
+# cipher and ML) and NetFlow detections to NIDS.
+# kv, logType, sub, logId, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$
+# come from the parent.
+
+sev = LOWERCASE(STRING(kv["severity"]))
+botname = STRING(kv["botname"])
+campaign = STRING(kv["campaign"])
+vname = STRING(kv["vname"])
+encname = STRING(kv["encryptedname"])
+ciphername = STRING(kv["ciphername"])
+tag = STRING(kv["tag"])
+host = STRING(kv["hostname"])
+
+# The message names what was found: the botnet, campaign, signature, malware family or NetFlow tag.
+what = ""
+what = IF botname != "" THEN botname ELSE what
+what = IF campaign != "" THEN campaign ELSE what
+what = IF vname != "" THEN vname ELSE what
+what = IF encname != "" THEN encname ELSE what
+what = IF ciphername != "" THEN ciphername ELSE what
+what = IF tag != "" THEN tag ELSE what
+label = IF logType == "netflow" THEN "NetFlow " + sub ELSE sub
+message$ = IF what != "" THEN "FortiNDR " + label + ": " + what ELSE "FortiNDR " + label
+vulntype = STRING(kv["vulntype"])
+classification$ = IF vulntype != "" THEN vulntype ELSE sub
+# Severity critical or high is priority 1, medium 2, low 3.
+priority$ = NULL
+priority$ = IF sev == "critical" OR sev == "high" THEN 1 ELSE priority$
+priority$ = IF sev == "medium" THEN 2 ELSE priority$
+priority$ = IF sev == "low" THEN 3 ELSE priority$
+
+src = STRING(kv["srcip"])
+dst = STRING(kv["dstip"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" THEN dst ELSE NULL
+spText = STRING(kv["srcport"])
+dpText = STRING(kv["dstport"])
+spm = spText|^(?P<n>\d{1,5})$
+dpm = dpText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spm["n"] != "" THEN INT(spm["n"], 10) ELSE NULL
+destinationPort$ = IF dpm["n"] != "" THEN INT(dpm["n"], 10) ELSE NULL
+proto = UPPERCASE(STRING(kv["tlproto"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+app = STRING(kv["alproto"])
+applicationName$ = IF app != "" AND app != "OTHER" THEN app ELSE NULL
+vlanText = STRING(kv["vlanid"])
+vm = vlanText|^(?P<n>\d{1,4})$
+vlan$ = IF vm["n"] != "" AND vm["n"] != "0" THEN INT(vm["n"], 10) ELSE NULL
+
+m1.key$ = "log_id"
+m1.value$ = logId
+m2.key$ = "severity"
+m2.value$ = sev
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "session_id"
+m3.value$ = STRING(kv["sessionid"])
+eventMetadata$.record$ = IF m3.value$ != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "behavior"
+m4.value$ = STRING(kv["behavior"])
+eventMetadata$.record$ = IF m4.value$ != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "hostname"
+m5.value$ = host
+eventMetadata$.record$ = IF host != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "url"
+m6.value$ = STRING(kv["url"])
+eventMetadata$.record$ = IF m6.value$ != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "md5"
+m7.value$ = STRING(kv["md5"])
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "ja3"
+m8.value$ = STRING(kv["ja3"])
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "ja3s"
+m9.value$ = STRING(kv["ja3s"])
+eventMetadata$.record$ = IF m9.value$ != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "cipher"
+m10.value$ = STRING(kv["cipher"])
+eventMetadata$.record$ = IF m10.value$ != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "tls_version"
+m11.value$ = STRING(kv["vers"])
+eventMetadata$.record$ = IF m11.value$ != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "source_mac"
+m12.value$ = STRING(kv["srcmac"])
+eventMetadata$.record$ = IF m12.value$ != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "destination_mac"
+m13.value$ = STRING(kv["dstmac"])
+eventMetadata$.record$ = IF m13.value$ != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+m14.key$ = "reasons"
+m14.value$ = STRING(kv["reasons"])
+eventMetadata$.record$ = IF m14.value$ != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$
+m15.key$ = "sensor"
+m15.value$ = STRING(kv["sensor_hostname"])
+eventMetadata$.record$ = IF m15.value$ != "" THEN eventMetadata$.record$ + [m15] ELSE eventMetadata$.record$
+m16.key$ = "flow_type"
+m16.value$ = STRING(kv["flowtype"])
+eventMetadata$.record$ = IF m16.value$ != "" THEN eventMetadata$.record$ + [m16] ELSE eventMetadata$.record$
+m17.key$ = "flow_exporter"
+m17.value$ = STRING(kv["sampleip"])
+eventMetadata$.record$ = IF m17.value$ != "" THEN eventMetadata$.record$ + [m17] ELSE eventMetadata$.record$
