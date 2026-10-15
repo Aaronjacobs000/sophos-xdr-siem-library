@@ -143,7 +143,7 @@ test('review rule: bridge code and other non-library files always need a review'
 
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.' } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const mock = path.join(dir, 'mock-fetch.mjs');
@@ -164,8 +164,9 @@ globalThis.fetch = async (url, init = {}) => {
   if (u.pathname === '/repos/o/r/pulls/7/files' && filesErrors > 0) { filesErrors--; return new Response('<html>Server Error</html>', { status: 500 }); }
   if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: 405 }); }
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
-  else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, node_id: 'PR_7', ...${JSON.stringify(pull)}, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})} } };
-  else if (u.pathname === '/repos/o/r/pulls/7/files') body = u.searchParams.get('page') === '1' ? files : [];
+  else if (u.pathname === '/repos/o/r/pulls/7') body = { draft: false, node_id: 'PR_7', changed_files: ${changedFiles}, ...${JSON.stringify(pull)}, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})} } };
+  // GitHub lists a pull request's files 100 to a page, and at most 3,000 of them.
+  else if (u.pathname === '/repos/o/r/pulls/7/files') { const n = Number(u.searchParams.get('per_page') || 30), p = Number(u.searchParams.get('page') || 1); body = files.slice(0, 3000).slice((p - 1) * n, p * n); }
   // Without a branch rule, GitHub refuses native auto-merge and the gate merges the pull request itself.
   else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
   else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: [{ name: 'tests', status: 'completed', conclusion: 'success' }] };
@@ -175,7 +176,8 @@ globalThis.fetch = async (url, init = {}) => {
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 };
 `);
-  const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')] : ['merge', '--pr', '7', '--sha', 'abc123'];
+  const args = command === 'pr' ? ['pr', '--pr', '7', '--sha', 'abc123', '--report', path.join(dir, 'report.json'), '--markdown', path.join(dir, 'report.md')]
+    : command === 'changed' ? ['changed', '--pr', '7', '--out', path.join(dir, 'changed.txt')] : ['merge', '--pr', '7', '--sha', 'abc123'];
   const out = execFileSync(process.execPath, ['--import', pathToFileURL(mock).href, path.join(ROOT, 'tools/github-gate.mjs'), ...args], { env: { ...process.env, GITHUB_REPOSITORY: 'o/r', GITHUB_TOKEN: 'test', GITHUB_OUTPUT: output, GATE_RETRY_MS: '1' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const calls = (await readFile(log, 'utf8')).trim().split('\n');
   const stepOutput = await readFile(output, 'utf8');
@@ -198,6 +200,24 @@ test('gate: the merge step refuses a pull request with bridge code, from either 
   const ok = await gateMerge(['parsers/acme/pull-api/meta.json']);
   assert.equal(ok.out, 'Auto-merge is on for this pull request.');
   assert.ok(ok.calls.some((c) => c === 'POST https://api.github.com/graphql'));
+});
+
+test('gate: a pull request whose file list GitHub cuts short never merges on its own', async () => {
+  // GitHub lists at most 3,000 files, and the gate reads 29 pages of 100, so a file past that
+  // point would go unseen. The gate holds any pull request it can't list in full.
+  const many = Array.from({ length: 2900 }, (_, i) => `parsers/acme/p${String(Math.floor(i / 5)).padStart(4, '0')}/f${i % 5}.parser.txt`);
+  for (const command of ['pr', 'merge']) {
+    const held = await gateMerge([...many, 'studio/app/main.js'], { command, autoMerge: false });
+    if (command === 'merge') assert.match(held.out, /^Not merged automatically: GitHub listed 2900 of the 2901 changed files/);
+    assert.ok(!held.calls.some((c) => /graphql|\/merge$/.test(c)), command);
+    assert.equal(held.stepOutput, '', command);
+  }
+  // A count that doesn't match the list holds it too, and so does a missing count.
+  assert.match((await gateMerge(['parsers/acme/pull-api/meta.json'], { changedFiles: 2 })).out, /^Not merged automatically: GitHub listed 1 of the 2 changed files/);
+  assert.match((await gateMerge(['parsers/acme/pull-api/meta.json'], { changedFiles: 'null' })).out, /^Not merged automatically/);
+  // The file list the checks read fails the same way, so the checks fail instead of passing on part of it.
+  await assert.rejects(gateMerge([...many, 'studio/app/main.js'], { command: 'changed' }), /GitHub listed 2900 of the 2901 changed files/);
+  assert.equal((await gateMerge(['parsers/acme/pull-api/meta.json', 'parsers/acme/pull-api/samples.log'], { command: 'changed' })).out, '2 changed files');
 });
 
 test('gate: a merge the gate makes tells the workflow to start the Pages build', async () => {

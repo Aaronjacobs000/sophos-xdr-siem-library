@@ -11,7 +11,8 @@
 // the pull request touches nothing outside parsers/, and each entry it changes is new or
 // already belongs to the person who opened it. Right before merging, the pull request's own
 // file list is checked again, so a change to bridges/ or anything else outside parsers/
-// never merges without review, whichever route opened it. When it merges, pr and merge write
+// never merges without review, whichever route opened it. A file list that GitHub can't give
+// in full holds the pull request for review. When it merges, pr and merge write
 // merged=true to $GITHUB_OUTPUT and delete the pull request's branch if it is in this repo.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
@@ -75,6 +76,16 @@ async function all(url) {
   return out;
 }
 
+// A pull request's changed files, with every rename's old name. GitHub lists at most 3,000 files
+// and this reads at most 2,900, so the list is checked against the pull request's own count, and
+// a list that comes up short is reported rather than trusted.
+async function changedFiles(pr, pull = null) {
+  const p = pull || await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+  const files = await all(`/repos/${REPO}/pulls/${pr}/files`);
+  const short = files.length !== p.changed_files ? `GitHub listed ${files.length} of the ${p.changed_files} changed files` : null;
+  return { names: files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean)), short };
+}
+
 async function ensureLabels() {
   const have = new Set((await all(`/repos/${REPO}/labels`)).map((l) => l.name));
   for (const [name, color, description] of Object.values(LABELS)) {
@@ -111,8 +122,9 @@ async function merge(pr, sha) {
   const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
   if (p.draft) return 'The pull request is a draft, so it waits.';
   if (p.head.sha !== sha) return 'The pull request changed after these checks ran; the next run decides.';
-  const files = await all(`/repos/${REPO}/pulls/${pr}/files`);
-  const held = reviewReasons(files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean)));
+  const files = await changedFiles(pr, p);
+  if (files.short) return `Not merged automatically: ${files.short}, so a maintainer will review it.`;
+  const held = reviewReasons(files.names);
   if (held.length) return `Not merged automatically: this pull request ${held.join('; ')}. A maintainer will review it.`;
   try {
     // Native auto-merge waits for any required checks; it needs a branch rule to exist.
@@ -151,8 +163,8 @@ async function reportMerged(outcome) {
 }
 
 if (cmd === 'changed') {
-  const files = await all(`/repos/${REPO}/pulls/${opt('--pr')}/files`);
-  const names = files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean));
+  const { names, short } = await changedFiles(opt('--pr'));
+  if (short) { console.error(`${short}, so the checks can't see the whole pull request.`); process.exit(1); }
   await writeFile(opt('--out'), names.join('\n') + '\n');
   console.log(`${names.length} changed files`);
 } else if (cmd === 'pr') {
