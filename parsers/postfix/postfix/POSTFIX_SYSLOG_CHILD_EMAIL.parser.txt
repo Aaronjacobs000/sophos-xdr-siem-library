@@ -1,0 +1,98 @@
+!SAMPLE=<22>Oct 14 11:20:02 mx1.example.com postfix/smtp[58560]: 4F2A51C0A3B: to=<adoe@example.com>, relay=mailstore.example.com[192.0.2.10]:25, delay=0.94, delays=0.12/0.01/0.31/0.5, dsn=2.0.0, status=sent (250 2.0.0 Ok: queued as 7C1D21C0B02)
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="email"
+!SCHEMA=scwx.email
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Postfix mail log lines sent by syslog.
+# Child of POSTFIX_SYSLOG_PARENT: to Email, with event_type set to what the line records:
+#   reject, discard, hold   refused or held by smtpd, postscreen or cleanup: sender, recipient,
+#                           client address and the reply. reject and discard are BLOCKED, hold QUARANTINED.
+#   delivery                a delivery agent's result: recipient, relay, dsn and status. sent is DELIVERED;
+#                           deferred, bounced and expired keep Postfix's status in event_metadata.
+#   queued                  qmgr: sender, size and the number of recipients.
+# rej, chk, dlv, qmg, daemon, mta, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+act = rej["act"]
+act = IF act == "" THEN chk["act"] ELSE act
+kind = act
+kind = IF dlv["qid"] != "" THEN "delivery" ELSE kind
+kind = IF qmg["qid"] != "" THEN "queued" ELSE kind
+eventType$ = kind
+qid = rej["qid"]
+qid = IF qid == "" THEN chk["qid"] ELSE qid
+qid = IF qid == "" THEN dlv["qid"] ELSE qid
+qid = IF qid == "" THEN qmg["qid"] ELSE qid
+
+# Envelope sender and recipient: from the line's own fields, or from=<..> and to=<..> after the reply.
+f = msg|\sfrom=<(?P<v>[^>]*)>
+t = msg|\sto=<(?P<v>[^>]*)>
+h = msg|\shelo=<(?P<v>[^>]*)>
+p = msg|\sproto=(?P<v>[A-Z]+)
+from = IF qmg["qid"] != "" THEN qmg["from"] ELSE f["v"]
+fromEmailAddress$ = IF from != "" THEN from ELSE NULL
+to = IF dlv["qid"] != "" THEN dlv["to"] ELSE t["v"]
+toEmailAddress$ = IF to != "" THEN to ELSE NULL
+messageSize$ = IF qmg["size"] != "" THEN INT(qmg["size"], 10) ELSE NULL
+
+addr = rej["addr"]
+addr = IF addr == "" THEN chk["addr"] ELSE addr
+senderIp$ = IF addr != "" THEN addr ELSE NULL
+client = rej["client"]
+client = IF client == "" THEN chk["client"] ELSE client
+
+# The reply or reason: smtpd's reply up to its "; from=", or cleanup's text after the last ": ".
+reply = rej["reply"]|^(?P<r>.*?);\s(?:from|to|proto|helo)=
+reason = reply["r"]
+reason = IF reason == "" THEN rej["reply"] ELSE reason
+chkReason = chk["rest"]|>:\s(?P<r>[^<>]*)$
+reason = IF chk["qid"] != "" THEN chk["class"] + " " + chk["content"] + ": " + chkReason["r"] ELSE reason
+blocked = act == "reject" OR act == "discard"
+status$ = NULL
+status$ = IF blocked THEN "BLOCKED" ELSE status$
+status$ = IF act == "hold" THEN "QUARANTINED" ELSE status$
+status$ = IF dlv["status"] == "sent" THEN "DELIVERED" ELSE status$
+quarantineReason$ = IF act != "" THEN reason ELSE NULL
+
+m1.key$ = "queue_id"
+m1.value$ = qid
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "daemon"
+m2.value$ = daemon
+eventMetadata$.record$ = eventMetadata$.record$ + [m2]
+m3.key$ = "client_name"
+m3.value$ = client
+eventMetadata$.record$ = IF client != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "smtp_stage"
+m4.value$ = rej["stage"]
+eventMetadata$.record$ = IF rej["stage"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "helo"
+m5.value$ = h["v"]
+eventMetadata$.record$ = IF h["v"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "proto"
+m6.value$ = p["v"]
+eventMetadata$.record$ = IF p["v"] != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "relay"
+m7.value$ = dlv["relay"]
+eventMetadata$.record$ = IF dlv["relay"] != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "orig_to"
+m8.value$ = dlv["orig"]
+eventMetadata$.record$ = IF dlv["orig"] != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "delay"
+m9.value$ = dlv["delay"]
+eventMetadata$.record$ = IF dlv["delay"] != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "dsn"
+m10.value$ = dlv["dsn"]
+eventMetadata$.record$ = IF dlv["dsn"] != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "postfix_status"
+m11.value$ = dlv["status"]
+eventMetadata$.record$ = IF dlv["status"] != "" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "status_text"
+m12.value$ = dlv["text"]
+eventMetadata$.record$ = IF dlv["text"] != "" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "nrcpt"
+m13.value$ = qmg["nrcpt"]
+eventMetadata$.record$ = IF qmg["nrcpt"] != "" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$

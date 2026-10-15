@@ -1,0 +1,494 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976798000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "target_user_name": "akim@example.com",
+      "source_address": "192.0.2.31",
+      "target_host_name": "mx1.example.com",
+      "auth_system": "Postfix SMTP AUTH",
+      "logon_application_family": "smtp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sasl_method",
+            "value": "PLAIN"
+          },
+          {
+            "key": "client_name",
+            "value": "ws-akim.example.com"
+          },
+          {
+            "key": "queue_id",
+            "value": "7D2E31C0B11"
+          },
+          {
+            "key": "daemon",
+            "value": "smtpd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 3,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 4,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976801000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "queued",
+      "from_email_address": [
+        "jsmith@example.net"
+      ],
+      "message_size": 4821,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "4F2A51C0A3B"
+          },
+          {
+            "key": "daemon",
+            "value": "qmgr"
+          },
+          {
+            "key": "nrcpt",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976802000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "delivery",
+      "to_email_address": [
+        "adoe@example.com"
+      ],
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "4F2A51C0A3B"
+          },
+          {
+            "key": "daemon",
+            "value": "smtp"
+          },
+          {
+            "key": "relay",
+            "value": "mailstore.example.com[192.0.2.10]:25"
+          },
+          {
+            "key": "delay",
+            "value": "0.94"
+          },
+          {
+            "key": "dsn",
+            "value": "2.0.0"
+          },
+          {
+            "key": "postfix_status",
+            "value": "sent"
+          },
+          {
+            "key": "status_text",
+            "value": "250 2.0.0 Ok: queued as 7C1D21C0B02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 7,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976869000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "reject",
+      "to_email_address": [
+        "nobody@example.com"
+      ],
+      "sender_ip": "203.0.113.66",
+      "status": "BLOCKED",
+      "quarantine_reason": "550 5.1.1 <nobody@example.com>: Recipient address rejected: User unknown in local recipient table",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "NOQUEUE"
+          },
+          {
+            "key": "daemon",
+            "value": "smtpd"
+          },
+          {
+            "key": "client_name",
+            "value": "unknown"
+          },
+          {
+            "key": "smtp_stage",
+            "value": "RCPT"
+          },
+          {
+            "key": "helo",
+            "value": "spam.example.org"
+          },
+          {
+            "key": "proto",
+            "value": "ESMTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976960000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "reject",
+      "from_email_address": [
+        "promo@example.org"
+      ],
+      "to_email_address": [
+        "adoe@example.com"
+      ],
+      "sender_ip": "203.0.113.50",
+      "status": "BLOCKED",
+      "quarantine_reason": "550 5.7.1 Service unavailable; client [203.0.113.50] blocked using zen.example.org",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "NOQUEUE"
+          },
+          {
+            "key": "daemon",
+            "value": "postscreen"
+          },
+          {
+            "key": "smtp_stage",
+            "value": "RCPT"
+          },
+          {
+            "key": "helo",
+            "value": "bulk.example.org"
+          },
+          {
+            "key": "proto",
+            "value": "ESMTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791976995000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "reject",
+      "from_email_address": [
+        "billing@example.net"
+      ],
+      "to_email_address": [
+        "adoe@example.com"
+      ],
+      "sender_ip": "198.51.100.77",
+      "status": "BLOCKED",
+      "quarantine_reason": "header Subject: Invoice overdue - open the attachment: 5.7.1 Message content rejected",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "9B3F41C0A40"
+          },
+          {
+            "key": "daemon",
+            "value": "cleanup"
+          },
+          {
+            "key": "client_name",
+            "value": "unknown"
+          },
+          {
+            "key": "helo",
+            "value": "mail.example.net"
+          },
+          {
+            "key": "proto",
+            "value": "ESMTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791977043000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "delivery",
+      "to_email_address": [
+        "partner@example.org"
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "2A7C91C0A55"
+          },
+          {
+            "key": "daemon",
+            "value": "smtp"
+          },
+          {
+            "key": "relay",
+            "value": "none"
+          },
+          {
+            "key": "delay",
+            "value": "30"
+          },
+          {
+            "key": "dsn",
+            "value": "4.4.1"
+          },
+          {
+            "key": "postfix_status",
+            "value": "deferred"
+          },
+          {
+            "key": "status_text",
+            "value": "connect to mx.example.org[198.51.100.90]:25: Connection timed out"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791977060000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "delivery",
+      "to_email_address": [
+        "former.staff@example.com"
+      ],
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "3E8A21C0A61"
+          },
+          {
+            "key": "daemon",
+            "value": "lmtp"
+          },
+          {
+            "key": "relay",
+            "value": "mailstore.example.com[192.0.2.10]:24"
+          },
+          {
+            "key": "orig_to",
+            "value": "fstaff@example.com"
+          },
+          {
+            "key": "delay",
+            "value": "0.21"
+          },
+          {
+            "key": "dsn",
+            "value": "5.1.1"
+          },
+          {
+            "key": "postfix_status",
+            "value": "bounced"
+          },
+          {
+            "key": "status_text",
+            "value": "host mailstore.example.com[192.0.2.10] said: 550 5.1.1 <former.staff@example.com> User doesn't exist (in reply to RCPT TO command)"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791977201000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.88",
+      "target_host_name": "mx1.example.com",
+      "auth_system": "Postfix SMTP AUTH",
+      "logon_application_family": "smtp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "authentication failure",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sasl_method",
+            "value": "LOGIN"
+          },
+          {
+            "key": "client_name",
+            "value": "unknown"
+          },
+          {
+            "key": "daemon",
+            "value": "smtpd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791977204000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "source_address": "203.0.113.88",
+      "target_host_name": "mx1.example.com",
+      "auth_system": "Postfix SMTP AUTH",
+      "logon_application_family": "smtp",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "UGFzc3dvcmQ6",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sasl_method",
+            "value": "LOGIN"
+          },
+          {
+            "key": "client_name",
+            "value": "unknown"
+          },
+          {
+            "key": "daemon",
+            "value": "smtpd"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "POSTFIX_SYSLOG_PARENT > POSTFIX_SYSLOG_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Postfix",
+      "event_time_usec": 1791937650412345,
+      "event_time_fidelity": "MICRO",
+      "host_id": "mx1.example.com",
+      "event_type": "delivery",
+      "to_email_address": [
+        "jlee@example.net"
+      ],
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "queue_id",
+            "value": "5C0D71C0A70"
+          },
+          {
+            "key": "daemon",
+            "value": "smtp"
+          },
+          {
+            "key": "relay",
+            "value": "mail.example.net[198.51.100.25]:25"
+          },
+          {
+            "key": "delay",
+            "value": "1.2"
+          },
+          {
+            "key": "dsn",
+            "value": "2.0.0"
+          },
+          {
+            "key": "postfix_status",
+            "value": "sent"
+          },
+          {
+            "key": "status_text",
+            "value": "250 2.0.0 Ok: queued as 1F3B2"
+          }
+        ]
+      }
+    }
+  }
+]
