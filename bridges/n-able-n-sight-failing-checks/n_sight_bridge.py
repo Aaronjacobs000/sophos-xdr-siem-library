@@ -46,6 +46,11 @@ class BridgeError(Exception):
     """A failure that stops the run without moving the cursor past unsent data."""
 
 
+class NetworkError(BridgeError):
+    """The API or HTTP Ingest couldn't be reached, even after the retries. With --interval the
+    bridge logs it and tries again at the next interval."""
+
+
 # ---------------------------------------------------------------- configuration
 
 def _env(env: dict, name: str, default: str | None = None) -> str | None:
@@ -190,7 +195,7 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 LOG.warning("%s to %s failed (%s); retrying in %.1fs", what, _host(url), type(e).__name__, delay)
                 time.sleep(delay)
                 continue
-            raise BridgeError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
+            raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None
         except ValueError:
             # http.client puts a header value it refuses, such as a key with a line break in it,
             # in its error, so that error isn't passed on.
@@ -385,6 +390,10 @@ def main(argv: list[str] | None = None) -> int:
         while True:
             try:
                 run_once(cfg, dry_run)
+            except NetworkError as e:
+                if not args.interval:
+                    raise
+                LOG.error("%s; trying again in %d seconds", e, args.interval)
             except BridgeError:
                 raise
             except Exception as e:

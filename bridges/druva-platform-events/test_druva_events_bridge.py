@@ -546,6 +546,17 @@ class RequestSafetyTest(unittest.TestCase):
         self.assertNotIn("key-part", str(caught.exception))
         self.assertIn("line break", str(caught.exception))
 
+    def test_unreachable_host_is_a_network_error_that_names_only_the_host(self):
+        # Nothing listens on port 9 here, so every attempt is refused. The backoff is skipped.
+        saved, c.time.sleep = c.time.sleep, lambda s: None
+        try:
+            with self.assertRaises(c.NetworkError) as caught:
+                c._request("POST", "http://127.0.0.1:9/http-endpoint/v1/00000000-example-integration",
+                           {"Authorization": "Bearer key-part-not-real"}, b"{}", 2.0, what="HTTP Ingest POST")
+        finally:
+            c.time.sleep = saved
+        self.assertEqual(str(caught.exception), "HTTP Ingest POST to 127.0.0.1:9 failed: URLError")
+
 
 class IntervalTest(unittest.TestCase):
     """main with --interval: an unexpected error is logged by type and line, never its message,
@@ -598,6 +609,48 @@ class IntervalTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             c.main([])
         self.assertEqual(len(self.calls), 1)
+
+    def test_network_error_is_logged_and_polling_goes_on(self):
+        self.run_once_raises(c.NetworkError("HTTP Ingest POST to ingest.example.com failed: URLError"))
+        self.assertEqual(c.main(["--interval", "5"]), 130)
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual(self.slept, [5])
+        errors = [line for line in self.log.getvalue().splitlines() if line.startswith("ERROR")]
+        self.assertEqual(errors, ["ERROR HTTP Ingest POST to ingest.example.com failed: URLError; trying again in 5 seconds"])
+
+    def test_network_error_still_stops_a_single_run(self):
+        self.run_once_raises(c.NetworkError("HTTP Ingest POST to ingest.example.com failed: URLError"))
+        self.assertEqual(c.main([]), 1)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_outage_past_the_retries_is_logged_by_host_and_polling_goes_on(self):
+        """The real run, with every connection refused: it ends after the retries with a network
+        error that names only the host, and the bridge runs again at the next interval."""
+        runs = []
+
+        def run_once(*args, **kwargs):
+            runs.append(1)
+            if len(runs) > 1:
+                raise KeyboardInterrupt()
+            return self.saved[1](*args, **kwargs)
+
+        def refuse(opener, req, *args, **kwargs):
+            raise c.urllib.error.URLError(ConnectionRefusedError("refused"))
+
+        c.run_once = run_once
+        opener = c.urllib.request.OpenerDirector
+        saved_open, opener.open = opener.open, refuse
+        try:
+            self.assertEqual(c.main(["--interval", "5", "--dry-run"]), 130)
+        finally:
+            opener.open = saved_open
+        self.assertEqual(len(runs), 2)
+        self.assertEqual(len(self.slept), c.MAX_ATTEMPTS)
+        self.assertEqual(self.slept[-1], 5)
+        errors = [line for line in self.log.getvalue().splitlines() if line.startswith("ERROR")]
+        self.assertEqual(len(errors), 1)
+        self.assertRegex(errors[0], r"^ERROR .+ to [a-z0-9.-]+ failed: URLError; trying again in 5 seconds$")
+        self.assertNotRegex(self.log.getvalue(), r"not-?real")
 
     def test_negative_interval_is_refused(self):
         self.run_once_raises()

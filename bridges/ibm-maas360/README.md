@@ -55,6 +55,7 @@ python3 maas360_bridge.py --interval 900    # keep polling every 15 minutes
 ```
 
 Exit code 0 means every report was read and sent. On an error the bridge logs the report and the HTTP status, stops, and leaves that report's cursor where it was, so the next run reads the same window again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
+With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
 
 ## How it reads the API
 
