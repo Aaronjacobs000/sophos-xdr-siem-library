@@ -84,10 +84,13 @@ ExecStart=/usr/bin/python3 /opt/webhook-relay/webhook_relay.py
 EnvironmentFile=/etc/webhook-relay.env
 DynamicUser=yes
 Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+`Restart=on-failure` starts the relay again 10 seconds after it stops, for example when it started before the address it listens on was ready.
 
 Keep the host's clock in sync: the relay refuses Huntress deliveries stamped more than 5 minutes from its clock.
 

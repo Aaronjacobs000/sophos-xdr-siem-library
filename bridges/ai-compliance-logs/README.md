@@ -63,6 +63,29 @@ With `--interval`, a network error that outlasts the retries is logged, naming o
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log. A signed download URL whose host name doesn't resolve says it came from the API's redirect, not the URL setting.
 
+As a systemd service that polls, with the variables in `/etc/ai-compliance-logs.env` (owned by root, mode 600):
+
+```ini
+[Unit]
+Description=AI compliance log bridge to Sophos NG-SIEM HTTP Ingest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/ai-compliance-logs/ai_compliance_bridge.py --interval 300
+EnvironmentFile=/etc/ai-compliance-logs.env
+DynamicUser=yes
+StateDirectory=ai-compliance-logs
+WorkingDirectory=/var/lib/ai-compliance-logs
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet.
+
 ## How it reads each API
 
 - **openai_clp:** lists files per event type with `after` set to the cursor, follows `has_more` and `last_end_time`, and downloads each file. The download answers with a redirect to a short-lived signed URL; the bridge fetches it without the Admin key, only over https (redirects included), and never logs it. The cursor moves after each file is sent. Files expire after 30 days, so run the bridge at least daily.

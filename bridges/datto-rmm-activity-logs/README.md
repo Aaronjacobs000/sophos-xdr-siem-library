@@ -49,6 +49,29 @@ With `--interval`, a network error that outlasts the retries is logged, naming o
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
+As a systemd service that polls, with the variables in `/etc/datto-rmm-activity-logs.env` (owned by root, mode 600):
+
+```ini
+[Unit]
+Description=Datto RMM Activity Log bridge to Sophos NG-SIEM HTTP Ingest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/datto-rmm-activity-logs/datto_rmm_bridge.py --interval 300
+EnvironmentFile=/etc/datto-rmm-activity-logs.env
+DynamicUser=yes
+StateDirectory=datto-rmm-activity-logs
+WorkingDirectory=/var/lib/datto-rmm-activity-logs
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet.
+
 ## How it reads the API
 
 - It requests an access token from `<API URL>/auth/oauth/token` with the password grant, the API key and secret as user name and password, and the OAuth client `public-client` / `public` that Datto documents. Tokens last 100 hours; on a 401 it asks for a new one once.
