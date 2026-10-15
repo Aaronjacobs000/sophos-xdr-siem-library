@@ -1,0 +1,55 @@
+{
+  "vendor": "Fortinet",
+  "product": "FortiNAC-F",
+  "versions": [
+    "7.4",
+    "7.6"
+  ],
+  "format": "csv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.fortinet.com/document/fortinac-f/7.6.0/administration-guide/499308/log-events-to-an-external-log-host",
+    "https://docs.fortinet.com/document/fortinac-f/7.6.0/administration-guide/338223/examples-of-syslog-messages",
+    "https://docs.fortinet.com/document/fortinac-f/7.6.0/administration-guide/71143",
+    "https://docs.fortinet.com/document/fortinac-f/7.6.0/administration-guide/327180",
+    "https://docs.fortinet.com/document/fortisiem/7.6.1/external-systems-configuration-guide/75983/fortinet-fortinac"
+  ],
+  "notes": "Under System > Settings > System Communication > Log Receivers, add the data collector as a Syslog CSV or Syslog CEF receiver, then under Logs > Events & Alarms > Management set each event you want to External or Internal & External: FortiNAC-F only sends events enabled for external logging. Administrator logins, logouts, timeouts and failures, and directory checks (Authenticated User, Authentication Failure), go to Auth. Events whose name ends in Modified, Admin User Created and Destroyed, and changes through the REST API go to ManagementEvent. Alarms (log type 2), security alarms (type 3) and security events (Security Risk Host, Host At Risk, Host Pending At Risk, Application Violation, Possible MAC address Spoof, and the violations FortiNAC receives from FortiGate and other products) go to Thirdparty, with the host as the source, severity normal, minor, major and critical as INFO, LOW, HIGH and CRITICAL, and the CSV record ID as alert_id. Other events stay generic. Events are matched by name, so a renamed event stays generic. Times come from the CSV log time or the CEF rt in the zone FortiNAC writes. The engine can't look up a zone abbreviation, so the parent gives AEST, AEDT, ACST, ACDT, AWST, NZST, NZDT, UTC, GMT and the US EST, EDT, MST, MDT, PST and PDT their offsets and reads any other zone as UTC. CEF times have no year. CEF headers name Fortinet and NAC Control Server in the 7.6 docs, and Bradford Networks and the appliance model in older releases; both are read. CEF lines carry only rt, cat, shost and msg, so the host's IP and MAC come only in CSV. Samples are made up from the CSV and CEF column tables and examples in the FortiNAC-F 7.6 Administration Guide and the CEF example in Fortinet's FortiSIEM guide. No built-in parser claimed these lines in 3 Run Tests. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-16 (103 of 103 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same 11 lines. Each child also passed Run Test there as a separate parser under its parent (9 of 9 lines, 96 of 96 fields, each line taken in each of 5 runs, and the 2 generic lines matched).",
+  "parsers": [
+    {
+      "name": "FORTINET_FORTINAC_SYSLOG_PARENT",
+      "file": "FORTINET_FORTINAC_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "FORTINET_FORTINAC_SYSLOG_CHILD_AUTH",
+      "file": "FORTINET_FORTINAC_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINAC_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "FORTINET_FORTINAC_SYSLOG_CHILD_MGMT",
+      "file": "FORTINET_FORTINAC_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINAC_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "FORTINET_FORTINAC_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "FORTINET_FORTINAC_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FORTINET_FORTINAC_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

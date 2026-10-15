@@ -1,0 +1,51 @@
+!SAMPLE=<37>Oct 14 09:31:12 : 2026/10/14 09:31:12 AEDT,3,2587,Security Risk Host,2,1127,,laptop02.example.com,192.0.2.45,00:00:5E:00:53:02,Host laptop02.example.com failed scan policy Windows-Baseline.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNAC-F events and alarms, Syslog CSV or CEF.
+# Child of FORTINET_FORTINAC_SYSLOG_PARENT: alarms (log type 2), security alarms (log type 3) and
+# security events (Security Risk Host, Host At Risk, Host Pending At Risk, Application Violation,
+# Possible MAC address Spoof, and the violations FortiNAC receives from FortiGate and other
+# security products), to Thirdparty. The host the alert is about is the source.
+# logType, eventId, eventName, sev, entityId, userId, entityName, entityIp, entityMac, category, msg,
+# sensorType$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Fortinet"
+provider$ = "FortiNAC-F"
+title$ = eventName
+summary$ = IF msg != "" THEN msg ELSE eventName
+# The CSV ID is the alarm's or event's record ID; the CEF ID is the event type's.
+alertId$ = IF logType != "" AND eventId != "" THEN eventId ELSE NULL
+logType$ = NULL
+logType$ = IF logType == "1" THEN "Event" ELSE logType$
+logType$ = IF logType == "2" THEN "Alarm" ELSE logType$
+logType$ = IF logType == "3" THEN "Security Alarm" ELSE logType$
+alertCategory$ = IF category != "" THEN category ELSE NULL
+
+# Severity 0 normal, 1 minor, 2 major, 3 critical.
+vendorSeverity$ = NULL
+vendorSeverity$ = IF sev == "0" THEN "Normal" ELSE vendorSeverity$
+vendorSeverity$ = IF sev == "1" THEN "Minor" ELSE vendorSeverity$
+vendorSeverity$ = IF sev == "2" THEN "Major" ELSE vendorSeverity$
+vendorSeverity$ = IF sev == "3" THEN "Critical" ELSE vendorSeverity$
+severity$ = NULL
+severity$ = IF sev == "0" THEN "INFO" ELSE severity$
+severity$ = IF sev == "1" THEN "LOW" ELSE severity$
+severity$ = IF sev == "2" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "3" THEN "CRITICAL" ELSE severity$
+
+sourceHostName$ = IF entityName != "" THEN entityName ELSE NULL
+sourceAddress$ = IF entityIp != "" THEN entityIp ELSE NULL
+sourceMac$ = IF entityMac != "" THEN LOWERCASE(entityMac) ELSE NULL
+sourceUserName$ = IF userId != "" THEN userId ELSE NULL
+
+a1.key$ = "event_id"
+a1.value$ = eventId
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "entity_id"
+a2.value$ = entityId
+additionalData$.record$ = IF entityId != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$

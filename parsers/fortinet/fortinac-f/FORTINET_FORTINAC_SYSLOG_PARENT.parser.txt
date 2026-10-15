@@ -1,0 +1,79 @@
+!SAMPLE=<37>Oct 14 09:31:12 : 2026/10/14 09:31:12 AEDT,3,2587,Security Risk Host,2,1127,,laptop02.example.com,192.0.2.45,00:00:5E:00:53:02,Host laptop02.example.com failed scan policy Windows-Baseline.
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=:\s+(?:\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\s+[A-Za-z][A-Za-z0-9+-]{1,7})?,[123],\d*,[^,]+,[0-3],|CEF:\d+\|(?:Fortinet|Bradford Networks)\|[^|]*NAC[^|]*\|)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNAC-F events and alarms sent to a log receiver of type Syslog CSV or Syslog Common
+# Event Format (CEF). The syslog header has no host name:
+#   <PRI>Mmm dd HH:MM:SS : YYYY/MM/DD HH:MM:SS <zone>,<log type>,<ID>,<event name>,<severity>,
+#     <entity ID>,<user ID>,<entity name>,<entity IP>,<entity MAC>,<message>
+#   <PRI>Mmm dd HH:MM:SS : CEF:0|Fortinet|NAC Control Server|<version>|<ID>|<event name>|<severity>|
+#     rt=<Mmm dd HH:MM:SS mmm zone> cat=<category> shost=<host> msg=<message>
+# Log type is 1 event, 2 alarm or 3 security alarm; severity is 0 normal, 1 minor, 2 major or
+# 3 critical. Older releases write Bradford Networks and the appliance model in the CEF header.
+# Parent: reads both layouts into the same variables and sets eventType$ for the children:
+# auth (administrator logins and directory authentication) to the Auth child, mgmt (changes to
+# configuration, policies and administrators) to the ManagementEvent child, and alert (alarms,
+# security alarms and security events such as Security Risk Host) to the Thirdparty child.
+
+csv = originalData$|:\s+(?P<ts>\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2})(?:\s+(?P<tz>[A-Za-z][A-Za-z0-9+-]{1,7}))?,(?P<lt>[123]),(?P<id>\d*),(?P<name>[^,]*),(?P<sev>[0-3]),(?P<eid>[^,]*),(?P<uid>[^,]*),(?P<ename>[^,]*),(?P<eip>[^,]*),(?P<emac>[^,]*),(?P<msg>.*)$
+cefm = originalData$|(?P<cef>CEF:\d+\|.*)$
+isCef = cefm["cef"] != ""
+v = IF isCef THEN CEF(cefm["cef"]) ELSE NULL
+
+logType = IF isCef THEN "" ELSE csv["lt"]
+eventId = IF isCef THEN STRING(v[4]) ELSE csv["id"]
+eventName = IF isCef THEN STRING(v[5]) ELSE csv["name"]
+sev = IF isCef THEN STRING(v[6]) ELSE csv["sev"]
+entityId = IF isCef THEN "" ELSE csv["eid"]
+userId = IF isCef THEN STRING(v["suser"]) ELSE csv["uid"]
+entityName = IF isCef THEN STRING(v["shost"]) ELSE csv["ename"]
+entityIp = IF isCef THEN STRING(v["src"]) ELSE csv["eip"]
+entityMac = IF isCef THEN STRING(v["smac"]) ELSE csv["emac"]
+category = IF isCef THEN STRING(v["cat"]) ELSE ""
+msg = IF isCef THEN STRING(v["msg"]) ELSE csv["msg"]
+# A CSV message with commas in it may come in double quotes.
+quoted = msg|^"(?P<m>.*?)"?$
+msg = IF quoted["m"] != "" THEN quoted["m"] ELSE msg
+
+sensorType$ = "Fortinet FortiNAC-F"
+sensorEventId$ = IF eventId != "" THEN eventId ELSE NULL
+sensorVersion$ = IF isCef THEN STRING(v[3]) ELSE NULL
+
+# The event time: the CSV log time or the CEF rt, in the zone FortiNAC names. Go can't look up a
+# zone abbreviation, so the common Australian, New Zealand and US ones get their offsets here;
+# any other zone is read as UTC. CEF times have no year, so the engine gives them this year.
+rt = IF isCef THEN STRING(v["rt"]) ELSE ""
+rtm = rt|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\s+\d{1,3})?(?:\s+(?P<tz>[A-Za-z][A-Za-z0-9+-]{1,7}))?$
+tz = IF isCef THEN rtm["tz"] ELSE csv["tz"]
+tz = UPPERCASE(STRING(tz))
+off = ""
+off = IF tz == "UTC" OR tz == "GMT" THEN "+0000" ELSE off
+off = IF tz == "AEST" THEN "+1000" ELSE off
+off = IF tz == "AEDT" THEN "+1100" ELSE off
+off = IF tz == "ACST" THEN "+0930" ELSE off
+off = IF tz == "ACDT" THEN "+1030" ELSE off
+off = IF tz == "AWST" THEN "+0800" ELSE off
+off = IF tz == "NZST" THEN "+1200" ELSE off
+off = IF tz == "NZDT" THEN "+1300" ELSE off
+off = IF tz == "EST" THEN "-0500" ELSE off
+off = IF tz == "EDT" THEN "-0400" ELSE off
+off = IF tz == "MST" THEN "-0700" ELSE off
+off = IF tz == "MDT" THEN "-0600" ELSE off
+off = IF tz == "PST" THEN "-0800" ELSE off
+off = IF tz == "PDT" THEN "-0700" ELSE off
+local = IF isCef THEN STRING(rtm["t"]) ELSE STRING(csv["ts"])
+layout = IF isCef THEN "Jan _2 15:04:05" ELSE "2006/01/02 15:04:05"
+eventTimeUsec$ = IF local != "" AND off != "" THEN DATETIME(local + " " + off, layout + " -0700", isCef) ELSE eventTimeUsec$
+eventTimeUsec$ = IF local != "" AND off == "" THEN DATETIME(local, layout, isCef) ELSE eventTimeUsec$
+
+# Which child takes the line, by event name and log type.
+authName = eventName|^(?:Admin User Login Success|Admin User Login Failure|Admin User Logged Out|Admin User Timed Out|Login Success|Login Failure|User Logged Out|Authenticated User|Authentication Failure)$
+mgmtName = eventName|(?:Modified|^Admin User Created|^Admin User Destroyed|via REST API)$
+alertName = eventName|^(?:Security Risk Host|Host At Risk|Host Pending At Risk|Application Violation|Host Application Violation|Possible MAC address Spoof|.+ Violation|.+_SEVERITY)$
+eventType$ = "event"
+eventType$ = IF logType == "2" OR logType == "3" OR alertName[0] != "" THEN "alert" ELSE eventType$
+eventType$ = IF mgmtName[0] != "" THEN "mgmt" ELSE eventType$
+eventType$ = IF authName[0] != "" THEN "auth" ELSE eventType$

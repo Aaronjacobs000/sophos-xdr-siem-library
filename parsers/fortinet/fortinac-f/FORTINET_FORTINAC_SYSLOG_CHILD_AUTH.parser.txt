@@ -1,0 +1,48 @@
+!SAMPLE=<37>Oct 14 09:12:44 : 2026/10/14 09:12:44 AEDT,1,545570,Admin User Login Success,0,12,,,,,User jsmith logged in.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: FortiNAC-F events and alarms, Syslog CSV or CEF.
+# Child of FORTINET_FORTINAC_SYSLOG_PARENT: administrator logins to the FortiNAC user interface
+# (Admin User Login Success and Failure, Logged Out, Timed Out, and the older Login Success, Login
+# Failure and User Logged Out) and checks of a user's credentials against the directory
+# (Authenticated User, Authentication Failure), to Auth.
+# eventName, userId, entityName, entityIp, entityMac, msg, sensorType$ and eventTimeUsec$ come
+# from the parent.
+
+authSystem$ = "FortiNAC-F"
+# Administrator events name the user only in the message: "User <name> logged in."
+mu = msg|^User (?P<u>\S+) (?:logged in|logged out|Logged Out|failed to log in|timed out)
+user = IF userId != "" THEN userId ELSE mu["u"]
+targetUserName$ = IF user != "" THEN user ELSE NULL
+admin = eventName|^(?:Admin User |Login |User Logged Out)
+logonApplicationFamily$ = IF admin[0] != "" THEN "FortiNAC administration" ELSE NULL
+# Directory checks carry the host the user signed in from.
+sourceHostName = IF admin[0] == "" AND entityName != "" THEN entityName ELSE ""
+targetHostName$ = IF admin[0] != "" AND entityName != "" THEN entityName ELSE NULL
+sourceAddress$ = IF entityIp != "" THEN entityIp ELSE NULL
+
+failed = eventName|Failure$
+out = eventName|(?:Logged Out|Timed Out)$
+authCategory$ = IF out[0] != "" THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "LOGON"
+action$ = IF out[0] != "" THEN "LOGOFF" ELSE action$
+action$ = IF failed[0] != "" THEN "FAILURE" ELSE action$
+actionResult$ = IF failed[0] != "" THEN "FAILED" ELSE "SUCCESS"
+
+m1.key$ = "event_name"
+m1.value$ = eventName
+m2.key$ = "message"
+m2.value$ = msg
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+eventMetadata$.record$ = IF msg != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "source_host"
+m3.value$ = sourceHostName
+eventMetadata$.record$ = IF sourceHostName != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "source_mac"
+m4.value$ = entityMac
+eventMetadata$.record$ = IF entityMac != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
