@@ -1,0 +1,48 @@
+{
+  "vendor": "Microsoft",
+  "product": "SQL Server audit",
+  "versions": [
+    "2016",
+    "2017",
+    "2019",
+    "2022",
+    "2025"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T02:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-records",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/security/auditing/write-sql-server-audit-events-to-the-security-log",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/system-functions/sys-fn-get-audit-file-transact-sql",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-audit-actions-transact-sql",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/mssqlserver-18456-database-engine-error",
+    "https://prophecyinternational.atlassian.net/wiki/spaces/WADOC/pages/1233224043/Appendix+A+-+Windows+Event+Output+Format",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft/WindowsEventLog/Setup/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For SQL Server Audit written to the Windows Application or Security log (event 33205), forwarded in Snare format over syslog by NXLog or the Snare agent, the feed of the Sophos Windows Event Log integration. Create a server audit TO APPLICATION_LOG or TO SECURITY_LOG and add the action groups you want, such as SUCCESSFUL_LOGIN_GROUP, FAILED_LOGIN_GROUP, SERVER_ROLE_MEMBER_CHANGE_GROUP and SCHEMA_OBJECT_ACCESS_GROUP. Logins and logouts (LGIS, LGIF, LGO, and DBAS, DBAF and DBL for contained database users) go to Auth, with the login as target user, the client address and workstation, the instance as service, and for failed logins the 18456 state mapped to a failure category. Every other action goes to ManagementEvent: the action code as operation and its name as operation_name, the statement as a T-SQL query, the login, client, database and result. The event time is event_time, which SQL Server writes in UTC. Fields are read by name, so the layouts of SQL Server 2016 to 2025 all parse; a statement over 4,000 characters arrives in several records. Each parser is a child of the global parser SNARE_Unsupported, which takes Snare events no other built-in parser handles; as a child of Microsoft_Windows_SNARE_Master it would compete with SNARE_Unsupported (see the Sysmon entry). Save each in the console with Set Global Parent in Parser Script turned on: the parser API refuses code with !PARENT. Each parser passed Run Test in a lab tenant on 2026-10-15, taking all of its lines in each of 15 Run Tests (169 of 169 fields matched the emulator in each of 3 runs). In Run Test the Snare parent also sets target_host, and os on ManagementEvent lines, fields the engine stores but the docs' schema tables don't list. Samples are made up in the field order of SQL Server's event log text and the Snare and NXLog output formats.",
+  "parsers": [
+    {
+      "name": "MSSQL_AUDIT_SNARE_CHILD_AUTH",
+      "file": "MSSQL_AUDIT_SNARE_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+      "file": "MSSQL_AUDIT_SNARE_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "SNARE_Unsupported",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

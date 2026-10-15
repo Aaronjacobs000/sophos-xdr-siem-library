@@ -1,0 +1,94 @@
+!SAMPLE=<182>Oct 15 00:45:30 sql01.example.com MSWinEventLog	1	Application	41202	Thu Oct 15 00:45:30 2026	33205	MSSQLSERVER	N/A	N/A	Failure Audit	sql01.example.com	N/A		Audit event: audit_schema_version:1 event_time:2026-10-15 00:45:30.5550000 sequence_number:1 action_id:LGIF succeeded:false is_column_permission:false session_id:0 server_principal_id:0 database_principal_id:0 target_server_principal_id:0 target_database_principal_id:0 object_id:0 user_defined_event_id:0 transaction_id:0 class_type:LX duration_milliseconds:0 response_rows:0 affected_rows:0 client_ip:203.0.113.50 permission_bitmask:00000000000000000000000000000000 sequence_group_id:00000000-0000-0000-0000-000000000000 session_server_principal_name: server_principal_name:sa server_principal_sid: database_principal_name: target_server_principal_name: target_server_principal_sid: target_database_principal_name: server_instance_name:SQL01 database_name: schema_name: object_name: statement:Login failed for user 'sa'. Reason: Password did not match that for the login provided. [CLIENT: 203.0.113.50] additional_information:<action_info><pooled_connection>0</pooled_connection><error>0x00004818</error><state>8</state><address>203.0.113.50</address><PasswordFirstNibbleHash>a</PasswordFirstNibbleHash></action_info> user_defined_information: application_name:sqlcmd connection_id:1A2B3C4D-5E6F-4A7B-8C9D-0E1F2A3B4C5D data_sensitivity_information: host_name:scanner01 .	41202
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\t(?:Application|Security)\t[^\t]*\t[^\t]*\t33205\t[^\t]*\t.*\saction_id:(?:LGIS|LGIF|LGO|DBAS|DBAF|DBL)\s
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: SQL Server Audit written to the Windows Application or Security log (event 33205), sent in
+# Snare format over syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log
+# integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter.
+# The message is "Audit event:" and one name:value line per audit field. NXLog and Snare replace
+# the line breaks with spaces, so each value ends where the next field name starts. Values can be
+# empty; SQL Server 2017 and later add fields, so the parser reads each field by name.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = s["msg"] + " "
+sensorType$ = "Microsoft SQL Server"
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+
+# event_time is UTC, with up to 7 fractional digits.
+et = msg|\sevent_time:(?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF et["v"] != "" THEN DATETIME(et["v"], "2006-01-02 15:04:05.9999999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+# action_id is padded to four characters with spaces.
+aidm = msg|\saction_id:(?P<v>\S+)
+aid = aidm["v"]
+ok = msg|\ssucceeded:(?P<v>\S+)
+sess = msg|\ssession_id:(?P<v>\d+)
+ip = msg|\sclient_ip:(?P<v>.*?)\s+permission_bitmask:
+principal = msg|\sserver_principal_name:(?P<v>.*?)\s+server_principal_sid:
+instance = msg|\sserver_instance_name:(?P<v>.*?)\s+database_name:
+db = msg|\sdatabase_name:(?P<v>.*?)\s+schema_name:
+stmt = msg|\sstatement:(?P<v>.*?)\s+additional_information:
+app = msg|\sapplication_name:(?P<v>.*?)\s+(?:[a-z][a-z_]*:|\.?\s*$)
+client = msg|\shost_name:(?P<v>\S*)
+# "local machine" is a connection from the server itself.
+local = ip["v"] == "local machine"
+srcIp = IF ip["v"] != "" AND NOT local THEN ip["v"] ELSE NULL
+
+# Logins and logouts go to Auth: LGIS, LGIF and LGO for server logins, DBAS, DBAF and DBL for
+# contained database users. Every other action goes to the ManagementEvent parser.
+login = aid == "LGIS" OR aid == "LGIF" OR aid == "DBAS" OR aid == "DBAF"
+action$ = IF login THEN (IF ok["v"] == "true" THEN "LOGON" ELSE "FAILURE") ELSE "LOGOFF"
+authCategory$ = IF login THEN "ACCOUNT_LOGON" ELSE "ACCOUNT_LOGOFF"
+actionResult$ = IF ok["v"] == "true" THEN "SUCCESS" ELSE "FAILED"
+
+targetUserName$ = principal["v"]
+sourceAddress$ = srcIp
+targetHostName$ = s["computer"]
+serviceName$ = instance["v"]
+applicationName$ = app["v"]
+# host_name is the client's workstation name.
+extraWorkstationname$ = client["v"]
+sessionId$ = IF sess["v"] != "" AND sess["v"] != "0" THEN sess["v"] ELSE NULL
+authSystem$ = "Microsoft SQL Server"
+winEventId$ = s["eid"]
+winTaskCategory$ = s["category"]
+os$.os$ = "OS_WINDOWS"
+
+# A failed login carries the error 18456 state in additional_information. Microsoft's error 18456
+# page lists the states: 2 and 5 an unknown login, 7 a disabled login, 8 and 9 a wrong password,
+# 18 a password that must be changed.
+st = msg|\sadditional_information:.*?<state>(?P<v>\d+)</state>
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] != "" THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF actionResult$ == "FAILED" AND (st["v"] == "2" OR st["v"] == "5") THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] == "7" THEN "ACCOUNT_DISABLED" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND (st["v"] == "8" OR st["v"] == "9") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF actionResult$ == "FAILED" AND st["v"] == "18" THEN "OVERDUE_PASSWORD_CHANGE" ELSE failureCategory$
+reason = stmt["v"]|Reason: (?P<v>.*?)\s*(?:\[CLIENT:|$)
+extraFailurereason$ = reason["v"]
+
+r1.key$ = "action_id"
+r1.value$ = aid
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [r1]
+r2.key$ = "database_name"
+r2.value$ = db["v"]
+eventMetadata$.record$ = IF db["v"] != "" THEN eventMetadata$.record$ + [r2] ELSE eventMetadata$.record$
+r3.key$ = "error_state"
+r3.value$ = st["v"]
+eventMetadata$.record$ = IF st["v"] != "" THEN eventMetadata$.record$ + [r3] ELSE eventMetadata$.record$
+r4.key$ = "client_ip"
+r4.value$ = ip["v"]
+eventMetadata$.record$ = IF local THEN eventMetadata$.record$ + [r4] ELSE eventMetadata$.record$

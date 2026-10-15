@@ -1,0 +1,101 @@
+!SAMPLE=<182>Oct 15 00:47:05 sql01.example.com MSWinEventLog	1	Security	880213	Thu Oct 15 00:47:05 2026	33205	MSSQLSERVER$AUDIT	N/A	N/A	Success Audit	sql01.example.com	Application Generated		Audit event: audit_schema_version:1 event_time:2026-10-15 00:47:05.7770000 sequence_number:1 action_id:APRL succeeded:true is_column_permission:false session_id:57 server_principal_id:259 database_principal_id:0 target_server_principal_id:301 target_database_principal_id:0 object_id:0 user_defined_event_id:0 transaction_id:0 class_type:SG duration_milliseconds:0 response_rows:0 affected_rows:0 client_ip:192.0.2.10 permission_bitmask:00000000000000000000000000000000 sequence_group_id:00000000-0000-0000-0000-000000000000 session_server_principal_name:EXAMPLE\jdoe server_principal_name:EXAMPLE\jdoe server_principal_sid:010500000000000515000000A1B2C3D4E5F6A7B8C9D0E1F250040000 database_principal_name: target_server_principal_name:EXAMPLE\temp.admin target_server_principal_sid: target_database_principal_name: server_instance_name:SQL01 database_name:master schema_name: object_name:sysadmin statement:ALTER SERVER ROLE [sysadmin] ADD MEMBER [EXAMPLE\temp.admin] additional_information: user_defined_information: application_name:Microsoft SQL Server Management Studio - Query connection_id:6F1C2E8A-1B2D-4C3E-9F4A-5B6C7D8E9F01 data_sensitivity_information: host_name:WS01 .	880213
+!PARENT=SNARE_Unsupported
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=MSWinEventLog\t[^\t]*\t(?:Application|Security)\t[^\t]*\t[^\t]*\t33205\t[^\t]*\t.*\saction_id:(?:[^LD\s]\S*|L(?:[^G\s]\S*)?|LG(?:[^IO\s]\S*)?|LGI(?:[^SF\s]\S*)?|LGI[SF]\S+|LGO\S+|D(?:[^B\s]\S*)?|DB(?:[^AL\s]\S*)?|DBA(?:[^SF\s]\S*)?|DBA[SF]\S+|DBL\S+)\s
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: SQL Server Audit written to the Windows Application or Security log (event 33205), sent in
+# Snare format over syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log
+# integration reads.
+# Child of the global parser SNARE_Unsupported, the child of Microsoft_Windows_SNARE_Master that
+# takes the Snare events no other built-in parser handles and leaves them in the generic schema.
+# Under SNARE_Unsupported it doesn't compete with it: in Run Test a sibling of SNARE_Unsupported
+# lost every line after one SNARE_Unsupported took. In Sophos Fusion, turn on Set Global Parent in
+# Parser Script. The parser reads the whole line itself, not the parents' variables.
+# Snare fields are tab separated: MSWinEventLog, criticality, log name, Snare counter, date and
+# time, event ID, source, user, SID type, event type, computer, category, data string, the
+# rendered message, and the event log counter.
+# The message is "Audit event:" and one name:value line per audit field. NXLog and Snare replace
+# the line breaks with spaces, so each value ends where the next field name starts. Values can be
+# empty; SQL Server 2017 and later add fields, so the parser reads each field by name.
+
+s = originalData$|MSWinEventLog\t(?P<crit>[^\t]*)\t(?P<log>[^\t]*)\t(?P<counter>[^\t]*)\t(?P<dt>[^\t]*)\t(?P<eid>[^\t]*)\t(?P<source>[^\t]*)\t(?P<user>[^\t]*)\t(?P<sidtype>[^\t]*)\t(?P<etype>[^\t]*)\t(?P<computer>[^\t]*)\t(?P<category>[^\t]*)\t(?P<data>[^\t]*)\t(?P<msg>[^\t]*)(?:\t(?P<logcounter>[^\t]*))?
+msg = s["msg"] + " "
+sensorType$ = "Microsoft SQL Server"
+sensorEventId$ = s["logcounter"]
+hostId$ = s["computer"]
+
+# event_time is UTC, with up to 7 fractional digits.
+et = msg|\sevent_time:(?P<v>\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d+)?)\s
+eventTimeUsec$ = IF et["v"] != "" THEN DATETIME(et["v"], "2006-01-02 15:04:05.9999999") ELSE DATETIME(s["dt"], "Mon Jan 02 15:04:05 2006")
+# action_id is padded to four characters with spaces.
+aidm = msg|\saction_id:(?P<v>\S+)
+aid = aidm["v"]
+ok = msg|\ssucceeded:(?P<v>\S+)
+sess = msg|\ssession_id:(?P<v>\d+)
+ip = msg|\sclient_ip:(?P<v>.*?)\s+permission_bitmask:
+principal = msg|\sserver_principal_name:(?P<v>.*?)\s+server_principal_sid:
+instance = msg|\sserver_instance_name:(?P<v>.*?)\s+database_name:
+db = msg|\sdatabase_name:(?P<v>.*?)\s+schema_name:
+stmt = msg|\sstatement:(?P<v>.*?)\s+additional_information:
+app = msg|\sapplication_name:(?P<v>.*?)\s+(?:[a-z][a-z_]*:|\.?\s*$)
+client = msg|\shost_name:(?P<v>\S*)
+# "local machine" is a connection from the server itself.
+local = ip["v"] == "local machine"
+srcIp = IF ip["v"] != "" AND NOT local THEN ip["v"] ELSE NULL
+
+# Every action except logins and logouts goes here: statements on objects, permission and
+# membership changes, backups, audit changes. The Auth parser takes LGIS, LGIF, LGO, DBAS, DBAF
+# and DBL.
+operation$ = aid
+# The action names from sys.dm_audit_actions; other actions keep the code.
+operationName$ = aid
+operationName$ = IF aid == "AUSC" THEN "AUDIT SESSION CHANGED" ELSE operationName$
+operationName$ = IF aid == "AUSF" THEN "AUDIT SHUTDOWN ON FAILURE" ELSE operationName$
+operationName$ = IF aid == "CR" THEN "CREATE" ELSE operationName$
+operationName$ = IF aid == "AL" THEN "ALTER" ELSE operationName$
+operationName$ = IF aid == "DR" THEN "DROP" ELSE operationName$
+operationName$ = IF aid == "SL" THEN "SELECT" ELSE operationName$
+operationName$ = IF aid == "IN" THEN "INSERT" ELSE operationName$
+operationName$ = IF aid == "UP" THEN "UPDATE" ELSE operationName$
+operationName$ = IF aid == "DL" THEN "DELETE" ELSE operationName$
+operationName$ = IF aid == "EX" THEN "EXECUTE" ELSE operationName$
+operationName$ = IF aid == "RF" THEN "REFERENCES" ELSE operationName$
+operationName$ = IF aid == "G" THEN "GRANT" ELSE operationName$
+operationName$ = IF aid == "GWG" THEN "GRANT WITH GRANT" ELSE operationName$
+operationName$ = IF aid == "D" THEN "DENY" ELSE operationName$
+operationName$ = IF aid == "DWC" THEN "DENY WITH CASCADE" ELSE operationName$
+operationName$ = IF aid == "R" THEN "REVOKE" ELSE operationName$
+operationName$ = IF aid == "RWG" THEN "REVOKE WITH GRANT" ELSE operationName$
+operationName$ = IF aid == "APRL" THEN "ADD MEMBER" ELSE operationName$
+operationName$ = IF aid == "DPRL" THEN "DROP MEMBER" ELSE operationName$
+operationName$ = IF aid == "BA" THEN "BACKUP" ELSE operationName$
+operationName$ = IF aid == "BAL" THEN "BACKUP LOG" ELSE operationName$
+operationName$ = IF aid == "RS" THEN "RESTORE" ELSE operationName$
+operationName$ = IF aid == "TO" THEN "TAKE OWNERSHIP" ELSE operationName$
+operationName$ = IF aid == "TRO" THEN "TRANSFER" ELSE operationName$
+operationName$ = IF aid == "IMP" THEN "IMPERSONATE" ELSE operationName$
+operationName$ = IF aid == "PWC" THEN "CHANGE PASSWORD" ELSE operationName$
+operationName$ = IF aid == "PWR" THEN "RESET PASSWORD" ELSE operationName$
+operationName$ = IF aid == "CCLG" THEN "CHANGE LOGIN CREDENTIAL" ELSE operationName$
+operationName$ = IF aid == "SVSR" THEN "SERVER STARTED" ELSE operationName$
+operationName$ = IF aid == "SVSD" THEN "SERVER SHUTDOWN" ELSE operationName$
+operationName$ = IF aid == "DBCC" THEN "DBCC" ELSE operationName$
+operationName$ = IF aid == "BCM" THEN "BATCH COMPLETED" ELSE operationName$
+operationName$ = IF aid == "RCM" THEN "RPC COMPLETED" ELSE operationName$
+query$ = IF stmt["v"] != "" THEN stmt["v"] ELSE NULL
+queryLanguage$ = IF stmt["v"] != "" THEN "T-SQL" ELSE NULL
+result$ = IF ok["v"] == "true" THEN "succeeded" ELSE "failed"
+username$ = principal["v"]
+sourceAddress$ = srcIp
+clientHostname$ = client["v"]
+targetHostname$ = s["computer"]
+namespace$ = db["v"]
+remoteOperation$ = IF ip["v"] == "" THEN NULL ELSE NOT local
+channel$ = s["log"]
+eventId$ = s["eid"]
+# The Snare parent puts the event ID in operation_id too; it isn't an operation ID, so clear it.
+operationId$ = NULL
