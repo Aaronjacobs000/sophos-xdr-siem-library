@@ -1,0 +1,84 @@
+!SAMPLE={"version":2,"date":"Oct 14 01:20:14","timestamp":"2026-10-14T01:20:14.877Z","hostname":"controller1.example.com","daemon":"cz-controllerd","log":{"authentication_type":"Client","client_ip":"203.0.113.99","collective_id":"cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd","distinguished_name":"CN=9f2c1e7a0b3d4c5e8f9a0b1c2d3e4f50,CN=adoe,OU=corp-idp","distinguished_name_device_id":"9f2c1e7a0b3d4c5e8f9a0b1c2d3e4f50","distinguished_name_ou":"corp-idp","distinguished_name_user":"adoe","event_type":"authentication_failed","hostname":"laptop-adoe","id":"9f02e9be-cbf0-4fd9-bcde-d0ae2c7862a7","reason":"Invalid username or password","timestamp":"2026-10-14T01:20:14.877101233Z","version":24}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Appgate SDP audit logs as JSON.
+# Child of APPGATE_SDP_JSON_PARENT: sign-ins to Auth.
+#   authentication_succeeded, authentication_failed      a client or an administrator (authentication_type
+#                                                         Client or Admin) signing in to the Controller
+#   password_authentication_*, otp_authentication_*      a password or OTP asked for by a remedy action
+#   ssh_access_succeeded, ssh_access_failed              SSH to an appliance (cz-sshd)
+#   local_user_locked                                     a local user locked out after 5 failures
+# The user is distinguished_name_user (distinguished_name is CN=<device>,CN=<user>,OU=<identity
+# provider>), username for SSH, and the user_distinguished_name CN for a lockout. In
+# authentication_failed, hostname is the client device's name.
+# ev, kind, daemon, appliance, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+ok = CONTAINS(kind, "_succeeded")
+locked = kind == "local_user_locked"
+ssh = CONTAINS(kind, "ssh_access")
+remedy = CONTAINS(kind, "password_authentication") OR CONTAINS(kind, "otp_authentication")
+atype = ev["$.authentication_type"]
+
+udn = STRING(ev["$.user_distinguished_name"])
+lockedUser = udn|^CN=(?P<name>[^,]+),OU=(?P<idp>.*)$
+user = ev["$.distinguished_name_user"]
+user = IF user == NULL THEN ev["$.username"] ELSE user
+user = IF user == NULL AND lockedUser["name"] != "" THEN lockedUser["name"] ELSE user
+targetUserName$ = user
+targetDomainName$ = IF locked THEN lockedUser["idp"] ELSE ev["$.distinguished_name_ou"]
+sourceAddress$ = ev["$.client_ip"]
+targetHostName$ = appliance
+authSystem$ = "Appgate SDP"
+authSystem$ = IF atype == "Admin" THEN "Appgate SDP admin" ELSE authSystem$
+authSystem$ = IF remedy THEN "Appgate SDP remedy action" ELSE authSystem$
+authSystem$ = IF ssh THEN "Appgate appliance SSH" ELSE authSystem$
+logonApplicationFamily$ = IF ssh THEN "ssh" ELSE atype
+
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE "ACCOUNT_LOGON"
+action$ = IF ok THEN "LOGON" ELSE "FAILURE"
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+actionResult$ = IF ok THEN "SUCCESS" ELSE "FAILED"
+actionResult$ = IF locked THEN NULL ELSE actionResult$
+reason = ev["$.reason"]
+extraFailurereason$ = IF ok THEN NULL ELSE reason
+lr = LOWERCASE(STRING(reason))
+failureCategory$ = IF ok THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT ok AND CONTAINS(lr, "password") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF NOT ok AND CONTAINS(lr, "otp") THEN "INCORRECT_MFA" ELSE failureCategory$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+# A remedy action's OTP is a second factor; nothing else in these records says whether MFA was used.
+mfaUsed$ = IF CONTAINS(kind, "otp_authentication") THEN TRUE ELSE NULL
+
+g1.key$ = "event_type"
+g1.value$ = kind
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [g1]
+g2.key$ = "daemon"
+g2.value$ = daemon
+eventMetadata$.record$ = IF daemon THEN eventMetadata$.record$ + [g2] ELSE eventMetadata$.record$
+g3.key$ = "device_id"
+g3.value$ = ev["$.distinguished_name_device_id"]
+eventMetadata$.record$ = IF g3.value$ THEN eventMetadata$.record$ + [g3] ELSE eventMetadata$.record$
+g4.key$ = "device_hostname"
+g4.value$ = ev["$.hostname"]
+eventMetadata$.record$ = IF g4.value$ THEN eventMetadata$.record$ + [g4] ELSE eventMetadata$.record$
+g5.key$ = "claims_token_id"
+g5.value$ = ev["$.claims_token_id"]
+eventMetadata$.record$ = IF g5.value$ THEN eventMetadata$.record$ + [g5] ELSE eventMetadata$.record$
+g6.key$ = "claim_name"
+g6.value$ = ev["$.claim_name"]
+eventMetadata$.record$ = IF g6.value$ THEN eventMetadata$.record$ + [g6] ELSE eventMetadata$.record$
+g7.key$ = "authentication_method"
+g7.value$ = ev["$.authentication_method"]
+eventMetadata$.record$ = IF g7.value$ THEN eventMetadata$.record$ + [g7] ELSE eventMetadata$.record$
+g8.key$ = "client_port"
+g8.value$ = STRING(ev["$.client_port"])
+eventMetadata$.record$ = IF ev["$.client_port"] != NULL THEN eventMetadata$.record$ + [g8] ELSE eventMetadata$.record$
+g9.key$ = "collective_id"
+g9.value$ = ev["$.collective_id"]
+eventMetadata$.record$ = IF g9.value$ THEN eventMetadata$.record$ + [g9] ELSE eventMetadata$.record$

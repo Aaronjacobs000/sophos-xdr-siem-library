@@ -1,0 +1,67 @@
+!SAMPLE={"version":2,"date":"Oct 14 01:25:44","timestamp":"2026-10-14T01:25:44.330Z","hostname":"controller1.example.com","daemon":"cz-controllerd","log":{"client_ip":"192.0.2.10","collective_id":"cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd","distinguished_name":"CN=55c2bc7427c14e458895661909dc3f16,CN=admin,OU=local","distinguished_name_device_id":"55c2bc7427c14e458895661909dc3f16","distinguished_name_ou":"local","distinguished_name_user":"admin","entity_id":"4c07bc67-57ea-42dd-b702-c2d6c45419fc","entity_name":"Contractors","entity_type":"Policy","event_type":"entity_updated","id":"c3d4e5f6-a7b8-4c9d-8e0f-2a3b4c5d6e7f","timestamp":"2026-10-14T01:25:44.330918274Z","version":24}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Appgate SDP audit logs as JSON.
+# Child of APPGATE_SDP_JSON_PARENT: administrator changes to CloudAudit, with the administrator
+# (distinguished_name_user) as the user, the address they worked from, and what they changed:
+#   entity_created, entity_updated, entity_deleted    entity_type, entity_id and entity_name (a Policy,
+#                                                      Entitlement, Condition, IdentityProvider, Appliance ...)
+#   denylist_entry_added and _removed (blacklist_ before 6.6), device_token_revoked (token_revoked before
+#   6.5), otp_seed_removed                             the user they act on (user_ or target_distinguished_name)
+#   global_settings_updated, auto_update_settings_updated, appliance_remote_command_run (command),
+#   appliance_seed_exported, appliance_rebooted, appliance_deactivated, issued_certificate_revoked,
+#   fido2_device_removed, on_boarded_device_deleted, admin_otp_settings_updated, risk_model_updated
+# The entity's JSON (entity, original_entity, settings) isn't copied.
+# ev, kind, daemon, appliance, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+userName$ = ev["$.distinguished_name_user"]
+sourceAddress$ = ev["$.client_ip"]
+eventName$ = kind
+eventType$ = "audit"
+eventSource$ = "Appgate SDP"
+targetHostname$ = appliance
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+# A user the change acts on: CN=<user>,OU=<identity provider>, or CN=<device>,CN=<user>,OU=... for a token.
+target = STRING(ev["$.user_distinguished_name"])
+target = IF target == "" THEN STRING(ev["$.target_distinguished_name"]) ELSE target
+tu = target|(?:^|,)CN=(?P<user>[^,]+),OU=
+targetUserName$ = IF tu["user"] != "" THEN tu["user"] ELSE NULL
+
+r1.resourceId$ = ev["$.entity_id"]
+r1.resourceType$ = ev["$.entity_type"]
+r2.resourceId$ = IF target != "" THEN target ELSE NULL
+r2.resourceType$ = "user"
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+
+p1.key$ = "command"
+p1.value$ = ev["$.command"]
+p2.key$ = "reason"
+p2.value$ = ev["$.reason"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+
+x1.key$ = "entity_name"
+x1.value$ = ev["$.entity_name"]
+x2.key$ = "identity_provider"
+x2.value$ = ev["$.distinguished_name_ou"]
+x3.key$ = "daemon"
+x3.value$ = daemon
+x4.key$ = "collective_id"
+x4.value$ = ev["$.collective_id"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF x1.value$ THEN additionalEventData$.record$ + [x1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF x2.value$ THEN additionalEventData$.record$ + [x2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF x3.value$ THEN additionalEventData$.record$ + [x3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF x4.value$ THEN additionalEventData$.record$ + [x4] ELSE additionalEventData$.record$
