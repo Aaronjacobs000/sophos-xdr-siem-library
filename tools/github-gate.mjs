@@ -6,6 +6,7 @@
 //   node tools/github-gate.mjs pr --pr <n> --sha <head sha> --report report.json --markdown report.md
 //   node tools/github-gate.mjs issue --issue <n> --markdown report.md [--failed "<reason>"]
 //   node tools/github-gate.mjs changed --pr <n> --out changed.txt
+//   node tools/github-gate.mjs waiting --pr <n> --sha <head sha>
 //
 // Auto-merge happens only when the repo setting "Allow auto-merge" is on, every check passed,
 // the pull request touches nothing outside parsers/, and each entry it changes is new or
@@ -15,7 +16,11 @@
 // in full holds the pull request for review. The merge waits until every other check on the
 // checked commit, CI among them, has finished and passed. When it merges, pr and merge write
 // merged=true to $GITHUB_OUTPUT, clear the "needs review" label, and delete the pull
-// request's branch if it is in this repo.
+// request's branch if it is in this repo. If CI is still running when the wait ends, the report
+// says so and carries a marker for the commit; when CI finishes, the workflow runs the gate again
+// for that commit, and waiting tells it whether the report still has the marker. A run whose
+// commit is no longer the pull request's head, or that ends after another run merged or closed
+// it, leaves the report alone.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { reviewReasons } from './lib/merge-rules.mjs';
@@ -25,6 +30,8 @@ const opt = (n) => { const i = rest.indexOf(n); return i === -1 ? null : rest[i 
 const REPO = process.env.GITHUB_REPOSITORY;
 const TOKEN = process.env.GITHUB_TOKEN;
 const MARKER = '<!-- parser-studio-report -->';
+// The last line of a report the gate wrote while CI was still running on the commit.
+const waitingMarker = (sha) => `<!-- parser-studio-waiting-for-ci ${sha} -->`;
 const LABELS = {
   passed: ['library checks passed', '1a7f37', 'Every Parser Studio library check passed'],
   failed: ['library checks failed', 'd1242f', 'A Parser Studio library check failed'],
@@ -102,29 +109,37 @@ async function setLabels(num, add, remove) {
   for (const name of remove) await gh('DELETE', `/repos/${REPO}/issues/${num}/labels/${encodeURIComponent(name)}`).catch(() => {});
 }
 
+// The gate's own report comment on a pull request or issue, if it has written one.
+async function reportComment(num) {
+  return (await all(`/repos/${REPO}/issues/${num}/comments`)).find((c) => c.body && c.body.startsWith(MARKER) && c.user && c.user.type === 'Bot');
+}
+
 async function comment(num, markdown) {
   const body = markdown.includes(MARKER) ? markdown : `${MARKER}\n${markdown}`;
-  const mine = (await all(`/repos/${REPO}/issues/${num}/comments`)).find((c) => c.body && c.body.startsWith(MARKER) && c.user && c.user.type === 'Bot');
+  const mine = await reportComment(num);
   if (mine) await gh('PATCH', `/repos/${REPO}/issues/comments/${mine.id}`, { body });
   else await gh('POST', `/repos/${REPO}/issues/${num}/comments`, { body });
 }
 
-// Waits for the other checks on the commit to finish and reports whether they all passed. The
+// Waits for the other checks on the commit to finish and reports 'passed' when they all passed. The
 // workflow that runs this script is left out by job name. On the pull request route (needCI) CI
 // runs on every pull request, so the gate also waits for CI's own run on the commit: a check GitHub
 // hasn't created yet can't be missed. The issue route opens its pull request with GITHUB_TOKEN,
-// which starts no workflows, so there it has no checks to wait for.
-async function otherChecksPassed(sha, self, needCI) {
+// which starts no workflows, so there it has no checks to wait for. After 10 minutes it reports
+// 'waiting' when CI's run hasn't finished and no check has failed so far, and 'failed' otherwise.
+async function otherChecks(sha, self, needCI) {
   const ok = (r) => ['success', 'skipped', 'neutral'].includes(r.conclusion);
+  let runs = [];
+  let ciDone = true;
   for (let i = 0; i < 40; i++) {
-    const runs = (await gh('GET', `/repos/${REPO}/commits/${sha}/check-runs?per_page=100`)).check_runs.filter((r) => r.name !== self);
+    runs = (await gh('GET', `/repos/${REPO}/commits/${sha}/check-runs?per_page=100`)).check_runs.filter((r) => r.name !== self);
     // Newest first, so the first run is the one that counts.
     const ci = needCI ? (await gh('GET', `/repos/${REPO}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=100`)).workflow_runs : [];
-    const done = runs.every((r) => r.status === 'completed') && (!needCI || (ci.length > 0 && ci.every((r) => r.status === 'completed')));
-    if (done) return runs.every(ok) && (!needCI || ci[0].conclusion === 'success');
+    ciDone = !needCI || (ci.length > 0 && ci.every((r) => r.status === 'completed'));
+    if (runs.every((r) => r.status === 'completed') && ciDone) return runs.every(ok) && (!needCI || ci[0].conclusion === 'success') ? 'passed' : 'failed';
     await pause(POLL_MS);
   }
-  return false;
+  return ciDone || runs.some((r) => r.status === 'completed' && !ok(r)) ? 'failed' : 'waiting';
 }
 
 // Whether the pull request can still merge on its own at the checked commit, or why not.
@@ -141,6 +156,7 @@ async function holdReason(pr, sha) {
 }
 
 const CLOSED = 'The pull request is no longer open.';
+const WAITING = 'CI is still running on this commit after 10 minutes, so this waits. When CI finishes, the gate runs again and merges this pull request if CI passed, with no maintainer needed.';
 
 async function merge(pr, sha, { needCI = false } = {}) {
   const repo = await gh('GET', `/repos/${REPO}`);
@@ -149,7 +165,9 @@ async function merge(pr, sha, { needCI = false } = {}) {
   if (first.reason) return first.reason;
   // Nothing merges until the checks on this commit, CI's tests among them, have all passed. The
   // wait takes minutes, so everything above is checked again after it.
-  if (!(await otherChecksPassed(sha, process.env.GATE_JOB || 'gate', needCI))) return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
+  const checks = await otherChecks(sha, process.env.GATE_JOB || 'gate', needCI);
+  if (checks === 'waiting') return WAITING;
+  if (checks !== 'passed') return 'Another check on this commit failed or is still running, so a maintainer will look at it.';
   const { p, reason } = await holdReason(pr, sha);
   if (reason) return reason;
   try {
@@ -161,7 +179,8 @@ async function merge(pr, sha, { needCI = false } = {}) {
     return 'Merged.';
   }
   // GitHub merges on its own once nothing holds the pull request. The gate waits a short while
-  // for that, so it can delete the branch and start Pages after this merge too.
+  // for that, so it can delete the branch and start Pages after this merge too. A merge after the
+  // wait starts no workflow at all: see "Notes for maintainers" in CONTRIBUTING.md.
   for (let i = 0; i < 8; i++) {
     await pause(POLL_MS);
     const now = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
@@ -199,6 +218,14 @@ async function reportMerged(outcome) {
   if (outcome === 'Merged.' && process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, 'merged=true\n');
 }
 
+// Whether the pull request is still open with the checked commit as its head. A run that is no
+// longer current doesn't touch the report: the run for the new head, or the one that merged the
+// pull request, writes the report that counts.
+async function current(pr, sha) {
+  const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+  return p.state === 'open' && Boolean(p.head) && p.head.sha === sha;
+}
+
 if (cmd === 'changed') {
   const { names, short } = await changedFiles(opt('--pr'));
   if (short) { console.error(`${short}, so the checks can't see the whole pull request.`); process.exit(1); }
@@ -209,23 +236,26 @@ if (cmd === 'changed') {
   const sha = opt('--sha');
   const report = JSON.parse(await readFile(opt('--report'), 'utf8'));
   let md = await readFile(opt('--markdown'), 'utf8');
+  let outcome = null;
   await ensureLabels();
   if (!report.passed) {
     await setLabels(pr, [LABELS.failed[0]], [LABELS.passed[0], LABELS.auto[0]]);
   } else if (report.eligible) {
     await setLabels(pr, [LABELS.passed[0]], [LABELS.failed[0], LABELS.review[0]]);
-    const outcome = await merge(pr, sha, { needCI: true }).catch((e) => `Merging failed: ${e.message}`);
+    outcome = await merge(pr, sha, { needCI: true }).catch((e) => `Merging failed: ${e.message}`);
     await reportMerged(outcome);
     // An earlier run, on a commit the pull request has since moved past, may have added "needs
     // review" while this run waited, so the merge clears it. A pull request that is no longer open
-    // gets no new label.
+    // gets no new label, and one waiting for CI needs no maintainer.
     if (/Merged|Auto-merge is on/.test(outcome)) await setLabels(pr, [LABELS.auto[0]], [LABELS.review[0]]);
-    else if (outcome !== CLOSED) await setLabels(pr, [LABELS.review[0]], []);
+    else if (outcome !== CLOSED && outcome !== WAITING) await setLabels(pr, [LABELS.review[0]], []);
     md += `\n${outcome}\n`;
+    if (outcome === WAITING) md += `\n${waitingMarker(sha)}\n`;
   } else {
     await setLabels(pr, [LABELS.passed[0], LABELS.review[0]], [LABELS.failed[0], LABELS.auto[0]]);
   }
-  await comment(pr, md);
+  if (outcome === 'Merged.' || await current(pr, sha)) await comment(pr, md);
+  else console.log('The pull request merged, closed or moved on while this run worked, so its report is left as it is.');
 } else if (cmd === 'issue') {
   const num = opt('--issue');
   await ensureLabels();
@@ -235,11 +265,17 @@ if (cmd === 'changed') {
   await comment(num, md);
   const passed = /checks: passed/.test(md);
   await setLabels(num, [passed ? LABELS.passed[0] : LABELS.failed[0]], [passed ? LABELS.failed[0] : LABELS.passed[0]]);
+} else if (cmd === 'waiting') {
+  // Exits 0 when the gate's report on the pull request says it is waiting for CI on this commit.
+  const mine = await reportComment(opt('--pr'));
+  const waiting = Boolean(mine && mine.body.trimEnd().endsWith(waitingMarker(opt('--sha'))));
+  console.log(waiting ? 'The gate is waiting for CI on this commit.' : 'The gate isn\'t waiting for CI on this commit.');
+  process.exit(waiting ? 0 : 1);
 } else if (cmd === 'merge') {
   const outcome = await merge(opt('--pr'), opt('--sha'));
   await reportMerged(outcome);
   console.log(outcome);
 } else {
-  console.error('usage: github-gate.mjs changed|pr|issue|merge ...');
+  console.error('usage: github-gate.mjs changed|pr|issue|merge|waiting ...');
   process.exit(2);
 }
