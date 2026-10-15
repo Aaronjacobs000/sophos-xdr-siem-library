@@ -1,0 +1,102 @@
+!SAMPLE=<187>1 2026-10-14T09:14:31.220158+10:00 cx-sw01 log-proxyd 1203 - - Event|5210|LOG_ERR|AMM|-|User root login from 203.0.113.45 for SSH session failed during password based authentication.
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS-CX event log lines sent to a remote syslog server.
+# Child of ARUBA_AOSCX_SYSLOG_PARENT: to Auth, by event ID (AOS-CX Event Log Message Reference):
+#   5209, 12904, 13001, 4655   User <user> logged in from <address> through SSH|TELNET|CONSOLE|REST session.
+#   5210, 12905, 13002, 4656   User <user> login from <address> for <session> session (has) failed ...
+#   4662, 13005                the same, from an interface that isn't allowed
+#   5211, 12906, 13003, 4657   User <user> logged out of <session> session from <address>.
+#   5215, 5216, 5221, 5222     SSH session from <address> for user <user> denied|rejected ...
+#   5220                       RADIUS authorize-only request failed for SSH session from <address> for user <user>.
+#   4601, 4602                 Authentication failed|succeeded for user <user> in session <session ID> (REST)
+#   4707                       User <user> locked out from session <session>
+#   10531, 10532, 10528, 10529 802.1x|MAC Authentication succeeded|failed ... for client <MAC> on port <port> ...
+# id, msg, app, sw, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+inok = msg|^User (?P<user>\S+) logged in from (?P<ip>\S+?) through (?P<ch>[A-Z]+) session\.?$
+inbad = msg|^User (?P<user>\S+) login from (?P<ip>\S+?) for (?P<ch>[A-Z]+) session (?:has )?failed(?P<why>.*?)\.?$
+out = msg|^User (?P<user>\S+) logged out of (?P<ch>[A-Z]+) session from (?P<ip>\S+?)\.?$
+deny = msg|^SSH session from (?P<ip>\S+?) for user (?P<user>\S+) (?:denied|rejected)(?P<why>.*?)\.?$
+radius = msg|^RADIUS authorize-only request failed for SSH session from (?P<ip>\S+?) for user (?P<user>\S+?)\.?$
+nocert = msg|^SSH session from (?P<ip>\S+?) denied because username (?P<user>\S+) not found
+rest = msg|^Authentication (?P<res>failed|succeeded) for user (?P<user>\S+) in session (?P<sess>\S+)$
+lock = msg|^User (?P<user>\S+) locked out from session (?P<sess>\S+)$
+nac = msg|^(?P<meth>802\.1x|MAC) Authentication (?P<res>succeeded|failed)(?: with reason (?P<why>.*?))? for client (?P<mac>\S+) on port (?P<port>\S+) with ID (?P<rid>\S+) (?:to|from) servers? (?P<srv>.*)$
+
+user = inok["user"]
+user = IF user == "" THEN inbad["user"] ELSE user
+user = IF user == "" THEN out["user"] ELSE user
+user = IF user == "" THEN deny["user"] ELSE user
+user = IF user == "" THEN radius["user"] ELSE user
+user = IF user == "" THEN nocert["user"] ELSE user
+user = IF user == "" THEN rest["user"] ELSE user
+user = IF user == "" THEN lock["user"] ELSE user
+# MAC authentication uses the client's MAC address as its user name.
+user = IF user == "" AND nac["meth"] == "MAC" THEN nac["mac"] ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+ip = inok["ip"]
+ip = IF ip == "" THEN inbad["ip"] ELSE ip
+ip = IF ip == "" THEN out["ip"] ELSE ip
+ip = IF ip == "" THEN deny["ip"] ELSE ip
+ip = IF ip == "" THEN radius["ip"] ELSE ip
+ip = IF ip == "" THEN nocert["ip"] ELSE ip
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+targetHostName$ = IF sw != "" THEN sw ELSE NULL
+
+ch = inok["ch"]
+ch = IF ch == "" THEN inbad["ch"] ELSE ch
+ch = IF ch == "" THEN out["ch"] ELSE ch
+ch = IF deny["user"] != "" OR radius["user"] != "" OR nocert["user"] != "" THEN "SSH" ELSE ch
+ch = IF rest["user"] != "" THEN "REST" ELSE ch
+ch = IF nac["meth"] != "" THEN nac["meth"] ELSE ch
+logonApplicationFamily$ = IF ch != "" THEN ch ELSE NULL
+authSystem$ = IF ch != "" THEN "AOS-CX " + ch ELSE "AOS-CX"
+
+logout = out["user"] != ""
+locked = lock["user"] != ""
+success = inok["user"] != "" OR logout OR rest["res"] == "succeeded" OR nac["res"] == "succeeded"
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+why = inbad["why"]
+why = IF why == "" THEN deny["why"] ELSE why
+why = IF why == "" THEN nac["why"] ELSE why
+why = TRIM(why)
+why = IF why == "" AND radius["user"] != "" THEN "RADIUS authorize-only request failed" ELSE why
+extraFailurereason$ = IF success OR why == "" THEN NULL ELSE why
+lwhy = LOWERCASE(why)
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND (CONTAINS(lwhy, "password") OR CONTAINS(lwhy, "access-reject")) THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+sess = IF rest["sess"] != "" THEN rest["sess"] ELSE lock["sess"]
+sessionId$ = IF sess != "" THEN sess ELSE NULL
+
+m1.key$ = "event_id"
+m1.value$ = id
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "client_mac"
+m2.value$ = nac["mac"]
+eventMetadata$.record$ = IF nac["mac"] != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "port"
+m3.value$ = nac["port"]
+eventMetadata$.record$ = IF nac["port"] != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "radius_server"
+m4.value$ = nac["srv"]
+eventMetadata$.record$ = IF nac["srv"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "request_id"
+m5.value$ = nac["rid"]
+eventMetadata$.record$ = IF nac["rid"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "app"
+m6.value$ = app
+eventMetadata$.record$ = IF app != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$

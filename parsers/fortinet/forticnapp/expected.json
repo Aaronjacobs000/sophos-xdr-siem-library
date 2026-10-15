@@ -1,0 +1,174 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiCNAPP",
+      "event_time_usec": 1791968400000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiCNAPP",
+      "alert_id": "120884",
+      "sensor_event_id": "120884",
+      "title": "Compliance Changed",
+      "summary": "AWS Account 111122223333: AWS_CIS_1_4 Ensure access keys are rotated every 90 days or less changed from compliant to non-compliant",
+      "alert_category": "Compliance",
+      "sub_provider": "AWSCompliance",
+      "severity": "HIGH",
+      "vendor_severity": "2",
+      "additional_data": {
+        "record": [
+          {
+            "key": "lacework_account",
+            "value": "example"
+          },
+          {
+            "key": "event_link",
+            "value": "https://lacework.example.com/ui/investigate/Event/120884?startTime=1792008000000&endTime=1792011600000"
+          },
+          {
+            "key": "rec_id",
+            "value": "AWS_CIS_1_4"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiCNAPP",
+      "event_time_usec": 1791972000000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiCNAPP",
+      "alert_id": "120890",
+      "sensor_event_id": "120890",
+      "title": "Compliance Changed",
+      "summary": "Azure Account example Pay-As-You-Go: Azure_CIS_2_1 Ensure that standard pricing tier is selected changed from compliant to non-compliant",
+      "alert_category": "Compliance",
+      "sub_provider": "AzureCompliance",
+      "severity": "LOW",
+      "vendor_severity": "4",
+      "additional_data": {
+        "record": [
+          {
+            "key": "lacework_account",
+            "value": "example"
+          },
+          {
+            "key": "event_link",
+            "value": "https://lacework.example.com/ui/investigate/Event/120890?startTime=1792011600000&endTime=1792015200000"
+          },
+          {
+            "key": "rec_id",
+            "value": "Azure_CIS_2_1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiCNAPP",
+      "event_time_usec": 1791968700000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiCNAPP",
+      "alert_id": "120885",
+      "sensor_event_id": "120885",
+      "title": "Unauthorized API Call",
+      "summary": "User jsmith made an unauthorized call to ec2:DescribeInstances from 203.0.113.50",
+      "alert_category": "CloudActivity",
+      "sub_provider": "AWS",
+      "severity": "MEDIUM",
+      "vendor_severity": "3",
+      "additional_data": {
+        "record": [
+          {
+            "key": "lacework_account",
+            "value": "example"
+          },
+          {
+            "key": "event_link",
+            "value": "https://lacework.example.com/ui/investigate/Event/120885?startTime=1792008000000&endTime=1792011600000"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiCNAPP",
+      "event_time_usec": 1791112320000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiCNAPP",
+      "alert_id": "120901",
+      "sensor_event_id": "120901",
+      "title": "New External Server DNS Connection",
+      "summary": "Host web01.example.com made a new connection to the external server malware.example.net (198.51.100.77)",
+      "alert_category": "NewExternalServerDNSConn",
+      "sub_provider": "Agent",
+      "severity": "CRITICAL",
+      "vendor_severity": "1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "lacework_account",
+            "value": "example"
+          },
+          {
+            "key": "event_link",
+            "value": "https://lacework.example.com/ui/investigate/Event/120901?startTime=1792015200000&endTime=1792018800000"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FORTINET_FORTICNAPP_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fortinet FortiCNAPP",
+      "event_time_usec": 1791979200000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Fortinet",
+      "provider": "FortiCNAPP",
+      "alert_id": "120910",
+      "sensor_event_id": "120910",
+      "title": "Compliance Changed",
+      "summary": "GCP Project example-prod: GCP_CIS13_3_1 Ensure that the default network does not exist in a project changed from compliant to non-compliant",
+      "alert_category": "Compliance",
+      "sub_provider": "GcpCompliance",
+      "severity": "MEDIUM",
+      "vendor_severity": "3",
+      "additional_data": {
+        "record": [
+          {
+            "key": "lacework_account",
+            "value": "example"
+          },
+          {
+            "key": "event_link",
+            "value": "https://lacework.example.com/ui/investigate/Event/120910?startTime=1792018800000&endTime=1792022400000"
+          },
+          {
+            "key": "rec_id",
+            "value": "GCP_CIS13_3_1"
+          }
+        ]
+      }
+    }
+  }
+]

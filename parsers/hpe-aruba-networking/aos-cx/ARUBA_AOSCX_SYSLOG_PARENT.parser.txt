@@ -1,0 +1,47 @@
+!SAMPLE=<190>1 2026-10-14T09:12:44.148824+10:00 cx-sw01 hpe-restd 886 - - Event|4655|LOG_INFO|AMM|-|User admin logged in from 192.0.2.10 through REST session
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s(?:Event\|\d+\|LOG_[A-Z]+\|[^|]*\|[^|]*\||AUDIT\|\S+ ".*" executed by user ')
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS-CX switch event log and accounting (audit) log sent to a remote
+# syslog server (logging <server> ... include-auditable-events).
+# Parent: recognizes event log lines and AOS-CX format accounting lines, and hands them on:
+#   Event|<event ID>|LOG_<severity>|<module role>|<module ID>|<message>
+#     sign-ins, sign-outs and failures on SSH, Telnet, the console and REST, account lockouts and
+#     802.1X and MAC authentication results                                     to the Auth child
+#     user, password, configuration, SSH key and remote logging changes          to the Management Event child
+#   AUDIT|<interface> "<command>" executed by user '<user>' from address '<address>' through <session>
+#     session which resulted in <result> at timezone <zone>.                     to the Management Event child
+# Other events stay generic. The time is the header's RFC 3339 time, which carries the switch's zone.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+)?(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))\s+(?P<rest>.*)$
+# RFC 5424: <host> <app> <pid> - - <body>. A relayed or local line: <host> <app>[<pid>]: <body>.
+r5424 = hdr["rest"]|^(?P<host>\S+)\s+(?P<app>[\w.-]+)\s+(?:\d+|-)\s+\S+\s+(?:-|\[.*?\])\s+(?P<body>(?:Event|AUDIT)\|.*)$
+rbsd = hdr["rest"]|^(?:(?P<host>\S+)\s+)?(?P<app>[\w.-]+)\[\d+\]:\s*(?P<body>(?:Event|AUDIT)\|.*)$
+body = IF r5424["body"] != "" THEN r5424["body"] ELSE rbsd["body"]
+sw = IF r5424["host"] != "" THEN r5424["host"] ELSE rbsd["host"]
+app = IF r5424["app"] != "" THEN r5424["app"] ELSE rbsd["app"]
+
+ev = body|^Event\|(?P<id>\d+)\|LOG_(?P<sev>[A-Z]+)\|(?P<role>[^|]*)\|(?P<mod>[^|]*)\|(?P<msg>.*?)\s*$
+aud = body|^AUDIT\|(?P<iface>\S+) "(?P<cmd>.*)" executed by user '(?P<user>[^']*)' from address '(?P<addr>[^']*)' through (?P<sess>\S+) session which resulted in (?P<res>\w+)(?: at timezone (?P<tz>\S+?))?\.?\s*$
+id = ev["id"]
+msg = ev["msg"]
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "HPE Aruba Networking AOS-CX"
+hostId$ = IF sw != "" THEN sw ELSE NULL
+eventTimeUsec$ = DATETIME(hdr["time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+signin = id == "5209" OR id == "5210" OR id == "5211" OR id == "5215" OR id == "5216" OR id == "5220" OR id == "5221" OR id == "5222"
+signin = signin OR id == "12904" OR id == "12905" OR id == "12906" OR id == "13001" OR id == "13002" OR id == "13003" OR id == "13005"
+signin = signin OR id == "4601" OR id == "4602" OR id == "4655" OR id == "4656" OR id == "4657" OR id == "4662" OR id == "4707"
+signin = signin OR id == "10528" OR id == "10529" OR id == "10531" OR id == "10532"
+change = id == "4609" OR id == "4610" OR id == "4611" OR id == "4612" OR id == "4613" OR id == "4614" OR id == "4617" OR id == "4618" OR id == "4619"
+change = change OR id == "4701" OR id == "4702" OR id == "4703" OR id == "4704" OR id == "5202" OR id == "5203" OR id == "5204" OR id == "5205"
+change = change OR id == "1218" OR id == "1219" OR id == "1220" OR id == "1232" OR id == "5901" OR id == "5902" OR id == "6801"
+eventType$ = "other"
+eventType$ = IF signin THEN "auth" ELSE eventType$
+eventType$ = IF change OR aud["cmd"] != "" THEN "admin" ELSE eventType$

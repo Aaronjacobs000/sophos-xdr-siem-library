@@ -1,0 +1,60 @@
+!SAMPLE=<190>1 2026-10-14T09:17:20.009311+10:00 cx-sw01 hpe-restd 886 - - Event|4609|LOG_INFO|AMM|-|User admin added netops2 with role operators
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS-CX event log and accounting log lines sent to a remote syslog server.
+# Child of ARUBA_AOSCX_SYSLOG_PARENT: to Management Event.
+#   Event log, by event ID: users added and deleted (4609, 4610, 4701, 4702), password changes (4611,
+#   4612, 4703, 4704), configuration written and copied (4613, 4614, 6801), REST changes (4617, 4618,
+#   4619), SSH server and client key changes (5202 to 5205), remote logging added, removed or changed
+#   and the security log cleared (1218, 1219, 1220, 1232), and admin password resets (5901, 5902).
+#   Accounting log (AOS-CX format, the default from 10.11): the command, user, address, session and result.
+# The event ID goes to event_id, the message to operation, and the user who acted to username.
+# id, msg, aud, app, sw, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+isAudit = aud["cmd"] != ""
+channel$ = IF isAudit THEN "AOS-CX accounting log" ELSE "AOS-CX event log"
+eventId$ = IF id != "" THEN INT(id, 10) ELSE NULL
+targetHostname$ = IF sw != "" THEN sw ELSE NULL
+
+# Who acted: "User <user> ...", "<user> has written|copied ...", "<user> created|deleted|modified <uri>",
+# or the accounting line's user.
+byUser = msg|^User (?P<u>\S+) (?:added|deleted|successfully changed|password change failed|set|restored)
+byHas = msg|^(?P<u>\S+) has (?:written|copied) 
+byUri = msg|^(?P<u>\S+) (?P<verb>created|deleted|modified) (?P<uri>/\S*)$
+actor = byUser["u"]
+actor = IF actor == "" THEN byHas["u"] ELSE actor
+actor = IF actor == "" THEN byUri["u"] ELSE actor
+actor = IF isAudit THEN aud["user"] ELSE actor
+username$ = IF actor != "" THEN actor ELSE NULL
+addr = aud["addr"]
+clientHostname$ = IF addr != "" THEN addr ELSE NULL
+command$ = IF isAudit THEN aud["cmd"] ELSE NULL
+operation$ = IF isAudit THEN aud["iface"] + " " + aud["cmd"] + " through " + aud["sess"] + " session" ELSE msg
+
+op = ""
+op = IF id == "4609" OR id == "4701" THEN "user added" ELSE op
+op = IF id == "4610" OR id == "4702" THEN "user deleted" ELSE op
+op = IF id == "4611" OR id == "4703" THEN "password changed" ELSE op
+op = IF id == "4612" OR id == "4704" THEN "password change failed" ELSE op
+op = IF id == "4613" THEN "configuration written" ELSE op
+op = IF id == "4614" OR id == "6801" THEN "configuration copied" ELSE op
+op = IF byUri["verb"] != "" THEN "resource " + byUri["verb"] ELSE op
+op = IF id == "5202" THEN "SSH server enabled" ELSE op
+op = IF id == "5203" THEN "SSH server disabled" ELSE op
+op = IF id == "5204" THEN "SSH client key installed" ELSE op
+op = IF id == "5205" THEN "SSH client key removed" ELSE op
+op = IF id == "1218" THEN "remote logging added" ELSE op
+op = IF id == "1219" THEN "remote logging removed" ELSE op
+op = IF id == "1220" THEN "remote logging changed" ELSE op
+op = IF id == "1232" THEN "security log cleared" ELSE op
+op = IF id == "5901" OR id == "5902" THEN "admin password reset" ELSE op
+op = IF isAudit THEN "command" ELSE op
+operationName$ = IF op != "" THEN op ELSE NULL
+failed = id == "4612" OR id == "4704" OR id == "5902"
+res = IF failed THEN "failure" ELSE "success"
+result$ = IF isAudit THEN aud["res"] ELSE res

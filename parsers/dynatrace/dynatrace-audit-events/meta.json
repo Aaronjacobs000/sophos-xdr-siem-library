@@ -1,0 +1,30 @@
+{
+  "vendor": "Dynatrace",
+  "product": "Dynatrace audit events",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://docs.dynatrace.com/docs/manage/data-privacy-and-security/configuration/audit-logs-grail",
+    "https://docs.dynatrace.com/docs/semantic-dictionary/model/dt-system-events",
+    "https://docs.dynatrace.com/docs/platform/upgrade/set-up-your-environment/upgrade-from-audit-logs-classic"
+  ],
+  "notes": "Dynatrace has no push for its audit events, so this parser reads the records the example bridge in bridges/dynatrace-audit-events pulls from Grail (dt.system.events with event.kind AUDIT_EVENT) with the Grail Query API and posts to HTTP Ingest. Give the bridge a service user limited by policy to audit events, and a platform token or OAuth client with only storage:system:read and storage:buckets:read; the bridge's README has the policy statements. The classic audit logs API isn't available in the latest environments, and OpenPipeline doesn't forward settings or API gateway audit events, so there is no S3 route. Every event goes to CloudAudit: event.provider (SETTINGS, API_GATEWAY, CLASSIC_API, DOCUMENTS and others) as the event type, event.type (PUT, POST, GET, DELETE and so on) as the event name, user.name (the email address) or else user.id as the user, the token's public identifier or the OAuth client ID as the access key, origin.address as the source, event.outcome as the status, a failure or 4xx or 5xx outcome as the error code with event.reason as the message, and the resource, typed by its settings schema, as a resource. GET requests are read-only and everything else is a management event. The environment ID is the recipient account and event.id the sensor event ID. Origin type, request source, the app (the docs name it both dt.app.id and app.id, and the parser reads both), the OAuth grant type, the settings schema and a settings change's JSON before and after go to additional_event_data. Dynatrace lists the fields but shows no example record and doesn't show how sign-ins look, so samples are made up from the field list in its semantic dictionary and the field mapping in its audit log upgrade guide. A token's public identifier shows as REDACTED, since the library's secret check won't take a real-looking value under a token key. Passed Run Test in a lab tenant on 2026-10-16 (78 of 78 fields matched the emulator in each of 3 runs). No built-in parser claimed these records in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/dynatrace-audit-events"
+}

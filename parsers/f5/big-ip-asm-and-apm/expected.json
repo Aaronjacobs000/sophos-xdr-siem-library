@@ -546,5 +546,450 @@
         ]
       }
     }
+  },
+  {
+    "line": 13,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791843302418233,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.45",
+      "source_port": 51544,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "source_nat_address": "198.51.100.5",
+      "source_nat_port": 51544,
+      "destination_nat_address": "198.51.100.80",
+      "destination_nat_port": 8443,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Accept"
+          },
+          {
+            "key": "acl_rule_name",
+            "value": "/Common/edge_rules:allow_https"
+          },
+          {
+            "key": "acl_policy_name",
+            "value": "/Common/edge_fw_policy"
+          },
+          {
+            "key": "acl_policy_type",
+            "value": "Enforced"
+          },
+          {
+            "key": "context_type",
+            "value": "Virtual Server"
+          },
+          {
+            "key": "context_name",
+            "value": "/Common/vs_www_https"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          },
+          {
+            "key": "flow_id",
+            "value": "00011a2b3c4d5e6f"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791843400902114,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.77",
+      "source_port": 40112,
+      "destination_address": "198.51.100.31",
+      "destination_port": 445,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "connection_end_reason": "Policy",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Reject"
+          },
+          {
+            "key": "acl_rule_name",
+            "value": "/Common/global_rules:deny_smb"
+          },
+          {
+            "key": "acl_policy_name",
+            "value": "/Common/global_fw_policy"
+          },
+          {
+            "key": "acl_policy_type",
+            "value": "Enforced"
+          },
+          {
+            "key": "context_type",
+            "value": "Global"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791883290000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.120",
+      "source_port": 49301,
+      "destination_address": "198.51.100.25",
+      "destination_port": 25,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Accept"
+          },
+          {
+            "key": "acl_rule_name",
+            "value": "/Common/edge_rules:allow_smtp"
+          },
+          {
+            "key": "acl_policy_name",
+            "value": "/Common/edge_fw_policy"
+          },
+          {
+            "key": "acl_policy_type",
+            "value": "Enforced"
+          },
+          {
+            "key": "context_type",
+            "value": "Virtual Server"
+          },
+          {
+            "key": "context_name",
+            "value": "/Common/vs_mail_smtp"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          },
+          {
+            "key": "flow_id",
+            "value": "00011a2b3c4d7b12"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791883334000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.150",
+      "source_port": 38877,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "connection_end_reason": "Connection Flow Miss",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Drop"
+          },
+          {
+            "key": "context_type",
+            "value": "Virtual Server"
+          },
+          {
+            "key": "context_name",
+            "value": "/Common/vs_www_https"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791883391000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.45",
+      "source_port": 51600,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "protocol": 6,
+      "flow_action": "FW_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Accept"
+          },
+          {
+            "key": "acl_rule_name",
+            "value": "/Common/edge_rules:allow_https"
+          },
+          {
+            "key": "context_name",
+            "value": "/Common/vs_www_https"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791883442000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003137",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "source_address": "203.0.113.77",
+      "source_port": 40877,
+      "destination_address": "198.51.100.32",
+      "destination_port": 3389,
+      "protocol": 6,
+      "flow_action": "FW_BLOCKED",
+      "connection_end_reason": "Policy",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "Drop"
+          },
+          {
+            "key": "acl_rule_name",
+            "value": "/Common/global_rules:deny_rdp"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          },
+          {
+            "key": "route_domain",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791846120115320,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003138",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "message": "TCP SYN flood",
+      "classification": "Network DoS Event",
+      "log_type": "DoS",
+      "action": "None",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "dos_attack_id",
+            "value": "3318840121"
+          },
+          {
+            "key": "dos_attack_event",
+            "value": "Attack Started"
+          },
+          {
+            "key": "dos_packets_dropped",
+            "value": "0"
+          },
+          {
+            "key": "dos_packets_received",
+            "value": "0"
+          },
+          {
+            "key": "dos_src",
+            "value": "Volumetric, Aggregated across all SrcIP's, Device-Wide attack, metric:PPS"
+          },
+          {
+            "key": "context_name",
+            "value": "Device"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791885721000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003138",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "message": "TCP SYN flood",
+      "classification": "Network DoS Event",
+      "log_type": "DoS",
+      "action": "Drop",
+      "blocked": 1,
+      "source_address": "203.0.113.201",
+      "source_port": 31337,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "dos_attack_id",
+            "value": "3318840121"
+          },
+          {
+            "key": "dos_attack_event",
+            "value": "Attack Sampled"
+          },
+          {
+            "key": "dos_packets_dropped",
+            "value": "48210"
+          },
+          {
+            "key": "dos_packets_received",
+            "value": "48975"
+          },
+          {
+            "key": "dos_src",
+            "value": "Volumetric, Aggregated across all SrcIP's, Device-Wide attack, metric:PPS"
+          },
+          {
+            "key": "context_name",
+            "value": "Device"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "F5_BIGIP_AFM_SYSLOG_PARENT > F5_BIGIP_AFM_SYSLOG_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP AFM",
+      "event_time_usec": 1791885725000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "23003138",
+      "host_id": "bigip01.example.com",
+      "sensor_version": "17.1.1.3.0.0.5",
+      "message": "TCP SYN flood",
+      "classification": "Network DoS Event",
+      "log_type": "DoS",
+      "action": "Drop",
+      "blocked": 1,
+      "source_address": "203.0.113.202",
+      "source_port": 40001,
+      "destination_address": "198.51.100.20",
+      "destination_port": 443,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "dos_attack_id",
+            "value": "3318840121"
+          },
+          {
+            "key": "dos_attack_event",
+            "value": "Attack Sampled"
+          },
+          {
+            "key": "vlan",
+            "value": "/Common/external"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
   }
 ]

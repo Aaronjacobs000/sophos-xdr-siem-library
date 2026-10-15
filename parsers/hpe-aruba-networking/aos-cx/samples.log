@@ -1,0 +1,15 @@
+<190>1 2026-10-14T09:12:44.148824+10:00 cx-sw01 hpe-restd 886 - - Event|4655|LOG_INFO|AMM|-|User admin logged in from 192.0.2.10 through REST session
+<187>1 2026-10-14T09:13:02.551203+10:00 cx-sw01 hpe-restd 886 - - Event|4656|LOG_ERR|AMM|-|User admin login from 203.0.113.45 for REST session has failed
+<190>1 2026-10-14T09:14:10.004521+10:00 cx-sw01 log-proxyd 1203 - - Event|5209|LOG_INFO|AMM|-|User netops logged in from 192.0.2.20 through SSH session.
+<187>1 2026-10-14T09:14:31.220158+10:00 cx-sw01 log-proxyd 1203 - - Event|5210|LOG_ERR|AMM|-|User root login from 203.0.113.45 for SSH session failed during password based authentication.
+<187>1 2026-10-14T09:14:52.876002+10:00 cx-sw01 log-proxyd 1203 - - Event|5222|LOG_ERR|AMM|-|SSH session from 203.0.113.46 for user admin denied by SSH server allow-list
+<190>1 2026-10-14T09:15:40.330671+10:00 cx-sw01 log-proxyd 1203 - - Event|5211|LOG_INFO|AMM|-|User netops logged out of SSH session from 192.0.2.20.
+<190>1 2026-10-14T09:16:05.441902+10:00 cx-sw01 port-accessd 2410 - - Event|10531|LOG_INFO|AMM|-|802.1x Authentication succeeded for client 00:50:56:96:a1:10 on port 1/1/4 with ID 24 from server 192.0.2.50:1812, udp, vrf default
+<190>1 2026-10-14T09:16:09.118034+10:00 cx-sw01 port-accessd 2410 - - Event|10529|LOG_INFO|AMM|-|MAC Authentication failed with reason Access-Reject for client 00:50:56:96:b2:20 on port 1/1/9 with ID 25 from servers 192.0.2.50:1812, udp, vrf default
+<190>1 2026-10-14T09:17:20.009311+10:00 cx-sw01 hpe-restd 886 - - Event|4609|LOG_INFO|AMM|-|User admin added netops2 with role operators
+<190>1 2026-10-14T09:17:41.772910+10:00 cx-sw01 hpe-restd 886 - - Event|4619|LOG_INFO|AMM|-|admin modified /rest/v10.15/system/interfaces/1%2F1%2F10
+<190>1 2026-10-14T09:18:02.301557+10:00 cx-sw01 hpe-restd 886 - - Event|4613|LOG_INFO|AMM|-|admin has written a new switch configuration to startup-config
+<190>1 2026-10-14T09:19:12.660024+10:00 cx-sw01 hpe-restd 886 - - Event|1219|LOG_INFO|AMM|-|Remote logging to 192.0.2.250 over default vrf removed.
+<190>1 2026-10-13T23:20:27.765+00:00 cx-sw02 acctsyslogd 2788 - - AUDIT|CLI "no logging 192.0.2.250" executed by user 'netops' from address '192.0.2.20' through SSH session which resulted in success at timezone UTC.
+2026-10-13T23:21:00.612861+00:00 cx-sw02 hpe-restd[3157]: Event|4602|LOG_INFO|AMM|-|Authentication succeeded for user admin in session ExampleSessionId00==
+<188>1 2026-10-14T09:22:15.004410+10:00 cx-sw01 lpd 1880 - - Event|2803|LOG_WARN|AMM|-|Loop detected on port 1/1/12 on VLAN 20

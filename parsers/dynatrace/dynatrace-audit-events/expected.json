@@ -1,0 +1,238 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Dynatrace",
+      "event_time_usec": 1792027523987000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Dynatrace",
+      "recipient_account_id": "abc12345",
+      "sensor_event_id": "5547782627070661074_1792027523000",
+      "event_type": "SETTINGS",
+      "event_name": "PUT",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jsmith@example.com",
+      "user_id": "3f2a1b0c-9d8e-4f7a-b6c5-d4e3f2a1b0c9",
+      "source_address": "203.0.113.45",
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "vu9U3hXa3q0AAAABABhidWlsdGluOmFsZXJ0aW5n",
+          "resource_type": "builtin:alerting.profile",
+          "resource_account_id": "abc12345"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "origin_type",
+            "value": "REST"
+          },
+          {
+            "key": "request_source",
+            "value": "BROWSER"
+          },
+          {
+            "key": "settings_schema_id",
+            "value": "builtin:alerting.profile"
+          },
+          {
+            "key": "json_before",
+            "value": "{\"name\":\"Default\",\"enabled\":true}"
+          },
+          {
+            "key": "json_after",
+            "value": "{\"name\":\"Default\",\"enabled\":false}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Dynatrace",
+      "event_time_usec": 1792027862115000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Dynatrace",
+      "recipient_account_id": "abc12345",
+      "sensor_event_id": "5547782627070661231_1792027862000",
+      "event_type": "API_GATEWAY",
+      "event_name": "POST",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "8c1d2e3f-4a5b-4c6d-9e7f-0a1b2c3d4e5f",
+      "user_id": "8c1d2e3f-4a5b-4c6d-9e7f-0a1b2c3d4e5f",
+      "user_type": "OAUTH2",
+      "access_key": "dt0s02.EXAMPLE1",
+      "source_address": "198.51.100.7",
+      "status": "200",
+      "resources": [
+        {
+          "resource_id": "/platform/storage/query/v1/query:execute",
+          "resource_type": "API_GATEWAY",
+          "resource_account_id": "abc12345"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "origin_type",
+            "value": "REST"
+          },
+          {
+            "key": "request_source",
+            "value": "OTHER"
+          },
+          {
+            "key": "grant_type",
+            "value": "CLIENT_CREDENTIALS"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Dynatrace",
+      "event_time_usec": 1792028447501000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Dynatrace",
+      "recipient_account_id": "abc12345",
+      "sensor_event_id": "5547782627070661390_1792028447000",
+      "event_type": "CLASSIC_API",
+      "event_name": "GET",
+      "read_only": true,
+      "management_event": false,
+      "user_name": "jsmith@example.com",
+      "user_id": "3f2a1b0c-9d8e-4f7a-b6c5-d4e3f2a1b0c9",
+      "user_type": "TOKEN",
+      "access_key": "REDACTED",
+      "source_address": "203.0.113.45",
+      "status": "200",
+      "resources": [
+        {
+          "resource_id": "/api/v2/entities",
+          "resource_type": "CLASSIC_API",
+          "resource_account_id": "abc12345"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "origin_type",
+            "value": "REST"
+          },
+          {
+            "key": "request_source",
+            "value": "OTHER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Dynatrace",
+      "event_time_usec": 1792029130042000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Dynatrace",
+      "recipient_account_id": "abc12345",
+      "sensor_event_id": "5547782627070661512_1792029130000",
+      "event_type": "API_GATEWAY",
+      "event_name": "DELETE",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "adoe@example.com",
+      "user_id": "7b6a5c4d-3e2f-4a1b-8c9d-0e1f2a3b4c5d",
+      "user_type": "OAUTH2",
+      "source_address": "198.51.100.23",
+      "status": "403",
+      "error_code": "403",
+      "error_message": "user is missing permission \"settings:objects:write\"",
+      "resources": [
+        {
+          "resource_id": "/platform/classic/environment-api/v2/settings/objects/vu9U3hXa3q0AAAABABhidWlsdGluOmFsZXJ0aW5n",
+          "resource_type": "API_GATEWAY",
+          "resource_account_id": "abc12345"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "origin_type",
+            "value": "REST"
+          },
+          {
+            "key": "request_source",
+            "value": "BROWSER"
+          },
+          {
+            "key": "grant_type",
+            "value": "AUTHORIZATION_CODE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DYNATRACE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Dynatrace",
+      "event_time_usec": 1792029933720000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Dynatrace",
+      "recipient_account_id": "abc12345",
+      "sensor_event_id": "5547782627070661677_1792029933000",
+      "event_type": "API_GATEWAY",
+      "event_name": "PATCH",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jsmith@example.com",
+      "user_id": "3f2a1b0c-9d8e-4f7a-b6c5-d4e3f2a1b0c9",
+      "user_type": "OAUTH2",
+      "source_address": "203.0.113.45",
+      "status": "200",
+      "resources": [
+        {
+          "resource_id": "/platform/document/v1/documents/2f7c1e9a-6b3d-4e8f-a1c2-5d6e7f8a9b0c",
+          "resource_type": "API_GATEWAY",
+          "resource_account_id": "abc12345"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "origin_type",
+            "value": "REST"
+          },
+          {
+            "key": "request_source",
+            "value": "BROWSER"
+          },
+          {
+            "key": "app_id",
+            "value": "dynatrace.notebooks"
+          },
+          {
+            "key": "grant_type",
+            "value": "AUTHORIZATION_CODE"
+          }
+        ]
+      }
+    }
+  }
+]
