@@ -1,0 +1,27 @@
+!SAMPLE={"topic":"audits","events":[{"admin_id":"0a1b2c3d-4e5f-4061-8a7b-000000000011","admin_name":"Sam Admin sam.admin@example.com","after":"{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": 10}}}","before":"{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": null}}}","id":"737909a2-04ff-4aeb-9a1c-000000000001","message":"Update Site Settings","org_id":"6748cfa6-4e12-11e6-9a1c-000000000001","site_id":"4ac1dcf4-9d8b-7211-9a1c-000000000001","site_name":"Head Office","src_ip":"203.0.113.20","timestamp":1791853804.201053,"user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"}]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{(?:\s*"topic"\s*:\s*"(?:audits|alarms|nac-events)"\s*,\s*"events"\s*:\s*\[|.*\]\s*,\s*"topic"\s*:\s*"(?:audits|alarms|nac-events)"\s*\}\s*$)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Juniper Mist webhooks for the audits, alarms and nac-events topics,
+# {"topic": ..., "events": [...]}, through the webhook relay in bridges/webhook-relay with
+# BRIDGE_SPLIT_BATCHES=1, which forwards each event of a batch as its own record. These parsers
+# read the first event of a record, so a batch that wasn't split loses the rest.
+# Parent: hands audits to the CloudAudit child, alarms to the ThirdPartyAlert child and Mist Access
+# Assurance NAC events to the Auth child. Other topics aren't claimed.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Juniper Mist"
+topic = json["$.topic"]
+# timestamp is epoch seconds, with a fraction on audits and NAC events. Some alarm types send
+# When instead.
+ts = json["$.events[0].timestamp"]
+ts = IF ts THEN ts ELSE json["$.events[0].When"]
+eventTimeUsec$ = INT(STRING(ts * 1000000), 10)
+eventType$ = topic

@@ -1,0 +1,49 @@
+!SAMPLE={"cyberark_epm_record":"raw_event","setId":"0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0","setName":"Acme Workstations","policyName":null,"hash":"5B97884A45C6C05F93B22C4059F3D9189E88E8B7","publisher":"Acme Software Pty Ltd","eventType":"Launch","sourceType":"LocalDisk","sourceName":"Windows Explorer","lastEventDate":"2026-10-14T01:20:16.069Z","firstEventDate":"2026-10-14T01:20:16.069Z","userName":"ACME\\akim","justification":null,"fileName":"reportbuilder.exe","justificationType":null,"jitRequestInterval":null,"originalFileName":"reportbuilder.exe","fileSize":11264,"threatProtectionAction":null,"packageName":"Report Builder","company":"Acme Software Pty Ltd","filePath":"C:\\Program Files\\Acme\\Report Builder\\reportbuilder.exe","fileDescription":"Report Builder","productName":"Report Builder","productVersion":"4.2.0.0","fileVersion":"4.2.0.0","modificationTime":"2026-08-02T04:11:09.164Z","userIsAdmin":false,"agentEventCount":1,"skippedCount":0,"accessAction":null,"accessTargetType":null,"accessTargetName":null,"processCommandLine":null,"sourceProcessCommandLine":null,"sourceProcessUsername":null,"sourceProcessHash":null,"sourceProcessPublisher":null,"sourceProcessSigner":null,"displayName":"Report Builder (reportbuilder.exe)","evidences":null,"owner":"NT AUTHORITY\\SYSTEM","deceptionType":0,"lureUser":null,"sourceWSName":null,"fatherProcess":null,"sourceWSIp":null,"winEventType":0,"winEventRecordId":0,"logonAttemptTypeId":0,"logonStatusId":0,"agentId":"78350d3c-5960-4f39-975a-ed07b53924a4","exposedUsers":null,"arrivalTime":"2026-10-14T01:21:02.512Z","lastEventComputerName":"FIN-LT-041"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"cyberark_epm_record"\s*:\s*"(?:raw_event|policy_audit)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: CyberArk Endpoint Privilege Manager (EPM SaaS) events from the EPM REST API, pulled by
+# the example bridge in bridges/cyberark-epm-events and posted to HTTP Ingest as JSON lines. EPM
+# SaaS has no syslog or push for these events, so the bridge names each record in
+# "cyberark_epm_record" (raw_event from Get detailed raw events, policy_audit from Get policy
+# audit raw event details) and adds the set it came from (setId, setName).
+# Parent: hands threat protection detections, blocks, restricted access, ransomware protection
+# and elevation requests to ThirdPartyAlert, and every other application event (launch, trust,
+# installation, access) to Process.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "CyberArk Endpoint Privilege Manager"
+rec = STRING(json["$.cyberark_epm_record"])
+epmType = STRING(json["$.eventType"])
+t = LOWERCASE(epmType)
+setName = STRING(json["$.setName"])
+user = STRING(json["$.userName"])
+filePath = STRING(json["$.filePath"])
+fileName = STRING(json["$.fileName"])
+sha1 = STRING(json["$.hash"])
+policyName = STRING(json["$.policyName"])
+# Policy audits name the computer; raw events name the computer of the most recent occurrence.
+computer = STRING(json["$.computerName"])
+computer = IF computer == "" THEN STRING(json["$.lastEventComputerName"]) ELSE computer
+
+# Dates are ISO 8601 in UTC. An event can stand for several identical ones (agentEventCount);
+# its time is the most recent one, else the first, else when EPM received it.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+first = STRING(json["$.firstEventDate"])
+last = STRING(json["$.lastEventDate"])
+arrival = STRING(json["$.arrivalTime"])
+eventTimeUsec$ = IF arrival != "" THEN DATETIME(arrival, layout) ELSE eventTimeUsec$
+eventTimeUsec$ = IF first != "" THEN DATETIME(first, layout) ELSE eventTimeUsec$
+eventTimeUsec$ = IF last != "" THEN DATETIME(last, layout) ELSE eventTimeUsec$
+
+threat = t == "attackattempt" OR t == "attackblock" OR t == "suspiciousactivityattempt" OR t == "suspiciousactivityblock" OR t == "ransomware"
+control = t == "block" OR t == "restrictaccess" OR t == "detectaccess"
+elevation = t == "elevationrequest" OR t == "manualrequest"
+eventType$ = IF threat OR control OR elevation THEN "alert" ELSE "process"

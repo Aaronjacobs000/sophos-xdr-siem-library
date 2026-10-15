@@ -1,0 +1,81 @@
+!SAMPLE={"topic":"nac-events","events":[{"ap":"5c5b35000001","auth_type":"eap-tls","bssid":"02005e000101","cert_cn":"pat@example.com","cert_expiry":1823389804,"cert_issuer":"/C=AU/O=Example/CN=Example Issuing CA","cert_serial":"1300103d29e56ef0","cert_subject":"/C=AU/O=Example/CN=pat@example.com","idp_id":"912ef72e-2239-4996-9a1c-000000000008","idp_role":["Employee","Finance"],"mac":"02005e00a002","nacrule_id":"32f27e7d-ff26-4a9b-9a1c-000000000009","nacrule_matched":true,"nas_vendor":"juniper-mist","org_id":"6748cfa6-4e12-11e6-9a1c-000000000001","random_mac":false,"site_id":"4ac1dcf4-9d8b-7211-9a1c-000000000001","ssid":"Corp-WiFi","timestamp":1791855004.358188,"type":"NAC_CLIENT_PERMIT","username":"pat@example.com","vlan":"750"}]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="nac-events"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Juniper Mist nac-events webhooks from Mist Access Assurance: network sign-ins allowed
+# (NAC_CLIENT_PERMIT) or denied (NAC_CLIENT_DENY), certificate checks, sessions, and identity
+# provider and MDM lookups.
+# Child of JUNIPER_MIST_WEBHOOK_JSON_PARENT: each one to Auth, with the event type as the status
+# and Mist's text as the sub-status. NAC events carry no client IP address; the client's MAC, the
+# AP or switch port, the SSID and the certificate go to event metadata.
+# json, topic, ts, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Juniper Mist Access Assurance"
+ntype = json["$.events[0].type"]
+status$ = ntype
+subStatus$ = json["$.events[0].text"]
+user = json["$.events[0].username"]
+user = IF user THEN user ELSE json["$.events[0].idp_username"]
+user = IF user THEN user ELSE json["$.events[0].cert_cn"]
+targetUserName$ = user
+
+lt = UPPERCASE(STRING(ntype))
+permit = lt == "NAC_CLIENT_PERMIT" OR lt == "NAC_SESSION_STARTED"
+logoff = lt == "NAC_SESSION_ENDED"
+failed = lt == "NAC_CLIENT_DENY" OR CONTAINS(lt, "EXPIRED") OR CONTAINS(lt, "REVOKED") OR CONTAINS(lt, "FAIL") OR CONTAINS(lt, "INVALID") OR CONTAINS(lt, "UNREACHABLE")
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "UNCLASSIFIED"
+action$ = IF permit THEN "LOGON" ELSE action$
+action$ = IF logoff THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = NULL
+actionResult$ = IF permit OR logoff OR CONTAINS(lt, "SUCCESS") THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF failed THEN "FAILED" ELSE actionResult$
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+
+m1.key$ = "org_id"
+m1.value$ = json["$.events[0].org_id"]
+m2.key$ = "site_id"
+m2.value$ = json["$.events[0].site_id"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "client_mac"
+m3.value$ = json["$.events[0].mac"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "auth_type"
+m4.value$ = json["$.events[0].auth_type"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "ssid"
+m5.value$ = json["$.events[0].ssid"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "ap"
+m6.value$ = json["$.events[0].ap"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "port_id"
+m7.value$ = json["$.events[0].port_id"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "vlan"
+m8.value$ = json["$.events[0].vlan"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "idp_role"
+m9.value$ = REPLACE_REGEX(STRING(json["$.events[0].idp_role"]), `[\[\]"]`, "")
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "nacrule_id"
+m10.value$ = json["$.events[0].nacrule_id"]
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "cert_cn"
+m11.value$ = json["$.events[0].cert_cn"]
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "cert_issuer"
+m12.value$ = json["$.events[0].cert_issuer"]
+eventMetadata$.record$ = IF m12.value$ THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "cert_serial"
+m13.value$ = json["$.events[0].cert_serial"]
+eventMetadata$.record$ = IF m13.value$ THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+m14.key$ = "random_mac"
+m14.value$ = STRING(json["$.events[0].random_mac"])
+eventMetadata$.record$ = IF m14.value$ != "" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$

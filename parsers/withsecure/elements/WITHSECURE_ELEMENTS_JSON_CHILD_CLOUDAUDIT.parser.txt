@@ -1,0 +1,46 @@
+!SAMPLE={"withsecure_record":"audit_log","id":"4f2dab8c-3e5a-4f7b-9c1d-2e3f4a5b6c7d","serverTimestamp":"2026-10-14T03:05:40.662Z","transactionId":"0000-d405b4e300fa44d8","namespace":"epp","action":"isolateFromNetwork","username":"it.admin@example.com","organization":{"id":"5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f","name":"Acme Corp","orgPath":"00000000-0000-0000-0000-000000000000/1c2d3e4f-5a6b-4c7d-8e9f-a0b1c2d3e4f5/5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f/"},"target":{"id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912","name":"FIN-LT-041"},"description":"Administrator \"it.admin@example.com\" isolated device \"FIN-LT-041\" from the network"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WithSecure Elements audit logs from the example bridge.
+# Child of WITHSECURE_ELEMENTS_JSON_PARENT: every audit log action other than login, such as
+# profiles assigned, devices isolated or released, response actions, quarantine actions,
+# exclusions, roles and users changed, and security events acknowledged, to CloudAudit.
+# json, eventId, orgName, orgId, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = eventId
+# The parent set eventType$ to "audit" to pick this child; the record keeps the product
+# namespace (elements-core, epp and others).
+ns = STRING(json["$.namespace"])
+eventType$ = IF ns != "" THEN ns ELSE "audit_log"
+eventSource$ = "WithSecure Elements"
+eventName$ = json["$.action"]
+user = STRING(json["$.username"])
+userName$ = IF user != "" THEN user ELSE NULL
+managementEvent$ = TRUE
+
+# The target is the device, profile, user or other object the action changed.
+targetId = STRING(json["$.target.id"])
+res.resourceId$ = targetId
+res.resourceAccountId$ = orgId
+resources$ = IF targetId != "" THEN [res] ELSE NULL
+
+d1.key$ = "organization_name"
+d1.value$ = orgName
+d2.key$ = "description"
+d2.value$ = STRING(json["$.description"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+d3.key$ = "target_name"
+d3.value$ = json["$.target.name"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "org_path"
+d4.value$ = json["$.organization.orgPath"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "transaction_id"
+d5.value$ = json["$.transactionId"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$

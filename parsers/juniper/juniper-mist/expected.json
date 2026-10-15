@@ -1,0 +1,574 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791853804201053,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "737909a2-04ff-4aeb-9a1c-000000000001",
+      "event_source": "Juniper Mist",
+      "event_name": "Update Site Settings",
+      "recipient_account_id": "6748cfa6-4e12-11e6-9a1c-000000000001",
+      "user_name": "sam.admin@example.com",
+      "user_id": "0a1b2c3d-4e5f-4061-8a7b-000000000011",
+      "source_address": "203.0.113.20",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "4ac1dcf4-9d8b-7211-9a1c-000000000001",
+          "resource_type": "site",
+          "resource_account_id": "6748cfa6-4e12-11e6-9a1c-000000000001"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Sam Admin sam.admin@example.com"
+          },
+          {
+            "key": "site_name",
+            "value": "Head Office"
+          },
+          {
+            "key": "before",
+            "value": "{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": null}}}"
+          },
+          {
+            "key": "after",
+            "value": "{\"radio_config\": {\"band_24\": {\"disabled\": false, \"power\": 10}}}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854110500000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "8e00dd48-b918-4d9b-9a1c-000000000002",
+      "event_source": "Juniper Mist",
+      "event_name": "Update Device \"Reception\"",
+      "recipient_account_id": "6748cfa6-4e12-11e6-9a1c-000000000001",
+      "user_name": "lee@example.com",
+      "source_address": "198.51.100.23",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "4ac1dcf4-9d8b-7211-9a1c-000000000001",
+          "resource_type": "site",
+          "resource_account_id": "6748cfa6-4e12-11e6-9a1c-000000000001"
+        },
+        {
+          "resource_id": "00000000-0000-0000-1000-5c5b35000001",
+          "resource_type": "device",
+          "resource_account_id": "6748cfa6-4e12-11e6-9a1c-000000000001"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Lee Example lee@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854400000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "59be9221-1e26-4466-9a1c-000000000003",
+      "alert_id": "59be9221-1e26-4466-9a1c-000000000003",
+      "vendor": "Juniper",
+      "provider": "Juniper Mist",
+      "title": "rogue_ap",
+      "alert_category": "security",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "summary": "rogue_ap on AP-RECEPTION (2 in the interval)",
+      "target_host_name": "AP-RECEPTION",
+      "additional_data": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "count",
+            "value": "2"
+          },
+          {
+            "key": "aps",
+            "value": "5c5b35000001"
+          },
+          {
+            "key": "bssids",
+            "value": "02005e000101,02005e000102"
+          },
+          {
+            "key": "ssids",
+            "value": "Free Guest WiFi,DIRECT-printer"
+          },
+          {
+            "key": "hostnames",
+            "value": "AP-RECEPTION"
+          },
+          {
+            "key": "update",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854520000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "ec653cbc-73e5-4712-9a1c-000000000004",
+      "alert_id": "ec653cbc-73e5-4712-9a1c-000000000004",
+      "vendor": "Juniper",
+      "provider": "Juniper Mist",
+      "title": "honeypot_ssid",
+      "alert_category": "security",
+      "vendor_severity": "info",
+      "severity": "INFO",
+      "summary": "honeypot_ssid on AP-LOBBY (4 in the interval)",
+      "target_host_name": "AP-LOBBY",
+      "additional_data": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "count",
+            "value": "4"
+          },
+          {
+            "key": "aps",
+            "value": "5c5b35000002"
+          },
+          {
+            "key": "bssids",
+            "value": "02005e000201"
+          },
+          {
+            "key": "ssids",
+            "value": "Corp-WiFi"
+          },
+          {
+            "key": "hostnames",
+            "value": "AP-LOBBY"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854640000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "59033c55-55a8-483a-9a1c-000000000005",
+      "alert_id": "59033c55-55a8-483a-9a1c-000000000005",
+      "vendor": "Juniper",
+      "provider": "Juniper Mist",
+      "title": "repeated_auth_failures",
+      "alert_category": "security",
+      "vendor_severity": "warn",
+      "severity": "MEDIUM",
+      "summary": "repeated_auth_failures on AP-RECEPTION (1 in the interval)",
+      "target_host_name": "AP-RECEPTION",
+      "additional_data": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "aps",
+            "value": "5c5b35000001"
+          },
+          {
+            "key": "bssids",
+            "value": "02005e000101"
+          },
+          {
+            "key": "ssids",
+            "value": "Corp-WiFi"
+          },
+          {
+            "key": "hostnames",
+            "value": "AP-RECEPTION"
+          },
+          {
+            "key": "client_macs",
+            "value": "02005e00a001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854760000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4e0adbb2-f5fb-6c32-9a1c-000000000006",
+      "alert_id": "4e0adbb2-f5fb-6c32-9a1c-000000000006",
+      "vendor": "Juniper",
+      "provider": "Juniper Mist",
+      "title": "gw_av_malware_detected",
+      "alert_category": "security",
+      "vendor_severity": "warn",
+      "severity": "MEDIUM",
+      "summary": "gw_av_malware_detected (1 in the interval)",
+      "source_address": "192.0.2.50",
+      "destination_address": "198.51.100.66",
+      "additional_data": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "files",
+            "value": "invoice_2026.exe"
+          },
+          {
+            "key": "gateways",
+            "value": "5c5b35000100"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791854880000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "f70c308f-7007-4866-9a1c-000000000007",
+      "alert_id": "f70c308f-7007-4866-9a1c-000000000007",
+      "vendor": "Juniper",
+      "provider": "Juniper Mist",
+      "title": "device_down",
+      "alert_category": "infrastructure",
+      "vendor_severity": "warn",
+      "severity": "MEDIUM",
+      "summary": "device_down on AP-WAREHOUSE (1 in the interval)",
+      "target_host_name": "AP-WAREHOUSE",
+      "additional_data": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "aps",
+            "value": "5c5b35000003"
+          },
+          {
+            "key": "hostnames",
+            "value": "AP-WAREHOUSE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791855004358188,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Juniper Mist Access Assurance",
+      "status": "NAC_CLIENT_PERMIT",
+      "target_user_name": "pat@example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "client_mac",
+            "value": "02005e00a002"
+          },
+          {
+            "key": "auth_type",
+            "value": "eap-tls"
+          },
+          {
+            "key": "ssid",
+            "value": "Corp-WiFi"
+          },
+          {
+            "key": "ap",
+            "value": "5c5b35000001"
+          },
+          {
+            "key": "vlan",
+            "value": "750"
+          },
+          {
+            "key": "idp_role",
+            "value": "Employee,Finance"
+          },
+          {
+            "key": "nacrule_id",
+            "value": "32f27e7d-ff26-4a9b-9a1c-000000000009"
+          },
+          {
+            "key": "cert_cn",
+            "value": "pat@example.com"
+          },
+          {
+            "key": "cert_issuer",
+            "value": "/C=AU/O=Example/CN=Example Issuing CA"
+          },
+          {
+            "key": "cert_serial",
+            "value": "1300103d29e56ef0"
+          },
+          {
+            "key": "random_mac",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791855120440573,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Juniper Mist Access Assurance",
+      "status": "NAC_CLIENT_DENY",
+      "sub_status": "Client Certificate Revoked",
+      "target_user_name": "lee@example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "client_mac",
+            "value": "02005e00a003"
+          },
+          {
+            "key": "auth_type",
+            "value": "eap-tls"
+          },
+          {
+            "key": "ssid",
+            "value": "Corp-WiFi"
+          },
+          {
+            "key": "ap",
+            "value": "5c5b35000002"
+          },
+          {
+            "key": "cert_cn",
+            "value": "lee@example.com"
+          },
+          {
+            "key": "cert_issuer",
+            "value": "/C=AU/O=Example/CN=Example Issuing CA"
+          },
+          {
+            "key": "cert_serial",
+            "value": "1300103d29e56ef1"
+          },
+          {
+            "key": "random_mac",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791855240466617,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Juniper Mist Access Assurance",
+      "status": "NAC_CLIENT_CERT_EXPIRED",
+      "sub_status": "TLS Client Certificate has Expired",
+      "target_user_name": "kiosk01",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "client_mac",
+            "value": "02005e00a004"
+          },
+          {
+            "key": "auth_type",
+            "value": "eap-tls"
+          },
+          {
+            "key": "ssid",
+            "value": "Devices"
+          },
+          {
+            "key": "ap",
+            "value": "5c5b35000003"
+          },
+          {
+            "key": "cert_cn",
+            "value": "kiosk01"
+          },
+          {
+            "key": "cert_issuer",
+            "value": "/C=AU/O=Example/CN=Example Issuing CA"
+          },
+          {
+            "key": "cert_serial",
+            "value": "1002"
+          },
+          {
+            "key": "random_mac",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "JUNIPER_MIST_WEBHOOK_JSON_PARENT > JUNIPER_MIST_WEBHOOK_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Juniper Mist",
+      "event_time_usec": 1791856800104411,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Juniper Mist Access Assurance",
+      "status": "NAC_SESSION_ENDED",
+      "target_user_name": "pat@example.com",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "org_id",
+            "value": "6748cfa6-4e12-11e6-9a1c-000000000001"
+          },
+          {
+            "key": "site_id",
+            "value": "4ac1dcf4-9d8b-7211-9a1c-000000000001"
+          },
+          {
+            "key": "client_mac",
+            "value": "02005e00a005"
+          },
+          {
+            "key": "port_id",
+            "value": "ge-0/0/17.0"
+          }
+        ]
+      }
+    }
+  }
+]

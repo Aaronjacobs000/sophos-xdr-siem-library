@@ -1,0 +1,90 @@
+!SAMPLE={"withsecure_record":"security_event","id":"6f1e2d3c-4b5a-3968-8776-a5b4c3d2e1f0_0","action":"quarantined","engine":"fileScanning","severity":"critical","serverTimestamp":"2026-10-14T01:12:08.311Z","persistenceTimestamp":"2026-10-14T01:12:09.024Z","eventTransactionId":"0000-4f3a2b1c0d9e8f7a","clientTimestamp":"2026-10-14T01:12:05Z","acknowledged":false,"message":"Real-time scanning detected infection 'Trojan:W32/Agent.ZQX' in file 'C:\\Users\\akim\\Downloads\\invoice_0412.exe' and quarantined it","description":"Real-time Scanning event","organization":{"id":"5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f","name":"Acme Corp"},"target":{"name":"FIN-LT-041","id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"},"device":{"id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912","name":"FIN-LT-041"},"userName":"FIN-LT-041\\akim","details":{"clientTimestamp":"1791940325000","sha1":"5b97884a45c6c05f93b22c4059f3d9189e88e8b7","infectionType":"virus","infectionName":"Trojan:W32/Agent.ZQX","quarantineId":"-1849302217","fileScanningType":"fileInfection","profileName":"Acme Workstations","hostIpAddress":"192.0.2.41/24","profileId":"73633559","profileVersion":"1791900000","path":"C:\\Users\\akim\\Downloads\\invoice_0412.exe","size":"482304","prevalence":"1","reputation":"95","url":"https://files.example.net/invoice_0412.exe","creator":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","accessOperation":"close","userName":"FIN-LT-041\\akim","throttledCount":"0","alertType":"on_access_scanner.file_infection.quarantined"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="malware"
+!SCHEMA=scwx.antivirus
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WithSecure Elements security events from the example bridge.
+# Child of WITHSECURE_ELEMENTS_JSON_PARENT: malware found by real-time, manual or scheduled
+# scanning (engines fileScanning, realtimeScanning and manualScanning), AMSI detections and
+# DeepGuard blocks, to Antivirus.
+# json, eventId, engine, orgName, orgId, eventType$, sensorType$ and eventTimeUsec$ come from
+# the parent.
+
+sensorEventId$ = eventId
+# The parent set eventType$ to "malware" to pick this child; the record keeps the engine name.
+eventType$ = json["$.engine"]
+det = json["$.details"]
+# The event reference names the infection infectionName and the file path; some API events
+# carry name and filePath instead, so both are read.
+threat = STRING(json["$.details.infectionName"])
+threat = IF threat == "" THEN STRING(json["$.details.name"]) ELSE threat
+threatName$ = IF threat != "" THEN threat ELSE NULL
+file = STRING(json["$.details.path"])
+file = IF file == "" THEN STRING(json["$.details.filePath"]) ELSE file
+# For AMSI, contentName is the script that was scanned and path the host process.
+amsi = engine == "amsi"
+content = STRING(json["$.details.contentName"])
+target = IF amsi AND content != "" THEN content ELSE file
+filePath$ = IF target != "" THEN target ELSE NULL
+processName$ = IF amsi AND file != "" THEN file ELSE NULL
+sha1 = STRING(json["$.details.sha1"])
+fileHash$.sha1$ = IF sha1 != "" THEN sha1 ELSE NULL
+url = STRING(json["$.details.url"])
+urlString$ = IF url != "" THEN url ELSE NULL
+user = STRING(json["$.details.userName"])
+user = IF user == "" THEN STRING(json["$.userName"]) ELSE user
+userName$ = IF user != "" THEN user ELSE NULL
+device = STRING(json["$.device.name"])
+device = IF device == "" THEN STRING(json["$.target.name"]) ELSE device
+computerName$ = IF device != "" THEN device ELSE NULL
+hostId$ = IF device != "" THEN device ELSE NULL
+agentDeviceId$ = json["$.device.id"]
+agentPriority$ = json["$.severity"]
+alertType = STRING(json["$.details.alertType"])
+vendorAlertType$ = IF alertType != "" THEN alertType ELSE NULL
+profile = STRING(json["$.details.profileName"])
+policyName$ = IF profile != "" THEN profile ELSE NULL
+
+act = LOWERCASE(STRING(json["$.action"]))
+actionTaken$ = "UNKNOWN_ACTIONTAKEN"
+actionTaken$ = IF act == "none" THEN "NONE" ELSE actionTaken$
+actionTaken$ = IF act == "blocked" THEN "BLOCKED" ELSE actionTaken$
+actionTaken$ = IF act == "quarantined" THEN "QUARANTINED" ELSE actionTaken$
+actionTaken$ = IF act == "deleted" THEN "DELETED" ELSE actionTaken$
+
+threatType$ = IF target != "" THEN "FILE" ELSE "UNKNOWN_THREATTYPE"
+threatType$ = IF LOWERCASE(alertType) == "memory" THEN "MEMORY" ELSE threatType$
+
+kind = LOWERCASE(STRING(json["$.details.infectionType"]) + " " + STRING(json["$.details.fileScanningType"]) + " " + threat)
+threatCategory$ = "UNKNOWN_THREATCATEGORY"
+threatCategory$ = IF CONTAINS(kind, "virus") THEN "VIRUS" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "spyware") THEN "MALWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "riskware") THEN "APPLICATION" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "trojan") THEN "TROJAN" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "backdoor") THEN "BACKDOOR" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "ransom") THEN "RANSOMWARE" ELSE threatCategory$
+threatCategory$ = IF CONTAINS(kind, "coinminer") OR CONTAINS(kind, "miner:") THEN "MINER" ELSE threatCategory$
+
+m1.key$ = "engine"
+m1.value$ = STRING(json["$.engine"])
+m2.key$ = "action"
+m2.value$ = STRING(json["$.action"])
+m3.key$ = "organization_name"
+m3.value$ = orgName
+m4.key$ = "organization_id"
+m4.value$ = orgId
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2, m3, m4]
+m5.key$ = "message"
+m5.value$ = json["$.message"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "host_ip_address"
+m6.value$ = json["$.details.hostIpAddress"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+# details holds every engine-specific field (reputation, prevalence, quarantineId and more).
+m7.key$ = "details"
+m7.value$ = STRING(det)
+eventMetadata$.record$ = IF det != NULL THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

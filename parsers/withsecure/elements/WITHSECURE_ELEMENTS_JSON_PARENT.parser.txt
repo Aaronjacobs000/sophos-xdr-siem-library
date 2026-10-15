@@ -1,0 +1,44 @@
+!SAMPLE={"withsecure_record":"security_event","id":"6f1e2d3c-4b5a-3968-8776-a5b4c3d2e1f0_0","action":"quarantined","engine":"fileScanning","severity":"critical","serverTimestamp":"2026-10-14T01:12:08.311Z","persistenceTimestamp":"2026-10-14T01:12:09.024Z","eventTransactionId":"0000-4f3a2b1c0d9e8f7a","clientTimestamp":"2026-10-14T01:12:05Z","acknowledged":false,"message":"Real-time scanning detected infection 'Trojan:W32/Agent.ZQX' in file 'C:\\Users\\akim\\Downloads\\invoice_0412.exe' and quarantined it","description":"Real-time Scanning event","organization":{"id":"5d6e7f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f","name":"Acme Corp"},"target":{"name":"FIN-LT-041","id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912"},"device":{"id":"3b4c5d6e-7f80-4192-a3b4-c5d6e7f80912","name":"FIN-LT-041"},"userName":"FIN-LT-041\\akim","details":{"clientTimestamp":"1791940325000","sha1":"5b97884a45c6c05f93b22c4059f3d9189e88e8b7","infectionType":"virus","infectionName":"Trojan:W32/Agent.ZQX","quarantineId":"-1849302217","fileScanningType":"fileInfection","profileName":"Acme Workstations","hostIpAddress":"192.0.2.41/24","profileId":"73633559","profileVersion":"1791900000","path":"C:\\Users\\akim\\Downloads\\invoice_0412.exe","size":"482304","prevalence":"1","reputation":"95","url":"https://files.example.net/invoice_0412.exe","creator":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","accessOperation":"close","userName":"FIN-LT-041\\akim","throttledCount":"0","alertType":"on_access_scanner.file_infection.quarantined"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"withsecure_record"\s*:\s*"(?:security_event|audit_log)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: WithSecure Elements security events (POST /security-events/v1/security-events) and audit
+# logs (GET /audit-logs/v1/audit-logs) from the Elements API, pulled by the example bridge in
+# bridges/withsecure-elements-events and posted to HTTP Ingest as JSON lines. The bridge names
+# each record in "withsecure_record": security_event or audit_log. With partner-level API
+# credentials one bridge reads every company under the partner; organization.name says which.
+# Parent: hands malware detections (file scanning, manual and real-time scanning, AMSI and
+# DeepGuard) to Antivirus, every other security event (EDR incidents, firewall, web and
+# connection blocks, application and device control, tamper protection, Collaboration
+# Protection, settings) to ThirdPartyAlert, administrator logins to Auth and other audit log
+# entries to CloudAudit.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "WithSecure Elements"
+rec = STRING(json["$.withsecure_record"])
+eventId = json["$.id"]
+# The API's engine names and the event reference's differ in case and wording (amsi and AMSI,
+# emailScan and collaborationProtectionEmailScan), so engine is compared in lower case.
+engine = LOWERCASE(STRING(json["$.engine"]))
+orgName = STRING(json["$.organization.name"])
+orgId = STRING(json["$.organization.id"])
+
+# serverTimestamp and clientTimestamp are ISO 8601 in UTC. A security event takes the endpoint's
+# clientTimestamp when it has one, else the time the server received it.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+server = STRING(json["$.serverTimestamp"])
+client = STRING(json["$.clientTimestamp"])
+eventTimeUsec$ = IF server != "" THEN DATETIME(server, layout) ELSE eventTimeUsec$
+eventTimeUsec$ = IF client != "" THEN DATETIME(client, layout) ELSE eventTimeUsec$
+
+malware = engine == "filescanning" OR engine == "manualscanning" OR engine == "realtimescanning" OR engine == "amsi" OR engine == "deepguard"
+eventType$ = IF malware THEN "malware" ELSE "alert"
+eventType$ = IF rec == "audit_log" THEN "audit" ELSE eventType$
+eventType$ = IF rec == "audit_log" AND STRING(json["$.action"]) == "login" THEN "login" ELSE eventType$
