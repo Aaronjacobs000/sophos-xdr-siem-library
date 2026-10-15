@@ -1,0 +1,135 @@
+!SAMPLE={"time":"2026-10-15T00:20:11.4810000Z","tenantId":"3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b","category":"AuditLogs","operationName":"wipe ManagedDevice","properties":{"ActivityDate":"10/15/2026 12:20:11 AM","ActivityResultStatus":1,"ActivityType":3,"Actor":{"ActorType":1,"Application":"5926fc8e-304e-4f59-8bed-58ca97cc39a4","ApplicationName":"Microsoft Intune portal extension","IsDelegatedAdmin":false,"Name":null,"ObjectId":"6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5","PartnerTenantId":"00000000-0000-0000-0000-000000000000","UserPermissions":["Microsoft.Intune/RemoteTasks/Wipe;Microsoft.Intune/ManagedDevices/Read"],"UPN":"jo.admin@example.com"},"AdditionalDetails":"","AuditEventId":"73537880-bdd5-4a62-8251-68a3a4c7bdbe","Category":4,"RelationId":null,"TargetDisplayNames":["wipe"],"TargetObjectIds":["7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f"],"Targets":[{"ModifiedProperties":[{"Name":"keepEnrollmentData","Old":null,"New":"False"},{"Name":"keepUserData","Old":null,"New":"False"},{"Name":"AzureADDeviceId","Old":null,"New":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"}],"Name":"wipe"}]},"resultType":"Success","resultDescription":"None","correlationId":"aa49be9b-7f26-41cf-9e42-bca545ca88b4","identity":"jo.admin@example.com"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{.*(?:"category"\s*:\s*"AuditLogs".*"AuditEventId"\s*:|"AuditEventId"\s*:.*"category"\s*:\s*"AuditLogs")
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Microsoft Intune audit logs (category AuditLogs), streamed by an Intune diagnostic
+# setting to an event hub that a Sophos NG-SIEM Azure Event Hubs integration reads. Each record of
+# the hub's {"records": [...]} batch reaches the parsers as its own message.
+# Standalone parser: no built-in parser claims these records. Microsoft Entra ID audit logs share
+# the category name but have no AuditEventId, so the confirm string leaves them alone.
+# Every audit record goes to CloudAudit, with the operation (such as "wipe ManagedDevice") as the
+# event name and the Intune area as the event type.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+p = "$.properties."
+sensorType$ = "Microsoft Intune"
+eventSource$ = "Microsoft.Intune"
+# time is RFC 3339 in UTC; ActivityDate is the same time without a zone.
+eventTimeUsec$ = DATETIME(json["$.time"], "2006-01-02T15:04:05.999999999Z07:00")
+
+# operationName is "<method> <entity>", such as "Patch DeviceManagementConfigurationPolicy" or
+# "wipe ManagedDevice". The method can have spaces, so the entity is the last word.
+op = json["$.operationName"]
+eventName$ = op
+ent = op|(?P<v>\S+)$
+recipientAccountId$ = json["$.tenantId"]
+status$ = json["$.resultType"]
+
+# Enums from Microsoft's "Audit log properties" table. Category and ActorType carry numbers there;
+# ActivityType's numbers follow the order of its list.
+cat = STRING(json[p + "Category"])
+catName = cat
+catName = IF cat == "0" THEN "Other" ELSE catName
+catName = IF cat == "1" THEN "Enrollment" ELSE catName
+catName = IF cat == "2" THEN "Compliance" ELSE catName
+catName = IF cat == "3" THEN "DeviceConfiguration" ELSE catName
+catName = IF cat == "4" THEN "Device" ELSE catName
+catName = IF cat == "5" THEN "Application" ELSE catName
+catName = IF cat == "6" THEN "EBookManagement" ELSE catName
+catName = IF cat == "7" THEN "ConditionalAccess" ELSE catName
+catName = IF cat == "8" THEN "OnPremiseAccess" ELSE catName
+catName = IF cat == "9" THEN "Role" ELSE catName
+catName = IF cat == "10" THEN "SoftwareUpdates" ELSE catName
+catName = IF cat == "11" THEN "DeviceSetupConfiguration" ELSE catName
+catName = IF cat == "12" THEN "DeviceIntent" ELSE catName
+catName = IF cat == "13" THEN "DeviceIntentSetting" ELSE catName
+catName = IF cat == "14" THEN "DeviceSecurity" ELSE catName
+catName = IF cat == "15" THEN "GroupPolicyAnalytics" ELSE catName
+catName = IF cat == "16" THEN "AssignmentFilter" ELSE catName
+catName = IF cat == "17" THEN "RemoteHelp" ELSE catName
+catName = IF cat == "18" THEN "OrganizationalMessage" ELSE catName
+catName = IF cat == "19" THEN "EndpointPrivilegeMgmt" ELSE catName
+catName = IF cat == "20" THEN "DeviceInventory" ELSE catName
+eventType$ = catName
+act = STRING(json[p + "ActivityType"])
+actName = act
+actName = IF act == "0" THEN "Create" ELSE actName
+actName = IF act == "1" THEN "Delete" ELSE actName
+actName = IF act == "2" THEN "Patch" ELSE actName
+actName = IF act == "3" THEN "Action" ELSE actName
+actName = IF act == "4" THEN "SetReference" ELSE actName
+actName = IF act == "5" THEN "RemoveReference" ELSE actName
+actName = IF act == "6" THEN "Get" ELSE actName
+actName = IF act == "7" THEN "Search" ELSE actName
+# Get and Search change nothing; every other activity changes an Intune object or device.
+readOnly$ = act == "6" OR act == "7"
+managementEvent$ = NOT readOnly$
+
+# The actor: a user's UPN, or an application when no user acted.
+upn = json[p + "Actor.UPN"]
+appName = json[p + "Actor.ApplicationName"]
+ident = json["$.identity"]
+userName$ = IF upn != NULL AND upn != "" THEN upn ELSE NULL
+userName$ = IF userName$ == NULL AND ident != NULL AND ident != "" AND NOT CONTAINS(ident, " ") THEN ident ELSE userName$
+userName$ = IF userName$ == NULL THEN appName ELSE userName$
+userId$ = json[p + "Actor.ObjectId"]
+actorType = STRING(json[p + "Actor.ActorType"])
+userType$ = NULL
+userType$ = IF actorType == "0" THEN "Unknown" ELSE userType$
+userType$ = IF actorType == "1" THEN "ItPro" ELSE userType$
+userType$ = IF actorType == "2" THEN "IW" ELSE userType$
+userType$ = IF actorType == "3" THEN "System" ELSE userType$
+userType$ = IF actorType == "4" THEN "Partner" ELSE userType$
+userType$ = IF actorType == "5" THEN "Application" ELSE userType$
+userType$ = IF actorType == "6" THEN "GuestUser" ELSE userType$
+
+# The first target: its ID as a resource and its display name as the object. Intune writes the
+# literal "<null>" for a missing name.
+tname = json[p + "TargetDisplayNames[0]"]
+tid = json[p + "TargetObjectIds[0]"]
+objectKey$ = IF tname != NULL AND tname != "" AND tname != "<null>" THEN tname ELSE NULL
+res.resourceId$ = tid
+res.resourceType$ = ent["v"]
+res.resourceAccountId$ = json["$.tenantId"]
+resources$ = IF tid != NULL AND tid != "" THEN [res] ELSE NULL
+
+# The first three modified properties of the first target, as name and new value.
+mp = p + "Targets[0].ModifiedProperties["
+q1.key$ = json[mp + "0].Name"]
+q1.value$ = STRING(json[mp + "0].New"])
+q2.key$ = json[mp + "1].Name"]
+q2.value$ = STRING(json[mp + "1].New"])
+q3.key$ = json[mp + "2].Name"]
+q3.value$ = STRING(json[mp + "2].New"])
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF q1.key$ != NULL AND q1.key$ != "" THEN requestParameters$.record$ + [q1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q2.key$ != NULL AND q2.key$ != "" THEN requestParameters$.record$ + [q2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q3.key$ != NULL AND q3.key$ != "" THEN requestParameters$.record$ + [q3] ELSE requestParameters$.record$
+
+d1.key$ = "audit_event_id"
+d1.value$ = json[p + "AuditEventId"]
+d2.key$ = "activity_type"
+d2.value$ = actName
+d3.key$ = "correlation_id"
+d3.value$ = json["$.correlationId"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = [d1, d2]
+additionalEventData$.record$ = IF d3.value$ != NULL AND d3.value$ != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "application_name"
+d4.value$ = appName
+additionalEventData$.record$ = IF appName != NULL AND appName != "" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+# A partner's delegated admin (GDAP) acting in this tenant.
+delegated = STRING(json[p + "Actor.IsDelegatedAdmin"])
+d5.key$ = "is_delegated_admin"
+d5.value$ = delegated
+additionalEventData$.record$ = IF delegated == "true" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+partner = json[p + "Actor.PartnerTenantId"]
+d6.key$ = "partner_tenant_id"
+d6.value$ = partner
+additionalEventData$.record$ = IF partner != NULL AND partner != "" AND partner != "00000000-0000-0000-0000-000000000000" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

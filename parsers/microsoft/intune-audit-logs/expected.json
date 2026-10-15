@@ -1,0 +1,353 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792023611481000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "wipe ManagedDevice",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "Device",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jo.admin@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "ItPro",
+      "object_key": "wipe",
+      "resources": [
+        {
+          "resource_id": "7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f",
+          "resource_type": "ManagedDevice",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "keepEnrollmentData",
+            "value": "False"
+          },
+          {
+            "key": "keepUserData",
+            "value": "False"
+          },
+          {
+            "key": "AzureADDeviceId",
+            "value": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "73537880-bdd5-4a62-8251-68a3a4c7bdbe"
+          },
+          {
+            "key": "activity_type",
+            "value": "Action"
+          },
+          {
+            "key": "correlation_id",
+            "value": "aa49be9b-7f26-41cf-9e42-bca545ca88b4"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Intune portal extension"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792023760102000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "Patch DeviceManagementConfigurationPolicy",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "DeviceConfiguration",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jo.admin@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "ItPro",
+      "object_key": "Baseline - Workstations (test)",
+      "resources": [
+        {
+          "resource_id": "916dc511-df99-45da-8eb6-1ac55579e16f",
+          "resource_type": "DeviceManagementConfigurationPolicy",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "Name",
+            "value": "Baseline - Workstations (test)"
+          },
+          {
+            "key": "Settings",
+            "value": "[1]"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "76e638c0-1f6d-44a8-b482-048267fd0bad"
+          },
+          {
+            "key": "activity_type",
+            "value": "Patch"
+          },
+          {
+            "key": "correlation_id",
+            "value": "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Intune portal extension"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792023902990000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "Delete DeviceCompliancePolicy",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "Compliance",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jo.admin@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "ItPro",
+      "object_key": "Windows - Require BitLocker",
+      "resources": [
+        {
+          "resource_id": "2e3f4a5b-6c7d-4e8f-9a0b-1c2d3e4f5a6b",
+          "resource_type": "DeviceCompliancePolicy",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "DisplayName"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+          },
+          {
+            "key": "activity_type",
+            "value": "Delete"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4081-92a3-b4c5d6e7f809"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Intune portal extension"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792024035330000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "Create DeviceAndAppManagementRoleAssignment",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "Role",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "jo.admin@example.com",
+      "user_id": "6b1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+      "user_type": "ItPro",
+      "object_key": "Helpdesk Operators",
+      "resources": [
+        {
+          "resource_id": "3b4c5d6e-7f80-4192-a3b4-c5d6e7f8091a",
+          "resource_type": "DeviceAndAppManagementRoleAssignment",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "DisplayName",
+            "value": "Helpdesk Operators"
+          },
+          {
+            "key": "Members",
+            "value": "[\"8f7e6d5c-4b3a-4291-8f0e-1d2c3b4a5968\"]"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7081"
+          },
+          {
+            "key": "activity_type",
+            "value": "Create"
+          },
+          {
+            "key": "correlation_id",
+            "value": "3c4d5e6f-7081-4293-a4b5-c6d7e8f90a1b"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Intune portal extension"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792024200057000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "createDeviceHealthScript DeviceHealthScript",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "DeviceConfiguration",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "Contoso Automation",
+      "user_id": "4c5d6e7f-8091-42a3-b4c5-d6e7f8091a2b",
+      "user_type": "Application",
+      "object_key": "Collect diagnostics",
+      "resources": [
+        {
+          "resource_id": "5d6e7f80-91a2-43b4-85c6-d7e8f90a1b2c",
+          "resource_type": "DeviceHealthScript",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "DisplayName",
+            "value": "Collect diagnostics"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "2c3d4e5f-6071-4829-8a3b-4c5d6e7f8091"
+          },
+          {
+            "key": "activity_type",
+            "value": "Create"
+          },
+          {
+            "key": "correlation_id",
+            "value": "4d5e6f70-8192-43a4-b5c6-d7e8f90a1b2c"
+          },
+          {
+            "key": "application_name",
+            "value": "Contoso Automation"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Intune",
+      "event_time_usec": 1792024428700000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Microsoft.Intune",
+      "event_name": "retire ManagedDevice",
+      "recipient_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b",
+      "status": "Success",
+      "event_type": "Device",
+      "read_only": false,
+      "management_event": true,
+      "user_name": "tech01@msp.example.net",
+      "user_id": "6e7f8091-a2b3-44c5-96d7-e8f90a1b2c3d",
+      "user_type": "Partner",
+      "object_key": "retire",
+      "resources": [
+        {
+          "resource_id": "8091a2b3-c4d5-46e7-98f9-0a1b2c3d4e5f",
+          "resource_type": "ManagedDevice",
+          "resource_account_id": "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "audit_event_id",
+            "value": "3d4e5f60-7182-493a-8b4c-5d6e7f8091a2"
+          },
+          {
+            "key": "activity_type",
+            "value": "Action"
+          },
+          {
+            "key": "correlation_id",
+            "value": "5e6f7081-92a3-44b5-86c7-d8e90a1b2c3d"
+          },
+          {
+            "key": "application_name",
+            "value": "Microsoft Intune portal extension"
+          },
+          {
+            "key": "is_delegated_admin",
+            "value": "true"
+          },
+          {
+            "key": "partner_tenant_id",
+            "value": "7f8091a2-b3c4-45d6-87e8-f90a1b2c3d4e"
+          }
+        ]
+      }
+    }
+  }
+]

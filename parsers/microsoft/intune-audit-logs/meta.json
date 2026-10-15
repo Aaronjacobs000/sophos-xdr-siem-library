@@ -1,0 +1,31 @@
+{
+  "vendor": "Microsoft",
+  "product": "Intune audit logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "azure",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/intune/governance/integrate-azure-monitor",
+    "https://learn.microsoft.com/en-us/intune/governance/monitor-audit-logs",
+    "https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/intuneauditlogs",
+    "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/resource-logs-schema",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/MicrosoftAzure/EventHubs/Setup/index.html"
+  ],
+  "notes": "In the Intune admin center (Reports > Diagnostic settings), stream the AuditLogs category to an event hub, and read the hub with a Sophos NG-SIEM Azure Event Hubs integration. Intune data can stay in Australia. Every audit record goes to CloudAudit: the operation (such as wipe ManagedDevice or Patch DeviceCompliancePolicy) as the event name, the Intune area (Device, Compliance, DeviceConfiguration, Role and the rest) as the event type, the admin's UPN or the acting application as the user, the actor type (ItPro, Partner, Application and so on) as user type, the tenant as the recipient account, the first target as object and resource, and up to three of its modified properties as request parameters, with a null new value left empty. Get and Search activities are read-only; the rest are management events. A partner's delegated admin gets is_delegated_admin and partner_tenant_id. Microsoft's table gives Category and ActorType numbers but lists ActivityType's names only, so the parser numbers those in list order, which matches published records. Microsoft documents the record's top level and these enums but not the raw Event Hubs property names; the samples follow the names in published Intune records, with made-up values. OperationalLogs, DeviceComplianceOrg and Devices records aren't covered and stay unclaimed. Microsoft warns the export can repeat records; AuditEventId (in additional_event_data) identifies each one. No built-in parser claims these records: Azure_Monitor_Master leaves the AuditLogs category alone. Passed Run Test in a lab tenant on 2026-10-15, taking every line in each of 15 Run Tests (89 of 89 fields matched the emulator in each of 3 runs).",
+  "parsers": [
+    {
+      "name": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "MS_INTUNE_AUDIT_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ]
+}
