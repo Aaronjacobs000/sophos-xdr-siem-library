@@ -1,0 +1,316 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969164000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "usgflex200",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51514,
+      "destination_port": 3389,
+      "flow_action": "FW_BLOCKED",
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Security Policy Control"
+          },
+          {
+            "key": "message",
+            "value": "priority:5, from WAN to LAN1, TCP, service RDP, DROP"
+          },
+          {
+            "key": "note",
+            "value": "ACCESS BLOCK"
+          },
+          {
+            "key": "policy_priority",
+            "value": "5"
+          },
+          {
+            "key": "from_zone",
+            "value": "WAN"
+          },
+          {
+            "key": "to_zone",
+            "value": "LAN1"
+          },
+          {
+            "key": "service",
+            "value": "service RDP"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005301"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969182000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "usgflex200",
+      "source_address": "192.0.2.45",
+      "destination_address": "203.0.113.80",
+      "source_port": 54754,
+      "destination_port": 443,
+      "flow_action": "FW_ALLOWED",
+      "protocol": 6,
+      "tx_byte_count": 575,
+      "rx_byte_count": 594,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 54754,
+      "application_name": "https",
+      "source_mac": "00:00:5e:00:53:21",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Traffic Log"
+          },
+          {
+            "key": "interfaces",
+            "value": "LAN1:WAN1"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "5"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005301"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969220000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "usgflex200",
+      "source_address": "192.0.2.30",
+      "destination_address": "203.0.113.25",
+      "source_port": 50122,
+      "destination_port": 22,
+      "flow_action": "FW_ALLOWED",
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Security Policy Control"
+          },
+          {
+            "key": "message",
+            "value": "priority:12, from LAN1 to WAN, TCP, service SSH, ALLOW"
+          },
+          {
+            "key": "note",
+            "value": "ACCESS FORWARD"
+          },
+          {
+            "key": "policy_priority",
+            "value": "12"
+          },
+          {
+            "key": "from_zone",
+            "value": "LAN1"
+          },
+          {
+            "key": "to_zone",
+            "value": "WAN"
+          },
+          {
+            "key": "service",
+            "value": "service SSH"
+          },
+          {
+            "key": "user",
+            "value": "jsmith"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005301"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969242000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "usgflex200",
+      "source_address": "203.0.113.70",
+      "destination_address": "192.0.2.10",
+      "source_port": 0,
+      "destination_port": 443,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Security Policy Control"
+          },
+          {
+            "key": "message",
+            "value": "Abnormal TCP traffic detected, source port is zero, DROP"
+          },
+          {
+            "key": "note",
+            "value": "ACCESS BLOCK"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005301"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969250000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "atp500",
+      "source_address": "198.51.100.40",
+      "destination_address": "192.0.2.11",
+      "source_port": 40000,
+      "destination_port": 23,
+      "flow_action": "FW_BLOCKED",
+      "protocol": 6,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Security Policy Control"
+          },
+          {
+            "key": "message",
+            "value": "priority:3, from WAN to DMZ, TCP, service TELNET, DROP"
+          },
+          {
+            "key": "note",
+            "value": "ACCESS BLOCK"
+          },
+          {
+            "key": "policy_priority",
+            "value": "3"
+          },
+          {
+            "key": "from_zone",
+            "value": "WAN"
+          },
+          {
+            "key": "to_zone",
+            "value": "DMZ"
+          },
+          {
+            "key": "service",
+            "value": "service TELNET"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005302"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT > ZYXEL_ZLD_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969260000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "atp500",
+      "source_address": "192.0.2.46",
+      "destination_address": "203.0.113.81",
+      "source_port": 51022,
+      "destination_port": 443,
+      "flow_action": "FW_ALLOWED",
+      "protocol": 6,
+      "tx_byte_count": 1340,
+      "rx_byte_count": 8820,
+      "source_nat_address": "198.51.100.3",
+      "source_nat_port": 51022,
+      "application_name": "https",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Traffic Log"
+          },
+          {
+            "key": "interfaces",
+            "value": "LAN1:WAN1"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "12"
+          },
+          {
+            "key": "device_id",
+            "value": "00005e005302"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969268000000,
+      "host_id": "usgflex200"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969300000000,
+      "host_id": "usgflex100"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969345000000,
+      "host_id": "usgflex100"
+    }
+  }
+]
