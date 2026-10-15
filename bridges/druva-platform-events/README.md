@@ -57,7 +57,7 @@ python3 druva_events_bridge.py --interval 300    # keep polling every 5 minutes
 python3 druva_events_bridge.py --reset           # forget the saved page token and start again
 ```
 
-Exit code 0 means the events were read and sent. On an error the bridge logs it and stops. The page token moves only after HTTP Ingest accepted that page, so the next run continues from the last page that was sent.
+Exit code 0 means the events were read and sent. On an error the bridge logs it and stops. The page token moves only after HTTP Ingest accepted that page, so the next run continues from the last page that was sent. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 
 ## How it reads the API
 

@@ -6,6 +6,7 @@ endpoint. No real service is called.
 
   python3 -m unittest discover -s bridges/ai-compliance-logs -p 'test_*.py' -v
 """
+import contextlib
 import gc
 import gzip
 import io
@@ -212,6 +213,48 @@ class Redirects:
     def close(self):
         self.server.shutdown()
         self.server.server_close()
+
+
+class Sized:
+    """A server that answers every request with the given status and a body of the given size,
+    and notes when the bridge has closed the connection."""
+
+    def __init__(self, size, code=200):
+        self.closed_by_bridge = closed = threading.Event()
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(size))
+                self.end_headers()
+                try:
+                    self.wfile.write(b" " * size)
+                    self.connection.recv(1)  # returns once the bridge closes the connection
+                except ConnectionError:
+                    pass  # the bridge closed it before reading everything, as a capped read should
+                closed.set()
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+# Every numeric setting: its name, config key, default, a normal value, type, and highest value.
+NUMBERS = [
+    ("BRIDGE_BATCH_BYTES", "batch_bytes", 100000, 50000, int, 10 ** 9),
+    ("BRIDGE_LOOKBACK_HOURS", "lookback_hours", 24.0, 12.5, float, 10 ** 6),
+    ("BRIDGE_OVERLAP_SECONDS", "overlap_seconds", 300, 600, int, 10 ** 9),
+    ("BRIDGE_HTTP_TIMEOUT", "timeout", 60.0, 30.5, float, 10 ** 9),
+    ("ANTHROPIC_SETTLE_SECONDS", "anthropic.settle_seconds", 60, 30, int, 10 ** 9),
+]
 
 
 class BridgeTest(unittest.TestCase):
@@ -518,6 +561,70 @@ class BridgeTest(unittest.TestCase):
         c.run_once(cfg)
         self.assertEqual([r["id"] for r in self.sent()], ["audit_log-0002"])
 
+    def request_sized(self, size, code=200, **kwargs):
+        """_request against a server whose answer has a body of `size` bytes, with the cap at 1 MB.
+        Fails if the bridge hasn't closed the connection by the time _request returns or raises."""
+        saved, c.MAX_RESPONSE_BYTES = c.MAX_RESPONSE_BYTES, 1024 * 1024
+        server = Sized(size, code)
+        try:
+            return c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request", **kwargs)
+        finally:
+            closed = server.closed_by_bridge.wait(5)
+            server.close()
+            c.MAX_RESPONSE_BYTES = saved
+            self.assertTrue(closed, "the bridge left the response open")
+
+    def test_response_up_to_the_limit_is_read(self):
+        self.assertEqual(len(self.request_sized(1024 * 1024)[-1]), 1024 * 1024)
+
+    def test_response_over_the_limit_stops_the_run(self):
+        # A broken or hostile endpoint can't make the bridge hold any amount in memory. The larger
+        # body is only partly read, so it also shows the bridge closes what it stopped reading.
+        for size in (1024 * 1024 + 1, 2 * 1024 * 1024):
+            with self.subTest(size=size), self.assertRaisesRegex(c.BridgeError, "sent more than 1 MB"):
+                self.request_sized(size)
+
+    def test_redirect_response_over_the_limit_stops_the_run(self):
+        # The one error body this bridge reads is a redirect it hands back to the caller.
+        for size in (1024 * 1024 + 1, 2 * 1024 * 1024):
+            with self.subTest(size=size), self.assertRaisesRegex(c.BridgeError, "sent more than 1 MB"):
+                self.request_sized(size, code=307, redirects="return")
+
+    def test_signed_file_download_has_its_own_larger_limit(self):
+        # Log files can be much larger than an API page, so only the signed download may go up to
+        # MAX_FILE_BYTES; every other request keeps MAX_RESPONSE_BYTES.
+        now = datetime.now(timezone.utc)
+        big = dict(clp_auth("big-1", iso(now)), padding=" " * (1536 * 1024))
+        self.mock.clp_files = [{"id": "clf-big", "event_type": "AUTH_LOG", "end_time": iso(now), "records": [big]}]
+        url = f"{self.base}/v1/compliance/workspaces/{WS}/logs/clf-big"
+        auth = {"Authorization": f"Bearer {CLP_KEY}"}
+        saved = c.MAX_RESPONSE_BYTES, c.MAX_FILE_BYTES
+        c.MAX_RESPONSE_BYTES, c.MAX_FILE_BYTES = 1024 * 1024, 2 * 1024 * 1024
+        try:
+            self.assertEqual(c._download_clp_file(url, auth, 5.0), [big])
+            with self.assertRaisesRegex(c.BridgeError, "sent more than 1 MB"):
+                c._get_json(f"{self.base}/signed/clf-big?sig={SIGNATURE}", {}, 5.0, "test request")
+            c.MAX_FILE_BYTES = 1024 * 1024
+            with self.assertRaisesRegex(c.BridgeError, "^signed file download to .* sent more than 1 MB"):
+                c._download_clp_file(url, auth, 5.0)
+        finally:
+            c.MAX_RESPONSE_BYTES, c.MAX_FILE_BYTES = saved
+
+    def test_bad_numbers_stop_with_one_plain_error(self):
+        for name, _, _, _, cast, high in NUMBERS:
+            for value in ["abc", "nan", "inf", "-1", str(high + 1)] + (["1.5"] if cast is int else []):
+                with self.subTest(name=name, value=value), self.assertRaisesRegex(c.BridgeError, f"^{name} "):
+                    c.load_config(self.env(**{name: value}))
+
+    def test_numbers_still_load(self):
+        for name, key, default, normal, cast, _ in NUMBERS:
+            for extra, expected in (({}, default), ({name: str(normal)}, normal)):
+                with self.subTest(name=name, extra=extra):
+                    value = c.load_config(self.env(**extra))
+                    for part in key.split("."):
+                        value = value[part]
+                    self.assertEqual((value, type(value)), (expected, cast))
+
 
 class LegacyNameTest(unittest.TestCase):
     """Bridges were called collectors: a setup that still sets the COLLECTOR_ names keeps working."""
@@ -545,6 +652,72 @@ class RequestSafetyTest(unittest.TestCase):
                        what="test request")
         self.assertNotIn("key-part", str(caught.exception))
         self.assertIn("line break", str(caught.exception))
+
+
+class IntervalTest(unittest.TestCase):
+    """main with --interval: an unexpected error is logged by type and line, never its message,
+    and polling goes on. A BridgeError still stops the bridge, and a single run still raises."""
+
+    def setUp(self):
+        self.cfg = c.load_config({"ANTHROPIC_COMPLIANCE_KEY": ANTHROPIC_KEY})
+        self.saved = (c.load_config, c.run_once, c.time.sleep, c.logging.basicConfig)
+        self.calls, self.slept = [], []
+        c.load_config = lambda env=None: self.cfg
+        c.time.sleep = self.slept.append
+        # main sets up the root logger; a handler left there would print the log of later tests.
+        c.logging.basicConfig = lambda **kwargs: None
+        self.log = io.StringIO()
+        self.handler = logging.StreamHandler(self.log)
+        self.handler.setFormatter(logging.Formatter("%(levelname)s %(message)s"))
+        c.LOG.addHandler(self.handler)
+
+    def tearDown(self):
+        c.load_config, c.run_once, c.time.sleep, c.logging.basicConfig = self.saved
+        c.LOG.removeHandler(self.handler)
+
+    def run_once_raises(self, *errors):
+        """run_once raises each error in turn, then KeyboardInterrupt, so main can't loop forever."""
+        errors = list(errors)
+
+        def run_once(cfg, *args, **kwargs):
+            self.calls.append(kwargs)
+            raise errors.pop(0) if errors else KeyboardInterrupt()
+
+        c.run_once = run_once
+
+    def test_unexpected_error_is_logged_without_its_message_and_polling_goes_on(self):
+        self.run_once_raises(RuntimeError("secret-value-not-real"))
+        self.assertEqual(c.main(["--interval", "5"]), 130)
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual(self.slept, [5])
+        errors = [line for line in self.log.getvalue().splitlines() if line.startswith("ERROR")]
+        self.assertEqual(len(errors), 1)
+        self.assertRegex(errors[0], r"unexpected RuntimeError at line \d+ in main;")
+        self.assertNotIn("secret-value-not-real", self.log.getvalue())
+
+    def test_bridge_error_still_stops_the_bridge(self):
+        self.run_once_raises(c.BridgeError("test failure"))
+        self.assertEqual(c.main(["--interval", "5"]), 1)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_single_run_still_raises_an_unexpected_error(self):
+        self.run_once_raises(RuntimeError("secret-value-not-real"))
+        with self.assertRaises(RuntimeError):
+            c.main([])
+        self.assertEqual(len(self.calls), 1)
+
+    def test_negative_interval_is_refused(self):
+        self.run_once_raises()
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            c.main(["--interval", "-1"])
+        self.assertEqual(caught.exception.code, 2)
+        self.assertEqual(self.calls, [])
+
+    def test_no_source_still_stops_the_bridge(self):
+        self.cfg = dict(self.cfg, sources=[])
+        self.run_once_raises()
+        self.assertEqual(c.main(["--interval", "5"]), 1)
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":

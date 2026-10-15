@@ -26,6 +26,7 @@ import random
 import sys
 import tempfile
 import time
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -38,6 +39,8 @@ RETRY_STATUS = {408, 429, 500, 502, 503, 504}
 # The opener doesn't follow these (see _NoRedirect), so the error names them as refused.
 REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 6
+# A response body over this stops the run, so a broken or hostile endpoint can't use up memory.
+MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 MAX_PAGES = 10000
 
 
@@ -62,6 +65,19 @@ def _flag(env: dict, name: str, default: bool) -> bool:
     return value.lower() not in ("0", "false", "no", "off")
 
 
+def _number(env: dict, name: str, default: str, cast=int, high: int = 10 ** 9):
+    """A numeric setting: a bad value stops the bridge with one plain error, not a traceback."""
+    value = _env(env, name, default)
+    try:
+        number = cast(value)
+    except ValueError:
+        raise BridgeError(f"{name} must be a number") from None
+    # NaN fails every comparison, so it lands here too.
+    if not 0 <= number <= high:
+        raise BridgeError(f"{name} must be between 0 and {high:,}")
+    return number
+
+
 def _require_https(url: str, what: str) -> None:
     """Keys travel with every request, so only https is allowed (plain http to this machine is
     allowed for local testing)."""
@@ -79,13 +95,13 @@ def load_config(env: dict | None = None) -> dict:
         "api_url": (_env(env, "VSA10_API_URL") or "").rstrip("/"),
         "token_id": _env(env, "VSA10_TOKEN_ID"),
         "token_secret": _env(env, "VSA10_TOKEN_SECRET"),
-        "page_size": int(_env(env, "VSA10_PAGE_SIZE", "1000")),
+        "page_size": _number(env, "VSA10_PAGE_SIZE", "1000"),
         "start_id": _env(env, "VSA10_START_ID"),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "kaseya_vsa10_state.json"),
         "gzip": _flag(env, "BRIDGE_GZIP", True),
-        "batch_bytes": int(_env(env, "BRIDGE_BATCH_BYTES", "100000")),
-        "lookback_hours": float(_env(env, "BRIDGE_LOOKBACK_HOURS", "24")),
-        "timeout": float(_env(env, "BRIDGE_HTTP_TIMEOUT", "60")),
+        "batch_bytes": _number(env, "BRIDGE_BATCH_BYTES", "100000"),
+        "lookback_hours": _number(env, "BRIDGE_LOOKBACK_HOURS", "24", float, high=10 ** 6),
+        "timeout": _number(env, "BRIDGE_HTTP_TIMEOUT", "60", float),
     }
     for name, key in (("VSA10_API_URL", "api_url"), ("VSA10_TOKEN_ID", "token_id"), ("VSA10_TOKEN_SECRET", "token_secret")):
         if not cfg[key]:
@@ -138,13 +154,29 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _OPENER = urllib.request.build_opener(_NoRedirect)
 
 
+def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
+    """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first."""
+    limit = limit or MAX_RESPONSE_BYTES
+    chunks, size = [], 0
+    while True:
+        chunk = resp.read(min(1048576, limit + 1 - size))
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+        size += len(chunk)
+        if size > limit:
+            raise BridgeError(f"{what} to {_host(url)} sent more than {limit // 1048576} MB, which the bridge "
+                              "refuses so a bad response can't use up memory")
+
+
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
     """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers={**headers, "User-Agent": USER_AGENT})
         try:
             with _OPENER.open(req, timeout=timeout) as resp:
-                return resp.status, resp.read()
+                return resp.status, _read(resp, what, url)
         except urllib.error.HTTPError as e:
             # Close the error response now so its socket is released, not when the error is
             # garbage collected. The code and headers stay readable.
@@ -310,18 +342,37 @@ def run_once(cfg: dict, dry_run: bool = False, out=None) -> int:
     return count
 
 
+def _where(e: BaseException) -> str:
+    """Where in this script an unexpected error came from: the line and function, never a value,
+    so no key or record reaches the log."""
+    frames = traceback.extract_tb(e.__traceback__)
+    mine = [f for f in frames if os.path.basename(f.filename) == os.path.basename(__file__)]
+    f = (mine or frames)[-1]
+    return f"line {f.lineno} in {f.name}"
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Send the Kaseya VSA 10 (or Pulseway) audit log to Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="print the NDJSON that would be sent; send and save nothing")
     ap.add_argument("--interval", type=int, default=0, help="poll every N seconds instead of running once")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
     args = ap.parse_args(argv)
+    if args.interval < 0:
+        ap.error("--interval must be 0 or more")
     logging.basicConfig(level=args.log_level.upper(), stream=sys.stderr, format="%(asctime)s %(levelname)s %(message)s")
     dry_run = args.dry_run or _flag(dict(os.environ), "BRIDGE_DRY_RUN", False)
     try:
         cfg = load_config()
         while True:
-            run_once(cfg, dry_run)
+            try:
+                run_once(cfg, dry_run)
+            except BridgeError:
+                raise
+            except Exception as e:
+                if not args.interval:
+                    raise
+                LOG.error("the run failed with an unexpected %s at %s; trying again in %d seconds",
+                          type(e).__name__, _where(e), args.interval)
             if not args.interval:
                 return 0
             time.sleep(args.interval)
