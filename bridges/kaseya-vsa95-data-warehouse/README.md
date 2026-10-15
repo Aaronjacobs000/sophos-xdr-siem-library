@@ -56,7 +56,8 @@ python3 kaseya_vsa95_bridge.py --interval 300   # keep polling every 5 minutes
 
 Exit code 0 means every dataset was read and sent. On an error the bridge logs the dataset and the HTTP status, stops, and leaves that dataset's cursor where it was. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
 ## How it reads the API
 
@@ -65,7 +66,7 @@ A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off pa
 - Records have no shared ID field, so repeats inside the overlap are recognized by the fields that identify each dataset's records (for example `SessionId`, or `AgentId` and `EventId`).
 - Each dataset's cursor moves to the newest time read, but never past the time of the run, so a record dated in the future can't stop that dataset.
 
-The reference gives no rate limits. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 400, 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Data Warehouse API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+The reference gives no rate limits. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 400, 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Data Warehouse API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

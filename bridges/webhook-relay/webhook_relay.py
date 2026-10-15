@@ -25,6 +25,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import http.client
 import io
 import json
 import logging
@@ -43,6 +44,9 @@ __version__ = "0.1.0"
 LOG = logging.getLogger("webhook_relay")
 USER_AGENT = f"parser-studio-webhook-relay/{__version__}"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# 501 and 505 say the server will never take the request as it is sent, so they aren't retried.
+UNSUPPORTED_STATUS = {501: "the server doesn't support this request",
+                      505: "the server doesn't support HTTP/1.1, the version the relay uses"}
 # The opener doesn't follow these (see _NoRedirect), so the log names them as refused.
 REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 5
@@ -270,7 +274,10 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def _host(url: str) -> str:
-    return urllib.parse.urlsplit(url).netloc
+    """The host and port, for log lines and errors. A user name or password in the URL is a
+    credential, so it shows as [redacted]."""
+    _, at, host = urllib.parse.urlsplit(url).netloc.rpartition("@")
+    return f"[redacted]@{host}" if at else host
 
 
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
@@ -350,12 +357,18 @@ class Relay:
                     LOG.error("%s: HTTP Ingest at %s answered with a redirect (HTTP %s), which the relay refuses so the "
                               "token never goes to another URL; check NGSIEM_INGEST_URL. Not retried", vendor, host, e.code)
                     return 502, "HTTP Ingest refused the delivery"
+                if e.code in UNSUPPORTED_STATUS:
+                    LOG.error("%s: HTTP Ingest at %s answered HTTP %s: %s, and a retry won't change that; check "
+                              "NGSIEM_INGEST_URL. Not retried", vendor, host, e.code, UNSUPPORTED_STATUS[e.code])
+                    return 502, "HTTP Ingest refused the delivery"
                 if e.code not in RETRY_STATUS:
                     LOG.error("%s: HTTP Ingest at %s answered HTTP %s; not retried", vendor, host, e.code)
                     return 502, "HTTP Ingest refused the delivery"
                 delay = _retry_delay(attempt, e.headers.get("Retry-After"))
                 problem = f"HTTP {e.code}"
-            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
+            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError, http.client.IncompleteRead) as e:
+                # IncompleteRead: the connection closed before HTTP Ingest's reply was complete, so
+                # it is tried again like any connection that fails partway.
                 delay = _retry_delay(attempt, None)
                 problem = type(e).__name__
             if attempt == MAX_ATTEMPTS - 1 or time.monotonic() + delay >= deadline:

@@ -44,6 +44,9 @@ __version__ = "0.1.0"
 LOG = logging.getLogger("withsecure_elements_bridge")
 USER_AGENT = f"parser-studio-withsecure-elements-bridge/{__version__}"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# 501 and 505 say the server will never take the request as it is sent, so they aren't retried.
+UNSUPPORTED_STATUS = {501: "the server doesn't support this request",
+                      505: "the server doesn't support HTTP/1.1, the version the bridge uses"}
 # The opener doesn't follow these (see _NoRedirect), so the error names them as refused.
 REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 6
@@ -159,7 +162,10 @@ def load_config(env: dict | None = None) -> dict:
 # ---------------------------------------------------------------- HTTP
 
 def _host(url: str) -> str:
-    return urllib.parse.urlsplit(url).netloc
+    """The host and port, for log lines and errors. A user name or password in the URL is a
+    credential, so it shows as [redacted]."""
+    _, at, host = urllib.parse.urlsplit(url).netloc.rpartition("@")
+    return f"[redacted]@{host}" if at else host
 
 
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
@@ -177,6 +183,9 @@ class HttpStatus(BridgeError):
         if code in REDIRECT_STATUS:
             message = (f"{what} to {_host(url)} answered with a redirect (HTTP {code}), which the bridge refuses "
                        "so the key or token never goes to another URL; check the URL setting")
+        elif code in UNSUPPORTED_STATUS:
+            message = (f"{what} to {_host(url)} failed with HTTP {code}: {UNSUPPORTED_STATUS[code]}, and a retry "
+                       "won't change that; check the URL setting")
         else:
             message = f"{what} to {_host(url)} failed with HTTP {code}"
         super().__init__(message)
@@ -185,7 +194,7 @@ class HttpStatus(BridgeError):
 
 
 class RetriedStatus(HttpStatus, NetworkError):
-    """A 408, 429 or 5xx that outlasted the retries. It is a NetworkError too, so with --interval
+    """A 408, 429, 500, 502, 503 or 504 that outlasted the retries. It is a NetworkError too, so with --interval
     the bridge logs it and tries again at the next interval."""
 
 
@@ -202,12 +211,18 @@ _OPENER = urllib.request.build_opener(_NoRedirect)
 
 def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
     """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
-    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first."""
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first.
+    A body that ends short of its Content-Length raises IncompleteRead, like a cut-off chunked one."""
     limit = limit or MAX_RESPONSE_BYTES
     chunks, size = [], 0
     while True:
         chunk = resp.read(min(1048576, limit + 1 - size))
         if not chunk:
+            # read(n) returns nothing, with no error, when the connection closes before the
+            # Content-Length is reached. http.client still counts the bytes it was promised.
+            owed = getattr(resp, "length", None)
+            if owed:
+                raise http.client.IncompleteRead(b"", owed)
             return b"".join(chunks)
         chunks.append(chunk)
         size += len(chunk)
@@ -222,7 +237,7 @@ _NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, Connecti
 
 
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float, what: str):
-    """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, body)."""
+    """Send a request, retrying 408, 429, 500, 502, 503 and 504 with backoff. Returns (status, body)."""
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers={**headers, "User-Agent": USER_AGENT})
         try:

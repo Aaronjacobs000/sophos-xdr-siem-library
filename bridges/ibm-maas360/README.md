@@ -56,7 +56,8 @@ python3 maas360_bridge.py --interval 900    # keep polling every 15 minutes
 
 Exit code 0 means every report was read and sent. On an error the bridge logs the report and the HTTP status, stops, and leaves that report's cursor where it was, so the next run reads the same window again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
 ## How it reads the API
 
@@ -64,7 +65,7 @@ A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off pa
 - For each report it asks for `fromDate` (the cursor minus the overlap) to `toDate` (now), in epoch milliseconds, 250 records a page from `pageNumber` 1 until a page comes back short. A single record can come back as an object rather than a list.
 - It sends the records it hasn't sent, oldest first, then moves the cursor to the newest `loginAttemptTime` or `updateDate`, but never past the time of the run, so a record dated in the future can't stop the reads.
 
-IBM doesn't publish a rate limit for these reports. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the MaaS360 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+IBM doesn't publish a rate limit for these reports. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the MaaS360 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 
