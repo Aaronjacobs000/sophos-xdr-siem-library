@@ -16,7 +16,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { loadLibrary, loadEntryFromDir, listBridges } from './lib/fs-library.mjs';
 import { reviewReasons } from './lib/merge-rules.mjs';
-import { validateEntry } from '../studio/core/library.js';
+import { validateEntry, vendorNames } from '../studio/core/library.js';
 
 const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1]; };
@@ -30,7 +30,7 @@ const library = await loadLibrary(root);
 const bridges = await listBridges(baseRoot || root);
 // A sample may name a library vendor as a company, such as Microsoft Corporation. The names come
 // from --base when it is given, so a pull request can't add to them.
-const allowNames = [...new Set((baseRoot ? await loadLibrary(baseRoot) : library).map((e) => e.meta && e.meta.vendor).filter((v) => typeof v === 'string' && v.trim()))];
+const allowNames = vendorNames(baseRoot ? await loadLibrary(baseRoot) : library);
 const report = { passed: true, eligible: false, reasons: [], outside: [], entries: [] };
 
 let targets = library;

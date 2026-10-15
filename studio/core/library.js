@@ -205,6 +205,13 @@ export function toEngineParsers(meta, texts) {
   return meta.parsers.map((p) => ({ name: p.name, text: texts[p.name] ?? '', parent: p.parent || undefined, role: p.role }));
 }
 
+// The library's vendor names, which a sample may use as a company name, such as Microsoft
+// Corporation (see scanText). The repo's checks take them from the main branch, and the studio from
+// the library it loaded, which is the main branch too.
+export function vendorNames(entries) {
+  return [...new Set((entries || []).map((e) => e && e.meta && e.meta.vendor).filter((v) => typeof v === 'string' && v.trim()))];
+}
+
 // entry: {id, meta, texts: {NAME: text}, samples: [lines], expected, files: [{path, content}]}
 // opts.library: other entries, for the overlap check. opts.bridges: see validateMeta.
 // opts.allowNames: vendor names a sample may use as a company name (see scanText).

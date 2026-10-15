@@ -7,7 +7,7 @@ import { state } from '../store.js';
 import { call } from '../emulator-client.js';
 import { libraryForLint, enginePayload } from './test.js';
 import { problemRow, SHIP_LABELS, FORMAT_LABELS } from './common.js';
-import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, FORMATS, LICENSES } from '../../core/library.js';
+import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, vendorNames, FORMATS, LICENSES } from '../../core/library.js';
 import { makeZip } from '../../core/zip.js';
 import { TOOL_VERSION, BRANCH } from '../../core/version.js';
 import { githubUrl } from '../library-client.js';
@@ -42,6 +42,12 @@ export function draftEntry(results) {
   if (state.origin && state.origin.kind === 'fork') meta.forked_from = state.origin.id;
   const texts = Object.fromEntries(state.parsers.map((p) => [p.name, p.text]));
   return { id: entryId(meta), meta, texts, samples: [...state.lines], expected: results ? expectedFrom(results) : [] };
+}
+
+// What the share check sends the worker: the entry, the rest of the library for the overlap check,
+// and the library's vendor names, which samples may use as company names as in the repo's checks.
+export function validatePayload(entry) {
+  return { entry: { ...entry, files: undefined }, library: libraryForLint().filter((e) => e.id !== entry.id), allowNames: vendorNames(state.library.entries) };
 }
 
 export function openShare() {
@@ -110,7 +116,7 @@ export function openShare() {
     try {
       const run = await call('run', { parsers: enginePayload(), samples: entry.samples, now: m.reference_time });
       entry.expected = expectedFrom(run);
-      const v = await call('validate', { entry: { ...entry, files: undefined }, library: libraryForLint().filter((e) => e.id !== entry.id) });
+      const v = await call('validate', validatePayload(entry));
       clear(results);
       const errors = v.problems.filter((p) => p.level === 'error');
       const warnings = v.problems.filter((p) => p.level === 'warning');
