@@ -52,13 +52,14 @@ python3 atlassian_org_audit_bridge.py --interval 300    # keep polling every 5 m
 
 Exit code 0 means every page was read and sent. On an error the bridge logs it with the HTTP status, stops, and leaves the cursor where it was, so the next run reads the same events again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log. A time without an offset is read as UTC, never as the machine's local time.
 
 ## How it reads the API
 
 - The first run asks `/events-stream` for events from the lookback (`from`, in epoch milliseconds) in ascending order. Every later request sends the `cursor` from the last page's `meta.next`, which Atlassian says keeps the sort order and can be used after the last page to poll for new events. The bridge saves the cursor after each page is sent, and stops when a page comes back empty or without a cursor.
 - If Atlassian refuses the saved cursor (`ADMIN-400-1`), the bridge reads again from the last event's time minus the overlap. Events carry a unique `id`, so the bridge drops ones it has sent.
-- The events stream allows 60 requests a minute per user and 50 per API path. On 429 the bridge waits until the `X-RateLimit-Reset` time Atlassian sends, and retries 408 and 5xx with backoff, up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Atlassian or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+- The events stream allows 60 requests a minute per user and 50 per API path. On 429 the bridge waits until the `X-RateLimit-Reset` time Atlassian sends, and retries 408, 500, 502, 503 and 504 with backoff, up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Atlassian or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

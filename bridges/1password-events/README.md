@@ -58,7 +58,8 @@ python3 onepassword_events_bridge.py --interval 300    # keep polling every 5 mi
 
 Exit code 0 means every feature was read and sent. On an error the bridge logs the feature and the HTTP status and stops. Each feature's cursor moves only after HTTP Ingest accepted that page, so the next run continues from the last page that was sent. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log.
 
 ## How it reads the API
 
@@ -66,7 +67,7 @@ A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off pa
 - The first request for a feature is a ResetCursor: `{"limit": 1000, "start_time": "<now minus the lookback>"}`. Every later request sends the `cursor` from the last response. 1Password says the cursor stays valid across sessions, so the bridge saves it and resumes from it on the next run.
 - It reads pages until `has_more` is false, sending each page and then saving its cursor.
 
-1Password allows 600 requests a minute and 30,000 an hour. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Events API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+1Password allows 600 requests a minute and 30,000 an hour. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Events API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving its cursor can send that page again; HTTP Ingest does not remove duplicates.
 

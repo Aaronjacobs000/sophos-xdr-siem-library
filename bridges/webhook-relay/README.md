@@ -140,7 +140,8 @@ The timeouts above make the proxy, not the relay, wait on a slow sender. nginx a
 - The body goes to HTTP Ingest unchanged, with `Authorization: Bearer` and `Content-Type: application/json` for a JSON object or `text/plain` for anything else. The vendor's headers are not passed on.
 - With `BRIDGE_SPLIT_BATCHES=1`, a Mist body with two or more events goes to HTTP Ingest in one request with one line per event, `{"topic": "<topic>", "events": [<event>]}`. A body with one event, and every other vendor's body, goes on as one record.
 - HTTP Ingest reads every line as a separate record, so a body with line breaks inside is put on one line first. In JSON they become spaces (JSON only allows them between values, so the data is the same). In text, such as a multi-line ScreenConnect `{Event.Data}`, each becomes the two characters `\n`.
-- HTTP Ingest 408, 429, 5xx and connection errors are retried with backoff, honoring `Retry-After`, until `BRIDGE_FORWARD_DEADLINE`. Other answers (400, 401, 403, 413 and redirects) are not retried.
+- HTTP Ingest 408, 429, 500, 502, 503, 504 and connection errors are retried with backoff, honoring `Retry-After`, until `BRIDGE_FORWARD_DEADLINE`. Other answers (400, 401, 403, 413 and redirects) are not retried.
+- A reply from HTTP Ingest cut off partway is retried the same way, and the sender always gets an answer. 501 and 505 aren't retried, since a retry won't change them, and the log says what they mean. A user name or password in `NGSIEM_INGEST_URL` shows as `[redacted]` in the log.
 
 | The relay answers | When |
 | --- | --- |

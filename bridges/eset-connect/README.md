@@ -54,17 +54,18 @@ python3 eset_connect_bridge.py --interval 300    # keep polling every 5 minutes
 
 Exit code 0 means every page was read and sent. On an error the bridge logs it with the HTTP status, stops, and leaves the cursor where it was, so the next run reads the same window again. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log. A token refresh that fails in an outage stops the run, rather than signing in and going through the retries again.
 
 ## How it reads the API
 
-- It signs in with `POST /oauth/token` (form fields `grant_type=password`, `username`, `password`) and sends the access token as `Authorization: Bearer`. ESET's tokens last 60 minutes; the bridge renews the token with `grant_type=refresh_token` a minute before it expires, and once more if the API answers 401. If the refresh fails, it signs in again.
+- It signs in with `POST /oauth/token` (form fields `grant_type=password`, `username`, `password`) and sends the access token as `Authorization: Bearer`. ESET's tokens last 60 minutes; the bridge renews the token with `grant_type=refresh_token` a minute before it expires, and once more if the API answers 401. If ESET refuses the refresh token, it signs in again.
 - Each run asks for detections with `occurTime` from the cursor minus the overlap (`startTime`, inclusive) up to the start of the run (`endTime`, exclusive), and follows `nextPageToken` until a page comes back without one.
 - When a query takes ESET more than 30 seconds, ESET answers `202 Accepted` with a `response-id` header and keeps the result for 10 minutes. The bridge asks again with the same query and that header until the result is ready.
 - It sends the detections it hasn't sent, oldest first, then moves the cursor to the start of the run.
 - ESET filters on when a detection happened, not when it reached ESET Connect, so a detection from a device that was offline for longer than the overlap is missed. Raise `BRIDGE_OVERLAP_SECONDS` if your devices report late.
 
-ESET allows 10 calls a second per API user, account and address. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from ESET or HTTP Ingest is refused, not followed, so no password, token or key goes to another URL, and the run stops with an error that says so.
+ESET allows 10 calls a second per API user, account and address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from ESET or HTTP Ingest is refused, not followed, so no password, token or key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 

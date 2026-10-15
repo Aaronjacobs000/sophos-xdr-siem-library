@@ -10,6 +10,7 @@ service is called.
   python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 """
 import base64
+import contextlib
 import gc
 import hashlib
 import hmac
@@ -89,6 +90,7 @@ class Ingest:
         self.retry_after = "0"
         self.received = []
         self.other = []
+        self.short = 0  # replies to cut short of their Content-Length after taking the delivery
 
 
 class IngestHandler(BaseHTTPRequestHandler):
@@ -119,6 +121,14 @@ class IngestHandler(BaseHTTPRequestHandler):
             if code != 200:
                 return self._send(code, {"Retry-After": m.retry_after})
         m.received.append({"headers": dict(self.headers), "body": body})
+        if m.short:
+            # The connection closes before the reply reaches its Content-Length.
+            m.short -= 1
+            self.send_response(200)
+            self.send_header("Content-Length", "100")
+            self.end_headers()
+            self.wfile.write(b"{}")
+            return
         self._send(200)
 
     def do_GET(self):
@@ -438,6 +448,25 @@ class RelayTest(unittest.TestCase):
         self.assertEqual(len(self.ingest.codes), 10 - r.MAX_ATTEMPTS)
         self.assertEqual(self.bodies(), [])
 
+    def test_ingest_reply_cut_short_is_retried_and_the_sender_always_gets_an_answer(self):
+        # HTTP Ingest took the delivery, but its reply closed before its Content-Length. The relay
+        # treats that like any connection that fails partway: it tries again, and if every reply
+        # is cut short, it answers 503 so the sender retries. Either way the sender gets an answer
+        # and the log gets one line per try, with no traceback.
+        self.start()
+        errors = io.StringIO()
+        with contextlib.redirect_stderr(errors):
+            self.ingest.short = 1
+            self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", HUDU_BODY), (200, "forwarded\n"))
+            self.assertEqual(self.bodies(), [HUDU_BODY, HUDU_BODY])
+            self.ingest.received.clear()
+            self.ingest.short = 100
+            self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", HUDU_BODY)[0], 503)
+            self.assertEqual(len(self.bodies()), r.MAX_ATTEMPTS)
+        self.assertNotIn("Traceback", errors.getvalue())
+        self.assertIn("failed (IncompleteRead); retrying in", self.log.getvalue())
+        self.assertIn("did not take the delivery in time; answered 503", self.log.getvalue())
+
     def test_retry_after_past_the_deadline_answers_503_at_once(self):
         self.start(BRIDGE_FORWARD_DEADLINE="8")
         self.ingest.codes = [429, 429]
@@ -459,6 +488,25 @@ class RelayTest(unittest.TestCase):
         self.relay.server_close()
         self.start(NGSIEM_INGEST_KEY="wrong-key-000000000")
         self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", HUDU_BODY)[0], 502)
+
+    def test_ingest_501_and_505_are_not_retried_and_say_why(self):
+        # 501 and 505 say HTTP Ingest will never take the request as it is sent, so a retry can't
+        # help: the sender gets 502 at once, and the log says what the code means.
+        self.start()
+        for code, meaning in ((501, "the server doesn't support this request"),
+                              (505, "the server doesn't support HTTP/1.1, the version the relay uses")):
+            with self.subTest(code=code):
+                self.ingest.codes = [code, 200]
+                self.assertEqual(self.post(f"/hudu/{HUDU_SECRET}", HUDU_BODY)[0], 502)
+                self.assertEqual(self.ingest.codes, [200])
+                self.assertIn(f"answered HTTP {code}: {meaning}, and a retry won't change that; check NGSIEM_INGEST_URL. "
+                              "Not retried", self.log.getvalue())
+
+    def test_user_info_in_the_ingest_url_stays_out_of_the_log(self):
+        # A user name or password in NGSIEM_INGEST_URL is a credential: log lines show the host and
+        # port with the user info redacted.
+        self.assertEqual(r._host("https://user:secret@ingest.example.com:8443/services/x"), "[redacted]@ingest.example.com:8443")
+        self.assertEqual(r._host("https://ingest.example.com/services/x"), "ingest.example.com")
 
     def test_ingest_redirect_is_not_followed(self):
         self.start()

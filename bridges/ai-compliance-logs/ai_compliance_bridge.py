@@ -36,6 +36,9 @@ LOG = logging.getLogger("ai_compliance_bridge")
 USER_AGENT = f"parser-studio-ai-compliance-bridge/{__version__}"
 REDACTED = "[redacted]"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+# 501 and 505 say the server will never take the request as it is sent, so they aren't retried.
+UNSUPPORTED_STATUS = {501: "the server doesn't support this request",
+                      505: "the server doesn't support HTTP/1.1, the version the bridge uses"}
 # _request refuses these unless told otherwise, so the error names them as refused.
 REDIRECT_STATUS = {301, 302, 303, 307, 308}
 MAX_ATTEMPTS = 6
@@ -179,7 +182,10 @@ _HTTPS_REDIRECT = urllib.request.build_opener(_HttpsRedirect)
 
 
 def _host(url: str) -> str:
-    return urllib.parse.urlsplit(url).netloc
+    """The host and port, for log lines and errors. A user name or password in the URL is a
+    credential, so it shows as [redacted]."""
+    _, at, host = urllib.parse.urlsplit(url).netloc.rpartition("@")
+    return f"[redacted]@{host}" if at else host
 
 
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
@@ -194,12 +200,18 @@ def _retry_delay(attempt: int, retry_after: str | None) -> float:
 
 def _read(resp, what: str, url: str, limit: int | None = None) -> bytes:
     """Reads a response body, but no more than the limit, so a broken or hostile endpoint can't
-    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first."""
+    use up memory. It reads 1 MB at a time: before Python 3.10, read(n) set aside all n bytes first.
+    A body that ends short of its Content-Length raises IncompleteRead, like a cut-off chunked one."""
     limit = limit or MAX_RESPONSE_BYTES
     chunks, size = [], 0
     while True:
         chunk = resp.read(min(1048576, limit + 1 - size))
         if not chunk:
+            # read(n) returns nothing, with no error, when the connection closes before the
+            # Content-Length is reached. http.client still counts the bytes it was promised.
+            owed = getattr(resp, "length", None)
+            if owed:
+                raise http.client.IncompleteRead(b"", owed)
             return b"".join(chunks)
         chunks.append(chunk)
         size += len(chunk)
@@ -215,11 +227,12 @@ _NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, socket.timeout, Connecti
 
 def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: float,
              redirects: str = "refuse", what: str = "request", limit: int | None = None):
-    """Send a request, retrying 408, 429 and 5xx with backoff. Returns (status, headers, body).
+    """Send a request, retrying 408, 429, 500, 502, 503 and 504 with backoff. Returns (status, headers, body).
     A redirect fails like any other status by default, so a key only goes to the configured host.
     redirects="return" hands a redirect to the caller instead, and "follow" follows one to https,
-    for a request that carries no key."""
+    for a request that carries no key: the signed file URL, which comes from the API, not a setting."""
     opener = _HTTPS_REDIRECT if redirects == "follow" else _NO_REDIRECT
+    check = "" if redirects == "follow" else "; check the URL setting"
     for attempt in range(MAX_ATTEMPTS):
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
         try:
@@ -249,6 +262,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
             if e.code in RETRY_STATUS:
                 # A NetworkError, so with --interval the bridge logs it and tries again at the next interval.
                 raise NetworkError(f"{what} to {_host(url)} failed with HTTP {e.code}") from None
+            if e.code in UNSUPPORTED_STATUS:
+                raise BridgeError(f"{what} to {_host(url)} failed with HTTP {e.code}: {UNSUPPORTED_STATUS[e.code]}, "
+                                  f"and a retry won't change that{check}") from None
             raise BridgeError(f"{what} to {_host(url)} failed with HTTP {e.code}") from None
         except _NETWORK_ERRORS as e:
             if attempt < MAX_ATTEMPTS - 1:
@@ -257,6 +273,9 @@ def _request(method: str, url: str, headers: dict, body: bytes | None, timeout: 
                 time.sleep(delay)
                 continue
             if isinstance(e, urllib.error.URLError) and isinstance(e.reason, socket.gaierror):
+                if redirects == "follow":
+                    raise HostNotFound(f"{what} to {_host(url)} failed: the host name in the signed URL the API "
+                                       "redirected to wasn't found") from None
                 raise HostNotFound(f"{what} to {_host(url)} failed: the host name wasn't found; "
                                    "check the URL setting") from None
             raise NetworkError(f"{what} to {_host(url)} failed: {type(e).__name__}") from None

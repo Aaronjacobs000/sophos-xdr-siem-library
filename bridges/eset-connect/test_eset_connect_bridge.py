@@ -72,6 +72,7 @@ class Mock:
         self.ingested = []
         self.requests = []
         self.token_forms = []
+        self.token_codes = []  # statuses the token endpoint answers before it works again
 
     def new_token(self):
         tok = f"test-eset-access-token-{len(self.tokens)}-not-real"
@@ -106,6 +107,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/oauth/token":
             form = {k: v[0] for k, v in urllib.parse.parse_qs(body.decode()).items()}
             m.token_forms.append(form)
+            if m.token_codes:
+                return self._json({"error": "temporarily_unavailable"}, m.token_codes.pop(0))
             if self.headers.get("Content-Type") != "application/x-www-form-urlencoded":
                 return self._json({"error": "invalid_request"}, 400)
             ok = (form.get("grant_type") == "password" and form.get("username") == USERNAME and form.get("password") == PASSWORD) \
@@ -234,9 +237,10 @@ class Sized:
 
 class CutShort:
     """A server that starts a chunked answer with the given status, then closes the connection
-    partway through it, as a dropped connection would."""
+    partway through it, as a dropped connection would. With length, the answer has a Content-Length
+    of that many bytes and fewer arrive. With whole_after, only the first answers are cut short."""
 
-    def __init__(self, code=200):
+    def __init__(self, code=200, length=None, whole_after=None):
         self.requests = 0
         outer = self
 
@@ -250,9 +254,20 @@ class CutShort:
                 outer.requests += 1
                 self.send_response(code)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Transfer-Encoding", "chunked")
-                self.end_headers()
-                self.wfile.write(b'100\r\n{"partial":')
+                if whole_after is not None and outer.requests > whole_after:
+                    self.send_header("Content-Length", str(len(b'{"whole": true}')))
+                    self.end_headers()
+                    self.wfile.write(b'{"whole": true}')
+                    return
+                if length is None:
+                    self.send_header("Transfer-Encoding", "chunked")
+                    self.end_headers()
+                    self.wfile.write(b'100\r\n{"partial":')
+                else:
+                    # What arrives is valid JSON, so only the Content-Length shows it is short.
+                    self.send_header("Content-Length", str(length))
+                    self.end_headers()
+                    self.wfile.write(b'{"partial": true}')
                 self.close_connection = True
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
@@ -404,6 +419,25 @@ class BridgeTest(unittest.TestCase):
         self.assertEqual([f["grant_type"] for f in self.mock.token_forms], ["password", "refresh_token"])
         gets = [h["Authorization"] for m, p, h in self.mock.requests if m == "GET"]
         self.assertEqual(gets, [f"Bearer {self.mock.tokens[0]}", f"Bearer {self.mock.tokens[1]}"])
+
+    def test_a_token_refresh_in_an_outage_is_retried_once_not_again_by_signing_in(self):
+        # The token endpoint answers 503 to the refresh past the retries. Signing in would only go
+        # through the same retries again, so the run stops after one round, as a network error.
+        self.mock.detections = [detection(0, self.now - 60)]
+        cfg = self.cfg()
+        client = c.EsetConnect(cfg)
+        c.run_once(cfg, client=client)
+        client.expires_at = time.time() - 1
+        self.mock.token_codes = [503] * (3 * c.MAX_ATTEMPTS)
+        with self.assertRaises(c.RetriedStatus):
+            c.run_once(cfg, client=client)
+        self.assertEqual([f["grant_type"] for f in self.mock.token_forms], ["password"] + ["refresh_token"] * c.MAX_ATTEMPTS)
+        self.assertNotIn("signing in again", self.logbuf.getvalue())
+        # A refresh token ESET refuses still leads to a fresh sign-in.
+        self.mock.token_codes = [400]
+        self.mock.token_forms.clear()
+        c.run_once(cfg, client=client)
+        self.assertEqual([f["grant_type"] for f in self.mock.token_forms], ["refresh_token", "password"])
 
     def test_a_pending_query_is_collected_with_its_response_id(self):
         self.mock.detections = [detection(i, self.now - 600 + i) for i in range(3)]
@@ -652,9 +686,98 @@ class RequestSafetyTest(unittest.TestCase):
                 self.assertTrue(str(caught.exception).endswith(ending), str(caught.exception))
                 self.assertNotIn("partial", str(caught.exception))
 
+    def test_501_and_505_stop_at_once_with_a_plain_message(self):
+        # 501 and 505 say the server will never take the request as it is sent, so a retry can't
+        # help, unlike 500, 502, 503 and 504. They stop the run at the first answer and say why.
+        for code, meaning in ((501, "the server doesn't support this request"),
+                              (505, "the server doesn't support HTTP/1.1, the version the bridge uses")):
+            with self.subTest(code=code):
+                server, slept = Sized(10, code), []
+                saved, c.time.sleep = c.time.sleep, slept.append
+                try:
+                    with self.assertRaises(c.BridgeError) as caught:
+                        c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+                finally:
+                    c.time.sleep = saved
+                    server.close()
+                self.assertNotIsInstance(caught.exception, c.NetworkError)
+                self.assertEqual(slept, [])
+                self.assertEqual(str(caught.exception), f"test request to {server.base[len('http://'):]} failed with HTTP "
+                                 f"{code}: {meaning}, and a retry won't change that; check the URL setting")
+
+    def test_user_info_in_a_url_stays_out_of_log_lines_and_errors(self):
+        # A user name or password in a URL setting is a credential. Log lines and errors name the
+        # host and port, with the user info redacted.
+        self.assertEqual(c._host("https://user:secret@api.example.com:8443/v1/x?q=1"), "[redacted]@api.example.com:8443")
+        self.assertEqual(c._host("https://token-value@api.example.com/v1"), "[redacted]@api.example.com")
+        self.assertEqual(c._host("https://api.example.com/v1?q=a@b"), "api.example.com")
+        with self.assertRaises(c.BridgeError) as caught:
+            c._read(io.BytesIO(b"xx"), "test request", "https://user:secret@api.example.com/x", limit=1)
+        self.assertTrue(str(caught.exception).startswith("test request to [redacted]@api.example.com sent more than"),
+                        str(caught.exception))
+        self.assertNotIn("secret", str(caught.exception))
+
+    def test_501_or_505_from_the_sign_in_is_not_called_a_credential_problem(self):
+        # The sign-in reports a refusal as a problem with the credentials, but 501 and 505 are about
+        # the server, so they keep their own message. A 400 is still about the credentials.
+        client = c.EsetConnect(c.load_config({"ESET_CONNECT_USERNAME": USERNAME, "ESET_CONNECT_PASSWORD": PASSWORD}))
+        saved = c._request
+        try:
+            for code in (501, 505, 400):
+                with self.subTest(code=code):
+                    def answer(method, url, *args, **kwargs):
+                        raise c.HttpStatus("ESET Connect sign-in", url, code)
+                    c._request = answer
+                    with self.assertRaises(c.BridgeError) as caught:
+                        client.sign_in()
+                    if code == 400:
+                        self.assertIn("check the API user's name and password", str(caught.exception))
+                    else:
+                        self.assertIn(f"failed with HTTP {code}: the server doesn't support", str(caught.exception))
+                        self.assertNotIn("check the API user's name and password", str(caught.exception))
+        finally:
+            c._request = saved
+
     def test_error_answer_cut_short_still_stops_at_once(self):
         # A status that isn't retried stops the run at the first answer, cut short or not.
         server = CutShort(400)
+        try:
+            with self.assertRaises(c.BridgeError) as caught:
+                c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+        finally:
+            server.close()
+        self.assertNotIsInstance(caught.exception, c.NetworkError)
+        self.assertEqual(server.requests, 1)
+        self.assertTrue(str(caught.exception).endswith("failed with HTTP 400"), str(caught.exception))
+
+    def test_answer_short_of_its_content_length_is_retried_then_a_network_error(self):
+        # The connection closes before the body reaches its Content-Length. http.client's read(n)
+        # returns what arrived with no error, so the bridge checks the count itself: a short body
+        # is retried like any answer cut short, and never passes as the whole answer.
+        for code, ending in ((200, "failed: IncompleteRead"), (503, "failed with HTTP 503")):
+            with self.subTest(code=code):
+                server, slept = CutShort(code, length=100), []
+                saved, c.time.sleep = c.time.sleep, slept.append
+                try:
+                    with self.assertRaises(c.NetworkError) as caught:
+                        c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+                finally:
+                    c.time.sleep = saved
+                    server.close()
+                self.assertEqual((server.requests, len(slept)), (c.MAX_ATTEMPTS, c.MAX_ATTEMPTS - 1))
+                self.assertTrue(str(caught.exception).endswith(ending), str(caught.exception))
+                self.assertNotIn("partial", str(caught.exception))
+        # Short once, then whole: the retry returns the whole answer.
+        server = CutShort(200, length=100, whole_after=1)
+        saved, c.time.sleep = c.time.sleep, lambda s: None
+        try:
+            answer = c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")
+        finally:
+            c.time.sleep = saved
+            server.close()
+        self.assertEqual((answer[0], answer[-1], server.requests), (200, b'{"whole": true}', 2))
+        # A status that isn't retried still stops the run at the first answer.
+        server = CutShort(400, length=100)
         try:
             with self.assertRaises(c.BridgeError) as caught:
                 c._request("GET", f"{server.base}/x", {}, None, 5.0, what="test request")

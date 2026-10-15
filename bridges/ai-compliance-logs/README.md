@@ -60,7 +60,8 @@ python3 ai_compliance_bridge.py --interval 300   # keep polling every 5 minutes
 
 Exit code 0 means every source was read and sent. On an error the bridge logs the source and the HTTP status, stops, and leaves the cursor where the last accepted batch left it, so the next run picks up from there. An API response over 64 MB, or a log file over 512 MB, also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
 With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or key error still stops it.
-A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
+An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password in a URL setting shows as `[redacted]` in the log. A signed download URL whose host name doesn't resolve says it came from the API's redirect, not the URL setting.
 
 ## How it reads each API
 
@@ -70,7 +71,7 @@ A 429 or 5xx that outlasts the retries, a read timeout, and an answer cut off pa
 
 All three APIs, and HTTP Ingest, deliver at least once. The bridge drops repeats it has seen recently, but a crash between sending a batch and saving the cursor can send that batch again. HTTP Ingest does not remove duplicates.
 
-Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429 or 5xx the bridge waits (honoring `Retry-After` up to 5 minutes) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key and only over https, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+Rate limits: OpenAI allows 100 requests a minute per route per workspace, and Anthropic 600 a minute per parent organization across all compliance endpoints. On 408, 429, 500, 502, 503 or 504 the bridge waits (honoring `Retry-After` up to 5 minutes) and retries up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. Apart from the log file download's signed URL, which is fetched without the key and only over https, a redirect from an API or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 ## Privacy
 
