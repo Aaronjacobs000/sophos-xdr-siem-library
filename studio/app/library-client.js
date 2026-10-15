@@ -6,14 +6,11 @@
 import { REPO, BRANCH } from '../core/version.js';
 import { parseSamples, entryId, BRIDGE_PATH, bridgeScripts, bridgeOf } from '../core/library.js';
 
-const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 const CACHE_KEY = 'parser-studio:library-cache:v3';
 
+// The library, its bridges and the links to them always come from this repo. A fork that
+// publishes its own studio sets REPO in core/version.js.
 export function repo() {
-  try {
-    const q = new URLSearchParams(location.search).get('repo');
-    if (q && REPO_RE.test(q)) return q;
-  } catch { /* default */ }
   return REPO;
 }
 
@@ -103,7 +100,7 @@ export async function loadLibrary({ force = false } = {}) {
       const snap = await loadSnapshot();
       return { entries: fromSnapshot(snap), bridges: (snap.bridges || []).map((b) => ({ ...b, loaded: true })), source: 'snapshot', at: snap.generated, error: err.message };
     } catch {
-      if (cache && cache.entries) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, error: err.message };
+      if (cache && cache.repo === repo() && cache.entries) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, error: err.message };
       return { entries: [], bridges: [], source: 'none', at: null, error: err.message };
     }
   }
