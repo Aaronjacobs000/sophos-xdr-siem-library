@@ -404,3 +404,32 @@ test('CI: a pull request can\'t add to the allowed names with a vendor of its ow
   assert.ok(sysmon.problems.some((p) => p.code === 'company' && /CI Fixture Pty Ltd/.test(p.message)), JSON.stringify(sysmon.problems));
   assert.equal(report.eligible, false);
 });
+
+test('the studio\'s share check allows the same company names as the repo\'s checks, from the loaded library', async () => {
+  // The page's worker and share dialog, run in Node: the worker answers through self.postMessage.
+  globalThis.self = {};
+  await import('../studio/app/worker.js');
+  const { state } = await import('../studio/app/store.js');
+  const { validatePayload } = await import('../studio/app/views/share.js');
+  const { expectedFrom, vendorNames } = await import('../studio/core/library.js');
+  const lib = await loadLibrary(ROOT);
+  state.library.entries = lib.map((e) => ({ ...e, loaded: true }));
+  assert.ok(vendorNames(state.library.entries).includes('Microsoft'));
+  const share = async (company) => {
+    const e = await loadEntryFromDir(path.join(ROOT, 'parsers/microsoft/sysmon'), ROOT);
+    const samples = e.samples.map((l) => l.replace('Company: -', `Company: ${company}`));
+    const entry = { id: e.id, meta: e.meta, texts: e.texts, samples, expected: expectedFrom(runParsers(e.parsers, samples, { now: e.meta.reference_time })) };
+    let answer;
+    self.postMessage = (m) => { answer = m; };
+    self.onmessage({ data: { id: 1, kind: 'validate', payload: validatePayload(entry) } });
+    assert.equal(answer.ok, true, answer.error);
+    return answer.result.problems.filter((p) => p.code === 'company').map((p) => p.message);
+  };
+  try {
+    assert.deepEqual(await share('Microsoft Corporation'), []);
+    assert.equal((await share('Initrode Pty Ltd')).length, 1);
+  } finally {
+    state.library.entries = [];
+    delete globalThis.self;
+  }
+});

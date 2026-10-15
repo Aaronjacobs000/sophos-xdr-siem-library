@@ -10,7 +10,7 @@ self.onmessage = (e) => {
     let result;
     if (kind === 'lint') result = lintParsers(payload.parsers, { samples: payload.samples, now: payload.now, library: payload.library, selfId: payload.selfId });
     else if (kind === 'run') result = runParsers(payload.parsers, payload.samples, { now: payload.now });
-    else if (kind === 'validate') result = validateEntry(payload.entry, { library: payload.library });
+    else if (kind === 'validate') result = validateEntry(payload.entry, { library: payload.library, allowNames: payload.allowNames });
     else if (kind === 'overlap') result = overlaps(payload.parsers, payload.samples, payload.library, payload.selfId);
     else throw new Error(`unknown job ${kind}`);
     self.postMessage({ id, ok: true, result });
