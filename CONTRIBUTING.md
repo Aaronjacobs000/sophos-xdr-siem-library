@@ -40,7 +40,7 @@ Every pull request that touches `parsers/` and every issue-form submission is ch
 
 ## Samples must be synthetic
 
-Use documentation addresses (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24, 2001:db8::/32), names under example.com, example.net or example.org, and made-up user and host names. Fictional companies such as Acme and Contoso are fine. Copy the line structure from the vendor's public log format docs and link those docs in `meta.json`. Customer logs are not accepted, even sanitized ones.
+Use documentation addresses (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24, 2001:db8::/32), names under example.com, example.net or example.org, and made-up user and host names. Fictional companies such as Acme and Contoso are fine, and so is the company name of a vendor already in the library, written as the vendor name plus its legal suffix, such as Microsoft Corporation. Copy the line structure from the vendor's public log format docs and link those docs in `meta.json`. Customer logs are not accepted, even sanitized ones.
 
 ## When a pull request merges without review
 

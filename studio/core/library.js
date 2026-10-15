@@ -207,6 +207,7 @@ export function toEngineParsers(meta, texts) {
 
 // entry: {id, meta, texts: {NAME: text}, samples: [lines], expected, files: [{path, content}]}
 // opts.library: other entries, for the overlap check. opts.bridges: see validateMeta.
+// opts.allowNames: vendor names a sample may use as a company name (see scanText).
 // Returns {ok, problems, results}.
 export function validateEntry(entry, opts = {}) {
   const problems = [];
@@ -234,7 +235,7 @@ export function validateEntry(entry, opts = {}) {
     if (f.path.endsWith('meta.json')) {
       try { content = JSON.stringify({ ...JSON.parse(f.content), docs: undefined }, null, 2); } catch { /* scanned as is */ }
     }
-    for (const s of scanText(content, { source: f.path.split('/').pop() })) problems.push({ ...s, file: f.path.split('/').pop() });
+    for (const s of scanText(content, { source: f.path.split('/').pop(), allowNames: opts.allowNames })) problems.push({ ...s, file: f.path.split('/').pop() });
   }
   let results = [];
   if (entry.meta && Array.isArray(entry.meta.parsers) && entry.meta.parsers.length) {

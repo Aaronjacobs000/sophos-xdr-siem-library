@@ -103,6 +103,8 @@ function versionContext(text, index) {
   return VERSION_WORDS.has(words[words.length - 1].toLowerCase());
 }
 
+const nameKey = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
 // Returns [{level, code, message, line, text}]. source names the file in messages.
 export function scanText(text, opts = {}) {
   const out = [];
@@ -162,9 +164,13 @@ export function scanText(text, opts = {}) {
     if (/^\d/.test(host) && /^[\d.]+[a-z]{2}$/.test(host)) continue;
     add('error', 'hostname', `${m[1]} is a real-looking domain or hostname. Use example.com, example.net or example.org.`, m.index, m[1]);
   }
+  // opts.allowNames lets a vendor's own company name through, such as Microsoft Corporation for
+  // Microsoft. The words before the legal suffix must be exactly an allowed name: part of a name
+  // would let customers through, such as any name with "isc" in it for the vendor ISC.
+  const allowed = new Set((opts.allowNames || []).map(nameKey));
   for (const m of text.matchAll(COMPANY)) {
     if (FICTIONAL.test(m[0])) continue;
-    if (opts.allowNames && opts.allowNames.some((n) => m[0].toLowerCase().includes(n.toLowerCase()))) continue;
+    if (allowed.has(nameKey(m[1]))) continue;
     add('error', 'company', `"${m[0].trim()}" looks like a company name. Samples must not name customers; use Acme or Example Corp.`, m.index, m[0].trim());
   }
   for (const m of text.matchAll(/(?<![A-Za-z0-9+/=_-])([A-Za-z0-9+/_-]{32,}={0,2})(?![A-Za-z0-9+/=_-])/g)) {

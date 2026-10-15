@@ -28,6 +28,9 @@ const changedFile = opt('--changed-files');
 
 const library = await loadLibrary(root);
 const bridges = await listBridges(baseRoot || root);
+// A sample may name a library vendor as a company, such as Microsoft Corporation. The names come
+// from --base when it is given, so a pull request can't add to them.
+const allowNames = [...new Set((baseRoot ? await loadLibrary(baseRoot) : library).map((e) => e.meta && e.meta.vendor).filter((v) => typeof v === 'string' && v.trim()))];
 const report = { passed: true, eligible: false, reasons: [], outside: [], entries: [] };
 
 let targets = library;
@@ -65,7 +68,7 @@ for (const entry of targets) {
     }
   }
   const others = library.filter((e) => e.id !== entry.id);
-  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others, bridges });
+  const v = entry.loadProblems.length ? { ok: false, problems: entry.loadProblems, results: [] } : validateEntry(entry, { library: others, bridges, allowNames });
   report.entries.push({
     id: entry.id, status, baseAuthor, author: entry.meta && entry.meta.author, ok: v.ok,
     problems: v.problems.map((p) => ({ level: p.level, code: p.code, file: p.file || null, line: p.line || null, message: p.message })),
