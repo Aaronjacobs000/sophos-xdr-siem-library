@@ -61,6 +61,7 @@ Exit code 0 means every dataset was read and sent. On an error the bridge logs t
 - It authenticates with HTTP Basic, user name and user token, as the API reference shows.
 - For each dataset it asks for `$filter=<time field> gt <cursor minus the overlap>`, `$orderby=<time field> asc`, `$top` and `$skip`, and reads pages until one comes back short. The reference documents standard OData expressions but types the time fields as strings, so `VSA95_QUOTE_TIMES` switches to a quoted literal if the server wants one. This hasn't been checked against a live server.
 - Records have no shared ID field, so repeats inside the overlap are recognized by the fields that identify each dataset's records (for example `SessionId`, or `AgentId` and `EventId`).
+- Each dataset's cursor moves to the newest time read, but never past the time of the run, so a record dated in the future can't stop that dataset.
 
 The reference gives no rate limits. The bridge waits and retries 408, 429 and 5xx up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 400, 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Data Warehouse API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 

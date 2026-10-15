@@ -284,6 +284,29 @@ class BridgeTest(unittest.TestCase):
         finally:
             r.close()
 
+    def test_a_record_dated_in_the_future_leaves_the_cursor_at_now(self):
+        # A wrong clock can date a record years ahead. The cursor stays at the run's time, so the
+        # next run still asks for everything after it.
+        class Client:
+            def __init__(self, rows):
+                self.rows, self.asked = rows, []
+
+            def alerts(self, created_after, page):
+                self.asked.append(created_after)
+                return {"rmm_alerts": self.rows, "meta": {"total_pages": 1}}
+
+        class Sink:
+            def send(self, records):
+                pass
+
+        cfg, state = self.cfg(), {}
+        future = {"id": 1, "created_at": "2099-01-01T00:00:00Z"}
+        c.collect(cfg, state, Sink(), lambda: None, Client([future]))
+        self.assertLessEqual(c._parse_time(state["rmm_alerts"]["since"]), datetime.now(timezone.utc))
+        again = Client([future])
+        self.assertEqual(c.collect(cfg, state, Sink(), lambda: None, again), 0)
+        self.assertLess(again.asked[0], datetime.now(timezone.utc))
+
 
 class LegacyNameTest(unittest.TestCase):
     """Bridges were called collectors: a setup that still sets the COLLECTOR_ names keeps working."""
@@ -294,6 +317,8 @@ class LegacyNameTest(unittest.TestCase):
         self.assertEqual(c._env({}, "BRIDGE_LOG_LEVEL", "INFO"), "INFO")
         self.assertTrue(c._flag({"COLLECTOR_DRY_RUN": "1"}, "BRIDGE_DRY_RUN", False))
         self.assertFalse(c._flag({"COLLECTOR_DRY_RUN": "1", "BRIDGE_DRY_RUN": "0"}, "BRIDGE_DRY_RUN", False))
+
+
 
 
 class RequestSafetyTest(unittest.TestCase):

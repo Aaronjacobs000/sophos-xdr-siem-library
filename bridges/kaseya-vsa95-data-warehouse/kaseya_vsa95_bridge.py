@@ -299,7 +299,7 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: WarehouseClient | 
     for dataset in cfg["datasets"]:
         time_field = DATASETS[dataset][0]
         cur = state.setdefault(dataset, {"since": _iso(now - timedelta(hours=cfg["lookback_hours"])), "seen": []})
-        after = _parse_time(cur["since"]) - timedelta(seconds=cfg["overlap_seconds"])
+        after = min(_parse_time(cur["since"]), now) - timedelta(seconds=cfg["overlap_seconds"])
         rows, skip = [], 0
         for _ in range(MAX_REQUESTS):
             page = client.page(dataset, time_field, after, skip)
@@ -319,7 +319,9 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: WarehouseClient | 
             fresh.append({"Dataset": dataset, **r})
         if fresh:
             sink.send(fresh)
-        newest = max([_when(r, time_field) for r in rows] + [_parse_time(cur["since"])])
+        # A record dated in the future, from a wrong clock, mustn't move the cursor past now: the
+        # next run would ask only for records after it.
+        newest = min(max([_when(r, time_field) for r in rows] + [_parse_time(cur["since"])]), now)
         cutoff = newest - timedelta(seconds=cfg["overlap_seconds"])
         cur["seen"] = list(dict.fromkeys(k for k, r in keyed if _when(r, time_field) >= cutoff))[-SEEN_LIMIT:]
         cur["since"] = _iso(newest)
