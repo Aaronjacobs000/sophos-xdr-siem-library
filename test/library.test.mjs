@@ -164,6 +164,21 @@ test('the issue-form bundle round-trips through an issue body', async () => {
   assert.throws(() => unpackBundle('nothing here'), /no Parser Studio bundle/);
 });
 
+test('expected.json must hold exactly what the emulator writes, with nothing extra', async () => {
+  const e = await loadEntryFromDir(path.join(ROOT, 'parsers/squid/squid'), ROOT);
+  const results = runParsers(e.parsers, e.samples, { now: e.meta.reference_time });
+  assert.deepEqual(compareExpected(results, e.expected), []);
+  const extra = structuredClone(e.expected);
+  extra[0].notes = 'anything at all';
+  assert.match(compareExpected(results, extra).join('\n'), /line 1: expected.json has fields the emulator doesn't write: notes/);
+  const renumbered = structuredClone(e.expected);
+  renumbered[1].line = 7;
+  assert.match(compareExpected(results, renumbered).join('\n'), /line 2: expected.json doesn't match the emulator's output/);
+  const empty = structuredClone(e.expected);
+  empty[2] = null;
+  assert.match(compareExpected(results, empty).join('\n'), /line 3: expected.json has no result for this line/);
+});
+
 test('expected.json comparison catches a changed parser', async () => {
   const e = await loadEntryFromDir(path.join(ROOT, 'parsers/squid/squid'), ROOT);
   const changed = e.parsers.map((p) => ({ ...p, text: p.text.replace('sensorType$ = "Squid"', 'sensorType$ = "Squid Proxy"') }));
