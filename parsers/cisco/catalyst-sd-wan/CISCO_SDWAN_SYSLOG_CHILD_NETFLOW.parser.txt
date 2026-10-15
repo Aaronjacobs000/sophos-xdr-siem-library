@@ -1,0 +1,40 @@
+!SAMPLE=<189>430: *Oct 14 09:12:44.358: %Cisco-SDWAN-edge-syd-01-FTMD-5-NTCE-1000026: **HSL-LOGGING IMPLICIT-ACL** : VPN-0 Src: 192.0.2.16/0 Dst: 192.0.2.20/0 Proto: 1 TOS: 0 LogReason: SDWAN_SERV_ICMP_EXCEPT_TS Count: 1Bytes: 114
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="acl"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Catalyst SD-WAN WAN Edge FTMD implicit ACL logs (message 1000026), turned on with
+# Implicit ACL Logging in the policy, which Cisco says logs dropped packets.
+# Child of CISCO_SDWAN_SYSLOG_PARENT: each one to Netflow as a blocked flow, with the addresses, ports,
+# protocol, packet count and bytes. ICMP flows have port 0. The VPN, log reason, TOS and interfaces go
+# to event_metadata.
+# acl, edge, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = acl["src"]
+destinationAddress$ = acl["dst"]
+sourcePort$ = INT(acl["sport"], 10)
+destinationPort$ = INT(acl["dport"], 10)
+protocol$ = INT(acl["proto"], 10)
+txPacketCount$ = INT(acl["count"], 10)
+txByteCount$ = INT(acl["bytes"], 10)
+flowAction$ = "FW_BLOCKED"
+
+m1.key$ = "vpn"
+m1.value$ = acl["vpn"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "log_reason"
+m2.value$ = acl["reason"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m2]
+m3.key$ = "tos"
+m3.value$ = acl["tos"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m3]
+m4.key$ = "ingress_interface"
+m4.value$ = acl["inif"]
+eventMetadata$.record$ = IF acl["inif"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "egress_interface"
+m5.value$ = acl["outif"]
+eventMetadata$.record$ = IF acl["outif"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$

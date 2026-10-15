@@ -1,0 +1,66 @@
+!SAMPLE=<190>Oct 14 09:16:02 edge-syd-01 2026/10/14-09:16:02.123456 UTC [**] [Hostname: edge-syd-01] [**] [System_IP: 198.51.100.15] [**] [Instance_ID: 1] [**] Drop [**] [1:58001:3] MALWARE-CNC Win.Trojan.Example outbound connection attempt [**] [Classification: A Network Trojan was Detected] [Priority: 1] [POLICY: ips-inspect-1] {TCP} 192.0.2.30:49822 -> 203.0.113.50:80
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=(?:%(?:Cisco-SDWAN-\S+-FTMD-\d-[A-Z]{4}-1000026|SDWAN-\d-FTMD)\s?:\s*(?:\*\*)?HSL-LOGGING IMPLICIT-ACL|\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}(?:\.\d+)?\s+(?:[A-Za-z]{1,5}\s+)?\[\*\*\]\s+(?:\[Hostname:[^\]]*\]\s+\[\*\*\]\s+\[System_IP:[^\]]*\]\s+\[\*\*\]\s+)?\[Instance_ID:\s*\d+\]\s+\[\*\*\]\s+\w+\s+\[\*\*\]\s)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Catalyst SD-WAN WAN Edge (IOS XE) syslog to the data collector.
+# Parent: recognizes two kinds of line and hands them on:
+#   FTMD implicit ACL logs, which Cisco says log dropped packets, in the header before release 20.15
+#     %Cisco-SDWAN-<host>-FTMD-5-NTCE-1000026: and from 20.15 %SDWAN-5-FTMD :      to the Netflow child
+#   UTD (Snort) alerts from the UTD container's own syslog destination:
+#     <time> <zone> [**] [Hostname: <host>] [**] [System_IP: <ip>] [**] [Instance_ID: <n>] [**] <action> [**] <event> ... {<proto>} <src>:<port> -> <dst>:<port>
+#     [gid:sid:rev] intrusion prevention signatures                               to the NIDS child
+#     UTD WebFilter URL filtering                                                to the HTTP child
+#     UTD AMP DISPOSITION file reputation                                        to the Antivirus child
+# Other SD-WAN daemon lines aren't claimed. IOS XE's own messages, %FW-6 firewall logs among them,
+# go to the Sophos built-in Cisco IOS parsers.
+# !TRIMALLOFF keeps the brackets in the UTD fields.
+
+sensorType$ = "Cisco Catalyst SD-WAN"
+eventType$ = "other"
+
+# Implicit ACL: VPN-<n> Src: <ip>/<port> Dst: <ip>/<port> Proto: <n> TOS: <n> LogReason: <reason> Count: <n>Bytes: <n>
+# [Ingress-Interface: <if> Egress-Interface: <if>]. Cisco's examples show ** around the label and no space before Bytes.
+acl = originalData$|HSL-LOGGING IMPLICIT-ACL(?:\*\*)?\s*:\s*VPN-(?P<vpn>\d+)\s+Src:\s*(?P<src>[^\s/]+)/(?P<sport>\d+)\s+Dst:\s*(?P<dst>[^\s/]+)/(?P<dport>\d+)\s+Proto:\s*(?P<proto>\d+)\s+TOS:\s*(?P<tos>\d+)\s+LogReason:\s*(?P<reason>\S+)\s+Count:\s*(?P<count>\d+)\s*Bytes:\s*(?P<bytes>\d+)(?:\s+Ingress-Interface:\s*(?P<inif>\S+))?(?:\s+Egress-Interface:\s*(?P<outif>\S+))?
+# Before 20.15 the host is in the tag, matched from the right since it can hold hyphens.
+tag = originalData$|%Cisco-SDWAN-(?P<host>.+)-(?P<daemon>[A-Za-z0-9_]+)-(?P<sev>[0-7])-(?P<sevname>[A-Z]{4})-(?P<msgid>\d+):
+# IOS XE time: *Oct 14 09:12:44.358: (* or . when the clock isn't synced), or RFC 3339 with RFC 5424 framing.
+ht = originalData$|^[^%]*?(?:(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)|(?P<iso>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})))[^%]*%
+
+# UTD body. The syslog header in front of it varies, so the body is found by its own time.
+utd = originalData$|(?P<time>\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+(?:(?P<zone>[A-Za-z]{1,5})\s+)?\[\*\*\]\s+(?:\[Hostname:\s*(?P<host>[^\]]*)\]\s+\[\*\*\]\s+\[System_IP:\s*(?P<sysip>[^\]]*)\]\s+\[\*\*\]\s+)?\[Instance_ID:\s*(?P<inst>\d+)\]\s+\[\*\*\]\s+(?P<act>\w+)\s+\[\*\*\]\s+(?P<event>.*?)\s+\{(?P<proto>[^}]+)\}\s+(?P<src>\S+?):(?P<sport>\d+)\s+->\s+(?P<dst>\S+?):(?P<dport>\d+)\s*$
+event = utd["event"]
+ips = event|^\[(?P<gid>\d+):(?P<sid>\d+):(?P<rev>\d+)\]\s+(?P<msg>.*?)\s+\[\*\*\]\s+\[Classification:\s*(?P<class>[^\]]*)\]\s+\[Priority:\s*(?P<prio>\d+)\]
+web = event|^UTD WebFilter (?P<type>.*?) \[\*\*\] \[URL: (?P<url>[^\]]*)\](?: \*\* \[Category: (?P<cat>[^\]]*)\] \*\* \[Reputation: (?P<rep>\d+)\])?
+amp = event|^UTD AMP DISPOSITION (?P<disp>\S+) \[\*\*\] SHA: (?P<sha>[0-9A-Fa-f]+) Malware: (?P<mal>.*?) Filename: (?P<fname>.*?) Filetype: (?P<ftype>.*?)(?: \[|$)
+vrf = event|\[(?:VRF|VRF_ID|Initiator_VRF):\s*(?P<v>[^\]]*)\]
+pol = event|\[POLICY:\s*(?P<v>[^\]]*)\]
+
+eventType$ = IF acl["vpn"] != "" THEN "acl" ELSE eventType$
+eventType$ = IF ips["sid"] != "" THEN "ips" ELSE eventType$
+eventType$ = IF web["url"] != "" THEN "web" ELSE eventType$
+eventType$ = IF amp["sha"] != "" THEN "amp" ELSE eventType$
+
+# The device: the UTD Hostname, the host in a pre-20.15 tag, or the BSD syslog header's host.
+bsdHost = originalData$|^(?:<\d{1,3}>)?[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+(?P<h>\S+)\s+\d{4}/
+edge = utd["host"]
+edge = IF edge == "" THEN tag["host"] ELSE edge
+edge = IF edge == "" THEN bsdHost["h"] ELSE edge
+hostId$ = IF edge != "" THEN edge ELSE NULL
+
+# Neither time carries a usable zone, so both are read as UTC: the UTD time's zone is a name such as
+# UTC or PDT, and the IOS XE time has none unless the clock is set to show one. Keep devices on UTC.
+utdTime = utd["time"]
+iosTime = IF ht["iso"] != "" THEN DATETIME(ht["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE DATETIME(ht["bsd"], "Jan _2 15:04:05", TRUE)
+eventTimeUsec$ = IF utdTime != "" THEN DATETIME(utdTime, "2006/01/02-15:04:05") ELSE iosTime
+
+# Protocol names in UTD alerts become IANA numbers.
+pname = UPPERCASE(STRING(utd["proto"]))
+pnum = 0
+pnum = IF pname == "TCP" THEN 6 ELSE pnum
+pnum = IF pname == "UDP" THEN 17 ELSE pnum
+pnum = IF pname == "ICMP" THEN 1 ELSE pnum
+pnum = IF pname == "IPV6-ICMP" OR pname == "ICMPV6" THEN 58 ELSE pnum

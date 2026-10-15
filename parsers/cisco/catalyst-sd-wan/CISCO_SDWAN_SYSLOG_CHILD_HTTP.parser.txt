@@ -1,0 +1,54 @@
+!SAMPLE=<10>2026/10/14-09:17:05.512870 UTC [**] [Hostname: edge-syd-01] [**] [System_IP: 198.51.100.15] [**] [Instance_ID: 1] [**] Drop [**] UTD WebFilter Category/Reputation [**] [URL: downloads.example.org/tools/setup.exe] ** [Category: Malware Sites] ** [Reputation: 10] [VRF: 10] {TCP} 192.0.2.30:40154 -> 203.0.113.90:80
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="web"
+!SCHEMA=scwx.http
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Catalyst SD-WAN UTD URL filtering alerts from the UTD container's syslog:
+#   ... [**] Drop|Pass [**] UTD WebFilter <type> [**] [URL: <url>] ** [Category: <c>] ** [Reputation: <n>] ... {TCP} <src>:<port> -> <dst>:<port>
+# <type> is Category/Reputation, Allowlist or Blocklist (Whitelist and Blacklist on older releases).
+# Child of CISCO_SDWAN_SYSLOG_PARENT: each one to HTTP, with the URL's host and path, the addresses
+# and ports, and Drop as blocked. The URL has no scheme. The filter type, category, reputation,
+# Hostname, System_IP, VRF and policy go to event_metadata.
+# utd, web, vrf, pol, pnum, edge, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+url = web["url"]
+u = url|^(?:(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*)://)?(?P<host>[^/:?#]+)(?::(?P<port>\d+))?(?P<path>/[^?#]*)?(?:\?(?P<query>[^#]*))?
+uriHost$ = u["host"]
+uriPath$ = IF u["path"] != "" THEN u["path"] ELSE NULL
+uriQuery$ = IF u["query"] != "" THEN u["query"] ELSE NULL
+uriScheme$ = IF u["scheme"] != "" THEN u["scheme"] ELSE NULL
+sourceAddress$ = utd["src"]
+destinationAddress$ = utd["dst"]
+sourcePort$ = INT(utd["sport"], 10)
+destinationPort$ = INT(utd["dport"], 10)
+protocol$ = pnum
+act = utd["act"]
+blocked$ = IF act == "Drop" THEN 1 ELSE 0
+sensorTypeActions$ = IF act == "Drop" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+requestDirection$ = "OUTBOUND"
+
+m1.key$ = "filter"
+m1.value$ = web["type"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "category"
+m2.value$ = web["cat"]
+eventMetadata$.record$ = IF web["cat"] != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "reputation"
+m3.value$ = web["rep"]
+eventMetadata$.record$ = IF web["rep"] != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "url"
+m4.value$ = url
+eventMetadata$.record$ = eventMetadata$.record$ + [m4]
+m5.key$ = "system_ip"
+m5.value$ = utd["sysip"]
+eventMetadata$.record$ = IF utd["sysip"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "vrf"
+m6.value$ = vrf["v"]
+eventMetadata$.record$ = IF vrf["v"] != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "policy"
+m7.value$ = pol["v"]
+eventMetadata$.record$ = IF pol["v"] != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

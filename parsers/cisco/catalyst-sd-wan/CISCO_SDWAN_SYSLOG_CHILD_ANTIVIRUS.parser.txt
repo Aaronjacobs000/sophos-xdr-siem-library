@@ -1,0 +1,57 @@
+!SAMPLE=<10>2026/10/14-09:18:12.835924 UTC [**] [Hostname: edge-syd-01] [**] [System_IP: 198.51.100.15] [**] [Instance_ID: 1] [**] Drop [**] UTD AMP DISPOSITION MALICIOUS [**] SHA: 275A021BBFB6489E54D471899F7DB9D1663FC695EC2FE2A2C4512FFBF651FF0F Malware: Example.Trojan Filename: invoice.zip Filetype: ZIP [POLICY: amp-inspect-1] {TCP} 203.0.113.97:443 -> 192.0.2.213:45554
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="amp"
+!SCHEMA=scwx.antivirus
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Catalyst SD-WAN UTD Advanced Malware Protection (file reputation) alerts from the UTD
+# container's syslog:
+#   ... [**] Drop|Pass [**] UTD AMP DISPOSITION <disposition> [**] SHA: <sha256> Malware: <name> Filename: <name> Filetype: <type> ... {TCP} <src>:<port> -> <dst>:<port>
+# Child of CISCO_SDWAN_SYSLOG_PARENT: each one to Antivirus, with the malware name, the file's SHA-256
+# and name, and Drop as blocked. The disposition, file type, addresses, ports, System_IP and policy go
+# to event_metadata. Filename can be empty.
+# The parent's eventType$ is replaced by UTD AMP, since the Antivirus schema stores event_type.
+# utd, amp, pol, edge, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+eventType$ = "UTD AMP"
+mal = amp["mal"]
+threatName$ = IF mal != "" THEN mal ELSE NULL
+fileHash$.sha256$ = LOWERCASE(amp["sha"])
+fname = amp["fname"]
+filePath$ = IF fname != "" THEN fname ELSE NULL
+threatType$ = "FILE"
+disp = amp["disp"]
+vendorAlertType$ = "UTD AMP DISPOSITION " + disp
+threatCategory$ = IF disp == "MALICIOUS" THEN "MALWARE" ELSE "UNKNOWN_THREATCATEGORY"
+act = utd["act"]
+actionTaken$ = IF act == "Drop" THEN "BLOCKED" ELSE "ALERT"
+policyName$ = IF pol["v"] != "" THEN pol["v"] ELSE NULL
+computerName$ = IF edge != "" THEN edge ELSE NULL
+
+m1.key$ = "disposition"
+m1.value$ = disp
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "file_type"
+m2.value$ = amp["ftype"]
+eventMetadata$.record$ = IF amp["ftype"] != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "source_address"
+m3.value$ = utd["src"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m3]
+m4.key$ = "source_port"
+m4.value$ = utd["sport"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m4]
+m5.key$ = "destination_address"
+m5.value$ = utd["dst"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m5]
+m6.key$ = "destination_port"
+m6.value$ = utd["dport"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m6]
+m7.key$ = "protocol"
+m7.value$ = utd["proto"]
+eventMetadata$.record$ = eventMetadata$.record$ + [m7]
+m8.key$ = "system_ip"
+m8.value$ = utd["sysip"]
+eventMetadata$.record$ = IF utd["sysip"] != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
