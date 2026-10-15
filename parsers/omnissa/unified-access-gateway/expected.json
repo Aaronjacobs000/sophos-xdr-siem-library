@@ -1,0 +1,335 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791967804000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "uag01",
+      "auth_system": "Unified Access Gateway Admin UI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-admin_uag-audit"
+          },
+          {
+            "key": "event",
+            "value": "LOGIN_SUCCESS"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791967813000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "target_host_name": "uag01",
+      "auth_system": "Unified Access Gateway Admin UI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Incorrect Password. 2 attempts are remaining.",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-admin_uag-audit"
+          },
+          {
+            "key": "event",
+            "value": "LOGIN_FAILED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791967944000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "username": "admin",
+      "client_hostname": "192.0.2.10",
+      "target_hostname": "uag01",
+      "operation_name": "CONFIG_CHANGE",
+      "command": "adminPasswordExpirationDays:(90->50) - sessionTimeout:(36000000->28800000) -",
+      "channel": "Admin UI"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791967982000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_hostname": "uag01",
+      "operation_name": "SETTINGS:CONFIG_CHANGED",
+      "command": "adminPasswordExpirationDays:(90->50) - sessionTimeout:(36000000->28800000) -"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791968131000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.10",
+      "target_host_name": "uag01",
+      "auth_system": "Unified Access Gateway Admin UI",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-admin_uag-audit"
+          },
+          {
+            "key": "event",
+            "value": "LOGOUT_SUCCESS"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791962926000000,
+      "host_id": "uag01"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791962931000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "jsmith",
+      "source_address": "203.0.113.20",
+      "target_host_name": "uag01",
+      "session_id": "5a0b2c4e-91d3-4f6a-8e1b-0c2d3e4f7cfa",
+      "auth_system": "Unified Access Gateway Horizon",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-esmanager_"
+          },
+          {
+            "key": "event",
+            "value": "Authentication successful for user"
+          },
+          {
+            "key": "auth_type",
+            "value": "RADIUS-AUTH"
+          },
+          {
+            "key": "auth_sub_type",
+            "value": "passcode"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791962943000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "jsmith",
+      "source_address": "203.0.113.20",
+      "target_host_name": "uag01",
+      "session_id": "5a0b2c4e-91d3-4f6a-8e1b-0c2d3e4f7cfa",
+      "auth_system": "Unified Access Gateway Horizon",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-esmanager_"
+          },
+          {
+            "key": "event",
+            "value": "HORIZON_SESSION:AUTHENTICATED"
+          },
+          {
+            "key": "session_text",
+            "value": "Horizon session authenticated"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791962956000000,
+      "host_id": "uag01"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791962995000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "jsmith",
+      "source_address": "203.0.113.20",
+      "target_host_name": "uag01",
+      "session_id": "5a0b2c4e-91d3-4f6a-8e1b-0c2d3e4f7cfa",
+      "auth_system": "Unified Access Gateway Horizon",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "uag-esmanager_"
+          },
+          {
+            "key": "event",
+            "value": "HORIZON_SESSION:TERMINATED"
+          },
+          {
+            "key": "session_text",
+            "value": "Horizon Session terminated due to logout"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791970015000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_user_name": "jdoe",
+      "target_host_name": "uag01",
+      "session_id": "f22c7d10-3b5e-4c2a-9d6f-1a2b3c4d162d",
+      "auth_system": "Unified Access Gateway edge service",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Received timeout from RADIUS server for user jdoe",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "UAG-ESMANAGER"
+          },
+          {
+            "key": "event",
+            "value": "AUTH FAILED for user"
+          },
+          {
+            "key": "auth_type",
+            "value": "RADIUS-AUTH"
+          },
+          {
+            "key": "auth_sub_type",
+            "value": "passcode"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT > OMNISSA_UAG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791969680000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "uag01",
+      "target_host_name": "uag01",
+      "session_id": "1e85a9c2-7d4b-4e1f-b3a0-6c5d4e3f1f8d",
+      "auth_system": "Unified Access Gateway edge service",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Authentication attempt - FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "app",
+            "value": "UAG-ESMANAGER"
+          },
+          {
+            "key": "event",
+            "value": "Authentication attempt - FAILED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "OMNISSA_UAG_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Omnissa Unified Access Gateway",
+      "event_time_usec": 1791966515000000,
+      "host_id": "uag01"
+    }
+  }
+]

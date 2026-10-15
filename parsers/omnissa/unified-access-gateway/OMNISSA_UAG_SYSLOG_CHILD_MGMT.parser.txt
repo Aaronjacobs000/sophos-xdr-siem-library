@@ -1,0 +1,29 @@
+!SAMPLE=<150>Oct 14 08:52:24 uag01 uag-admin_uag-audit_: [qtp1062181581-80]INFO utils.SyslogAuditManager[logAuditLog: 418] - CONFIG_CHANGE: SOURCE_IP_ADDR=192.0.2.10 USERNAME=admin: CHANGE=adminPasswordExpirationDays:(90->50) - sessionTimeout:(36000000->28800000) -
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="mgmt"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Omnissa Unified Access Gateway syslog.
+# Child of OMNISSA_UAG_SYSLOG_PARENT: configuration changes to ManagementEvent.
+#   CONFIG_CHANGE: SOURCE_IP_ADDR=<address> USERNAME=<user>: CHANGE=<setting>:(<old>-><new>) - ...
+#       an administrator's change in the Admin UI or the CLI (uag-admin_uag-audit)
+#   <AREA>:CONFIG_CHANGED:<setting>:(<old>-><new>) - ...
+#       the same change as the admin service saved it (uag-admin_), with no user
+# The change list goes to command as UAG writes it.
+# hdr, msg, audit, settings, event, uag, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+admin = event == "CONFIG_CHANGE"
+user = audit["user"]
+# The audit log marks a change made with a command line tool such as uagcertutil "USERNAME=root (CLI)".
+who = user|^(?P<name>.*?)(?P<cli>\s\(CLI\))?$
+username$ = IF admin AND who["name"] != "" THEN who["name"] ELSE NULL
+ip = audit["ip"]
+clientHostname$ = IF admin AND ip != "" THEN ip ELSE NULL
+targetHostname$ = uag
+operationName$ = IF admin THEN "CONFIG_CHANGE" ELSE settings["area"] + ":CONFIG_CHANGED"
+change = IF admin THEN audit["change"] ELSE settings["change"]
+command$ = IF change != "" THEN change ELSE NULL
+channel$ = IF admin THEN "Admin UI" ELSE NULL
+channel$ = IF who["cli"] != "" THEN "CLI" ELSE channel$
