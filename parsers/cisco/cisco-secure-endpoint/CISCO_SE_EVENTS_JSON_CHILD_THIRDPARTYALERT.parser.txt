@@ -1,0 +1,104 @@
+!SAMPLE={"cisco_se_record":"event","event_id":"6180351977805887514","id":6180351977805887514,"timestamp":1791854404,"timestamp_nanoseconds":68483351,"date":"2026-10-13T01:20:04+00:00","event_type":"DFC Threat Detected","event_type_id":1090519084,"detection":"DFC.CustomIPList","detection_id":"6180351977805840417","connector_guid":"538738f5-3a14-4449-933b-86142553de06","group_guids":["e766a0e9-96da-41b9-b1e8-87dd010d6b68"],"severity":"Medium","computer":{"connector_guid":"538738f5-3a14-4449-933b-86142553de06","hostname":"WS-EXAMPLE-01","external_ip":"203.0.113.40","user":"pat@WS-EXAMPLE-01","active":true,"network_addresses":[{"ip":"192.0.2.10","mac":"00:00:5e:00:53:01"}]},"network_info":{"dirty_url":"http://malicious.example.net/payload.txt","remote_ip":"198.51.100.66","remote_port":80,"local_ip":"192.0.2.10","local_port":52344,"nfm":{"direction":"Outgoing connection from","protocol":"TCP"},"parent":{"process_id":2800,"disposition":"Unknown","file_name":"rundll32.exe","identity":{"sha256":"c1e3a5b7d9f0a2c4e6b8d0f1a3c5e7b9d0f2a4c6e8b0d1f3a5c7e9b0d2f4a6c8"}}}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Secure Endpoint events from the example bridge: compromise events (Cloud IOC,
+# Executed malware, Potential Dropper Infection, the "compromise" and "launched a shell" events,
+# Suspected botnet connection, Vulnerable Application Detected, Potential Ransomware and the
+# like) and network detections (DFC Threat Detected), which carry network_info.
+# Child of CISCO_SE_EVENTS_JSON_PARENT: each one to ThirdPartyAlert, with the event type as the
+# title, Cisco's severity (Low, Medium, High, Critical), and the connection for network detections.
+# json, eid, host, user, sev, det, detId, eventType$, sensorType$ and eventTimeUsec$ come from
+# the parent.
+
+sensorEventId$ = json["$.event_id"]
+alertId$ = json["$.event_id"]
+vendor$ = "Cisco"
+provider$ = "Cisco Secure Endpoint"
+etype = json["$.event_type"]
+title$ = etype
+alertCategory$ = etype
+summary$ = IF det THEN etype + ": " + det ELSE etype
+summary$ = IF host THEN summary$ + " on " + host ELSE summary$
+
+vendorSeverity$ = sev
+lsev = LOWERCASE(STRING(sev))
+severity$ = NULL
+severity$ = IF lsev == "low" THEN "LOW" ELSE severity$
+severity$ = IF lsev == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF lsev == "high" THEN "HIGH" ELSE severity$
+severity$ = IF lsev == "critical" THEN "CRITICAL" ELSE severity$
+
+targetHostName$ = host
+sourceUserName$ = user
+
+# Network detections name the connection; other events give the endpoint's own address.
+localIp = json["$.network_info.local_ip"]
+sourceAddress$ = IF localIp THEN localIp ELSE json["$.computer.network_addresses[0].ip"]
+destinationAddress$ = json["$.network_info.remote_ip"]
+destinationPort$ = json["$.network_info.remote_port"]
+sourcePort$ = json["$.network_info.local_port"]
+destinationUrl$ = json["$.network_info.dirty_url"]
+nfmDir = LOWERCASE(STRING(json["$.network_info.nfm.direction"]))
+direction$ = NULL
+direction$ = IF CONTAINS(nfmDir, "outgoing") THEN "OUTBOUND" ELSE direction$
+direction$ = IF CONTAINS(nfmDir, "incoming") THEN "INBOUND" ELSE direction$
+proto = UPPERCASE(STRING(json["$.network_info.nfm.protocol"]))
+protocol$ = NULL
+protocol$ = IF proto == "TCP" THEN 6 ELSE protocol$
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+
+d1.key$ = "event_type_id"
+d1.value$ = STRING(eid)
+d2.key$ = "connector_guid"
+d2.value$ = json["$.connector_guid"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2]
+d3.key$ = "detection"
+d3.value$ = det
+additionalData$.record$ = IF det THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+d4.key$ = "detection_id"
+d4.value$ = detId
+additionalData$.record$ = IF detId THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "file_name"
+d5.value$ = json["$.file.file_name"]
+additionalData$.record$ = IF d5.value$ THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+# Cisco writes paths as \\?\C:\... or as /C:/...; both become C:\...
+path = REPLACE_REGEX(STRING(json["$.file.file_path"]), `^\\\\\?\\`, "")
+slashed = path|^/(?P<d>[A-Za-z]):(?P<rest>/.*)$
+path = IF slashed["d"] THEN slashed["d"] + ":" + REPLACE(slashed["rest"], "/", "\\") ELSE path
+d6.key$ = "file_path"
+d6.value$ = path
+additionalData$.record$ = IF d6.value$ THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "file_sha256"
+d7.value$ = json["$.file.identity.sha256"]
+additionalData$.record$ = IF d7.value$ THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+d8.key$ = "disposition"
+d8.value$ = json["$.file.disposition"]
+additionalData$.record$ = IF d8.value$ THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+parentName = json["$.file.parent.file_name"]
+parentName = IF parentName THEN parentName ELSE json["$.network_info.parent.file_name"]
+d9.key$ = "parent_file_name"
+d9.value$ = parentName
+additionalData$.record$ = IF parentName THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+parentSha = json["$.file.parent.identity.sha256"]
+parentSha = IF parentSha THEN parentSha ELSE json["$.network_info.parent.identity.sha256"]
+d10.key$ = "parent_sha256"
+d10.value$ = parentSha
+additionalData$.record$ = IF parentSha THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "command_line"
+d11.value$ = json["$.command_line.arguments"]
+additionalData$.record$ = IF d11.value$ THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "external_ip"
+d12.value$ = json["$.computer.external_ip"]
+additionalData$.record$ = IF d12.value$ THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "tactics"
+d13.value$ = REPLACE_REGEX(STRING(json["$.tactics"]), `[\[\]"]`, "")
+additionalData$.record$ = IF d13.value$ THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "techniques"
+d14.value$ = REPLACE_REGEX(STRING(json["$.techniques"]), `[\[\]"]`, "")
+additionalData$.record$ = IF d14.value$ THEN additionalData$.record$ + [d14] ELSE additionalData$.record$

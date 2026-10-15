@@ -1,0 +1,561 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791853804000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat Detected",
+      "sensor_event_id": "6180351977805847919",
+      "vendor_alert_type": "Threat Detected",
+      "threat_name": "W32.Example.Trojan.Agent",
+      "agent_priority": "High",
+      "computer_name": "WS-EXAMPLE-01",
+      "agent_device_id": "538738f5-3a14-4449-933b-86142553de06",
+      "user_name": "pat@WS-EXAMPLE-01",
+      "file_path": "C:\\Users\\pat\\Downloads\\invoice_2026.exe",
+      "file_hash": {
+        "sha256": "9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8",
+        "sha1": "4b1e0c9d8a7f6e5d4c3b2a19087f6e5d4c3b2a19",
+        "md5": "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
+      },
+      "threat_type": "FILE",
+      "process_name": "msedge.exe",
+      "action_taken": "ALERT",
+      "threat_category": "MALWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1090519054"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "detection_id",
+            "value": "6180351977805840385"
+          },
+          {
+            "key": "disposition",
+            "value": "Malicious"
+          },
+          {
+            "key": "file_name",
+            "value": "invoice_2026.exe"
+          },
+          {
+            "key": "parent_sha256",
+            "value": "2d7f3a1c9e8b4d6f0a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f"
+          },
+          {
+            "key": "parent_process_id",
+            "value": "4040"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "tactics",
+            "value": "TA0002"
+          },
+          {
+            "key": "techniques",
+            "value": "T1204.002"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791853805000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat Quarantined",
+      "sensor_event_id": "6180351977805855838",
+      "vendor_alert_type": "Threat Quarantined",
+      "agent_priority": "High",
+      "computer_name": "WS-EXAMPLE-01",
+      "agent_device_id": "538738f5-3a14-4449-933b-86142553de06",
+      "user_name": "pat@WS-EXAMPLE-01",
+      "file_path": "C:\\Users\\pat\\Downloads\\invoice_2026.exe",
+      "file_hash": {
+        "sha256": "9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8"
+      },
+      "threat_type": "FILE",
+      "action_taken": "QUARANTINED",
+      "threat_category": "MALWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "553648143"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "detection_id",
+            "value": "6180351977805840385"
+          },
+          {
+            "key": "disposition",
+            "value": "Malicious"
+          },
+          {
+            "key": "file_name",
+            "value": "invoice_2026.exe"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791853924000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Quarantine Failure",
+      "sensor_event_id": "6180351977805863757",
+      "vendor_alert_type": "Quarantine Failure",
+      "agent_priority": "Medium",
+      "computer_name": "WS-EXAMPLE-02",
+      "agent_device_id": "7d2c9a41-5e6f-4b80-9a1c-2d3e4f5a6b7c",
+      "user_name": "lee@WS-EXAMPLE-02",
+      "file_path": "C:\\ProgramData\\Example\\setup_helper.dll",
+      "file_hash": {
+        "sha256": "6e1f0a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f"
+      },
+      "threat_type": "FILE",
+      "action_taken": "NONE",
+      "threat_category": "MALWARE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "2164260880"
+          },
+          {
+            "key": "connector_guid",
+            "value": "7d2c9a41-5e6f-4b80-9a1c-2d3e4f5a6b7c"
+          },
+          {
+            "key": "detection_id",
+            "value": "6180351977805840391"
+          },
+          {
+            "key": "disposition",
+            "value": "Malicious"
+          },
+          {
+            "key": "file_name",
+            "value": "setup_helper.dll"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.41"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.11"
+          },
+          {
+            "key": "error",
+            "value": "Object name not found"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791854104000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Exploit Prevention",
+      "sensor_event_id": "6180351977805871676",
+      "vendor_alert_type": "Exploit Prevention",
+      "threat_name": "Exploit Prevention: Memory Injection",
+      "agent_priority": "Critical",
+      "computer_name": "WS-EXAMPLE-02",
+      "agent_device_id": "7d2c9a41-5e6f-4b80-9a1c-2d3e4f5a6b7c",
+      "user_name": "lee@WS-EXAMPLE-02",
+      "file_path": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "file_hash": {
+        "sha256": "8c4e2a0f1b3d5c7e9a0b2c4d6e8f0a1b3c5d7e9f0a2b4c6d8e0f1a3b5c7d9e0f"
+      },
+      "threat_type": "FILE",
+      "process_name": "explorer.exe",
+      "action_taken": "BLOCKED",
+      "threat_category": "EXPLOIT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1090519103"
+          },
+          {
+            "key": "connector_guid",
+            "value": "7d2c9a41-5e6f-4b80-9a1c-2d3e4f5a6b7c"
+          },
+          {
+            "key": "detection_id",
+            "value": "6180351977805840402"
+          },
+          {
+            "key": "disposition",
+            "value": "Unknown"
+          },
+          {
+            "key": "file_name",
+            "value": "WINWORD.EXE"
+          },
+          {
+            "key": "parent_sha256",
+            "value": "1a3c5e7f9b0d2f4a6c8e0b1d3f5a7c9e0b2d4f6a8c0e1b3d5f7a9c0e2b4d6f8a"
+          },
+          {
+            "key": "parent_process_id",
+            "value": "7312"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.41"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.11"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_ANTIVIRUS",
+    "schema": "scwx.antivirus",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791854224000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Threat Detection",
+      "sensor_event_id": "6180351977805879595",
+      "vendor_alert_type": "Threat Detection",
+      "threat_name": "Encoded PowerShell Launched by Script Host",
+      "agent_priority": "Medium",
+      "computer_name": "WS-EXAMPLE-01",
+      "agent_device_id": "538738f5-3a14-4449-933b-86142553de06",
+      "user_name": "pat@WS-EXAMPLE-01",
+      "threat_type": "PROCESS",
+      "process_name": "powershell.exe",
+      "action_taken": "TERMINATED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "553648222"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "tactics",
+            "value": "TA0002,TA0005"
+          },
+          {
+            "key": "bp_signature",
+            "value": "apde:20260412000001"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791854404000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805887514",
+      "alert_id": "6180351977805887514",
+      "vendor": "Cisco",
+      "provider": "Cisco Secure Endpoint",
+      "title": "DFC Threat Detected",
+      "alert_category": "DFC Threat Detected",
+      "summary": "DFC Threat Detected: DFC.CustomIPList on WS-EXAMPLE-01",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "target_host_name": "WS-EXAMPLE-01",
+      "source_user_name": "pat@WS-EXAMPLE-01",
+      "source_address": "192.0.2.10",
+      "destination_address": "198.51.100.66",
+      "destination_port": 80,
+      "source_port": 52344,
+      "destination_url": "http://malicious.example.net/payload.txt",
+      "direction": "OUTBOUND",
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1090519084"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "detection",
+            "value": "DFC.CustomIPList"
+          },
+          {
+            "key": "detection_id",
+            "value": "6180351977805840417"
+          },
+          {
+            "key": "parent_file_name",
+            "value": "rundll32.exe"
+          },
+          {
+            "key": "parent_sha256",
+            "value": "c1e3a5b7d9f0a2c4e6b8d0f1a3c5e7b9d0f2a4c6e8b0d1f3a5c7e9b0d2f4a6c8"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791854524000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805895433",
+      "alert_id": "6180351977805895433",
+      "vendor": "Cisco",
+      "provider": "Cisco Secure Endpoint",
+      "title": "Cloud IOC",
+      "alert_category": "Cloud IOC",
+      "summary": "Cloud IOC: W32.WinWord.Powershell on WS-EXAMPLE-01",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "target_host_name": "WS-EXAMPLE-01",
+      "source_user_name": "pat@WS-EXAMPLE-01",
+      "source_address": "192.0.2.10",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1107296274"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "detection",
+            "value": "W32.WinWord.Powershell"
+          },
+          {
+            "key": "file_name",
+            "value": "powershell.exe"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "file_sha256",
+            "value": "5b7d9f1a3c5e7b9d0f2a4c6e8b0d1f3a5c7e9b0d2f4a6c8e0a1b3c5d7e9f1a3c"
+          },
+          {
+            "key": "disposition",
+            "value": "Clean"
+          },
+          {
+            "key": "parent_file_name",
+            "value": "WINWORD.EXE"
+          },
+          {
+            "key": "parent_sha256",
+            "value": "8c4e2a0f1b3d5c7e9a0b2c4d6e8f0a1b3c5d7e9f0a2b4c6d8e0f1a3b5c7d9e0f"
+          },
+          {
+            "key": "command_line",
+            "value": "powershell.exe -NoP -W Hidden -Command Get-Process"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791854704000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805903352",
+      "alert_id": "6180351977805903352",
+      "vendor": "Cisco",
+      "provider": "Cisco Secure Endpoint",
+      "title": "Executed malware",
+      "alert_category": "Executed malware",
+      "summary": "Executed malware: W32.Example.Trojan.Agent on WS-EXAMPLE-01",
+      "vendor_severity": "Critical",
+      "severity": "CRITICAL",
+      "target_host_name": "WS-EXAMPLE-01",
+      "source_user_name": "pat@WS-EXAMPLE-01",
+      "source_address": "192.0.2.10",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "1107296272"
+          },
+          {
+            "key": "connector_guid",
+            "value": "538738f5-3a14-4449-933b-86142553de06"
+          },
+          {
+            "key": "detection",
+            "value": "W32.Example.Trojan.Agent"
+          },
+          {
+            "key": "file_name",
+            "value": "invoice_2026.exe"
+          },
+          {
+            "key": "file_path",
+            "value": "C:\\Users\\pat\\Downloads\\invoice_2026.exe"
+          },
+          {
+            "key": "file_sha256",
+            "value": "9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8"
+          },
+          {
+            "key": "disposition",
+            "value": "Malicious"
+          },
+          {
+            "key": "external_ip",
+            "value": "203.0.113.40"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791855304000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805911271",
+      "operation_name": "Scan Started",
+      "event_id": 554696714,
+      "target_hostname": "WS-EXAMPLE-01",
+      "username": "pat@WS-EXAMPLE-01",
+      "operation": "Flash Scan"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791855604000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805919190",
+      "operation_name": "Policy Update",
+      "event_id": 553648130,
+      "target_hostname": "WS-EXAMPLE-01",
+      "username": "pat@WS-EXAMPLE-01"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791855904000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805927109",
+      "operation_name": "Endpoint Isolation Start Success",
+      "event_id": 553648202,
+      "target_hostname": "WS-EXAMPLE-02",
+      "username": "lee@WS-EXAMPLE-02",
+      "result": "success"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "CISCO_SE_EVENTS_JSON_PARENT > CISCO_SE_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Secure Endpoint",
+      "event_time_usec": 1791856204000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6180351977805935028",
+      "operation_name": "Policy Update Failure",
+      "event_id": 2164260866,
+      "target_hostname": "WS-EXAMPLE-01",
+      "username": "pat@WS-EXAMPLE-01",
+      "result": "failure",
+      "possible_cause": "Policy download failed"
+    }
+  }
+]

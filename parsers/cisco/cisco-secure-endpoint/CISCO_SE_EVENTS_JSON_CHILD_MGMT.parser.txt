@@ -1,0 +1,29 @@
+!SAMPLE={"cisco_se_record":"event","event_id":"6180351977805911271","id":6180351977805911271,"timestamp":1791855304,"timestamp_nanoseconds":772000000,"date":"2026-10-13T01:35:04+00:00","event_type":"Scan Started","event_type_id":554696714,"connector_guid":"538738f5-3a14-4449-933b-86142553de06","group_guids":["e766a0e9-96da-41b9-b1e8-87dd010d6b68"],"computer":{"connector_guid":"538738f5-3a14-4449-933b-86142553de06","hostname":"WS-EXAMPLE-01","external_ip":"203.0.113.40","user":"pat@WS-EXAMPLE-01","active":true,"network_addresses":[{"ip":"192.0.2.10","mac":"00:00:5e:00:53:01"}]},"scan":{"description":"Flash Scan"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="activity"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Secure Endpoint events from the example bridge with no severity or detection:
+# scans, policy and product updates, endpoint isolation, faults, installs, and quarantine restore
+# requests.
+# Child of CISCO_SE_EVENTS_JSON_PARENT: each one to ManagementEvent, with the event type as the
+# operation name and its type ID as the event ID. Events Cisco names as failures get the result
+# failure, and their error description as the possible cause.
+# json, eid, host, user, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.event_id"]
+etype = json["$.event_type"]
+operationName$ = etype
+eventId$ = eid
+targetHostname$ = host
+username$ = user
+scan = json["$.scan.description"]
+operation$ = IF scan THEN scan ELSE NULL
+lname = LOWERCASE(STRING(etype))
+result$ = NULL
+result$ = IF CONTAINS(lname, "success") OR CONTAINS(lname, "completed") THEN "success" ELSE result$
+result$ = IF CONTAINS(lname, "fail") THEN "failure" ELSE result$
+possibleCause$ = json["$.error.description"]

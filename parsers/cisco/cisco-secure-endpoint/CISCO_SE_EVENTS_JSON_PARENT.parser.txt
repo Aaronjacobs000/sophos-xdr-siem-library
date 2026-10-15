@@ -1,0 +1,39 @@
+!SAMPLE={"cisco_se_record":"event","event_id":"6180351977805847919","id":6180351977805847919,"timestamp":1791853804,"timestamp_nanoseconds":548000000,"date":"2026-10-13T01:10:04+00:00","event_type":"Threat Detected","event_type_id":1090519054,"detection":"W32.Example.Trojan.Agent","detection_id":"6180351977805840385","connector_guid":"538738f5-3a14-4449-933b-86142553de06","group_guids":["e766a0e9-96da-41b9-b1e8-87dd010d6b68"],"severity":"High","computer":{"connector_guid":"538738f5-3a14-4449-933b-86142553de06","hostname":"WS-EXAMPLE-01","external_ip":"203.0.113.40","user":"pat@WS-EXAMPLE-01","active":true,"network_addresses":[{"ip":"192.0.2.10","mac":"00:00:5e:00:53:01"}]},"file":{"disposition":"Malicious","file_name":"invoice_2026.exe","file_path":"\\\\?\\C:\\Users\\pat\\Downloads\\invoice_2026.exe","identity":{"sha256":"9f2c4e1b7a3d5f60812c3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8","sha1":"4b1e0c9d8a7f6e5d4c3b2a19087f6e5d4c3b2a19","md5":"0a1b2c3d4e5f60718293a4b5c6d7e8f9"},"parent":{"process_id":4040,"disposition":"Clean","file_name":"msedge.exe","identity":{"sha256":"2d7f3a1c9e8b4d6f0a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f"}}},"tactics":["TA0002"],"techniques":["T1204.002"]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"cisco_se_record"\s*:\s*"event"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Secure Endpoint events from the API v1 events list, pulled by the example bridge in
+# bridges/cisco-secure-endpoint-events and posted to HTTP Ingest as JSON lines. The bridge puts
+# "cisco_se_record": "event" first and adds event_id, the 64-bit event ID as text.
+# Parent: hands the compromise events (Cisco's event type IDs 1107296257 to 1107296344, such as
+# Cloud IOC, Executed malware and Vulnerable Application Detected) and network detections (DFC) to
+# the ThirdPartyAlert child; every other event with a severity or a detection (Threat Detected,
+# Threat Quarantined, Quarantine Failure, Exploit Prevention, Behavioral Protection and the like) to
+# the Antivirus child; and the rest (scans, policy updates, isolation, faults) to the
+# ManagementEvent child. Routing reads the event type ID, since Cisco has renamed event types.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Cisco Secure Endpoint"
+eid = json["$.event_type_id"]
+# date is ISO 8601 in UTC with an offset and no fraction, such as 2026-10-13T01:10:04+00:00.
+eventTimeUsec$ = DATETIME(json["$.date"], "2006-01-02T15:04:05.999999999Z07:00")
+host = json["$.computer.hostname"]
+user = json["$.computer.user"]
+
+sev = json["$.severity"]
+det = json["$.detection"]
+detId = json["$.detection_id"]
+threat = sev OR det OR detId
+compromise = eid >= 1107296256 AND eid < 1107296512
+netDet = json["$.network_info.remote_ip"] OR json["$.network_info.dirty_url"]
+
+eventType$ = "activity"
+eventType$ = IF threat THEN "detection" ELSE eventType$
+eventType$ = IF compromise OR netDet THEN "alert" ELSE eventType$
