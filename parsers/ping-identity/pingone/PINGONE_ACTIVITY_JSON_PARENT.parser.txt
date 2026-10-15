@@ -1,0 +1,41 @@
+!SAMPLE={"_embedded":{},"id":"7f3e2d1c-0b9a-4876-9543-21fedcba0007","recordedAt":"2026-10-14T09:20:31.587Z","createdAt":"2026-10-14T09:20:31.594Z","correlationId":"2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0007","actors":{"client":{"id":"5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9","name":"PingOne Admin Console","type":"CLIENT","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"href":"https://api.pingone.example/v1/environments/6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b/applications/5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9"},"user":{"id":"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","name":"admin@example.com","type":"USER","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"}}},"action":{"type":"ROLE_ASSIGNMENT.CREATED","description":"Role Assignment Created"},"resources":[{"type":"USER","id":"3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11","name":"jsmith@example.com","environment":{"id":"6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"},"population":{"id":"0f1e2d3c-4b5a-4968-8776-655443322110"},"href":"https://api.pingone.example/v1/environments/6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b/users/3d0a6b2e-7c1f-4a8e-9b5d-2e4f6a8c0b11"}],"result":{"status":"SUCCESS","description":"Assigned role Environment Admin to user jsmith@example.com"},"internalCorrelation":{"sessionId":"9e8d7c6b-5a49-4382-a170-ffeeddcc0007","transactionId":"b1c2d3e4-f5a6-4b7c-8d9e-0a1b2c3d0007"},"source":{"ipAddress":"192.0.2.20","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"recordedAt"\s*:\s*"\d{4}-\d{2}-\d{2}T[^"]*".*"action"\s*:\s*\{[^{}]*"type"\s*:\s*"[A-Z0-9_]+\.[A-Z0-9_]+"|"action"\s*:\s*\{[^{}]*"type"\s*:\s*"[A-Z0-9_]+\.[A-Z0-9_]+".*"recordedAt"\s*:\s*"\d{4}-\d{2}-\d{2}T)
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: PingOne audit activities in Ping Activity Format, from a PingOne webhook, one event per
+# HTTP Ingest record (the webhook relay splits PingOne's batches). The same records come from the
+# Audit Activities API.
+#   {"id": ..., "recordedAt": ..., "actors": {"client": {...}, "user": {...}},
+#    "action": {"type": "<RESOURCE>.<VERB>", "description": ...}, "resources": [...],
+#    "result": {"status": ..., "description": ...}, "source": {"ipAddress": ..., "userAgent": ...}}
+# A whole batch in one record (a JSON array) is left unclaimed.
+# Parent: hands sign-on, MFA, lockout, password reset and sign-off events to Auth, and every other
+# action type (users, roles, applications, populations, policies, keys, flows) to CloudAudit.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "PingOne"
+sensorEventId$ = json["$.id"]
+recorded = json["$.recordedAt"]
+eventTimeUsec$ = IF recorded THEN DATETIME(recorded, "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+actionType = STRING(json["$.action.type"])
+userName = json["$.actors.user.name"]
+clientName = json["$.actors.client.name"]
+ip = json["$.source.ipAddress"]
+ua = json["$.source.userAgent"]
+resultStatus = UPPERCASE(STRING(json["$.result.status"]))
+resultFailed = resultStatus == "FAILED" OR resultStatus == "FAILURE"
+
+# Sign-on events by action type, from PingOne's Audit Reporting Events.
+signOn = actionType == "PASSWORD.CHECK_SUCCEEDED" OR actionType == "PASSWORD.CHECK_FAILED" OR actionType == "PASSWORD.CHECK_FAILED_USER_NOT_FOUND" OR actionType == "USER.KERBEROS_SUCCEEDED" OR actionType == "USER.KERBEROS_FAILED" OR actionType == "CIBA_AUTHENTICATION.SUCCEEDED" OR actionType == "CIBA_AUTHENTICATION.FAILED"
+mfa = actionType == "OTP.CHECK_SUCCESS" OR actionType == "OTP.CHECK_FAILED" OR actionType == "OTP.CHECK_INVALID" OR actionType == "ASSERTION.CHECK_SUCCESS" OR actionType == "ASSERTION.CHECK_FAILED" OR actionType == "PUSH_BIOMETRICS.REJECTED"
+lockout = actionType == "USER.LOCKED" OR actionType == "USER.UNLOCKED" OR actionType == "PASSWORD.LOCKED" OR actionType == "PASSWORD.UNLOCKED"
+passwordChange = actionType == "PASSWORD.RESET" OR actionType == "PASSWORD.RECOVERY" OR actionType == "PASSWORD.SET"
+signOff = actionType == "SESSION.DELETED" OR actionType == "USER.SLO_SUCCESS"
+eventType$ = IF signOn OR mfa OR lockout OR passwordChange OR signOff THEN "auth" ELSE "audit"
