@@ -1,0 +1,38 @@
+!SAMPLE=<134>Oct 15 10:16:08 ddi01 CEF:0|Trend Micro|Deep Discovery Inspector|7.0.1225|300999|The system time setting has been changed.|2|dvc=192.0.2.32 dvcmac=00:00:5E:00:53:BD dvchost=ddi01.example.com deviceExternalId=E9A3FA433916-4738984C-A4BF-84A0-D603 rt=Oct 15 2026 10:16:08 GMT+10:00 duser=admin outcome=Success src=192.0.2.10
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\s*0\|Trend Micro\|Deep Discovery Inspector\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Deep Discovery Inspector (DDI) syslog in CEF to the data collector
+# (Administration > Integrated Products/Services > Syslog, format CEF):
+#   <134>Oct 15 09:42:47 ddi01 CEF:0|Trend Micro|Deep Discovery Inspector|7.0.1225|8|Eicar_test_file - HTTP (Response)|8|...
+# Parent: hands threat, web reputation and disruptive application logs to the NIDS child, system
+# logs (300102 and 300999) to the ManagementEvent child, and Virtual Analyzer file analysis
+# results (200119) to the third-party alert child. Notable characteristics, deny list and other
+# logs stay generic.
+
+v = CEF(originalData$)
+sigText = STRING(v[4])
+evName = STRING(v[5])
+sevText = STRING(v[6])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Trend Micro Deep Discovery Inspector"
+appliance = STRING(v["dvchost"])
+hostId$ = IF appliance != "" THEN appliance ELSE NULL
+# rt is the log time with its offset from GMT, for example Oct 15 2026 09:42:47 GMT+10:00.
+rt = STRING(v["rt"])
+rtm = rt|^[A-Z][a-z]{2} +\d{1,2} \d{4} \d{2}:\d{2}:\d{2} GMT[+-]\d{2}:\d{2}$
+eventTimeUsec$ = IF rtm[0] != "" THEN DATETIME(rt, "Jan _2 2006 15:04:05 GMT-07:00") ELSE eventTimeUsec$
+
+# cn3 is the threat type on network logs: 0 malicious content, 1 malicious behavior,
+# 2 suspicious behavior, 3 exploit, 4 grayware, 5 web reputation, 6 disruptive application.
+threatType = STRING(v["cn3"])
+eventType$ = "other"
+eventType$ = IF threatType == "0" OR threatType == "1" OR threatType == "2" OR threatType == "3" OR threatType == "4" OR threatType == "5" OR threatType == "6" THEN "network" ELSE eventType$
+eventType$ = IF sigText == "100101" OR sigText == "100120" THEN "network" ELSE eventType$
+eventType$ = IF sigText == "300102" OR sigText == "300999" THEN "system" ELSE eventType$
+eventType$ = IF sigText == "200119" THEN "sandbox" ELSE eventType$
+eventType$ = IF sigText == "200120" OR sigText == "200127" THEN "other" ELSE eventType$

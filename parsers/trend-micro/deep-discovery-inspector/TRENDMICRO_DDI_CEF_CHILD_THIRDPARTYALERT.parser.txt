@@ -1,0 +1,56 @@
+!SAMPLE=<134>Oct 15 10:21:46 ddi01 CEF:0|Trend Micro|Deep Discovery Inspector|7.0.1225|200119|Sample file sandbox analysis is finished|3|rt=Oct 15 2026 10:21:46 GMT+10:00 dvc=192.0.2.32 dvchost=ddi01.example.com dvcmac=00:00:5E:00:53:BD deviceExternalId=E9A3FA433916-4738984C-A4BF-84A0-D603 fname=invoice_0915.rar fileHash=1E4677A1EF1FBAD11F8D06A9DAD8103C2CE861A9 fileType=RAR fsize=131372 cs1Label=SandboxImageType cs1=win10x64 cn2Label=ROZRating cn2=3 cn1Label=GRIDIsKnownGood cn1=-1 cs2Label=MalwareName cs2=VAN_DROPPER.UMXX cn3Label=PcapReady cn3=1
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="sandbox"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Trend Micro Deep Discovery Inspector CEF syslog.
+# Child of TRENDMICRO_DDI_CEF_PARENT: Virtual Analyzer file analysis results (200119) to the
+# third-party alert schema. The ROZ rating (0 no risk, 1 low, 2 medium, 3 high) is the severity.
+# v, evName, appliance, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Trend Micro"
+provider$ = "Deep Discovery Inspector"
+alertCategory$ = "Virtual Analyzer"
+file = STRING(v["fname"])
+malware = STRING(v["cs2"])
+title$ = IF file != "" THEN "Sandbox analysis: " + file ELSE "Sandbox analysis"
+summary$ = IF malware != "" THEN evName + ": " + malware ELSE evName
+
+roz = STRING(v["cn2"])
+severity$ = NULL
+severity$ = IF roz == "0" THEN "INFO" ELSE severity$
+severity$ = IF roz == "1" THEN "LOW" ELSE severity$
+severity$ = IF roz == "2" THEN "MEDIUM" ELSE severity$
+severity$ = IF roz == "3" THEN "HIGH" ELSE severity$
+vendorSeverity$ = IF roz != "" THEN "ROZ " + roz ELSE NULL
+
+s1.key$ = "file_name"
+s1.value$ = file
+s2.key$ = "file_sha1"
+s2.value$ = STRING(v["fileHash"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [s1, s2]
+s3.key$ = "malware_name"
+s3.value$ = malware
+additionalData$.record$ = IF malware != "" THEN additionalData$.record$ + [s3] ELSE additionalData$.record$
+s4.key$ = "file_type"
+s4.value$ = STRING(v["fileType"])
+additionalData$.record$ = IF s4.value$ != "" THEN additionalData$.record$ + [s4] ELSE additionalData$.record$
+s5.key$ = "file_size"
+s5.value$ = STRING(v["fsize"])
+additionalData$.record$ = IF s5.value$ != "" THEN additionalData$.record$ + [s5] ELSE additionalData$.record$
+s6.key$ = "sandbox_image"
+s6.value$ = STRING(v["cs1"])
+additionalData$.record$ = IF s6.value$ != "" THEN additionalData$.record$ + [s6] ELSE additionalData$.record$
+# GRID: 0 a known bad file, 1 a known good file, -1 unknown.
+s7.key$ = "grid_known_good"
+s7.value$ = STRING(v["cn1"])
+additionalData$.record$ = IF s7.value$ != "" THEN additionalData$.record$ + [s7] ELSE additionalData$.record$
+s8.key$ = "parent_sha1"
+s8.value$ = STRING(v["cs3"])
+additionalData$.record$ = IF s8.value$ != "" THEN additionalData$.record$ + [s8] ELSE additionalData$.record$
+s9.key$ = "appliance_guid"
+s9.value$ = STRING(v["deviceExternalId"])
+additionalData$.record$ = IF s9.value$ != "" THEN additionalData$.record$ + [s9] ELSE additionalData$.record$

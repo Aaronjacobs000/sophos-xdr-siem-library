@@ -1,0 +1,54 @@
+{
+  "vendor": "Trend Micro",
+  "product": "Deep Discovery Inspector",
+  "versions": [
+    "7.0"
+  ],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-15T01:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-15"
+  },
+  "docs": [
+    "https://docs.trendmicro.com/en-us/documentation/article/deep-discovery-inspector-7-0-syslog-content-help-introduction",
+    "https://docs.trendmicro.com/en-us/documentation/article/deep-discovery-inspector-7-0-syslog-content-help-cef-threat-logs",
+    "https://docs.trendmicro.com/en-us/documentation/article/deep-discovery-inspector-7-0-syslog-content-help-syslog-content-mappi",
+    "https://docs.trendmicro.com/o-help/manual/24af35dc-0b4b-4544-b860-758c6da210df/ddi_7_syslog.pdf",
+    "https://docs.trendmicro.com/en-us/documentation/article/deep-discovery-inspector-7-0-online-help-adding-a-syslog-serv"
+  ],
+  "notes": "For Deep Discovery Inspector 7.0 syslog in CEF (Administration > Integrated Products/Services > Syslog, format CEF, UDP 514, TCP 601 or TCP with SSL). The admin picks CEF, LEEF or TMEF for each server; this entry reads CEF, which has no correlated incident or retro scan logs. Threat logs (malicious content and behavior, suspicious behavior, exploits and grayware), web reputation logs (100101) and disruptive application logs (100120) go to NIDS: the detection as the message, the header event ID as signature_id, the detection name or category as the classification, act and blocked, addresses and ports (IPv6 from c6a2 and c6a3), the protocol as the application, the VLAN, and direction from deviceDirection (0 source external, 1 source internal). Threat type, attack phase, URL, host name, file name and SHA1, CCCA details, WRS score, mail fields and the payload ID go to event_metadata. System logs (300102 and 300999) go to ManagementEvent with the change, the user (duser), the user's IP, the outcome and the details. Virtual Analyzer file analysis results (200119) go to the third-party alert schema with the ROZ rating as severity. Notable characteristics, deny list and other logs stay generic. rt carries its GMT offset (Oct 15 2026 09:42:47 GMT+10:00) and is read with it. Samples are made up from the tables and samples in Trend Micro's DDI 7.0 Syslog Content Mapping Guide, with documentation addresses. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-15 (125 of 125 fields matched the emulator), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (9 of 9 lines, 122 of 122 fields, and the generic line matched). No built-in parser claimed these lines in 12 Run Tests.",
+  "parsers": [
+    {
+      "name": "TRENDMICRO_DDI_CEF_PARENT",
+      "file": "TRENDMICRO_DDI_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TRENDMICRO_DDI_CEF_CHILD_NIDS",
+      "file": "TRENDMICRO_DDI_CEF_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "TRENDMICRO_DDI_CEF_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "TRENDMICRO_DDI_CEF_CHILD_MGMT",
+      "file": "TRENDMICRO_DDI_CEF_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "TRENDMICRO_DDI_CEF_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "TRENDMICRO_DDI_CEF_CHILD_THIRDPARTYALERT",
+      "file": "TRENDMICRO_DDI_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "TRENDMICRO_DDI_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
