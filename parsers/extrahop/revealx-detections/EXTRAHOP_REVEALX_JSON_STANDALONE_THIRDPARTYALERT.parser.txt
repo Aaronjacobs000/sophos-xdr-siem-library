@@ -1,0 +1,94 @@
+!SAMPLE={"title": "Kerberos Brute Force Activity", "type": "Kerberos Brute Force", "src": {"type": "device", "hostname": "ws-0142.example.com", "ipaddr": "192.0.2.20", "role": "offender", "endpoint": "client", "username": "jsmith", "device": {"oid": 10245, "name": "ws-0142", "ipaddrs": ["192.0.2.20"], "macaddr": "00:00:5E:00:53:20"}}, "dst": {"type": "device", "hostname": "dc01.example.com", "ipaddr": "192.0.2.10", "role": "victim", "endpoint": "server", "username": "", "device": {"oid": 10001, "name": "dc01", "ipaddrs": ["192.0.2.10"], "macaddr": "00:00:5E:00:53:10"}}, "additional_participants": [], "properties": {"client_principal_names": ["jsmith@EXAMPLE.COM"]}, "description": "ws-0142.example.com (192.0.2.20) received Kerberos responses with the KDC_ERR_PREAUTH_FAILED error, indicating an invalid password for a client principal name.", "categories_ids": ["sec", "sec.attack"], "mitre_techniques": ["T1110"], "recommended": "true", "recommended_factors": ["high_risk_score"], "url": "https://revealx.example.com/extrahop/#/detections/detail/4294967310", "risk_score": 60, "time": 1792026900000, "id": 4294967310}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*(?:"url"\s*:\s*"[^"]*/extrahop/#/detections/detail/[^"]*".*"risk_score"\s*:\s*\d|"risk_score"\s*:\s*\d.*"url"\s*:\s*"[^"]*/extrahop/#/detections/detail/)
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ExtraHop RevealX security detections from a detection notification rule with a Custom
+# Webhook target, posted as JSON to a Sophos NG-SIEM HTTP Ingest integration with a Bearer token.
+# The payload is ExtraHop's default webhook payload, sent on one line (see README.md).
+# Standalone parser for the third-party alert schema. The confirm string looks for the detection
+# URL (/extrahop/#/detections/detail/) and a numeric risk score, so performance detections and
+# the Send Test Payload message stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "ExtraHop RevealX"
+vendor$ = "ExtraHop"
+provider$ = "ExtraHop RevealX"
+logType$ = "detection"
+alertId$ = STRING(json["$.id"])
+title$ = json["$.title"]
+# type is the detection type's display name; title can name the occurrence.
+detType = STRING(json["$.type"])
+alertCategory$ = IF detType != "" THEN detType ELSE NULL
+desc = STRING(json["$.description"])
+summary$ = IF desc != "" THEN desc ELSE json["$.title"]
+
+# time is when the detection occurred, in epoch milliseconds.
+ms = STRING(json["$.time"])
+msOk = ms|^(?P<n>\d{13})$
+eventTimeUsec$ = IF msOk["n"] != "" THEN INT(msOk["n"], 10) * 1000 ELSE eventTimeUsec$
+
+# ExtraHop colors risk scores red (80 to 99), orange (31 to 79) and yellow (1 to 30).
+risk = json["$.risk_score"]
+riskScore$ = risk
+vendorSeverity$ = STRING(risk)
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF risk >= 1 THEN "LOW" ELSE severity$
+severity$ = IF risk >= 31 THEN "MEDIUM" ELSE severity$
+severity$ = IF risk >= 80 THEN "HIGH" ELSE severity$
+
+# src started the traffic and dst received it. Either one can be the offender or the victim, so
+# each participant's role goes to additional_data. A participant's hostname is the name seen in
+# the detection; the device name is the name ExtraHop gave the device.
+srcHost = STRING(json["$.src.hostname"])
+srcHost = IF srcHost == "" THEN STRING(json["$.src.device.name"]) ELSE srcHost
+dstHost = STRING(json["$.dst.hostname"])
+dstHost = IF dstHost == "" THEN STRING(json["$.dst.device.name"]) ELSE dstHost
+srcIp = STRING(json["$.src.ipaddr"])
+dstIp = STRING(json["$.dst.ipaddr"])
+srcUser = STRING(json["$.src.username"])
+dstUser = STRING(json["$.dst.username"])
+srcMac = STRING(json["$.src.device.macaddr"])
+dstMac = STRING(json["$.dst.device.macaddr"])
+sourceHostName$ = IF srcHost != "" THEN srcHost ELSE NULL
+targetHostName$ = IF dstHost != "" THEN dstHost ELSE NULL
+sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
+destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL
+sourceUserName$ = IF srcUser != "" THEN srcUser ELSE NULL
+targetUserName$ = IF dstUser != "" THEN dstUser ELSE NULL
+sourceMac$ = IF srcMac != "" THEN srcMac ELSE NULL
+destinationMac$ = IF dstMac != "" THEN dstMac ELSE NULL
+
+d1.key$ = "detection_url"
+d1.value$ = STRING(json["$.url"])
+d2.key$ = "src_role"
+d2.value$ = STRING(json["$.src.role"])
+d3.key$ = "dst_role"
+d3.value$ = STRING(json["$.dst.role"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3]
+
+# categories_ids lists the category and its parents, such as ["sec", "sec.attack"]; keep the last.
+cat = originalData$|"categories_ids"\s*:\s*\[[^\]]*"(?P<c>[^"]+)"\s*\]
+d4.key$ = "category"
+d4.value$ = cat["c"]
+additionalData$.record$ = IF cat["c"] != "" THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+
+# mitre_techniques holds technique IDs, or objects with an id and a name. Keep the first.
+tech = STRING(json["$.mitre_techniques[0].id"])
+tech = IF tech == "" THEN STRING(json["$.mitre_techniques[0]"]) ELSE tech
+techOk = tech|^(?P<t>T\d{4}(?:\.\d{3})?)$
+d5.key$ = "mitre_technique"
+d5.value$ = techOk["t"]
+additionalData$.record$ = IF techOk["t"] != "" THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+
+# recommended is "true" or "false" in the default payload, or a JSON boolean.
+rec = LOWERCASE(STRING(json["$.recommended"]))
+d6.key$ = "recommended_for_triage"
+d6.value$ = rec
+additionalData$.record$ = IF rec == "true" OR rec == "false" THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
