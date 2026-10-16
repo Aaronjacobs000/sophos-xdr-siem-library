@@ -39,7 +39,10 @@ eventTimeUsec$ = IF iso != "" AND tz != "" AND tz != "Z" THEN DATETIME(iso + tz,
 fw = msg|^(?:Firewall(?:\s+rule\s+(?P<rule>\d+))?:\s*)?(?P<act>DENY|PERMIT|REJECT|LOG)\b(?P<why>[^=]*?)\s+(?P<kv>IN=\S*\s+OUT=.*)$
 # Connection logs, from connection-log events new|end|all.
 conn = msg|^(?P<ev>NEW|END)\s+(?P<kv>proto=\S+\s+orig_src=.*)$
-kvText = IF fw["kv"] != "" THEN fw["kv"] ELSE conn["kv"]
+# An ICMP error carries the packet it answers in brackets, [SRC=... DST=... PROTO=...], and the split
+# keeps the last copy of a key, so the bracketed packet is taken out first: the fields are the
+# outer packet's.
+kvText = IF fw["kv"] != "" THEN REPLACE_REGEX(fw["kv"], "\\s*\\[[^\\]]*\\]", "") ELSE conn["kv"]
 kv = SPLIT_NAME_VALUES(kvText, " ", "=", `"`)
 
 # URL filtering. The categories are a comma-separated list, then a comma and the rule's ID.

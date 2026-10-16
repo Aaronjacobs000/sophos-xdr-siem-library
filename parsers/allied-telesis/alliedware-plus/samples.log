@@ -14,3 +14,4 @@
 <85>Oct 14 09:30:12 x530-sw02 login[2211]: pam_unix(vty0:auth): authentication failure; logname= uid=0 euid=0 tty=vty0 ruser= rhost=198.51.100.7 user=jsmith
 <13>Oct 14 09:42:20 x930-core IMISH[676]: show log
 <14>Oct 14 09:36:50 ar4050s UTM[1567]: antivirus: No virus detected in http://files.example.com/report.pdf to 192.0.2.47
+<174>Oct 14 09:28:12 ar4050s ulogd[432]: Firewall rule 40: DENY IN=eth1 OUT=vlan1 SRC=203.0.113.9 DST=192.0.2.45 LEN=100 TOS=0x00 PREC=0xC0 TTL=60 ID=4821 PROTO=ICMP TYPE=3 CODE=3 [SRC=192.0.2.45 DST=203.0.113.9 LEN=72 TOS=0x00 PREC=0x00 TTL=63 ID=21102 PROTO=UDP SPT=53112 DPT=53 LEN=52 ]
