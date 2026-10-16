@@ -22,7 +22,10 @@ payload = h["payload"]
 p = REPLACE(payload, `\\`, "%5C")
 p = REPLACE(p, `\;`, "%3B")
 p = REPLACE(p, `\=`, "%3D")
-kv = SPLIT_NAME_VALUES(p, ";", "=", `"`)
+# BeyondTrust doesn't quote values, so a " in one is just a character. The quote character given is
+# the backslash, which BeyondTrust escapes and the first swap takes out, so a " neither strips a
+# value nor, in the studio's emulator, joins it to the next field.
+kv = SPLIT_NAME_VALUES(p, ";", "=", "\\")
 
 # Variables and $ fields set here are visible to both children.
 sensorType$ = "BeyondTrust Secure Remote Access"

@@ -226,5 +226,37 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 14,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791856350000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "user_changed",
+      "operation": "event=user_changed;new_display_name=Kiosk 27\" lobby;old_display_name=Kiosk;old_username=kiosk-lobby;site=access.example.com;when=1791856350;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791856390000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "user_changed",
+      "operation": "event=user_changed;new_display_name=\"Ops\\= night shift\";old_display_name=Ops;old_username=ops-night;site=access.example.com;when=1791856390;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
   }
 ]
