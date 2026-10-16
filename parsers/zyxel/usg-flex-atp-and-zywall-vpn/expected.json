@@ -312,5 +312,15 @@
       "event_time_usec": 1791969345000000,
       "host_id": "usgflex100"
     }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ZYXEL_ZLD_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zyxel ZLD",
+      "event_time_usec": 1791969365000000,
+      "host_id": "usgflex200"
+    }
   }
 ]
