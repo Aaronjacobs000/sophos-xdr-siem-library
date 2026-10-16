@@ -4,19 +4,17 @@ PingOne webhooks send audit activities (sign-ons, MFA checks, lockouts, password
 
 ## Send the events
 
-PingOne posts up to 500 events in one body, as a JSON array by default, and HTTP Ingest would store that as one record. The [webhook relay](../../../bridges/webhook-relay/) takes PingOne's webhook on `/pingone`, checks its token and forwards each event as its own record.
+PingOne posts its webhook straight to a Sophos NG-SIEM HTTP Ingest integration in NDJSON, one event per line, with the integration key in a custom `Authorization` header, the way the OneLogin entry sends. No bridge is needed.
 
 1. In Sophos Fusion, go to Security Operations > Integrations > Marketplace, choose Custom, then Set Up under HTTP Ingest. Copy the Integration Key and URL.
-2. Run the relay with `NGSIEM_INGEST_URL`, `NGSIEM_INGEST_KEY` and `PINGONE_WEBHOOK_TOKEN` (32 characters or more) behind a TLS proxy, as its README describes.
-3. In the PingOne admin console, go to Integrations > Webhooks and add a webhook:
-   - Protocol HTTPS, Destination URL `https://<relay name>/pingone`, and Allow TLS connection with untrusted certificates off.
-   - Under Headers, Add Custom HTTP Headers: Key `Authorization`, Value `Bearer <PINGONE_WEBHOOK_TOKEN>`.
-   - Payload Format JSON array with Pretty Print off (NDJSON works too), Event Schema Ping Activity Format.
-   - Payload Limit: Limit by Size, at most 500 KB with the relay's default `BRIDGE_MAX_BODY_BYTES`. PingOne resends a delivery until it gets 200 and holds every later event until then.
+2. In the PingOne admin console, go to Integrations > Webhooks and add a webhook:
+   - Protocol HTTPS, Destination URL the HTTP Ingest URL, and Allow TLS connection with untrusted certificates off.
+   - Under Headers, Add Custom HTTP Headers: Key `Authorization`, Value `Bearer <Integration Key>`.
+   - Payload Format NDJSON, Event Schema Ping Activity Format. Not JSON array: HTTP Ingest would store a whole batch of up to 500 events as one record, which the parsers leave unclaimed.
    - Turn on Include IP address and Include User Agent, or the events carry neither.
    - Event Types: the sign-on, MFA and password types below, and the admin change types you want, such as users, roles, groups, applications, populations, identity providers and sign-on policies.
 
-PingOne's NDJSON format, with an `Authorization: Bearer <Integration Key>` custom header, could post to HTTP Ingest without the relay, one event per line, the way the OneLogin entry sends. That route hasn't been tried with HTTP Ingest; the relay is the tested one.
+This route hasn't been tested end to end: the parsers passed Run Test on NDJSON lines, but no event was sent through HTTP Ingest. PingOne's webhook page offers NDJSON and also says its requests don't use line-delimited JSON, so after you set it up, search for a few PingOne events and check each event is its own record. If a whole batch arrives as one record, nothing is normalized.
 
 ## Add the parsers
 
