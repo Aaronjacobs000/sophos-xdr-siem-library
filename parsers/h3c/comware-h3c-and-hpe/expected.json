@@ -754,5 +754,62 @@
       "sensor_event_id": "SHELL/6/SHELL_CMD_CONFIRM",
       "host_id": "sw01"
     }
+  },
+  {
+    "line": 22,
+    "extractor_path": "H3C_COMWARE_SYSLOG_PARENT > H3C_COMWARE_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Comware",
+      "event_time_usec": 1792056178000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UFLT/6/UFLT_MATCH_IPV4_LOG",
+      "host_id": "fw01",
+      "source_address": "192.0.2.26",
+      "destination_address": "203.0.113.91",
+      "source_port": 50510,
+      "destination_port": 80,
+      "protocol": 6,
+      "l7_protocol": "http",
+      "source_username": "jdoe",
+      "source_mac": "00-00-5e-00-53-26",
+      "destination_mac": "00-00-5e-00-53-01",
+      "uri_host": "portal.example.com",
+      "uri_path": "/app/login.jsp;jsessionid=9F2C7A01B3D4",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "url_category",
+            "value": "Malware"
+          },
+          {
+            "key": "action",
+            "value": "Drop"
+          },
+          {
+            "key": "policy",
+            "value": "policy1"
+          },
+          {
+            "key": "source_zone",
+            "value": "Trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "Untrust"
+          },
+          {
+            "key": "vlan",
+            "value": "400"
+          },
+          {
+            "key": "device_ip",
+            "value": "192.0.2.2"
+          }
+        ]
+      }
+    }
   }
 ]
