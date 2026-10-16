@@ -421,5 +421,77 @@
       "event_time_usec": 1791856802000000,
       "host_id": "FEVM020000123456"
     }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FORTINET_FORTIMAIL_KV_PARENT > FORTINET_FORTIMAIL_KV_CHILD_EMAIL",
+    "schema": "scwx.email",
+    "normalized": {
+      "sensor_type": "Fortinet FortiMail",
+      "event_time_usec": 1791855228000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "statistics",
+      "host_id": "FEVM020000123456",
+      "from_email_address": [
+        "orders@example.net"
+      ],
+      "to_email_address": [
+        "jdoe@example.com"
+      ],
+      "subject": "Order 4471 update: status=shipped eta=2 days",
+      "message_id": "20261013013346.4471@mail.example.net",
+      "message_size": 20480,
+      "sender_ip": "198.51.100.23",
+      "direction": "INBOUND",
+      "status": "DELIVERED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "session_id",
+            "value": "tqwmbzhxle"
+          },
+          {
+            "key": "log_id",
+            "value": "0200000001"
+          },
+          {
+            "key": "disposition",
+            "value": "Accept"
+          },
+          {
+            "key": "classifier",
+            "value": "FortiGuard AntiSpam-Safe"
+          },
+          {
+            "key": "policy_id",
+            "value": "0:1:2:example.com"
+          },
+          {
+            "key": "header_from",
+            "value": "orders@example.net"
+          },
+          {
+            "key": "delivery_status",
+            "value": "Delivered"
+          },
+          {
+            "key": "resolved",
+            "value": "OK"
+          },
+          {
+            "key": "client_name",
+            "value": "mail.example.net"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "tls_version_in",
+            "value": "TLSv1.3"
+          }
+        ]
+      }
+    }
   }
 ]
