@@ -590,5 +590,51 @@
         ]
       }
     }
+  },
+  {
+    "line": 14,
+    "extractor_path": "APPGATE_SDP_JSON_PARENT > APPGATE_SDP_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Appgate SDP",
+      "event_time_usec": 1791941250118204,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091",
+      "host_id": "controller1.example.com",
+      "event_type": "audit",
+      "user_name": "admin",
+      "source_address": "192.0.2.10",
+      "event_name": "entity_created",
+      "event_source": "Appgate SDP",
+      "target_hostname": "controller1.example.com",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "5f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+          "resource_type": "Entitlement"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "Finance web apps"
+          },
+          {
+            "key": "identity_provider",
+            "value": "local"
+          },
+          {
+            "key": "daemon",
+            "value": "cz-controllerd"
+          },
+          {
+            "key": "collective_id",
+            "value": "cd4b8086-ad44-47a6-a3aa-ca20a27f4dfd"
+          }
+        ]
+      }
+    }
   }
 ]

@@ -1,6 +1,6 @@
 !SAMPLE={"id":"4183","author_id":42,"entity_id":42,"entity_type":"User","details":{"author_name":"Pat Example","author_class":"User","with":"standard","target_id":42,"target_type":"User","target_details":"pexample","ip_address":"203.0.113.10","entity_path":"pexample"},"ip_address":"203.0.113.10","author_name":"Pat Example","entity_path":"pexample","target_details":"pexample","created_at":"2026-10-13T01:10:04.218Z","target_type":"User","target_id":42,"event_type":"authenticated_with_password"}
 !CONFIRMWITH=PATTERN
-!CONFIRMSTRING=\{.*(?:"entity_type"\s*:\s*"[^"]+".*"event_type"\s*:\s*"[a-z0-9_]+"|"event_type"\s*:\s*"[a-z0-9_]+".*"entity_type"\s*:\s*"[^"]+")
+!CONFIRMSTRING=\{.*"author_id"\s*:\s*-?\d+.*"entity_type"\s*:\s*"[^"]+".*"entity_path"\s*:\s*"[^"]*".*"event_type"\s*:\s*"[a-z0-9_]+"
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
@@ -10,8 +10,9 @@
 # POST, sent straight to a Sophos NG-SIEM HTTP Ingest integration with an Authorization custom
 # header. Works for instance streaming (Self-Managed, Dedicated) and top-level group streaming
 # (also GitLab SaaS).
-# Parent: recognizes streamed audit events by their entity_type and event_type, and hands each to
-# a child.
+# Parent: recognizes streamed audit events by author_id, entity_type, entity_path and event_type,
+# in the order GitLab writes them, and hands each to a child. Other products' JSON with entity_type
+# and event_type, such as Appgate SDP's entity records, has no author_id or entity_path.
 #   Sign-ins, failed sign-ins and lockouts go to Auth.
 #   Every other event (Git operations, members, tokens, settings, streaming changes) goes to
 #   CloudAudit.
