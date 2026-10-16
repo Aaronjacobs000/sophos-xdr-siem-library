@@ -1,0 +1,253 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_SophosMobile
+tags: []
+categories:
+    - Generic
+title: Sophos Mobile (unofficial)
+description: Locks Sophos Mobile devices or sends them a message, and reads devices and the actions it started. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Calls the Sophos Mobile API to lock devices or send them a message, read a device, and read the state of the actions it started. It has no wipe, locate or unenroll. API reference: https://developer.sophos.com/reference/mobile-v1/
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos doesn't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | OAuth Client Credentials |
+    | Grant URL | `https://id.sophos.com/api/v2/oauth2/token` |
+    | Client ID and Client Secret | A Sophos Fusion API credential with the Service Principal Management role |
+    | Scopes | `token` |
+    | Sophos Mobile API host | The data region of the Sophos Fusion account that holds Sophos Mobile: eu01, eu02, us01 or us03 |
+    | Tenant ID | That account's tenant ID |
+
+    Sophos Mobile isn't available in the Australian, Brazilian, Canadian, Indian or Japanese data regions. Get the tenant ID and data region once, with the credential's token: `GET https://api.central.sophos.com/whoami/v1` returns `id` and `apiHosts.dataRegion`.
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads one device, to test the connection |
+    | getDevice | Reads a device, with its group and platform |
+    | getActions | Reads the state of actions by ID |
+    | lock | Locks up to 50 devices, with a lock screen message |
+    | sendMessage | Sends a message to up to 50 devices |
+method: http
+version: 1.0.0
+vendorName: Sophos
+vendorProduct: Mobile
+parameters:
+    properties:
+        api_host:
+            enum:
+                - api-eu01.central.sophos.com
+                - api-eu02.central.sophos.com
+                - api-us01.central.sophos.com
+                - api-us03.central.sophos.com
+            required: true
+            title: Sophos Mobile API host
+            type: string
+        tenant_id:
+            required: true
+            title: Tenant ID
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading one device
+      outputs:
+        properties:
+            items:
+                description: Up to one device
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Mobile API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Mobile API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/mobile/v1/devices?pageSize=1&view=basic
+    - name: getDevice
+      description: Read a device, with its group and platform
+      inputs:
+        properties:
+            device_id:
+                description: The device ID, which Sophos Mobile shares with the endpoint ID in Sophos Fusion
+                title: Device ID
+                type: string
+        required:
+            - device_id
+        type: object
+      outputs:
+        properties:
+            deviceGroup:
+                description: The device's group, with its id and name
+                type: object
+            id:
+                description: The device ID
+                type: string
+            name:
+                description: The device name
+                type: string
+            os:
+                description: The operating system, with its platform
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Mobile API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Mobile API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/mobile/v1/devices/${inputs.device_id.trim()}?view=full
+    - name: getActions
+      description: Read the state of actions by ID
+      inputs:
+        properties:
+            action_ids:
+                description: The IDs of the actions, from lock or sendMessage
+                items:
+                    type: string
+                maxItems: 50
+                title: Action IDs
+                type: array
+        required:
+            - action_ids
+        type: object
+      outputs:
+        properties:
+            items:
+                description: Each action, with its device, type, state and any error
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Mobile API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Mobile API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/mobile/v1/actions?ids=${join(inputs.action_ids, ',')}&pageSize=50&view=summary
+    - name: lock
+      description: Lock up to 50 devices, with a lock screen message
+      inputs:
+        properties:
+            endpoints:
+                description: Device IDs, up to 50
+                items:
+                    type: string
+                maxItems: 50
+                title: Devices
+                type: array
+            message:
+                description: Shown on the lock screen of Android and iOS devices, up to 500 characters
+                maxLength: 500
+                title: Lock screen message
+                type: string
+        required:
+            - endpoints
+            - message
+        type: object
+      outputs:
+        properties:
+            created:
+                description: One action for each device that took the lock, in the state accepted
+                type: array
+            errors:
+                description: The devices Sophos Mobile couldn't lock, and why
+                type: object
+        type: object
+      config:
+        body:
+            arguments:
+                lockScreenMessage: ${inputs.message}
+            endpoints: ${inputs.endpoints}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 201 ? '' :
+                has(status.code) ? 'Sophos Mobile API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Mobile API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: POST
+        outputs: ${body}
+        url: https://${config.api_host}/mobile/v1/actions/lock
+    - name: sendMessage
+      description: Send a message to up to 50 devices
+      inputs:
+        properties:
+            endpoints:
+                description: Device IDs, up to 50
+                items:
+                    type: string
+                maxItems: 50
+                title: Devices
+                type: array
+            message:
+                description: The message, up to 500 characters
+                maxLength: 500
+                title: Message
+                type: string
+        required:
+            - endpoints
+            - message
+        type: object
+      outputs:
+        properties:
+            created:
+                description: One action for each device that took the message, in the state accepted
+                type: array
+            errors:
+                description: The devices Sophos Mobile couldn't send to, and why
+                type: object
+        type: object
+      config:
+        body:
+            arguments:
+                message: ${inputs.message}
+            endpoints: ${inputs.endpoints}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 201 ? '' :
+                has(status.code) ? 'Sophos Mobile API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Mobile API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: POST
+        outputs: ${body}
+        url: https://${config.api_host}/mobile/v1/actions/send-message
+authTypes:
+    - OAuthClientCreds
+authDefaults:
+    url: https://id.sophos.com/api/v2/oauth2/token
+    clientCredentialsAuth:
+        clientId: <Client-ID>
+        scopes:
+            - token
