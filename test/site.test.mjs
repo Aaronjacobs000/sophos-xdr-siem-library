@@ -57,6 +57,8 @@ test('the site build publishes the index, the entry files and the bridges next t
     const relay = index.bridges.find((b) => b.path === 'bridges/webhook-relay');
     assert.ok(relay.files.includes('README.md') && relay.files.includes('webhook_relay.py'));
     assert.ok((await stat(path.join(out, 'bridges/webhook-relay/webhook_relay.py'))).isFile());
+    // Each bridge is listed by its path and files only, and the page reads it from that path.
+    for (const b of index.bridges) assert.deepEqual(Object.keys(b).sort(), ['files', 'path'], b.path);
     // Playbooks and connectors: listed with their metadata, and their files published.
     assert.ok(Array.isArray(index.playbooks) && Array.isArray(index.connectors));
     for (const [folder, list] of [['playbooks', index.playbooks], ['connectors', index.connectors]]) {

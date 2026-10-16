@@ -67,19 +67,18 @@ export async function loadEntry(entry) {
   return entry;
 }
 
-// The folder in the repo that holds an entry's bridge, for links: bridges/<name>, or collectors/<name>
-// in a fork made before the rename. With no folder listed, an entry that still names
-// collectors/<name> under the old "collector" key points there.
+// The folder in the repo that holds an entry's bridge, for links: bridges/<name>. With no folder
+// listed, an entry that still names collectors/<name> under the old "collector" key points there.
 export function bridgeFolder(bridges, meta) {
   const path = bridgeOf(meta);
   const known = (bridges || []).find((b) => b && b.path === path);
-  if (known) return known.dir || known.path;
+  if (known) return known.path;
   const legacy = meta && (meta.bridge === undefined || meta.bridge === null) && typeof meta.collector === 'string' && /^collectors\//.test(meta.collector);
   return legacy ? meta.collector : path;
 }
 
 // A bridge's README and scripts, from the copy the site build put next to the page. Returns
-// {path, dir?, files, readme, scripts: [{name, text}]}.
+// {path, files, readme, scripts: [{name, text}]}.
 const bridgeCache = new Map();
 export function loadBridge(bridges, path) {
   if (typeof path !== 'string' || !BRIDGE_PATH.test(path)) return Promise.reject(new Error('not a bridge path'));
@@ -96,11 +95,10 @@ export function loadBridge(bridges, path) {
 
 async function fetchBridge(known, path) {
   if (!known) throw new Error(`${path} is not in the library`);
-  const dir = known.dir || path;
   const names = bridgeScripts(known.files);
-  const readme = known.files.includes('README.md') ? await fetchText(siteUrl(`${dir}/README.md`)) : '';
-  const texts = await pool(names, 3, (n) => fetchText(siteUrl(`${dir}/${n}`)));
-  return { path, ...(known.dir ? { dir } : {}), files: known.files, readme, scripts: names.map((name, i) => ({ name, text: texts[i] })) };
+  const readme = known.files.includes('README.md') ? await fetchText(siteUrl(`${path}/README.md`)) : '';
+  const texts = await pool(names, 3, (n) => fetchText(siteUrl(`${path}/${n}`)));
+  return { path, files: known.files, readme, scripts: names.map((name, i) => ({ name, text: texts[i] })) };
 }
 
 // Entries in the shape the lint's overlap check takes.
