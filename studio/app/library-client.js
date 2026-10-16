@@ -67,24 +67,6 @@ export async function loadEntry(entry) {
   return entry;
 }
 
-// Every bridge folder in a repo tree, with the names of the files directly in it. A fork made
-// before bridges were renamed keeps them under collectors/<name>: each lists as bridges/<name>,
-// the path its entries resolve to, with dir naming the folder that holds the files.
-export function bridgeFolders(tree) {
-  const dirs = new Map();
-  for (const t of tree || []) {
-    const m = t && t.type === 'blob' ? /^((?:bridges|collectors)\/[^/]+)\/([^/]+)$/.exec(t.path) : null;
-    if (m) (dirs.get(m[1]) || dirs.set(m[1], []).get(m[1])).push(m[2]);
-  }
-  const out = [];
-  for (const [dir, names] of dirs) {
-    const path = dir.replace(/^collectors\//, 'bridges/');
-    if (path === dir) out.push({ path, files: names.sort() });
-    else if (!dirs.has(path)) out.push({ path, dir, files: names.sort() });
-  }
-  return out;
-}
-
 // The folder in the repo that holds an entry's bridge, for links: bridges/<name>, or collectors/<name>
 // in a fork made before the rename. With no folder listed, an entry that still names
 // collectors/<name> under the old "collector" key points there.
