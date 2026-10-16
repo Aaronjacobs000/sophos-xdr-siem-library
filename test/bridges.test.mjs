@@ -12,6 +12,7 @@ import { bridgeFolders, bridgeFolder } from '../studio/app/library-client.js';
 import { listBridges, loadBridges } from '../tools/lib/fs-library.mjs';
 import { reviewReasons } from '../tools/lib/merge-rules.mjs';
 import { parseMarkdown, parseInline, linkTarget } from '../studio/app/markdown.js';
+import { trackedEntries, isTracked } from './tracked.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['meta.json', 'ACME_PULL_JSON_STANDALONE.parser.txt', 'samples.log', 'expected.json'];
@@ -116,8 +117,10 @@ test('the site build copies the bridges into the snapshot and every entry names 
   const relay = snap.bridges.find((b) => b.path === 'bridges/webhook-relay');
   assert.deepEqual(relay.scripts.map((s) => s.name), ['webhook_relay.py']);
   assert.equal(snap.entries.find((e) => e.id === 'huntress/huntress-webhooks').meta.bridge, 'bridges/webhook-relay');
-  assert.deepEqual(snap.entries.filter((e) => 'collector' in e.meta).map((e) => e.id), []);
-  for (const e of snap.entries.filter((x) => x.meta.bridge)) assert.ok(snap.bridges.some((b) => b.path === e.meta.bridge), e.id);
+  const tracked = trackedEntries(ROOT);
+  const entries = snap.entries.filter((e) => isTracked(tracked, e.id));
+  assert.deepEqual(entries.filter((e) => 'collector' in e.meta).map((e) => e.id), []);
+  for (const e of entries.filter((x) => x.meta.bridge)) assert.ok(snap.bridges.some((b) => b.path === e.meta.bridge), e.id);
 });
 
 test('bridge scripts leave out tests, and the repo bridges load', async () => {

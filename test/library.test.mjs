@@ -10,6 +10,7 @@ import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected,
 import { scanText } from '../studio/core/scan.js';
 import { loadLibrary, loadEntryFromDir, listBridges } from '../tools/lib/fs-library.mjs';
 import { runParsers } from '../studio/core/engine.js';
+import { trackedEntries, isTracked } from './tracked.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kinds = (text) => scanText(text).filter((f) => f.level === 'error').map((f) => f.code);
@@ -17,11 +18,36 @@ const kinds = (text) => scanText(text).filter((f) => f.level === 'error').map((f
 test('every seed entry in the library passes validation', async () => {
   const lib = await loadLibrary(ROOT);
   const bridges = await listBridges(ROOT);
-  assert.ok(lib.length >= 5);
-  for (const e of lib) {
-    const v = validateEntry(e, { library: lib.filter((x) => x.id !== e.id), bridges });
+  const tracked = trackedEntries(ROOT);
+  const entries = lib.filter((x) => isTracked(tracked, x.id));
+  assert.ok(entries.length >= 5);
+  for (const e of entries) {
+    const v = validateEntry(e, { library: entries.filter((x) => x.id !== e.id), bridges });
     assert.deepEqual(v.problems.filter((p) => p.level === 'error'), [], e.id);
     assert.equal(e.id, entryId(e.meta), `${e.id} folder matches vendor/product`);
+  }
+});
+
+test('the whole-library tests leave out entries git does not track', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-tracked-'));
+  const other = await mkdtemp(path.join(tmpdir(), 'ps-untracked-'));
+  try {
+    for (const id of ['acme/tracked', 'acme/untracked']) {
+      await mkdir(path.join(dir, 'parsers', id), { recursive: true });
+      await writeFile(path.join(dir, 'parsers', id, 'meta.json'), '{}\n');
+    }
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: 'pipe' });
+    execFileSync('git', ['add', 'parsers/acme/tracked'], { cwd: dir, stdio: 'pipe' });
+    const tracked = trackedEntries(dir);
+    assert.deepEqual([...tracked], ['acme/tracked']);
+    assert.equal(isTracked(tracked, 'acme/tracked'), true);
+    assert.equal(isTracked(tracked, 'acme/untracked'), false);
+    // Outside a git checkout every entry counts.
+    assert.equal(trackedEntries(other), null);
+    assert.equal(isTracked(null, 'acme/untracked'), true);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(other, { recursive: true, force: true });
   }
 });
 
