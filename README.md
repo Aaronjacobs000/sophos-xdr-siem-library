@@ -135,7 +135,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
-| `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, and the Pages deploy. |
+| `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, the review label, and the Pages deploy. |
 
 ## License
 

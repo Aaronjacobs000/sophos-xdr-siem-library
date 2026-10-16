@@ -151,6 +151,7 @@ Open an issue first for anything large. Keep the page free of runtime dependenci
 ## Notes for maintainers
 
 - **Playbook and connector pull requests.** The gate labels them "needs review" and never merges them. Review them as the section above says, then squash-merge as owner.
+- **"needs review" after you merge.** When you merge a pull request the gate labeled "needs review", the Review label workflow takes that label off. It leaves every other label, and a "needs review" that someone other than the gate added.
 
 - **CI that takes over 10 minutes.** The gate stops waiting, and its report on the pull request says it is waiting for CI. When CI finishes, the gate runs again for that commit, with every check, and merges it if CI passed or labels it "needs review" if not.
 - **CI that fails, then passes on a re-run.** The gate labels the pull request "needs review" and its report says a check failed. Re-run the failed CI jobs: when CI passes on the same commit, the gate runs again for it, with every check, and merges it if they all passed.
