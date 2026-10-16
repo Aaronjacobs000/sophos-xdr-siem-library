@@ -91,14 +91,14 @@ test('gitleaks regexes: Go syntax translates exactly, case folding and all', () 
   for (const s of ['xApiy', 'XapiY', 'xAPIy', 'xKEYy']) assert.ok(api.test(s), s);
   assert.equal(api.test('xaPIy'), false);
   // Go folds the Kelvin sign into k and the long s into s, in literals, ranges and \w.
-  assert.ok(goRegex('(?i)^key$').test('Key'));
-  assert.ok(goRegex('(?i)^secret$').test('ſecret'));
-  assert.ok(goRegex('(?i)^[a-z]+$').test('ſK'));
-  assert.ok(goRegex('(?i)^\\w$').test('K'));
-  assert.equal(goRegex('^\\w$').test('K'), false);
+  assert.ok(goRegex('(?i)^key$').test('\u212Aey'));
+  assert.ok(goRegex('(?i)^secret$').test('\u017Fecret'));
+  assert.ok(goRegex('(?i)^[a-z]+$').test('\u017F\u212A'));
+  assert.ok(goRegex('(?i)^\\w$').test('\u212A'));
+  assert.equal(goRegex('^\\w$').test('\u212A'), false);
   // \s is [\t\n\f\r ], . leaves out only \n, and \z is the end of the text.
   assert.ok(goRegex('^a\\sb$').test('a\fb'));
-  for (const s of ['a\vb', 'a b']) assert.equal(goRegex('^a\\sb$').test(s), false);
+  for (const s of ['a\vb', 'a\u00a0b']) assert.equal(goRegex('^a\\sb$').test(s), false);
   assert.ok(goRegex('^a.b$').test('a\rb'));
   assert.equal(goRegex('^a.b$').test('a\nb'), false);
   assert.ok(goRegex('x(?:\\n|\\z)').test('x'));
