@@ -54,3 +54,9 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 ## Code
 
 Parser Studio has no runtime or build dependencies. The emulator, the Go regex and time layout handling, the JSONPath reader and the ZIP writer are written for this project.
+
+The library check runs a port of one rule of the secret scanner CI runs, so contributors see what CI would flag before they submit.
+
+| File | Source | License |
+| --- | --- | --- |
+| `studio/core/gitleaks.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `config/gitleaks.toml`, the `generic-api-key` rule's regex, keywords, entropy threshold, allowlists and stopword list, and the global allowlist's regexes and stopwords; from `detect/detect.go` and `config/allowlist.go`, how a match becomes a finding and how the allowlists apply. The license text is in the file's header comment | MIT |
