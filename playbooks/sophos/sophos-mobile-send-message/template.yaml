@@ -1,0 +1,186 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_SophosMobile_SendMessage
+version: 1.0.0
+title: Sophos Mobile send message (unofficial)
+description: Sends a message to the Sophos Mobile device behind a host, when the device is in a device group you allow. It starts in dry run, which only comments on the case with what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Sends a message to the Sophos Mobile device behind the host the playbook runs on, and comments on the case with what happened. It needs the unofficial Sophos Mobile connector from the same library. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the device and comments on the case with what it would send, and sends nothing.
+    - It only messages devices in the device groups you list. With no groups set, it sends nothing.
+    - A run that finds more devices than Most devices per run (1 unless you change it) sends nothing.
+    - Rollback: none. A sent message can't be recalled.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only comment on the case with what the playbook would do | On |
+    | Device groups | IDs of the Sophos Mobile device groups the playbook may message | None |
+    | Most devices per run | A run that finds more devices sends nothing | 1 |
+    | Message | The text the device shows | None |
+changeNotes: First version
+tags:
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_SophosMobile:1.0.0
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: Host
+        name: Message mobile device (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                device_groups:
+                    description: IDs of the Sophos Mobile device groups whose devices this playbook may message. A device in any other group is left alone.
+                    items:
+                        type: string
+                    title: Device groups
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only comments on the case with what it would send. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                max_devices:
+                    default: 1
+                    description: A run that finds more devices than this sends nothing
+                    maximum: 50
+                    minimum: 1
+                    title: Most devices per run
+                    type: integer
+                message:
+                    description: The message the device shows, up to 500 characters
+                    maxLength: 500
+                    title: Message
+                    type: string
+            required:
+                - device_groups
+                - message
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        devices:
+            description: Each device the playbook messaged, with the state of the message
+            type: array
+        status:
+            description: SUCCESS, PARTIAL, FAIL or UNKNOWN
+            type: string
+    type: object
+dsl:
+    name: Unofficial_SophosMobile_SendMessage
+    description: Sends a message to the Sophos Mobile device behind a host, within the allowed device groups and the per-run limit, or comments on the case with what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        devices: result.variables.devices
+        status: finish.variables.status
+    tasks:
+        # The settings, the case, and the device IDs: a Sophos Mobile device ID is its endpoint ID.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            groups: "inputs.?configuration.device_groups.orValue([])"
+            cap: "int(inputs.?configuration.max_devices.orValue(1))"
+            message: "inputs.?configuration.message.orValue('')"
+            case_id: "caseId(inputs)"
+            endpoints: "has(inputs, 'entity') ? unique(entityValue(inputs, 'host_id')) : has(inputs, 'asset.hostId') ? [inputs.asset.hostId] : []"
+        # Stop before any call when there's nothing safe to do.
+        - name: check
+          let:
+            stop: >-
+                size(setup.variables.endpoints) == 0 ? 'No host ID came with the trigger, so there is no device to message.' :
+                size(setup.variables.endpoints) > setup.variables.cap ? 'The trigger named ' + string(size(setup.variables.endpoints)) + ' devices, more than the limit of ' + string(setup.variables.cap) + ' a run, so nothing was sent.' :
+                size(setup.variables.groups) == 0 ? 'No device groups are set, so the playbook may message nothing.' :
+                setup.variables.message.trim() == '' ? 'No message is set, so nothing was sent.' : ''
+        # Read each device, and keep the ones in an allowed group.
+        - name: read_devices
+          condition: "check.variables.stop == ''"
+          variables:
+            in_scope: []
+            out_of_scope: []
+          range: setup.variables.endpoints
+          for:
+            - name: read_device
+              action: Unofficial_SophosMobile.getDevice
+              optional: true
+              retry: 2
+              inputs:
+                device_id: read_devices.value
+            - name: sort_device
+              let:
+                in_scope: "has(read_device, 'outputs.id') && read_device.outputs.?deviceGroup.id.orValue('') in setup.variables.groups ? append(read_devices.variables.in_scope, {'id': read_device.outputs.id, 'name': read_device.outputs.?name.orValue(read_device.outputs.id)}) : read_devices.variables.in_scope"
+                out_of_scope: "has(read_device, 'outputs.id') && read_device.outputs.?deviceGroup.id.orValue('') in setup.variables.groups ? read_devices.variables.out_of_scope : append(read_devices.variables.out_of_scope, read_devices.value)"
+        - name: plan
+          let:
+            targets: "check.variables.stop == '' && has(read_devices, 'variables.in_scope') ? read_devices.variables.in_scope : []"
+            skipped: "check.variables.stop == '' && has(read_devices, 'variables.out_of_scope') ? read_devices.variables.out_of_scope : []"
+        # The only task that acts, and only with dry run off.
+        - name: send
+          condition: "!setup.variables.dry_run && size(plan.variables.targets) > 0"
+          action: Unofficial_SophosMobile.sendMessage
+          optional: true
+          inputs:
+            endpoints: "plan.variables.targets.map(d, d.id)"
+            message: setup.variables.message
+        # Messages reach the device later: read their state every 15 seconds, for up to 3 minutes.
+        - name: poll
+          condition: "has(send, 'outputs.created') && size(send.outputs.created) > 0"
+          variables:
+            state: 'pending'
+            actions: []
+          range: "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"
+          for:
+            - name: wait
+              condition: "poll.variables.state == 'pending'"
+              sleep: '15s'
+            - name: read_actions
+              condition: "poll.variables.state == 'pending'"
+              action: Unofficial_SophosMobile.getActions
+              optional: true
+              retry: 2
+              inputs:
+                action_ids: "send.outputs.created.map(a, a.id)"
+            - name: note_state
+              condition: "poll.variables.state == 'pending' && has(read_actions, 'outputs.items')"
+              let:
+                actions: read_actions.outputs.items
+                state: "read_actions.outputs.items.all(a, a.state in ['successful', 'failed', 'skipped']) ? 'done' : 'pending'"
+        - name: result
+          let:
+            actions: "has(poll, 'variables.actions') ? poll.variables.actions : []"
+            devices: "has(poll, 'variables.actions') ? poll.variables.actions.map(a, {'id': a.device.id, 'name': a.device.?name.orValue(a.device.id), 'state': a.state}) : []"
+            refused: "has(send, 'outputs.errors') ? toString(send.outputs.errors) : ''"
+        - name: finish
+          let:
+            status: >-
+                check.variables.stop != '' || size(plan.variables.targets) == 0 ? 'FAIL' :
+                setup.variables.dry_run ? 'SUCCESS' :
+                size(result.variables.actions) == 0 ? 'FAIL' :
+                result.variables.actions.all(a, a.state == 'successful') ? 'SUCCESS' :
+                result.variables.actions.exists(a, a.state == 'successful') ? 'PARTIAL' :
+                result.variables.actions.exists(a, !(a.state in ['successful', 'failed', 'skipped'])) ? 'UNKNOWN' : 'FAIL'
+            message: >-
+                check.variables.stop != '' ? check.variables.stop :
+                size(plan.variables.targets) == 0 ? 'None of the ' + string(size(setup.variables.endpoints)) + ' devices is in an allowed device group, so nothing was sent.' :
+                setup.variables.dry_run ? 'Dry run: the playbook would send the message to ' + join(plan.variables.targets.map(d, d.name + ' (' + d.id + ')'), ', ') + '. Nothing was sent. Turn off dry run to send.' :
+                size(result.variables.actions) == 0 ? 'Sophos Mobile took no message. ' + result.variables.refused :
+                'Message: ' + join(result.variables.devices.map(d, d.name + ' ' + d.state), ', ') + (size(plan.variables.skipped) > 0 ? '. Not in an allowed group: ' + join(plan.variables.skipped, ', ') : '') + (result.variables.refused != '' ? '. Refused: ' + result.variables.refused : '')
+        - name: comment
+          condition: "setup.variables.case_id != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          inputs:
+            caseId: setup.variables.case_id
+            comment: "'Sophos Mobile send message (unofficial playbook): ' + finish.variables.message"
