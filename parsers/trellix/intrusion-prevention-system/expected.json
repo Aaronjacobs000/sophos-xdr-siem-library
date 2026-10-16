@@ -405,5 +405,20 @@
       "result": "Failed",
       "operation": "Login failed for user jdoe from 192.0.2.20"
     }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TRELLIX_IPS_SYSLOG_PARENT > TRELLIX_IPS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Trellix IPS",
+      "event_time_usec": 1792020280000000,
+      "event_time_fidelity": "MICRO",
+      "username": "ops|backup",
+      "operation_name": "User login",
+      "namespace": "User",
+      "result": "Failed",
+      "operation": "Login failed for user ops|backup from 192.0.2.20"
+    }
   }
 ]
