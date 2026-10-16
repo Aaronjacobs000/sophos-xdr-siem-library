@@ -948,5 +948,68 @@
       "sensor_event_id": "POLICY/2/POLICYSENDFAIL",
       "host_id": "fw01.example.com"
     }
+  },
+  {
+    "line": 21,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792056340000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "URL/4/FILTER",
+      "host_id": "fw01.example.com",
+      "source_address": "192.0.2.26",
+      "destination_address": "203.0.113.96",
+      "source_port": 50461,
+      "destination_port": 80,
+      "protocol": 6,
+      "source_username": "akim",
+      "l7_protocol": "HTTP",
+      "uri_host": "shop.example.net",
+      "uri_path": "/search?q=router,sort=price",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Shopping"
+          },
+          {
+            "key": "action",
+            "value": "block"
+          },
+          {
+            "key": "sub_category",
+            "value": "Online Shopping"
+          },
+          {
+            "key": "rule_type",
+            "value": "Pre-defined"
+          },
+          {
+            "key": "policy",
+            "value": "trust_untrust"
+          },
+          {
+            "key": "profile",
+            "value": "default"
+          },
+          {
+            "key": "source_zone",
+            "value": "trust"
+          },
+          {
+            "key": "destination_zone",
+            "value": "untrust"
+          },
+          {
+            "key": "user_group",
+            "value": "/default/staff"
+          }
+        ]
+      }
+    }
   }
 ]

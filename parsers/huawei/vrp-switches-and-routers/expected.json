@@ -663,5 +663,25 @@
       "sensor_event_id": "SHELL/5/TIMEOUT",
       "host_id": "sw01.example.com"
     }
+  },
+  {
+    "line": 22,
+    "extractor_path": "HUAWEI_VRP_SYSLOG_PARENT > HUAWEI_VRP_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Huawei VRP",
+      "event_time_usec": 1792020110000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CLI/5/CMDRECORD",
+      "host_id": "ce01.example.com",
+      "username": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_hostname": "ce01.example.com",
+      "command": "description Uplink to core, vlan=20",
+      "operation_name": "command",
+      "operation": "description Uplink to core, vlan=20",
+      "channel": "Huawei VRP command record",
+      "result": "success"
+    }
   }
 ]

@@ -19,3 +19,4 @@
 <189>2026-10-15T09:24:15.903+10:00 ce01.example.com %%01SSH/5/SSH_USER_LOGOUT(s):CID=2160731923;The SSH user logged out. (ServiceType=stelnet, LogoutReason=User exit, UserName=jsmith, UserAddress=192.0.2.25, LocalAddress=192.0.2.1, VPNInstanceName=_public_)
 <189>2026-10-15 09:25:10 fw01.example.com %%01CLI/5/LOGINFAILED(s):CID=2160731923;The user failed to log in to VTY0. (UserType=SSH, UserName=admin, RemoteIp=203.0.113.78, VpnName=_public_, Reason=Authentication failed, LocalIp=192.0.2.1)
 <189>Oct 15 2026 09:26:00+10:00 sw01.example.com %%01SHELL/5/TIMEOUT(l)[12]:jsmith login from 192.0.2.25 is time out.
+<189>2026-10-15 09:21:50+10:00 ce01.example.com %%01CLI/5/CMDRECORD(s):CID=2160731923;Recorded command information. (Task=VTY1, RemoteIp=192.0.2.25, VpnName=_public_, User=jsmith, AuthenticationMethod="Local-user", Command="description Uplink to core, vlan=20", LocalIp=192.0.2.1)
