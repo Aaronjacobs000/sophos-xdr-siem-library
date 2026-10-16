@@ -1,0 +1,29 @@
+{
+  "title": "Sophos Mobile lock",
+  "vendor": "Sophos",
+  "product": "Sophos Mobile",
+  "use_case": "From a host in a case, lock the Sophos Mobile device behind it, with a message on the lock screen, and record what happened on the case.",
+  "trigger": "User Initiated: a Response Action on Host, which an analyst runs from the host in a case. Leave When does this playbook run? at Always.",
+  "connections": [
+    "Unofficial_SophosMobile 1.0.0, the Sophos Mobile connector from this library: OAuth client credentials with a Sophos Fusion API credential",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to comment on the case"
+  ],
+  "requires": "Sophos Mobile, in a Sophos Fusion account in the eu01, eu02, us01 or us03 data region, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It can act on a device MDR is investigating, so tell your MDR contact before you turn it on, and leave response that MDR supports to MDR.",
+  "rollback": "Sophos Mobile has no unlock action, so there is no rollback playbook. The user unlocks the device with its passcode.",
+  "tested": {
+    "validated": "2026-10-16",
+    "tenant": null
+  },
+  "connector": "connectors/sophos/sophos-mobile",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/mobile/",
+    "https://developer.sophos.com/reference/mobile-v1/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run in a tenant yet. On 2026-10-16, in a tenant without Sophos Mobile, a renamed copy passed playbookValidateDSLV2 with no errors or warnings, imported, exported again unchanged apart from the tenant's own fields, and was deleted. The device ID is the host ID from the trigger. Sophos documents that a Sophos Mobile device ID is the same as its endpoint ID in Sophos Fusion; that a host in a case carries that ID is untested. Macs need a lock code this playbook doesn't send, so they aren't locked."
+}
