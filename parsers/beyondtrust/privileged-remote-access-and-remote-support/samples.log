@@ -11,3 +11,5 @@ Oct 13 01:47:12 pra01.example.com BG[24117]:3021:01:01:event=user_changed;new_di
 Oct 13 01:50:00 pra01.example.com BG[24117]:3021:01:02:site=access.example.com;event=user_changed;old_username=pexample;old_display_name=Pat Example;old_permissions:suppor
 Oct 13 01:50:00 pra01.example.com BG[24117]:3021:02:02:t=1;old_permissions:support:canned_messages=1;new_display_name=Pat B. Example;when=1791856200;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
 Oct 13 01:51:00 pra01.example.com ntpd[811]: clock step +0.21 s
+Oct 13 01:52:30 pra01.example.com BG[24117]:3021:01:01:event=user_changed;new_display_name=Kiosk 27" lobby;old_display_name=Kiosk;old_username=kiosk-lobby;site=access.example.com;when=1791856350;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
+Oct 13 01:53:10 pra01.example.com BG[24117]:3021:01:01:event=user_changed;new_display_name="Ops\= night shift";old_display_name=Ops;old_username=ops-night;site=access.example.com;when=1791856390;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61
