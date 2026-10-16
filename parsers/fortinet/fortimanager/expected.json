@@ -235,5 +235,24 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 11,
+    "extractor_path": "FORTINET_FORTIMANAGER_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Fortinet FortiManager",
+      "event_time_usec": 1791935412000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0021030002",
+      "host_id": "FMG-VM0000000001",
+      "username": "jsmith",
+      "client_hostname": "192.0.2.10",
+      "channel": "GUI",
+      "operation_name": "cdb event log for object changed",
+      "operation": "edit",
+      "command": "type=fw_addr,key=Branch subnet,comment=Sydney office LAN",
+      "namespace": "root"
+    }
   }
 ]
