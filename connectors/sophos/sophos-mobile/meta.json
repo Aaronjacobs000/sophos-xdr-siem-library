@@ -1,0 +1,28 @@
+{
+  "title": "Sophos Mobile (unofficial)",
+  "vendor": "Sophos",
+  "product": "Sophos Mobile",
+  "auth": "OAuth client credentials: a Sophos Fusion API credential, a token from id.sophos.com with the scope token, and the tenant ID and Sophos Mobile API host as connection settings",
+  "functions": {
+    "validate": "lookup",
+    "getDevice": "lookup",
+    "getActions": "lookup",
+    "lock": "reversible action",
+    "sendMessage": "notify"
+  },
+  "license": "MIT",
+  "tested": {
+    "validated": "2026-10-16",
+    "tenant": null
+  },
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/mobile/",
+    "https://developer.sophos.com/reference/mobile-v1/",
+    "https://developer.sophos.com/getting-started-tenant/",
+    "https://developer.sophos.com/concepts/regions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=API-credential-management",
+    "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=unsupported-regions"
+  ],
+  "notes": "Lock and send message only: no wipe, locate or unenroll. Not tested in a tenant with Sophos Mobile yet. On 2026-10-16 a renamed copy imported into a Sophos Fusion tenant without Sophos Mobile, exported again unchanged apart from the order of its functions, and was deleted."
+}
