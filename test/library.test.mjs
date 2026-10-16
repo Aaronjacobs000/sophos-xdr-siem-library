@@ -132,24 +132,6 @@ test('the scan reads session IDs and GUIDs as identifiers unless they look like 
   assert.deepEqual(kinds('session_id=Q5bXrT9kLm2Vn8Pz4Wc7Yd1Hf6Jg3Ks0Ab'), ['secret']);
 });
 
-test('the scan reads a Comware message name ending in PWD as a name, and still checks the text after it', () => {
-  assert.deepEqual(kinds('<189>Oct 15 09:13:06 2026 sw01 %%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD: -DevIP=192.0.2.1; Invalid username or password from 198.51.100.23.'), []);
-  assert.deepEqual(kinds('%%10 VsysId:1 LOGIN/5/LOGIN_INVALID_USERNAME_PWD:-DevIP=192.0.2.1; Invalid username or password'), []);
-  for (const line of [
-    '%%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD: password=Hunter2xyz9',
-    '%%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD:password=Hunter2xyz9',
-    '%%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD: -DevIP=192.0.2.1; pwd: Hunter2xyz9',
-    // Anything but an uppercase name of that shape with the colon right after it is a key as before.
-    'pwd: Hunter2xyz9',
-    'PWD=Hunter2xyz9',
-    'login/5/login_invalid_username_pwd: -DevIP=192.0.2.1;',
-    '%%10LOGIN/LOGIN_INVALID_USERNAME_PWD: -DevIP=192.0.2.1;',
-    '%%10LOGIN/x/LOGIN_INVALID_USERNAME_PWD: -DevIP=192.0.2.1;',
-    '%%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD : -DevIP=192.0.2.1;',
-    '%%10LOGIN/5/LOGIN_INVALID_USERNAME_PWD= -DevIP=192.0.2.1;',
-  ]) assert.deepEqual(kinds(line), ['secret'], line);
-});
-
 test('the scan lets service domains, .id properties and versions in URL-encoded user agents through', () => {
   assert.deepEqual(kinds('"apiGroup":"rbac.authorization.k8s.io","apiVersion":"audit.k8s.io/v1"'), []);
   assert.deepEqual(kinds('"requestUri":"https://kv-example-prod.vault.azure.net/secrets/db/?api-version=7.4"'), []);

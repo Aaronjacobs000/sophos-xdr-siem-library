@@ -15,7 +15,9 @@
 # the Antivirus child. Event, system event and encryption logs stay generic.
 
 kvm = originalData$|(?P<kv>date=\d{4}-\d{2}-\d{2}\s.*)$
-kv = SPLIT_NAME_VALUES(kvm["kv"], " ", "=", `"`)
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, which
+# SPLIT_NAME_VALUES cuts in Sophos NG-SIEM, and it ends an unquoted value at the next " key=".
+kv = CEF("CEF:0|Fortinet|FortiMail|0|kv|kv|0|" + kvm["kv"])
 
 # Variables and $ fields set here are visible to both children. event_type is FortiMail's type.
 sensorType$ = "Fortinet FortiMail"
