@@ -30,8 +30,10 @@ year = STRING(hdr["year"])
 eventTimeUsec$ = IF time != "" THEN DATETIME(time, "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
 eventTimeUsec$ = IF time != "" AND year != "" THEN DATETIME(time + " " + year, "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
 
-# One object of named fields from either format: CEF() for CEF, else the key="value" pairs.
-kv = IF isCef THEN CEF(body) ELSE SPLIT_NAME_VALUES(body, " ", "=", `"`)
+# One object of named fields from either format: CEF() reads both. For the key="value" pairs it
+# keeps a quoted value whole even when it holds " key=" text, which SPLIT_NAME_VALUES cuts in
+# Sophos NG-SIEM.
+kv = CEF(IF isCef THEN body ELSE "CEF:0|ZyXEL|ZLD|0|kv|kv|0|" + body)
 cat = STRING(kv["cat"])
 msg = STRING(kv["msg"])
 note = IF isCef THEN STRING(kv["ZYnote"]) ELSE STRING(kv["note"])
