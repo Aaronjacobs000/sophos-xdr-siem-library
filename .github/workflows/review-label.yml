@@ -1,0 +1,41 @@
+# The gate labels a pull request "needs review" when it can't merge it on its own. Once the owner
+# has reviewed and merged it, the label has done its job, so this takes it off. It runs nothing from
+# the pull request or the repo, changes no other label, and leaves a "needs review" that someone
+# other than the gate added.
+name: Review label
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  clear:
+    if: github.event.pull_request.merged == true && github.event.pull_request.merged_by.login == github.repository_owner && contains(github.event.pull_request.labels.*.name, 'needs review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: read
+      pull-requests: write
+    steps:
+      - name: Take off the gate's "needs review" label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # The gate labels with GITHUB_TOKEN, so the last time "needs review" went on, the actor was
+          # github-actions[bot] if the gate put it there.
+          BY=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/events?per_page=100" --paginate --jq '.[] | select(.event == "labeled" and .label.name == "needs review") | .actor.login' | tail -n 1)
+          if [ "$BY" != "github-actions[bot]" ]; then
+            echo "\"needs review\" was last added by ${BY:-no one the events show}, not the gate, so it stays."
+            exit 0
+          fi
+          if OUT=$(gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR/labels/needs%20review" 2>&1); then
+            echo "Took off \"needs review\"."
+          elif echo "$OUT" | grep -q "HTTP 404"; then
+            echo "\"needs review\" was already off."
+          else
+            echo "$OUT"
+            exit 1
+          fi
