@@ -1,0 +1,56 @@
+!SAMPLE={"omada_record":"event","omada_scope":"site","omada_id":"de382a0e78f4deb681f3128c3e75dbd1","omada_site_id":"640effd1b3f2ae5b912275ec","omada_site_name":"Head Office","id":"6705c3a0b1e2c34d5f6a7b81","key":"OSG_ATK","module":"Device","content":"Gateway ER7206 detected a TCP SYN flood attack from 198.51.100.23.","time":1792055564000}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="threat"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: TP-Link Omada events and alerts from the example bridge.
+# Child of TPLINK_OMADA_JSON_PARENT: gateway attack detections to Thirdparty, by their log key:
+#   OSG_ATK                          Gateway Detected Attack
+#   OSG_SF_ATK                       Gateway Detected Stationary Flood Attack
+#   OSG_ARP_ATK                      Gateway Detected ARP Conflicts
+#   OSG_LARGE_PING_ATTACK            Large Ping Attack
+#   OSG_ROGUE_DHCP_SERVER_DETECTED   A rogue DHCP server is detected
+# The key's name from TP-Link's log notification table is the title and the content the summary.
+# An alert's level (Error, Warning or Information) sets the severity; an event, which has none, is medium.
+# json, key, rec, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "TP-Link"
+provider$ = "Omada"
+alertId$ = json["$.id"]
+module = STRING(json["$.module"])
+alertCategory$ = IF module != "" THEN module ELSE NULL
+name = "Gateway Detected Attack"
+name = IF key == "OSG_SF_ATK" THEN "Gateway Detected Stationary Flood Attack" ELSE name
+name = IF key == "OSG_ARP_ATK" THEN "Gateway Detected ARP Conflicts" ELSE name
+name = IF key == "OSG_LARGE_PING_ATTACK" THEN "Large Ping Attack" ELSE name
+name = IF key == "OSG_ROGUE_DHCP_SERVER_DETECTED" THEN "A rogue DHCP server is detected" ELSE name
+title$ = name
+content = STRING(json["$.content"])
+summary$ = IF content != "" THEN content ELSE name
+level = STRING(json["$.level"])
+vendorSeverity$ = IF level != "" THEN level ELSE NULL
+lvl = LOWERCASE(level)
+severity$ = "MEDIUM"
+severity$ = IF lvl == "error" THEN "HIGH" ELSE severity$
+severity$ = IF lvl == "warning" THEN "MEDIUM" ELSE severity$
+severity$ = IF lvl == "information" THEN "LOW" ELSE severity$
+site = STRING(json["$.omada_site_name"])
+targetHostName$ = IF site != "" THEN site ELSE NULL
+
+t1.key$ = "log_key"
+t1.value$ = key
+t2.key$ = "record"
+t2.value$ = STRING(rec)
+t3.key$ = "scope"
+t3.value$ = STRING(json["$.omada_scope"])
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [t1, t2, t3]
+t4.key$ = "site_id"
+t4.value$ = STRING(json["$.omada_site_id"])
+additionalData$.record$ = IF t4.value$ != "" THEN additionalData$.record$ + [t4] ELSE additionalData$.record$
+t5.key$ = "customer"
+t5.value$ = STRING(json["$.omada_customer_name"])
+additionalData$.record$ = IF t5.value$ != "" THEN additionalData$.record$ + [t5] ELSE additionalData$.record$

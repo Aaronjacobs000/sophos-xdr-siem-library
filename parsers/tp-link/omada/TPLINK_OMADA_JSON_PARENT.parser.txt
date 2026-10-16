@@ -1,0 +1,38 @@
+!SAMPLE={"omada_record":"event","omada_scope":"site","omada_id":"de382a0e78f4deb681f3128c3e75dbd1","omada_site_id":"640effd1b3f2ae5b912275ec","omada_site_name":"Head Office","id":"6705c3a0b1e2c34d5f6a7b81","key":"OSG_ATK","module":"Device","content":"Gateway ER7206 detected a TCP SYN flood attack from 198.51.100.23.","time":1792055564000}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"omada_record"\s*:\s*"(?:event|alert|audit)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: TP-Link Omada event, alert and audit logs from the Omada Open API, pulled by the example
+# bridge in bridges/tp-link-omada-logs and posted to HTTP Ingest as JSON lines. The bridge puts
+# "omada_record" (event, alert or audit) first, then where the record came from (omada_scope, omada_id,
+# and the customer and site), then the record as Omada returns it.
+# Parent: hands audit logs to the Management Event child, and events and alerts by their key:
+#   LOGIN_OK, LOGIN_FL, HS_LOGIN_OK, HS_LOGIN_FL (controller and hotspot operator sign-ins),
+#   W_C_PRT_OK, W_C_PRT_FL, L_C_PTR_OK, L_C_PTR_FL (portal authentication), OSW_C_1X_OK, OSW_C_1X_FL
+#   (802.1X), OSG_RC_VPN_OK, OSG_RC_VPN_FL, OSG_RC_VPN_LO (remote PPTP and L2TP clients)  to the Auth child
+#   OSG_ATK, OSG_SF_ATK, OSG_ARP_ATK, OSG_LARGE_PING_ATTACK, OSG_ROGUE_DHCP_SERVER_DETECTED to the Thirdparty child
+# Other events and alerts stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+json = JSON(originalData$)
+rec = json["$.omada_record"]
+key = STRING(json["$.key"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "TP-Link Omada"
+sensorEventId$ = IF rec == "audit" THEN NULL ELSE json["$.id"]
+# time is milliseconds since the epoch.
+eventTimeUsec$ = IF json["$.time"] THEN json["$.time"] * 1000 ELSE eventTimeUsec$
+
+auth = key == "LOGIN_OK" OR key == "LOGIN_FL" OR key == "HS_LOGIN_OK" OR key == "HS_LOGIN_FL"
+auth = auth OR key == "W_C_PRT_OK" OR key == "W_C_PRT_FL" OR key == "L_C_PTR_OK" OR key == "L_C_PTR_FL"
+auth = auth OR key == "OSW_C_1X_OK" OR key == "OSW_C_1X_FL" OR key == "OSG_RC_VPN_OK" OR key == "OSG_RC_VPN_FL" OR key == "OSG_RC_VPN_LO"
+threat = key == "OSG_ATK" OR key == "OSG_SF_ATK" OR key == "OSG_ARP_ATK" OR key == "OSG_LARGE_PING_ATTACK" OR key == "OSG_ROGUE_DHCP_SERVER_DETECTED"
+eventType$ = "other"
+eventType$ = IF rec != "audit" AND auth THEN "auth" ELSE eventType$
+eventType$ = IF rec != "audit" AND threat THEN "threat" ELSE eventType$
+eventType$ = IF rec == "audit" THEN "audit" ELSE eventType$

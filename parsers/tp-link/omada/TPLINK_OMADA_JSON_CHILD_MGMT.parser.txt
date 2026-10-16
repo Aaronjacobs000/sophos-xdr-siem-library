@@ -1,0 +1,34 @@
+!SAMPLE={"omada_record":"audit","omada_scope":"site","omada_id":"de382a0e78f4deb681f3128c3e75dbd1","omada_site_id":"640effd1b3f2ae5b912275ec","omada_site_name":"Head Office","time":1792056104000,"operator":"jsmith","resource":"WEB","ip":"192.0.2.10","auditType":"Network Security","level":"Information","result":"Succeed","content":"ACL rule Block-RDP edited successfully.","label":"MENU.NETWORK_SECURITY","oldValue":{"status":"true"},"newValue":{"status":"false"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: TP-Link Omada audit logs from the example bridge, with the documented fields time, operator,
+# resource (WEB or Open API), ip, auditType, level, result (Succeed or Failed), content, label,
+# oldValue and newValue.
+# Child of TPLINK_OMADA_JSON_PARENT: every audit log to Management Event. The operator goes to username,
+# the address to source_address, the audit type to operation_name, the content to operation, the label
+# (the configuration card or the Open API request path) to namespace, and the result to result.
+# json, rec, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+op = STRING(json["$.operator"])
+username$ = IF op != "" THEN op ELSE NULL
+ip = STRING(json["$.ip"])
+sourceAddress$ = IF ip != "" THEN ip ELSE NULL
+atype = STRING(json["$.auditType"])
+operationName$ = IF atype != "" THEN atype ELSE NULL
+content = STRING(json["$.content"])
+operation$ = IF content != "" THEN content ELSE NULL
+label = STRING(json["$.label"])
+namespace$ = IF label != "" THEN label ELSE NULL
+res = STRING(json["$.result"])
+result$ = IF res != "" THEN res ELSE NULL
+resource = STRING(json["$.resource"])
+channel$ = IF resource != "" THEN "Omada " + resource ELSE "Omada"
+site = STRING(json["$.omada_site_name"])
+customer = STRING(json["$.omada_customer_name"])
+target = IF site != "" THEN site ELSE customer
+targetHostname$ = IF target != "" THEN target ELSE NULL
