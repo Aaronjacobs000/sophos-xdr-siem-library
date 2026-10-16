@@ -14,11 +14,12 @@ info-center source default channel loghost log level informational
 firewall log service log-type syslog
 ```
 
-3. Turn on logging in the security policy rules you want logged. Policy matching logs (`POLICY/6/POLICYPERMIT` and `POLICYDENY`) are off by default; turn on policy logging in the rule. Session logs come from rules with `session logging`:
+3. Turn on logging in the security policy rules you want logged. Policy matching logs (`POLICY/6/POLICYPERMIT` and `POLICYDENY`) come from rules with `policy logging`, which is off by default, while `log type policy enable` (on by default) keeps them on for the whole firewall. Session logs come from rules with `session logging`:
 
 ```
 security-policy
  rule name <rule>
+  policy logging
   session logging
 ```
 
