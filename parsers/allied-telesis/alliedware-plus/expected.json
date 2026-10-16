@@ -481,5 +481,52 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 17,
+    "extractor_path": "ALLIED_AWPLUS_SYSLOG_PARENT > ALLIED_AWPLUS_SYSLOG_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Allied Telesis AlliedWare Plus",
+      "event_time_usec": 1791970092000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ar4050s",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.45",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "firewall"
+          },
+          {
+            "key": "firewall_action",
+            "value": "DENY"
+          },
+          {
+            "key": "firewall_rule",
+            "value": "40"
+          },
+          {
+            "key": "in_interface",
+            "value": "eth1"
+          },
+          {
+            "key": "out_interface",
+            "value": "vlan1"
+          },
+          {
+            "key": "icmp_type",
+            "value": "3"
+          },
+          {
+            "key": "icmp_code",
+            "value": "3"
+          }
+        ]
+      }
+    }
   }
 ]
