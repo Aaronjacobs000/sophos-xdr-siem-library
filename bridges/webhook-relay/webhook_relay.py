@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and
-PingOne webhooks, check that each one came from the vendor, and forward the body to a Sophos
-NG-SIEM HTTP Ingest integration with the Authorization: Bearer header that all but Mist and
-PingOne can't add. Python 3 standard library only.
+"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP
+webhooks, check that each one came from the vendor, and forward the body to a Sophos NG-SIEM HTTP
+Ingest integration with the Authorization: Bearer header that all but Mist can't add. Python 3
+standard library only.
 
   POST /huntress                 Svix signature (HMAC-SHA256 over id, timestamp and body)
   POST /autotask                 X-Hook-Signature (HMAC-SHA1 over the body, base64)
@@ -10,13 +10,10 @@ PingOne can't add. Python 3 standard library only.
   POST /screenconnect/<secret>   no signing option: a long random secret in the path
   POST /mist                     X-Mist-Signature-v2 (HMAC-SHA256 over the body, hex)
   POST /forticnapp/<secret>      no signing option: a long random secret in the path
-  POST /pingone                  no signing option: Authorization: Bearer <token>, a custom header
-                                 set on the PingOne webhook
 
 Mist sends several events in one body, {"topic": ..., "events": [...]}, for most topics. With
 BRIDGE_SPLIT_BATCHES=1 the relay forwards each event as its own record, in the same envelope with
-one event, so HTTP Ingest stores one record per event. PingOne sends up to 500 events in one body,
-as a JSON array or one per line (NDJSON); the relay always forwards each as its own record.
+one event, so HTTP Ingest stores one record per event.
 
 Configuration comes from environment variables (see README.md). Listen on 127.0.0.1 behind a
 reverse proxy that terminates TLS. --dry-run checks deliveries and prints each body instead of
@@ -67,7 +64,6 @@ VENDORS = {
     "screenconnect": "path",
     "mist": "mist",
     "forticnapp": "path",
-    "pingone": "bearer",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 # A sender gets this long in all, however slowly it sends, for its request line, headers and body.
@@ -165,12 +161,11 @@ def load_config(env: dict | None = None) -> dict:
         "screenconnect": _shared_secret(env, "SCREENCONNECT_PATH_SECRET"),
         "mist": _shared_secret(env, "MIST_WEBHOOK_SECRET"),
         "forticnapp": _shared_secret(env, "FORTICNAPP_PATH_SECRET"),
-        "pingone": _shared_secret(env, "PINGONE_WEBHOOK_TOKEN"),
     }
     cfg["vendors"] = {name: secret for name, secret in secrets.items() if secret}
     if not cfg["vendors"]:
         raise RelayError("set at least one of HUNTRESS_SIGNING_SECRET, AUTOTASK_SECRET_KEY, HUDU_PATH_SECRET, "
-                         "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET, FORTICNAPP_PATH_SECRET and PINGONE_WEBHOOK_TOKEN")
+                         "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET and FORTICNAPP_PATH_SECRET")
     cfg["split_batches"] = _flag(env, "BRIDGE_SPLIT_BATCHES", False)
     if cfg["ingest_url"]:
         _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
@@ -242,18 +237,6 @@ def verify_mist(key: str, headers, body: bytes) -> str | None:
     return None if hmac.compare_digest(given.encode("utf-8"), expected.encode("utf-8")) else "signature does not match"
 
 
-def verify_bearer(token: str, headers) -> str | None:
-    """PingOne can't sign a delivery, but sends the custom headers set on its webhook, here
-    Authorization: Bearer <token>."""
-    given = (headers.get("Authorization") or "").strip()
-    if not given:
-        return "missing Authorization header"
-    scheme, _, value = given.partition(" ")
-    if scheme.lower() != "bearer":
-        return "Authorization header is not a Bearer token"
-    return None if hmac.compare_digest(value.strip().encode("utf-8"), token.encode("utf-8")) else "token does not match"
-
-
 def path_secret_matches(expected: str, given: str) -> bool:
     return hmac.compare_digest(given.encode("utf-8"), expected.encode("utf-8"))
 
@@ -293,37 +276,6 @@ def split_batch(body: bytes) -> tuple[bytes, int] | None:
     rest = {k: v for k, v in data.items() if k != "events"}
     lines = [json.dumps({**rest, "events": [e]}, separators=(",", ":"), ensure_ascii=False) for e in data["events"]]
     return "\n".join(lines).encode("utf-8"), len(lines)
-
-
-def split_events(body: bytes) -> tuple[bytes, int] | None:
-    """A PingOne body, a JSON array of events (JSON array format, pretty-printed or not) or one
-    event per line (NDJSON), as one compact line per event, and the number of events. An empty
-    array gives no lines and 0. None for any other body, such as a single event, which goes on as
-    one record."""
-    try:
-        data = json.loads(body)
-    except RecursionError:
-        raise BodyError("its JSON is nested too deeply") from None
-    except ValueError:
-        data = None
-    if isinstance(data, list):
-        events = data
-    elif data is not None:
-        return None
-    else:
-        lines = [line for line in LINE_BREAK.split(body) if line.strip()]
-        if len(lines) < 2:
-            return None
-        events = []
-        for line in lines:
-            try:
-                events.append(json.loads(line))
-            except RecursionError:
-                raise BodyError("its JSON is nested too deeply") from None
-            except ValueError:
-                return None
-    out = [json.dumps(e, separators=(",", ":"), ensure_ascii=False) for e in events]
-    return "\n".join(out).encode("utf-8"), len(out)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -380,23 +332,17 @@ class Relay:
             return verify_autotask(self.cfg["vendors"][vendor], headers, body)
         if kind == "mist":
             return verify_mist(self.cfg["vendors"][vendor], headers, body)
-        if kind == "bearer":
-            return verify_bearer(self.cfg["vendors"][vendor], headers)
         return None  # path secret, already checked in route()
 
     def forward(self, vendor: str, body: bytes) -> tuple[int, str]:
         """Posts one delivery to HTTP Ingest. Returns the status and text for the sender:
         200 when HTTP Ingest took it, 502 when it refused it, 503 when it stayed unavailable
         until the deadline, so the sender's own retries take over. With BRIDGE_SPLIT_BATCHES, a
-        Mist batch goes as one record per event, in one request, and a PingOne batch always does."""
+        Mist batch goes as one record per event, in one request."""
         split = split_batch(body) if self.cfg.get("split_batches") and VENDORS[vendor] == "mist" else None
-        split = split_events(body) if vendor == "pingone" else split
-        if split and split[1] == 0:
-            LOG.info("%s: the delivery held no events, so nothing was forwarded", vendor)
-            return 200, "no events"
         if split:
             record, ctype = split[0], "application/json"
-            LOG.info("%s: split a batch of %d %s", vendor, split[1], "event" if split[1] == 1 else "events")
+            LOG.info("%s: split a batch of %d events", vendor, split[1])
         else:
             record, ctype = one_record(body)
         if self.dry_run:
@@ -610,7 +556,7 @@ def make_server(cfg: dict, dry_run: bool = False, out=None) -> ThreadingHTTPServ
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and PingOne webhooks to Sophos NG-SIEM HTTP Ingest.")
+    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP webhooks to Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="check deliveries and print each body; forward nothing")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
     args = ap.parse_args(argv)
