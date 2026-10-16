@@ -4,9 +4,9 @@
 
 A library of parsers, playbooks and connectors for Sophos Fusion that people share, with Parser Studio, a page that helps you write custom parsers and test them in your browser. It has three sections:
 
-- **Parsers:** custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM), each with synthetic samples and the emulator's expected output. Anyone can use them, test them against their own logs, fork them, and add to them.
-- **Playbooks:** Sophos Fusion playbook templates to import, each with its setup steps, risk tier, MDR note and rollback. They ship with dry run on, and the owner reviews every one.
-- **Connectors:** custom connectors for products that have no connector from Sophos, which the playbooks call. Each one calls only hosts its vendor documents.
+- Parsers: custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM), each with synthetic samples and the emulator's expected output. Anyone can use them, test them against their own logs, fork them, and add to them.
+- Playbooks: Sophos Fusion playbook templates to import, each with its setup steps, risk tier, MDR note and rollback. They ship with dry run on, and the owner reviews every one.
+- Connectors: custom connectors for products that have no connector from Sophos, which the playbooks call. Each one calls only hosts its vendor documents.
 
 Open the library at https://aaronjacobs000.github.io/sophos-xdr-siem-library/ and Parser Studio at https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample
 
