@@ -1,0 +1,394 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b81",
+      "vendor": "TP-Link",
+      "provider": "Omada",
+      "alert_id": "6705c3a0b1e2c34d5f6a7b81",
+      "alert_category": "Device",
+      "title": "Gateway Detected Attack",
+      "summary": "Gateway ER7206 detected a TCP SYN flood attack from 198.51.100.23.",
+      "severity": "MEDIUM",
+      "target_host_name": "Head Office",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSG_ATK"
+          },
+          {
+            "key": "record",
+            "value": "event"
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ec"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055624000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b82",
+      "vendor": "TP-Link",
+      "provider": "Omada",
+      "alert_id": "6705c3a0b1e2c34d5f6a7b82",
+      "alert_category": "Device",
+      "title": "Gateway Detected ARP Conflicts",
+      "summary": "Gateway ER605 detected ARP conflicts from 00:00:5e:00:53:21.",
+      "vendor_severity": "Warning",
+      "severity": "MEDIUM",
+      "target_host_name": "Branch 01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSG_ARP_ATK"
+          },
+          {
+            "key": "record",
+            "value": "alert"
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ed"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055684000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b83",
+      "vendor": "TP-Link",
+      "provider": "Omada",
+      "alert_id": "6705c3a0b1e2c34d5f6a7b83",
+      "alert_category": "Device",
+      "title": "A rogue DHCP server is detected",
+      "summary": "A rogue DHCP server 192.0.2.250 was detected on LAN1.",
+      "severity": "MEDIUM",
+      "target_host_name": "Head Office",
+      "additional_data": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSG_ROGUE_DHCP_SERVER_DETECTED"
+          },
+          {
+            "key": "record",
+            "value": "event"
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ec"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055744000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b84",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "extra_failurereason": "802.1X authentication failed for jdoe (00:00:5e:00:53:11) on switch SG3428 port 5.",
+      "logon_application_family": "802.1X",
+      "auth_system": "Omada 802.1X",
+      "target_host_name": "Head Office",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSW_C_1X_FL"
+          },
+          {
+            "key": "content",
+            "value": "802.1X authentication failed for jdoe (00:00:5e:00:53:11) on switch SG3428 port 5."
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ec"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055804000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b85",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "802.1X",
+      "auth_system": "Omada 802.1X",
+      "target_host_name": "Head Office",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSW_C_1X_OK"
+          },
+          {
+            "key": "content",
+            "value": "jsmith (00:00:5e:00:53:10) authenticated with 802.1X on switch SG3428 port 4."
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ec"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055864000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b86",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "extra_failurereason": "Client 00:00:5e:00:53:12 failed portal authentication on SSID Guest.",
+      "logon_application_family": "portal",
+      "auth_system": "Omada portal",
+      "target_host_name": "Branch 01",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "W_C_PRT_FL"
+          },
+          {
+            "key": "content",
+            "value": "Client 00:00:5e:00:53:12 failed portal authentication on SSID Guest."
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ed"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055924000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b87",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "remote VPN",
+      "auth_system": "Omada remote VPN",
+      "target_host_name": "Head Office",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "OSG_RC_VPN_OK"
+          },
+          {
+            "key": "content",
+            "value": "Remote L2TP client jsmith connected from 203.0.113.40."
+          },
+          {
+            "key": "scope",
+            "value": "site"
+          },
+          {
+            "key": "site_id",
+            "value": "640effd1b3f2ae5b912275ec"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792055984000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b88",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "extra_failurereason": "admin failed to log in to the controller from 198.51.100.7.",
+      "logon_application_family": "controller",
+      "auth_system": "Omada controller",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "LOGIN_FL"
+          },
+          {
+            "key": "content",
+            "value": "admin failed to log in to the controller from 198.51.100.7."
+          },
+          {
+            "key": "scope",
+            "value": "global"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792056044000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b89",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "controller",
+      "auth_system": "Omada controller",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_key",
+            "value": "LOGIN_OK"
+          },
+          {
+            "key": "content",
+            "value": "mspadmin logged in to the controller from 192.0.2.10."
+          },
+          {
+            "key": "scope",
+            "value": "msp"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792056104000000,
+      "event_time_fidelity": "MICRO",
+      "username": "jsmith",
+      "source_address": "192.0.2.10",
+      "operation_name": "Network Security",
+      "operation": "ACL rule Block-RDP edited successfully.",
+      "namespace": "MENU.NETWORK_SECURITY",
+      "result": "Succeed",
+      "channel": "Omada WEB",
+      "target_hostname": "Head Office"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT > TPLINK_OMADA_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792056164000000,
+      "event_time_fidelity": "MICRO",
+      "username": "apiapp",
+      "source_address": "198.51.100.8",
+      "operation_name": "Account",
+      "operation": "User apiapp failed to add a new administrator.",
+      "namespace": "/openapi/v1/c0ffee00c0ffee00c0ffee00c0ffee01/users",
+      "result": "Failed",
+      "channel": "Omada Open API",
+      "target_hostname": "Example Customer"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792056224000000,
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b8a"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "TPLINK_OMADA_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "TP-Link Omada",
+      "event_time_usec": 1792056284000000,
+      "sensor_event_id": "6705c3a0b1e2c34d5f6a7b8b"
+    }
+  }
+]

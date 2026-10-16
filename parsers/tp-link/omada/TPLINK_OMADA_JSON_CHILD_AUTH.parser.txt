@@ -1,0 +1,58 @@
+!SAMPLE={"omada_record":"event","omada_scope":"site","omada_id":"de382a0e78f4deb681f3128c3e75dbd1","omada_site_id":"640effd1b3f2ae5b912275ec","omada_site_name":"Head Office","id":"6705c3a0b1e2c34d5f6a7b84","key":"OSW_C_1X_FL","module":"Client","content":"802.1X authentication failed for jdoe (00:00:5e:00:53:11) on switch SG3428 port 5.","time":1792055744000}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: TP-Link Omada events and alerts from the example bridge.
+# Child of TPLINK_OMADA_JSON_PARENT: sign-in and authentication events to Auth, by their log key:
+#   LOGIN_OK, LOGIN_FL                  User Logged In, User Login Failed (the controller)
+#   HS_LOGIN_OK, HS_LOGIN_FL            Hotspot Operator Logged In, Hotspot Operator Login Failed
+#   W_C_PRT_OK, W_C_PRT_FL              Client Authenticated with Portal, Portal Authentication Failed (wireless)
+#   L_C_PTR_OK, L_C_PTR_FL              the same for wired clients
+#   OSW_C_1X_OK, OSW_C_1X_FL            Client Authenticated with 802.1X, 802.1X Authentication Failed
+#   OSG_RC_VPN_OK, OSG_RC_VPN_FL, _LO   Remote PPTP/L2TP Client Connected, Connection Failed, Logged Out
+# Omada doesn't catalog the content text, so the user, client and address stay in it: the content goes
+# to event_metadata, and to the failure reason for a failure.
+# json, key, rec, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+ok = key == "LOGIN_OK" OR key == "HS_LOGIN_OK" OR key == "W_C_PRT_OK" OR key == "L_C_PTR_OK" OR key == "OSW_C_1X_OK" OR key == "OSG_RC_VPN_OK"
+logout = key == "OSG_RC_VPN_LO"
+success = ok OR logout
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+content = STRING(json["$.content"])
+extraFailurereason$ = IF NOT success AND content != "" THEN content ELSE NULL
+
+fam = "controller"
+fam = IF key == "HS_LOGIN_OK" OR key == "HS_LOGIN_FL" THEN "hotspot manager" ELSE fam
+fam = IF key == "W_C_PRT_OK" OR key == "W_C_PRT_FL" OR key == "L_C_PTR_OK" OR key == "L_C_PTR_FL" THEN "portal" ELSE fam
+fam = IF key == "OSW_C_1X_OK" OR key == "OSW_C_1X_FL" THEN "802.1X" ELSE fam
+fam = IF key == "OSG_RC_VPN_OK" OR key == "OSG_RC_VPN_FL" OR logout THEN "remote VPN" ELSE fam
+logonApplicationFamily$ = fam
+authSystem$ = "Omada " + fam
+site = STRING(json["$.omada_site_name"])
+targetHostName$ = IF site != "" THEN site ELSE NULL
+
+a1.key$ = "log_key"
+a1.value$ = key
+a2.key$ = "content"
+a2.value$ = content
+a3.key$ = "scope"
+a3.value$ = STRING(json["$.omada_scope"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1, a2, a3]
+a4.key$ = "site_id"
+a4.value$ = STRING(json["$.omada_site_id"])
+eventMetadata$.record$ = IF a4.value$ != "" THEN eventMetadata$.record$ + [a4] ELSE eventMetadata$.record$
+a5.key$ = "customer"
+a5.value$ = STRING(json["$.omada_customer_name"])
+eventMetadata$.record$ = IF a5.value$ != "" THEN eventMetadata$.record$ + [a5] ELSE eventMetadata$.record$
+a6.key$ = "alert_level"
+a6.value$ = STRING(json["$.level"])
+eventMetadata$.record$ = IF a6.value$ != "" THEN eventMetadata$.record$ + [a6] ELSE eventMetadata$.record$
