@@ -48,7 +48,12 @@ host = STRING(hr["host"])
 
 # Most bodies are a description and a (Key=Value, ...) list. Values in double quotes keep their commas.
 pl = body|^(?P<desc>[^()]*?)\s*\((?P<list>.*)\)\s*\.?$
-kv = SPLIT_NAME_VALUES(STRING(pl["list"]), ",", "=", "\"")
+# Each Key=Value item becomes its own tab-separated item before the split, with a quoted value
+# matched whole, so a comma or Key=Value text inside it, such as a URL or a command, stays in it.
+# Split on the commas themselves, Sophos NG-SIEM's SPLIT_NAME_VALUES cuts such a value and reads
+# the text after the comma as an item of its own.
+items = REPLACE_REGEX(REPLACE(STRING(pl["list"]), "\t", " "), `(?:^|,\s*)([^,="\t]+=)("(?:[^"\\]|\\.)*"|[^,]*)`, "\t$1$2")
+kv = SPLIT_NAME_VALUES(items, "\t", "=", `"`)
 desc = STRING(pl["desc"])
 
 # Variables and $ fields set here are visible to every child.
