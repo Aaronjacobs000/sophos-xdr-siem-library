@@ -21,7 +21,7 @@
 // the workflow runs the gate again for that commit if waiting says so: always for the first marker,
 // and for the second only when CI passed, as after a re-run. A run whose commit is no longer the
 // pull request's head, or that ends after another run merged or closed it, leaves the report and
-// the labels alone.
+// the labels alone, and puts back labels or a report it wrote just as the commit stopped being the head.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { reviewReasons } from './lib/merge-rules.mjs';
@@ -117,11 +117,17 @@ async function reportComment(num) {
   return (await all(`/repos/${REPO}/issues/${num}/comments`)).find((c) => c.body && c.body.startsWith(MARKER) && c.user && c.user.type === 'Bot');
 }
 
+// Writes the report and returns how to put it back: {id, previous} after editing the gate's comment,
+// {id, created: true} after adding one.
 async function comment(num, markdown) {
   const body = markdown.includes(MARKER) ? markdown : `${MARKER}\n${markdown}`;
   const mine = await reportComment(num);
-  if (mine) await gh('PATCH', `/repos/${REPO}/issues/comments/${mine.id}`, { body });
-  else await gh('POST', `/repos/${REPO}/issues/${num}/comments`, { body });
+  if (mine) {
+    await gh('PATCH', `/repos/${REPO}/issues/comments/${mine.id}`, { body });
+    return { id: mine.id, previous: mine.body };
+  }
+  const made = await gh('POST', `/repos/${REPO}/issues/${num}/comments`, { body });
+  return { id: made && made.id, created: true };
 }
 
 // Waits for the other checks on the commit to finish and reports 'passed' when they all passed. The
@@ -301,8 +307,20 @@ if (cmd === 'changed') {
   } else {
     await label([LABELS.passed[0], LABELS.review[0]], [LABELS.failed[0], LABELS.auto[0]]);
   }
-  if (outcome === 'Merged.' || await current(pr, sha)) await comment(pr, md);
-  else console.log('The pull request merged, closed or moved on while this run worked, so its report is left as it is.');
+  if (outcome === 'Merged.') await comment(pr, md);
+  else if (!(await current(pr, sha))) console.log('The pull request merged, closed or moved on while this run worked, so its report is left as it is.');
+  else {
+    // The report has the labels' window: a push can land between the read above and the write, so
+    // the gate reads the pull request again after it, and if its commit is no longer the open head,
+    // puts the report back as it was. The run for the new commit can't have written one yet.
+    const done = await comment(pr, md);
+    if (!(await current(pr, sha))) {
+      if (!done.created) await gh('PATCH', `/repos/${REPO}/issues/comments/${done.id}`, { body: done.previous });
+      else if (done.id) await gh('DELETE', `/repos/${REPO}/issues/comments/${done.id}`);
+      else console.error('::warning::The pull request moved on while this run wrote its report, and GitHub gave no ID to take the report back.');
+      console.log('The pull request moved on while this run wrote its report, so the report is back as it was.');
+    }
+  }
 } else if (cmd === 'issue') {
   const num = opt('--issue');
   await ensureLabels();

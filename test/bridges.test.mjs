@@ -199,6 +199,8 @@ globalThis.fetch = async (url, init = {}) => {
   else if (u.pathname === '/graphql') body = ${autoMerge} ? { data: { enablePullRequestAutoMerge: { clientMutationId: null } } } : { errors: [{ message: 'Pull request is in clean status' }] };
   else if (u.pathname === '/repos/o/r/commits/abc123/check-runs') body = { check_runs: next('checks') };
   else if (u.pathname === '/repos/o/r/actions/workflows/ci.yml/runs' && u.searchParams.get('head_sha') === 'abc123') body = { workflow_runs: next('ciRuns') };
+  // A comment the gate adds gets an ID, so it can take the comment back.
+  else if (method === 'POST' && u.pathname === '/repos/o/r/issues/7/comments') body = { id: 4242 };
   else if (method === 'GET' && u.pathname === '/repos/o/r/issues/7/comments') body = ${JSON.stringify(comments)};
   else if (method === 'GET' && /\\/(labels|comments)$/.test(u.pathname)) body = [];
   else if (method === 'GET' && u.pathname.startsWith('/repos/o/r/git/ref/heads/')) body = { object: { sha: ${JSON.stringify(refSha)} } };
@@ -403,6 +405,30 @@ test('gate: labels a push beat by a moment are put back as they were', async () 
   // Control: still the head after labeling, so nothing is put back.
   const kept = await gateMerge(entry, { command: 'pr', report: { passed: false, eligible: false }, pulls: [had] });
   assert.deepEqual(labelCalls(kept), labelCalls(failed).slice(0, 4));
+});
+
+test('gate: a report a push beat by a moment is put back as it was', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const writes = (r) => r.calls.filter((c) => /\/comments(\/\d+)?$/.test(c) && !c.startsWith('GET '));
+  const C = 'https://api.github.com/repos/o/r/issues';
+  // These runs read the pull request four times: before and after labeling, right before the report
+  // and right after it. A new commit shows up only at the last read.
+  const moved = [{}, {}, {}, { head: { sha: 'def456' } }];
+  const earlier = { id: 99, body: '<!-- parser-studio-report -->\n### Parser library checks: passed\n\nearlier report\n', user: { type: 'Bot' } };
+  for (const report of [{ passed: true, eligible: false }, { passed: false, eligible: false }]) {
+    // No report yet: the one the run added goes.
+    const added = await gateMerge(entry, { command: 'pr', report, pulls: moved });
+    assert.deepEqual(writes(added), [`POST ${C}/7/comments`, `DELETE ${C}/comments/4242`], JSON.stringify(report));
+    // An earlier report gets its own text back.
+    const edited = await gateMerge(entry, { command: 'pr', report, pulls: moved, comments: [earlier] });
+    assert.deepEqual(writes(edited), [`PATCH ${C}/comments/99`, `PATCH ${C}/comments/99`], JSON.stringify(report));
+    assert.equal(edited.comments.length, 2);
+    assert.notEqual(edited.comments[0], earlier.body);
+    assert.equal(edited.comments[1], earlier.body);
+    // Control: still the head after writing, so the report stays.
+    assert.deepEqual(writes(await gateMerge(entry, { command: 'pr', report, pulls: [{}] })), [`POST ${C}/7/comments`], JSON.stringify(report));
+    assert.deepEqual(writes(await gateMerge(entry, { command: 'pr', report, pulls: [{}], comments: [earlier] })), [`PATCH ${C}/comments/99`], JSON.stringify(report));
+  }
 });
 
 const MERGE_CALLS = /graphql|\/merge$/;
