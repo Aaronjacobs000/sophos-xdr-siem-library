@@ -15,8 +15,9 @@
 #     [gid:sid:rev] intrusion prevention signatures                               to the NIDS child
 #     UTD WebFilter URL filtering                                                to the HTTP child
 #     UTD AMP DISPOSITION file reputation                                        to the Antivirus child
-# Other SD-WAN daemon lines aren't claimed. IOS XE's own messages, %FW-6 firewall logs among them,
-# go to the Sophos built-in Cisco IOS parsers.
+# Other SD-WAN daemon lines aren't claimed. IOS XE's own messages go to the Sophos built-in Cisco IOS
+# parsers; for the %FW-6 zone-based firewall logs, add the library's Cisco IOS XE Zone-Based Firewall
+# entry (parsers/cisco/ios-xe-zone-based-firewall), a child of the built-in Cisco_IOS_Master.
 # !TRIMALLOFF keeps the brackets in the UTD fields.
 
 sensorType$ = "Cisco Catalyst SD-WAN"
