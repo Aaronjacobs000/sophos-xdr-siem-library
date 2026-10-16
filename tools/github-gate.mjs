@@ -43,8 +43,8 @@ const LABELS = {
   submission: ['parser-submission', '8250df', 'A parser submitted through the issue form'],
 };
 
-// GitHub sometimes answers a read with a 500, and a merge with 405 "Base branch was modified"
-// when another merge lands first. Both pass on a retry, so the gate tries again a few times.
+// GitHub sometimes answers a read or a merge with a 500, and a merge with 405 "Base branch was
+// modified" when another merge lands first. They pass on a retry, so the gate tries again a few times.
 const RETRIES = 3;
 const RETRY_MS = Number(process.env.GATE_RETRY_MS ?? 3000);
 // How often the gate looks again while it waits for checks or for GitHub's auto-merge.
@@ -178,7 +178,8 @@ async function merge(pr, sha, { needCI = false } = {}) {
     // Native auto-merge is for a branch rule that holds the pull request, such as a required review.
     await gh('POST', '/graphql', { query: 'mutation($id:ID!,$sha:GitObjectID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH,expectedHeadOid:$sha}){clientMutationId}}', variables: { id: p.node_id, sha } }).then((r) => { if (r.errors) throw new Error(r.errors[0].message); });
   } catch {
-    await retrying(() => gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' }), (e) => e.status === 405 && /base branch was modified/i.test(e.message));
+    const done = await mergeCommit(pr, sha);
+    if (done !== 'Merged.') return done;
     await deleteHeadBranch(p, sha);
     return 'Merged.';
   }
@@ -195,6 +196,30 @@ async function merge(pr, sha, { needCI = false } = {}) {
     if (now.state !== 'open') return CLOSED;
   }
   return 'Auto-merge is on for this pull request.';
+}
+
+// Merges the checked commit: the merge names it, so GitHub refuses it if the head has moved. A 405
+// "Base branch was modified" and a 5xx are tried again, after 3, 6 and 9 seconds. A 5xx may come
+// after GitHub merged, so before each retry and after the last one the gate reads the pull request:
+// merged counts as merged, and a pull request that closed or has a new head isn't merged again.
+async function mergeCommit(pr, sha) {
+  for (let i = 0; ; i++) {
+    try {
+      await gh('PUT', `/repos/${REPO}/pulls/${pr}/merge`, { sha, merge_method: 'squash' });
+      return 'Merged.';
+    } catch (e) {
+      const server = e.status >= 500;
+      if (!server && !(e.status === 405 && /base branch was modified/i.test(e.message))) throw e;
+      if (i < RETRIES) await pause(RETRY_MS * (i + 1));
+      if (server) {
+        const now = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+        if (now.merged) return 'Merged.';
+        if (now.state !== 'open') return CLOSED;
+        if (!now.head || now.head.sha !== sha) return 'The pull request changed after these checks ran; the next run decides.';
+      }
+      if (i >= RETRIES) throw e;
+    }
+  }
 }
 
 // The repo setting that deletes head branches doesn't act on a merge made with GITHUB_TOKEN, or on
@@ -226,9 +251,10 @@ async function reportMerged(outcome) {
 // longer current doesn't touch the report: the run for the new head, or the one that merged the
 // pull request, writes the report that counts.
 async function current(pr, sha) {
-  const p = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
-  return p.state === 'open' && Boolean(p.head) && p.head.sha === sha;
+  return isHead(await gh('GET', `/repos/${REPO}/pulls/${pr}`), sha);
 }
+
+const isHead = (p, sha) => p.state === 'open' && Boolean(p.head) && p.head.sha === sha;
 
 if (cmd === 'changed') {
   const { names, short } = await changedFiles(opt('--pr'));
@@ -244,8 +270,19 @@ if (cmd === 'changed') {
   await ensureLabels();
   // A run labels the pull request only while its commit is still the open pull request's head, so a
   // run for a commit the pull request has moved past can't add "needs review" or undo the labels of
-  // the run for the newer commit. The run that merged it labels it too.
-  const label = async (add, remove) => { if (await current(pr, sha)) await setLabels(pr, add, remove); };
+  // the run for the newer commit. The run that merged it labels it too. A push can land between the
+  // read and the label calls, so the gate reads the pull request again after them, and if its commit
+  // is no longer the open head, it puts the labels back as they were. The run for the new commit
+  // can't have labeled it yet: it starts only when Parser checks finish on that commit.
+  const label = async (add, remove) => {
+    const before = await gh('GET', `/repos/${REPO}/pulls/${pr}`);
+    if (!isHead(before, sha)) return;
+    await setLabels(pr, add, remove);
+    if (isHead(await gh('GET', `/repos/${REPO}/pulls/${pr}`), sha)) return;
+    const had = new Set((before.labels || []).map((l) => l.name));
+    await setLabels(pr, remove.filter((n) => had.has(n)), add.filter((n) => !had.has(n)));
+    console.log('The pull request moved on while this run labeled it, so its labels are back as they were.');
+  };
   if (!report.passed) {
     // Failed checks need a fix, not a review, so an earlier run's "needs review" goes.
     await label([LABELS.failed[0]], [LABELS.passed[0], LABELS.auto[0], LABELS.review[0]]);

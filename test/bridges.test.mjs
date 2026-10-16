@@ -151,7 +151,7 @@ test('review rule: bridge code and other non-library files always need a review'
 // runs, CI's workflow runs and the pull request; the last answer repeats. comments are the pull
 // request's comments, and the result's comments are the report bodies the gate wrote.
 const PASSED = [{ name: 'tests', status: 'completed', conclusion: 'success' }];
-async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}], report = { passed: true, eligible: true }, comments = [], extra = [] } = {}) {
+async function gateMerge(files, { command = 'merge', autoMerge = true, pull = {}, refSha = 'abc123', deleteStatus = 204, filesErrors = 0, mergeErrors = 0, mergeError = 'Base branch was modified. Review and try the merge again.', mergeStatus = 405, changedFiles = files.length, checks = [PASSED], ciRuns = [[{ status: 'completed', conclusion: 'success' }]], pulls = [{}], report = { passed: true, eligible: true }, comments = [], extra = [] } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-gate-'));
   const log = path.join(dir, 'calls.log');
   const written = path.join(dir, 'comments.json');
@@ -177,7 +177,7 @@ globalThis.fetch = async (url, init = {}) => {
   if ((method === 'POST' || method === 'PATCH') && /\\/comments(\\/\\d+)?$/.test(u.pathname)) appendFileSync(${JSON.stringify(written)}, JSON.stringify(JSON.parse(init.body).body) + '\\n');
   let body = {};
   if (u.pathname === '/repos/o/r/pulls/7/files' && filesErrors > 0) { filesErrors--; return new Response('<html>Server Error</html>', { status: 500 }); }
-  if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: 405 }); }
+  if (method === 'PUT' && u.pathname === '/repos/o/r/pulls/7/merge' && mergeErrors > 0) { mergeErrors--; return new Response(JSON.stringify({ message: ${JSON.stringify(mergeError)} }), { status: ${mergeStatus} }); }
   if (u.pathname === '/repos/o/r') body = { allow_auto_merge: true };
   else if (u.pathname === '/repos/o/r/pulls/7') { const now = next('pulls'); body = { state: 'open', draft: false, node_id: 'PR_7', changed_files: ${changedFiles}, ...${JSON.stringify(pull)}, ...now, head: { sha: 'abc123', ...${JSON.stringify(pull.head || {})}, ...(now.head || {}) } }; }
   // GitHub lists a pull request's files 100 to a page, and at most 3,000 of them.
@@ -301,6 +301,83 @@ test('gate: it retries a 500 while listing files and a 405 "Base branch was modi
   assert.equal(refused.stepOutput, '');
 });
 
+test('gate: a merge GitHub answers with a 5xx is tried again on the checked commit, and never twice once merged', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const puts = (r) => r.calls.filter((c) => c === 'PUT https://api.github.com/repos/o/r/pulls/7/merge');
+  const reads = (r) => r.calls.filter((c) => c === 'GET https://api.github.com/repos/o/r/pulls/7');
+  // Two 500s, then the merge goes through. The gate reads the pull request after each one: still
+  // open, on the checked commit and not merged, so it merges that commit again.
+  for (const status of [500, 502, 503]) {
+    const merged = await gateMerge(entry, { autoMerge: false, mergeErrors: 2, mergeStatus: status, mergeError: 'Server Error' });
+    assert.equal(merged.out, 'Merged.', String(status));
+    assert.equal(puts(merged).length, 3, String(status));
+    assert.equal(merged.stepOutput, 'merged=true\n');
+    // Two reads before the merge (before and after the wait for checks) and one after each 5xx.
+    assert.equal(reads(merged).length, 4, merged.calls.join('\n'));
+    assert.ok(merged.calls.lastIndexOf(reads(merged)[3]) < merged.calls.lastIndexOf(puts(merged)[2]));
+  }
+  // The 500 came after GitHub merged it: no second merge call, and it counts as merged.
+  const already = await gateMerge(entry, { autoMerge: false, mergeErrors: 1, mergeStatus: 500, mergeError: 'Server Error', pulls: [{}, {}, { state: 'closed', merged: true }] });
+  assert.equal(already.out, 'Merged.');
+  assert.equal(puts(already).length, 1);
+  assert.equal(already.stepOutput, 'merged=true\n');
+  // A new head or a closed pull request after the 5xx: no second merge call.
+  const moved = await gateMerge(entry, { autoMerge: false, mergeErrors: 1, mergeStatus: 500, mergeError: 'Server Error', pulls: [{}, {}, { head: { sha: 'def456' } }] });
+  assert.equal(moved.out, 'The pull request changed after these checks ran; the next run decides.');
+  assert.equal(puts(moved).length, 1);
+  assert.equal(moved.stepOutput, '');
+  const closed = await gateMerge(entry, { autoMerge: false, mergeErrors: 1, mergeStatus: 500, mergeError: 'Server Error', pulls: [{}, {}, { state: 'closed' }] });
+  assert.equal(closed.out, 'The pull request is no longer open.');
+  assert.equal(puts(closed).length, 1);
+  // GitHub keeps failing: four tries, then a read shows it didn't merge, and the pull request
+  // waits for a maintainer as before.
+  const failing = await gateMerge(entry, { command: 'pr', autoMerge: false, mergeErrors: 9, mergeStatus: 500, mergeError: 'Server Error' });
+  assert.equal(puts(failing).length, 4);
+  assert.equal(failing.stepOutput, '');
+  assert.match(failing.comments[0], /Merging failed: PUT \/repos\/o\/r\/pulls\/7\/merge: 500 Server Error/);
+  assert.ok(failing.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), failing.calls.join('\n'));
+  // A 4xx other than "Base branch was modified" is still not retried.
+  const refused = await gateMerge(entry, { autoMerge: false, mergeErrors: 1, mergeStatus: 409, mergeError: 'Head branch was modified. Review and try the merge again.', command: 'pr' });
+  assert.equal(puts(refused).length, 1);
+  assert.equal(refused.stepOutput, '');
+});
+
+test('gate: labels a push beat by a moment are put back as they were', async () => {
+  const entry = ['parsers/acme/pull-api/meta.json'];
+  const labelCalls = (r) => r.calls.filter((c) => c.includes('/issues/7/labels'));
+  const L = (n) => `https://api.github.com/repos/o/r/issues/7/labels/${encodeURIComponent(n)}`;
+  // The pull request had "needs review" and "library checks passed". The head is the checked commit
+  // when the run reads it, and a new commit when it reads it again right after labeling.
+  const had = { labels: [{ name: 'needs review' }, { name: 'library checks passed' }] };
+  const failed = await gateMerge(entry, { command: 'pr', report: { passed: false, eligible: false }, pulls: [had, { head: { sha: 'def456' } }] });
+  assert.deepEqual(labelCalls(failed), [
+    'POST https://api.github.com/repos/o/r/issues/7/labels {"labels":["library checks failed"]}',
+    `DELETE ${L('library checks passed')}`, `DELETE ${L('auto-merge')}`, `DELETE ${L('needs review')}`,
+    // Back as they were: the two it removed that the pull request had, and the one it added goes.
+    'POST https://api.github.com/repos/o/r/issues/7/labels {"labels":["library checks passed","needs review"]}',
+    `DELETE ${L('library checks failed')}`,
+  ]);
+  assert.deepEqual(failed.comments, []);
+  // The same for a run whose checks passed: it adds no label in the end, and doesn't merge.
+  const passed = await gateMerge(entry, { command: 'pr', pulls: [had, { head: { sha: 'def456' } }] });
+  assert.equal(firstMergeCall(passed), -1);
+  assert.deepEqual(labelCalls(passed), [
+    'POST https://api.github.com/repos/o/r/issues/7/labels {"labels":["library checks passed"]}',
+    `DELETE ${L('library checks failed')}`, `DELETE ${L('needs review')}`,
+    'POST https://api.github.com/repos/o/r/issues/7/labels {"labels":["needs review"]}',
+  ]);
+  // Closed in that moment: the same.
+  const closed = await gateMerge(entry, { command: 'pr', report: { passed: true, eligible: false }, pulls: [{}, { state: 'closed' }] });
+  assert.deepEqual(labelCalls(closed), [
+    'POST https://api.github.com/repos/o/r/issues/7/labels {"labels":["library checks passed","needs review"]}',
+    `DELETE ${L('library checks failed')}`, `DELETE ${L('auto-merge')}`,
+    `DELETE ${L('library checks passed')}`, `DELETE ${L('needs review')}`,
+  ]);
+  // Control: still the head after labeling, so nothing is put back.
+  const kept = await gateMerge(entry, { command: 'pr', report: { passed: false, eligible: false }, pulls: [had] });
+  assert.deepEqual(labelCalls(kept), labelCalls(failed).slice(0, 4));
+});
+
 const MERGE_CALLS = /graphql|\/merge$/;
 const firstMergeCall = (r) => r.calls.findIndex((c) => MERGE_CALLS.test(c));
 const checkReads = (r) => r.calls.map((c, i) => [c, i]).filter(([c]) => c.startsWith('GET https://api.github.com/repos/o/r/commits/abc123/check-runs')).map(([, i]) => i);
@@ -349,7 +426,8 @@ test('gate: a pull request that changed or closed while the gate waited for chec
   assert.equal(moved.out, 'The pull request changed after these checks ran; the next run decides.');
   assert.equal(firstMergeCall(moved), -1);
   // Already merged by a later run: no merge, and no "needs review" label on the merged pull request.
-  const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', pulls: [{}, { state: 'closed', merged: true, head: { sha: 'def456' } }] });
+  // On the pull request route the first two reads are the checks around the first label calls.
+  const merged = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', pulls: [{}, {}, { state: 'closed', merged: true, head: { sha: 'def456' } }] });
   assert.equal(firstMergeCall(merged), -1);
   assert.ok(!merged.calls.some((c) => c.startsWith('POST https://api.github.com/repos/o/r/issues/7/labels') && c.includes('needs review')), merged.calls.join('\n'));
 });
@@ -358,7 +436,7 @@ test('gate: a merge clears the "needs review" label an earlier run added', async
   const removeReview = 'DELETE https://api.github.com/repos/o/r/issues/7/labels/needs%20review';
   for (const autoMerge of [false, true]) {
     // With native auto-merge, GitHub merges the pull request a little after the gate turns it on.
-    const r = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, { state: 'open' }, { state: 'closed', merged: true }] : [{}] });
+    const r = await gateMerge(['parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, {}, { state: 'open' }, { state: 'closed', merged: true }] : [{}] });
     assert.equal(r.stepOutput, 'merged=true\n', String(autoMerge));
     const mergedAt = firstMergeCall(r);
     assert.ok(mergedAt >= 0);
@@ -373,7 +451,8 @@ test('gate: after native auto-merge merges, it deletes a same-repo head branch, 
   const deletes = (r) => r.calls.filter((c) => c.startsWith('DELETE ') && c.includes('/git/refs/'));
   const later = [{}, {}, { state: 'open' }, { state: 'closed', merged: true }];
   for (const command of ['pr', 'merge']) {
-    const own = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, pull: from('library/acme'), pulls: later });
+    // On the pull request route the first two reads are the checks around the first label calls.
+    const own = await gateMerge(['parsers/acme/pull-api/meta.json'], { command, pull: from('library/acme'), pulls: command === 'pr' ? [{}, ...later] : later });
     assert.ok(own.calls.includes('POST https://api.github.com/graphql'), command);
     assert.deepEqual(deletes(own), ['DELETE https://api.github.com/repos/o/r/git/refs/heads/library/acme'], command);
     assert.equal(own.stepOutput, 'merged=true\n', command);
@@ -392,7 +471,7 @@ test('gate: a run whose commit is no longer the head, or that ends after the pul
   const entry = ['parsers/acme/pull-api/meta.json'];
   // The pull request moved on, or another run merged it, while this run waited for checks.
   for (const later of [{ head: { sha: 'def456' } }, { state: 'closed', merged: true, head: { sha: 'def456' } }, { state: 'closed', merged: true }]) {
-    const r = await gateMerge(entry, { command: 'pr', pulls: [{}, later] });
+    const r = await gateMerge(entry, { command: 'pr', pulls: [{}, {}, later] });
     assert.equal(firstMergeCall(r), -1, JSON.stringify(later));
     assert.deepEqual(r.comments, [], JSON.stringify(later));
   }
@@ -405,9 +484,9 @@ test('gate: a run whose commit is no longer the head, or that ends after the pul
     assert.equal((await gateMerge(entry, { command: 'pr', report })).comments.length, 1, JSON.stringify(report));
   }
   // The run that merged the pull request writes its report, though the pull request is now closed.
-  // The first read of the pull request is the check before the run labels it.
+  // The first two reads of the pull request are the checks before and after the run labels it.
   for (const autoMerge of [false, true]) {
-    const own = await gateMerge(entry, { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, {}, { state: 'closed', merged: true }] : [{}] });
+    const own = await gateMerge(entry, { command: 'pr', autoMerge, pulls: autoMerge ? [{}, {}, {}, {}, { state: 'closed', merged: true }] : [{}] });
     assert.equal(own.stepOutput, 'merged=true\n', String(autoMerge));
     assert.equal(own.comments.length, 1, String(autoMerge));
     assert.match(own.comments[0], /Merged\.\n$/);
@@ -418,7 +497,7 @@ test('gate: a run whose commit was replaced changes no labels, and failed checks
   const entry = ['parsers/acme/pull-api/meta.json'];
   const labelCalls = (r) => r.calls.filter((c) => c.includes('/issues/7/labels'));
   // The pull request moved on while this run waited for checks: the run adds no "needs review".
-  const moved = await gateMerge(entry, { command: 'pr', pulls: [{}, { head: { sha: 'def456' } }] });
+  const moved = await gateMerge(entry, { command: 'pr', pulls: [{}, {}, { head: { sha: 'def456' } }] });
   assert.equal(firstMergeCall(moved), -1);
   assert.ok(!moved.calls.some((c) => c.endsWith('/issues/7/labels {"labels":["needs review"]}')), moved.calls.join('\n'));
   // Moved on, or closed, before the run labeled anything: no label is added or removed, whatever the report says.
