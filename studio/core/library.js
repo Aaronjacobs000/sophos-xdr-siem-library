@@ -12,6 +12,7 @@
 import { runParsers, expectedShape } from './engine.js';
 import { lintParsers } from './lint.js';
 import { scanText } from './scan.js';
+import { gitleaksProblems } from './gitleaks.js';
 import { SCHEMA_IDS } from './schemas.js';
 import { TOOL_VERSION } from './version.js';
 
@@ -235,7 +236,11 @@ export function validateEntry(entry, opts = {}) {
       problems.push({ level: 'warning', code: 'header', message: `${name}.parser.txt: start with the tool's header comment, which says whether it has passed Run Test in a tenant`, file: `${name}.parser.txt` });
     }
   }
+  // CI's gitleaks scans every file as committed, at its path in the repo.
+  const dir = entry.id || (entry.meta && entry.meta.vendor && entry.meta.product ? entryId(entry.meta) : '');
   for (const f of files) {
+    const name = f.path.split('/').pop();
+    for (const s of gitleaksProblems(f.content, dir ? `parsers/${dir}/${name}` : name, { source: name })) problems.push({ ...s, file: name });
     if (f.path.endsWith('expected.json')) continue;
     let content = f.content;
     // The docs links in meta.json point at real vendor sites on purpose; scan the rest.

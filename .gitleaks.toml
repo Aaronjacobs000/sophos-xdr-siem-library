@@ -15,8 +15,8 @@ paths = ['''^parsers/[^/]+/[^/]+/samples\.log$''']
 regexTarget = "match"
 regexes = ['''(?i)^[\w.-]*id["']?\s*[:=]\s*["']?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["']?$''']
 
-# Two more, each for one rule, one file and the exact values flagged there, so any other value in
-# those files is still reported.
+# The rest are each for one rule, one file and the exact values flagged there, so any other value
+# in those files is still reported.
 
 [[allowlists]]
 description = "The synthetic token ID the Atlassian entry's expected.json stores as access_key"
@@ -33,3 +33,11 @@ condition = "AND"
 paths = ['''^test/library\.test\.mjs$''']
 regexTarget = "match"
 regexes = ['''^session_token=abc123def456'?$''', '''^api_key=3fa85f64-5717-4562-b3fc-2c963f66afa6'?$''']
+
+[[allowlists]]
+description = "Fixtures in test/gitleaks.test.mjs that check the library check reports what gitleaks flags"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^test/gitleaks\.test\.mjs$''']
+regexTarget = "match"
+regexes = ['''^access1, GigaEthernet0\.1 $''', '''^claims_token_id":"3fa85f64-5717-4562-b3fc-2c963f66afa6"$''']
