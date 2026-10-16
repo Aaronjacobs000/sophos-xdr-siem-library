@@ -33,6 +33,14 @@ test('routes: the parser library\'s old addresses land on the same page under #/
   assert.equal(routeOf('#/library/acme/a%20b').id, 'acme/a b');
 });
 
+test('routes: playbooks and connectors have a list and a page each', () => {
+  assert.deepEqual(['#/playbooks', '#/connectors'].map((h) => routeOf(h).view), ['playbooks', 'connectors']);
+  const pb = routeOf('#/playbooks/sophos/sophos-mobile-lock');
+  assert.deepEqual([pb.view, pb.id, pb.nav], ['playbook', 'sophos/sophos-mobile-lock', 'playbooks']);
+  const c = routeOf('#/connectors/sophos/sophos-mobile');
+  assert.deepEqual([c.view, c.id, c.nav], ['connector', 'sophos/sophos-mobile', 'connectors']);
+});
+
 test('the site build publishes the index, the entry files and the bridges next to the page', async () => {
   const out = await mkdtemp(path.join(tmpdir(), 'xsl-site-'));
   try {
@@ -49,6 +57,14 @@ test('the site build publishes the index, the entry files and the bridges next t
     const relay = index.bridges.find((b) => b.path === 'bridges/webhook-relay');
     assert.ok(relay.files.includes('README.md') && relay.files.includes('webhook_relay.py'));
     assert.ok((await stat(path.join(out, 'bridges/webhook-relay/webhook_relay.py'))).isFile());
+    // Playbooks and connectors: listed with their metadata, and their files published.
+    assert.ok(Array.isArray(index.playbooks) && Array.isArray(index.connectors));
+    for (const [folder, list] of [['playbooks', index.playbooks], ['connectors', index.connectors]]) {
+      for (const e of list) {
+        assert.ok(e.meta && e.meta.title, `${folder}/${e.id}`);
+        for (const f of e.files) assert.ok((await stat(path.join(out, folder, e.id, f))).isFile(), `${folder}/${e.id}/${f}`);
+      }
+    }
     // The page itself, with the new name.
     const html = await readFile(path.join(out, 'index.html'), 'utf8');
     assert.match(html, /<title>Unofficial Sophos Fusion XDR and SIEM Library<\/title>/);

@@ -27,17 +27,31 @@ async function pool(items, n, fn) {
   return out;
 }
 
-// Returns {entries, bridges, source: 'site'|'none', at, sha?, error?}. bridges lists each
-// bridges/<name> folder with its file names. One request: the index the site build wrote.
+// Returns {entries, bridges, playbooks, connectors, source: 'site'|'none', at, sha?, error?}.
+// bridges lists each bridges/<name> folder with its file names, and playbooks and connectors each
+// entry's metadata and file names. One request: the index the site build wrote.
 export async function loadLibrary() {
   try {
     const index = JSON.parse(await fetchText(siteUrl('library-index.json')));
     const entries = (index.entries || []).filter((e) => e && e.meta && typeof e.id === 'string')
       .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], vendor: e.meta.vendor, product: e.meta.product, loaded: false }));
-    return { entries, bridges: index.bridges || [], source: 'site', at: index.generated || null, sha: index.commit || null };
+    const automation = (list) => (Array.isArray(list) ? list : []).filter((e) => e && e.meta && typeof e.id === 'string')
+      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], loaded: false }));
+    return { entries, bridges: index.bridges || [], playbooks: automation(index.playbooks), connectors: automation(index.connectors), source: 'site', at: index.generated || null, sha: index.commit || null };
   } catch (err) {
-    return { entries: [], bridges: [], source: 'none', at: null, error: err.message };
+    return { entries: [], bridges: [], playbooks: [], connectors: [], source: 'none', at: null, error: err.message };
   }
+}
+
+// Fetch the text files of a playbook or connector entry, as entry.texts by file name. folder is
+// playbooks or connectors.
+export async function loadAutomationEntry(folder, entry) {
+  if (entry.loaded) return entry;
+  const names = entry.files.filter((f) => /^(template\.yaml|connector\.yaml|SETUP\.md|README\.md)$/.test(f));
+  const texts = {};
+  await pool(names, 4, async (n) => { texts[n] = await fetchText(siteUrl(`${folder}/${entry.id}/${n}`)); });
+  Object.assign(entry, { texts, loaded: true });
+  return entry;
 }
 
 // Fetch an entry's parser files, samples and expected output.

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadLibrary, loadEntry, loadBridge, siteUrl, githubUrl } from '../studio/app/library-client.js';
+import { loadLibrary, loadEntry, loadBridge, loadAutomationEntry, siteUrl, githubUrl } from '../studio/app/library-client.js';
 import { REPO } from '../studio/core/version.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -33,6 +33,8 @@ const INDEX = {
   commit: 'a'.repeat(40),
   entries: [{ id: 'acme/widget', meta: { vendor: 'Acme', product: 'Widget', parsers: [{ name: 'ACME_WIDGET_JSON_STANDALONE_AUTH', role: 'standalone' }] }, files: ['meta.json', 'samples.log'] }],
   bridges: [{ path: 'bridges/acme-pull', files: ['README.md', 'acme_pull.py', 'test_acme_pull.py'] }],
+  playbooks: [{ id: 'acme/widget-lock', meta: { title: 'Widget lock', vendor: 'Acme' }, files: ['SETUP.md', 'meta.json', 'template.yaml'] }],
+  connectors: [{ id: 'acme/widget', meta: { title: 'Widget', vendor: 'Acme' }, files: ['README.md', 'connector.yaml', 'meta.json'] }],
 };
 
 test('the library index comes from the site, by a path relative to the page', async () => {
@@ -69,6 +71,26 @@ test('an entry\'s files and a bridge\'s files come from the same site, and nothi
       assert.ok(url.startsWith(SITE), url);
       assert.doesNotMatch(url, /github/i);
     }
+  });
+});
+
+test('playbooks and connectors are listed from the index, and their files come from the same site', async () => {
+  const files = {
+    'library-index.json': JSON.stringify(INDEX),
+    'playbooks/acme/widget-lock/template.yaml': 'kind: Playbook\n',
+    'playbooks/acme/widget-lock/SETUP.md': '# Setup\n',
+    'connectors/acme/widget/connector.yaml': 'kind: Connector\n',
+    'connectors/acme/widget/README.md': '# Widget\n',
+  };
+  await withSite(files, async (asked) => {
+    const lib = await loadLibrary();
+    assert.deepEqual(lib.playbooks.map((e) => e.id), ['acme/widget-lock']);
+    assert.deepEqual(lib.connectors.map((e) => e.id), ['acme/widget']);
+    const pb = await loadAutomationEntry('playbooks', lib.playbooks[0]);
+    assert.deepEqual(pb.texts, { 'SETUP.md': '# Setup\n', 'template.yaml': 'kind: Playbook\n' });
+    const c = await loadAutomationEntry('connectors', lib.connectors[0]);
+    assert.deepEqual(Object.keys(c.texts).sort(), ['README.md', 'connector.yaml']);
+    for (const url of asked) assert.ok(url.startsWith(SITE) && !/github/i.test(url), url);
   });
 });
 

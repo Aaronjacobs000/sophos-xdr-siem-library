@@ -148,6 +148,16 @@ test('review rule: bridge code and other non-library files always need a review'
   }
 });
 
+test('review rule: playbooks and connectors always wait for the owner, alone or with library entries', () => {
+  const pb = ['playbooks/acme/widget-lock/template.yaml', 'playbooks/acme/widget-lock/meta.json'];
+  assert.match(reviewReasons(pb).join(), /changes playbooks or connectors, which act on tenants, so the owner always reviews them: playbooks\/acme\/widget-lock\/template.yaml/);
+  assert.match(reviewReasons(['connectors/acme/widget/connector.yaml']).join(), /playbooks or connectors/);
+  assert.match(reviewReasons(['connectors/allowed-hosts.json']).join(), /playbooks or connectors/);
+  assert.match(reviewReasons(['parsers/acme/pull-api/meta.json', 'connectors/acme/widget/connector.yaml']).join(), /playbooks or connectors/);
+  // They are not "outside parsers/" files too: one reason each.
+  assert.equal(reviewReasons(pb).length, 1);
+});
+
 // Runs github-gate.mjs merge against a stand-in for the GitHub API, the way the two workflows
 // call it, and reports what it said and which calls it made.
 // checks, ciRuns and pulls are the answers GitHub gives in turn to each read of the commit's check
@@ -223,6 +233,20 @@ test('gate: the merge step refuses a pull request with bridge code, from either 
   const ok = await gateMerge(['parsers/acme/pull-api/meta.json']);
   assert.equal(ok.out, 'Auto-merge is on for this pull request.');
   assert.ok(ok.calls.some((c) => c === 'POST https://api.github.com/graphql'));
+});
+
+test('gate: a pull request that touches playbooks or connectors never merges, from either route, and is labeled for review', async () => {
+  const files = ['playbooks/acme/widget-lock/template.yaml', 'connectors/acme/widget/connector.yaml'];
+  const held = await gateMerge(files, { autoMerge: false });
+  assert.match(held.out, /^Not merged automatically: this pull request changes playbooks or connectors, which act on tenants, so the owner always reviews them/);
+  assert.ok(!held.calls.some((c) => /graphql|\/merge|^PUT/.test(c)), held.calls.join('\n'));
+  // Even a report that says it may merge, as a check job with a bug might, ends in a review label.
+  for (const report of [{ passed: true, eligible: true }, { passed: true, eligible: false }]) {
+    const pr = await gateMerge([...files, 'parsers/acme/pull-api/meta.json'], { command: 'pr', autoMerge: false, report });
+    assert.ok(!pr.calls.some((c) => /graphql|\/merge|^PUT/.test(c)), pr.calls.join('\n'));
+    assert.ok(pr.calls.some((c) => /^POST https:\/\/api\.github\.com\/repos\/o\/r\/issues\/7\/labels .*needs review/.test(c)), pr.calls.join('\n'));
+    assert.equal(pr.stepOutput, '', JSON.stringify(report));
+  }
 });
 
 test('gate: a pull request whose file list GitHub cuts short never merges on its own', async () => {
