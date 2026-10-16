@@ -991,5 +991,53 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 23,
+    "extractor_path": "F5_BIGIP_ASM_SYSLOG_PARENT > F5_BIGIP_ASM_SYSLOG_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "F5 BIG-IP ASM",
+      "event_time_usec": 1791853540000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "bigip01.example.com",
+      "http_method": "GET",
+      "uri_path": "/api/hosts",
+      "uri_query": "filter=status=up,protocol=ssh",
+      "uri_scheme": "https",
+      "uri_host": "portal.example.com",
+      "user_agent": "curl/8.5.0",
+      "source_address": "198.51.100.31",
+      "source_port": 53011,
+      "destination_address": "203.0.113.10",
+      "destination_port": 443,
+      "response_code": 200,
+      "request_direction": "INBOUND",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "support_id",
+            "value": "18205860747014046006"
+          },
+          {
+            "key": "policy",
+            "value": "/Common/portal_policy"
+          },
+          {
+            "key": "request_status",
+            "value": "passed"
+          },
+          {
+            "key": "geo_location",
+            "value": "AU"
+          },
+          {
+            "key": "virtual_server",
+            "value": "/Common/portal_https_vs"
+          }
+        ]
+      }
+    }
   }
 ]
