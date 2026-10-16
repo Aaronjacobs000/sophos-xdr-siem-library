@@ -316,5 +316,87 @@
       "namespace": "Administration",
       "target_hostname": "edr-manager.example.com"
     }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FORTINET_FORTIEDR_KV_PARENT > FORTINET_FORTIEDR_KV_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "FortiEDR",
+      "event_time_usec": 1792019645000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "WS-0163",
+      "vendor": "Fortinet",
+      "provider": "FortiEDR",
+      "alert_id": "458540",
+      "target_host_name": "WS-0163",
+      "title": "Malicious File Detected - Execution prevented",
+      "alert_category": "Malicious",
+      "summary": "Malicious event on WS-0163: powershell.exe, File Write",
+      "vendor_severity": "High",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.63",
+      "source_mac": "00:00:5e:00:53:63",
+      "first_event_time_usec": 1792019638000000,
+      "last_event_time_usec": 1792019644000000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "classification",
+            "value": "Malicious"
+          },
+          {
+            "key": "raw_data_id",
+            "value": "1270887102"
+          },
+          {
+            "key": "organization",
+            "value": "Example Org"
+          },
+          {
+            "key": "process_name",
+            "value": "powershell.exe"
+          },
+          {
+            "key": "process_path",
+            "value": "\\Device\\HarddiskVolume3\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+          },
+          {
+            "key": "destination",
+            "value": "File Write"
+          },
+          {
+            "key": "action",
+            "value": "Blocked"
+          },
+          {
+            "key": "count",
+            "value": "1"
+          },
+          {
+            "key": "certificate",
+            "value": "yes"
+          },
+          {
+            "key": "operating_system",
+            "value": "Windows 11 Pro"
+          },
+          {
+            "key": "device_state",
+            "value": "Running"
+          },
+          {
+            "key": "mitre_techniques",
+            "value": "T1059.001,T1562.001"
+          },
+          {
+            "key": "command_line",
+            "value": "powershell.exe -NoProfile -Command \"Set-MpPreference -DisableRealtimeMonitoring $true; Stop-Service -Name WinDefend -Force\""
+          }
+        ]
+      }
+    }
   }
 ]
