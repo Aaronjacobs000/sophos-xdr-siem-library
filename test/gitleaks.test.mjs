@@ -6,9 +6,12 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { spawnSync, execFileSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { goRegex, findGenericApiKeys, gitleaksProblems, REPO_ALLOWLISTS, GITLEAKS_VERSION } from '../studio/core/gitleaks.js';
+import { RULE, GLOBAL_ALLOWLISTS } from '../studio/core/gitleaks-rule.js';
+import { portFromConfig, renderModule, setCiVersion, setAttributionVersion, tarballSha256 } from '../tools/lib/gitleaks-port.mjs';
+import { readToml as readTomlLib } from '../tools/lib/toml.mjs';
 import { validateEntry } from '../studio/core/library.js';
 import { loadEntryFromDir } from '../tools/lib/fs-library.mjs';
 
@@ -164,8 +167,13 @@ test('the port\'s copies of the .gitleaks.toml allowlists and gitleaks version m
   }
   assert.deepEqual(REPO_ALLOWLISTS, ported);
   for (const a of REPO_ALLOWLISTS) for (const r of [...a.paths, ...a.regexes]) assert.doesNotThrow(() => goRegex(r), r);
+  // Both CI jobs that install gitleaks, the unit tests' and the secret scan's, take the version the
+  // port came from, with one checksum.
   const ci = await readFile(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
-  assert.equal(/GITLEAKS_VERSION: (\S+)/.exec(ci)[1], GITLEAKS_VERSION, 'CI runs another gitleaks version: port its generic-api-key rule again');
+  const versions = [...ci.matchAll(/GITLEAKS_VERSION: (\S+)/g)].map((m) => m[1]);
+  assert.equal(versions.length, 2, 'the tests and secrets jobs each install gitleaks');
+  for (const v of versions) assert.equal(v, GITLEAKS_VERSION, `CI installs gitleaks ${v} and the port came from ${GITLEAKS_VERSION}: run node tools/port-gitleaks.mjs ${v}`);
+  assert.equal(new Set([...ci.matchAll(/GITLEAKS_SHA256: (\S+)/g)].map((m) => m[1])).size, 1, 'the two jobs install gitleaks with different checksums');
 });
 
 // The Appgate SDP shape CI flagged in parser files: a UUID record ID under a key ending in id, in a
@@ -224,6 +232,168 @@ test('gitleaks itself flags what the port flags, before and after the parser fil
     assert.deepEqual(after, others);
     assert.deepEqual(ported(SAMPLES_ONLY), before);
     assert.deepEqual(ported(REPO_ALLOWLISTS), after);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// A config in the shape of gitleaks' config/gitleaks.toml: the global allowlist, another rule, and
+// generic-api-key with allowlists of each kind.
+const CONFIG = `title = "gitleaks config"
+minVersion = "v8.25.0"
+
+# TODO: change to [[allowlists]]
+[allowlist]
+description = "global allow lists"
+paths = [
+    '''gitleaks\\.toml''',
+    '''(?:^|/)node_modules(?:/.*)?$''',
+]
+regexes = [
+    '''(?i)^true|false|null$''',
+]
+stopwords = [
+    "abcdefghijklmnopqrstuvwxyz",
+]
+
+[[rules]]
+id = "github-app-token"
+description = "Identified a GitHub App Token."
+regex = '''(?:ghu|ghs)_[0-9a-zA-Z]{36}'''
+entropy = 3
+keywords = [
+    "ghu_","ghs_",
+]
+[[rules.allowlists]]
+paths = [
+    '''(?:^|/)@octokit/auth-token/README\\.md$''',
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Detected a Generic API Key."
+regex = '''(?i)[\\w.-]{0,50}?(?:key|token)[\\s'"]{0,3}(?:=|:)([\\w.=-]{10,150})'''
+entropy = 3.5
+keywords = [
+    "key",
+    "token",
+]
+[[rules.allowlists]]
+regexes = [
+    '''^[a-zA-Z_.-]+$''',
+]
+[[rules.allowlists]]
+description = "Allowlist for Generic API Keys"
+regexTarget = "match"
+regexes = [
+    '''(?i)(?:access(?:ibility|or)|author)''',
+]
+stopwords = [
+    "000000",
+    "about",
+]
+[[rules.allowlists]]
+condition = "AND"
+paths = [
+    '''\\.bb$''','''\\.inc$''',
+]
+regexTarget = "line"
+regexes = [
+    '''LICENSE[^=]*=\\s*"[^"]+''',
+]
+`;
+
+test('port tool: reads the rule and the global allowlist from gitleaks\' config, and nothing it can\'t port', () => {
+  const { rule, globals } = portFromConfig(CONFIG);
+  assert.deepEqual(rule, {
+    id: 'generic-api-key',
+    regex: String.raw`(?i)[\w.-]{0,50}?(?:key|token)[\s'"]{0,3}(?:=|:)([\w.=-]{10,150})`,
+    entropy: 3.5,
+    keywords: ['key', 'token'],
+    allowlists: [
+      { regexes: ['^[a-zA-Z_.-]+$'] },
+      { description: 'Allowlist for Generic API Keys', regexTarget: 'match', regexes: ['(?i)(?:access(?:ibility|or)|author)'], stopwords: ['000000', 'about'] },
+      { condition: 'AND', regexTarget: 'line', paths: [String.raw`\.bb$`, String.raw`\.inc$`], regexes: [String.raw`LICENSE[^=]*=\s*"[^"]+`] },
+    ],
+  });
+  assert.deepEqual(globals, [{ description: 'global allow lists', paths: [String.raw`gitleaks\.toml`, '(?:^|/)node_modules(?:/.*)?$'], regexes: ['(?i)^true|false|null$'], stopwords: ['abcdefghijklmnopqrstuvwxyz'] }]);
+  // A later config with [[allowlists]] instead of [allowlist] reads the same.
+  assert.deepEqual(portFromConfig(CONFIG.replace('[allowlist]', '[[allowlists]]')).globals, globals);
+  // A field the port's matching doesn't implement stops the tool, and so does a missing rule.
+  assert.throws(() => portFromConfig(CONFIG.replace('entropy = 3.5', 'entropy = 3.5\nsecretGroup = 1')), /secretGroup, which the port doesn't implement/);
+  assert.throws(() => portFromConfig(CONFIG.replace('condition = "AND"', 'condition = "AND"\ncommits = ["abc"]')), /commits, which the port doesn't implement/);
+  assert.throws(() => portFromConfig(CONFIG.replace('id = "generic-api-key"', 'id = "generic-key"')), /0 generic-api-key rules/);
+});
+
+test('port tool: the module it writes holds what it read, and CI moves to the same version', async () => {
+  const { rule, globals } = portFromConfig(CONFIG);
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-port-'));
+  try {
+    await writeFile(path.join(dir, 'rule.mjs'), renderModule({ version: '9.1.2', source: 'https://example.com/gitleaks.toml', sha256: 'a'.repeat(64), rule, globals }));
+    const m = await import(pathToFileURL(path.join(dir, 'rule.mjs')).href);
+    assert.equal(m.GITLEAKS_VERSION, '9.1.2');
+    assert.deepEqual(m.RULE, rule);
+    assert.deepEqual(m.GLOBAL_ALLOWLISTS, globals);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  const ci = await readFile(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
+  const sha = 'b'.repeat(64);
+  const moved = setCiVersion(ci, '9.1.2', sha);
+  assert.deepEqual([...moved.matchAll(/GITLEAKS_VERSION: (\S+)/g)].map((x) => x[1]), ['9.1.2', '9.1.2']);
+  assert.deepEqual([...moved.matchAll(/GITLEAKS_SHA256: (\S+)/g)].map((x) => x[1]), [sha, sha]);
+  assert.equal(moved.split('\n').length, ci.split('\n').length);
+  assert.throws(() => setCiVersion('jobs:\n', '9.1.2', sha), /0 GITLEAKS_VERSION/);
+  assert.equal(tarballSha256(`${'c'.repeat(64)}  gitleaks_9.1.2_darwin_arm64.tar.gz\n${sha}  gitleaks_9.1.2_linux_x64.tar.gz\n`, '9.1.2'), sha);
+  assert.throws(() => tarballSha256(`${sha}  gitleaks_9.1.1_linux_x64.tar.gz\n`, '9.1.2'), /no checksum/);
+  // ATTRIBUTIONS.md credits the version the port came from, and the tool moves it too.
+  const credits = await readFile(path.join(ROOT, 'ATTRIBUTIONS.md'), 'utf8');
+  const named = [...credits.matchAll(/\[gitleaks\]\(https:\/\/github\.com\/gitleaks\/gitleaks\) v(\S+),/g)].map((x) => x[1]);
+  assert.deepEqual(named, [GITLEAKS_VERSION, GITLEAKS_VERSION]);
+  assert.deepEqual([...setAttributionVersion(credits, '9.1.2').matchAll(/\[gitleaks\]\(https:\/\/github\.com\/gitleaks\/gitleaks\) v(\S+),/g)].map((x) => x[1]), ['9.1.2', '9.1.2']);
+});
+
+test('the TOML reader reads gitleaks\' config files, and refuses what it doesn\'t know', async () => {
+  const text = await readFile(path.join(ROOT, '.gitleaks.toml'), 'utf8');
+  assert.deepEqual(readTomlLib(text), readToml(text));
+  assert.deepEqual(readTomlLib('a = 1\nb = -2.5\nc = "x\\ty"\nd = true\n[[t.u]]\n[[t.u]]\ne = [1, 2,]\n'), { a: 1, b: -2.5, c: 'x\ty', d: true, t: { u: [{}, { e: [1, 2] }] } });
+  for (const bad of ['a = """x"""\n', 'a = 1\na = 2\n', 'a = 1 b = 2\n', 'a = {x = 1}\n', 'a = 1979-05-27\n']) assert.throws(() => readTomlLib(bad), /TOML/, bad);
+});
+
+test('the port came from gitleaks\' own rule: the shapes its matching expects', () => {
+  assert.equal(RULE.id, 'generic-api-key');
+  assert.ok(RULE.regex && RULE.entropy > 0 && RULE.keywords.length, JSON.stringify(RULE).slice(0, 200));
+  for (const a of [...RULE.allowlists, ...GLOBAL_ALLOWLISTS]) for (const r of [...(a.paths || []), ...(a.regexes || [])]) assert.doesNotThrow(() => goRegex(r), r);
+});
+
+// Every library file git tracks, by its path from the repo root.
+async function libraryFiles() {
+  const out = execFileSync('git', ['ls-files', '-z', '--', 'parsers', 'playbooks', 'connectors'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+  return Promise.all(out.map(async (file) => ({ file, content: await readFile(path.join(ROOT, file), 'utf8') })));
+}
+
+test('gitleaks itself, with all its rules and decoding, finds nothing in the library the port misses', { skip: !realGitleaks && `needs gitleaks ${GITLEAKS_VERSION} on the PATH` }, async () => {
+  // With gitleaks' default config alone, no repo allowlists, the library has findings. The port
+  // must make each of them, and each must be its rule's, none found only after decoding.
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-gitleaks-lib-'));
+  try {
+    const files = await libraryFiles();
+    for (const { file, content } of files) {
+      await mkdir(path.dirname(path.join(dir, 'src', file)), { recursive: true });
+      await writeFile(path.join(dir, 'src', file), content);
+    }
+    await writeFile(path.join(dir, 'default.toml'), '[extend]\nuseDefault = true\n');
+    const report = path.join(dir, 'report.json');
+    const r = spawnSync('gitleaks', ['dir', '--no-banner', '--config', path.join(dir, 'default.toml'), '--report-format', 'json', '--report-path', report, '--exit-code', '0', '.'], { cwd: path.join(dir, 'src'), encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    const found = JSON.parse(await readFile(report, 'utf8'));
+    assert.ok(found.length > 0, 'without the repo allowlists the library has findings, so this compares something');
+    assert.deepEqual(found.filter((f) => f.RuleID !== RULE.id || (f.Tags || []).some((t) => /decoded/.test(t))).map((f) => `${f.File}:${f.StartLine} ${f.RuleID} ${f.Tags}`), [], 'findings the port has no rule for');
+    const real = found.map((f) => `${f.File}:${f.StartLine} ${f.Secret}`).sort();
+    const ported = files.flatMap(({ file, content }) => findGenericApiKeys(content, file, { allowlists: [] }).map((f) => `${file}:${f.line} ${f.secret}`)).sort();
+    assert.deepEqual(ported, real);
+    // With the repo's allowlists both find nothing, as CI requires.
+    assert.deepEqual(files.flatMap(({ file, content }) => findGenericApiKeys(content, file)), []);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

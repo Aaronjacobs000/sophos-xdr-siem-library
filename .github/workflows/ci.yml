@@ -19,6 +19,20 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
+      # The same gitleaks the secrets job runs, so the unit tests check the library check's port of
+      # its generic-api-key rule against it. tools/port-gitleaks.mjs sets both jobs' version and hash.
+      - name: Install gitleaks for the port tests
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          mkdir gitleaks-bin
+          tar -xzf gitleaks.tar.gz -C gitleaks-bin gitleaks
+          gitleaks-bin/gitleaks version
+          echo "$RUNNER_TEMP/gitleaks-bin" >> "$GITHUB_PATH"
       - name: Unit tests
         run: npm test
       - name: Validate the whole library
