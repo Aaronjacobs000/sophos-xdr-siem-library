@@ -1,0 +1,50 @@
+!SAMPLE=<133>Oct 15 09:12:44 2026 192.0.2.5 authmgr[2435]: <522008> <2435> <NOTI> <mc01 192.0.2.5>  User Authentication Successful: username=jsmith MAC=00:00:5e:00:53:10 IP=192.0.2.50 role=employee VLAN=10 AP=ap-lvl1-01 SSID=corp-wifi AAA profile=corp-aaa auth method=802.1x auth server=radius01
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s[A-Za-z_][\w.-]*(?:\[\d+\])?:\s+(?:<\d{6}>\s+(?:<\d+>\s+)?<(?:EMERG|ALERT|CRIT|ERRS|ERR|WARN|NOTI|INFO|DBUG|DEBUG)>\s|USER:\S+\s+COMMAND:<)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS 8 Mobility Controllers and Conductors (and AOS 10 gateways, assumed
+# to send the same lines), syslog sent to the data collector:
+#   <PRI><time> [<year>] <host> <process>[<pid>]: <<message ID>> [<<pid>>] <<severity>> [<<node> <address>> or |<process>|]  <text>
+#   <PRI><time> [<year>] <host> cli[<pid>]: USER:<user>@<from> COMMAND:<<command> > -- <result>   (audit trail)
+# Parent: claims every line with a message ID or an audit trail record and hands them on:
+#   522008, 522275, 522274 and 522010 (user and management authentication and de-authentication),
+#   125023, 125024, 125032 and 124025 (management sign-ins)                  to the Auth child
+#   audit trail commands, 125063 and 125064 (management users added or removed) to the Management Event child
+#   126000 and 126002 (rogue AP) and 127004 (interfering AP)                  to the Thirdparty child
+# Other messages stay generic.
+
+h = originalData$|^(?:<\d{1,3}>)?\s*(?P<pre>.*?)\s*(?P<proc>[A-Za-z_][\w.-]*)(?:\[(?P<pid>\d+)\])?:\s+(?P<rest>(?:<\d{6}>|USER:\S+\s+COMMAND:<).*?)\s*$
+pre = h["pre"]
+proc = h["proc"]
+m = h["rest"]|^<(?P<id>\d{6})>\s+(?:<(?P<pid2>\d+)>\s+)?<(?P<sev>[A-Z]+)>\s+(?:<(?P<node>[^>]*)>|\|(?P<tag>[^|]*)\|)?\s*(?:\|AP (?P<apmac>[0-9A-Fa-f:]+)@(?P<apip>\S+?) [^|]*\|\s*)?(?P<text>.*)$
+aud = h["rest"]|^USER:(?P<user>\S+?)@(?P<from>\S+)\s+COMMAND:<(?P<cmd>.*?)\s*>\s*--\s*(?P<res>.*?)\s*$
+id = STRING(m["id"])
+text = STRING(m["text"])
+
+# The time is the BSD syslog time, with the year when the controller adds it. It has no zone, so
+# it is read as UTC; keep the controllers on UTC.
+ta = pre|^(?P<t>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\s+(?P<y>\d{4}))?(?:\s+(?P<host>\S+))?$
+eventTimeUsec$ = IF STRING(ta["y"]) != "" THEN DATETIME(ta["t"] + " " + ta["y"], "Jan _2 15:04:05 2006") ELSE eventTimeUsec$
+eventTimeUsec$ = IF STRING(ta["t"]) != "" AND STRING(ta["y"]) == "" THEN DATETIME(ta["t"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+host = STRING(ta["host"])
+nodeText = STRING(m["node"])
+nd = nodeText|^(?P<name>\S+)
+node = STRING(nd["name"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "HPE Aruba Networking AOS"
+sensorEventId$ = IF id != "" THEN id ELSE "audit"
+hostId$ = IF node != "" THEN node ELSE NULL
+hostId$ = IF node == "" AND host != "" THEN host ELSE hostId$
+
+login = id == "522008" OR id == "522275" OR id == "522274" OR id == "522010"
+login = login OR id == "125023" OR id == "125024" OR id == "125032" OR id == "124025"
+admin = STRING(aud["cmd"]) != "" OR id == "125063" OR id == "125064"
+wids = id == "126000" OR id == "126002" OR id == "127004"
+eventType$ = "other"
+eventType$ = IF login THEN "login" ELSE eventType$
+eventType$ = IF admin THEN "admin" ELSE eventType$
+eventType$ = IF wids THEN "wids" ELSE eventType$

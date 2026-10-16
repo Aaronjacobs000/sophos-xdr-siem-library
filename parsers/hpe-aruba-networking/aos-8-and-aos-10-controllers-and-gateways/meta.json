@@ -1,0 +1,52 @@
+{
+  "vendor": "HPE Aruba Networking",
+  "product": "AOS 8 and AOS 10 Controllers and Gateways",
+  "versions": [
+    "8.x",
+    "10.x"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-16"
+  },
+  "docs": [
+    "https://support.hpe.com/hpesc/public/api/document/emr_na-c05321932",
+    "https://airheads.hpe.com/discussion/understanding-syslog-format-in-aos8"
+  ],
+  "notes": "Add the data collector as a syslog server and lower the user and security logging levels to notifications (informational for management users added or removed); the default is warnings, which drops sign-in successes. The README has the commands. User authentication successes and failures (522008, 522275), de-authentications (522010), management authentication failures (522274) and management sign-ins (125023, 125024, 125032, 124025) go to Auth, with the user, client address and MAC, role, VLAN, AP, SSID, AAA profile and authentication server. Audit trail commands (cli and fpcli) and management users added or removed (125063, 125064) go to Management Event, with the user, address, command and result. Rogue APs (126000, 126002) and interfering APs (127004) go to Thirdparty, rogue as high and interfering as low, with the BSSID, SSID, channel and the wired MAC and address a rogue matched. Other messages stay generic. The time is the syslog time, with the year when the controller adds it, read as UTC. Lines are read with the current header (<message ID> <pid> <severity> <node address>) and the older one (<message ID> <severity> |process|). How sure this is: the message templates, severities and the audit trail line come from HPE's ArubaOS 8.x Syslog Message Guide (2016). The guide shows an older header than current controllers send; the current header, with the process ID and the node name and address, comes from an HPE Airheads community thread. AOS 10 gateway lines are assumed to match AOS 8, which HPE doesn't document. 522010's cause values and 126002's Additional Info aren't listed, so the samples' values are made up; samples are made up from the templates. The parsers passed Run Test in a lab tenant on 2026-10-16: each child combined with the parent into one parser (176 of 176 fields matched the emulator in each of 3 runs), and each child as a separate parser under its parent (172 of 172 fields, each line taken in 5 of 5 runs, and the parent-only line matched). No built-in parser claimed these lines in 3 runs; Sophos Fusion's Aruba integration covers ClearPass only.",
+  "parsers": [
+    {
+      "name": "ARUBA_AOS_SYSLOG_PARENT",
+      "file": "ARUBA_AOS_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ARUBA_AOS_SYSLOG_CHILD_AUTH",
+      "file": "ARUBA_AOS_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "ARUBA_AOS_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "ARUBA_AOS_SYSLOG_CHILD_MGMT",
+      "file": "ARUBA_AOS_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "ARUBA_AOS_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "ARUBA_AOS_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "ARUBA_AOS_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "ARUBA_AOS_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

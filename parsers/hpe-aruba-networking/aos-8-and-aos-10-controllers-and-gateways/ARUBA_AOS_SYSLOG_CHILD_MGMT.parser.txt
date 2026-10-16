@@ -1,0 +1,38 @@
+!SAMPLE=<133>Oct 15 09:16:20 2026 192.0.2.5 cli[1439]: USER:netadmin@192.0.2.10 COMMAND:<aaa profile "corp-aaa" > -- command executed successfully
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: HPE Aruba Networking AOS 8 and AOS 10 syslog.
+# Child of ARUBA_AOS_SYSLOG_PARENT: configuration commands and management users to Management Event.
+#   audit trail: cli[<pid>]: USER:<user>@<address or serial> COMMAND:<<command> > -- <result>
+#   125063: User <user> created, with management role <role>
+#   125064: User <user> removed
+# The audit trail records every command that changes the configuration (and show commands with
+# audit-trail all). The user who ran it goes to username and the command to command and operation.
+# proc, id, text, aud, host, node, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+isAudit = STRING(aud["cmd"]) != ""
+added = text|^User (?P<user>\S+) created, with management role (?P<role>.*?)\s*$
+removed = text|^User (?P<user>\S+) removed\s*$
+user = STRING(aud["user"])
+username$ = IF user != "" THEN user ELSE NULL
+from = STRING(aud["from"])
+fromIp = from|^(?P<ip>[0-9A-Fa-f:]*[0-9A-Fa-f][.:][0-9A-Fa-f.:]+)$
+sourceAddress$ = IF STRING(fromIp["ip"]) != "" THEN fromIp["ip"] ELSE NULL
+clientHostname$ = IF from != "" AND STRING(fromIp["ip"]) == "" THEN from ELSE NULL
+target = IF node != "" THEN node ELSE host
+targetHostname$ = IF target != "" THEN target ELSE NULL
+cmd = STRING(aud["cmd"])
+command$ = IF isAudit THEN cmd ELSE NULL
+op = "command"
+op = IF id == "125063" THEN "management user created" ELSE op
+op = IF id == "125064" THEN "management user removed" ELSE op
+operationName$ = op
+operation$ = IF isAudit THEN cmd ELSE text
+channel$ = IF isAudit THEN "AOS audit trail (" + proc + ")" ELSE "AOS management users"
+res = STRING(aud["res"])
+result$ = IF isAudit THEN res ELSE "success"
+eventId$ = IF id != "" THEN id ELSE NULL

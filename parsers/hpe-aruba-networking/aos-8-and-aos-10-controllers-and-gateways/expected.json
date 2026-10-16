@@ -1,0 +1,499 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "522008",
+      "host_id": "mc01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.50",
+      "target_host_name": "mc01",
+      "logon_application_family": "802.1x",
+      "auth_system": "AOS 802.1x",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "522008"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:10"
+          },
+          {
+            "key": "role",
+            "value": "employee"
+          },
+          {
+            "key": "vlan",
+            "value": "10"
+          },
+          {
+            "key": "ap_name",
+            "value": "ap-lvl1-01"
+          },
+          {
+            "key": "ssid",
+            "value": "corp-wifi"
+          },
+          {
+            "key": "aaa_profile",
+            "value": "corp-aaa"
+          },
+          {
+            "key": "auth_server",
+            "value": "radius01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055582000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "522275",
+      "host_id": "mc01",
+      "target_user_name": "jdoe",
+      "source_address": "192.0.2.51",
+      "target_host_name": "mc01",
+      "logon_application_family": "802.1x",
+      "auth_system": "AOS 802.1x",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "522275"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:11"
+          },
+          {
+            "key": "ap_name",
+            "value": "ap-lvl1-01"
+          },
+          {
+            "key": "bssid",
+            "value": "00:00:5e:00:53:20"
+          },
+          {
+            "key": "auth_server",
+            "value": "radius01"
+          },
+          {
+            "key": "auth_server_ip",
+            "value": "198.51.100.10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055670000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "522010",
+      "host_id": "mc01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.50",
+      "target_host_name": "mc01",
+      "logon_application_family": "network",
+      "auth_system": "AOS network",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "522010"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:10"
+          },
+          {
+            "key": "cause",
+            "value": "Idle timeout"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055702000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "522274",
+      "host_id": "mc01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.45",
+      "target_host_name": "mc01",
+      "logon_application_family": "management",
+      "auth_system": "AOS management",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "522274"
+          },
+          {
+            "key": "auth_server",
+            "value": "radius01"
+          },
+          {
+            "key": "auth_server_ip",
+            "value": "198.51.100.10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055740000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "125032",
+      "host_id": "mc01",
+      "target_user_name": "netadmin",
+      "source_address": "192.0.2.10",
+      "source_port_number": 51544,
+      "target_address": "192.0.2.5",
+      "target_port_number": 22,
+      "target_host_name": "mc01",
+      "logon_application_family": "SSH",
+      "auth_system": "AOS SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "125032"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055741000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "124025",
+      "host_id": "mc01",
+      "target_user_name": "netadmin",
+      "target_host_name": "mc01",
+      "logon_application_family": "management",
+      "auth_system": "AOS management",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "124025"
+          },
+          {
+            "key": "role",
+            "value": "root"
+          },
+          {
+            "key": "privileged",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055780000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit",
+      "host_id": "192.0.2.5",
+      "username": "netadmin",
+      "source_address": "192.0.2.10",
+      "target_hostname": "192.0.2.5",
+      "command": "aaa profile \"corp-aaa\"",
+      "operation_name": "command",
+      "operation": "aaa profile \"corp-aaa\"",
+      "channel": "AOS audit trail (cli)",
+      "result": "command executed successfully"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055815000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "audit",
+      "host_id": "192.0.2.5",
+      "username": "netadmin",
+      "source_address": "192.0.2.10",
+      "target_hostname": "192.0.2.5",
+      "command": "no logging 198.51.100.20",
+      "operation_name": "command",
+      "operation": "no logging 198.51.100.20",
+      "channel": "AOS audit trail (fpcli)",
+      "result": "command executed successfully"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055850000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "125063",
+      "host_id": "mc01",
+      "target_hostname": "mc01",
+      "operation_name": "management user created",
+      "operation": "User guestadmin created, with management role guest-provisioning",
+      "channel": "AOS management users",
+      "result": "success",
+      "event_id": 125063
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055890000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "126002",
+      "host_id": "mc01",
+      "vendor": "HPE Aruba Networking",
+      "provider": "AOS wireless intrusion detection",
+      "alert_category": "Wireless intrusion detection",
+      "title": "Rogue AP",
+      "summary": "Rogue AP: The system classified an access point(BSSID 00:00:5e:00:53:40 and SSID free-wifi on CHANNEL 6) as rogue. Additional Info: Matched wired MAC 00:00:5e:00:53:41.",
+      "vendor_severity": "ERRS",
+      "severity": "HIGH",
+      "source_mac": "00:00:5e:00:53:40",
+      "target_host_name": "mc01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "126002"
+          },
+          {
+            "key": "ssid",
+            "value": "free-wifi"
+          },
+          {
+            "key": "channel",
+            "value": "6"
+          },
+          {
+            "key": "additional_info",
+            "value": "Matched wired MAC 00:00:5e:00:53:41"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055910000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "126000",
+      "host_id": "mc01",
+      "vendor": "HPE Aruba Networking",
+      "provider": "AOS wireless intrusion detection",
+      "alert_category": "Wireless intrusion detection",
+      "title": "Rogue AP",
+      "summary": "AP(00:00:5e:00:53:31@ap-lvl1-01): Rogue AP: An AP classified an access point (BSSID 00:00:5e:00:53:42 and SSID free-wifi-2 on CHANNEL 11) as rogue because it matched the MAC (00:00:5e:00:53:43) with IP (198.51.100.77).",
+      "vendor_severity": "ERRS",
+      "severity": "HIGH",
+      "source_mac": "00:00:5e:00:53:42",
+      "source_address": "198.51.100.77",
+      "target_host_name": "ap-lvl1-01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "126000"
+          },
+          {
+            "key": "ssid",
+            "value": "free-wifi-2"
+          },
+          {
+            "key": "channel",
+            "value": "11"
+          },
+          {
+            "key": "radio_mac",
+            "value": "00:00:5e:00:53:31"
+          },
+          {
+            "key": "matched_mac",
+            "value": "00:00:5e:00:53:43"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792055940000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "127004",
+      "host_id": "mc01",
+      "vendor": "HPE Aruba Networking",
+      "provider": "AOS wireless intrusion detection",
+      "alert_category": "Wireless intrusion detection",
+      "title": "Interfering AP",
+      "summary": "AP(00:00:5e:00:53:31): Interfering AP: An AP detected an interfering access point (BSSID 00:00:5e:00:53:32 and SSID neighbor-net on CHANNEL 1).",
+      "vendor_severity": "NOTI",
+      "severity": "LOW",
+      "source_mac": "00:00:5e:00:53:32",
+      "target_host_name": "mc01",
+      "additional_data": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "127004"
+          },
+          {
+            "key": "ssid",
+            "value": "neighbor-net"
+          },
+          {
+            "key": "channel",
+            "value": "1"
+          },
+          {
+            "key": "radio_mac",
+            "value": "00:00:5e:00:53:31"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT > ARUBA_AOS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792056005000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "522008",
+      "host_id": "192.0.2.6",
+      "target_user_name": "akim",
+      "source_address": "192.0.2.52",
+      "target_host_name": "192.0.2.6",
+      "logon_application_family": "802.1x",
+      "auth_system": "AOS 802.1x",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "message_id",
+            "value": "522008"
+          },
+          {
+            "key": "client_mac",
+            "value": "00:00:5e:00:53:12"
+          },
+          {
+            "key": "role",
+            "value": "staff"
+          },
+          {
+            "key": "vlan",
+            "value": "20"
+          },
+          {
+            "key": "ap_name",
+            "value": "ap-lvl2-03"
+          },
+          {
+            "key": "ssid",
+            "value": "corp-wifi"
+          },
+          {
+            "key": "aaa_profile",
+            "value": "corp-aaa"
+          },
+          {
+            "key": "auth_server",
+            "value": "radius02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ARUBA_AOS_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "HPE Aruba Networking AOS",
+      "event_time_usec": 1792056060000000,
+      "sensor_event_id": "522125",
+      "host_id": "mc01"
+    }
+  }
+]
