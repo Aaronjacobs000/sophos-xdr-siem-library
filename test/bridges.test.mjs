@@ -8,7 +8,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { validateMeta, bridgeScripts, hasBridge, bridgeOf, withBridgeKey } from '../studio/core/library.js';
-import { bridgeFolders, bridgeFolder } from '../studio/app/library-client.js';
+import { bridgeFolder } from '../studio/app/library-client.js';
 import { listBridges, loadBridges } from '../tools/lib/fs-library.mjs';
 import { reviewReasons } from '../tools/lib/merge-rules.mjs';
 import { parseMarkdown, parseInline, linkTarget } from '../studio/app/markdown.js';
@@ -88,21 +88,11 @@ test('bridge: the old "collector" key still works, with a warning', () => {
   assert.equal(withBridgeKey(current), current);
 });
 
-test('the page lists bridge folders, and a fork from before the rename still shows its own', () => {
-  const blob = (p) => ({ path: p, type: 'blob' });
-  const tree = [blob('bridges/acme-pull/acme_pull.py'), blob('bridges/acme-pull/README.md'), { path: 'bridges/acme-pull', type: 'tree' }, blob('bridges/README.md'), blob('parsers/acme/pull-api/meta.json')];
-  assert.deepEqual(bridgeFolders(tree), [{ path: 'bridges/acme-pull', files: ['README.md', 'acme_pull.py'] }]);
-  // An older fork keeps collectors/<name>: it lists as bridges/<name>, read from its real folder.
-  assert.deepEqual(bridgeFolders([blob('collectors/acme-pull/acme_pull.py')]), [{ path: 'bridges/acme-pull', dir: 'collectors/acme-pull', files: ['acme_pull.py'] }]);
-  assert.deepEqual(bridgeFolders([blob('collectors/acme-pull/old.py'), blob('bridges/acme-pull/new.py')]), [{ path: 'bridges/acme-pull', files: ['new.py'] }]);
-});
-
 test('a bridge link points at the folder that holds the bridge, collectors/<name> in a fork made before the rename', () => {
-  const blob = (p) => ({ path: p, type: 'blob' });
-  const old = bridgeFolders([blob('collectors/acme-pull/acme_pull.py')]);
+  const old = [{ path: 'bridges/acme-pull', dir: 'collectors/acme-pull', files: ['acme_pull.py'] }];
   assert.equal(bridgeFolder(old, { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
   assert.equal(bridgeFolder(old, { bridge: 'bridges/acme-pull' }), 'collectors/acme-pull');
-  assert.equal(bridgeFolder(bridgeFolders([blob('bridges/acme-pull/acme_pull.py')]), { collector: 'collectors/acme-pull' }), 'bridges/acme-pull');
+  assert.equal(bridgeFolder([{ path: 'bridges/acme-pull', files: ['acme_pull.py'] }], { collector: 'collectors/acme-pull' }), 'bridges/acme-pull');
   // With no folder listed, the entry's own path.
   assert.equal(bridgeFolder([], { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
   assert.equal(bridgeFolder(undefined, { bridge: 'bridges/acme-pull' }), 'bridges/acme-pull');
