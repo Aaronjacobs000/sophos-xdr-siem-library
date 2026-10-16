@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="Threat_Event"
 !SCHEMA=scwx.antivirus
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ESET PROTECT On-Prem, JSON over syslog to the data collector.
 # Child of ESET_PROTECT_JSON_PARENT: antivirus detections (Threat_Event) to the Antivirus schema.

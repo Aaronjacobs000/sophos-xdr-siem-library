@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use **Share to the library** on the Test step of [Parser Studio](https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/). It runs the library checks, then copies a submission for this form.
+        Use **Share to the library** on the Test step of [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample). It runs the library checks, then copies a submission for this form.
         A workflow checks the submission again and opens a pull request for it. You are recorded as the author.
   - type: textarea
     id: bundle

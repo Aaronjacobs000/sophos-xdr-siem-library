@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="auth"
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: IBM i security audit journal PW (invalid password or user ID) entries as CEF.
 # Child of IBM_I_CEF_PARENT: each one to Auth as a failed logon. The user who failed is in IBM's msg

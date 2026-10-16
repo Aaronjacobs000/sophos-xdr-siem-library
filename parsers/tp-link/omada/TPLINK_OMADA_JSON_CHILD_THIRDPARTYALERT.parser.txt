@@ -4,7 +4,7 @@
 !SCHEMA=scwx.thirdpartyalert
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: TP-Link Omada events and alerts from the example bridge.
 # Child of TPLINK_OMADA_JSON_PARENT: gateway attack detections to Thirdparty, by their log key:

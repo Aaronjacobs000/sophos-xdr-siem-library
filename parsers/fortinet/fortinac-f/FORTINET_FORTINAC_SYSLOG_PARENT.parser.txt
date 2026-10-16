@@ -3,7 +3,7 @@
 !CONFIRMSTRING=:\s+(?:\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\s+[A-Za-z][A-Za-z0-9+-]{1,7})?,[123],\d*,[^,]+,[0-3],|CEF:\d+\|(?:Fortinet|Bradford Networks)\|[^|]*NAC[^|]*\|)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiNAC-F events and alarms sent to a log receiver of type Syslog CSV or Syslog Common
 # Event Format (CEF). The syslog header has no host name:

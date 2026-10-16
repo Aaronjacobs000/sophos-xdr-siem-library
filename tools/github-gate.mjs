@@ -36,8 +36,8 @@ const waitingMarker = (sha) => `<!-- parser-studio-waiting-for-ci ${sha} -->`;
 // The last line of a report the gate wrote when a check on the commit failed.
 const failedMarker = (sha) => `<!-- parser-studio-check-failed ${sha} -->`;
 const LABELS = {
-  passed: ['library checks passed', '1a7f37', 'Every Parser Studio library check passed'],
-  failed: ['library checks failed', 'd1242f', 'A Parser Studio library check failed'],
+  passed: ['library checks passed', '1a7f37', 'Every library check passed'],
+  failed: ['library checks failed', 'd1242f', 'A library check failed'],
   review: ['needs review', 'bf8700', 'Passed the checks but needs a maintainer to look'],
   auto: ['auto-merge', '0969da', 'Merged by the library workflow after the checks passed'],
   submission: ['parser-submission', '8250df', 'A parser submitted through the issue form'],

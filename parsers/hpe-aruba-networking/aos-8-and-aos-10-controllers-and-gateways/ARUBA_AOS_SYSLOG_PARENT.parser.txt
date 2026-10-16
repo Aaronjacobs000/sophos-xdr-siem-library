@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s[A-Za-z_][\w.-]*(?:\[\d+\])?:\s+(?:<\d{6}>\s+(?:<\d+>\s+)?<(?:EMERG|ALERT|CRIT|ERRS|ERR|WARN|NOTI|INFO|DBUG|DEBUG)>\s|USER:\S+\s+COMMAND:<)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: HPE Aruba Networking AOS 8 Mobility Controllers and Conductors (and AOS 10 gateways, assumed
 # to send the same lines), syslog sent to the data collector:

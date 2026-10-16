@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:^|\s)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z,(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:"(?:[^"]|"")*"|[^,"]*),(?:ADMIN|AGENT|APPROVAL|BOOTLOADER|DNS|DSN|GATEWAY|MAILBOXRULE|MEETINGMESSAGEPROCESSOR|ORAR|PICKUP|POISONMESSAGE|PUBLICFOLDER|QUEUE|REDUNDANCY|RESOLVER|ROUTING|SAFETYNET|SMTP|STOREDRIVER),[A-Z]+,
 !SCHEMA=scwx.email
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Microsoft Exchange Server 2016, 2019 or Subscription Edition message tracking logs
 # (MSGTRK*.LOG), each CSV row sent unchanged as a syslog message by NXLog (see README.md).

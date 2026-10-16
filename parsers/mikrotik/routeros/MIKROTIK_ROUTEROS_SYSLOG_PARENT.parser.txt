@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s[a-z0-9,-]*\b(?:info|warning|error|critical)\b[a-z0-9,-]*\s+(?:user\s.+\slogged\s(?:in|out)\s.*via\s[\w-]+\s*$|login failure for user\s.+\svia\s[\w-]+\s*$|.*[\w-]+:\s+in:\S+\s+out:.+,\s+proto\s+\S+.*,\s+len\s+\d+)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: MikroTik RouterOS, plain text over syslog to the data collector.
 # Parent: recognizes RouterOS login and firewall log lines and hands them to its children.

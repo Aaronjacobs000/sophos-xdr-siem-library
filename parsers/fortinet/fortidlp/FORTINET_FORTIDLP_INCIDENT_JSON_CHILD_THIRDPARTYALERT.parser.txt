@@ -4,7 +4,7 @@
 !SCHEMA=scwx.thirdpartyalert
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiDLP webhooks, JSON payload format, one event per request.
 # Child of FORTINET_FORTIDLP_JSON_PARENT: incident events (an incident created, resolved, or with

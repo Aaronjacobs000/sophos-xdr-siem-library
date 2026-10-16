@@ -1,14 +1,16 @@
-# Parser Studio for Sophos NG-SIEM
+# Unofficial Sophos Fusion XDR and SIEM Library
 
 > **Unofficial project, not from Sophos.** This is a personal project by an individual. It is not an official Sophos product and it is not built, endorsed, supported, or warranted by Sophos. Raise problems as issues on this repository, not with Sophos support. Report a security problem privately, as [SECURITY.md](SECURITY.md) explains.
 
-Parser Studio helps you write custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM) and test them in your browser before you add them in Sophos Fusion. It also holds a community library of parsers that anyone can use, test against their own logs, fork, and add to.
+A library of custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM) that people share, and Parser Studio, a page that helps you write your own parsers and test them in your browser before you add them in Sophos Fusion. Anyone can use the parsers, test them against their own logs, fork them, and add to them.
 
-Open the studio at https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/
+Open the library at https://aaronjacobs000.github.io/sophos-xdr-siem-library/ and Parser Studio at https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample
+
+This repo was called sophos-ngsiem-parser-studio until October 2026. Links to the old site redirect here, and the old repo's page links here.
 
 ![Parser Studio's Test step: an ESET PROTECT parser in the editor on the left, and the parsed NIDS record for one sample line on the right](docs/screenshot.png)
 
-## What it does
+## Parser Studio
 
 1. Sample: paste or drop log lines. The page finds the syslog header and the body format (JSON, CEF, LEEF, key=value, delimited or plain text), the key that splits event types, and a confirm string. It suggests a parent parser with one child per event type, or a single standalone parser.
 2. Map fields: each source key gets a parser field for the schema you pick, from a dictionary of common key names and the shape of each value. You change any mapping, map source values to enum names, add fixed values, and send the rest to `event_metadata`. Plain-text logs get a capture pattern with named groups that you can edit.
@@ -20,7 +22,7 @@ Mapping is rules only. There is no AI service and no backend.
 
 ## Privacy
 
-Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page's content security policy only lets it fetch from `api.github.com` and `raw.githubusercontent.com`, and it only uses them to read the public library.
+Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page's content security policy only lets it fetch from the site itself, and it only does that to read the library.
 
 ## The emulator and its limits
 
@@ -34,7 +36,7 @@ The emulator has been validated against 10 real event types.
 
 The emulator knows the fields in the docs' schema tables, plus the few more the engine was seen to store: `event_type`, `sensor_version` and `source_address` in Antivirus, `source_address` in Management Event, and `sensor_version` and `sensor_event_id` in the generic schema. It leaves out `rule_context` in Registry, which the engine drops. The engine's schemas may have others, so a field the emulator drops with a warning may still be stored. A line with no event time gets the ingest time, which for a library entry is its `reference_time`. It also can't see the built-in parsers in your tenant, which may claim the same lines first. A built-in parent sets fields of its own on its children's events, such as `os`, `computer` and `target_host` from the Windows Snare parent, which the emulator leaves out. The engine also tries first whichever of a built-in parent's children took the latest line, so when your child and a built-in one both match, the lines before decide which one takes a line. So a parser that passes here is a tested draft: add it in Sophos Fusion under Security Operations > Integrations > Custom Parsers, add your samples, and use Parse Message and Run Test before you turn it on. Sophos does not maintain custom parsers, and this tool does not replace Sophos Professional Services, which builds custom parsers for customers.
 
-## The community library
+## The parser library
 
 The library is the `parsers/` folder of this repo, one folder per vendor and product:
 
@@ -48,7 +50,7 @@ parsers/eset/eset-protect-on-prem/
   expected.json                          the emulator's result for each line
 ```
 
-The studio reads the library from GitHub each time it loads, so a parser shows up as soon as it merges, with no redeploy. If GitHub can't be reached, the page falls back to a copy built into the site, refreshed on every merge and daily. In the studio you can open any entry, run your own lines through it, or fork it as a starting point.
+The site publishes a copy of the library each time a change merges, and daily, so a parser shows up a few minutes after it merges. You can open any entry, run your own lines through it, or open it in Parser Studio and fork it as a starting point.
 
 It has 143 entries with 385 parsers:
 
@@ -81,8 +83,8 @@ Use **Share to the library** on the Test step. It runs the same checks as the re
 You need Node.js 22 or later. There are no packages to install.
 
 ```bash
-git clone https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio.git
-cd sophos-ngsiem-parser-studio
+git clone https://github.com/Aaronjacobs000/sophos-xdr-siem-library.git
+cd sophos-xdr-siem-library
 npm test                 # unit tests
 npm run validate         # the library checks CI runs
 npm run build            # builds the site into _site/
@@ -103,7 +105,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | Path | What it holds |
 | --- | --- |
 | `studio/` | The static site. `studio/core/` is the emulator, lint, detection, mapping and library code, shared by the page and the Node tools. `studio/app/` is the interface. |
-| `parsers/` | The community library. |
+| `parsers/` | The parser library. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |

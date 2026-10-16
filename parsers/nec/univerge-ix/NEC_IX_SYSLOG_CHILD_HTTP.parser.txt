@@ -4,7 +4,7 @@
 !SCHEMA=scwx.http
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: NEC UNIVERGE IX URL filtering and web guard logs, syslog to the data collector:
 #   UTM[nnn]: UF|WG-<h|l> seq <n>, {"type":"UF|WG","src":"<ip>:<port>","dst":"<ip>:<port>",...,"url":"<URL>",

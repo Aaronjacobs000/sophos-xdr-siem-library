@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="network"
 !SCHEMA=scwx.nids
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Trellix Network Security CEF notifications.
 # Child of TRELLIX_NX_CEF_PARENT: IPS events, malware callbacks, domain and infection matches and

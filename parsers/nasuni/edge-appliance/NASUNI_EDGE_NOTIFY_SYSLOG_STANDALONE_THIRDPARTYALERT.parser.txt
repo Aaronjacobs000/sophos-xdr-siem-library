@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s(?:The Filer has detected a new ransomware attack from user |The Filer has enforced the mitigation policy on volume |Antivirus has flagged file\(s\) on volume )
 !SCHEMA=scwx.thirdpartyalert
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Nasuni Edge Appliance notifications sent by Syslog Export: plain text after an RFC 5424
 # header. Three security notifications go to the third-party alert schema:

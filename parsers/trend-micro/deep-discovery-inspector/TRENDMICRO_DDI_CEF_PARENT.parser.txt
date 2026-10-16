@@ -3,7 +3,7 @@
 !CONFIRMSTRING=CEF:\s*0\|Trend Micro\|Deep Discovery Inspector\|
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Trend Micro Deep Discovery Inspector (DDI) syslog in CEF to the data collector
 # (Administration > Integrated Products/Services > Syslog, format CEF):

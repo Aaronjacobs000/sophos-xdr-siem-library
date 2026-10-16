@@ -4,7 +4,7 @@
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: AWS Network Firewall alert, flow and TLS logs, one JSON record per line, through S3 Ingest.
 # Each record wraps a Suricata EVE event: firewall_name, availability_zone, event_timestamp and event.

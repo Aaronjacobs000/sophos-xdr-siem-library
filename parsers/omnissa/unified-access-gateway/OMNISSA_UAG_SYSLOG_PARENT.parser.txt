@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s[Uu][Aa][Gg]-[A-Za-z_-]+:\s\[[^\]]*\](?:TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\s+\S+\[[^\]:]+: \d+\](?:\[[^\]]*\])?(?:\[[^\]]*\])?(?:\[[^\]]*\])?(?:\[[^\]]*\])?(?:\[[^\]]*\])? -
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Omnissa Unified Access Gateway (UAG) syslog, from Advanced Settings > System Configuration
 # > Syslog in the Admin UI, in the formats of Omnissa's "Syslog Formats and Events" page:

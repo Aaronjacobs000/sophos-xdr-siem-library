@@ -4,7 +4,7 @@
 !CONFIRMSTRING=\sdevid="?FDC[^\s"]*"?\s.*\stype="?event"?\s+subtype="?system"?\s.*(?:\smsg="(?:EventID|Service|Operation)=[^"]*\sAttacker[Ii][Pp]=|[^:]\s(?:EventID=\d+\s+IncidentID=|Operation=\S+\s+Attacker[Ii][Pp]=))
 !SCHEMA=scwx.thirdpartyalert
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiDeceptor logs sent to a remote log server of type syslog, key=value:
 #   <PRI><time> devhost=<name> devid=<serial> logver=<n> tzone=<seconds> tz=<zone> date=<date>

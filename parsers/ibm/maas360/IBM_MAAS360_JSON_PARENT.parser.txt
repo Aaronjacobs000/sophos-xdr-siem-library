@@ -4,7 +4,7 @@
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: IBM MaaS360 portal administrator reports, pulled by the example bridge in
 # bridges/ibm-maas360 and posted to HTTP Ingest as JSON lines. MaaS360 has no syslog or webhook

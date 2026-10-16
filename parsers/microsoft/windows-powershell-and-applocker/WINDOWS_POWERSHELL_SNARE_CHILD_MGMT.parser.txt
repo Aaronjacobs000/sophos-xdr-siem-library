@@ -5,7 +5,7 @@
 !SCHEMA=scwx.managementevent
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: PowerShell script block logging (event 4104) and module logging (event 4103) from the
 # Microsoft-Windows-PowerShell/Operational log (Windows PowerShell 5.1) and the

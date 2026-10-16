@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:^|[\s>])date="\d{4}-\d{2}-\d{2}"\s+time="[\d:]+"\s+tz="[^"]*"\s+logid="\d+"\s.*\bdevid="F(?:AI|ND)[^"]*"\s+type="(?:ndr|attack|event|netflow)"
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiNDR (on-premises, formerly FortiAI) logs sent to a syslog server in the default
 # format, key="value" with numbers unquoted:

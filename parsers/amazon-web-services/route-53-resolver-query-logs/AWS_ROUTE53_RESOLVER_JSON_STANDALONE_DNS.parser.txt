@@ -4,7 +4,7 @@
 !SCHEMA=scwx.dnsquery
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Amazon Route 53 VPC Resolver query logs, one JSON record per line, through S3 Ingest.
 # Standalone parser for the DNS schema. AWS writes the keys in no fixed order, so the confirm

@@ -5,7 +5,7 @@
 !SCHEMA=scwx.cloudaudit
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Azure SQL Database, SQL Managed Instance and Synapse SQL auditing (category
 # SQLSecurityAuditEvents), streamed by a diagnostic setting to an event hub that a Sophos NG-SIEM

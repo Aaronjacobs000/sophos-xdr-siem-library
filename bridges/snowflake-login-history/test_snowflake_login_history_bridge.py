@@ -440,7 +440,7 @@ class BridgeTest(unittest.TestCase):
         for h in self.mock.headers:
             self.assertEqual((h["Authorization"], h["X-Snowflake-Authorization-Token-Type"], h["Accept"], h["Content-Type"]),
                              (f"Bearer {TOKEN}", "PROGRAMMATIC_ACCESS_TOKEN", "application/json", "application/json"))
-            self.assertTrue(h["User-Agent"].startswith("parser-studio-snowflake-login-history-bridge/"))
+            self.assertTrue(h["User-Agent"].startswith("sophos-xdr-siem-library-snowflake-login-history-bridge/"))
 
     def test_without_a_warehouse_or_role_the_users_defaults_are_used(self):
         self.mock.rows = [login(0, self.ago(400))]

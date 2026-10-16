@@ -3,7 +3,7 @@
 !CONFIRMSTRING=:\s+\S+\s+\S+\s+\S+\s+\[\d{2}/[A-Z][a-z]{2}/\d{4}:\d{2}:\d{2}:\d{2}\s[+-]\d{4}\]\s+"(?:[^"\\]|\\.)*"\s+\d{3}\s+(?:\d+|-)\s+"(?:[^"\\]|\\.)*"\s+"(?:[^"\\]|\\.)*"\s*$
 !SCHEMA=scwx.http
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: nginx or Apache httpd access logs in the combined format, over syslog to the data collector.
 # Standalone parser for the HTTP schema. The two servers write the same combined format:

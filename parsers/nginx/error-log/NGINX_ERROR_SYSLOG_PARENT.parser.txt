@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:^|\s)\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[(?:emerg|alert|crit|error|warn|notice|info|debug)\] \d+#\d+:
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: nginx error log lines, sent with error_log syslog:server=<collector> (tag nginx, facility
 # local7) or forwarded from the error log file by the host's syslog daemon. nginx documents the

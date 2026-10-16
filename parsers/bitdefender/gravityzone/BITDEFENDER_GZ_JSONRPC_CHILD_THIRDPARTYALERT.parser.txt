@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="new-incident" OR eventType$=="new-extended-incident" OR eventType$=="avc" OR eventType$=="antiexploit" OR eventType$=="network-monitor" OR eventType$=="ransomware-mitigation" OR eventType$=="network-sandboxing" OR eventType$=="aph"
 !SCHEMA=scwx.thirdpartyalert
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Bitdefender GravityZone Event Push Service, serviceType jsonRPC, to HTTP Ingest.
 # Child of BITDEFENDER_GZ_JSONRPC_PARENT: EDR and XDR incidents, Advanced Threat Control,

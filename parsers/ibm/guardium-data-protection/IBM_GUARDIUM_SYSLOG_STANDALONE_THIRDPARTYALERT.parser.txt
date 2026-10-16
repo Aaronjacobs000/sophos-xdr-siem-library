@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:LEEF:1\.0|CEF:0)\|(?:IBM|Guardium)\|Guardium\|[^|]*\|
 !SCHEMA=scwx.thirdpartyalert
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: IBM Guardium Data Protection policy and correlation alerts, sent by syslog (remote log)
 # from a collector, with one of IBM's predefined alert message templates:

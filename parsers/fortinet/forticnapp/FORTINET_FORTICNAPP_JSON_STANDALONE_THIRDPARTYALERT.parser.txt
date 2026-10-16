@@ -4,7 +4,7 @@
 !SCHEMA=scwx.thirdpartyalert
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiCNAPP (Lacework) alerts from a custom webhook alert channel, one alert per request,
 # through bridges/webhook-relay (route /forticnapp/<secret>) to a Sophos NG-SIEM HTTP Ingest

@@ -6,7 +6,7 @@ To report a security problem, follow [SECURITY.md](SECURITY.md) instead of openi
 
 ## Add parsers to the library
 
-Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/), then choose **Share to the library** on the Test step. Fill in the details and run the library checks; they are the same checks the repo runs. When they pass, pick a route.
+Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample), then choose **Share to the library** on the Test step. Fill in the details and run the library checks; they are the same checks the repo runs. When they pass, pick a route.
 
 ### Route 1: pull request in the browser
 

@@ -5,7 +5,7 @@
 !SCHEMA=scwx.process
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Sysmon event 1 (Process Create) from the Microsoft-Windows-Sysmon/Operational log, sent
 # in Snare format over syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log

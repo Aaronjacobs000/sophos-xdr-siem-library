@@ -3,7 +3,7 @@
 !CONFIRMSTRING=DESCRIPTION:\s.*\s\|\s+TIMESTAMP:\s*\d+\s+\|\s.*USER:\s.*\s\|\s+CATEGORY:\s*[A-Z_]+\s+\|\s+ACTION:\s*[A-Z_]+\s+\|\s+REASON:
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Veritas NetBackup audit events sent to the primary server's system log (Send the audit
 # events to the system logs, or SYSLOG_AUDIT_CATEGORIES in bp.conf) in the native format, then

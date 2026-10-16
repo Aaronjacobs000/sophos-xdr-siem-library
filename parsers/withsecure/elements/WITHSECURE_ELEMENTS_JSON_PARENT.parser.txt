@@ -4,7 +4,7 @@
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: WithSecure Elements security events (POST /security-events/v1/security-events) and audit
 # logs (GET /audit-logs/v1/audit-logs) from the Elements API, pulled by the example bridge in

@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\sConnection\s+[^:]*:\s*User \[[^\]]*\] from \[[^\]]+\] (?:signed in to \[[^\]]+\] successfully via|failed to sign in to \[[^\]]+\] via \[[^\]]+\] due to|failed to log in via \[[^\]]+\] due to)
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Synology DSM Log Center, "Send to a syslog server" in BSD (RFC 3164) format.
 # Standalone parser for the Auth schema: sign-in successes and failures from the Connection log.

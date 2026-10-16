@@ -3,7 +3,7 @@
 !CONFIRMSTRING=%%\d{2}\s?(?:SN:\S+\s+)?(?:VsysId:\S+\s+)?(?:SHELL|LOGIN|SSHS|AAA|CFGMAN|WEB|DOT1X|MACA|SESSION|FILTER|IPS|ATK|UFLT|ANTI-VIR)/\d/[A-Z][A-Z0-9_]*:
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Comware 7 devices from H3C (switches, routers and SecPath firewalls) and HPE (FlexNetwork and
 # FlexFabric switches), system logs sent to the data collector in the default (non-customized) format,

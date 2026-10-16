@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="mgmt"
 !SCHEMA=scwx.managementevent
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Omnissa Unified Access Gateway syslog.
 # Child of OMNISSA_UAG_SYSLOG_PARENT: configuration changes to ManagementEvent.

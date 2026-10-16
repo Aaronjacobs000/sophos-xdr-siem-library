@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="av" OR eventType$=="hd" OR eventType$=="exchange-malware"
 !SCHEMA=scwx.antivirus
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Bitdefender GravityZone Event Push Service, serviceType jsonRPC, to HTTP Ingest.
 # Child of BITDEFENDER_GZ_JSONRPC_PARENT: Antimalware (av), HyperDetect (hd) and Security for

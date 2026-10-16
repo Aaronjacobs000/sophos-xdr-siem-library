@@ -4,7 +4,7 @@
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: NEC UNIVERGE IX routers, syslog to the data collector, in both series' formats:
 #   IX-R and IX-V, RFC 5424: <PRI>1 <time> <host> <function> - <message ID> - <message>

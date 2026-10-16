@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s(?:apmd|apd|tmm\d*)\[\d+\]:\s+0149(?:0500|0010|0005|0102|0107|0501|0567):\d:\s
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: F5 BIG-IP APM access messages, RFC 3164 remote syslog (the default) to the data collector:
 #   <PRI>Mmm dd HH:MM:SS <host> <severity> <process>[<pid>]: <message id>:<level>: <profile>:<partition>:<session>: <text>

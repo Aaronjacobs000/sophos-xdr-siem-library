@@ -4,7 +4,7 @@
 !SCHEMA=scwx.generic
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: osquery scheduled query results (event format, one JSON object per row change) and status
 # logs from osqueryd's syslog logger plugin, forwarded by the host's syslog daemon:

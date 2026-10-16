@@ -5,21 +5,26 @@ import { renderMap } from './views/map.js';
 import { renderTest } from './views/test.js';
 import { renderLibrary, renderEntry } from './views/library.js';
 import { renderHelp } from './views/help.js';
-import { TOOL_VERSION } from '../core/version.js';
+import { renderHome } from './views/home.js';
+import { TOOL_VERSION, SITE_NAME } from '../core/version.js';
+import { routeOf } from './routes.js';
 import { clear } from './dom.js';
 
 const app = document.getElementById('app');
 
 function route() {
-  const hash = location.hash.replace(/^#\/?/, '') || 'build/sample';
-  const parts = hash.split('/').map((p) => { try { return decodeURIComponent(p); } catch { return p; } });
-  for (const a of document.querySelectorAll('[data-nav]')) a.classList.toggle('on', a.dataset.nav === parts[0]);
+  const r = routeOf(location.hash);
+  // Links from before the parser library moved to #/parsers keep working, and show the new address.
+  if (r.canonical !== null && r.canonical !== location.hash) history.replaceState(null, '', r.canonical);
+  for (const a of document.querySelectorAll('[data-nav]')) a.classList.toggle('on', a.dataset.nav === r.nav);
+  document.title = r.title ? `${r.title} | ${SITE_NAME}` : SITE_NAME;
   clear(app);
-  if (parts[0] === 'library' && parts.length >= 3) renderEntry(app, `${parts[1]}/${parts[2]}`);
-  else if (parts[0] === 'library') renderLibrary(app);
-  else if (parts[0] === 'help') renderHelp(app);
-  else if (parts[1] === 'map' && state.plan) renderMap(app);
-  else if (parts[1] === 'test' && state.parsers) renderTest(app);
+  if (r.view === 'entry') renderEntry(app, r.id);
+  else if (r.view === 'parsers') renderLibrary(app);
+  else if (r.view === 'help') renderHelp(app);
+  else if (r.view === 'home') renderHome(app);
+  else if (r.step === 'map' && state.plan) renderMap(app);
+  else if (r.step === 'test' && state.parsers) renderTest(app);
   else renderSample(app);
   app.focus({ preventScroll: true });
   window.scrollTo(0, 0);
@@ -31,20 +36,20 @@ function updateMeta() {
   el.textContent = `v${TOOL_VERSION} · MIT · library: ${state.library.status === 'ready' ? `${n} parsers` : 'loading'}`;
 }
 
-export async function refreshLibrary(force = false) {
+export async function refreshLibrary() {
   state.library.status = 'loading';
   emit('library');
-  const r = await loadLibrary({ force });
-  Object.assign(state.library, { status: 'ready', entries: r.entries, bridges: r.bridges || [], source: r.source, at: r.at, error: r.error || null });
+  const r = await loadLibrary();
+  Object.assign(state.library, { status: 'ready', entries: r.entries, bridges: r.bridges || [], source: r.source, at: r.at, sha: r.sha || null, error: r.error || null });
   emit('library');
 }
 
 window.addEventListener('hashchange', route);
-window.addEventListener('parser-studio:refresh-library', () => refreshLibrary(true));
+window.addEventListener('parser-studio:refresh-library', () => refreshLibrary());
 subscribe((what) => {
   if (what !== 'library') return;
   updateMeta();
-  if (/^#\/library/.test(location.hash || '')) route();
+  if (routeOf(location.hash).library) route();
 });
 route();
 updateMeta();

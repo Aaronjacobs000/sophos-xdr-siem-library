@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:\sFIREWALL-PKTLOG(?:\[\d+\]:|:|\s+\d+\s+-\s+-)\s+[0-9a-f]{8}\s+INET6?\s|\sNSX\s+\S+\s+\S+\s+\[nsx@6876\s)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: VMware NSX (vDefend Firewall) syslog to the data collector. Two senders:
 #   ESXi hosts send distributed firewall (DFW) packet logs through the host's own syslog:

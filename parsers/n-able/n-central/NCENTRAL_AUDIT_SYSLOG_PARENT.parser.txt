@@ -3,7 +3,7 @@
 !CONFIRMSTRING=<\d{1,3}>1 \d{4}-\d{2}-\d{2}T\S+ \S+ ncentraldms \S+ \S+ \S+ \[[^\]]*\] logged in from \S+
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: N-able N-central Audit Export (Administration > Audit Export), RFC 5424 syslog over TCP
 # to the data collector, or through a relay that adds its own syslog header in front.

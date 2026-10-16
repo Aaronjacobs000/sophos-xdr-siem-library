@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="afm-dos"
 !SCHEMA=scwx.nids
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: F5 BIG-IP AFM DoS events (rfc5424 structured data, Splunk or ArcSight CEF).
 # Child of F5_BIGIP_AFM_SYSLOG_PARENT: network, DNS and SIP DoS events (errdefs_msgno 23003138,

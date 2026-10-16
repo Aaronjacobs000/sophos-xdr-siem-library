@@ -43,7 +43,7 @@ const fromDir = args[0] === '--from' ? args[1] : null;
 
 async function load(url, file) {
   if (fromDir) return readFile(path.join(fromDir, file), 'utf8');
-  const res = await fetch(url, { headers: { 'user-agent': 'sophos-ngsiem-parser-studio schema builder' } });
+  const res = await fetch(url, { headers: { 'user-agent': 'sophos-xdr-siem-library schema builder' } });
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   return res.text();
 }

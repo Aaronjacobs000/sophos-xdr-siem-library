@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\[FILTER\]\[(?:Block|Pass)\]\[[^\]]*->[^\]]*,\s*[\d:]+\s*\]\[@S:R=\d+:\d+,\s*[^\]]*->[^\]]*\]\[[^\]]+\]
 !SCHEMA=scwx.netflow
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: DrayTek Vigor routers (DrayOS), firewall IP Filter syslog (local0) to the data collector.
 # Standalone parser for the Netflow schema. Tick Syslog on the filter rules you want logged.

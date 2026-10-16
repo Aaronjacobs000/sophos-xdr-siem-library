@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\[[A-Z0-9_]+-[A-Z]+-\d+\]\s+(?:DESCR="[^"]*"\s+)?IN=\S*\s+OUT=\S*\s+(?:MAC=\S*\s+)?SRC=\S+\s+DST=\S+\s+LEN=\d+\s.*PROTO=
 !SCHEMA=scwx.netflow
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Ubiquiti UniFi gateways (UDM, UCG, UXG, USG), firewall rule logs over syslog to the
 # data collector (CyberSecure > Traffic Logging, with Syslog Logging on each rule to log).
