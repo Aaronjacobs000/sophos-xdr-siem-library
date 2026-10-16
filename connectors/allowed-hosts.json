@@ -1,0 +1,21 @@
+{
+  "sophos": {
+    "api": [
+      "id.sophos.com",
+      "api.central.sophos.com",
+      "api-eu01.central.sophos.com",
+      "api-eu02.central.sophos.com",
+      "api-us01.central.sophos.com",
+      "api-us03.central.sophos.com"
+    ],
+    "docs": [
+      "developer.sophos.com",
+      "docs.sophos.com"
+    ],
+    "sources": [
+      "https://developer.sophos.com/getting-started-tenant/",
+      "https://developer.sophos.com/concepts/regions/",
+      "https://developer.sophos.com/reference/mobile-v1/"
+    ]
+  }
+}

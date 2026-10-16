@@ -12,6 +12,7 @@ Say what is affected, how to reproduce it, and what someone could do with it. Th
 
 - The site: https://aaronjacobs000.github.io/sophos-xdr-siem-library/, Parser Studio included, and the code under `studio/`.
 - The library gate and workflows: the checks and merge rules under `tools/`, and the workflows under `.github/workflows/` that check and merge library submissions.
+- The playbooks and connectors under `playbooks/` and `connectors/`, and the host allowlist they're checked against.
 - The bridges: the scripts and the webhook relay under `bridges/`.
 
 Fixes go to the main branch and the live site. There are no releases to patch.

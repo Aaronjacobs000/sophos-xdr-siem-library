@@ -225,6 +225,18 @@ table.rec td:last-child { font-family: var(--mono); overflow-wrap: anywhere; whi
 .card .foot2 { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; margin-top: auto; flex-wrap: wrap; }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
 
+/* playbooks and connectors */
+.yamlpanel { margin-top: 14px; }
+.yamlpanel .editortools h2 { margin: 0; }
+.yamlview { white-space: pre; margin: 8px 0 0; max-height: 640px; }
+.steps-list { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; display: flex; flex-direction: column; gap: 6px; }
+ul.plain { margin: 0; padding-left: 18px; }
+ul.plain li { margin-bottom: 3px; }
+table.fntable td:first-child { width: 45%; }
+.libhead .actions .pill { align-self: center; }
+.mdpanel { margin-top: 14px; }
+.mdpanel .mdview { max-height: none; }
+
 /* bridge on an entry page */
 .bridge { margin-top: 12px; }
 .bridgehead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -272,11 +284,18 @@ dialog::backdrop { background: rgba(0, 26, 71, .45); }
 .help code { font-family: var(--mono); font-size: 12.5px; background: #E9EFF5; padding: 1px 4px; border-radius: 3px; }
 .hidden { display: none !important; }
 .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 1640px) {
+  .brand small { display: none; }
+}
+@media (max-width: 1520px) {
+  .top .meta { display: none; }
+}
 @media (max-width: 720px) {
   .top { padding: 8px 16px; gap: 10px; }
   .brand small { display: none; }
   .top .meta { display: none; }
-  .topnav { margin-left: 0; }
+  .topnav { margin-left: 0; flex-wrap: wrap; }
+  .topnav a { padding: 6px 8px; }
   main { padding: 0 16px 20px; }
   .notice { padding: 8px 16px; }
   .steps .bar { width: 16px; }

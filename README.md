@@ -2,7 +2,11 @@
 
 > **Unofficial project, not from Sophos.** This is a personal project by an individual. It is not an official Sophos product and it is not built, endorsed, supported, or warranted by Sophos. Raise problems as issues on this repository, not with Sophos support. Report a security problem privately, as [SECURITY.md](SECURITY.md) explains.
 
-A library of custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM) that people share, and Parser Studio, a page that helps you write your own parsers and test them in your browser before you add them in Sophos Fusion. Anyone can use the parsers, test them against their own logs, fork them, and add to them.
+A library of parsers, playbooks and connectors for Sophos Fusion that people share, with Parser Studio, a page that helps you write custom parsers and test them in your browser. It has three sections:
+
+- Parsers: custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM), each with synthetic samples and the emulator's expected output. Anyone can use them, test them against their own logs, fork them, and add to them.
+- Playbooks: Sophos Fusion playbook templates to import, each with its setup steps, risk tier, MDR note and rollback. They ship with dry run on, and the owner reviews every one.
+- Connectors: custom connectors for products that have no connector from Sophos, which the playbooks call. Each one calls only hosts its vendor documents.
 
 Open the library at https://aaronjacobs000.github.io/sophos-xdr-siem-library/ and Parser Studio at https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample
 
@@ -22,7 +26,7 @@ Mapping is rules only. There is no AI service and no backend.
 
 ## Privacy
 
-Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page's content security policy only lets it fetch from the site itself, and it only does that to read the library.
+Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page's content security policy only lets it fetch from the site itself, and it only does that to read the library. The site never connects to a Sophos Fusion tenant.
 
 ## The emulator and its limits
 
@@ -74,9 +78,29 @@ A library entry that needs a bridge names it in `meta.json`, for example `"bridg
 
 Bridges were called collectors until October 2026, when they were renamed so nobody mistakes them for the Sophos data collector. The old `"collector"` key and `COLLECTOR_*` settings still work.
 
+## Playbooks and connectors
+
+Sophos Fusion exports and imports playbook templates and custom connectors as YAML, so the library holds the files you import, as Sophos Fusion exports them:
+
+```
+playbooks/sophos/sophos-mobile-lock/
+  template.yaml    the template, without tenantId or icon
+  meta.json        use case, trigger to set, connections, risk tier, MDR note, rollback, tested status
+  SETUP.md         the trigger, inputs and connections to set, which a template can't carry
+connectors/sophos/sophos-mobile/
+  connector.yaml   the connector
+  meta.json        how it signs in, and each function's risk tier
+  README.md        what to set up before you add a connection
+connectors/allowed-hosts.json   the hosts each vendor documents, the only ones a connector may call
+```
+
+To use one, import the library connector it needs under Security Operations > Automations > Connectors > Connector Library and add a connection, import `template.yaml` under Automations > Playbooks > Templates, choose Use this Template and leave the playbook off, then run it against a test target before you turn it on. Each entry's page on the site has the YAML to copy or download, and its setup steps.
+
+Playbooks act on tenants, so nothing under `playbooks/` or `connectors/` merges on its own: the checks label each pull request for review and the owner merges it. Entries ship with dry run on, a scoping input and a per-run limit. The checks catch YAML and CEL that don't parse, names and versions, dependencies on the entry's own connector, task references, a risk tier lower than what the template calls, hosts that aren't on the allowlist, wipe-type actions, and tenant IDs, icons, credentials, webhook URLs and personal data. They run offline; `playbookValidateDSLV2` in a tenant is the authority on a template, and an entry records when it passed.
+
 ## Contributing
 
-Use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. [CONTRIBUTING.md](CONTRIBUTING.md) has the details, including how to work from a git clone.
+Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Playbooks and connectors: open a pull request from a git clone; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
 ## Run it locally
 
@@ -106,6 +130,8 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | --- | --- |
 | `studio/` | The static site. `studio/core/` is the emulator, lint, detection, mapping and library code, shared by the page and the Node tools. `studio/app/` is the interface. |
 | `parsers/` | The parser library. |
+| `playbooks/` | Playbook templates, each with its metadata and setup steps. |
+| `connectors/` | Custom connectors, and the allowlist of the hosts they may call. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |

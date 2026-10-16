@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Unofficial Sophos Fusion XDR and SIEM Library</title>
-<meta name="description" content="Custom parsers for Sophos NG-SIEM that people share, and Parser Studio to write and test your own in the browser. Unofficial project, not from Sophos.">
+<meta name="description" content="Parsers, playbooks and connectors for Sophos Fusion XDR and Sophos NG-SIEM that people share, and Parser Studio to write and test parsers in the browser. Unofficial project, not from Sophos.">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app/styles.css">
 <script type="module" src="app/main.js"></script>
@@ -15,10 +15,12 @@
 <header class="top">
   <a class="brandlink" href="#/" aria-label="Unofficial Sophos Fusion XDR and SIEM Library home">
     <span class="glyph" aria-hidden="true">{ }</span>
-    <span class="brand">Unofficial Sophos Fusion XDR and SIEM Library <small>parsers and Parser Studio</small></span>
+    <span class="brand">Unofficial Sophos Fusion XDR and SIEM Library <small>parsers, playbooks and connectors</small></span>
   </a>
   <nav class="topnav" aria-label="Main">
     <a href="#/parsers" data-nav="parsers">Parsers</a>
+    <a href="#/playbooks" data-nav="playbooks">Playbooks</a>
+    <a href="#/connectors" data-nav="connectors">Connectors</a>
     <a href="#/build/sample" data-nav="build">Parser Studio</a>
     <a href="#/help" data-nav="help">How it works</a>
   </nav>
@@ -26,7 +28,7 @@
   <span class="meta" id="top-meta">v0.1.0 · MIT</span>
   <a class="unofficial" href="https://github.com/Aaronjacobs000/sophos-xdr-siem-library" target="_blank" rel="noopener noreferrer" title="The library's repo on GitHub" aria-label="Unofficial tool: the library's repo on GitHub, opens in a new tab">Unofficial tool</a>
 </header>
-<div class="notice" role="note"><b>Not from Sophos.</b> A personal project, not built, endorsed, or supported by Sophos. Everything runs in this browser tab, and results are emulator output until you Run Test in your own tenant.</div>
+<div class="notice" role="note"><b>Not from Sophos.</b> A personal project, not built, endorsed, or supported by Sophos. Everything runs in this browser tab. Parser results are emulator output until you Run Test in your own tenant, and playbooks ship with dry run on.</div>
 <main id="app" tabindex="-1">
   <noscript><p class="pad">This site needs JavaScript. It runs entirely in your browser.</p></noscript>
 </main>

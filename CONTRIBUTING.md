@@ -51,7 +51,7 @@ The repo merges a pull request on its own when all of these hold:
 - The pull request changes nothing outside `parsers/`.
 - Each entry it changes is new, or its `meta.json` already names the person who opened the pull request as `author`.
 
-Anything else, such as a change to someone else's entry, a deletion, a bridge, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
+Anything else, such as a change to someone else's entry, a deletion, a bridge, a playbook or connector, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
 
 ## Mark an entry tenant tested
 
@@ -76,11 +76,81 @@ To show a bridge on an entry's page, set `"bridge": "bridges/<name>"` in the ent
 
 Bridges are code that people download and run, so the maintainer reviews every bridge before it merges. You can propose one in a pull request, but it won't merge automatically.
 
+## Add a playbook or connector
+
+Playbooks act on tenants: they lock devices, isolate hosts and send data out. So the owner reviews every playbook and connector, and nothing under `playbooks/` or `connectors/` merges on its own. The checks label the pull request "needs review" and leave it open. Work from a git clone and open a pull request.
+
+### What an entry holds
+
+```
+playbooks/<vendor>/<name>/      template.yaml, meta.json, SETUP.md, and an optional README.md
+connectors/<vendor>/<name>/     connector.yaml, meta.json, README.md
+```
+
+The folder comes from `meta.json`: the vendor and the title for a playbook, the vendor and the product for a connector, in lowercase with hyphens. [playbooks/sophos/sophos-mobile-lock](playbooks/sophos/sophos-mobile-lock/) and [connectors/sophos/sophos-mobile](connectors/sophos/sophos-mobile/) show the shape.
+
+- `template.yaml` and `connector.yaml` are the files as Sophos Fusion exports them (More Actions > Export on the template, or the Connector Library), with `tenantId` and `icon` taken out. Edit the raw text. A single-quoted value in a template is text, and a plain or double-quoted one is an expression, so a tool that reads and rewrites the YAML can change what a playbook does.
+- A playbook's `meta.json` has `title`, `vendor`, `product`, `use_case`, `trigger` (the trigger to set), `connections`, `requires` (the products it needs), `license`, `risk_tier`, `mdr_note`, `rollback`, `tested`, `connector` (the library connector it needs, or null), `author`, `docs` and optional `notes`.
+- A connector's `meta.json` has `title`, `vendor`, `product`, `auth` (how the connection signs in), `functions` (each function's risk tier), `license`, `tested`, `author`, `docs` and optional `notes`.
+- `tested` is `{"validated": "YYYY-MM-DD", "tenant": null}`: the date the template passed `playbookValidateDSLV2` (or the connector imported) in a tenant, and `{"date": "YYYY-MM-DD", "region": "us01"}` once it really ran in a tenant. Only record what happened.
+- `SETUP.md` lists what a template can't carry: the trigger, the run condition, the inputs, the connections, and the response mode where it applies. It says to pin the template version, because a configured playbook picks up minor and patch versions on its own, and to leave the playbook off until a test run.
+
+### Risk tiers
+
+| Tier | What the playbook does |
+| --- | --- |
+| lookup | Reads data and changes nothing. |
+| notify | Sends a message or adds a comment, and changes nothing else. |
+| reversible action | Changes something that can be undone, such as locking a device or isolating a host. |
+| destructive | Changes something that can't be undone. It needs a `tested.tenant` record, a run in a real tenant, before it can merge. |
+
+The checks work out the least tier from what the template calls: the tiers in its own connector's `meta.json`, a few Sophos-managed functions they know, and a reversible action for anything else. An entry can claim a higher tier, never a lower one. Wipe-type actions are refused for now: there is no undo, and no corporate-only wipe.
+
+### Entries ship off, and safe
+
+Every playbook ships off: you import it, choose Use this Template and leave the configured playbook off until a test run. A playbook that acts also needs:
+
+- a `dry_run` input that defaults to true, with every acting task conditioned on it, so a first run only reports what it would do
+- a scoping input, such as a device group or a tag, with nothing in scope when it is empty
+- a per-run limit with a low default, so a broad trigger can't act on a fleet
+- an honest rollback: what undoes it, or that nothing does
+- an MDR note: Sophos MDR doesn't run customer playbooks, and one can act on a host or device MDR is working on
+
+### What the checks look at
+
+- The YAML parses, with no anchors, tags or tabs, and the fields are ones a template or connector has.
+- Names, versions (`1.0.0`), the `Taegis` prefix Sophos reserves, and the files and folder.
+- Dependencies: every `action`, `exec` and `call` is in the template's `connectors`, `playbooks` or `interfaces` list, the entry's own connector is listed at the version its `connector.yaml` has, and it has the functions the template calls.
+- Every CEL expression parses, and reads only tasks, `inputs`, `TDR` and `tenant`. A bare word that is none of them was probably meant as text, which needs single quotes.
+- The risk tier, wipe-type actions, and the tenant record for destructive entries.
+- Every URL a connector calls is https on a host in [connectors/allowed-hosts.json](connectors/allowed-hosts.json) for its vendor, including hosts that come from a connection setting with a fixed list of values. A host set at run time is refused. A template holds no URLs at all.
+- No tenant IDs, object IDs, icons, credentials, webhook URLs or personal data, and the same secret scan CI runs.
+
+A new host goes into `connectors/allowed-hosts.json` in its own pull request first, with the vendor page that documents it under `sources`. The checks read the allowlist from the main branch.
+
+The checks run offline. Run `playbookValidateDSLV2` in your own tenant on the template's `dsl` before you open the pull request; it is the authority, and it saves nothing.
+
+### What review looks at
+
+- What each acting task does, against the risk tier and the vendor's docs.
+- The dry run, scoping input and per-run limit, and that the defaults are safe.
+- Every use of the Generic Webhook or Fetch connectors, and exactly which fields leave the tenant.
+- Whether `SETUP.md` is enough to set it up without guessing.
+
+### What never goes in
+
+- Template or connector YAML that Sophos manages, copied as is. Refer to it by name and version, such as `Taegis.Case:1.0.5`.
+- Exports from real tenants with their data, tenant IDs, connection details, credentials and webhook URLs.
+- Internal Sophos material: internal discussions and the names in them, internal licensing or service notes, and roadmaps.
+- Anything that looks like the Sophos Fusion console, and Sophos logos.
+
 ## Changes to the studio
 
 Open an issue first for anything large. Keep the page free of runtime dependencies and network calls other than reading the library, add tests under `test/`, and run `npm test` before you open the pull request. Code changes always get a review.
 
 ## Notes for maintainers
+
+- **Playbook and connector pull requests.** The gate labels them "needs review" and never merges them. Review them as the section above says, then squash-merge as owner.
 
 - **CI that takes over 10 minutes.** The gate stops waiting, and its report on the pull request says it is waiting for CI. When CI finishes, the gate runs again for that commit, with every check, and merges it if CI passed or labels it "needs review" if not.
 - **CI that fails, then passes on a re-run.** The gate labels the pull request "needs review" and its report says a check failed. Re-run the failed CI jobs: when CI passes on the same commit, the gate runs again for it, with every check, and merges it if they all passed.

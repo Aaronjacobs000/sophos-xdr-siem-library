@@ -221,3 +221,11 @@ test('merge workflow: a run CI started goes on only if the gate\'s report holds 
     assert.ok(!moved.calls.some((c) => c.startsWith('node ')), answer);
   }
 });
+
+test('checks workflow: every pull request is checked, so one that only touches playbooks or connectors still reaches the gate', async () => {
+  const checks = await readFile(path.join(ROOT, '.github/workflows/parser-checks.yml'), 'utf8');
+  const on = checks.slice(checks.indexOf('\non:'), checks.indexOf('\npermissions:'));
+  assert.match(on, /\n {2}pull_request:\n {4}types: \[opened, synchronize, reopened, ready_for_review\]/);
+  assert.doesNotMatch(on, /paths(-ignore)?:|branches(-ignore)?:/, 'no filter that would skip a pull request');
+  assert.match(checks, /node base\/tools\/validate-library\.mjs --root pr --base base --changed-files changed\.txt /);
+});
