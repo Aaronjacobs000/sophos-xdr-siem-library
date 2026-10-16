@@ -59,4 +59,5 @@ The library check runs a port of one rule of the secret scanner CI runs, so cont
 
 | File | Source | License |
 | --- | --- | --- |
-| `studio/core/gitleaks.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `config/gitleaks.toml`, the `generic-api-key` rule's regex, keywords, entropy threshold, allowlists and stopword list, and the global allowlist's regexes and stopwords; from `detect/detect.go` and `config/allowlist.go`, how a match becomes a finding and how the allowlists apply. The license text is in the file's header comment | MIT |
+| `studio/core/gitleaks-rule.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `config/gitleaks.toml`, the `generic-api-key` rule's regex, keywords, entropy threshold, allowlists and stopword list, and the global allowlist, written by `tools/port-gitleaks.mjs`. The license text is in the file's header comment | MIT |
+| `studio/core/gitleaks.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `detect/detect.go` and `config/allowlist.go`, how a match becomes a finding and how the allowlists apply. The license text is in the file's header comment | MIT |

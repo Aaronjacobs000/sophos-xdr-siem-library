@@ -177,3 +177,44 @@ test('CI workflow: every bridge test server notices shutdown within 0.05 s, so t
   }
   assert.ok(servers >= 100, `found ${servers} test servers`);
 });
+
+test('CI workflow: the tests job installs the secrets job\'s gitleaks before the unit tests, and puts only it on the PATH', { skip: process.platform === 'win32' }, async () => {
+  const lines = jobs().tests;
+  const names = lines.map((l) => /^\s+- name: (.*)$/.exec(l)).filter(Boolean).map((m) => m[1]);
+  assert.ok(names.indexOf('Install gitleaks for the port tests') !== -1 && names.indexOf('Install gitleaks for the port tests') < names.indexOf('Unit tests'), names.join(', '));
+  const own = step('Install gitleaks for the port tests');
+  const scan = step('Install gitleaks');
+  assert.deepEqual(own.env, scan.env, 'the same version and checksum as the secrets job');
+  assert.ok(!own.run.includes('${{'));
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-gitleaks-path-'));
+  try {
+    const temp = path.join(dir, 'runner');
+    const bin = path.join(dir, 'bin');
+    const pkg = path.join(dir, 'pkg');
+    await mkdir(temp);
+    await mkdir(bin);
+    await mkdir(pkg);
+    await writeFile(path.join(pkg, 'gitleaks'), '#!/bin/sh\necho "fake gitleaks"\n');
+    await chmod(path.join(pkg, 'gitleaks'), 0o755);
+    await writeFile(path.join(pkg, 'README.md'), 'not extracted\n');
+    const tarball = path.join(dir, 'release.tar.gz');
+    execFileSync('tar', ['-czf', tarball, '-C', pkg, 'gitleaks', 'README.md']);
+    const good = createHash('sha256').update(await readFile(tarball)).digest('hex');
+    await writeFile(path.join(bin, 'curl'), `#!/bin/sh\nwhile [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -*) shift;; *) shift;; esac; done\ncp "${tarball}" "$out"\n`);
+    await chmod(path.join(bin, 'curl'), 0o755);
+    const ghPath = path.join(dir, 'github-path.txt');
+    await writeFile(ghPath, '');
+    const env = { ...own.env, RUNNER_TEMP: temp, PATH: `${bin}:${process.env.PATH}`, GITHUB_PATH: ghPath };
+    // The pinned hash doesn't match the stand-in: nothing is installed or added to the PATH.
+    assert.notEqual(bash(own.run, temp, env).status, 0);
+    assert.equal(await readFile(ghPath, 'utf8'), '');
+    const r = bash(own.run, temp, { ...env, GITLEAKS_SHA256: good });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const added = (await readFile(ghPath, 'utf8')).trim();
+    assert.equal(added, path.join(temp, 'gitleaks-bin'));
+    const { readdir } = await import('node:fs/promises');
+    assert.deepEqual(await readdir(added), ['gitleaks']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
