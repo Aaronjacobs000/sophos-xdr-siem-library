@@ -43,7 +43,11 @@ const SECRET_PATTERNS = [
   [/SharedAccessKey=[A-Za-z0-9+/=]{20,}/, 'an Azure shared access key'],
   [/\b(?:https?:\/\/)[^\s:@/]+:[^\s@/]+@/, 'a URL with a password in it'],
 ];
-const SECRET_KEYS = /(?:^|[^A-Za-z0-9])["']?((?:client[_-]?)?secret|pass(?:word|wd)?|pwd|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth[_-]?token|access[_-]?token|refresh[_-]?token|session[_-]?(?:id|token)|bearer|x-api-key|ingest[_-]?key|integration[_-]?key|token)["']?\s*[:=]\s*["']?([^"'\s,;&}<>]{6,})/gi;
+const SECRET_KEYS = /(?:^|[^A-Za-z0-9])["']?((?:client[_-]?)?secret|pass(?:word|wd)?|pwd|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth[_-]?token|access[_-]?token|refresh[_-]?token|session[_-]?(?:id|token)|bearer|x-api-key|ingest[_-]?key|integration[_-]?key|token)["']?\s*[:=]\s*["']?([^"'\s,;&}<>]{6,})/dgi;
+// H3C and HPE Comware name a message MODULE/severity/MNEMONIC: before its text, such as
+// LOGIN/5/LOGIN_INVALID_USERNAME_PWD:, so an uppercase key that ends the name, right before the
+// colon, is part of the name. The scan goes on from the colon, so a key after it is still caught.
+const COMWARE_NAME = /(?<=[A-Z][A-Z0-9_-]*\/\d\/(?:[A-Z][A-Z0-9_]*)?)[A-Z][A-Z0-9_]*:/y;
 // Logs use a session ID, such as a GUID, to tie events together. It is only treated as a
 // secret when it looks like a random token (see highEntropy).
 const SESSION_ID_KEY = /^session[_-]?id$/i;
@@ -119,7 +123,10 @@ export function scanText(text, opts = {}) {
     const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
     for (const m of text.matchAll(g)) add('error', 'secret', `looks like ${what}. Remove it.`, m.index, m[0].slice(0, 12) + '...');
   }
-  for (const m of text.matchAll(SECRET_KEYS)) {
+  const keys = new RegExp(SECRET_KEYS);
+  for (let m; (m = keys.exec(text));) {
+    COMWARE_NAME.lastIndex = m.indices[1][0];
+    if (COMWARE_NAME.test(text)) { keys.lastIndex = m.indices[1][1]; continue; }
     const value = m[2];
     if (PLACEHOLDER.test(value)) continue;
     if (/^[a-z]+$/i.test(value) && value.length < 12) continue;
