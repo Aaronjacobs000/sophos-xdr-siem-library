@@ -55,10 +55,13 @@ rest = IF NOT hasA AND NOT hasB AND NOT hasC AND NOT hasD THEN pre ELSE rest
 hn = rest|^(?P<host>\S+)
 host = STRING(hn["host"])
 
-# Firewall logs are Keyword(ID)=Value pairs joined by semicolons. The IDs are taken off the keys.
+# Firewall logs are Keyword(ID)=Value pairs joined by semicolons. Each pair becomes its own
+# tab-separated item, with the ID taken off its key, before the split, so a semicolon inside a value,
+# such as a URL's, stays in it. Split on the semicolons themselves, Sophos NG-SIEM's SPLIT_NAME_VALUES
+# cuts such a value and reads the text after the semicolon as an item of its own.
 kb = body|^(?P<l>.*?)[;.]?$
-kvText = REPLACE_REGEX(STRING(kb["l"]), "\\(\\d+\\)=", "=")
-kv = SPLIT_NAME_VALUES(kvText, ";", "=", "\\")
+kvText = REPLACE_REGEX(REPLACE(STRING(kb["l"]), "\t", " "), "(?:^|;)([A-Za-z][A-Za-z0-9_]*)\\(\\d+\\)=", "\t$1=")
+kv = SPLIT_NAME_VALUES(kvText, "\t", "=", "\\")
 
 # Variables and $ fields set here are visible to every child.
 sensorType$ = "Comware"
