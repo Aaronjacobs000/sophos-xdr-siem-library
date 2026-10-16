@@ -1,17 +1,19 @@
 # gitleaks reads this file from the repo root. Library samples are synthetic and use UUIDs as record
 # IDs, and the generic-api-key rule reads one under a key such as secretId or tokenId as a secret.
 # This allowlist lets through only that: a whole UUID as the value of a key ending in id, in a
-# library samples.log. Any other value under those keys, and every other finding in a sample or
-# anywhere else, is still reported.
+# library samples.log or parser file (its !SAMPLE= lines copy sample lines). gitleaks tests an
+# allowlist regex against the match or the line, not both, so it can't single out the !SAMPLE=
+# lines. Any other value under those keys, and every other finding in a sample, a parser or
+# anywhere else, is still reported. studio/core/gitleaks.js holds a copy for the library check.
 
 [extend]
 useDefault = true
 
 [[allowlists]]
-description = "UUID record IDs under ...Id keys in synthetic library samples"
+description = "UUID record IDs under ...Id keys in synthetic library samples and parser files"
 targetRules = ["generic-api-key"]
 condition = "AND"
-paths = ['''^parsers/[^/]+/[^/]+/samples\.log$''']
+paths = ['''^parsers/[^/]+/[^/]+/samples\.log$''', '''^parsers/[^/]+/[^/]+/[A-Z0-9_]+\.parser\.txt$''']
 regexTarget = "match"
 regexes = ['''(?i)^[\w.-]*id["']?\s*[:=]\s*["']?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["']?$''']
 

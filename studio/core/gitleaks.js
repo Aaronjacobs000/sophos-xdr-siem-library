@@ -346,10 +346,10 @@ const RULE_ALLOWLISTS = [
 // written there. A test checks the two stay the same.
 export const REPO_ALLOWLISTS = [
   {
-    description: 'UUID record IDs under ...Id keys in synthetic library samples',
+    description: 'UUID record IDs under ...Id keys in synthetic library samples and parser files',
     targetRules: ['generic-api-key'],
     condition: 'AND',
-    paths: [String.raw`^parsers/[^/]+/[^/]+/samples\.log$`],
+    paths: [String.raw`^parsers/[^/]+/[^/]+/samples\.log$`, String.raw`^parsers/[^/]+/[^/]+/[A-Z0-9_]+\.parser\.txt$`],
     regexTarget: 'match',
     regexes: [String.raw`(?i)^[\w.-]*id["']?\s*[:=]\s*["']?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["']?$`],
   },

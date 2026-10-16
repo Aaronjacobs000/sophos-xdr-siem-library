@@ -3,8 +3,10 @@
 // the gitleaks version match the repo's.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { goRegex, findGenericApiKeys, gitleaksProblems, REPO_ALLOWLISTS, GITLEAKS_VERSION } from '../studio/core/gitleaks.js';
 import { validateEntry } from '../studio/core/library.js';
@@ -164,4 +166,65 @@ test('the port\'s copies of the .gitleaks.toml allowlists and gitleaks version m
   for (const a of REPO_ALLOWLISTS) for (const r of [...a.paths, ...a.regexes]) assert.doesNotThrow(() => goRegex(r), r);
   const ci = await readFile(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
   assert.equal(/GITLEAKS_VERSION: (\S+)/.exec(ci)[1], GITLEAKS_VERSION, 'CI runs another gitleaks version: port its generic-api-key rule again');
+});
+
+// The Appgate SDP shape CI flagged in parser files: a UUID record ID under a key ending in id, in a
+// !SAMPLE line.
+const APPGATE = 'parsers/appgate/sdp/APPGATE_SDP_JSON_PARENT.parser.txt';
+const appgate = (value) => `!SAMPLE={"version":2,"log":{"claims_token_id":"${value}","client_ip":"203.0.113.45"}}\n!SCHEMA=scwx.generic\n`;
+const UUID = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
+// The UUID allowlist as it was, for samples.log only.
+const SAMPLES_ONLY = [{ ...REPO_ALLOWLISTS[0], paths: [String.raw`^parsers/[^/]+/[^/]+/samples\.log$`] }];
+
+test('a UUID record ID under a key ending in id passes in a library parser file, and nothing else does', () => {
+  assert.equal(findGenericApiKeys(appgate(UUID), APPGATE, { allowlists: SAMPLES_ONLY }).length, 1);
+  assert.deepEqual(findGenericApiKeys(appgate(UUID), APPGATE), []);
+  // Another value under the key, the UUID under a key that doesn't end in id, and the UUID in any
+  // other file are still flagged.
+  assert.equal(findGenericApiKeys(appgate('Synthetic7Qv2Lm9Rt4'), APPGATE).length, 1);
+  assert.equal(findGenericApiKeys(appgate(UUID).replace('_id"', '"'), APPGATE).length, 1);
+  for (const file of ['parsers/appgate/sdp/README.md', 'parsers/appgate/sdp/expected.json', 'parsers/appgate/APPGATE_SDP_JSON_PARENT.parser.txt', 'test/APPGATE_SDP_JSON_PARENT.parser.txt']) {
+    assert.equal(findGenericApiKeys(appgate(UUID), file).length, 1, file);
+  }
+});
+
+const installed = spawnSync('gitleaks', ['version'], { encoding: 'utf8' });
+const realGitleaks = installed.status === 0 && installed.stdout.trim() === GITLEAKS_VERSION;
+
+// A gitleaks config that extends the default with these allowlists, as .gitleaks.toml writes them.
+const configOf = (allowlists) => ['[extend]', 'useDefault = true', ...allowlists.flatMap((a) => [
+  '', '[[allowlists]]', `description = ${JSON.stringify(a.description)}`, `targetRules = ${JSON.stringify(a.targetRules)}`, `condition = "${a.condition}"`,
+  `paths = [${a.paths.map((x) => `'''${x}'''`).join(', ')}]`, `regexTarget = "${a.regexTarget}"`, `regexes = [${a.regexes.map((x) => `'''${x}'''`).join(', ')}]`,
+])].join('\n') + '\n';
+
+test('gitleaks itself flags what the port flags, before and after the parser file allowlist', { skip: !realGitleaks && `needs gitleaks ${GITLEAKS_VERSION} on the PATH` }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-gitleaks-'));
+  try {
+    const files = {
+      [APPGATE]: appgate(UUID),
+      'parsers/appgate/sdp/APPGATE_SDP_JSON_CHILD_NETFLOW.parser.txt': appgate('Synthetic7Qv2Lm9Rt4'),
+      'parsers/nec/univerge-ix/samples.log': `${NEC}\n`,
+    };
+    for (const [file, content] of Object.entries(files)) {
+      await mkdir(path.dirname(path.join(dir, 'src', file)), { recursive: true });
+      await writeFile(path.join(dir, 'src', file), content);
+    }
+    await writeFile(path.join(dir, 'old.toml'), configOf(SAMPLES_ONLY));
+    const flagged = async (config) => {
+      const report = path.join(dir, 'report.json');
+      const r = spawnSync('gitleaks', ['dir', '--no-banner', '--config', config, '--report-format', 'json', '--report-path', report, '--exit-code', '0', '.'], { cwd: path.join(dir, 'src'), encoding: 'utf8' });
+      assert.equal(r.status, 0, r.stderr);
+      return JSON.parse(await readFile(report, 'utf8')).map((f) => `${f.File}:${f.StartLine} ${f.Secret}`).sort();
+    };
+    const ported = (allowlists) => Object.entries(files).flatMap(([file, content]) => findGenericApiKeys(content, file, { allowlists }).map((f) => `${file}:${f.line} ${f.secret}`)).sort();
+    const before = await flagged(path.join(dir, 'old.toml'));
+    const after = await flagged(path.join(ROOT, '.gitleaks.toml'));
+    const others = ['parsers/appgate/sdp/APPGATE_SDP_JSON_CHILD_NETFLOW.parser.txt:1 Synthetic7Qv2Lm9Rt4', 'parsers/nec/univerge-ix/samples.log:1 GigaEthernet0.1'];
+    assert.deepEqual(before, [...others, `${APPGATE}:1 ${UUID}`].sort());
+    assert.deepEqual(after, others);
+    assert.deepEqual(ported(SAMPLES_ONLY), before);
+    assert.deepEqual(ported(REPO_ALLOWLISTS), after);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
