@@ -74,6 +74,17 @@ test('an entry\'s files and a bridge\'s files come from the same site, and nothi
   });
 });
 
+test('a bridge is read from its own path, whatever else its listing holds', async () => {
+  const bridges = [{ path: 'bridges/acme-relay', dir: 'collectors/acme-relay', files: ['README.md', 'acme_relay.py'] }];
+  const files = { 'bridges/acme-relay/README.md': '# Acme relay\n', 'bridges/acme-relay/acme_relay.py': 'pass\n' };
+  await withSite(files, async (asked) => {
+    const b = await loadBridge(bridges, 'bridges/acme-relay');
+    assert.equal(b.readme, '# Acme relay\n');
+    assert.equal(b.dir, undefined);
+    for (const url of asked) assert.ok(url.startsWith(`${SITE}bridges/acme-relay/`), url);
+  });
+});
+
 test('playbooks and connectors are listed from the index, and their files come from the same site', async () => {
   const files = {
     'library-index.json': JSON.stringify(INDEX),

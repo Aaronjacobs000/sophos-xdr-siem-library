@@ -187,7 +187,7 @@ function bridgeSection(e) {
 }
 
 function drawBridge(root, b) {
-  const dir = b.dir || b.path;
+  const dir = b.path;
   const folder = githubUrl(`/tree/main/${dir}`);
   root.append(h('p', { class: 'sub' }, ext(folder, `${dir} on GitHub`)));
   const grid = h('div', { class: 'grid g-bridge' });

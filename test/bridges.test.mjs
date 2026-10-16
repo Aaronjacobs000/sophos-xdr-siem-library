@@ -88,11 +88,12 @@ test('bridge: the old "collector" key still works, with a warning', () => {
   assert.equal(withBridgeKey(current), current);
 });
 
-test('a bridge link points at the folder that holds the bridge, collectors/<name> in a fork made before the rename', () => {
-  const old = [{ path: 'bridges/acme-pull', dir: 'collectors/acme-pull', files: ['acme_pull.py'] }];
-  assert.equal(bridgeFolder(old, { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
-  assert.equal(bridgeFolder(old, { bridge: 'bridges/acme-pull' }), 'collectors/acme-pull');
-  assert.equal(bridgeFolder([{ path: 'bridges/acme-pull', files: ['acme_pull.py'] }], { collector: 'collectors/acme-pull' }), 'bridges/acme-pull');
+test('a bridge link points at the folder that holds the bridge, bridges/<name>', () => {
+  const listed = [{ path: 'bridges/acme-pull', files: ['acme_pull.py'] }];
+  assert.equal(bridgeFolder(listed, { bridge: 'bridges/acme-pull' }), 'bridges/acme-pull');
+  assert.equal(bridgeFolder(listed, { collector: 'collectors/acme-pull' }), 'bridges/acme-pull');
+  // The site's index lists each bridge by its path, with no other folder, so a dir key is ignored.
+  assert.equal(bridgeFolder([{ ...listed[0], dir: 'collectors/acme-pull' }], { bridge: 'bridges/acme-pull' }), 'bridges/acme-pull');
   // With no folder listed, the entry's own path.
   assert.equal(bridgeFolder([], { collector: 'collectors/acme-pull' }), 'collectors/acme-pull');
   assert.equal(bridgeFolder(undefined, { bridge: 'bridges/acme-pull' }), 'bridges/acme-pull');
