@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:[\s,\[]|^)device_product="Advanced Firewall Module"[\s,\]]|CEF:\d+\|F5\|Advanced Firewall Module\|
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: F5 BIG-IP AFM network firewall and DoS events from a security logging profile's log
 # publisher, in one of three keyed layouts:

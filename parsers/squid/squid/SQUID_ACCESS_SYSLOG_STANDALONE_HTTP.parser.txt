@@ -3,7 +3,7 @@
 !CONFIRMSTRING=squid(\[\d+\])?:\s+\d{9,10}\.\d{3}\s+\d+\s+\S+\s+[A-Z_]+/\d{3}\s
 !SCHEMA=scwx.http
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Squid, native access.log format over syslog (access_log syslog:...).
 # Standalone parser for the HTTP schema. Columns, from the Squid LogFormat page:

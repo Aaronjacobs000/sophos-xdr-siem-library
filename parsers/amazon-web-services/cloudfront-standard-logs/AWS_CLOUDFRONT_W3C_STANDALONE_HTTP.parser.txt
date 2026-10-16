@@ -3,7 +3,7 @@
 !CONFIRMSTRING=^\d{4}-\d{2}-\d{2}\t\d{2}:\d{2}:\d{2}\t[^\t]+\t\d+\t[^\t]+\t[A-Z]+\t[^\t]+\t[^\t]*\t\d{3}\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[A-Za-z]+\t[^\t]+\t[^\t]*\t(?:https?|wss?|grpcs)\t\d+\t
 !SCHEMA=scwx.http
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Amazon CloudFront standard access logs (legacy, or v2 in the W3C format with the default
 # fields), tab-separated, written to an S3 bucket and read by a Sophos NG-SIEM S3 Ingest

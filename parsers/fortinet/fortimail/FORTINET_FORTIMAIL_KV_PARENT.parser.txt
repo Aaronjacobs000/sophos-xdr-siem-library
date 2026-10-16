@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\bdevice_id=FE\S*\s+log_id=\d{9,10}\s+type=(?:statistics|spam|virus|encrypt|event|kevent)\s+(?:subtype=\S+\s+)?pri=
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Fortinet FortiMail remote logging (key=value), syslog to the data collector:
 #   <PRI>date=<date> time=<time> [eventtime=<ms> tz="<+-HHMM>"] device_id=<serial> log_id=<10 digits>

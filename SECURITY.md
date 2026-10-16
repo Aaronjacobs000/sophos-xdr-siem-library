@@ -1,6 +1,6 @@
 # Security policy
 
-Parser Studio is an unofficial community project, not a Sophos product. Report a problem in Sophos NG-SIEM, Sophos Fusion or any other Sophos product to Sophos, as its [responsible disclosure policy](https://www.sophos.com/en-us/legal/sophos-responsible-disclosure-policy) describes.
+The Unofficial Sophos Fusion XDR and SIEM Library, Parser Studio included, is a personal project, not a Sophos product. Report a problem in Sophos NG-SIEM, Sophos Fusion or any other Sophos product to Sophos, as its [responsible disclosure policy](https://www.sophos.com/en-us/legal/sophos-responsible-disclosure-policy) describes.
 
 ## Report a vulnerability
 
@@ -10,7 +10,7 @@ Say what is affected, how to reproduce it, and what someone could do with it. Th
 
 ## In scope
 
-- The studio: the site at https://aaronjacobs000.github.io/sophos-ngsiem-parser-studio/ and the code under `studio/`.
+- The site: https://aaronjacobs000.github.io/sophos-xdr-siem-library/, Parser Studio included, and the code under `studio/`.
 - The library gate and workflows: the checks and merge rules under `tools/`, and the workflows under `.github/workflows/` that check and merge library submissions.
 - The bridges: the scripts and the webhook relay under `bridges/`.
 

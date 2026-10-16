@@ -1,36 +1,19 @@
-// Loads the community library from the public GitHub repo at runtime, so the page shows
-// newly merged parsers without a redeploy. Falls back to the copy bundled with the page when
-// GitHub can't be reached (offline, or the unauthenticated API rate limit of 60 an hour).
-// Only GET requests to api.github.com and raw.githubusercontent.com; nothing is sent.
+// Loads the library from the site itself. The site build writes library-index.json and copies the
+// parsers/ and bridges/ folders next to the page, and Pages publishes it again after every merge,
+// so every request is relative to the page and the site doesn't depend on the repo's name.
+// Only GET requests to this site; nothing is sent.
 
-import { REPO, BRANCH } from '../core/version.js';
+import { REPO } from '../core/version.js';
 import { parseSamples, entryId, BRIDGE_PATH, bridgeScripts, bridgeOf } from '../core/library.js';
 
-const CACHE_KEY = 'parser-studio:library-cache:v3';
+// Links to the repo on GitHub, where people read the files, open issues and contribute.
+export const githubUrl = (path = '') => `https://github.com/${REPO}${path}`;
 
-// The library, its bridges and the links to them always come from this repo. A fork that
-// publishes its own studio sets REPO in core/version.js.
-export function repo() {
-  return REPO;
-}
+// A file of the site, by its path from the site's root, which holds index.html and app/.
+export const siteUrl = (path) => new URL(`../${path.split('/').map(encodeURIComponent).join('/')}`, import.meta.url).href;
 
-// Files are read at a fixed commit, so a CDN copy of an older version can't mix in.
-const raw = (path, ref = BRANCH) => `https://raw.githubusercontent.com/${repo()}/${ref}/${path.split('/').map(encodeURIComponent).join('/')}`;
-export const githubUrl = (path = '') => `https://github.com/${repo()}${path}`;
-
-// A cache written before bridges were listed is ignored, so the next load lists them.
-function readCache() {
-  try {
-    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    return c && Array.isArray(c.bridges) ? c : null;
-  } catch { return null; }
-}
-function writeCache(v) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(v)); } catch { /* storage off */ }
-}
-
-async function fetchText(url, init) {
-  const res = await fetch(url, { ...init, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
+async function fetchText(url) {
+  const res = await fetch(url, { cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
   if (!res.ok) throw Object.assign(new Error(`${res.status} ${res.statusText}`), { status: res.status });
   return res.text();
 }
@@ -44,65 +27,16 @@ async function pool(items, n, fn) {
   return out;
 }
 
-function fromSnapshot(snap) {
-  return snap.entries.map((e) => ({ ...e, loaded: true }));
-}
-
-async function loadSnapshot() {
-  const res = await fetch(new URL('../library-snapshot.json', import.meta.url), { cache: 'no-cache' });
-  if (!res.ok) throw new Error('no bundled library copy');
-  return res.json();
-}
-
-// Returns {entries, bridges, source: 'github'|'snapshot', at, sha?, error?}. bridges lists each
-// bridges/<name> folder with its file names; snapshot copies also carry the text.
-// Two API calls when the library changed (the head commit, then its tree) and one when it
-// didn't; an unchanged head answers 304, which doesn't count against GitHub's rate limit.
-export async function loadLibrary({ force = false } = {}) {
-  const cache = readCache();
-  const api = (path, headers = {}) => fetch(`https://api.github.com/repos/${repo()}${path}`, { headers: { Accept: 'application/vnd.github+json', ...headers }, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
-  const fail = (res) => Object.assign(new Error(res.status === 403 || res.status === 429 ? 'GitHub rate limit reached' : `GitHub said ${res.status}`), { status: res.status });
+// Returns {entries, bridges, source: 'site'|'none', at, sha?, error?}. bridges lists each
+// bridges/<name> folder with its file names. One request: the index the site build wrote.
+export async function loadLibrary() {
   try {
-    const headHeaders = { Accept: 'application/vnd.github.sha' };
-    if (cache && cache.repo === repo() && cache.headEtag && !force) headHeaders['If-None-Match'] = cache.headEtag;
-    const head = await api(`/commits/${BRANCH}`, headHeaders);
-    if (head.status === 304 && cache) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, sha: cache.sha };
-    if (!head.ok) throw fail(head);
-    const sha = (await head.text()).trim();
-    if (cache && cache.repo === repo() && cache.sha === sha && !force) {
-      writeCache({ ...cache, headEtag: head.headers.get('ETag') });
-      return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, sha };
-    }
-    const res = await api(`/git/trees/${sha}?recursive=1`);
-    if (!res.ok) throw fail(res);
-    const tree = await res.json();
-    const metas = tree.tree.filter((t) => t.type === 'blob' && /^parsers\/[^/]+\/[^/]+\/meta\.json$/.test(t.path));
-    const files = new Map();
-    for (const t of tree.tree) {
-      const m = /^parsers\/([^/]+\/[^/]+)\/([^/]+)$/.exec(t.path);
-      if (m && t.type === 'blob') (files.get(m[1]) || files.set(m[1], []).get(m[1])).push(m[2]);
-    }
-    const bridges = bridgeFolders(tree.tree);
-    const entries = (await pool(metas, 6, async (t) => {
-      const id = t.path.split('/').slice(1, 3).join('/');
-      try {
-        const meta = JSON.parse(await fetchText(raw(t.path, sha)));
-        return { id, ref: sha, meta, files: files.get(id) || [], vendor: meta.vendor, product: meta.product, loaded: false };
-      } catch {
-        return null;
-      }
-    })).filter(Boolean);
-    const at = new Date().toISOString();
-    writeCache({ repo: repo(), headEtag: head.headers.get('ETag'), at, sha, entries: entries.map(({ loaded, texts, samples, expected, ...rest }) => rest), bridges });
-    return { entries, bridges, source: 'github', at, sha };
+    const index = JSON.parse(await fetchText(siteUrl('library-index.json')));
+    const entries = (index.entries || []).filter((e) => e && e.meta && typeof e.id === 'string')
+      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], vendor: e.meta.vendor, product: e.meta.product, loaded: false }));
+    return { entries, bridges: index.bridges || [], source: 'site', at: index.generated || null, sha: index.commit || null };
   } catch (err) {
-    try {
-      const snap = await loadSnapshot();
-      return { entries: fromSnapshot(snap), bridges: (snap.bridges || []).map((b) => ({ ...b, loaded: true })), source: 'snapshot', at: snap.generated, error: err.message };
-    } catch {
-      if (cache && cache.repo === repo() && cache.entries) return { entries: cache.entries.map((e) => ({ ...e, loaded: false })), bridges: cache.bridges, source: 'github', at: cache.at, error: err.message };
-      return { entries: [], bridges: [], source: 'none', at: null, error: err.message };
-    }
+    return { entries: [], bridges: [], source: 'none', at: null, error: err.message };
   }
 }
 
@@ -111,11 +45,10 @@ export async function loadEntry(entry) {
   if (entry.loaded) return entry;
   const base = `parsers/${entry.id}/`;
   const texts = {};
-  const ref = entry.ref || BRANCH;
-  await pool(entry.meta.parsers || [], 4, async (p) => { texts[p.name] = await fetchText(raw(`${base}${p.name}.parser.txt`, ref)); });
-  const samples = parseSamples(await fetchText(raw(`${base}samples.log`, ref)));
+  await pool(entry.meta.parsers || [], 4, async (p) => { texts[p.name] = await fetchText(siteUrl(`${base}${p.name}.parser.txt`)); });
+  const samples = parseSamples(await fetchText(siteUrl(`${base}samples.log`)));
   let expected = [];
-  try { expected = JSON.parse(await fetchText(raw(`${base}expected.json`, ref))); } catch { expected = []; }
+  try { expected = JSON.parse(await fetchText(siteUrl(`${base}expected.json`))); } catch { expected = []; }
   Object.assign(entry, { texts, samples, expected, loaded: true });
   return entry;
 }
@@ -149,33 +82,28 @@ export function bridgeFolder(bridges, meta) {
   return legacy ? meta.collector : path;
 }
 
-// A bridge's README and scripts, read at the same commit as the library. When GitHub can't
-// serve them, the copy bundled with the page is used. Returns {path, dir?, files, readme,
-// scripts: [{name, text}], fallback?}.
+// A bridge's README and scripts, from the copy the site build put next to the page. Returns
+// {path, dir?, files, readme, scripts: [{name, text}]}.
 const bridgeCache = new Map();
-export function loadBridge(bridges, path, ref = BRANCH) {
+export function loadBridge(bridges, path) {
   if (typeof path !== 'string' || !BRIDGE_PATH.test(path)) return Promise.reject(new Error('not a bridge path'));
   const known = (bridges || []).find((b) => b.path === path);
   if (known && known.loaded) return Promise.resolve(known);
-  const key = `${repo()}@${ref}:${path}`;
-  if (!bridgeCache.has(key)) {
-    bridgeCache.set(key, fetchBridge(known, path, ref).catch(async (err) => {
-      bridgeCache.delete(key);
-      let copy = null;
-      try { copy = ((await loadSnapshot()).bridges || []).find((b) => b.path === path); } catch { /* no bundled copy */ }
-      if (copy) return { ...copy, fallback: true, error: err.message };
+  if (!bridgeCache.has(path)) {
+    bridgeCache.set(path, fetchBridge(known, path).catch((err) => {
+      bridgeCache.delete(path);
       throw err;
     }));
   }
-  return bridgeCache.get(key);
+  return bridgeCache.get(path);
 }
 
-async function fetchBridge(known, path, ref) {
-  if (!known) throw new Error(`${path} is not in the repo`);
+async function fetchBridge(known, path) {
+  if (!known) throw new Error(`${path} is not in the library`);
   const dir = known.dir || path;
   const names = bridgeScripts(known.files);
-  const readme = known.files.includes('README.md') ? await fetchText(raw(`${dir}/README.md`, ref)) : '';
-  const texts = await pool(names, 3, (n) => fetchText(raw(`${dir}/${n}`, ref)));
+  const readme = known.files.includes('README.md') ? await fetchText(siteUrl(`${dir}/README.md`)) : '';
+  const texts = await pool(names, 3, (n) => fetchText(siteUrl(`${dir}/${n}`)));
   return { path, ...(known.dir ? { dir } : {}), files: known.files, readme, scripts: names.map((name, i) => ({ name, text: texts[i] })) };
 }
 

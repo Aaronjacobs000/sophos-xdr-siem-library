@@ -3,35 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Unofficial Sophos Next-Gen SIEM Parser Studio</title>
-<meta name="description" content="Write and test Sophos NG-SIEM custom parsers in your browser, and share them in a community library. Unofficial project, not from Sophos.">
+<title>Unofficial Sophos Fusion XDR and SIEM Library</title>
+<meta name="description" content="Custom parsers for Sophos NG-SIEM that people share, and Parser Studio to write and test your own in the browser. Unofficial project, not from Sophos.">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app/styles.css">
 <script type="module" src="app/main.js"></script>
 </head>
 <body>
 <header class="top">
-  <a class="brandlink" href="#/build/sample" aria-label="Unofficial Sophos Next-Gen SIEM Parser Studio home">
+  <a class="brandlink" href="#/" aria-label="Unofficial Sophos Fusion XDR and SIEM Library home">
     <span class="glyph" aria-hidden="true">{ }</span>
-    <span class="brand">Unofficial Sophos Next-Gen SIEM Parser Studio <small>custom parsers for Sophos NG-SIEM</small></span>
+    <span class="brand">Unofficial Sophos Fusion XDR and SIEM Library <small>parsers and Parser Studio</small></span>
   </a>
   <nav class="topnav" aria-label="Main">
-    <a href="#/build/sample" data-nav="build">Build</a>
-    <a href="#/library" data-nav="library">Library</a>
+    <a href="#/parsers" data-nav="parsers">Parsers</a>
+    <a href="#/build/sample" data-nav="build">Parser Studio</a>
     <a href="#/help" data-nav="help">How it works</a>
   </nav>
   <span class="spacer"></span>
   <span class="meta" id="top-meta">v0.1.0 · MIT</span>
-  <a class="unofficial" href="https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio" target="_blank" rel="noopener noreferrer" title="Parser Studio repo on GitHub" aria-label="Unofficial community tool: Parser Studio repo on GitHub, opens in a new tab">Unofficial community tool</a>
+  <a class="unofficial" href="https://github.com/Aaronjacobs000/sophos-xdr-siem-library" target="_blank" rel="noopener noreferrer" title="The library's repo on GitHub" aria-label="Unofficial tool: the library's repo on GitHub, opens in a new tab">Unofficial tool</a>
 </header>
 <div class="notice" role="note"><b>Not from Sophos.</b> A personal project, not built, endorsed, or supported by Sophos. Everything runs in this browser tab, and results are emulator output until you Run Test in your own tenant.</div>
 <main id="app" tabindex="-1">
-  <noscript><p class="pad">Parser Studio needs JavaScript. It runs entirely in your browser.</p></noscript>
+  <noscript><p class="pad">This site needs JavaScript. It runs entirely in your browser.</p></noscript>
 </main>
 <footer class="foot">
-  <span>Parser Studio is an unofficial, MIT-licensed project by Aaron Jacobs. It is not a Sophos product. Report problems as <a href="https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio/issues" rel="noopener noreferrer" target="_blank">issues on GitHub</a>, not to Sophos support.</span>
+  <span>The Unofficial Sophos Fusion XDR and SIEM Library, with Parser Studio, is an MIT-licensed personal project by Aaron Jacobs. It is not a Sophos product. Report problems as <a href="https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues" rel="noopener noreferrer" target="_blank">issues on GitHub</a>, not to Sophos support.</span>
 </footer>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

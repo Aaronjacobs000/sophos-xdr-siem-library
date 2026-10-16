@@ -412,7 +412,7 @@ class BridgeTest(unittest.TestCase):
         req = self.mock.token_requests[0]
         self.assertEqual(req["headers"]["Authorization"], "Basic " + base64.b64encode(f"{CLIENT_ID}:{SECRET}".encode()).decode())
         self.assertEqual(req["form"], {"grant_type": ["client_credentials"], "scope": ["connect.api.read"]})
-        self.assertTrue(req["headers"]["User-Agent"].startswith("parser-studio-withsecure-elements-bridge/"))
+        self.assertTrue(req["headers"]["User-Agent"].startswith("sophos-xdr-siem-library-withsecure-elements-bridge/"))
         self.assertTrue(all(r["headers"]["Authorization"] == "Bearer access-token-1" for r in self.mock.requests))
         self.assertEqual(len(self.mock.token_requests), 1)
 

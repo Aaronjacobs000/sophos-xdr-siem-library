@@ -3,7 +3,7 @@
 !CONFIRMSTRING=INFO:\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[[0-9A-Fa-f-]{36}\]\s+.*\s\[[A-Za-z]+\]\s+SRC=\S+\s+DST=\S+\s+PROTO=\S+.*\sACTION=[A-Za-z]+
 !SCHEMA=scwx.netflow
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Nutanix Flow Network Security policy hit logs (Prism Central remote syslog, Security
 # Policy Hit Logs module), sent by each AHV host:

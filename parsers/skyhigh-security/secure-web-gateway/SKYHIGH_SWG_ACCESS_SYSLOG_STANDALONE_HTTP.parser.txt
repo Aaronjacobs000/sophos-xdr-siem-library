@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\[\d{2}/[A-Z][a-z]{2}/\d{4}:\d{2}:\d{2}:\d{2} [+-]\d{4}\] "[^"]*" \S+ (?:\d{3}|-) "[^"]*" "[^"]*" "[^"]*" "[^"]*" (?:\d+|-) 
 !SCHEMA=scwx.http
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Skyhigh Secure Web Gateway (formerly McAfee Web Gateway), the default access log line
 # sent to syslog by a Syslog event next to the Write access.log rule (tag mwg, facility daemon).

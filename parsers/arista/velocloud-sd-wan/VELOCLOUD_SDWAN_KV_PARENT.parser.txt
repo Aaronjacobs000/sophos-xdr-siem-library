@@ -3,7 +3,7 @@
 !CONFIRMSTRING=ACTION=VCF (?:Open|Close|Deny|Drop|Update|Allow|Alert)\s+[A-Z][A-Z_]*[=]
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Arista VeloCloud SD-WAN (formerly VMware SD-WAN) Edge firewall logs, sent by each Edge
 # over syslog to the data collector (Profile or Edge > Device > Telemetry > Syslog, role FIREWALL

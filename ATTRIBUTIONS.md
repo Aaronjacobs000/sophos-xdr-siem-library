@@ -53,7 +53,7 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 
 ## Code
 
-Parser Studio has no runtime or build dependencies. The emulator, the Go regex and time layout handling, the JSONPath reader and the ZIP writer are written for this project.
+This project has no runtime or build dependencies. The emulator, the Go regex and time layout handling, the JSONPath reader and the ZIP writer are written for this project.
 
 The library check runs a port of one rule of the secret scanner CI runs, so contributors see what CI would flag before they submit.
 

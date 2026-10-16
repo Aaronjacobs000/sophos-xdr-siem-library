@@ -4,7 +4,7 @@
 !CONFIRMSTRING=\sdevice_id=FMG\S*\s+log_id=00(?:0[3458]|1[26]|2[12])\d{6}\s+type=event\s
 !SCHEMA=scwx.managementevent
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiManager local event logs sent to a syslog server (config system locallog syslogd
 # setting, csv disabled), key=value:

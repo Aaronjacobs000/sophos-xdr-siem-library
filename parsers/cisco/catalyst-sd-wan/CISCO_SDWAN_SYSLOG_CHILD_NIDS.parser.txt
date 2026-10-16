@@ -4,7 +4,7 @@
 !SCHEMA=scwx.nids
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Cisco Catalyst SD-WAN UTD intrusion prevention (Snort) alerts from the UTD container's syslog:
 #   ... [**] Drop|Pass [**] [gid:sid:rev] <message> [**] [Classification: <c>] [Priority: <n>] [VRF: <n>]|[POLICY: <p>] {<proto>} <src>:<port> -> <dst>:<port>

@@ -4,7 +4,7 @@
 !SCHEMA=scwx.thirdpartyalert
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Carbon Black Cloud Data Forwarder alerts (alert schema 2.1.0 and 2.0.0), which the
 # forwarder writes to an Amazon S3 bucket as gzipped JSON lines that a Sophos NG-SIEM S3 Ingest

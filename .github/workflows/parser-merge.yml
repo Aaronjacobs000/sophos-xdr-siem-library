@@ -193,8 +193,8 @@ jobs:
           PR: ${{ steps.pr.outputs.number }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: node base/tools/github-gate.mjs pr --pr "$PR" --sha "$HEAD_SHA" --report report/report.json --markdown report/report.md
-  # A merge made with GITHUB_TOKEN starts no push workflows, so Pages would keep the old library
-  # snapshot until its daily run. workflow_dispatch is an event GITHUB_TOKEN may start, and this
+  # A merge made with GITHUB_TOKEN starts no push workflows, so Pages would keep the old copy of
+  # the library until its daily run. workflow_dispatch is an event GITHUB_TOKEN may start, and this
   # job's token can do nothing else.
   pages:
     needs: gate

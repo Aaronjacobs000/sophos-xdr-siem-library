@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\sASM:(?:unit_hostname="|CEF:0\|F5\|ASM\|)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: F5 BIG-IP ASM / Advanced WAF request logs from a remote logging profile, in the
 # "Key-Value Pairs (Splunk)" or "Common Event Format (ArcSight)" format, to the data collector:

@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="alert"
 !SCHEMA=scwx.thirdpartyalert
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Cisco ACI syslog from the APIC and the fabric switches.
 # Child of CISCO_ACI_SYSLOG_PARENT: faults, and process-crash events, to Thirdparty.

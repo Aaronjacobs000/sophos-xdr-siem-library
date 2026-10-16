@@ -3,7 +3,7 @@
 !CONFIRMSTRING=[A-Za-z][\w.-]*\[\d+\]:\s"[0-3]"\s"\d+"\s"
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Tenable Identity Exposure (formerly Tenable AD, and before that Alsid) syslog alerts. Tenable's docs
 # call the format CEF, but it is an RFC 3164 header and then space-separated quoted fields:

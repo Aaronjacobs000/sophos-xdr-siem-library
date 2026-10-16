@@ -1,4 +1,4 @@
-// Community library entries: the folder layout, metadata rules, the single-text bundle used
+// Library entries: the folder layout, metadata rules, the single-text bundle used
 // by the issue form, and the validation that both the studio and CI run.
 //
 // parsers/<vendor-slug>/<product-slug>/

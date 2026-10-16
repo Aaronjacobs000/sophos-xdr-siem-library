@@ -3,7 +3,7 @@
 !CONFIRMSTRING=sshd(\[\d+\])?:\s+(Accepted|Failed)\s+\S+\s+for\s+.+\s+from\s+\S+\s+port\s+\d+\s+ssh2
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: OpenSSH sshd, plain text over syslog to the data collector.
 # Standalone parser for the Authentication schema: "Accepted" and "Failed" logon lines only.

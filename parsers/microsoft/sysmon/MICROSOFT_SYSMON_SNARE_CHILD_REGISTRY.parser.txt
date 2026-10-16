@@ -5,7 +5,7 @@
 !SCHEMA=scwx.registry
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Sysmon events 12 (Registry object added or deleted), 13 (Registry value
 # set) and 14 (Registry object renamed) from the Microsoft-Windows-Sysmon/Operational log, sent in Snare format over

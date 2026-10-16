@@ -3,7 +3,7 @@
 !CONFIRMSTRING=dnsmasq(\[\d+\])?:\s+query\[[A-Za-z0-9=]+\]\s+\S+\s+from\s
 !SCHEMA=scwx.dnsquery
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: dnsmasq with --log-queries, plain text over syslog to the data collector.
 # Standalone parser for the DNS schema. Only query lines match; forwarded, reply and cached

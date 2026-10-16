@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="auth"
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Druva Cloud Platform events (Events API v3) sent to HTTP Ingest by bridges/druva-platform-events,
 # one JSON event per line with "druva_record": "platform_event" in front.

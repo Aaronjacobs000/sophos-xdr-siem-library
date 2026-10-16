@@ -4,7 +4,7 @@
 !SCHEMA=scwx.cloudaudit
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Splashtop Enterprise SIEM Logging (ECS) through HTTP Ingest.
 # Child of SPLASHTOP_SIEM_ECS_PARENT: team history changes and session logs (remote, file transfer,

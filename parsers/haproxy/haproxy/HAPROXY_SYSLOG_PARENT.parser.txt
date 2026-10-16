@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\s\S+:\d+\s+\[\d{2}/[A-Z][a-z]{2}/\d{4}:\d{2}:\d{2}:\d{2}\.\d{3}\]\s+\S+\s+[^\s/]+/\S+\s+(?:(?:-?\d+/){4}\+?-?\d+\s+-?\d+\s+\+?\d+\s+\S+\s+\S+\s+[-A-Za-z]{4}|(?:-?\d+/){2}\+?-?\d+\s+\+?\d+\s+[-A-Za-z]{2})\s+\d+/\d+/\d+/\d+/\+?\d+\s+\d+/\d+(?:\s|$)
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: HAProxy traffic logs in the default HTTP, HTTPS and TCP log formats, over syslog to the data collector.
 # Parent: recognizes the three formats and hands HTTP and HTTPS lines to the HTTP child and TCP

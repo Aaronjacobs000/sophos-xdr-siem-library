@@ -4,7 +4,7 @@
 !SCHEMA=scwx.email
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Postfix mail log lines sent by syslog.
 # Child of POSTFIX_SYSLOG_PARENT: to Email, with event_type set to what the line records:

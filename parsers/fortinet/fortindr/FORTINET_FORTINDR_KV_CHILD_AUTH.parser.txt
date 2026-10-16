@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="login"
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: FortiNDR logs in the default syslog format.
 # Child of FORTINET_FORTINDR_KV_PARENT: administrator logins and logouts (user events with

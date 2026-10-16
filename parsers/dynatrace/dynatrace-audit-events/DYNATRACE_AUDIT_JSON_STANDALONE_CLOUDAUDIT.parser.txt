@@ -4,7 +4,7 @@
 !SCHEMA=scwx.cloudaudit
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Dynatrace audit events (dt.system.events, event.kind AUDIT_EVENT) read from Grail by the
 # example bridge in bridges/dynatrace-audit-events and posted to HTTP Ingest as JSON lines. Keys are

@@ -39,7 +39,7 @@ from datetime import datetime, timezone
 
 __version__ = "0.1.0"
 LOG = logging.getLogger("cisco_secure_endpoint_bridge")
-USER_AGENT = f"parser-studio-cisco-secure-endpoint-bridge/{__version__}"
+USER_AGENT = f"sophos-xdr-siem-library-cisco-secure-endpoint-bridge/{__version__}"
 RETRY_STATUS = {408, 429, 500, 502, 503, 504}
 # 501 and 505 say the server will never take the request as it is sent, so they aren't retried.
 UNSUPPORTED_STATUS = {501: "the server doesn't support this request",

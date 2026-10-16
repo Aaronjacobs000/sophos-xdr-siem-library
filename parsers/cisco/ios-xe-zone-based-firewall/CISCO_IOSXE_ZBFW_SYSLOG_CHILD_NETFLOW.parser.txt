@@ -4,7 +4,7 @@
 !CONFIRMSTRING=%FW-6-(?:(?:DROP|PASS)_PKT\s?:\s*(?:Dropping|Passing)\s.+?\spkt\s+from\s+\S+\s+\[?[0-9A-Fa-f.:]+\]?:\d+\s*[=]>|LOG_SUMMARY\s?:\s*\d+\s.*?packets?\s+(?:were|was)\s+(?:dropped|passed)\s+from\s+\S+\s+\[?[0-9A-Fa-f.:]+\]?:\d+\s*[=]>|SESS_AUDIT_TRAIL(?:_START)?\s?:\s*(?:\(target:class\)\s*-?\s*\([^()]*\)\s*:\s*)?(?:Start|Stop)\s.+?\ssession:\s+initiator\s.*\sfrom\s+\S)
 !SCHEMA=scwx.netflow
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Cisco IOS XE zone-based policy firewall syslog (ISR, ASR 1000, Catalyst 8000 and Catalyst
 # SD-WAN edges), with or without the "%IOSXE-6-PLATFORM: <slot>: cpp_cp: ... TS:<n>" wrapper:

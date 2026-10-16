@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="Threat" OR eventType$=="ExploitAttempt" OR eventType$=="ScriptControl"
 !SCHEMA=scwx.antivirus
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Aurora Protect Desktop (CylancePROTECT) syslog from the Aurora Endpoint Security console.
 # Child of CYLANCEPROTECT_SYSLOG_PARENT: threats (Threat), memory protection (ExploitAttempt) and

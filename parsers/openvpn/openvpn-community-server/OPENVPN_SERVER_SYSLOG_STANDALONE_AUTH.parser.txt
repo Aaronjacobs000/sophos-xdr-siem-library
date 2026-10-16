@@ -3,7 +3,7 @@
 !CONFIRMSTRING=[\s/]\d{1,3}(?:\.\d{1,3}){3}:\d+\s+(?:\[[^\]]*\]\s+Peer Connection Initiated with\s|TLS Auth Error: Auth Username/Password verification failed for peer|VERIFY ERROR: depth=\d+, error=|SIG[A-Z0-9]+\[[^\]]*\] received, client-instance exiting)
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: OpenVPN 2.x community server (multi-client mode), plain text over syslog to the data collector.
 # Standalone parser for the Auth schema. In server mode each client line starts with

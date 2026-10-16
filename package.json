@@ -1,14 +1,14 @@
 {
-  "name": "sophos-ngsiem-parser-studio",
+  "name": "sophos-xdr-siem-library",
   "version": "0.1.0",
-  "description": "Write and test Sophos NG-SIEM custom parsers in the browser, with a community parser library. Unofficial project, not from Sophos.",
+  "description": "Unofficial Sophos Fusion XDR and SIEM Library: custom parsers for Sophos NG-SIEM that people share, and Parser Studio to write and test your own in the browser. Unofficial project, not from Sophos.",
   "private": true,
   "type": "module",
   "license": "MIT",
   "author": "Aaron Jacobs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio.git"
+    "url": "https://github.com/Aaronjacobs000/sophos-xdr-siem-library.git"
   },
   "engines": {
     "node": ">=22"

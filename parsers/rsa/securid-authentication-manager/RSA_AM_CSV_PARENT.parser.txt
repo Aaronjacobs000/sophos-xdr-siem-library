@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3},[^,]*,\s*(?:audit\.(?:runtime|admin)|system)\.[^,]+,\s*[A-Z]+,
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: RSA Authentication Manager 8.x audit and system logs forwarded to a remote syslog
 # host. After the syslog header each line is comma-separated fields in fixed positions, from

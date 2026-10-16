@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\[kea-dhcp[46][\w.-]*(?:/[^\]]*)?\]\s+(?:DHCP4_(?:LEASE_(?:ALLOC|OFFER|ADVERT|REUSE)|RELEASE(?:_EXPIRED|_DELETED)?|DECLINE_LEASE|INIT_REBOOT|PACKET_(?:RECEIVED|SEND))|DHCP6_(?:LEASE_(?:ALLOC|ADVERT|REUSE)|RELEASE_NA(?:_EXPIRED|_DELETED)?))\s
 !SCHEMA=scwx.dhcp
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ISC Kea DHCPv4 and DHCPv6 servers, log messages over syslog or read from Kea's log file.
 # Standalone parser for the DHCP schema. Kea logs each event by message ID (Kea Messages Manual):

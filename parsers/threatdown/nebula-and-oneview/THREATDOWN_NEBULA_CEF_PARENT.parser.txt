@@ -3,7 +3,7 @@
 !CONFIRMSTRING=CEF:0\|Malwarebytes\|[^|]*\|[^|]*\|Detection\|
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ThreatDown (Malwarebytes) Nebula or OneView syslog logging: a Windows syslog
 # communication endpoint polls the console and sends CEF over TCP or UDP to the data collector.

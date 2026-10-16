@@ -4,7 +4,7 @@
 !SCHEMA=scwx.antivirus
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: NEC UNIVERGE IX2000 and IX3000 UTM antivirus logs, syslog to the data collector:
 #   UTM[nnn]: AV-<h|l> seq <n>, {"type":"AV","src":"<ip>:<port>","dst":"<ip>:<port>","mac":...,"proto":"6",

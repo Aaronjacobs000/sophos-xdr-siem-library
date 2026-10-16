@@ -3,7 +3,7 @@
 !CONFIRMSTRING=\sdhcpd(?:\[\d+\])?:\s+(?:DHCP4o6\s+)?(?:DHCPDISCOVER\s+from|DHCP(?:OFFER|ACK)\s+on\s+\S+\s+to|DHCPREQUEST\s+for|DHCPRELEASE\s+of\s+\S+\s+from)\s+\S+\s.*\bvia\s+\S
 !SCHEMA=scwx.dhcp
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: ISC DHCP server (dhcpd 4.x), plain text over syslog to the data collector.
 # Standalone parser for the DHCP schema. dhcpd has no log format reference, so the line shapes

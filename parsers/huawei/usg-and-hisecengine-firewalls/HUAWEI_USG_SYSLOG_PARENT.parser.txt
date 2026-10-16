@@ -3,7 +3,7 @@
 !CONFIRMSTRING=%%\d{2}(?:POLICY|SECLOG|IPS|AV|URL|WAF|SSLVPN|WEBM)/\d/[A-Za-z0-9_]+\([A-Za-z]\)(?:\[\d+\])?:
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Huawei USG and HiSecEngine firewalls (USG6000E, USG6000F and others on the same
 # software), info-center logs and default syslog session logs sent to the data collector:

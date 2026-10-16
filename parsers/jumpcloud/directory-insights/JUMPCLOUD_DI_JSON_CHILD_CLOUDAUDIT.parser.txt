@@ -4,7 +4,7 @@
 !SCHEMA=scwx.cloudaudit
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: JumpCloud Directory Insights events from the example bridge that aren't sign-ins: admin and
 # user changes, group and application changes, associations, MFA enrollment, password resets, device,

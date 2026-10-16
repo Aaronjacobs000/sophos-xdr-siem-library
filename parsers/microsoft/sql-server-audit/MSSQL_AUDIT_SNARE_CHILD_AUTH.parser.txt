@@ -5,7 +5,7 @@
 !SCHEMA=scwx.auth
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: SQL Server Audit written to the Windows Application or Security log (event 33205), sent in
 # Snare format over syslog by NXLog or the Snare agent, the feed the Sophos Windows Event Log

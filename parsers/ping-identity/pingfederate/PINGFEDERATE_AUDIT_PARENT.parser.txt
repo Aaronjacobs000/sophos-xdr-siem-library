@@ -3,7 +3,7 @@
 !CONFIRMSTRING=CEF:0\|Ping Identity\|PingFederate\||\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}\| [^|]*\|(?: [^|]*\|)? [A-Za-z_]+\| [^|]*\| [^|]* \| 
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: the PingFederate security audit log (audit.log) in either of its stock log4j2 layouts:
 #   CEF, from the SecurityAuditToCEFSyslog appender in log4j2.xml:

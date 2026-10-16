@@ -3,7 +3,7 @@
 !CONFIRMSTRING=(?:TRELLIX_IPS[=](?:alert|audit)\||\S+ detected \S+ attack .+ \(severity = [^)]*\)\.\s+\S+ -> \S+ \(result = [^)]*\))
 !SCHEMA=scwx.generic
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Trellix Intrusion Prevention System (formerly McAfee Network Security Platform) syslog
 # from the Manager to the data collector. Messages are built from $IV_ variables, so this entry's

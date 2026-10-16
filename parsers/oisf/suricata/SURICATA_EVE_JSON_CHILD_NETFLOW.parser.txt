@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="flow"
 !SCHEMA=scwx.netflow
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Suricata EVE JSON (eve-log with type: syslog), JSON over syslog to the data collector.
 # Child of SURICATA_EVE_JSON_PARENT: flow records to Netflow.

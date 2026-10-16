@@ -4,7 +4,7 @@
 !SCHEMA=scwx.auth
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: QNAP QuLog Center access log (conn log) lines sent to a syslog server.
 # Child of QNAP_QULOG_SYSLOG_PARENT: Login Success, Login Fail and Logout to Auth, with the user,

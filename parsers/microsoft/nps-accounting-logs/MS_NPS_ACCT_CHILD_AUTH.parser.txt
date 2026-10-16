@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="auth"
 !SCHEMA=scwx.auth
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Microsoft NPS accounting logs, sent by NXLog (see README.md).
 # Child of MS_NPS_ACCT_PARENT: RADIUS decisions and sessions to Auth. Access-Accept is a LOGON that

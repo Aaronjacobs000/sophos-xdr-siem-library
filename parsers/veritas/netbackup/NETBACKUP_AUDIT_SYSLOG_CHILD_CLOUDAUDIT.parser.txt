@@ -3,7 +3,7 @@
 !CONFIRMSTRING=eventType$=="audit"
 !SCHEMA=scwx.cloudaudit
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Veritas NetBackup audit events in the system log.
 # Child of NETBACKUP_AUDIT_SYSLOG_PARENT: every category other than LOGIN, such as POLICY, JOB,

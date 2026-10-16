@@ -15,10 +15,9 @@ const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 function sourceLine() {
   const L = state.library;
   const wrap = h('div', { class: 'status' });
-  if (L.status !== 'ready') { wrap.append(h('span', { class: 'dot grey' }), 'Loading the library from GitHub…'); return wrap; }
+  if (L.status !== 'ready') { wrap.append(h('span', { class: 'dot grey' }), 'Loading the library…'); return wrap; }
   const at = L.at ? new Date(L.at).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '';
-  if (L.source === 'github') wrap.append(h('span', { class: 'dot' }), `Loaded from GitHub (main branch) at ${at}`);
-  else if (L.source === 'snapshot') wrap.append(h('span', { class: 'dot amber' }), `GitHub is unreachable (${L.error}), so this is the copy bundled with the page, built ${at}`);
+  if (L.source === 'site') wrap.append(h('span', { class: 'dot' }), `Published from the main branch${L.sha ? ` (${L.sha.slice(0, 7)})` : ''} at ${at}`);
   else wrap.append(h('span', { class: 'dot red' }), `The library couldn't load: ${L.error}`);
   wrap.append(' ', h('button', { class: 'linkbtn', onclick: () => window.dispatchEvent(new Event('parser-studio:refresh-library')), text: 'Refresh' }));
   return wrap;
@@ -26,7 +25,7 @@ function sourceLine() {
 
 export function renderLibrary(root) {
   const head = h('div', { class: 'libhead' },
-    h('div', {}, h('h1', { text: 'Community parser library' }), h('p', { class: 'sub', text: 'Parsers people have shared, each with synthetic samples and the emulator\'s expected output. Open one to read it, test it against your own line, or fork it.' })),
+    h('div', {}, h('h1', { text: 'Parsers' }), h('p', { class: 'sub', text: 'Parsers people have shared, each with synthetic samples and the emulator\'s expected output. Open one to read it, test it against your own line, or fork it.' })),
     h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl('/tree/main/parsers'), target: '_blank', rel: 'noopener noreferrer', text: 'Browse on GitHub' }), h('a', { class: 'btn primary', href: '#/build/sample', text: 'Build a parser' })));
   root.append(head, sourceLine());
   const search = h('input', { class: 'input', type: 'search', placeholder: 'Search vendor, product, schema, author or bridge', 'aria-label': 'Search the library', value: state.libQuery || '' });
@@ -56,7 +55,7 @@ function legend() {
 function card(e) {
   const m = e.meta;
   const schemas = [...new Set((m.parsers || []).map((p) => p.schema).filter((s) => s && s !== 'scwx.generic'))];
-  const a = h('a', { class: 'card', href: `#/library/${e.id}` });
+  const a = h('a', { class: 'card', href: `#/parsers/${e.id}` });
   a.append(h('span', { class: 'vendor', text: m.vendor }), h('h2', { text: m.product }));
   const pills = h('span', { class: 'pills' }, pill(FORMAT_LABELS[m.format] || m.format, 'grey'), pill(SHIP_LABELS[m.ship_method] || m.ship_method, 'grey'));
   if (hasBridge(m)) pills.append(pill('needs a bridge', 'cyan'));
@@ -69,7 +68,7 @@ function card(e) {
 
 export function renderEntry(root, id) {
   const e = state.library.entries.find((x) => x.id === id);
-  root.append(h('div', { class: 'libhead' }, h('div', {}, h('a', { href: '#/library', text: '← Library' }))));
+  root.append(h('div', { class: 'libhead' }, h('div', {}, h('a', { href: '#/parsers', text: '← Parsers' }))));
   if (!e) {
     root.append(h('p', { class: 'empty', text: state.library.status === 'ready' ? `No library entry ${id}.` : 'Loading the library…' }));
     return;
@@ -105,7 +104,7 @@ function drawEntry(root, e) {
   row('License', m.license);
   row('Samples', m.sample_source === 'vendor-docs' ? 'from public vendor docs' : 'synthetic');
   row('Tested', m.tested && m.tested.tenant ? `passed Run Test in a tenant on ${m.tested.tenant}` : `emulator only (Parser Studio ${m.tested ? m.tested.emulator : ''})`);
-  if (m.forked_from) row('Forked from', h('a', { href: `#/library/${m.forked_from}`, text: m.forked_from }));
+  if (m.forked_from) row('Forked from', h('a', { href: `#/parsers/${m.forked_from}`, text: m.forked_from }));
   if (Array.isArray(m.docs) && m.docs.length) {
     const d = h('span');
     m.docs.filter((u) => /^https:\/\//.test(u)).forEach((u, i) => { if (i) d.append(h('br')); d.append(ext(u, u.replace(/^https:\/\//, '').slice(0, 70))); });
@@ -181,7 +180,7 @@ function bridgeSection(e) {
     h('p', { class: 'sub', text: 'These parsers need a bridge to get this source\'s logs. The bridge below polls the vendor\'s API or relays its webhooks, and sends each record to an HTTP Ingest integration in Sophos Fusion. You run it yourself; it isn\'t part of Sophos. The maintainer reviews every bridge before it merges. Read the code and run it with --dry-run first.' }));
   const body = h('div', {}, h('p', { class: 'empty', text: 'Loading the bridge…' }));
   sec.append(body);
-  loadBridge(state.library.bridges, path, e.ref)
+  loadBridge(state.library.bridges, path)
     .then((b) => { clear(body); drawBridge(body, b); })
     .catch((err) => { clear(body); body.append(h('div', { class: 'callout' }, h('span', {}, `Couldn't load ${path}: ${err.message}. `, ext(githubUrl(`/tree/main/${bridgeFolder(state.library.bridges, e.meta)}`), 'Open it on GitHub')))); });
   return sec;
@@ -190,7 +189,7 @@ function bridgeSection(e) {
 function drawBridge(root, b) {
   const dir = b.dir || b.path;
   const folder = githubUrl(`/tree/main/${dir}`);
-  root.append(h('p', { class: 'sub' }, ext(folder, `${dir} on GitHub`), b.fallback ? ` (GitHub couldn't be reached, so this is the copy bundled with the page)` : ''));
+  root.append(h('p', { class: 'sub' }, ext(folder, `${dir} on GitHub`)));
   const grid = h('div', { class: 'grid g-bridge' });
   root.append(grid);
   grid.append(h('div', { class: 'bridgecol' }, h('h3', { text: 'README' }),

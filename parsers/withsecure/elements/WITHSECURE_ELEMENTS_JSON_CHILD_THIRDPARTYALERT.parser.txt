@@ -4,7 +4,7 @@
 !SCHEMA=scwx.thirdpartyalert
 !TRIMALLOFF
 
-# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-ngsiem-parser-studio
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: WithSecure Elements security events from the example bridge.
 # Child of WITHSECURE_ELEMENTS_JSON_PARENT: every security event the Antivirus child doesn't take,
