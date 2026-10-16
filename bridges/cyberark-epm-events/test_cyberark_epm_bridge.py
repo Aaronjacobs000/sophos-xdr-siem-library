@@ -513,12 +513,25 @@ class BridgeTest(unittest.TestCase):
     def test_calls_to_epm_are_spaced(self):
         client = c.Epm(self.cfg())
         client.sets()
-        # Only the second call is sure to wait: on some platforms time.monotonic() starts near zero
-        # with the process, so the first call can wait too when the suite runs fast.
         self.slept.clear()
         client.sets()
         gaps = [s for s in self.slept if 0 < s <= c.MIN_CALL_GAP]
         self.assertEqual(len(gaps), 1)
+
+    def test_the_first_call_doesnt_wait_when_the_clock_starts_near_zero(self):
+        # time.monotonic() can start near zero with the process, as on macOS's Python 3.9. The first
+        # call has no call before it to keep its distance from, so it never waits.
+        real, clock = c.time.monotonic, [0.01]
+        c.time.monotonic = lambda: clock[0]
+        try:
+            client = c.Epm(self.cfg())
+            client.sets()
+            self.assertEqual([s for s in self.slept if 0 < s <= c.MIN_CALL_GAP], [])
+            clock[0] += 0.05
+            client.sets()
+            self.assertEqual([round(s, 6) for s in self.slept if 0 < s <= c.MIN_CALL_GAP], [0.2])
+        finally:
+            c.time.monotonic = real
 
     def test_dry_run_prints_and_changes_nothing(self):
         self.mock.events = {SET_A["Id"]: [raw_event(i, self.ago(10 - i)) for i in range(2)]}

@@ -346,7 +346,8 @@ class Epm:
         self.cfg = cfg
         self._token = None
         self._expires = 0.0
-        self._last_call = 0.0
+        # None until the first call, which never waits: time.monotonic() can start near zero.
+        self._last_call = None
 
     def _new_token(self) -> str:
         url = f"{self.cfg['identity_url']}/oauth2/token/{urllib.parse.quote(self.cfg['app_id'], safe='')}"
@@ -383,7 +384,7 @@ class Epm:
         url = f"{self.cfg['api_url']}{path}?{query}"
         data = json.dumps(body, separators=(",", ":")).encode() if body is not None else None
         for renew in (False, True):
-            wait = self._last_call + MIN_CALL_GAP - time.monotonic()
+            wait = self._last_call + MIN_CALL_GAP - time.monotonic() if self._last_call is not None else 0
             if wait > 0:
                 time.sleep(wait)
             self._last_call = time.monotonic()
