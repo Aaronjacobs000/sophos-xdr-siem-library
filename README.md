@@ -98,6 +98,12 @@ To use one, import the library connector it needs under Security Operations > Au
 
 Playbooks act on tenants, so nothing under `playbooks/` or `connectors/` merges on its own: the checks label each pull request for review and the owner merges it. Entries ship with dry run on, a scoping input and a per-run limit. The checks catch YAML and CEL that don't parse, names and versions, dependencies on the entry's own connector, task references, a risk tier lower than what the template calls, hosts that aren't on the allowlist, wipe-type actions, and tenant IDs, icons, credentials, webhook URLs and personal data. They run offline; `playbookValidateDSLV2` in a tenant is the authority on a template, and an entry records when it passed.
 
+Sophos Fusion ships case sync templates for several ticketing tools. The library adds ConnectWise PSA, Autotask PSA and ServiceNow, which Sophos Fusion has a connector for but no template. Each opens a ticket when a case is created, adds changes and comments as notes, links the ticket on the case and closes it with the case. For HaloPSA, use Sophos Fusion's own Halo ITSM connector and Halo ITSM Case Sync template: HaloPSA has the same Halo API, so set the connection's URL to your HaloPSA host and its grant URL to that host's `/auth/token`, with `?tenant=` for a hosted instance. Check which Halo priority each case severity gets before you rely on it. This is untested against a HaloPSA instance.
+
+## Chat bridge
+
+Sophos Fusion playbooks can post a case to Teams or Slack, but can't take a reply. [chat-bridge/](chat-bridge/) is a small Cloudflare Worker that does: from a Teams outgoing webhook command or a Slack button, it sets a case's status or adds a comment through the Sophos Fusion Cases API, after checking the request's signature, and names the person who acted in the case comment. It pairs with the Teams case chat sync and Slack case chat sync playbooks, and the maintainer reviews every change to it.
+
 ## Contributing
 
 Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Playbooks and connectors: open a pull request from a git clone; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
@@ -133,6 +139,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | `playbooks/` | Playbook templates, each with its metadata and setup steps. |
 | `connectors/` | Custom connectors, and the allowlist of the hosts they may call. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
+| `chat-bridge/` | The Cloudflare Worker that carries Teams and Slack replies back to Sophos Fusion cases. Its tests are `test/chat-bridge.test.mjs`. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
 | `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, the review label, and the Pages deploy. |
