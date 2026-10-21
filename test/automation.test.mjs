@@ -322,6 +322,15 @@ test('checks: the risk tier can\'t be less than what the template calls, and des
   // Generic webhook connectors send data anywhere: a warning for review.
   const webhook = check(playbookEntry({ yaml: TEMPLATE.replace('    - Taegis.Case:1.0.5\n', '    - Taegis.Case:1.0.5\n    - Taegis.Webhook:1.1.4\n').replace('action: Taegis.Case.addComment', 'action: Taegis.Webhook.post') }));
   assert.ok(webhook.problems.some((p) => p.level === 'warning' && p.code === 'review'));
+  // Teams and Slack post to the webhook URL in their connection: notify, with the same warning.
+  for (const [name, fn] of [['Taegis.MicrosoftTeams:1.2.4', 'Taegis.MicrosoftTeams.sendWorkflowMessage'], ['Taegis.SalesforceSlack:2.1.1', 'Taegis.SalesforceSlack.sendMessage']]) {
+    const chat = check(playbookEntry({ yaml: TEMPLATE.replace('    - Taegis.Case:1.0.5\n', `    - Taegis.Case:1.0.5\n    - ${name}\n`).replace('action: Acme_Widget.lockWidget', 'action: Acme_Widget.getWidget').replace('action: Taegis.Case.addComment', `action: ${fn}`), meta: { risk_tier: 'notify' } }));
+    assert.ok(!has(chat, 'tier'), name);
+    assert.ok(chat.problems.some((p) => p.level === 'warning' && p.code === 'review'), name);
+  }
+  // A case link is a note on the case, and a work note only renders text.
+  const linked = check(playbookEntry({ yaml: TEMPLATE.replace('action: Acme_Widget.lockWidget', 'action: Acme_Widget.getWidget').replace('action: Taegis.Case.addComment', 'action: Taegis.Case.createLink'), meta: { risk_tier: 'notify' } }));
+  assert.ok(!has(linked, 'tier'));
 });
 
 test('checks: dependencies match the entry\'s own connector, its functions and the lists the template declares', () => {

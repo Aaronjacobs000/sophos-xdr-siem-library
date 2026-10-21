@@ -29,12 +29,16 @@ export const CONNECTOR_PATH = /^connectors\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(
 // entry that calls one can't claim to only look things up or notify.
 export const KNOWN_TIERS = {
   'Taegis.Case.addComment': 'notify',
+  'Taegis.Case.createLink': 'notify',
   'Taegis.Case.getComments': 'lookup',
   'Taegis.Case.query': 'lookup',
   'Taegis.Case.queryCustom': 'lookup',
+  // Renders a case event as text and returns it; it writes nothing.
+  'Taegis.CaseWorkNote': 'lookup',
 };
-// Connectors that send data to an address set in the connection rather than in the connector.
-const ANY_ADDRESS = new Set(['Taegis.Webhook', 'Taegis.Fetch']);
+// Connectors that send data to an address set in the connection rather than in the connector:
+// the generic webhooks, and the Teams and Slack connectors, which post to the webhook URL in their connection.
+const ANY_ADDRESS = new Set(['Taegis.Webhook', 'Taegis.Fetch', 'Taegis.MicrosoftTeams', 'Taegis.SalesforceSlack']);
 // Wipe has no undo, and there's no corporate-only wipe, so no entry may call one for now.
 const WIPE = /wipe|factory[-_ ]?reset/i;
 
