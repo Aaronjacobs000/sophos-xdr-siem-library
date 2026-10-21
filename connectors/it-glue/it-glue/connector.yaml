@@ -1,0 +1,142 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_ITGlue
+tags: []
+categories:
+    - Generic
+title: IT Glue (unofficial)
+description: Looks up IT Glue configurations by name, read only, for case context. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos or Kaseya.
+documentation: |
+    # Overview
+    Calls the IT Glue API to find configurations by name and read organizations. It reads only, and it never reads passwords. API guide: https://api.itglue.com/developer/
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos and Kaseya don't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | API Key |
+    | Header | `x-api-key` |
+    | Key | An IT Glue API key without password access |
+    | IT Glue API host | The API host of your IT Glue data center |
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads one organization, to test the connection |
+    | findConfigurations | Finds configurations whose name matches exactly, optionally in one organization |
+    | getOrganization | Reads an organization |
+method: http
+version: 1.0.0
+vendorName: IT Glue
+vendorProduct: Documentation
+parameters:
+    properties:
+        api_host:
+            enum:
+                - api.au.itglue.com
+                - api.eu.itglue.com
+                - api.itglue.com
+            required: true
+            title: IT Glue API host
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading one organization
+      outputs:
+        properties:
+            organizations:
+                description: Up to one organization
+                type: array
+        type: object
+      config:
+        contentType: application/vnd.api+json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'IT Glue API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the IT Glue API'
+            }
+        headers:
+            - name: Accept
+              value: application/vnd.api+json
+        method: GET
+        outputs:
+            organizations: ${body.?data.orValue([])}
+        url: https://${config.api_host}/organizations?page%5Bsize%5D=1
+    - name: findConfigurations
+      description: Find configurations whose name matches exactly, optionally in one organization
+      inputs:
+        properties:
+            name:
+                description: The configuration name to match, such as a hostname. IT Glue matches the whole name.
+                title: Name
+                type: string
+            organization_id:
+                description: Only look in this IT Glue organization
+                title: Organization ID
+                type: string
+        required:
+            - name
+        type: object
+      outputs:
+        properties:
+            configurations:
+                description: Up to five configurations, each with id and attributes such as organization-name, configuration-type-name, configuration-status-name, location-name and resource-url
+                type: array
+        type: object
+      config:
+        contentType: application/vnd.api+json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'IT Glue API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the IT Glue API'
+            }
+        headers:
+            - name: Accept
+              value: application/vnd.api+json
+        method: GET
+        outputs:
+            configurations: ${body.?data.orValue([])}
+        url: 'https://${config.api_host}/configurations?filter%5Bname%5D=${inputs.name.trim().toURLQuery()}${inputs.?organization_id.orValue("") != "" ? "&filter%5Borganization_id%5D=" + inputs.organization_id.trim().toURLQuery() : ""}&page%5Bsize%5D=5'
+    - name: getOrganization
+      description: Read an organization
+      inputs:
+        properties:
+            organization_id:
+                description: The IT Glue organization ID
+                title: Organization ID
+                type: string
+        required:
+            - organization_id
+        type: object
+      outputs:
+        properties:
+            organization:
+                description: The organization, with id and attributes such as name and quick-notes
+                type: object
+        type: object
+      config:
+        contentType: application/vnd.api+json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'IT Glue API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the IT Glue API'
+            }
+        headers:
+            - name: Accept
+              value: application/vnd.api+json
+        method: GET
+        outputs:
+            organization: ${body.?data.orValue({})}
+        url: https://${config.api_host}/organizations/${inputs.organization_id.trim()}
+authTypes:
+    - APIKey
+authDefaults:
+    apiKeyAuth:
+        header: x-api-key
+        param: ""
+        value: <API-Key>

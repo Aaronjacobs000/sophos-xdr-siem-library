@@ -1,0 +1,26 @@
+{
+  "title": "Autotask PSA (unofficial)",
+  "vendor": "Autotask",
+  "product": "Autotask PSA",
+  "auth": "API key: the API user's secret in the Secret header, with its user name, integration code and zone host as connection settings",
+  "functions": {
+    "validate": "lookup",
+    "getTicket": "lookup",
+    "createTicket": "notify",
+    "updateTicket": "reversible action",
+    "addNote": "notify"
+  },
+  "license": "MIT",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://www.autotask.net/help/developerhelp/Content/APIs/REST/General_Topics/REST_Security_Auth.htm",
+    "https://www.autotask.net/help/developerhelp/Content/APIs/General/API_Zones.htm",
+    "https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketsEntity.htm",
+    "https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketNotesEntity.htm"
+  ],
+  "notes": "Not run against Autotask: there was no instance to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. Whether Sophos Fusion's API Key sign-in sends the Secret header alongside the two static headers, the child Notes path and the ticket link format are untested."
+}

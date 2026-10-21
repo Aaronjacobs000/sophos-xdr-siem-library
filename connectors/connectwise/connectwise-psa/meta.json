@@ -1,0 +1,24 @@
+{
+  "title": "ConnectWise PSA (unofficial)",
+  "vendor": "ConnectWise",
+  "product": "ConnectWise PSA",
+  "auth": "Basic: the company ID and an API member's public key as the username, the private key as the password, plus the ConnectWise clientId and API host as connection settings",
+  "functions": {
+    "validate": "lookup",
+    "getTicket": "lookup",
+    "createTicket": "notify",
+    "updateTicket": "reversible action",
+    "addNote": "notify"
+  },
+  "license": "MIT",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.connectwise.com/Products/ConnectWise_PSA/REST",
+    "https://developer.connectwise.com/Best_Practices/Manage_Cloud_URL_Formatting"
+  ],
+  "notes": "Not run against ConnectWise PSA: there was no instance to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. Request and response shapes follow ConnectWise's published API models; the JSON Patch form of a status change and the ticket link format are untested."
+}

@@ -1,0 +1,278 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_AutotaskPSA
+tags: []
+categories:
+    - Generic
+title: Autotask PSA (unofficial)
+description: Creates, reads and updates Autotask PSA tickets and adds notes to them, for case sync. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos or Kaseya.
+documentation: |
+    # Overview
+    Calls the Autotask PSA REST API to create, read and update tickets and add notes to them. It can't delete tickets. API guide: https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketsEntity.htm
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos and Kaseya don't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | API Key |
+    | Header | `Secret` |
+    | Key | The API user's secret |
+    | Autotask API zone host | The webservices host of your Autotask zone |
+    | API user name | The API user's user name |
+    | API integration code | The tracking identifier on the API user |
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads the Tickets entity information, to test the connection |
+    | getTicket | Reads a ticket, with its status |
+    | createTicket | Creates a ticket and returns its ID and a link to it |
+    | updateTicket | Changes fields on a ticket, such as its status |
+    | addNote | Adds a note to a ticket |
+method: http
+version: 1.0.0
+vendorName: Autotask
+vendorProduct: PSA
+parameters:
+    properties:
+        integration_code:
+            description: The tracking identifier (API integration code) on the API user, sent as the ApiIntegrationCode header
+            required: true
+            title: API integration code
+            type: string
+        username:
+            description: The API user's user name, sent as the UserName header
+            required: true
+            title: API user name
+            type: string
+        zone_host:
+            enum:
+                - webservices1.autotask.net
+                - webservices2.autotask.net
+                - webservices3.autotask.net
+                - webservices4.autotask.net
+                - webservices5.autotask.net
+                - webservices6.autotask.net
+                - webservices11.autotask.net
+                - webservices12.autotask.net
+                - webservices14.autotask.net
+                - webservices15.autotask.net
+                - webservices16.autotask.net
+                - webservices17.autotask.net
+                - webservices18.autotask.net
+                - webservices19.autotask.net
+                - webservices22.autotask.net
+                - webservices24.autotask.net
+                - webservices25.autotask.net
+                - webservices26.autotask.net
+                - webservices28.autotask.net
+                - webservices29.autotask.net
+            required: true
+            title: Autotask API zone host
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading the Tickets entity information
+      outputs:
+        properties:
+            info:
+                description: The Tickets entity information
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Autotask API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Autotask API'
+            }
+        headers:
+            - name: ApiIntegrationCode
+              value: ${config.integration_code}
+            - name: UserName
+              value: ${config.username}
+        method: GET
+        outputs:
+            info: ${body}
+        url: https://${config.zone_host}/ATServicesRest/V1.0/Tickets/entityInformation
+    - name: getTicket
+      description: Read a ticket, with its status
+      inputs:
+        properties:
+            ticket_id:
+                description: The ticket's ID
+                title: Ticket ID
+                type: string
+        required:
+            - ticket_id
+        type: object
+      outputs:
+        properties:
+            ticket:
+                description: The ticket, with id, ticketNumber, title and status
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Autotask API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Autotask API'
+            }
+        headers:
+            - name: ApiIntegrationCode
+              value: ${config.integration_code}
+            - name: UserName
+              value: ${config.username}
+        method: GET
+        outputs:
+            ticket: ${body.?item.orValue({})}
+        url: https://${config.zone_host}/ATServicesRest/V1.0/Tickets/${inputs.ticket_id.trim()}
+    - name: createTicket
+      description: Create a ticket and return its ID and a link to it
+      inputs:
+        properties:
+            ticket:
+                description: 'The ticket as the Autotask API takes it: companyID, title, status, priority and dueDateTime, and optional description, queueID, ticketType, ticketCategory and source'
+                title: Ticket
+                type: object
+        required:
+            - ticket
+        type: object
+      outputs:
+        properties:
+            id:
+                description: The new ticket's ID
+                type: string
+            ticket_url:
+                description: A link that opens the ticket in Autotask
+                type: string
+        type: object
+      config:
+        body: ${inputs.ticket}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 && has(body.itemId) ? '' :
+                has(status.code) ? 'Autotask API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Autotask API'
+            }
+        headers:
+            - name: ApiIntegrationCode
+              value: ${config.integration_code}
+            - name: UserName
+              value: ${config.username}
+        method: POST
+        outputs:
+            id: '${has(body.itemId) ? string(body.itemId) : ""}'
+            ticket_url: '${has(body.itemId) ? "https:" + "//" + config.zone_host.replace("webservices", "ww") + "/Autotask/AutotaskExtend/ExecuteCommand.aspx?Code=OpenTicketDetail&TicketID=" + string(body.itemId) : ""}'
+        url: https://${config.zone_host}/ATServicesRest/V1.0/Tickets
+    - name: updateTicket
+      description: Change fields on a ticket, such as its status or title
+      inputs:
+        properties:
+            fields:
+                description: 'The fields to change, such as {"status": 5}. The ticket ID is added for you.'
+                title: Fields
+                type: object
+            ticket_id:
+                description: The ticket's ID
+                title: Ticket ID
+                type: string
+        required:
+            - ticket_id
+            - fields
+        type: object
+      outputs:
+        properties:
+            id:
+                description: The ticket's ID
+                type: string
+        type: object
+      config:
+        body: '${merge(inputs.fields, {"id": int(inputs.ticket_id.trim())})}'
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Autotask API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Autotask API'
+            }
+        headers:
+            - name: ApiIntegrationCode
+              value: ${config.integration_code}
+            - name: UserName
+              value: ${config.username}
+        method: PATCH
+        outputs:
+            id: '${has(body.itemId) ? string(body.itemId) : ""}'
+        url: https://${config.zone_host}/ATServicesRest/V1.0/Tickets
+    - name: addNote
+      description: Add a note to a ticket
+      inputs:
+        properties:
+            note_type:
+                default: 1
+                description: The note type picklist value
+                title: Note type
+                type: integer
+            publish:
+                default: 1
+                description: The publish picklist value, which sets who can see the note
+                title: Publish
+                type: integer
+            text:
+                description: The note text, up to 32000 characters
+                title: Text
+                type: string
+            ticket_id:
+                description: The ticket's ID
+                title: Ticket ID
+                type: string
+            title:
+                description: The note title, up to 250 characters
+                title: Title
+                type: string
+        required:
+            - ticket_id
+            - text
+        type: object
+      outputs:
+        properties:
+            id:
+                description: The new note's ID
+                type: string
+        type: object
+      config:
+        body:
+            description: ${inputs.text}
+            noteType: ${inputs.?note_type.orValue(1)}
+            publish: ${inputs.?publish.orValue(1)}
+            title: ${inputs.?title.orValue("Sophos Fusion case update")}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Autotask API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Autotask API'
+            }
+        headers:
+            - name: ApiIntegrationCode
+              value: ${config.integration_code}
+            - name: UserName
+              value: ${config.username}
+        method: POST
+        outputs:
+            id: '${has(body.itemId) ? string(body.itemId) : ""}'
+        url: https://${config.zone_host}/ATServicesRest/V1.0/Tickets/${inputs.ticket_id.trim()}/Notes
+authTypes:
+    - APIKey
+authDefaults:
+    apiKeyAuth:
+        header: Secret
+        param: ""
+        value: <API-User-Secret>
