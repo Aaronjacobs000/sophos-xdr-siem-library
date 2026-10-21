@@ -1,0 +1,314 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_AutotaskPSA_CaseSync
+version: 1.0.0
+title: Autotask PSA case sync (unofficial)
+description: Opens an Autotask PSA ticket when a case is created, adds case changes and comments to it as notes, links it on the case, and completes it when the case closes. It starts in dry run, which only reports what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Keeps an Autotask PSA ticket in step with a case, one way, the way Sophos Fusion's own case sync templates work for other ticketing tools:
+    - When a case is created, it opens a ticket for the company you set, and saves a link to it on the case.
+    - When the case changes or someone comments, it adds the change or comment to the ticket as a note.
+    - When the title changes, it updates the ticket title.
+    - When the case closes, it adds a note, sets the resolution and moves the ticket to your closed status. When a closed case reopens, it moves the ticket back to your reopen status.
+
+    It needs the unofficial Autotask PSA connector from the same library. Sophos doesn't make, maintain or support this playbook.
+
+    Autotask status, priority, queue and note values are picklist numbers that differ between Autotask accounts. The defaults are Autotask's standard ones: check yours under Admin > Features & Settings, or with the Tickets entityInformation fields call.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the case and the linked ticket and says what it would do in the run's outcome. It writes nothing to Autotask or the case.
+    - Only cases at or above the minimum severity, and managed by whoever you choose, get a new ticket.
+    - Each run handles one case, so it opens at most one ticket.
+    - Rollback: complete or delete the ticket in Autotask, and delete the link on the case.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only report what the playbook would do | On |
+    | Minimum severity | Cases below it get no ticket | 4 (Low) |
+    | Managed by | self, sophos or any | self |
+    | Company ID | The Autotask company ID for new tickets | None |
+    | Company by tenant | JSON of tenant ID to company ID, for a partner-level playbook | `{}` |
+    | Queue ID | The queue for new tickets; 0 leaves it out | 0 |
+    | New, closed and reopen status | Status picklist values | 1, 5, 1 |
+    | Priority by severity | JSON of case severity to priority picklist value | Standard picklist |
+    | Due in hours | Sets the due date this many hours after the ticket opens | 24 |
+    | Note type and publish | Picklist values for the notes | 1, 1 |
+changeNotes: First version
+tags:
+    - Type:Ticketing
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_AutotaskPSA:1.0.0
+    - Taegis.Case:1.0.5
+playbooks:
+    - Taegis.CaseWorkNote:1.0.2
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+            - Update
+            - Comment Added
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Autotask PSA ticket (unofficial)
+inputs:
+    properties:
+        settings:
+            properties:
+                dry_run:
+                    default: true
+                    description: When on, the playbook only reports what it would do in the run's outcome. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                managed_by:
+                    default: self
+                    description: Which cases get a ticket. self is CUSTOMER, sophos is PROVIDER (Sophos MDR).
+                    enum:
+                        - self
+                        - sophos
+                        - any
+                    title: Managed by
+                    type: string
+                min_severity:
+                    default: 4
+                    description: Cases below this severity get no ticket. 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical.
+                    enum:
+                        - 2
+                        - 4
+                        - 6
+                        - 8
+                        - 10
+                    title: Minimum severity
+                    type: integer
+            title: Playbook settings
+            type: object
+        ticket:
+            properties:
+                closed_status:
+                    default: 5
+                    description: The status picklist value for a closed case. 5 is Complete in Autotask's standard list.
+                    title: Closed status
+                    type: integer
+                company_by_tenant:
+                    default: '{}'
+                    description: 'JSON of Sophos Fusion tenant ID to Autotask company ID, such as {"<tenant ID>": 174}. A tenant not in it uses Company ID.'
+                    title: Company by tenant
+                    type: string
+                company_id:
+                    description: The Autotask company ID for new tickets
+                    title: Company ID
+                    type: integer
+                due_hours:
+                    default: 24
+                    description: The ticket's due date is this many hours after it opens
+                    minimum: 1
+                    title: Due in hours
+                    type: integer
+                new_status:
+                    default: 1
+                    description: The status picklist value for new tickets. 1 is New in Autotask's standard list.
+                    title: New ticket status
+                    type: integer
+                note_publish:
+                    default: 1
+                    description: The publish picklist value for notes, which sets who sees them
+                    title: Note publish
+                    type: integer
+                note_type:
+                    default: 1
+                    description: The note type picklist value for notes
+                    title: Note type
+                    type: integer
+                priority_by_severity:
+                    default: '{"10": 4, "8": 1, "6": 2, "4": 3, "2": 3}'
+                    description: 'JSON of case severity to Autotask priority picklist value. The default maps Critical to 4 (Critical), High to 1 (High), Medium to 2 (Medium), and Low and Informational to 3 (Low).'
+                    title: Priority by severity
+                    type: string
+                queue_id:
+                    default: 0
+                    description: The queue picklist value for new tickets. 0 leaves the queue out.
+                    title: Queue ID
+                    type: integer
+                reopen_status:
+                    default: 1
+                    description: The status picklist value for a case that reopens
+                    title: Reopen status
+                    type: integer
+            required:
+                - company_id
+            title: Ticket settings
+            type: object
+    required:
+        - ticket
+    type: object
+outputs:
+    properties:
+        status:
+            description: SUCCESS, PARTIAL, FAIL or UNKNOWN
+            type: string
+        ticket_id:
+            description: The linked Autotask ticket ID
+            type: string
+    type: object
+dsl:
+    name: Unofficial_AutotaskPSA_CaseSync
+    description: Syncs a case to an Autotask PSA ticket, one way, or reports what it would do in dry run.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        status: finish.variables.status
+        ticket_id: finish.variables.ticket_id
+    tasks:
+        # A quick follow-up event waits for the Create run to save the ticket link.
+        - name: wait_for_create
+          sleep: '30s'
+          condition: "inputs.?event.orValue('').lowerAscii() != 'create'"
+        - name: fetch_case
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            id: caseId(inputs)
+            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } links { reference url title type }'
+        - name: setup
+          let:
+            dry_run: "inputs.?settings.dry_run.orValue(true)"
+            event: "inputs.?event.orValue('manual').lowerAscii()"
+            case: "fetch_case.?outputs.case.orValue({})"
+            ticket_id: "caseLinkReference(caseLinks(fetch_case.?outputs.orValue({})).filter(l, caseLinkType(l) == 'AutotaskPSA')[?0].orValue({}))"
+            company: "int(decodeJSON(inputs.ticket.?company_by_tenant.orValue('{}'))[?caseTenantId(inputs)].orValue(inputs.ticket.company_id))"
+            closing: "inputs.?event.orValue('').lowerAscii() == 'delete' || fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false)"
+            closed_status: "int(inputs.ticket.?closed_status.orValue(5))"
+        - name: scope
+          let:
+            stop: |-
+                !setup.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was synced.' :
+                setup.variables.ticket_id != '' ? '' :
+                int(setup.variables.case.?severity.orValue(0)) < int(inputs.?settings.min_severity.orValue(4)) ? 'The case is below the minimum severity, so it gets no ticket.' :
+                inputs.?settings.managed_by.orValue('self') == 'self' && setup.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so it gets no ticket.' :
+                inputs.?settings.managed_by.orValue('self') == 'sophos' && setup.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so it gets no ticket.' :
+                setup.variables.closing ? 'The case is already closed and has no ticket, so none was opened.' : ''
+        - name: read_ticket
+          condition: "scope.variables.stop == '' && setup.variables.ticket_id != ''"
+          action: Unofficial_AutotaskPSA.getTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+        - name: plan
+          let:
+            create: "scope.variables.stop == '' && setup.variables.ticket_id == ''"
+            note: "scope.variables.stop == '' && setup.variables.ticket_id != '' && !(setup.variables.event in ['create', 'manual'])"
+            retitle: "scope.variables.stop == '' && setup.variables.ticket_id != '' && setup.variables.event == 'update' && caseFieldChanged(inputs, 'title')"
+            close: "scope.variables.stop == '' && setup.variables.ticket_id != '' && setup.variables.closing && int(read_ticket.?outputs.ticket.status.orValue(0)) != setup.variables.closed_status"
+            reopen: "scope.variables.stop == '' && setup.variables.ticket_id != '' && !setup.variables.closing && int(read_ticket.?outputs.ticket.status.orValue(0)) == setup.variables.closed_status"
+            title: "'Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))"
+            standard_priority: "int(setup.variables.case.?severity.orValue(4)) >= 10 ? 4 : int(setup.variables.case.?severity.orValue(4)) >= 8 ? 1 : int(setup.variables.case.?severity.orValue(4)) >= 6 ? 2 : 3"
+            body_text: "'Sophos Fusion case ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs)) + '\\n' + 'Severity: ' + casePriority(inputs) + '\\n' + 'Status: ' + setup.variables.case.?primaryStatus.title.orValue('') + '\\n' + 'Case link: ' + createShareLink(inputs) + '\\n\\n' + caseKeyFindings(inputs)"
+        - name: build
+          condition: "plan.variables.create"
+          let:
+            ticket: |-
+                merge(
+                  {
+                    'companyID': setup.variables.company,
+                    'title': size(plan.variables.title) > 255 ? plan.variables.title.substring(0, 252) + '...' : plan.variables.title,
+                    'description': size(plan.variables.body_text) > 7990 ? plan.variables.body_text.substring(0, 7990) : plan.variables.body_text,
+                    'status': int(inputs.ticket.?new_status.orValue(1)),
+                    'priority': int(decodeJSON(inputs.ticket.?priority_by_severity.orValue('{}'))[?string(int(setup.variables.case.?severity.orValue(4)))].orValue(plan.variables.standard_priority)),
+                    'dueDateTime': string(now() + duration(string(int(inputs.ticket.?due_hours.orValue(24))) + 'h'))
+                  },
+                  int(inputs.ticket.?queue_id.orValue(0)) > 0 ? {'queueID': int(inputs.ticket.queue_id)} : {}
+                )
+        - name: create_ticket
+          condition: "plan.variables.create && !setup.variables.dry_run"
+          action: Unofficial_AutotaskPSA.createTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket: build.variables.ticket
+        - name: link_ticket
+          condition: "create_ticket.?outputs.id.orValue('') != ''"
+          action: Taegis.Case.createLink
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            caseId: caseId(inputs)
+            url: create_ticket.outputs.ticket_url
+            reference: create_ticket.outputs.id
+            title: "'Autotask ticket ' + create_ticket.outputs.id"
+            type: 'AutotaskPSA'
+            isInternal: false
+        - name: render_note
+          condition: "plan.variables.note"
+          exec: Taegis.CaseWorkNote
+          optional: true
+          inputs:
+            case: "inputs.?case.orValue({})"
+            event: "inputs.?event.orValue('')"
+            tenant: "inputs.?tenant.orValue({})"
+            formats: ['plain']
+        - name: add_note
+          condition: "plan.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != ''"
+          action: Unofficial_AutotaskPSA.addNote
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            title: "'Sophos Fusion case update'"
+            text: "render_note.outputs.plain.substring(0, size(render_note.outputs.plain) > 31990 ? 31990 : size(render_note.outputs.plain))"
+            note_type: "int(inputs.ticket.?note_type.orValue(1))"
+            publish: "int(inputs.ticket.?note_publish.orValue(1))"
+        - name: retitle_ticket
+          condition: "plan.variables.retitle && !setup.variables.dry_run"
+          action: Unofficial_AutotaskPSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            fields: "{'title': size(plan.variables.title) > 255 ? plan.variables.title.substring(0, 252) + '...' : plan.variables.title}"
+        - name: close_ticket
+          condition: "plan.variables.close && !setup.variables.dry_run"
+          action: Unofficial_AutotaskPSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            fields: "{'status': setup.variables.closed_status, 'resolution': 'Sophos Fusion closed case ' + setup.variables.case.?shortId.orValue('') + ' with the status ' + setup.variables.case.?primaryStatus.title.orValue('Closed') + '. ' + createShareLink(inputs)}"
+        - name: reopen_ticket
+          condition: "plan.variables.reopen && !setup.variables.dry_run"
+          action: Unofficial_AutotaskPSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            fields: "{'status': int(inputs.ticket.?reopen_status.orValue(1))}"
+        - name: tally
+          let:
+            planned: "[plan.variables.create ? 'open a ticket for company ' + string(setup.variables.company) : '', plan.variables.note ? 'add a note to ticket ' + setup.variables.ticket_id : '', plan.variables.retitle ? 'update the ticket title' : '', plan.variables.close ? 'close ticket ' + setup.variables.ticket_id : '', plan.variables.reopen ? 'reopen ticket ' + setup.variables.ticket_id : ''].filter(s, s != '')"
+            failed: "[plan.variables.create && !setup.variables.dry_run && create_ticket.?outputs.id.orValue('') == '' ? 'open the ticket' : '', create_ticket.?outputs.id.orValue('') != '' && !link_ticket.?outputs.link.id.hasValue() ? 'link the ticket on the case' : '', plan.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != '' && add_note.?outputs.id.orValue('') == '' ? 'add the note' : '', plan.variables.close && !setup.variables.dry_run && close_ticket.?outputs.id.orValue('') == '' ? 'close the ticket' : '', plan.variables.reopen && !setup.variables.dry_run && reopen_ticket.?outputs.id.orValue('') == '' ? 'reopen the ticket' : ''].filter(s, s != '')"
+        - name: finish
+          let:
+            ticket_id: "create_ticket.?outputs.id.orValue(setup.variables.ticket_id)"
+            status: |-
+                scope.variables.stop != '' ? (setup.variables.case.?id.hasValue() ? 'SUCCESS' : 'FAIL') :
+                setup.variables.dry_run ? 'SUCCESS' :
+                size(tally.variables.failed) == 0 ? 'SUCCESS' :
+                size(tally.variables.failed) < size(tally.variables.planned) ? 'PARTIAL' : 'FAIL'
+            message: |-
+                scope.variables.stop != '' ? scope.variables.stop :
+                size(tally.variables.planned) == 0 ? 'Nothing to sync for this event.' :
+                setup.variables.dry_run ? 'Dry run: the playbook would ' + tally.variables.planned.join(', ') + '. Nothing was written. Turn off dry run to sync.' :
+                size(tally.variables.failed) == 0 ? 'Synced: ' + tally.variables.planned.join(', ') + '.' :
+                'Could not ' + tally.variables.failed.join(', ') + '.'

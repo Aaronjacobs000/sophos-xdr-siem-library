@@ -1,0 +1,28 @@
+{
+  "title": "NinjaOne device context",
+  "vendor": "NinjaOne",
+  "product": "NinjaOne",
+  "use_case": "From a host in a case, find the device in NinjaOne and comment on the case with its organization, online state, last contact, last logged-on user, operating system and a link to it.",
+  "trigger": "User Initiated: a Response Action on Host, which an analyst runs from the host in a case. Leave When does this playbook run? at Always.",
+  "connections": [
+    "Unofficial_NinjaOne 1.0.0, the NinjaOne connector from this library: OAuth client credentials with the monitoring scope",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to comment on the case"
+  ],
+  "requires": "NinjaOne, an API Services client app with the monitoring scope, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It only reads NinjaOne and adds a comment to the case, which Sophos MDR analysts can see on a case they share with you.",
+  "rollback": "Delete the comment on the case if you don't want it. Nothing in NinjaOne changes.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "connector": "connectors/ninjaone/ninjaone",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://www.ninjaone.com/docs/integrations/how-to-set-up-api-oauth-token/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run against NinjaOne: there was no instance to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted. It matches the host's short name against the NinjaOne system and DNS names."
+}

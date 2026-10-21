@@ -1,0 +1,28 @@
+{
+  "title": "ServiceNow case sync",
+  "vendor": "ServiceNow",
+  "product": "ServiceNow ITSM",
+  "use_case": "Open a ServiceNow incident for each new case, keep it updated with case changes and comments as work notes, link it on the case, and resolve it when the case closes. Sophos Fusion has a ServiceNow connector but no ServiceNow case sync template.",
+  "trigger": "Platform Events, source Case, events Create, Update and Comment Added. Leave When does this playbook run? at Always; the playbook's own settings do the scoping. It can also run by hand from a case.",
+  "connections": [
+    "Taegis.ServiceNow 1.1.7, the ServiceNow connector Sophos manages: Basic or OAuth password sign-in to your instance",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to read the case and save the incident link"
+  ],
+  "requires": "ServiceNow ITSM with a user that can create and update incidents through the Table API, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. With Managed by set to self it leaves Sophos MDR cases alone. If you sync MDR cases, check first that a playbook can save the ticket link on a Sophos-managed case, or every event opens another ticket, and that the notes it copies are ones your customer may see.",
+  "rollback": "Close or delete the incident in ServiceNow and delete the ServiceNow link on the case. Turning the playbook off stops further syncing.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.servicenow.com/dev.do#!/reference/api/latest/rest/c_TableAPI",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run against ServiceNow: there was no instance to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported, exported again unchanged apart from the tenant's own fields, and was deleted. Close codes and incident states vary by instance; set yours. A case-triggered run is untested: the Cases API refused to create a test case that day."
+}

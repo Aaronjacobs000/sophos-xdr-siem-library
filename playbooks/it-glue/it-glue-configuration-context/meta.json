@@ -1,0 +1,28 @@
+{
+  "title": "IT Glue configuration context",
+  "vendor": "IT Glue",
+  "product": "IT Glue",
+  "use_case": "From a host in a case, find its IT Glue configuration and comment on the case with the organization, type, status, location, contact, primary IP and a link to the record.",
+  "trigger": "User Initiated: a Response Action on Host, which an analyst runs from the host in a case. Leave When does this playbook run? at Always.",
+  "connections": [
+    "Unofficial_ITGlue 1.0.0, the IT Glue connector from this library: an API key without password access",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to comment on the case"
+  ],
+  "requires": "IT Glue, an API key without password access, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It only reads IT Glue and adds a comment to the case, which Sophos MDR analysts can see on a case they share with you.",
+  "rollback": "Delete the comment on the case if you don't want it. Nothing in IT Glue changes.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "connector": "connectors/it-glue/it-glue",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://api.itglue.com/developer/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run against IT Glue: there was no account to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted."
+}

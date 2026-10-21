@@ -1,0 +1,166 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_Rewst_CaseHandoff
+version: 1.0.0
+title: Rewst case handoff (unofficial)
+description: Sends a short, fixed set of case fields to a Rewst webhook trigger when a case is created or changes, so a Rewst workflow can ticket, document or notify across an MSP's tools. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Posts a small JSON document about a case to a Rewst webhook trigger through the Generic Webhook connector Sophos manages, when a case is created, when its status, severity, assignee or title changes, and, if you turn it on, when someone comments. A Rewst workflow then does the rest: a PSA ticket, an RMM action, a Teams post or a customer email. Sophos doesn't make, maintain or support this playbook.
+
+    # What leaves Sophos Fusion
+    Only these fields, never the key findings, evidence or detections: the case ID, short ID, title, severity, status, who manages it, assignee name, tenant ID, the link to the case, the event, the fields that changed and, only with Send comments on, the comment text and its author's name. The Rewst webhook URL and secret stay in the connection.
+
+    # Filters
+    - Minimum severity and Managed by limit which cases go to Rewst.
+    - Comments that start with the Rewst comment prefix, `[rewst]` unless you change it, aren't sent, so a comment your Rewst workflow writes back to the case doesn't start the workflow again.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Minimum severity | Cases below it aren't sent | 4 (Low) |
+    | Managed by | any, self or sophos | any |
+    | Send comments | Send new comments, with their text | Off |
+    | Rewst comment prefix | Comments that start with it aren't sent | `[rewst]` |
+changeNotes: First version
+tags:
+    - Type:Notification
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.Webhook:1.1.4
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+            - Update
+            - Comment Added
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Send case to Rewst (unofficial)
+inputs:
+    properties:
+        settings:
+            properties:
+                comment_prefix:
+                    default: '[rewst]'
+                    description: Comments that start with this text aren't sent. Have your Rewst workflow start any comment it writes to the case with it.
+                    title: Rewst comment prefix
+                    type: string
+                managed_by:
+                    default: any
+                    description: Which cases to send. self is CUSTOMER, sophos is PROVIDER (Sophos MDR).
+                    enum:
+                        - any
+                        - self
+                        - sophos
+                    title: Managed by
+                    type: string
+                min_severity:
+                    default: 4
+                    description: Cases below this severity aren't sent. 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical.
+                    enum:
+                        - 2
+                        - 4
+                        - 6
+                        - 8
+                        - 10
+                    title: Minimum severity
+                    type: integer
+                send_comments:
+                    default: false
+                    description: Send new comments, with their text and author, to Rewst
+                    title: Send comments
+                    type: boolean
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        reason:
+            description: Why nothing was sent, when nothing was
+            type: string
+        sent:
+            description: Whether the case went to Rewst
+            type: boolean
+    type: object
+dsl:
+    name: Unofficial_Rewst_CaseHandoff
+    description: Sends a fixed set of case fields to a Rewst webhook trigger on case events, within the filters.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        sent: finish.variables.sent
+        reason: decide.variables.skip
+    tasks:
+        - name: setup
+          let:
+            event: "inputs.?event.orValue('manual').lowerAscii()"
+            prefix: "inputs.?settings.comment_prefix.orValue('[rewst]')"
+            send_comments: "inputs.?settings.send_comments.orValue(false)"
+        - name: fetch_case
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            id: caseId(inputs)
+            fields: 'id shortId title severity managedBy tenantId primaryStatus { name title isClosed } assigneeSubject { displayName }'
+        - name: read
+          let:
+            case: "fetch_case.?outputs.case.orValue({})"
+            comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
+            author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
+            changed: "setup.variables.event == 'update' ? [['status', caseFieldChanged(inputs, 'primaryStatus')], ['severity', caseFieldChanged(inputs, 'severity')], ['assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
+        - name: decide
+          let:
+            skip: |-
+                !read.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was sent.' :
+                int(read.variables.case.?severity.orValue(0)) < int(inputs.?settings.min_severity.orValue(4)) ? 'The case is below the minimum severity, so nothing was sent.' :
+                inputs.?settings.managed_by.orValue('any') == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was sent.' :
+                inputs.?settings.managed_by.orValue('any') == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was sent.' :
+                !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook sends creates, updates and comments only.' :
+                setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was sent.' :
+                setup.variables.event == 'comment added' && !setup.variables.send_comments ? 'Comments are not sent.' :
+                setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was sent.' :
+                setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from Rewst, so it was not sent back.' : ''
+        - name: send
+          condition: "decide.variables.skip == ''"
+          action: Taegis.Webhook.post
+          optional: true
+          retry: 2
+          inputs:
+            source: 'sophos-fusion'
+            schema: 'unofficial-rewst-case-handoff/1'
+            event: setup.variables.event
+            case:
+                id: "read.variables.case.?id.orValue('')"
+                short_id: "read.variables.case.?shortId.orValue('')"
+                title: "read.variables.case.?title.orValue('')"
+                severity: "int(read.variables.case.?severity.orValue(0))"
+                severity_name: casePriority(inputs)
+                status: "read.variables.case.?primaryStatus.name.orValue('')"
+                closed: "read.variables.case.?primaryStatus.isClosed.orValue(false)"
+                managed_by: "read.variables.case.?managedBy.orValue('')"
+                assignee: "read.variables.case.?assigneeSubject.displayName.orValue('')"
+                tenant_id: caseTenantId(inputs)
+                link: createShareLink(inputs)
+            changed: read.variables.changed
+            comment: "setup.variables.event == 'comment added' ? {'text': read.variables.comment, 'author': resolveSubjectName(read.variables.author)} : {}"
+        - name: finish
+          let:
+            sent: "decide.variables.skip == '' && has(send, 'status') && send.?status.error.orValue('') == ''"
+            status: |-
+                decide.variables.skip != '' ? 'SUCCESS' :
+                has(send, 'status') && send.?status.error.orValue('') == '' ? 'SUCCESS' : 'FAIL'
+            message: |-
+                decide.variables.skip != '' ? decide.variables.skip :
+                has(send, 'status') && send.?status.error.orValue('') == '' ? 'Sent ' + read.variables.case.?shortId.orValue('the case') + ' to Rewst (' + setup.variables.event + ').' :
+                'Rewst did not take the case: ' + toString(send.?status.error.orValue('no response'))

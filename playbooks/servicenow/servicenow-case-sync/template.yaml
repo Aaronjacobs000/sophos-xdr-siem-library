@@ -1,0 +1,302 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_ServiceNow_CaseSync
+version: 1.0.0
+title: ServiceNow case sync (unofficial)
+description: Opens a ServiceNow incident when a case is created, adds case changes and comments to it as work notes, links it on the case, and resolves it when the case closes. It uses the ServiceNow connector Sophos manages, and starts in dry run, which only reports what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Keeps a ServiceNow incident in step with a case, one way, the way Sophos Fusion's own case sync templates work for other ticketing tools. Sophos Fusion has a ServiceNow connector but no ServiceNow case sync template, so this playbook fills that gap with the connector Sophos manages:
+    - When a case is created, it opens an incident with the case ID as its correlation ID, and saves a link to it on the case.
+    - When the case changes or someone comments, it adds the change or comment to the incident as a work note.
+    - When the title changes, it updates the short description.
+    - When the case closes, it resolves the incident with your close code and a close note. When a closed case reopens, it moves the incident back to your reopen state.
+
+    Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the case and the linked incident and says what it would do in the run's outcome. It writes nothing to ServiceNow or the case.
+    - Only cases at or above the minimum severity, and managed by whoever you choose, get a new incident.
+    - Each run handles one case, so it opens at most one incident.
+    - Rollback: close or delete the incident in ServiceNow, and delete the link on the case.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only report what the playbook would do | On |
+    | Minimum severity | Cases below it get no incident | 4 (Low) |
+    | Managed by | self, sophos or any | self |
+    | Assignment group, caller and category | Optional incident fields; empty leaves each out | None |
+    | Note field | work_notes, or comments to make notes visible to the caller | work_notes |
+    | Resolved state, close code | What a closed case sets | 6, Solution provided |
+    | Reopen state | What a reopened case sets | 2 |
+changeNotes: First version
+tags:
+    - Type:Ticketing
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.ServiceNow:1.1.7
+    - Taegis.Case:1.0.5
+playbooks:
+    - Taegis.CaseWorkNote:1.0.2
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+            - Update
+            - Comment Added
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: ServiceNow incident (unofficial)
+inputs:
+    properties:
+        incident:
+            properties:
+                assignment_group:
+                    default: ""
+                    description: The sys_id or name of the assignment group for new incidents. Leave it empty to leave it out.
+                    title: Assignment group
+                    type: string
+                caller_id:
+                    default: ""
+                    description: The sys_id or user name of the caller for new incidents. Leave it empty to leave it out.
+                    title: Caller
+                    type: string
+                category:
+                    default: ""
+                    description: The category for new incidents. Leave it empty to leave it out.
+                    title: Category
+                    type: string
+                close_code:
+                    default: Solution provided
+                    description: The resolution code a closed case sets, as it is in your instance
+                    title: Close code
+                    type: string
+                note_field:
+                    default: work_notes
+                    description: Where notes go. work_notes stay internal; comments are visible to the caller.
+                    enum:
+                        - work_notes
+                        - comments
+                    title: Note field
+                    type: string
+                reopen_state:
+                    default: "2"
+                    description: The incident state a reopened case sets. 2 is In Progress in a standard instance.
+                    title: Reopen state
+                    type: string
+                resolved_state:
+                    default: "6"
+                    description: The incident state a closed case sets. 6 is Resolved in a standard instance.
+                    title: Resolved state
+                    type: string
+            title: Incident settings
+            type: object
+        settings:
+            properties:
+                dry_run:
+                    default: true
+                    description: When on, the playbook only reports what it would do in the run's outcome. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                managed_by:
+                    default: self
+                    description: Which cases get an incident. self is CUSTOMER, sophos is PROVIDER (Sophos MDR).
+                    enum:
+                        - self
+                        - sophos
+                        - any
+                    title: Managed by
+                    type: string
+                min_severity:
+                    default: 4
+                    description: Cases below this severity get no incident. 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical.
+                    enum:
+                        - 2
+                        - 4
+                        - 6
+                        - 8
+                        - 10
+                    title: Minimum severity
+                    type: integer
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        incident:
+            description: The linked incident number
+            type: string
+        status:
+            description: SUCCESS, PARTIAL, FAIL or UNKNOWN
+            type: string
+    type: object
+dsl:
+    name: Unofficial_ServiceNow_CaseSync
+    description: Syncs a case to a ServiceNow incident, one way, or reports what it would do in dry run.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        incident: finish.variables.incident
+        status: finish.variables.status
+    tasks:
+        # A quick follow-up event waits for the Create run to save the incident link.
+        - name: wait_for_create
+          sleep: '30s'
+          condition: "inputs.?event.orValue('').lowerAscii() != 'create'"
+        - name: fetch_case
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            id: caseId(inputs)
+            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } links { reference url title type }'
+        - name: setup
+          let:
+            dry_run: "inputs.?settings.dry_run.orValue(true)"
+            event: "inputs.?event.orValue('manual').lowerAscii()"
+            case: "fetch_case.?outputs.case.orValue({})"
+            sys_id: "caseLinkReference(caseLinks(fetch_case.?outputs.orValue({})).filter(l, caseLinkType(l) == 'ServiceNow')[?0].orValue({}))"
+            closing: "inputs.?event.orValue('').lowerAscii() == 'delete' || fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false)"
+            note_field: "inputs.?incident.note_field.orValue('work_notes') == 'comments' ? 'comments' : 'work_notes'"
+        - name: scope
+          let:
+            stop: |-
+                !setup.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was synced.' :
+                setup.variables.sys_id != '' ? '' :
+                int(setup.variables.case.?severity.orValue(0)) < int(inputs.?settings.min_severity.orValue(4)) ? 'The case is below the minimum severity, so it gets no incident.' :
+                inputs.?settings.managed_by.orValue('self') == 'self' && setup.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so it gets no incident.' :
+                inputs.?settings.managed_by.orValue('self') == 'sophos' && setup.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so it gets no incident.' :
+                setup.variables.closing ? 'The case is already closed and has no incident, so none was opened.' : ''
+        - name: read_incident
+          condition: "scope.variables.stop == '' && setup.variables.sys_id != ''"
+          action: Taegis.ServiceNow.query
+          optional: true
+          retry: 2
+          inputs:
+            table: 'incident'
+            query: "'sys_id=' + setup.variables.sys_id"
+            sysparm_fields: 'sys_id,number,state,active'
+            sysparm_limit: '1'
+        - name: plan
+          let:
+            resolved: "read_incident.?outputs[?0].active.orValue('true') == 'false' || read_incident.?outputs[?0].state.orValue('') in ['6', '7', '8']"
+            short: |-
+                size('Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))) > 160 ?
+                ('Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))).substring(0, 157) + '...' :
+                'Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))
+            level: "int(setup.variables.case.?severity.orValue(0)) >= 8 ? '1' : int(setup.variables.case.?severity.orValue(0)) >= 6 ? '2' : '3'"
+        - name: decide
+          let:
+            create: "scope.variables.stop == '' && setup.variables.sys_id == ''"
+            note: "scope.variables.stop == '' && setup.variables.sys_id != '' && !(setup.variables.event in ['create', 'manual'])"
+            retitle: "scope.variables.stop == '' && setup.variables.sys_id != '' && setup.variables.event == 'update' && caseFieldChanged(inputs, 'title')"
+            close: "scope.variables.stop == '' && setup.variables.sys_id != '' && setup.variables.closing && !plan.variables.resolved"
+            reopen: "scope.variables.stop == '' && setup.variables.sys_id != '' && !setup.variables.closing && plan.variables.resolved"
+        - name: build
+          condition: "decide.variables.create"
+          let:
+            body: |-
+                merge(merge(merge(
+                  {
+                    'short_description': plan.variables.short,
+                    'description': 'Sophos Fusion case ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs)) + '\n' + 'Severity: ' + casePriority(inputs) + '\n' + 'Status: ' + setup.variables.case.?primaryStatus.title.orValue('') + '\n' + 'Case link: ' + createShareLink(inputs) + '\n\n' + caseKeyFindings(inputs),
+                    'urgency': plan.variables.level,
+                    'impact': plan.variables.level,
+                    'correlation_id': caseId(inputs),
+                    'correlation_display': 'Sophos Fusion'
+                  },
+                  inputs.?incident.assignment_group.orValue('') != '' ? {'assignment_group': inputs.incident.assignment_group} : {}),
+                  inputs.?incident.caller_id.orValue('') != '' ? {'caller_id': inputs.incident.caller_id} : {}),
+                  inputs.?incident.category.orValue('') != '' ? {'category': inputs.incident.category} : {})
+        - name: create_incident
+          condition: "decide.variables.create && !setup.variables.dry_run"
+          action: Taegis.ServiceNow.create
+          optional: true
+          inputs:
+            table: 'incident'
+            body: build.variables.body
+        - name: link_incident
+          condition: "create_incident.?outputs.sys_id.orValue('') != ''"
+          action: Taegis.Case.createLink
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            caseId: caseId(inputs)
+            url: create_incident.outputs.url
+            reference: create_incident.outputs.sys_id
+            title: "'ServiceNow ' + create_incident.outputs.id"
+            type: 'ServiceNow'
+            isInternal: false
+        - name: render_note
+          condition: "decide.variables.note"
+          exec: Taegis.CaseWorkNote
+          optional: true
+          inputs:
+            case: "inputs.?case.orValue({})"
+            event: "inputs.?event.orValue('')"
+            tenant: "inputs.?tenant.orValue({})"
+            formats: ['plain']
+        - name: add_note
+          condition: "decide.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != ''"
+          action: Taegis.ServiceNow.update
+          optional: true
+          retry: 2
+          inputs:
+            table: 'incident'
+            id: setup.variables.sys_id
+            value: "{setup.variables.note_field: render_note.outputs.plain}"
+        - name: retitle_incident
+          condition: "decide.variables.retitle && !setup.variables.dry_run"
+          action: Taegis.ServiceNow.update
+          optional: true
+          retry: 2
+          inputs:
+            table: 'incident'
+            id: setup.variables.sys_id
+            value: "{'short_description': plan.variables.short}"
+        - name: resolve_incident
+          condition: "decide.variables.close && !setup.variables.dry_run"
+          action: Taegis.ServiceNow.update
+          optional: true
+          retry: 2
+          inputs:
+            table: 'incident'
+            id: setup.variables.sys_id
+            value: "{'state': inputs.?incident.resolved_state.orValue('6'), 'close_code': inputs.?incident.close_code.orValue('Solution provided'), 'close_notes': 'Sophos Fusion closed case ' + setup.variables.case.?shortId.orValue('') + ' with the status ' + setup.variables.case.?primaryStatus.title.orValue('Closed') + '. ' + createShareLink(inputs)}"
+        - name: reopen_incident
+          condition: "decide.variables.reopen && !setup.variables.dry_run"
+          action: Taegis.ServiceNow.update
+          optional: true
+          retry: 2
+          inputs:
+            table: 'incident'
+            id: setup.variables.sys_id
+            value: "{'state': inputs.?incident.reopen_state.orValue('2'), setup.variables.note_field: 'Sophos Fusion reopened case ' + setup.variables.case.?shortId.orValue('') + '.'}"
+        - name: tally
+          let:
+            planned: "[decide.variables.create ? 'open an incident' : '', decide.variables.note ? 'add a note to the incident' : '', decide.variables.retitle ? 'update the short description' : '', decide.variables.close ? 'resolve the incident' : '', decide.variables.reopen ? 'reopen the incident' : ''].filter(s, s != '')"
+            failed: "[decide.variables.create && !setup.variables.dry_run && create_incident.?outputs.sys_id.orValue('') == '' ? 'open the incident' : '', create_incident.?outputs.sys_id.orValue('') != '' && !link_incident.?outputs.link.id.hasValue() ? 'link the incident on the case' : '', decide.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != '' && !add_note.?outputs.id.hasValue() ? 'add the note' : '', decide.variables.close && !setup.variables.dry_run && !resolve_incident.?outputs.id.hasValue() ? 'resolve the incident' : '', decide.variables.reopen && !setup.variables.dry_run && !reopen_incident.?outputs.id.hasValue() ? 'reopen the incident' : ''].filter(s, s != '')"
+        - name: finish
+          let:
+            incident: "create_incident.?outputs.id.orValue(read_incident.?outputs[?0].number.orValue(''))"
+            status: |-
+                scope.variables.stop != '' ? (setup.variables.case.?id.hasValue() ? 'SUCCESS' : 'FAIL') :
+                setup.variables.dry_run ? 'SUCCESS' :
+                size(tally.variables.failed) == 0 ? 'SUCCESS' :
+                size(tally.variables.failed) < size(tally.variables.planned) ? 'PARTIAL' : 'FAIL'
+            message: |-
+                scope.variables.stop != '' ? scope.variables.stop :
+                size(tally.variables.planned) == 0 ? 'Nothing to sync for this event.' :
+                setup.variables.dry_run ? 'Dry run: the playbook would ' + tally.variables.planned.join(', ') + '. Nothing was written. Turn off dry run to sync.' :
+                size(tally.variables.failed) == 0 ? 'Synced: ' + tally.variables.planned.join(', ') + '.' :
+                'Could not ' + tally.variables.failed.join(', ') + '.'
