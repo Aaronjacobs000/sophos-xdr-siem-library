@@ -1,4 +1,139 @@
 {
+  "autotask": {
+    "api": [
+      "webservices1.autotask.net",
+      "webservices2.autotask.net",
+      "webservices3.autotask.net",
+      "webservices4.autotask.net",
+      "webservices5.autotask.net",
+      "webservices6.autotask.net",
+      "webservices11.autotask.net",
+      "webservices12.autotask.net",
+      "webservices14.autotask.net",
+      "webservices15.autotask.net",
+      "webservices16.autotask.net",
+      "webservices17.autotask.net",
+      "webservices18.autotask.net",
+      "webservices19.autotask.net",
+      "webservices22.autotask.net",
+      "webservices24.autotask.net",
+      "webservices25.autotask.net",
+      "webservices26.autotask.net",
+      "webservices28.autotask.net",
+      "webservices29.autotask.net"
+    ],
+    "docs": [
+      "www.autotask.net"
+    ],
+    "sources": [
+      "https://www.autotask.net/help/developerhelp/Content/APIs/General/API_Zones.htm",
+      "https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketsEntity.htm"
+    ]
+  },
+  "connectwise": {
+    "api": [
+      "api-au.myconnectwise.net",
+      "api-aus.myconnectwise.net",
+      "api-eu.myconnectwise.net",
+      "api-na.myconnectwise.net"
+    ],
+    "docs": [
+      "developer.connectwise.com",
+      "docs.connectwise.com",
+      "au.myconnectwise.net",
+      "aus.myconnectwise.net",
+      "eu.myconnectwise.net",
+      "na.myconnectwise.net"
+    ],
+    "sources": [
+      "https://developer.connectwise.com/Best_Practices/Manage_Cloud_URL_Formatting",
+      "https://developer.connectwise.com/Products/ConnectWise_PSA/REST"
+    ]
+  },
+  "halo": {
+    "api": [],
+    "docs": [
+      "halopsa.com",
+      "halo.haloservicedesk.com"
+    ],
+    "sources": [
+      "https://halopsa.com/apidoc/",
+      "https://halo.haloservicedesk.com/apidoc/authentication/client"
+    ]
+  },
+  "it-glue": {
+    "api": [
+      "api.au.itglue.com",
+      "api.eu.itglue.com",
+      "api.itglue.com"
+    ],
+    "docs": [
+      "www.itglue.com"
+    ],
+    "sources": [
+      "https://api.itglue.com/developer/"
+    ]
+  },
+  "microsoft": {
+    "api": [],
+    "docs": [
+      "learn.microsoft.com",
+      "adaptivecards.microsoft.com"
+    ],
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-outgoing-webhook"
+    ]
+  },
+  "ninjaone": {
+    "api": [
+      "app.ninjarmm.com",
+      "ca.ninjarmm.com",
+      "eu.ninjarmm.com",
+      "oc.ninjarmm.com",
+      "us2.ninjarmm.com"
+    ],
+    "docs": [
+      "www.ninjaone.com"
+    ],
+    "sources": [
+      "https://www.ninjaone.com/docs/integrations/how-to-set-up-api-oauth-token/",
+      "https://app.ninjarmm.com/apidocs-beta/",
+      "https://eu.ninjarmm.com/apidocs-beta/",
+      "https://oc.ninjarmm.com/apidocs-beta/",
+      "https://ca.ninjarmm.com/apidocs-beta/",
+      "https://us2.ninjarmm.com/apidocs-beta/"
+    ]
+  },
+  "rewst": {
+    "api": [],
+    "docs": [
+      "docs.rewst.help"
+    ],
+    "sources": [
+      "https://docs.rewst.help/documentation/triggers/use-cases-and-examples/using-webhook-triggers"
+    ]
+  },
+  "servicenow": {
+    "api": [],
+    "docs": [
+      "developer.servicenow.com",
+      "docs.servicenow.com"
+    ],
+    "sources": [
+      "https://developer.servicenow.com/dev.do#!/reference/api/latest/rest/c_TableAPI"
+    ]
+  },
+  "slack": {
+    "api": [],
+    "docs": [
+      "api.slack.com",
+      "docs.slack.dev"
+    ],
+    "sources": [
+      "https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks",
+      "https://docs.slack.dev/authentication/verifying-requests-from-slack"
+    ]
+  },
   "sophos": {
     "api": [
       "id.sophos.com",
