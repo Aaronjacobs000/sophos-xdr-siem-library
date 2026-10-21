@@ -1,0 +1,133 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_NinjaOne_DeviceContext
+version: 1.0.0
+title: NinjaOne device context (unofficial)
+description: Looks up the host in NinjaOne and comments on the case with its organization, last contact, last logged-on user, operating system and a link to the device. Read only in NinjaOne. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    From a host in a case, finds the matching device in NinjaOne by hostname and comments on the case with what NinjaOne knows: the organization it belongs to, whether it is online and when it last checked in, the last logged-on user, its operating system and a link to it. It needs the unofficial NinjaOne connector from the same library, which only reads. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - It changes nothing in NinjaOne. It adds one comment to the case.
+    - A host name that matches no device, or more than one, gets a comment that says so, with the names it found.
+    - A run that names more hosts than Most hosts per run (3 unless you change it) looks up none.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Most hosts per run | A run that names more hosts looks up none | 3 |
+changeNotes: First version
+tags:
+    - Type:Enrichment
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_NinjaOne:1.0.0
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: Host
+        name: NinjaOne device context (unofficial)
+inputs:
+    properties:
+        settings:
+            properties:
+                max_hosts:
+                    default: 3
+                    description: A run that names more hosts than this looks up none
+                    maximum: 10
+                    minimum: 1
+                    title: Most hosts per run
+                    type: integer
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        devices:
+            description: Each host, with the NinjaOne device it matched
+            type: array
+        status:
+            description: SUCCESS, PARTIAL, FAIL or UNKNOWN
+            type: string
+    type: object
+dsl:
+    name: Unofficial_NinjaOne_DeviceContext
+    description: Looks up hosts in NinjaOne, read only, and comments on the case with what it found.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        devices: lookup.variables.found
+        status: finish.variables.status
+    tasks:
+        - name: setup
+          let:
+            cap: "int(inputs.?settings.max_hosts.orValue(3))"
+            case_id: "caseId(inputs)"
+            hosts: "unique((has(inputs, 'entity') ? entityValue(inputs, 'hostname') : has(inputs, 'asset.hostnames') ? inputs.asset.hostnames.map(h, h.hostname) : []).map(h, h.split('.')[0].lowerAscii()).filter(h, h != ''))"
+        - name: check
+          let:
+            stop: |-
+                size(setup.variables.hosts) == 0 ? 'No hostname came with the trigger, so there was nothing to look up.' :
+                size(setup.variables.hosts) > setup.variables.cap ? 'The trigger named ' + string(size(setup.variables.hosts)) + ' hosts, more than the limit of ' + string(setup.variables.cap) + ' a run, so none was looked up.' : ''
+        - name: lookup
+          condition: "check.variables.stop == ''"
+          variables:
+            found: []
+          range: setup.variables.hosts
+          for:
+            - name: search
+              action: Unofficial_NinjaOne.searchDevices
+              optional: true
+              retry: 2
+              inputs:
+                query: lookup.value
+                limit: 5
+            - name: pick
+              let:
+                exact: "search.?outputs.devices.orValue([]).filter(d, d.?systemName.orValue('').lowerAscii() == lookup.value || d.?dnsName.orValue('').lowerAscii().split('.')[0] == lookup.value)"
+            - name: device
+              condition: "size(pick.variables.exact) == 1"
+              action: Unofficial_NinjaOne.getDevice
+              optional: true
+              retry: 2
+              inputs:
+                device_id: "string(pick.variables.exact[0].id)"
+            - name: organization
+              condition: "device.?outputs.device.organizationId.hasValue()"
+              action: Unofficial_NinjaOne.getOrganization
+              optional: true
+              retry: 2
+              inputs:
+                organization_id: "string(device.outputs.device.organizationId)"
+            - name: note
+              let:
+                found: |-
+                    append(lookup.variables.found,
+                      size(pick.variables.exact) == 1 && device.?outputs.device.id.hasValue() ?
+                        {'host': lookup.value, 'matched': true, 'text': lookup.value + ': ' + device.outputs.device.?systemName.orValue(lookup.value) + ' in ' + organization.?outputs.organization.name.orValue('an unknown organization') + ', ' + (device.outputs.device.?offline.orValue(false) ? 'offline' : 'online') + ', last contact ' + (device.outputs.device.?lastContact.hasValue() ? string(timestamp('1970-01-01T00:00:00Z') + duration(string(int(device.outputs.device.lastContact)) + 's')) : 'unknown') + ', last logged-on user ' + device.outputs.device.?lastLoggedInUser.orValue('unknown') + ', ' + device.outputs.device.?os.name.orValue('operating system unknown') + '. ' + device.outputs.device_url} :
+                      size(pick.variables.exact) > 1 ?
+                        {'host': lookup.value, 'matched': false, 'text': lookup.value + ': ' + string(size(pick.variables.exact)) + ' NinjaOne devices have this name, so none was chosen.'} :
+                        {'host': lookup.value, 'matched': false, 'text': lookup.value + ': no NinjaOne device with this name' + (size(search.?outputs.devices.orValue([])) > 0 ? '. Near matches: ' + search.outputs.devices.map(d, d.?systemName.orValue('')).join(', ') : '') + '.'})
+        - name: finish
+          let:
+            matched: "has(lookup, 'variables.found') ? lookup.variables.found.filter(f, f.matched).size() : 0"
+            status: |-
+                check.variables.stop != '' ? 'FAIL' :
+                !has(lookup, 'variables.found') ? 'UNKNOWN' :
+                lookup.variables.found.all(f, f.matched) ? 'SUCCESS' :
+                lookup.variables.found.exists(f, f.matched) ? 'PARTIAL' : 'FAIL'
+            message: |-
+                check.variables.stop != '' ? check.variables.stop :
+                has(lookup, 'variables.found') ? lookup.variables.found.map(f, f.text).join(' ') : 'The lookup did not run.'
+        - name: comment
+          condition: "setup.variables.case_id != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          inputs:
+            caseId: setup.variables.case_id
+            comment: "'NinjaOne (unofficial playbook): ' + finish.variables.message"

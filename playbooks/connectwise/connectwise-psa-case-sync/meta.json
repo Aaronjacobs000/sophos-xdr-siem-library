@@ -1,0 +1,28 @@
+{
+  "title": "ConnectWise PSA case sync",
+  "vendor": "ConnectWise",
+  "product": "ConnectWise PSA",
+  "use_case": "Open a ConnectWise PSA service ticket for each new case, keep it updated with case changes and comments as notes, link it on the case, and close it when the case closes. For MSPs who run the service desk in ConnectWise.",
+  "trigger": "Platform Events, source Case, events Create, Update and Comment Added. Leave When does this playbook run? at Always; the playbook's own settings do the scoping. It can also run by hand from a case.",
+  "connections": [
+    "Unofficial_ConnectWisePSA 1.0.0, the ConnectWise PSA connector from this library: Basic sign-in with an API member's keys and your ConnectWise clientId",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to read the case and save the ticket link"
+  ],
+  "requires": "ConnectWise PSA in the ConnectWise cloud, an API member with rights to service tickets, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. With Managed by set to self it leaves Sophos MDR cases alone. If you sync MDR cases, check first that a playbook can save the ticket link on a Sophos-managed case, or every event opens another ticket, and that the notes it copies are ones your customer may see.",
+  "rollback": "Close or delete the ticket in ConnectWise PSA and delete the ConnectWisePSA link on the case. Turning the playbook off stops further syncing.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "connector": "connectors/connectwise/connectwise-psa",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.connectwise.com/Products/ConnectWise_PSA/REST",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run against ConnectWise PSA: there was no instance to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted. A case-triggered run is untested: the Cases API refused to create a test case that day."
+}

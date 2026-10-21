@@ -1,0 +1,17 @@
+# Cloudflare Worker settings for the chat bridge. Secrets never go in this file: set them with
+# wrangler secret put (see README.md).
+name = "fusion-chat-bridge"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+# Leave dry run on until a test run reads right, then set it to "0".
+BRIDGE_DRY_RUN = "1"
+BRIDGE_ALLOWED_STATUSES = "active,awaiting_action,closed"
+BRIDGE_ALLOWED_VERDICTS = "false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable"
+BRIDGE_COMMENT_PREFIX = "[chat-sync]"
+
+# Keeps the bridge's log lines, which name who acted on which case, in Workers Logs.
+[observability]
+enabled = true

@@ -1,0 +1,257 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_ConnectWisePSA
+tags: []
+categories:
+    - Generic
+title: ConnectWise PSA (unofficial)
+description: Creates, reads and updates ConnectWise PSA service tickets and adds notes to them, for case sync. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos or ConnectWise.
+documentation: |
+    # Overview
+    Calls the ConnectWise PSA REST API (codebase v4_6_release, API 3.0) on a ConnectWise cloud host to create, read and update service tickets and add notes to them. It can't delete tickets. API guide: https://developer.connectwise.com/Products/ConnectWise_PSA/REST
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos and ConnectWise don't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | Basic |
+    | Username | Your company ID, a plus sign and the API member's public key, such as `acme+PublicKey` |
+    | Password | The API member's private key |
+    | ConnectWise PSA API host | The API host of your ConnectWise cloud region |
+    | ConnectWise company ID | The company ID you sign in with, used in ticket links |
+    | ConnectWise clientId | The clientId ConnectWise issued for your integration |
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads the system information, to test the connection |
+    | getTicket | Reads a ticket: its summary, status, board, company and whether it is closed |
+    | createTicket | Creates a service ticket and returns its ID and a link to it |
+    | updateTicket | Changes a ticket with JSON Patch operations, such as a new status |
+    | addNote | Adds a note to a ticket, as a discussion, internal or resolution note |
+method: http
+version: 1.0.0
+vendorName: ConnectWise
+vendorProduct: PSA
+parameters:
+    properties:
+        api_host:
+            enum:
+                - api-au.myconnectwise.net
+                - api-aus.myconnectwise.net
+                - api-eu.myconnectwise.net
+                - api-na.myconnectwise.net
+            required: true
+            title: ConnectWise PSA API host
+            type: string
+        client_id:
+            description: The clientId from the ConnectWise developer site, sent as the clientId header on every call
+            required: true
+            title: ConnectWise clientId
+            type: string
+        company_id:
+            description: The company ID you sign in to ConnectWise PSA with
+            required: true
+            title: ConnectWise company ID
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading the system information
+      outputs:
+        properties:
+            version:
+                description: The ConnectWise PSA version
+                type: string
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'ConnectWise PSA API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the ConnectWise PSA API'
+            }
+        headers:
+            - name: clientId
+              value: ${config.client_id}
+            - name: Accept
+              value: application/json
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/v4_6_release/apis/3.0/system/info
+    - name: getTicket
+      description: Read a ticket, with its status and whether it is closed
+      inputs:
+        properties:
+            ticket_id:
+                description: The ticket number
+                title: Ticket ID
+                type: string
+        required:
+            - ticket_id
+        type: object
+      outputs:
+        properties:
+            ticket:
+                description: The ticket's id, summary, status, board, company and closedFlag
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'ConnectWise PSA API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the ConnectWise PSA API'
+            }
+        headers:
+            - name: clientId
+              value: ${config.client_id}
+            - name: Accept
+              value: application/json
+        method: GET
+        outputs:
+            ticket: ${body}
+        url: https://${config.api_host}/v4_6_release/apis/3.0/service/tickets/${inputs.ticket_id.trim()}?fields=id,summary,status,board,company,closedFlag
+    - name: createTicket
+      description: Create a service ticket and return its ID and a link to it
+      inputs:
+        properties:
+            ticket:
+                description: 'The ticket as the ConnectWise PSA API takes it: summary (up to 100 characters), board, company, and optional status, severity, impact and initialDescription'
+                title: Ticket
+                type: object
+        required:
+            - ticket
+        type: object
+      outputs:
+        properties:
+            id:
+                description: The new ticket's number
+                type: string
+            ticket_url:
+                description: A link that opens the ticket in ConnectWise PSA
+                type: string
+        type: object
+      config:
+        body: ${inputs.ticket}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 201 && has(body.id) ? '' :
+                has(status.code) ? 'ConnectWise PSA API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the ConnectWise PSA API'
+            }
+        headers:
+            - name: clientId
+              value: ${config.client_id}
+            - name: Accept
+              value: application/json
+        method: POST
+        outputs:
+            id: '${has(body.id) ? string(body.id) : ""}'
+            ticket_url: '${has(body.id) ? "https:" + "//" + config.api_host.replace("api-", "") + "/v4_6_release/services/system_io/Service/fv_sr100_request.rails?service_recid=" + string(body.id) + "&companyName=" + config.company_id : ""}'
+        url: https://${config.api_host}/v4_6_release/apis/3.0/service/tickets
+    - name: updateTicket
+      description: Change a ticket with JSON Patch operations, such as a new status or summary
+      inputs:
+        properties:
+            operations:
+                description: 'JSON Patch operations, such as [{"op": "replace", "path": "status", "value": {"name": "Closed"}}]'
+                items:
+                    type: object
+                title: Operations
+                type: array
+            ticket_id:
+                description: The ticket number
+                title: Ticket ID
+                type: string
+        required:
+            - ticket_id
+            - operations
+        type: object
+      outputs:
+        properties:
+            ticket:
+                description: The ticket's id, status and closedFlag after the change
+                type: object
+        type: object
+      config:
+        body: ${inputs.operations}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'ConnectWise PSA API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the ConnectWise PSA API'
+            }
+        headers:
+            - name: clientId
+              value: ${config.client_id}
+            - name: Accept
+              value: application/json
+        method: PATCH
+        outputs:
+            ticket: '${has(body.id) ? {"id": body.id, "status": body.?status.orValue({}), "closedFlag": body.?closedFlag.orValue(false)} : {}}'
+        url: https://${config.api_host}/v4_6_release/apis/3.0/service/tickets/${inputs.ticket_id.trim()}
+    - name: addNote
+      description: Add a note to a ticket
+      inputs:
+        properties:
+            internal:
+                default: true
+                description: Add the note as an internal analysis note rather than to the discussion customers can see
+                title: Internal note
+                type: boolean
+            resolution:
+                default: false
+                description: Mark the note as the resolution
+                title: Resolution note
+                type: boolean
+            text:
+                description: The note text
+                title: Text
+                type: string
+            ticket_id:
+                description: The ticket number
+                title: Ticket ID
+                type: string
+        required:
+            - ticket_id
+            - text
+        type: object
+      outputs:
+        properties:
+            id:
+                description: The new note's ID
+                type: string
+        type: object
+      config:
+        body:
+            detailDescriptionFlag: ${!inputs.?internal.orValue(true)}
+            internalAnalysisFlag: ${inputs.?internal.orValue(true)}
+            resolutionFlag: ${inputs.?resolution.orValue(false)}
+            text: ${inputs.text}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 201 ? '' :
+                has(status.code) ? 'ConnectWise PSA API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the ConnectWise PSA API'
+            }
+        headers:
+            - name: clientId
+              value: ${config.client_id}
+            - name: Accept
+              value: application/json
+        method: POST
+        outputs:
+            id: '${has(body.id) ? string(body.id) : ""}'
+        url: https://${config.api_host}/v4_6_release/apis/3.0/service/tickets/${inputs.ticket_id.trim()}/notes
+authTypes:
+    - Basic
+authDefaults:
+    basicAuth:
+        username: <CompanyID>+<PublicKey>

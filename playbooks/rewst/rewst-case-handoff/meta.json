@@ -1,0 +1,28 @@
+{
+  "title": "Rewst case handoff",
+  "vendor": "Rewst",
+  "product": "Rewst",
+  "use_case": "Hand each new or changed case to a Rewst workflow, which then tickets, documents or notifies across the MSP's PSA, RMM and documentation tools.",
+  "trigger": "Platform Events, source Case, events Create, Update and Comment Added. Leave When does this playbook run? at Always; the playbook's own settings do the scoping. It can also run by hand from a case.",
+  "connections": [
+    "Taegis.Webhook 1.1.4, the Generic Webhook connector Sophos manages, set to your Rewst webhook trigger URL, with the x-rewst-secret header as the API key if the trigger has a secret",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to read the case"
+  ],
+  "requires": "A Rewst organization with a workflow that starts from a webhook trigger, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. What your Rewst workflow does with the case is up to that workflow: keep anything that acts on hosts or accounts out of it unless your MDR contact knows.",
+  "rollback": "None for what was sent. Turn the playbook off to stop sending.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.rewst.help/documentation/triggers/use-cases-and-examples/using-webhook-triggers",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "Not run against Rewst: there was no Rewst organization to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported, exported again unchanged apart from the tenant's own fields, and was deleted. The document it sends is fixed: see What leaves Sophos Fusion in the template documentation."
+}

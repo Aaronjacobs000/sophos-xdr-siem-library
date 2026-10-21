@@ -1,0 +1,305 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_ConnectWisePSA_CaseSync
+version: 1.0.0
+title: ConnectWise PSA case sync (unofficial)
+description: Opens a ConnectWise PSA service ticket when a case is created, adds case changes and comments to it as notes, links it on the case, and closes it when the case closes. It starts in dry run, which only reports what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Keeps a ConnectWise PSA service ticket in step with a case, one way, the way Sophos Fusion's own case sync templates work for other ticketing tools:
+    - When a case is created, it opens a ticket on the board and company you set, and saves a link to it on the case.
+    - When the case changes or someone comments, it adds the change or comment to the ticket as a note.
+    - When the title changes, it updates the ticket summary.
+    - When the case closes, it adds a resolution note and moves the ticket to your closed status. When a closed case reopens, it moves the ticket back to your reopen status.
+
+    It needs the unofficial ConnectWise PSA connector from the same library. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the case and the linked ticket and says what it would do in the run's outcome. It writes nothing to ConnectWise or the case.
+    - Only cases at or above the minimum severity, and managed by whoever you choose, get a new ticket.
+    - Each run handles one case, so it opens at most one ticket.
+    - Rollback: close or delete the ticket in ConnectWise PSA, and delete the link on the case.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only report what the playbook would do | On |
+    | Minimum severity | Cases below it get no ticket | 4 (Low) |
+    | Managed by | self, sophos or any | self |
+    | Board | The service board for new tickets | None |
+    | Company | The company identifier for new tickets | None |
+    | Company by tenant | JSON of tenant ID to company identifier, for a partner-level playbook | `{}` |
+    | New ticket status | A status name for new tickets; empty uses the board's default | None |
+    | Closed status | The status name for a closed case | Closed |
+    | Reopen status | The status name for a reopened case | New |
+    | Internal notes | Add notes as internal analysis rather than to the customer discussion | On |
+changeNotes: First version
+tags:
+    - Type:Ticketing
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_ConnectWisePSA:1.0.0
+    - Taegis.Case:1.0.5
+playbooks:
+    - Taegis.CaseWorkNote:1.0.2
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+            - Update
+            - Comment Added
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: ConnectWise PSA ticket (unofficial)
+inputs:
+    properties:
+        settings:
+            properties:
+                dry_run:
+                    default: true
+                    description: When on, the playbook only reports what it would do in the run's outcome. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                managed_by:
+                    default: self
+                    description: Which cases get a ticket. self is CUSTOMER, sophos is PROVIDER (Sophos MDR).
+                    enum:
+                        - self
+                        - sophos
+                        - any
+                    title: Managed by
+                    type: string
+                min_severity:
+                    default: 4
+                    description: Cases below this severity get no ticket. 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical.
+                    enum:
+                        - 2
+                        - 4
+                        - 6
+                        - 8
+                        - 10
+                    title: Minimum severity
+                    type: integer
+            title: Playbook settings
+            type: object
+        ticket:
+            properties:
+                board:
+                    description: The name of the service board for new tickets
+                    title: Board
+                    type: string
+                closed_status:
+                    default: Closed
+                    description: The ticket status name for a closed case, as it is on the board
+                    title: Closed status
+                    type: string
+                company:
+                    description: The company identifier for new tickets
+                    title: Company
+                    type: string
+                company_by_tenant:
+                    default: '{}'
+                    description: 'JSON of Sophos Fusion tenant ID to ConnectWise company identifier, such as {"<tenant ID>": "AcmeCorp"}. A tenant not in it uses Company.'
+                    title: Company by tenant
+                    type: string
+                internal_notes:
+                    default: true
+                    description: Add notes as internal analysis notes, not to the discussion the customer sees
+                    title: Internal notes
+                    type: boolean
+                new_status:
+                    default: ""
+                    description: A status name for new tickets. Leave it empty to use the board's default.
+                    title: New ticket status
+                    type: string
+                reopen_status:
+                    default: New
+                    description: The ticket status name for a case that reopens
+                    title: Reopen status
+                    type: string
+            required:
+                - board
+                - company
+            title: Ticket settings
+            type: object
+    required:
+        - ticket
+    type: object
+outputs:
+    properties:
+        status:
+            description: SUCCESS, PARTIAL, FAIL or UNKNOWN
+            type: string
+        ticket_id:
+            description: The linked ConnectWise PSA ticket number
+            type: string
+    type: object
+dsl:
+    name: Unofficial_ConnectWisePSA_CaseSync
+    description: Syncs a case to a ConnectWise PSA service ticket, one way, or reports what it would do in dry run.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        status: finish.variables.status
+        ticket_id: finish.variables.ticket_id
+    tasks:
+        # A quick follow-up event waits for the Create run to save the ticket link.
+        - name: wait_for_create
+          sleep: '30s'
+          condition: "inputs.?event.orValue('').lowerAscii() != 'create'"
+        - name: fetch_case
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            id: caseId(inputs)
+            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } links { reference url title type }'
+        - name: setup
+          let:
+            dry_run: "inputs.?settings.dry_run.orValue(true)"
+            event: "inputs.?event.orValue('manual').lowerAscii()"
+            case: "fetch_case.?outputs.case.orValue({})"
+            ticket_id: "caseLinkReference(caseLinks(fetch_case.?outputs.orValue({})).filter(l, caseLinkType(l) == 'ConnectWisePSA')[?0].orValue({}))"
+            company: "decodeJSON(inputs.ticket.?company_by_tenant.orValue('{}'))[?caseTenantId(inputs)].orValue(inputs.ticket.company)"
+            closing: "inputs.?event.orValue('').lowerAscii() == 'delete' || fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false)"
+        - name: scope
+          let:
+            stop: |-
+                !setup.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was synced.' :
+                setup.variables.ticket_id != '' ? '' :
+                int(setup.variables.case.?severity.orValue(0)) < int(inputs.?settings.min_severity.orValue(4)) ? 'The case is below the minimum severity, so it gets no ticket.' :
+                inputs.?settings.managed_by.orValue('self') == 'self' && setup.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so it gets no ticket.' :
+                inputs.?settings.managed_by.orValue('self') == 'sophos' && setup.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so it gets no ticket.' :
+                setup.variables.closing ? 'The case is already closed and has no ticket, so none was opened.' : ''
+        - name: read_ticket
+          condition: "scope.variables.stop == '' && setup.variables.ticket_id != ''"
+          action: Unofficial_ConnectWisePSA.getTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+        - name: plan
+          let:
+            create: "scope.variables.stop == '' && setup.variables.ticket_id == ''"
+            note: "scope.variables.stop == '' && setup.variables.ticket_id != '' && !(setup.variables.event in ['create', 'manual'])"
+            retitle: "scope.variables.stop == '' && setup.variables.ticket_id != '' && setup.variables.event == 'update' && caseFieldChanged(inputs, 'title')"
+            close: "scope.variables.stop == '' && setup.variables.ticket_id != '' && setup.variables.closing && !read_ticket.?outputs.ticket.closedFlag.orValue(false)"
+            reopen: "scope.variables.stop == '' && setup.variables.ticket_id != '' && !setup.variables.closing && read_ticket.?outputs.ticket.closedFlag.orValue(false)"
+            summary: |-
+                size('Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))) > 100 ?
+                ('Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))).substring(0, 97) + '...' :
+                'Sophos Fusion ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs))
+            level: "int(setup.variables.case.?severity.orValue(0)) >= 8 ? 'High' : int(setup.variables.case.?severity.orValue(0)) >= 6 ? 'Medium' : 'Low'"
+        - name: build
+          condition: "plan.variables.create"
+          let:
+            ticket: |-
+                merge(
+                  {
+                    'summary': plan.variables.summary,
+                    'board': {'name': inputs.ticket.board},
+                    'company': {'identifier': setup.variables.company},
+                    'severity': plan.variables.level,
+                    'impact': plan.variables.level,
+                    'initialDescription': 'Sophos Fusion case ' + setup.variables.case.?shortId.orValue('') + ': ' + setup.variables.case.?title.orValue(caseTitle(inputs)) + '\n' + 'Severity: ' + casePriority(inputs) + '\n' + 'Status: ' + setup.variables.case.?primaryStatus.title.orValue('') + '\n' + 'Case link: ' + createShareLink(inputs) + '\n\n' + caseKeyFindings(inputs)
+                  },
+                  inputs.ticket.?new_status.orValue('') != '' ? {'status': {'name': inputs.ticket.new_status}} : {}
+                )
+        - name: create_ticket
+          condition: "plan.variables.create && !setup.variables.dry_run"
+          action: Unofficial_ConnectWisePSA.createTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket: build.variables.ticket
+        - name: link_ticket
+          condition: "create_ticket.?outputs.id.orValue('') != ''"
+          action: Taegis.Case.createLink
+          optional: true
+          retry: 3
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            caseId: caseId(inputs)
+            url: create_ticket.outputs.ticket_url
+            reference: create_ticket.outputs.id
+            title: "'ConnectWise PSA ticket ' + create_ticket.outputs.id"
+            type: 'ConnectWisePSA'
+            isInternal: false
+        - name: render_note
+          condition: "plan.variables.note"
+          exec: Taegis.CaseWorkNote
+          optional: true
+          inputs:
+            case: "inputs.?case.orValue({})"
+            event: "inputs.?event.orValue('')"
+            tenant: "inputs.?tenant.orValue({})"
+            formats: ['plain']
+        - name: add_note
+          condition: "plan.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != ''"
+          action: Unofficial_ConnectWisePSA.addNote
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            text: render_note.outputs.plain
+            internal: "inputs.ticket.?internal_notes.orValue(true)"
+        - name: retitle_ticket
+          condition: "plan.variables.retitle && !setup.variables.dry_run"
+          action: Unofficial_ConnectWisePSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            operations: "[{'op': 'replace', 'path': 'summary', 'value': plan.variables.summary}]"
+        - name: close_note
+          condition: "plan.variables.close && !setup.variables.dry_run"
+          action: Unofficial_ConnectWisePSA.addNote
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            text: "'Sophos Fusion closed case ' + setup.variables.case.?shortId.orValue('') + ' with the status ' + setup.variables.case.?primaryStatus.title.orValue('Closed') + '. ' + createShareLink(inputs)"
+            internal: "inputs.ticket.?internal_notes.orValue(true)"
+            resolution: true
+        - name: close_ticket
+          condition: "plan.variables.close && !setup.variables.dry_run"
+          action: Unofficial_ConnectWisePSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            operations: "[{'op': 'replace', 'path': 'status', 'value': {'name': inputs.ticket.?closed_status.orValue('Closed')}}]"
+        - name: reopen_ticket
+          condition: "plan.variables.reopen && !setup.variables.dry_run"
+          action: Unofficial_ConnectWisePSA.updateTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket_id: setup.variables.ticket_id
+            operations: "[{'op': 'replace', 'path': 'status', 'value': {'name': inputs.ticket.?reopen_status.orValue('New')}}]"
+        - name: tally
+          let:
+            planned: "[plan.variables.create ? 'open a ticket on ' + inputs.ticket.board + ' for ' + setup.variables.company : '', plan.variables.note ? 'add a note to ticket ' + setup.variables.ticket_id : '', plan.variables.retitle ? 'update the ticket summary' : '', plan.variables.close ? 'close ticket ' + setup.variables.ticket_id : '', plan.variables.reopen ? 'reopen ticket ' + setup.variables.ticket_id : ''].filter(s, s != '')"
+            failed: "[plan.variables.create && !setup.variables.dry_run && create_ticket.?outputs.id.orValue('') == '' ? 'open the ticket' : '', create_ticket.?outputs.id.orValue('') != '' && !link_ticket.?outputs.link.id.hasValue() ? 'link the ticket on the case' : '', plan.variables.note && !setup.variables.dry_run && render_note.?outputs.plain.orValue('') != '' && add_note.?outputs.id.orValue('') == '' ? 'add the note' : '', plan.variables.close && !setup.variables.dry_run && !close_ticket.?outputs.ticket.id.hasValue() ? 'close the ticket' : '', plan.variables.reopen && !setup.variables.dry_run && !reopen_ticket.?outputs.ticket.id.hasValue() ? 'reopen the ticket' : ''].filter(s, s != '')"
+        - name: finish
+          let:
+            ticket_id: "create_ticket.?outputs.id.orValue(setup.variables.ticket_id)"
+            status: |-
+                scope.variables.stop != '' ? (setup.variables.case.?id.hasValue() ? 'SUCCESS' : 'FAIL') :
+                setup.variables.dry_run ? 'SUCCESS' :
+                size(tally.variables.failed) == 0 ? 'SUCCESS' :
+                size(tally.variables.failed) < size(tally.variables.planned) ? 'PARTIAL' : 'FAIL'
+            message: |-
+                scope.variables.stop != '' ? scope.variables.stop :
+                size(tally.variables.planned) == 0 ? 'Nothing to sync for this event.' :
+                setup.variables.dry_run ? 'Dry run: the playbook would ' + tally.variables.planned.join(', ') + '. Nothing was written. Turn off dry run to sync.' :
+                size(tally.variables.failed) == 0 ? 'Synced: ' + tally.variables.planned.join(', ') + '.' :
+                'Could not ' + tally.variables.failed.join(', ') + '.'

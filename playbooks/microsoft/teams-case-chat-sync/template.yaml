@@ -1,0 +1,209 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_Teams_CaseChatSync
+version: 1.0.0
+title: Teams case chat sync (unofficial)
+description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. Each card names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Posts an Adaptive Card to a Teams channel through a Teams Workflows webhook when a case is created, when its status, severity, assignee or title changes, and when someone comments on it. The card shows the case's short ID, title, severity, status, assignee and who manages it, with a button that opens the case in Sophos Fusion. Sophos doesn't make, maintain or support this playbook.
+
+    For notifications only, Sophos Fusion's own Send Notification Message template already posts case events to Teams. Use this one when you also run the library's chat bridge, so people in the channel can set a case's status or comment on it from Teams. The card tells them how.
+
+    # Filters
+    - Minimum severity: cases below it aren't posted. Medium unless you change it.
+    - Managed by: any, self (CUSTOMER) or Sophos MDR (PROVIDER).
+    - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
+    - Updates are posted only when the status, severity, assignee or title changed.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Minimum severity | 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical | 6 |
+    | Managed by | any, self or sophos | any |
+    | Post comments | Post new comments to the channel | On |
+    | Bridge comment prefix | Comments that start with it aren't posted | `[chat-sync]` |
+    | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
+    | Bridge name | The @mention name of your chat bridge's outgoing webhook; leave empty to leave out the reply line | Fusion |
+changeNotes: First version
+tags:
+    - Type:Notification
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.MicrosoftTeams:1.2.4
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+            - Update
+            - Comment Added
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Post case to Teams (unofficial)
+inputs:
+    properties:
+        settings:
+            properties:
+                bridge_name:
+                    default: Fusion
+                    description: The @mention name of the chat bridge's outgoing webhook in Teams. Leave it empty to leave the reply line out of the card.
+                    title: Bridge name
+                    type: string
+                comment_prefix:
+                    default: '[chat-sync]'
+                    description: Comments that start with this text aren't posted. The chat bridge starts every comment it writes with it.
+                    title: Bridge comment prefix
+                    type: string
+                ignore_authors:
+                    default: ""
+                    description: Comma-separated subject IDs whose comments aren't posted, such as the chat bridge's API credential
+                    title: Ignore comments by
+                    type: string
+                managed_by:
+                    default: any
+                    description: Which cases to post. self is CUSTOMER, sophos is PROVIDER (Sophos MDR).
+                    enum:
+                        - any
+                        - self
+                        - sophos
+                    title: Managed by
+                    type: string
+                min_severity:
+                    default: 6
+                    description: Cases below this severity aren't posted. 2 Informational, 4 Low, 6 Medium, 8 High, 10 Critical.
+                    enum:
+                        - 2
+                        - 4
+                        - 6
+                        - 8
+                        - 10
+                    title: Minimum severity
+                    type: integer
+                post_comments:
+                    default: true
+                    description: Post new comments to the channel
+                    title: Post comments
+                    type: boolean
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        posted:
+            description: Whether a card was posted
+            type: boolean
+        reason:
+            description: Why no card was posted, when none was
+            type: string
+    type: object
+dsl:
+    name: Unofficial_Teams_CaseChatSync
+    description: Posts a case card to Teams on case events, within the severity and managed-by filters, skipping comments the chat bridge wrote.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        posted: finish.variables.posted
+        reason: decide.variables.skip
+    tasks:
+        - name: setup
+          let:
+            event: "inputs.?event.orValue('manual').lowerAscii()"
+            min_severity: "int(inputs.?settings.min_severity.orValue(6))"
+            managed_by: "inputs.?settings.managed_by.orValue('any')"
+            post_comments: "inputs.?settings.post_comments.orValue(true)"
+            prefix: "inputs.?settings.comment_prefix.orValue('[chat-sync]')"
+            ignore_authors: "inputs.?settings.ignore_authors.orValue('').split(',').map(a, a.trim()).filter(a, a != '')"
+            bridge_name: "inputs.?settings.bridge_name.orValue('Fusion').trim()"
+        - name: fetch_case
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            id: caseId(inputs)
+            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } assigneeSubject { displayName }'
+        - name: read
+          let:
+            case: "fetch_case.?outputs.case.orValue({})"
+            comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
+            author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
+            changed: "setup.variables.event == 'update' ? [['Status', caseFieldChanged(inputs, 'primaryStatus')], ['Severity', caseFieldChanged(inputs, 'severity')], ['Assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['Title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
+        - name: decide
+          let:
+            severity: "int(read.variables.case.?severity.orValue(0))"
+            managed: "read.variables.case.?managedBy.orValue('')"
+            skip: |-
+                !read.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was posted.' :
+                int(read.variables.case.?severity.orValue(0)) < setup.variables.min_severity ? 'The case is below the minimum severity, so nothing was posted.' :
+                setup.variables.managed_by == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was posted.' :
+                setup.variables.managed_by == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was posted.' :
+                !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook posts creates, updates and comments only.' :
+                setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was posted.' :
+                setup.variables.event == 'comment added' && !setup.variables.post_comments ? 'Comments are not posted.' :
+                setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
+                setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
+                setup.variables.event == 'comment added' && read.variables.author in setup.variables.ignore_authors ? 'The comment author is on the ignore list, so it was not posted.' : ''
+        - name: card
+          condition: "decide.variables.skip == ''"
+          let:
+            ref: "read.variables.case.?shortId.orValue(caseId(inputs))"
+            severity_name: "{2: 'Informational', 4: 'Low', 6: 'Medium', 8: 'High', 10: 'Critical'}[?decide.variables.severity].orValue(string(decide.variables.severity))"
+            status_name: "read.variables.case.?primaryStatus.title.orValue(read.variables.case.?primaryStatus.name.orValue('Unknown'))"
+            assignee: "read.variables.case.?assigneeSubject.displayName.orValue('Unassigned')"
+            managed_name: "decide.variables.managed == 'PROVIDER' ? 'Sophos MDR' : decide.variables.managed == 'CUSTOMER' ? 'Self' : 'Not set'"
+            headline: |-
+                setup.variables.event == 'create' ? 'New case' :
+                setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
+                setup.variables.event == 'comment added' ? 'New comment from ' + resolveSubjectName(read.variables.author) :
+                'Case shared from Sophos Fusion'
+            comment_text: "size(read.variables.comment) > 1500 ? read.variables.comment.substring(0, 1500) + '...' : read.variables.comment"
+            link: createShareLink(inputs)
+        - name: build
+          condition: "decide.variables.skip == ''"
+          let:
+            body: |-
+                [
+                  {'type': 'TextBlock', 'text': card.variables.ref + ': ' + read.variables.case.?title.orValue(caseTitle(inputs)), 'weight': 'Bolder', 'size': 'Medium', 'wrap': true},
+                  {'type': 'TextBlock', 'text': card.variables.headline, 'wrap': true, 'spacing': 'None'},
+                  {'type': 'FactSet', 'facts': [
+                    {'title': 'Severity', 'value': card.variables.severity_name},
+                    {'title': 'Status', 'value': card.variables.status_name},
+                    {'title': 'Assignee', 'value': card.variables.assignee},
+                    {'title': 'Managed by', 'value': card.variables.managed_name}
+                  ]}
+                ] +
+                (card.variables.comment_text != '' ? [{'type': 'TextBlock', 'text': card.variables.comment_text, 'wrap': true}] : []) +
+                (setup.variables.bridge_name != '' ? [{'type': 'TextBlock', 'isSubtle': true, 'size': 'Small', 'wrap': true, 'text': 'Reply in this channel: @' + setup.variables.bridge_name + ' active ' + card.variables.ref + ' | @' + setup.variables.bridge_name + ' close ' + card.variables.ref + ' <verdict> <note> | @' + setup.variables.bridge_name + ' comment ' + card.variables.ref + ' <text>'}] : [])
+            actions: "card.variables.link != '' ? [{'type': 'Action.OpenUrl', 'title': 'Open in Sophos Fusion', 'url': card.variables.link}] : []"
+        - name: post
+          condition: "decide.variables.skip == ''"
+          action: Taegis.MicrosoftTeams.sendWorkflowMessage
+          optional: true
+          retry: 2
+          inputs:
+            message_content:
+                type: 'message'
+                attachments:
+                    - contentType: 'application/vnd.microsoft.card.adaptive'
+                      content:
+                        type: 'AdaptiveCard'
+                        body: build.variables.body
+                        actions: build.variables.actions
+        - name: finish
+          let:
+            posted: "decide.variables.skip == '' && has(post, 'status') && post.?status.error.orValue('') == ''"
+            status: |-
+                decide.variables.skip != '' ? 'SUCCESS' :
+                has(post, 'status') && post.?status.error.orValue('') == '' ? 'SUCCESS' : 'FAIL'
+            message: |-
+                decide.variables.skip != '' ? decide.variables.skip :
+                has(post, 'status') && post.?status.error.orValue('') == '' ? 'Posted ' + card.variables.ref + ' to Teams: ' + card.variables.headline :
+                'Teams did not take the card: ' + post.?status.error.orValue('no response')

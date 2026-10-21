@@ -1,0 +1,32 @@
+{
+  "title": "Slack case chat sync",
+  "vendor": "Slack",
+  "product": "Slack",
+  "use_case": "Post a message to a Slack channel when a case is created, changes status, severity, assignee or title, or gets a comment, with a link to the case. With the library's chat bridge, its buttons set the status, close the case or add a comment from Slack.",
+  "trigger": "Platform Events, source Case, events Create, Update and Comment Added. Leave When does this playbook run? at Always; the playbook's own settings do the scoping. It can also run by hand from a case.",
+  "connections": [
+    "Taegis.SalesforceSlack 2.1.1, the Slack connector Sophos manages, set to your Slack app's incoming webhook URL",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to read the case"
+  ],
+  "requires": "A Slack app with an incoming webhook, and Sophos Fusion playbooks under Security Operations > Automations. Two-way buttons also need the chat bridge in this repo as the app's interactivity request URL.",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. With Managed by at any, Sophos MDR cases are posted too, comments included, so check who is in the channel.",
+  "rollback": "None for posted messages. Turn the playbook off to stop posting.",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": {
+      "date": "2026-10-21",
+      "region": "eu02"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks",
+    "https://docs.slack.dev/reference/interaction-payloads/block_actions-payload",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "notes": "On 2026-10-21 it passed playbookValidateDSLV2 with no errors or warnings, and a renamed copy ran by hand in a Sophos Fusion tenant against a test case, with case and comment events given as inputs: the Slack connector posted the message, buttons included, to a test endpoint standing in for the incoming webhook, and it was not shown in Slack, as there was no Slack workspace to test with. A case post arrived; a comment starting with [chat-sync] and an event with no comment text sent nothing; another comment arrived with its text. A case-triggered run is untested: the Cases API refused to create a test case that day."
+}

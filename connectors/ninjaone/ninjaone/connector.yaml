@@ -1,0 +1,174 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_NinjaOne
+tags: []
+categories:
+    - Generic
+title: NinjaOne (unofficial)
+description: Looks up NinjaOne devices and organizations, read only, for case context. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos or NinjaOne.
+documentation: |
+    # Overview
+    Calls the NinjaOne public API (v2) to search devices, read a device and read an organization. It reads only: it can't run scripts, reboot devices or change anything. API guide: https://www.ninjaone.com/docs/integrations/how-to-set-up-api-oauth-token/
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos and NinjaOne don't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | OAuth Client Credentials |
+    | Grant URL | `https://<your instance host>/ws/oauth/token` |
+    | Client ID and Client Secret | A NinjaOne API Services (machine-to-machine) client app |
+    | Scopes | `monitoring` |
+    | NinjaOne instance host | The host you sign in to NinjaOne on |
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads one organization, to test the connection |
+    | searchDevices | Finds devices whose name matches a search term |
+    | getDevice | Reads a device, with its last contact, last logged-on user and a link to it |
+    | getOrganization | Reads an organization's name and description |
+method: http
+version: 1.0.0
+vendorName: NinjaOne
+vendorProduct: RMM
+parameters:
+    properties:
+        instance_host:
+            enum:
+                - app.ninjarmm.com
+                - ca.ninjarmm.com
+                - eu.ninjarmm.com
+                - oc.ninjarmm.com
+                - us2.ninjarmm.com
+            required: true
+            title: NinjaOne instance host
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading one organization
+      outputs:
+        properties:
+            organizations:
+                description: Up to one organization
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'NinjaOne API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the NinjaOne API'
+            }
+        method: GET
+        outputs:
+            organizations: ${body}
+        url: https://${config.instance_host}/v2/organizations?pageSize=1
+    - name: searchDevices
+      description: Find devices whose name matches a search term
+      inputs:
+        properties:
+            limit:
+                default: 5
+                description: The most devices to return
+                maximum: 25
+                minimum: 1
+                title: Limit
+                type: integer
+            query:
+                description: The search term, such as a hostname
+                title: Search term
+                type: string
+        required:
+            - query
+        type: object
+      outputs:
+        properties:
+            devices:
+                description: The matching devices, each with id, organizationId, systemName, dnsName, offline and lastContact
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'NinjaOne API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the NinjaOne API'
+            }
+        method: GET
+        outputs:
+            devices: ${body.?devices.orValue([])}
+        url: https://${config.instance_host}/v2/devices/search?q=${inputs.query.trim().toURLQuery()}&limit=${string(inputs.?limit.orValue(5))}
+    - name: getDevice
+      description: Read a device, with a link to it in NinjaOne
+      inputs:
+        properties:
+            device_id:
+                description: The NinjaOne device ID
+                title: Device ID
+                type: string
+        required:
+            - device_id
+        type: object
+      outputs:
+        properties:
+            device:
+                description: The device
+                type: object
+            device_url:
+                description: A link that opens the device in NinjaOne
+                type: string
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'NinjaOne API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the NinjaOne API'
+            }
+        method: GET
+        outputs:
+            device: ${body}
+            device_url: '${has(body.id) ? "https:" + "//" + config.instance_host + "/#/deviceDashboard/" + string(body.id) + "/overview" : ""}'
+        url: https://${config.instance_host}/v2/device/${inputs.device_id.trim()}
+    - name: getOrganization
+      description: Read an organization's name and description
+      inputs:
+        properties:
+            organization_id:
+                description: The NinjaOne organization ID
+                title: Organization ID
+                type: string
+        required:
+            - organization_id
+        type: object
+      outputs:
+        properties:
+            organization:
+                description: The organization, with id, name and description
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'NinjaOne API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the NinjaOne API'
+            }
+        method: GET
+        outputs:
+            organization: ${body}
+        url: https://${config.instance_host}/v2/organization/${inputs.organization_id.trim()}
+authTypes:
+    - OAuthClientCreds
+authDefaults:
+    url: https://app.ninjarmm.com/ws/oauth/token
+    clientCredentialsAuth:
+        clientId: <Client-ID>
+        scopes:
+            - monitoring

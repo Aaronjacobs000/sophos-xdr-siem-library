@@ -1,0 +1,24 @@
+{
+  "title": "NinjaOne (unofficial)",
+  "vendor": "NinjaOne",
+  "product": "NinjaOne",
+  "auth": "OAuth client credentials: a NinjaOne API Services client app with the monitoring scope, and the instance host as a connection setting",
+  "functions": {
+    "validate": "lookup",
+    "searchDevices": "lookup",
+    "getDevice": "lookup",
+    "getOrganization": "lookup"
+  },
+  "license": "MIT",
+  "tested": {
+    "validated": "2026-10-21",
+    "tenant": null
+  },
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://www.ninjaone.com/docs/integrations/how-to-set-up-api-oauth-token/",
+    "https://www.ninjaone.com/docs/application-programming-interface-api/oauth-token-configuration/",
+    "https://app.ninjarmm.com/apidocs-beta/"
+  ],
+  "notes": "Not run against NinjaOne: there was no instance to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. How Sophos Fusion's OAuth Client Credentials handler sends the client secret, the device search response shape and the device link format are untested."
+}
