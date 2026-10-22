@@ -1,0 +1,125 @@
+!SAMPLE={"xpanse_record":"alert","xpanse_tenant":"xpanse.example.com","category":null,"project":null,"cloud_provider":null,"resource_sub_type":null,"resource_type":null,"action_country":["AU"],"event_type":null,"is_whitelisted":false,"image_name":null,"action_local_ip":null,"action_local_port":null,"action_external_hostname":null,"action_remote_ip":null,"action_remote_port":null,"matching_service_rule_id":null,"starred":false,"matching_status":"MATCHED","end_match_attempt_ts":null,"deduplicate_tokens":null,"filter_rule_id":null,"event_id":null,"action_local_ip_v6":null,"action_remote_ip_v6":null,"alert_type":"Unclassified","resolution_comment":null,"dynamic_fields":null,"malicious_urls":null,"cloud_management_status":"Not Applicable","integration_source":null,"endpoint_id":null,"host_ip":null,"action":"NOT_AVAILABLE","action_pretty":"N/A","user_name":null,"mac_addresses":null,"source":"ASM","alert_id":"113845","external_id":"9a8b7c6d-5e4f-3a2b-8c1d-0e9f8a7b6c5d-0","name":"Insecure OpenSSH (8.9p1) at 203.0.113.88:22","description":"This issue flags OpenSSH servers below the version that fixes known vulnerabilities.","severity":"medium","resolution_status":"STATUS_020_UNDER_INVESTIGATION","local_insert_ts":1792558713000,"last_modified_ts":1792562313000,"case_id":73,"event_timestamp":[1792558600000],"detection_timestamp":1792558600000,"last_observed":1792558500000,"tags":["BU:Acme Logistics"],"country_codes":["AU"],"cloud_providers":["On Prem"],"ipv4_addresses":["203.0.113.88"],"ipv6_addresses":[],"domain_names":["sftp.example.net"],"service_ids":["5d4c3b2a-1908-3f7e-8d6c-5b4a39281706"],"website_ids":[],"asset_ids":["2b1a0f9e-8d7c-36b5-a493-82716f5e4d3c"],"certificate":null,"port_number":22,"port_protocol":"TCP","attack_surface_rule_name":"Insecure OpenSSH","attack_surface_rule_id":"InsecureOpenSSH","asm_alert_categories":["Attack Surface Reduction","Vulnerability"],"remediation_guidance":"Upgrade OpenSSH to the latest version.","mitre_tactic_id_and_name":["TA0001 - Initial Access"],"mitre_technique_id_and_name":["T1190 - Exploit Public-Facing Application"],"host_name":"203.0.113.88"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"xpanse_record"\s*:\s*"alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cortex Xpanse attack surface (ASM) alerts from the Get Alerts API, read by the example
+# bridge in bridges/cortex-xpanse-alerts and posted to HTTP Ingest as JSON lines, each alert as
+# Xpanse returns it with "xpanse_record": "alert" and the tenant first. Times are epoch milliseconds.
+# Standalone: every alert to the third-party alert schema.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Cortex Xpanse"
+vendor$ = "Palo Alto Networks"
+provider$ = "Cortex Xpanse"
+logType$ = "alert"
+alertId$ = json["$.alert_id"]
+title$ = json["$.name"]
+summary$ = json["$.description"]
+# Xpanse's resolution status, such as STATUS_010_NEW or STATUS_020_UNDER_INVESTIGATION.
+status$ = json["$.resolution_status"]
+# The attack surface rule that raised the alert, such as Insecure TLS.
+rule = json["$.attack_surface_rule_name"]
+alertCategory$ = IF rule != NULL THEN rule ELSE json["$.alert_type"]
+
+# Xpanse severities: informational, low, medium, high, critical and unknown.
+sevText = LOWERCASE(STRING(json["$.severity"]))
+vendorSeverity$ = json["$.severity"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sevText == "informational" THEN "INFO" ELSE severity$
+severity$ = IF sevText == "low" THEN "LOW" ELSE severity$
+severity$ = IF sevText == "medium" THEN "MEDIUM" ELSE severity$
+severity$ = IF sevText == "high" THEN "HIGH" ELSE severity$
+severity$ = IF sevText == "critical" THEN "CRITICAL" ELSE severity$
+
+# detection_timestamp is when Xpanse found the issue, local_insert_ts when it stored the alert, and
+# last_modified_ts when the alert last changed, each in epoch milliseconds.
+detectedText = STRING(json["$.detection_timestamp"])
+insertedText = STRING(json["$.local_insert_ts"])
+modifiedText = STRING(json["$.last_modified_ts"])
+observedText = STRING(json["$.last_observed"])
+detected = detectedText|^(?P<n>\d{13})$
+inserted = insertedText|^(?P<n>\d{13})$
+modified = modifiedText|^(?P<n>\d{13})$
+observed = observedText|^(?P<n>\d{13})$
+eventTimeUsec$ = IF inserted["n"] != "" THEN INT(inserted["n"], 10) * 1000 ELSE eventTimeUsec$
+eventTimeUsec$ = IF detected["n"] != "" THEN INT(detected["n"], 10) * 1000 ELSE eventTimeUsec$
+createdTimeUsec$ = IF detected["n"] != "" THEN INT(detected["n"], 10) * 1000 ELSE NULL
+updatedTimeUsec$ = IF modified["n"] != "" THEN INT(modified["n"], 10) * 1000 ELSE NULL
+lastEventTimeUsec$ = IF observed["n"] != "" THEN INT(observed["n"], 10) * 1000 ELSE NULL
+
+# The exposed service is the target: its first address, first domain, port and protocol. The
+# lists come as JSON arrays; a comma-joined string, which other Xpanse endpoints use, works too.
+# The engine keeps every match of a capture pattern, so each one is anchored to take the first.
+ipText = STRING(json["$.ipv4_addresses"])
+ip4 = ipText|^\D*(?P<ip>\d{1,3}(?:\.\d{1,3}){3})\b
+ip6Text = REPLACE_REGEX(STRING(json["$.ipv6_addresses"]), `[\[\]" ]`, "")
+ip6 = ip6Text|^(?P<ip>[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]+)
+destinationAddress$ = IF ip4["ip"] != "" THEN ip4["ip"] ELSE NULL
+destinationAddress$ = IF destinationAddress$ == NULL AND ip6["ip"] != "" THEN ip6["ip"] ELSE destinationAddress$
+domains = REPLACE_REGEX(STRING(json["$.domain_names"]), `[\[\]" ]`, "")
+firstDomain = domains|^(?P<d>[^,]+)
+targetHostName$ = IF firstDomain["d"] != "" THEN firstDomain["d"] ELSE NULL
+port = STRING(json["$.port_number"])
+p = port|^(?P<n>\d{1,5})$
+destinationPort$ = IF p["n"] != "" THEN INT(p["n"], 10) ELSE NULL
+proto = UPPERCASE(STRING(json["$.port_protocol"]))
+protocol$ = IF proto == "TCP" THEN 6 ELSE NULL
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+
+# Keys with no third-party alert field of their own go to additional_data.
+x1.key$ = "xpanse_tenant"
+x1.value$ = json["$.xpanse_tenant"]
+x2.key$ = "attack_surface_rule_id"
+x2.value$ = json["$.attack_surface_rule_id"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [x1]
+additionalData$.record$ = IF x2.value$ THEN additionalData$.record$ + [x2] ELSE additionalData$.record$
+x3.key$ = "external_id"
+x3.value$ = json["$.external_id"]
+additionalData$.record$ = IF x3.value$ THEN additionalData$.record$ + [x3] ELSE additionalData$.record$
+x4.key$ = "asm_alert_categories"
+x4.value$ = REPLACE_REGEX(STRING(json["$.asm_alert_categories"]), `[\[\]"]`, "")
+additionalData$.record$ = IF x4.value$ THEN additionalData$.record$ + [x4] ELSE additionalData$.record$
+x5.key$ = "remediation_guidance"
+x5.value$ = json["$.remediation_guidance"]
+additionalData$.record$ = IF x5.value$ THEN additionalData$.record$ + [x5] ELSE additionalData$.record$
+x6.key$ = "ipv4_addresses"
+x6.value$ = REPLACE_REGEX(ipText, `[\[\]" ]`, "")
+additionalData$.record$ = IF x6.value$ THEN additionalData$.record$ + [x6] ELSE additionalData$.record$
+x7.key$ = "domain_names"
+x7.value$ = domains
+additionalData$.record$ = IF x7.value$ THEN additionalData$.record$ + [x7] ELSE additionalData$.record$
+x8.key$ = "tags"
+x8.value$ = REPLACE_REGEX(STRING(json["$.tags"]), `[\[\]"]`, "")
+additionalData$.record$ = IF x8.value$ THEN additionalData$.record$ + [x8] ELSE additionalData$.record$
+x9.key$ = "asset_ids"
+x9.value$ = REPLACE_REGEX(STRING(json["$.asset_ids"]), `[\[\]" ]`, "")
+additionalData$.record$ = IF x9.value$ THEN additionalData$.record$ + [x9] ELSE additionalData$.record$
+x10.key$ = "service_ids"
+x10.value$ = REPLACE_REGEX(STRING(json["$.service_ids"]), `[\[\]" ]`, "")
+additionalData$.record$ = IF x10.value$ THEN additionalData$.record$ + [x10] ELSE additionalData$.record$
+x11.key$ = "cloud_providers"
+x11.value$ = REPLACE_REGEX(STRING(json["$.cloud_providers"]), `[\[\]"]`, "")
+additionalData$.record$ = IF x11.value$ THEN additionalData$.record$ + [x11] ELSE additionalData$.record$
+x12.key$ = "certificate_subject"
+x12.value$ = json["$.certificate.subjectName"]
+additionalData$.record$ = IF x12.value$ THEN additionalData$.record$ + [x12] ELSE additionalData$.record$
+x13.key$ = "certificate_issuer"
+x13.value$ = json["$.certificate.issuerName"]
+additionalData$.record$ = IF x13.value$ THEN additionalData$.record$ + [x13] ELSE additionalData$.record$
+x14.key$ = "mitre_technique"
+x14.value$ = REPLACE_REGEX(STRING(json["$.mitre_technique_id_and_name"]), `[\[\]"]`, "")
+additionalData$.record$ = IF x14.value$ THEN additionalData$.record$ + [x14] ELSE additionalData$.record$
+x15.key$ = "case_id"
+caseId = STRING(json["$.case_id"])
+x15.value$ = IF caseId != "" AND caseId != "0" THEN caseId ELSE NULL
+additionalData$.record$ = IF x15.value$ THEN additionalData$.record$ + [x15] ELSE additionalData$.record$
+x16.key$ = "cloud_management_status"
+x16.value$ = json["$.cloud_management_status"]
+additionalData$.record$ = IF x16.value$ THEN additionalData$.record$ + [x16] ELSE additionalData$.record$
