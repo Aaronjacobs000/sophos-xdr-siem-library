@@ -1,0 +1,174 @@
+!SAMPLE={"insertId":"10x6hrzevg2q01","jsonPayload":{"vmInstanceIdString":"2838092002611613780","vmInstanceId":2838092002611613700,"vmInstanceName":"228025391384.web-01","vmProjectId":"example-project","vmZoneName":"australia-southeast1-a","sourceNetwork":"default","protocol":"UDP","dns64Translated":false,"queryName":"www.example.com.","queryType":"A","responseCode":"NOERROR","rdata":"www.example.com.\t186\tIN\tcname\tcdn.example.net.\ncdn.example.net.\t300\tIN\ta\t203.0.113.80\ncdn.example.net.\t300\tIN\ta\t203.0.113.81","authAnswer":false,"serverLatency":4,"sourceIP":"192.0.2.43"},"resource":{"type":"dns_query","labels":{"target_name":"","target_type":"external","location":"australia-southeast1","project_id":"example-project","source_type":"gce-vm"}},"timestamp":"2026-10-20T01:02:03.469213028Z","severity":"INFO","logName":"projects/example-project/logs/dns.googleapis.com%2Fdns_queries","receiveTimestamp":"2026-10-20T01:02:03.469213999Z"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\s*\{.*"logName"\s*:\s*"projects/[^"]*/logs/dns\.googleapis\.com(?:%2F|/)dns_queries"
+!SCHEMA=scwx.dnsquery
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Google Cloud DNS query logs, as Cloud Logging entries (resource dns_query, log
+# dns.googleapis.com/dns_queries) that a Log Router sink publishes to Pub/Sub, pulled by the example
+# bridge in bridges/google-cloud-pubsub and posted to HTTP Ingest unchanged.
+# Standalone parser for the DNS schema: the name, the type as a number, the response code, the
+# client, the forwarding target, the VM, and the first four answers.
+# Setting query_name lets the Domain Generation Algorithms and Domain Watchlist detectors use these events.
+# !TRIMALLOFF stops TRIM_ALL() stripping quotes from TXT answers.
+
+json = JSON(originalData$)
+
+sensorType$ = "Google Cloud DNS"
+# timestamp is RFC 3339 in UTC, with up to nine fraction digits.
+eventTimeUsec$ = DATETIME(json["$.timestamp"], "2006-01-02T15:04:05.999999999Z07:00")
+sourceAddress$ = json["$.jsonPayload.sourceIP"]
+# destinationIP is set when Cloud DNS forwarded the query to another server.
+destinationAddress$ = json["$.jsonPayload.destinationIP"]
+# vmInstanceId is a number too large to keep exactly, so the text copy is read.
+hostId$ = json["$.jsonPayload.vmInstanceIdString"]
+hostId$ = IF hostId$ == NULL THEN json["$.jsonPayload.vmInstanceName"] ELSE hostId$
+
+# Cloud DNS writes the name fully qualified, with a trailing dot, in the case the client asked in.
+# Drop the dot and lowercase it so names match watchlists.
+qtext = LOWERCASE(STRING(json["$.jsonPayload.queryName"]))
+qn = qtext|^(?P<name>.*?)\.?$
+qname = qn["name"]
+queryName$ = IF qname != "" THEN qname ELSE NULL
+# Reverse lookups (in-addr.arpa and ip6.arpa names) have no private domain to mark.
+rev = qname|\.arpa$
+# A label can start with an underscore, as in _dmarc.example.com. Sophos NG-SIEM counts the index
+# from the start of the name; written with a letter in its place, the emulator counts it the same way.
+tld = IDX_OF_TLD(REPLACE(qname, "_", "x"))
+indexOfTopPrivateDomain$ = IF rev[0] == "" THEN tld ELSE NULL
+isTopPrivateDomainParsed$ = IF rev[0] == "" THEN tld != -1 ELSE NULL
+
+# query_type and response_code take the DNS numbers (IANA); Cloud DNS logs the names.
+qt = UPPERCASE(STRING(json["$.jsonPayload.queryType"]))
+queryType$ = NULL
+queryType$ = IF qt == "A" THEN 1 ELSE queryType$
+queryType$ = IF qt == "NS" THEN 2 ELSE queryType$
+queryType$ = IF qt == "CNAME" THEN 5 ELSE queryType$
+queryType$ = IF qt == "SOA" THEN 6 ELSE queryType$
+queryType$ = IF qt == "PTR" THEN 12 ELSE queryType$
+queryType$ = IF qt == "MX" THEN 15 ELSE queryType$
+queryType$ = IF qt == "TXT" THEN 16 ELSE queryType$
+queryType$ = IF qt == "AAAA" THEN 28 ELSE queryType$
+queryType$ = IF qt == "SRV" THEN 33 ELSE queryType$
+queryType$ = IF qt == "NAPTR" THEN 35 ELSE queryType$
+queryType$ = IF qt == "DS" THEN 43 ELSE queryType$
+queryType$ = IF qt == "RRSIG" THEN 46 ELSE queryType$
+queryType$ = IF qt == "DNSKEY" THEN 48 ELSE queryType$
+queryType$ = IF qt == "SVCB" THEN 64 ELSE queryType$
+queryType$ = IF qt == "HTTPS" THEN 65 ELSE queryType$
+queryType$ = IF qt == "SPF" THEN 99 ELSE queryType$
+queryType$ = IF qt == "ANY" THEN 255 ELSE queryType$
+queryType$ = IF qt == "CAA" THEN 257 ELSE queryType$
+
+rc = UPPERCASE(STRING(json["$.jsonPayload.responseCode"]))
+rcn = rc|^(?P<n>\d{1,4})$
+responseCode$ = IF rcn["n"] != "" THEN INT(rcn["n"], 10) ELSE NULL
+responseCode$ = IF rc == "NOERROR" THEN 0 ELSE responseCode$
+responseCode$ = IF rc == "FORMERR" THEN 1 ELSE responseCode$
+responseCode$ = IF rc == "SERVFAIL" THEN 2 ELSE responseCode$
+responseCode$ = IF rc == "NXDOMAIN" THEN 3 ELSE responseCode$
+responseCode$ = IF rc == "NOTIMP" THEN 4 ELSE responseCode$
+responseCode$ = IF rc == "REFUSED" THEN 5 ELSE responseCode$
+responseCode$ = IF rc == "YXDOMAIN" THEN 6 ELSE responseCode$
+responseCode$ = IF rc == "YXRRSET" THEN 7 ELSE responseCode$
+responseCode$ = IF rc == "NXRRSET" THEN 8 ELSE responseCode$
+responseCode$ = IF rc == "NOTAUTH" THEN 9 ELSE responseCode$
+responseCode$ = IF rc == "NOTZONE" THEN 10 ELSE responseCode$
+responseCode$ = IF rc == "BADVERS" THEN 16 ELSE responseCode$
+responseCode$ = IF rc == "BADSIG" THEN 16 ELSE responseCode$
+responseCode$ = IF rc == "BADKEY" THEN 17 ELSE responseCode$
+responseCode$ = IF rc == "BADTIME" THEN 18 ELSE responseCode$
+responseCode$ = IF rc == "BADMODE" THEN 19 ELSE responseCode$
+responseCode$ = IF rc == "BADNAME" THEN 20 ELSE responseCode$
+responseCode$ = IF rc == "BADALG" THEN 21 ELSE responseCode$
+responseCode$ = IF rc == "BADTRUNC" THEN 22 ELSE responseCode$
+responseCode$ = IF rc == "BADCOOKIE" THEN 23 ELSE responseCode$
+
+# The answers: structuredRdata when the entry has it, otherwise rdata, the answers in presentation
+# format, one per line (name, TTL, class, type, data, separated by tabs), cut off at 260 bytes.
+rdata = STRING(json["$.jsonPayload.rdata"])
+lines = rdata|^(?P<l1>[^\n]*)(?:\n(?P<l2>[^\n]*))?(?:\n(?P<l3>[^\n]*))?(?:\n(?P<l4>[^\n]*))?
+line1 = lines["l1"]
+r1 = line1|^[^\t]+\t\d+\t[^\t]+\t(?P<t>[^\t]+)\t(?P<d>.*)$
+sd1 = json["$.jsonPayload.structuredRdata[0].rvalue"]
+st1 = json["$.jsonPayload.structuredRdata[0].type"]
+a1.responseData$ = IF sd1 THEN sd1 ELSE r1["d"]
+a1.responseData$ = IF a1.responseData$ != "" THEN a1.responseData$ ELSE NULL
+t1 = UPPERCASE(STRING(IF sd1 THEN st1 ELSE r1["t"]))
+a1.responseType$ = NULL
+a1.responseType$ = IF t1 == "A" THEN 1 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "NS" THEN 2 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "CNAME" THEN 5 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SOA" THEN 6 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "PTR" THEN 12 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "MX" THEN 15 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "TXT" THEN 16 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "AAAA" THEN 28 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SRV" THEN 33 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "HTTPS" THEN 65 ELSE a1.responseType$
+
+line2 = lines["l2"]
+r2 = line2|^[^\t]+\t\d+\t[^\t]+\t(?P<t>[^\t]+)\t(?P<d>.*)$
+sd2 = json["$.jsonPayload.structuredRdata[1].rvalue"]
+st2 = json["$.jsonPayload.structuredRdata[1].type"]
+a2.responseData$ = IF sd2 THEN sd2 ELSE r2["d"]
+a2.responseData$ = IF a2.responseData$ != "" THEN a2.responseData$ ELSE NULL
+t2 = UPPERCASE(STRING(IF sd2 THEN st2 ELSE r2["t"]))
+a2.responseType$ = NULL
+a2.responseType$ = IF t2 == "A" THEN 1 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "NS" THEN 2 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "CNAME" THEN 5 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SOA" THEN 6 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "PTR" THEN 12 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "MX" THEN 15 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "TXT" THEN 16 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "AAAA" THEN 28 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SRV" THEN 33 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "HTTPS" THEN 65 ELSE a2.responseType$
+
+line3 = lines["l3"]
+r3 = line3|^[^\t]+\t\d+\t[^\t]+\t(?P<t>[^\t]+)\t(?P<d>.*)$
+sd3 = json["$.jsonPayload.structuredRdata[2].rvalue"]
+st3 = json["$.jsonPayload.structuredRdata[2].type"]
+a3.responseData$ = IF sd3 THEN sd3 ELSE r3["d"]
+a3.responseData$ = IF a3.responseData$ != "" THEN a3.responseData$ ELSE NULL
+t3 = UPPERCASE(STRING(IF sd3 THEN st3 ELSE r3["t"]))
+a3.responseType$ = NULL
+a3.responseType$ = IF t3 == "A" THEN 1 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "NS" THEN 2 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "CNAME" THEN 5 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SOA" THEN 6 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "PTR" THEN 12 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "MX" THEN 15 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "TXT" THEN 16 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "AAAA" THEN 28 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SRV" THEN 33 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "HTTPS" THEN 65 ELSE a3.responseType$
+
+line4 = lines["l4"]
+r4 = line4|^[^\t]+\t\d+\t[^\t]+\t(?P<t>[^\t]+)\t(?P<d>.*)$
+sd4 = json["$.jsonPayload.structuredRdata[3].rvalue"]
+st4 = json["$.jsonPayload.structuredRdata[3].type"]
+a4.responseData$ = IF sd4 THEN sd4 ELSE r4["d"]
+a4.responseData$ = IF a4.responseData$ != "" THEN a4.responseData$ ELSE NULL
+t4 = UPPERCASE(STRING(IF sd4 THEN st4 ELSE r4["t"]))
+a4.responseType$ = NULL
+a4.responseType$ = IF t4 == "A" THEN 1 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "NS" THEN 2 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "CNAME" THEN 5 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SOA" THEN 6 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "PTR" THEN 12 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "MX" THEN 15 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "TXT" THEN 16 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "AAAA" THEN 28 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SRV" THEN 33 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "HTTPS" THEN 65 ELSE a4.responseType$
+
+# Assign the list before reading it: reading responses$.records$ before it is set fails the event.
+responses$.records$ = []
+responses$.records$ = IF a1.responseData$ THEN responses$.records$ + [a1] ELSE responses$.records$
+responses$.records$ = IF a2.responseData$ THEN responses$.records$ + [a2] ELSE responses$.records$
+responses$.records$ = IF a3.responseData$ THEN responses$.records$ + [a3] ELSE responses$.records$
+responses$.records$ = IF a4.responseData$ THEN responses$.records$ + [a4] ELSE responses$.records$
