@@ -1,0 +1,47 @@
+{
+  "vendor": "Cisco",
+  "product": "Cisco UCS",
+  "versions": [
+    "4.2",
+    "4.3"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/sw/ucsm_syslog/b_Monitoring_Cisco_UCSM_Using_Syslog/b_Monitoring_Cisco_UCSM_Using_Syslog_chapter_01.html",
+    "https://www.cisco.com/c/en/us/support/docs/cloud-systems-management/intersight/222727-configure-and-verify-syslog-on-ucs-inter.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Cisco/IOSandNXOS/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For Cisco UCS Manager syslog from the fabric interconnects, with audits on as a syslog source, and for CIMC audit records from C-Series and Intersight managed servers; the README has the steps. The built-in Cisco_IOS_Master claims every %UCSM and %CIMC line and stores nothing from them, so the two UCS Manager parsers are its children. AUDIT [session] creation records (Web A or B: remote user ... logged in from ..., and Fabric A or B for SSH) go to Auth with the user, address, session and fabric interconnect. AUDIT records with the trigger admin, oper, special or authorization go to Management Event with the user, the change (creation, modification, deletion or failure) as the operation name, the trigger as the operation, the description as the command, the affected DN as the namespace, the session's interface as the channel and the record ID. Failed sign-ins are %AUTHPRIV-3-SYSTEM_MSG pam_aaa lines, which the built-in Cisco_IOS_AUTHPRIV_pam_aaa already reads to Auth; faults, FSM events and other NX-OS lines stay with the built-in parsers. CIMC AUDIT[pid] lines (... by User:<user> from Interface:<interface> Remote IP:<address>), which no built-in parser claims, go to Management Event from a standalone parser; User:(null), as for Intersight's own changes, leaves the user unset. Times: UCS Manager sends the year and a zone name; UTC, GMT and common names are read with their offset (CST as US Central), and other names as UTC. CIMC lines have no year or zone and are read as UTC. Add each child with Set Global Parent in Parser Script ticked, as the README says. How sure this is: the line layouts, fault, event and audit examples come from Cisco's Monitoring Cisco UCS Manager Using Syslog guide, a Cisco Community answer for the SSH sign-in and the Cisco tech note on Intersight syslog for the header and the CIMC audit line. The meaning of the brackets in the newer audit layout is inferred from the UCS Manager audit record; audit descriptions in the samples are made up. Samples are made up in those shapes. Each parser passed Run Test in a lab tenant on 2026-10-22 (80 of 80 fields matched the emulator in each of 3 runs). Each child took each of its lines in 5 of 5 runs under Cisco_IOS_Master, also with Cisco IOS sign-in, configuration and pam_aaa lines between them, and neither took another line.",
+  "parsers": [
+    {
+      "name": "CISCO_UCS_SYSLOG_CHILD_AUTH",
+      "file": "CISCO_UCS_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "Cisco_IOS_Master",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "CISCO_UCS_SYSLOG_CHILD_MGMT",
+      "file": "CISCO_UCS_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "Cisco_IOS_Master",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "CISCO_IMC_SYSLOG_STANDALONE_MGMT",
+      "file": "CISCO_IMC_SYSLOG_STANDALONE_MGMT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
