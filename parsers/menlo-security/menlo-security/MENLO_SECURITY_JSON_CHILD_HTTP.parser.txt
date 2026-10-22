@@ -1,0 +1,146 @@
+!SAMPLE={"menlo_record":"web","event_time":"2026-10-21T21:30:02.377000","name":"file_download","userid":"pnguyen@example.com","x-client-ip":"192.0.2.44","x-client-country":"NZ","xff_ip":"NA","egress_ip":"198.51.100.201","egress_country":"AU","origin_ip":"203.0.113.150","origin_country":"NL","dst":"203.0.113.150","domain":"files.example.net","url":"http://files.example.net/dl/invoice_8812.exe","top_url":"http://files.example.net/dl/","referer":"http://files.example.net/dl/","protocol":"http","request_type":"GET","response_code":"NA","content-type":"application/x-msdownload","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","browser_and_version":"Chrome_141","ua_type":"supported_browser","categories":"Malicious Sources","threats":"cats_Malicious Sources","threat_types":"Malware","risk_score":"high","risk_tally":"5","pe_action":"block","pe_rulename":["Block executables","Block malicious sources"],"pe_reason":"file_download_EXE_blocked_category","filename":"invoice_8812.exe","file_size":3402270721,"sha256":"9f2c4e6a8b0d1f3e5a7c9b2d4f6e8a0c1b3d5f7e9a2c4b6d8f0e1a3c5b7d9f2e","document_type":"EXE","magicName":"PE32 executable (GUI) Intel 80386, for MS Windows","fullScanResult":"Malicious","virusDetails":"Trojan.GenericKD.12345","has_password":"false","is_iframe":"false","tab_id":"2","full_session_id":"QrStUv34-1","region":"ap-southeast-2a","region_name":"Sydney","severity":"5","version":"2.0","product":"MSIP","vendor":"Menlo Security"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="http"
+!SCHEMA=scwx.http
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Menlo Security web logs from the example bridge: page_request (a page or resource the
+# browser asked for), file_download, proxy_event (such as a certificate error on CONNECT) and
+# application_request events.
+# Child of MENLO_SECURITY_JSON_PARENT: each one to HTTP. pe_action block is blocked; allow,
+# isolate (rendered in Menlo's isolation), direct and the rest are allowed.
+# json, logType, name, eventType$, sensorType$, sensorVersion$ and eventTimeUsec$ come from the parent.
+# Menlo writes NA for a value it doesn't have, and a field with several values, such as dst,
+# categories or pe_rulename, as a list; with one value it is plain text.
+
+# x-client-ip is the client's address as Menlo saw it, and xff_ip the address in X-Forwarded-For.
+sourceAddress$ = json["$['x-client-ip']"]
+xff = json["$.xff_ip"]
+trueSourceAddress$ = IF xff == "NA" THEN NULL ELSE xff
+port = json["$.srcPort"]
+sourcePort$ = IF port AND port != "NA" THEN INT(STRING(port), 10) ELSE NULL
+# origin_ip is the web server's address; dst is the same as one address or a list.
+dst0 = json["$.dst[0]"]
+dst = IF dst0 THEN dst0 ELSE json["$.dst"]
+origin = json["$.origin_ip"]
+destinationAddress$ = IF origin AND origin != "NA" THEN origin ELSE dst
+destinationAddress$ = IF destinationAddress$ == "NA" THEN NULL ELSE destinationAddress$
+user = json["$.userid"]
+sourceUsername$ = IF user == "NA" OR user == "Unknown" THEN NULL ELSE user
+requestDirection$ = "OUTBOUND"
+
+httpMethod$ = json["$.request_type"]
+link = json["$.url"]
+url = URL_PARSE(link, TRUE)
+proto = json["$.protocol"]
+uriScheme$ = IF proto AND proto != "NA" THEN proto ELSE url["scheme"]
+uriScheme$ = IF json["$.request_type"] == "CONNECT" AND url["port"] == "443" THEN "https" ELSE uriScheme$
+host = url["host"]
+hostname = IF host THEN host ELSE json["$.domain"]
+uriHost$ = hostname
+uriHostRaw$ = url["host_raw"]
+uriPort$ = url["port"]
+uriPath$ = url["path"]
+uriPathRaw$ = url["path_raw"]
+uriQuery$ = url["query"]
+uriQueryRaw$ = url["query_raw"]
+# The docs pair IDX_OF_TLD() with indexOfTopPrivateDomain$.
+tld = IDX_OF_TLD(hostname)
+indexOfTopPrivateDomain$ = tld
+isTopPrivateDomainParsed$ = tld != -1
+code = json["$.response_code"]
+responseCode$ = IF code AND code != "NA" THEN INT(STRING(code), 10) ELSE NULL
+ua = json["$['user-agent']"]
+userAgent$ = IF ua == "NA" THEN NULL ELSE ua
+ref = json["$.referer"]
+referer$ = IF ref == "NA" THEN NULL ELSE ref
+
+action = json["$.pe_action"]
+denied = action == "block"
+sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+blocked$ = IF denied THEN 1 ELSE 0
+
+# Up to three values of a field that can be a list, joined with commas.
+r0 = json["$.pe_rulename[0]"]
+r1 = json["$.pe_rulename[1]"]
+r2 = json["$.pe_rulename[2]"]
+rules = IF r0 THEN r0 ELSE json["$.pe_rulename"]
+rules = IF r1 THEN rules + ", " + r1 ELSE rules
+rules = IF r2 THEN rules + ", " + r2 ELSE rules
+c0 = json["$.categories[0]"]
+c1 = json["$.categories[1]"]
+c2 = json["$.categories[2]"]
+cats = IF c0 THEN c0 ELSE json["$.categories"]
+cats = IF c1 THEN cats + ", " + c1 ELSE cats
+cats = IF c2 THEN cats + ", " + c2 ELSE cats
+t0 = json["$.threat_types[0]"]
+threat = IF t0 THEN t0 ELSE json["$.threat_types"]
+pr0 = json["$.pe_reason[0]"]
+reason = IF pr0 THEN pr0 ELSE json["$.pe_reason"]
+pt0 = json["$.proxyEventType[0]"]
+ptype = IF pt0 THEN pt0 ELSE json["$.proxyEventType"]
+pd0 = json["$.proxyEventDetail[0]"]
+pdetail = IF pd0 THEN pd0 ELSE json["$.proxyEventDetail"]
+
+m1.key$ = "event_name"
+m1.value$ = name
+m2.key$ = "policy_action"
+m2.value$ = action
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1, m2]
+m3.key$ = "policy_rule"
+m3.value$ = rules
+eventMetadata$.record$ = IF rules AND rules != "NA" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "policy_reason"
+m4.value$ = reason
+eventMetadata$.record$ = IF reason AND reason != "NA" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "categories"
+m5.value$ = cats
+eventMetadata$.record$ = IF cats AND cats != "NA" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "threat_type"
+m6.value$ = threat
+eventMetadata$.record$ = IF threat AND threat != "NA" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "risk_score"
+m7.value$ = json["$.risk_score"]
+eventMetadata$.record$ = IF m7.value$ AND m7.value$ != "NA" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "filename"
+m8.value$ = json["$.filename"]
+eventMetadata$.record$ = IF m8.value$ AND m8.value$ != "NA" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "sha256"
+m9.value$ = json["$.sha256"]
+eventMetadata$.record$ = IF m9.value$ AND m9.value$ != "NA" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "file_size"
+m10.value$ = STRING(json["$.file_size"])
+eventMetadata$.record$ = IF json["$.file_size"] != NULL AND m10.value$ != "NA" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+m11.key$ = "scan_result"
+m11.value$ = json["$.fullScanResult"]
+eventMetadata$.record$ = IF m11.value$ AND m11.value$ != "NA" THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+m12.key$ = "virus_details"
+m12.value$ = json["$.virusDetails"]
+eventMetadata$.record$ = IF m12.value$ AND m12.value$ != "NA" THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$
+m13.key$ = "content_type"
+m13.value$ = json["$['content-type']"]
+eventMetadata$.record$ = IF m13.value$ AND m13.value$ != "NA" THEN eventMetadata$.record$ + [m13] ELSE eventMetadata$.record$
+m14.key$ = "egress_ip"
+m14.value$ = json["$.egress_ip"]
+eventMetadata$.record$ = IF m14.value$ AND m14.value$ != "NA" THEN eventMetadata$.record$ + [m14] ELSE eventMetadata$.record$
+m15.key$ = "client_country"
+m15.value$ = json["$['x-client-country']"]
+eventMetadata$.record$ = IF m15.value$ AND m15.value$ != "NA" THEN eventMetadata$.record$ + [m15] ELSE eventMetadata$.record$
+m16.key$ = "origin_country"
+m16.value$ = json["$.origin_country"]
+eventMetadata$.record$ = IF m16.value$ AND m16.value$ != "NA" THEN eventMetadata$.record$ + [m16] ELSE eventMetadata$.record$
+m17.key$ = "proxy_event"
+m17.value$ = IF pdetail AND pdetail != "NA" THEN pdetail ELSE ptype
+eventMetadata$.record$ = IF m17.value$ AND m17.value$ != "NA" THEN eventMetadata$.record$ + [m17] ELSE eventMetadata$.record$
+m18.key$ = "session_id"
+m18.value$ = json["$.full_session_id"]
+eventMetadata$.record$ = IF m18.value$ AND m18.value$ != "NA" THEN eventMetadata$.record$ + [m18] ELSE eventMetadata$.record$
+m19.key$ = "region"
+m19.value$ = json["$.region"]
+eventMetadata$.record$ = IF m19.value$ AND m19.value$ != "NA" THEN eventMetadata$.record$ + [m19] ELSE eventMetadata$.record$
+m20.key$ = "top_url"
+m20.value$ = json["$.top_url"]
+eventMetadata$.record$ = IF m20.value$ AND m20.value$ != "NA" AND m20.value$ != link THEN eventMetadata$.record$ + [m20] ELSE eventMetadata$.record$

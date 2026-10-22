@@ -1,0 +1,497 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792616531218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "source_address": "203.0.113.10",
+      "destination_address": "192.0.2.80",
+      "source_username": "akim@example.com",
+      "request_direction": "OUTBOUND",
+      "http_method": "GET",
+      "uri_scheme": "https",
+      "uri_host": "login.example.net",
+      "uri_host_raw": "login.example.net",
+      "uri_path": "/account/verify",
+      "uri_path_raw": "/account/verify",
+      "uri_query": "session=8812",
+      "uri_query_raw": "session=8812",
+      "index_of_top_private_domain": 6,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "referer": "https://mail.example.com/",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "page_request"
+          },
+          {
+            "key": "policy_action",
+            "value": "isolate"
+          },
+          {
+            "key": "policy_rule",
+            "value": "Isolate risky sites"
+          },
+          {
+            "key": "policy_reason",
+            "value": "6c6ea27d-5350"
+          },
+          {
+            "key": "categories",
+            "value": "Business"
+          },
+          {
+            "key": "threat_type",
+            "value": "Phishing"
+          },
+          {
+            "key": "risk_score",
+            "value": "high"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html; charset=utf-8"
+          },
+          {
+            "key": "egress_ip",
+            "value": "198.51.100.200"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "origin_country",
+            "value": "US"
+          },
+          {
+            "key": "session_id",
+            "value": "KbJQIDPS-1"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792616740902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "source_address": "198.51.100.23",
+      "true_source_address": "192.0.2.15",
+      "destination_address": "203.0.113.90",
+      "source_username": "jlee@example.com",
+      "request_direction": "OUTBOUND",
+      "http_method": "GET",
+      "uri_scheme": "https",
+      "uri_host": "docs.example.org",
+      "uri_host_raw": "docs.example.org",
+      "uri_path": "/guides/setup.html",
+      "uri_path_raw": "/guides/setup.html",
+      "uri_query": "lang=en",
+      "uri_query_raw": "lang=en",
+      "index_of_top_private_domain": 5,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "page_request"
+          },
+          {
+            "key": "policy_action",
+            "value": "allow"
+          },
+          {
+            "key": "policy_rule",
+            "value": "Default allow"
+          },
+          {
+            "key": "categories",
+            "value": "Business, Computers & Technology"
+          },
+          {
+            "key": "risk_score",
+            "value": "low"
+          },
+          {
+            "key": "content_type",
+            "value": "text/html"
+          },
+          {
+            "key": "egress_ip",
+            "value": "198.51.100.200"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "origin_country",
+            "value": "AU"
+          },
+          {
+            "key": "session_id",
+            "value": "LmNoPq12-3"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2b"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792618202377000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "source_address": "192.0.2.44",
+      "destination_address": "203.0.113.150",
+      "source_username": "pnguyen@example.com",
+      "request_direction": "OUTBOUND",
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host": "files.example.net",
+      "uri_host_raw": "files.example.net",
+      "uri_path": "/dl/invoice_8812.exe",
+      "uri_path_raw": "/dl/invoice_8812.exe",
+      "index_of_top_private_domain": 6,
+      "is_top_private_domain_parsed": true,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "referer": "http://files.example.net/dl/",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "file_download"
+          },
+          {
+            "key": "policy_action",
+            "value": "block"
+          },
+          {
+            "key": "policy_rule",
+            "value": "Block executables, Block malicious sources"
+          },
+          {
+            "key": "policy_reason",
+            "value": "file_download_EXE_blocked_category"
+          },
+          {
+            "key": "categories",
+            "value": "Malicious Sources"
+          },
+          {
+            "key": "threat_type",
+            "value": "Malware"
+          },
+          {
+            "key": "risk_score",
+            "value": "high"
+          },
+          {
+            "key": "filename",
+            "value": "invoice_8812.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "9f2c4e6a8b0d1f3e5a7c9b2d4f6e8a0c1b3d5f7e9a2c4b6d8f0e1a3c5b7d9f2e"
+          },
+          {
+            "key": "file_size",
+            "value": "3402270721"
+          },
+          {
+            "key": "scan_result",
+            "value": "Malicious"
+          },
+          {
+            "key": "virus_details",
+            "value": "Trojan.GenericKD.12345"
+          },
+          {
+            "key": "content_type",
+            "value": "application/x-msdownload"
+          },
+          {
+            "key": "egress_ip",
+            "value": "198.51.100.201"
+          },
+          {
+            "key": "client_country",
+            "value": "NZ"
+          },
+          {
+            "key": "origin_country",
+            "value": "NL"
+          },
+          {
+            "key": "session_id",
+            "value": "QrStUv34-1"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2a"
+          },
+          {
+            "key": "top_url",
+            "value": "http://files.example.net/dl/"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792618879000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "source_address": "203.0.113.12",
+      "source_port": 31189,
+      "request_direction": "OUTBOUND",
+      "http_method": "CONNECT",
+      "uri_scheme": "https",
+      "uri_host": "updates.example.com",
+      "uri_host_raw": "updates.example.com:443",
+      "uri_port": "443",
+      "index_of_top_private_domain": 8,
+      "is_top_private_domain_parsed": true,
+      "response_code": 200,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "blocked": 0,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "proxy_event"
+          },
+          {
+            "key": "policy_action",
+            "value": "proxy_event"
+          },
+          {
+            "key": "policy_rule",
+            "value": "proxy_event"
+          },
+          {
+            "key": "risk_score",
+            "value": "low"
+          },
+          {
+            "key": "proxy_event",
+            "value": "X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN@depth=2 (cert_error)"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2b"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792620045612000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "source_address": "198.51.100.61",
+      "destination_address": "192.0.2.120",
+      "request_direction": "OUTBOUND",
+      "http_method": "GET",
+      "uri_scheme": "http",
+      "uri_host": "casino.example.com",
+      "uri_host_raw": "casino.example.com",
+      "uri_path": "/",
+      "uri_path_raw": "/",
+      "index_of_top_private_domain": 7,
+      "is_top_private_domain_parsed": true,
+      "user_agent": "python-requests/2.32.3",
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "blocked": 1,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "page_request"
+          },
+          {
+            "key": "policy_action",
+            "value": "block"
+          },
+          {
+            "key": "policy_rule",
+            "value": "Block gambling"
+          },
+          {
+            "key": "policy_reason",
+            "value": "7a8b9c0d-1e2f"
+          },
+          {
+            "key": "categories",
+            "value": "Gambling"
+          },
+          {
+            "key": "risk_score",
+            "value": "medium"
+          },
+          {
+            "key": "egress_ip",
+            "value": "198.51.100.200"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "origin_country",
+            "value": "MT"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792620633481000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "event_type": "web_policy",
+      "event_source": "Menlo Security",
+      "event_name": "update",
+      "user_name": "jlee@example.com",
+      "management_event": true,
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "actions",
+            "value": "update"
+          },
+          {
+            "key": "details",
+            "value": "{\"rule\":\"Block gambling\",\"action\":\"block\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "admin_audit"
+          },
+          {
+            "key": "revision",
+            "value": "1842"
+          },
+          {
+            "key": "severity",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT > MENLO_SECURITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792620950127000,
+      "event_time_fidelity": "MICRO",
+      "sensor_version": "2.0",
+      "event_type": "api_token",
+      "event_source": "Menlo Security",
+      "event_name": "create",
+      "user_name": "akim@example.com",
+      "management_event": true,
+      "read_only": false,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "actions",
+            "value": "create, enable"
+          },
+          {
+            "key": "details",
+            "value": "{\"token_name\":\"SIEM export\",\"permissions\":[\"Log Export API\"]}"
+          },
+          {
+            "key": "additional_info",
+            "value": "{\"source_ip\":\"203.0.113.10\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "admin_audit"
+          },
+          {
+            "key": "revision",
+            "value": "1843"
+          },
+          {
+            "key": "severity",
+            "value": "5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "MENLO_SECURITY_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Menlo Security",
+      "event_time_usec": 1792621207000000
+    }
+  }
+]

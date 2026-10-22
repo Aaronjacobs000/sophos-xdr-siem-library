@@ -1,0 +1,55 @@
+!SAMPLE={"menlo_record":"audit","event_time":"2026-10-21T22:15:50.127000","name":"admin_audit","uid":"akim@example.com","audit_actions":["create","enable"],"sub_event_type":"api_token","details":"{\"token_name\":\"SIEM export\",\"permissions\":[\"Log Export API\"]}","additional_info":"{\"source_ip\":\"203.0.113.10\"}","rev_id":"1843","severity":"5","version":"2.0","product":"MSIP","vendor":"Menlo Security"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Menlo Security admin audit logs from the example bridge: changes made in the Menlo Admin
+# Portal, with the administrator in uid, the actions in audit_actions (one as text, several as a
+# list), the kind of change in sub_event_type, and what changed in details as JSON text.
+# Child of MENLO_SECURITY_JSON_PARENT: each one to CloudAudit, with the first action as the event
+# name and sub_event_type as the event type.
+# json, logType, name, eventType$, sensorType$, sensorVersion$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Menlo Security"
+a0 = json["$.audit_actions[0]"]
+a1 = json["$.audit_actions[1]"]
+a2 = json["$.audit_actions[2]"]
+first = IF a0 THEN a0 ELSE json["$.audit_actions"]
+first = IF first == "NA" THEN NULL ELSE first
+actions = first
+actions = IF a1 THEN actions + ", " + a1 ELSE actions
+actions = IF a2 THEN actions + ", " + a2 ELSE actions
+eventName$ = IF first THEN first ELSE name
+sub = json["$.sub_event_type"]
+eventType$ = IF sub AND sub != "NA" THEN sub ELSE name
+admin = json["$.uid"]
+userName$ = IF admin == "NA" THEN NULL ELSE admin
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+p1.key$ = "actions"
+p1.value$ = actions
+p2.key$ = "details"
+p2.value$ = json["$.details"]
+p3.key$ = "additional_info"
+p3.value$ = json["$.additional_info"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF actions THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ AND p2.value$ != "NA" AND p2.value$ != "{}" THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ AND p3.value$ != "NA" AND p3.value$ != "{}" THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+
+d1.key$ = "event_name"
+d1.value$ = name
+d2.key$ = "revision"
+d2.value$ = json["$.rev_id"]
+d3.key$ = "severity"
+d3.value$ = json["$.severity"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ AND d2.value$ != "NA" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ AND d3.value$ != "NA" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
