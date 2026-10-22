@@ -1,0 +1,85 @@
+!SAMPLE={"slack_record":"audit","id":"4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c05","date_create":1792620045,"action":"anomaly","actor":{"type":"user","user":{"id":"W0JLEE002","name":"Jordan Lee","email":"jlee@example.com","team":"T0EXMPL02"}},"entity":{"type":"user","user":{"id":"W0JLEE002","name":"Jordan Lee","email":"jlee@example.com","team":"T0EXMPL02"}},"context":{"location":{"type":"workspace","id":"T0EXMPL02","name":"Example Engineering","domain":"example-eng"},"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","session_id":"7214490031207","ip_address":"192.0.2.77"},"details":{"action_timestamp":1792620041120338,"location":"Frankfurt, Hesse","previous_ip_address":"203.0.113.44","previous_ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","reason":["ip_address","asn"],"ip_address_details":["cloud-asn"]}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Slack audit log anomaly entries from the example bridge: Slack's own detections of unusual
+# user or app behavior, such as a new or cloud ASN, a Tor exit node, an unexpected client or user
+# agent, excessive downloads or scraping. details.reason lists the reason codes.
+# Child of SLACK_AUDIT_JSON_PARENT: each one to Thirdparty, with the reason codes as the title.
+# Slack gives anomalies no severity.
+# json, kind, etype, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+alertId$ = json["$.id"]
+vendor$ = "Slack"
+provider$ = "Slack Audit Logs"
+logType$ = kind
+alertCategory$ = "anomaly"
+
+# The first three reason codes, such as ip_address, asn.
+r0 = json["$.details.reason[0]"]
+r1 = json["$.details.reason[1]"]
+r2 = json["$.details.reason[2]"]
+reasons = IF r0 THEN r0 ELSE "unknown"
+reasons = IF r1 THEN reasons + ", " + r1 ELSE reasons
+reasons = IF r2 THEN reasons + ", " + r2 ELSE reasons
+title$ = "Slack anomaly: " + reasons
+actionReason$ = reasons
+
+# An anomaly is about a user or an app.
+uemail = json["$.entity.user.email"]
+uname = json["$.entity.user.name"]
+person = IF uemail THEN uemail ELSE uname
+app = json["$.entity.app.name"]
+targetUserName$ = IF etype == "user" THEN person ELSE NULL
+targetUserId$ = IF etype == "user" THEN json["$.entity.user.id"] ELSE NULL
+userPrincipalName$ = IF etype == "user" THEN uemail ELSE NULL
+destinationServiceName$ = IF etype == "app" THEN app ELSE NULL
+who = IF etype == "app" THEN "app " + STRING(app) ELSE STRING(person)
+ip = json["$.context.ip_address"]
+sourceAddress$ = ip
+userAgent$ = json["$.context.ua"]
+sid = json["$.context.session_id"]
+sessionId$ = IF sid == NULL THEN NULL ELSE STRING(sid)
+where = json["$.details.location"]
+userLocation$ = where
+summary$ = "Slack flagged " + who + " for " + reasons
+summary$ = IF ip THEN summary$ + " from " + ip ELSE summary$
+summary$ = IF where THEN summary$ + " (" + where + ")" ELSE summary$
+
+a1.key$ = "location_type"
+a1.value$ = json["$.context.location.type"]
+a2.key$ = "location_id"
+a2.value$ = json["$.context.location.id"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2]
+a3.key$ = "location_name"
+a3.value$ = json["$.context.location.name"]
+additionalData$.record$ = IF a3.value$ THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "previous_ip_address"
+a4.value$ = json["$.details.previous_ip_address"]
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "previous_ua"
+a5.value$ = json["$.details.previous_ua"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "ip_address_details"
+a6.value$ = json["$.details.ip_address_details[0]"]
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "detected_client"
+a7.value$ = json["$.details.detected_client"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "detected_os"
+a8.value$ = json["$.details.detected_os"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "api_call_method"
+a9.value$ = json["$.details.api_call_method"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "entity_id"
+a10.value$ = IF etype == "app" THEN json["$.entity.app.id"] ELSE json["$.entity.user.id"]
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "entity_type"
+a11.value$ = etype
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$

@@ -1,0 +1,665 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792616531000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c01",
+      "target_user_name": "akim@example.com",
+      "user_display_name": "Alex Kim",
+      "auth_system": "Slack",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "session_id": "7214490018833",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "user_login"
+          },
+          {
+            "key": "user_id",
+            "value": "W0AKIM001"
+          },
+          {
+            "key": "team",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_type",
+            "value": "enterprise"
+          },
+          {
+            "key": "location_id",
+            "value": "E0EXMPL01"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "location_domain",
+            "value": "example-org"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792616740000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c02",
+      "target_user_name": "pnguyen@example.com",
+      "user_display_name": "Priya Nguyen",
+      "auth_system": "Slack",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "user_login_failed"
+          },
+          {
+            "key": "user_id",
+            "value": "W0PNGU003"
+          },
+          {
+            "key": "team",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_type",
+            "value": "enterprise"
+          },
+          {
+            "key": "location_id",
+            "value": "E0EXMPL01"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "location_domain",
+            "value": "example-org"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792618202000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c03",
+      "target_user_name": "akim@example.com",
+      "user_display_name": "Alex Kim",
+      "auth_system": "Slack",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "session_id": "7214490018833",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "user_logout"
+          },
+          {
+            "key": "user_id",
+            "value": "W0AKIM001"
+          },
+          {
+            "key": "team",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_id",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "location_domain",
+            "value": "example-eng"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792618879000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c04",
+      "target_user_name": "pnguyen@example.com",
+      "user_display_name": "Priya Nguyen",
+      "auth_system": "Slack",
+      "session_id": "7214490026611",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "action",
+            "value": "user_logout_compromised"
+          },
+          {
+            "key": "user_id",
+            "value": "W0PNGU003"
+          },
+          {
+            "key": "team",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_type",
+            "value": "enterprise"
+          },
+          {
+            "key": "location_id",
+            "value": "E0EXMPL01"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "location_domain",
+            "value": "example-org"
+          },
+          {
+            "key": "actor_id",
+            "value": "USLACKSECURITY"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792620045000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c05",
+      "alert_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c05",
+      "vendor": "Slack",
+      "provider": "Slack Audit Logs",
+      "log_type": "anomaly",
+      "alert_category": "anomaly",
+      "title": "Slack anomaly: ip_address, asn",
+      "action_reason": "ip_address, asn",
+      "target_user_name": "jlee@example.com",
+      "target_user_id": "W0JLEE002",
+      "user_principal_name": "jlee@example.com",
+      "source_address": "192.0.2.77",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "session_id": "7214490031207",
+      "user_location": "Frankfurt, Hesse",
+      "summary": "Slack flagged jlee@example.com for ip_address, asn from 192.0.2.77 (Frankfurt, Hesse)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_id",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "previous_ip_address",
+            "value": "203.0.113.44"
+          },
+          {
+            "key": "previous_ua",
+            "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+          },
+          {
+            "key": "ip_address_details",
+            "value": "cloud-asn"
+          },
+          {
+            "key": "entity_id",
+            "value": "W0JLEE002"
+          },
+          {
+            "key": "entity_type",
+            "value": "user"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792620252000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c06",
+      "alert_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c06",
+      "vendor": "Slack",
+      "provider": "Slack Audit Logs",
+      "log_type": "anomaly",
+      "alert_category": "anomaly",
+      "title": "Slack anomaly: unexpected_client, spoofed_user_agent, user_agent",
+      "action_reason": "unexpected_client, spoofed_user_agent, user_agent",
+      "target_user_name": "pnguyen@example.com",
+      "target_user_id": "W0PNGU003",
+      "user_principal_name": "pnguyen@example.com",
+      "source_address": "198.51.100.61",
+      "user_agent": "python-requests/2.32.3",
+      "session_id": "7214490035519",
+      "user_location": "Sydney, New South Wales",
+      "summary": "Slack flagged pnguyen@example.com for unexpected_client, spoofed_user_agent, user_agent from 198.51.100.61 (Sydney, New South Wales)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_id",
+            "value": "T0EXMPL02"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "previous_ua",
+            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
+          },
+          {
+            "key": "detected_client",
+            "value": "python-requests"
+          },
+          {
+            "key": "detected_os",
+            "value": "Linux"
+          },
+          {
+            "key": "entity_id",
+            "value": "W0PNGU003"
+          },
+          {
+            "key": "entity_type",
+            "value": "user"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792620633000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c07",
+      "event_type": "file",
+      "event_source": "Slack",
+      "event_name": "file_downloaded",
+      "recipient_account_id": "T0EXMPL02",
+      "user_name": "jlee@example.com",
+      "user_id": "W0JLEE002",
+      "user_type": "user",
+      "source_address": "192.0.2.77",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "F0FILE0001",
+          "resource_type": "file",
+          "resource_account_id": "T0EXMPL02"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "entity_name",
+            "value": "q3-forecast.xlsx"
+          },
+          {
+            "key": "session_id",
+            "value": "7214490031207"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792620950000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c08",
+      "event_type": "channel",
+      "event_source": "Slack",
+      "event_name": "public_channel_created",
+      "recipient_account_id": "T0EXMPL02",
+      "user_name": "channel-helper@example.com",
+      "user_id": "W0BOT0004",
+      "user_type": "user",
+      "source_address": "198.51.100.5",
+      "user_agent": "channel-helper/2.1",
+      "logon_application_family": "Channel Helper",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "C0CHAN0001",
+          "resource_type": "channel",
+          "resource_account_id": "T0EXMPL02"
+        },
+        {
+          "resource_id": "A0APP0001",
+          "resource_type": "app",
+          "resource_account_id": "T0EXMPL02"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "entity_name",
+            "value": "incident-review"
+          },
+          {
+            "key": "channel_privacy",
+            "value": "public"
+          },
+          {
+            "key": "app_name",
+            "value": "Channel Helper"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792621207000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c09",
+      "event_type": "user",
+      "event_source": "Slack",
+      "event_name": "role_change_to_admin",
+      "recipient_account_id": "T0EXMPL02",
+      "user_name": "jlee@example.com",
+      "user_id": "W0JLEE002",
+      "user_type": "user",
+      "source_address": "192.0.2.77",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "target_user_name": "pnguyen@example.com",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "W0PNGU003",
+          "resource_type": "user",
+          "resource_account_id": "T0EXMPL02"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "entity_name",
+            "value": "Priya Nguyen"
+          },
+          {
+            "key": "session_id",
+            "value": "7214490031207"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792621915000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c10",
+      "event_type": "enterprise",
+      "event_source": "Slack",
+      "event_name": "pref.sso_setting_changed",
+      "recipient_account_id": "E0EXMPL01",
+      "user_name": "akim@example.com",
+      "user_id": "W0AKIM001",
+      "user_type": "user",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "E0EXMPL01",
+          "resource_type": "enterprise",
+          "resource_account_id": "E0EXMPL01"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "previous_value",
+            "value": "sso_optional"
+          },
+          {
+            "key": "new_value",
+            "value": "sso_required"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "enterprise"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "entity_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "session_id",
+            "value": "7214490041102"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792622428000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c11",
+      "event_type": "app",
+      "event_source": "Slack",
+      "event_name": "app_scopes_expanded",
+      "recipient_account_id": "T0EXMPL02",
+      "user_name": "jlee@example.com",
+      "user_id": "W0JLEE002",
+      "user_type": "user",
+      "source_address": "192.0.2.77",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "A0APP0002",
+          "resource_type": "app",
+          "resource_account_id": "T0EXMPL02"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "previous_scopes",
+            "value": "[\"users:read\",\"files:read\"]"
+          },
+          {
+            "key": "new_scopes",
+            "value": "[\"users:read\",\"files:read\",\"channels:history\"]"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "workspace"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Engineering"
+          },
+          {
+            "key": "entity_name",
+            "value": "Expense Bot"
+          },
+          {
+            "key": "session_id",
+            "value": "7214490031207"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "SLACK_AUDIT_JSON_PARENT > SLACK_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Slack Audit Logs",
+      "event_time_usec": 1792622713000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c12",
+      "event_type": "user",
+      "event_source": "Slack",
+      "event_name": "user_session_reset_by_admin",
+      "recipient_account_id": "E0EXMPL01",
+      "user_name": "akim@example.com",
+      "user_id": "W0AKIM001",
+      "user_type": "user",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "target_user_name": "pnguyen@example.com",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "W0PNGU003",
+          "resource_type": "user",
+          "resource_account_id": "E0EXMPL01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location_type",
+            "value": "enterprise"
+          },
+          {
+            "key": "location_name",
+            "value": "Example Org"
+          },
+          {
+            "key": "entity_name",
+            "value": "Priya Nguyen"
+          },
+          {
+            "key": "session_id",
+            "value": "7214490041102"
+          }
+        ]
+      }
+    }
+  }
+]

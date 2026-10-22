@@ -1,0 +1,30 @@
+!SAMPLE={"slack_record":"audit","id":"4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c01","date_create":1792616531,"action":"user_login","actor":{"type":"user","user":{"id":"W0AKIM001","name":"Alex Kim","email":"akim@example.com","team":"T0EXMPL02"}},"entity":{"type":"user","user":{"id":"W0AKIM001","name":"Alex Kim","email":"akim@example.com","team":"T0EXMPL02"}},"context":{"location":{"type":"enterprise","id":"E0EXMPL01","name":"Example Org","domain":"example-org"},"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","session_id":"7214490018833","ip_address":"203.0.113.10"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"slack_record"\s*:\s*"audit"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Slack audit log entries from the Audit Logs API (Enterprise plans), pulled by the example
+# bridge in bridges/slack-audit-logs and posted to HTTP Ingest as JSON lines. The bridge puts
+# "slack_record": "audit" first.
+# Parent: hands sign-ins, failed sign-ins and sign-outs to the Auth child, Slack's anomaly events
+# to the Thirdparty child, and every other entry to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Slack Audit Logs"
+sensorEventId$ = json["$.id"]
+kind = json["$.action"]
+etype = json["$.entity.type"]
+# date_create is Unix time in seconds.
+eventTimeUsec$ = INT(STRING(json["$.date_create"]), 10) * 1000000
+
+# Every sign-out action starts with user_logout, such as user_logout_compromised.
+signin = kind == "user_login" OR kind == "user_login_failed" OR kind == "cli_login" OR CONTAINS(kind, "user_logout")
+eventType$ = "audit"
+eventType$ = IF kind == "anomaly" THEN "alert" ELSE eventType$
+eventType$ = IF signin THEN "auth" ELSE eventType$
