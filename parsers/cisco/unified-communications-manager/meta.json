@@ -1,0 +1,42 @@
+{
+  "vendor": "Cisco",
+  "product": "Unified Communications Manager",
+  "versions": [
+    "12.5",
+    "14",
+    "15"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-16T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/cucm/err_msgs/15_x/ccmalarms15.html",
+    "https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/cucm/admin/15/adminGd/cucm_b_administration-guide-15/cucm_b_test-adminguide_chapter_010100.html",
+    "https://developer.cisco.com/docs/sxml/log-collection-api/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/OverridingAndExtending/index.html"
+  ],
+  "notes": "For Cisco Unified Communications Manager (CUCM) alarms and audit events sent by remote syslog to the data collector; the README has the Enterprise Parameters and Audit Log Configuration steps. Sign-ins to the web pages, the AXL API (Interface Apache-Axis2) and other interfaces (%UC_LOGIN AuthenticationFailed and AuthenticationSucceeded), platform account lockouts (PlatformAdminAccountLocked), audit events of the UserLogging type (sign-ins, sign-outs and failures) and device registrations refused for a reason that points at an unknown or unauthenticated device (%UC_CALLMANAGER DeviceTransientConnection reasons 2, 3, 4, 10, 11, 17, 28 and 35, such as 10 for a failed SIP digest) go to Auth. Other audit events (configuration changes, access checks, CLI commands, service changes) go to ManagementEvent with the user, address, event type, details, status, component and cluster. Padded keys, App ID or AppID, and the older Login UserID key names are read, and both time forms (02:10:19 PM.484 and 14:12:02.118), with or without the host and the year. The time is read as UTC, which CUCM writes; a line in another zone keeps the ingest time. The details text of sign-ins and sign-outs follows Cisco's DevNet example from a 14.0 audit log; that a sign-out arrives as %UC_AUDITLOG-6-CriticalEvent is inferred from its CriticalEvent category. Other alarms, RTMT alerts and CDRs (CSV files over SFTP) aren't covered. Both parsers are children of the global parser Cisco_IOS_Master, which claims CUCM lines and leaves them without a schema. To add each in Sophos Fusion, choose Add Custom Parser, tick Set Global Parent in Parser Script and keep Parent parser (default): the parent picker lists only your own parsers, never built-in ones. Paste the whole file, !PARENT line included; its !SCHEMA line sets the schema, whatever the dialog shows. Without that option the save fails with \"code contains restricted syntax: !PARENT\"; turn the option on in the editor and save again. Samples are made up from Cisco's CUCM 15 alarm catalog, Administration Guide and DevNet examples. Each parser passed Run Test under Cisco_IOS_Master in a lab tenant on 2026-10-22 (232 of 232 fields matched the emulator in each of 3 runs). With Cisco IOS lines taken by the built-in children Cisco_IOS_SYS_Master and Cisco_IOS_SEC_LOGIN_Master before each line, each parser took all of its lines in 5 of 5 runs and none of the other's.",
+  "parsers": [
+    {
+      "name": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+      "file": "CISCO_CUCM_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "Cisco_IOS_Master",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+      "file": "CISCO_CUCM_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "Cisco_IOS_Master",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

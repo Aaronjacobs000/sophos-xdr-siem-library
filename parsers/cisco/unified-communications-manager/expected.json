@@ -1,0 +1,496 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073620007000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_LOGIN-4-AuthenticationFailed",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "administrator",
+      "source_address": "203.0.113.50",
+      "logon_application_family": "Cisco CallManager Administration",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073632311000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_LOGIN-4-AuthenticationFailed",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "axlsvc",
+      "source_address": "198.51.100.70",
+      "logon_application_family": "Apache-Axis2",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073671902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_LOGIN-6-AuthenticationSucceeded",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "logon_application_family": "cucm-uds",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073689389000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_LOGIN-6-AuthenticationSucceeded",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "axlsvc",
+      "source_address": "192.0.2.31",
+      "logon_application_family": "Apache-Axis2",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073709640000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_LOGIN-4-PlatformAdminAccountLocked",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Syslog Agent",
+      "target_user_name": "platadmin",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          },
+          {
+            "key": "unlock_time_seconds",
+            "value": "300"
+          },
+          {
+            "key": "failed_login_count",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073780118000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-6-AdministrativeEvent",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "logon_application_family": "Cisco CallManager Administration",
+      "status": "Success",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "audit_details",
+            "value": "Successfully Logged into Cisco Unified CM Admin Webpages"
+          },
+          {
+            "key": "component",
+            "value": "Cisco CallManager Administration"
+          },
+          {
+            "key": "audit_category",
+            "value": "AdministrativeEvent"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073865502000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-5-AdministrativeEvent",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "jdoe",
+      "source_address": "203.0.113.61",
+      "logon_application_family": "Cisco CallManager Administration",
+      "status": "Failure",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Failed to Log into Cisco CCM Webpages",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "audit_details",
+            "value": "Failed to Log into Cisco CCM Webpages"
+          },
+          {
+            "key": "component",
+            "value": "Cisco CallManager Administration"
+          },
+          {
+            "key": "audit_category",
+            "value": "AdministrativeEvent"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792075207250000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-6-CriticalEvent",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-pub",
+      "target_host_name": "cucm-pub",
+      "application_name": "Cisco Tomcat",
+      "target_user_name": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "logon_application_family": "CUCMAdmin",
+      "status": "Success",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          },
+          {
+            "key": "audit_details",
+            "value": "Successfully Logged out Cisco Unified Administration Web Pages"
+          },
+          {
+            "key": "component",
+            "value": "Cisco CUCM Administration"
+          },
+          {
+            "key": "audit_category",
+            "value": "CriticalEvent"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792074002607000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_CALLMANAGER-4-DeviceTransientConnection",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-sub1",
+      "target_host_name": "cucm-sub1",
+      "application_name": "Cisco CallManager",
+      "source_address": "203.0.113.99",
+      "logon_application_family": "SIP",
+      "target_port_number": 5060,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INVALID_ACCOUNT",
+      "extra_failurereason": "DatabaseConfigurationError",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          },
+          {
+            "key": "reason",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792074104902000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_CALLMANAGER-4-DeviceTransientConnection",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-sub1",
+      "target_host_name": "cucm-sub1",
+      "application_name": "Cisco CallManager",
+      "target_user_name": "4022",
+      "source_address": "203.0.113.99",
+      "logon_application_family": "SIP",
+      "target_port_number": 5060,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "extra_failurereason": "AuthenticationError",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          },
+          {
+            "key": "reason",
+            "value": "10"
+          },
+          {
+            "key": "device_name",
+            "value": "SEP00005E005342"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792074190415000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_CALLMANAGER-3-DeviceTransientConnection",
+      "auth_system": "Cisco Unified CM",
+      "host_id": "cucm-sub1",
+      "target_host_name": "cucm-sub1",
+      "application_name": "Cisco CallManager",
+      "target_user_name": "SIPTRUNK-GW",
+      "source_address": "2001:db8::45",
+      "logon_application_family": "SIP",
+      "target_port_number": 5061,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "extra_failurereason": "DeviceNameUnresolveable",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "cluster_id",
+            "value": "StandAloneCluster"
+          },
+          {
+            "key": "reason",
+            "value": "4"
+          },
+          {
+            "key": "device_name",
+            "value": "SIPTRUNK-GW"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073419484000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-5-AdministrativeEvent",
+      "username": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "GeneralConfigurationUpdate",
+      "operation": "record in table device, with key field name = SEP00005E005341 deleted",
+      "result": "Success",
+      "channel": "Cisco CUCM Administration",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792073522118000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-6-AdministrativeEvent",
+      "username": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "GeneralConfigurationUpdate",
+      "operation": "record in table callforwarddynamic, with key field name = 4021 updated",
+      "result": "Success",
+      "channel": "Cisco CUCM Administration",
+      "namespace": "StandAloneCluster",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792075533871000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-6-AdministrativeEvent",
+      "username": "platadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "CLICommand",
+      "operation": "Attempt to access data was successful. User has access rights for CLI Command->utils dbreplication runtimestate",
+      "command": "utils dbreplication runtimestate",
+      "result": "Success",
+      "channel": "CLI",
+      "namespace": "StandAloneCluster",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792075622330000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-6-AdministrativeEvent",
+      "username": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "UserAccess",
+      "operation": "Attempt to access data was successful.User is authorized to access auditconfig",
+      "result": "Success",
+      "channel": "Cisco Serviceability",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792075955000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UC_AUDITLOG-5-AdministrativeEvent",
+      "username": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "GeneralConfigurationUpdate",
+      "operation": "record in table enduser, with key field name = jdoe updated",
+      "result": "Success",
+      "channel": "Cisco CUCM Administration",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "CISCO_CUCM_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco Unified CM",
+      "event_time_usec": 1792075812004000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "CCM_TOMCAT-GENERIC-3-AuditEventGenerated",
+      "username": "ccmadmin",
+      "source_address": "192.0.2.25",
+      "operation_name": "ServiceStatusUpdated",
+      "operation": "Call Manager Service status is stopped",
+      "result": "Successful",
+      "namespace": "StandAloneCluster",
+      "host_id": "cucm-pub",
+      "target_hostname": "cucm-pub"
+    }
+  }
+]
