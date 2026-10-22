@@ -1,0 +1,76 @@
+!SAMPLE={"citrix_record":"systemlog","citrix_customer_id":"exampleco1x2y","RecordId":"c1d2e3f4-0a1b-4c2d-8e3f-000000000001","UtcTimestamp":"2026-10-20T01:02:03.6103585Z","CustomerId":"exampleco1x2y","EventType":"platform/administrator/create","TargetId":"6233644161364977157","TargetDisplayName":"Lee Park","TargetEmail":"lee@example.com","TargetUserId":"a90b4449675f4fcf97e1663623334d74","TargetType":"administrator","BeforeChanges":null,"AfterChanges":{"AccessType":"Full","DisplayName":"Lee Park","Principal":"lee@example.com","Pending":"False"},"AgentId":"platform","ServiceProfileName":null,"ActorId":"b80c5550786f5adf08f2774734445e85","ActorDisplayName":"Alex Kim","ActorType":"administrator","Message":{"en-US":"Administrator 'lee@example.com' was created.","de-DE":"Administrator 'lee@example.com' wurde erstellt."}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="systemlog"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Citrix Cloud System Log records from the example bridge: administrators and groups,
+# service principals, identity providers, domains, resource locations and connectors, licensing,
+# Secure Private Access and Workspace events, named service/object/action.
+# Child of CITRIX_CLOUD_JSON_PARENT: each one to CloudAudit, with the event type as the event name,
+# the actor, the target, and the changes before and after.
+# json, customer, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+event = json["$.EventType"]
+eventName$ = event
+agent = json["$.AgentId"]
+eventText = STRING(event)
+svc = eventText|^(?P<s>[^/:]+)
+eventSource$ = IF agent THEN agent ELSE svc["s"]
+ttype = json["$.TargetType"]
+eventType$ = ttype
+recipientAccountId$ = json["$.CustomerId"]
+recipientAccountId$ = IF recipientAccountId$ THEN recipientAccountId$ ELSE customer
+
+# The actor is an administrator, a service principal, or CwcSystem when Citrix Cloud made the change.
+actor = json["$.ActorDisplayName"]
+userName$ = IF actor THEN actor ELSE json["$.ActorId"]
+userId$ = json["$.ActorId"]
+userType$ = json["$.ActorType"]
+email = json["$.TargetEmail"]
+tl = LOWERCASE(STRING(ttype))
+person = tl == "administrator" OR tl == "subscriber" OR tl == "user"
+targetUserName$ = IF email THEN email ELSE NULL
+targetUserName$ = IF targetUserName$ == NULL AND person THEN json["$.TargetDisplayName"] ELSE targetUserName$
+
+# Event types that end in "failed" record a change that failed.
+failed = eventText|failed$
+status$ = IF failed[0] != "" THEN "Failure" ELSE "Success"
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+r1.resourceId$ = json["$.TargetId"]
+r1.resourceType$ = ttype
+r1.resourceAccountId$ = recipientAccountId$
+# Assign the list first: reading resources$ before it is set fails the event.
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+p1.key$ = "message"
+p1.value$ = json["$.Message['en-US']"]
+p2.key$ = "before"
+p2.value$ = STRING(json["$.BeforeChanges"])
+p3.key$ = "after"
+p3.value$ = STRING(json["$.AfterChanges"])
+p4.key$ = "service_profile"
+p4.value$ = json["$.ServiceProfileName"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ != "" THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ != "" THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+
+d1.key$ = "record_id"
+d1.value$ = json["$.RecordId"]
+d2.key$ = "target_name"
+d2.value$ = json["$.TargetDisplayName"]
+d3.key$ = "target_user_id"
+d3.value$ = json["$.TargetUserId"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$

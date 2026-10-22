@@ -1,0 +1,73 @@
+!SAMPLE={"citrix_record":"configlog","citrix_customer_id":"exampleco1x2y","citrix_site_id":"3061173e-0a1b-4c2d-8e3f-405162738495","Id":"0d96ecf1-4c73-4a0c-9476-000000000004","AdminMachineIP":"192.0.2.15","EndTime":"10/20/2026 : 4:05:31 AM","FormattedEndTime":"2026-10-20T04:05:31Z","IsSuccessful":true,"OperationType":"ConfigurationChange","Parameters":[{"Name":"Name","Value":"Finance Desktops"},{"Name":"DesktopKind","Value":"Shared"},{"Name":"SessionSupport","Value":"MultiSession"}],"Source":"Studio","StartTime":"10/20/2026 : 4:05:29 AM","FormattedStartTime":"2026-10-20T04:05:29Z","TargetTypes":["DesktopGroup"],"Text":"Create Delivery Group 'Finance Desktops'","User":"EXAMPLE\\akim","UserIdentity":"S-1-5-21-1004336348-1177238915-682003330-1105","Labels":[],"Metadata":[]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="configlog"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Citrix DaaS Configuration Logging operations from the example bridge: administrator
+# changes made in Studio, Web Studio, PowerShell and the APIs (delivery groups, machine catalogs,
+# applications, policies, hosting, administrators), and admin activities such as logging off a session.
+# Child of CITRIX_CLOUD_JSON_PARENT: each one to CloudAudit, with the operation (the text before
+# its first quoted name) as the event name, the console or SDK as the event source, and the first
+# three parameters.
+# json, customer, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+text = json["$.Text"]
+textStr = STRING(text)
+op = textStr|^(?P<op>[^']*?)\s*(?:'|$)
+eventName$ = IF op["op"] != "" THEN op["op"] ELSE text
+eventSource$ = json["$.Source"]
+eventType$ = json["$.OperationType"]
+recipientAccountId$ = customer
+userName$ = json["$.User"]
+userId$ = json["$.UserIdentity"]
+ip = json["$.AdminMachineIP"]
+sourceAddress$ = IF ip THEN ip ELSE NULL
+
+# IsSuccessful is unset while an operation is still running.
+ok = STRING(json["$.IsSuccessful"])
+status$ = "Incomplete"
+status$ = IF ok == "true" THEN "Success" ELSE status$
+status$ = IF ok == "false" THEN "Failure" ELSE status$
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+site = json["$.citrix_site_id"]
+r1.resourceId$ = site
+r1.resourceType$ = "site"
+r1.resourceAccountId$ = customer
+# Assign the list first: reading resources$ before it is set fails the event.
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+p1.key$ = "text"
+p1.value$ = text
+p2.key$ = "target_types"
+p2.value$ = REPLACE_REGEX(STRING(json["$.TargetTypes"]), `[\[\]"]`, "")
+p3.key$ = json["$.Parameters[0].Name"]
+p3.value$ = json["$.Parameters[0].Value"]
+p4.key$ = json["$.Parameters[1].Name"]
+p4.value$ = json["$.Parameters[1].Value"]
+p5.key$ = json["$.Parameters[2].Name"]
+p5.value$ = json["$.Parameters[2].Value"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ != "" THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.key$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.key$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p5.key$ THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+
+d1.key$ = "operation_id"
+d1.value$ = json["$.Id"]
+d2.key$ = "end_time"
+d2.value$ = json["$.FormattedEndTime"]
+d3.key$ = "labels"
+d3.value$ = REPLACE_REGEX(STRING(json["$.Labels"]), `[\[\]"]`, "")
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$

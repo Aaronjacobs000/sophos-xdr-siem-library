@@ -1,0 +1,511 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_SYSTEMLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix Cloud",
+      "event_time_usec": 1792458123610358,
+      "event_time_fidelity": "MICRO",
+      "event_type": "administrator",
+      "event_name": "platform/administrator/create",
+      "event_source": "platform",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "Alex Kim",
+      "user_id": "b80c5550786f5adf08f2774734445e85",
+      "user_type": "administrator",
+      "target_user_name": "lee@example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "6233644161364977157",
+          "resource_type": "administrator",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Administrator 'lee@example.com' was created."
+          },
+          {
+            "key": "after",
+            "value": "{\"AccessType\":\"Full\",\"DisplayName\":\"Lee Park\",\"Pending\":\"False\",\"Principal\":\"lee@example.com\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_id",
+            "value": "c1d2e3f4-0a1b-4c2d-8e3f-000000000001"
+          },
+          {
+            "key": "target_name",
+            "value": "Lee Park"
+          },
+          {
+            "key": "target_user_id",
+            "value": "a90b4449675f4fcf97e1663623334d74"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_SYSTEMLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix Cloud",
+      "event_time_usec": 1792462540120000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "serviceprincipal",
+      "event_name": "platform/serviceprincipal/secretrotation",
+      "event_source": "platform",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "Alex Kim",
+      "user_id": "b80c5550786f5adf08f2774734445e85",
+      "user_type": "administrator",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "7d1e5f60-1a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "resource_type": "serviceprincipal",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Service principal 'siem-bridge' secret was rotated."
+          },
+          {
+            "key": "after",
+            "value": "{\"SecretExpiry\":\"2027-04-18T00:00:00Z\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "record_id",
+            "value": "c1d2e3f4-0a1b-4c2d-8e3f-000000000002"
+          },
+          {
+            "key": "target_name",
+            "value": "siem-bridge"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_SYSTEMLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix Cloud",
+      "event_time_usec": 1792467011000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "cws",
+      "event_name": "platform/identityprovider/azuread/authdomain/updatenamefailed",
+      "event_source": "platform",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "CwcSystem",
+      "user_type": "system",
+      "status": "Failure",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "exampleco1x2y",
+          "resource_type": "cws",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "message",
+            "value": "Microsoft Entra ID auth domain name change failed."
+          },
+          {
+            "key": "before",
+            "value": "{\"AuthDomain\":\"example-auth\"}"
+          },
+          {
+            "key": "after",
+            "value": "{\"AuthDomain\":\"example-signin\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "target_name",
+            "value": "example-auth"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792469129000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ConfigurationChange",
+      "event_name": "Create Delivery Group",
+      "event_source": "Studio",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "EXAMPLE\\akim",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1105",
+      "source_address": "192.0.2.15",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "3061173e-0a1b-4c2d-8e3f-405162738495",
+          "resource_type": "site",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "text",
+            "value": "Create Delivery Group 'Finance Desktops'"
+          },
+          {
+            "key": "target_types",
+            "value": "DesktopGroup"
+          },
+          {
+            "key": "Name",
+            "value": "Finance Desktops"
+          },
+          {
+            "key": "DesktopKind",
+            "value": "Shared"
+          },
+          {
+            "key": "SessionSupport",
+            "value": "MultiSession"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_id",
+            "value": "0d96ecf1-4c73-4a0c-9476-000000000004"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-20T04:05:31Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792473058000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ConfigurationChange",
+      "event_name": "Remove Machines from Machine Catalog",
+      "event_source": "Broker SDK",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "EXAMPLE\\jsmith",
+      "user_id": "S-1-5-21-1004336348-1177238915-682003330-1107",
+      "source_address": "198.51.100.30",
+      "status": "Failure",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "3061173e-0a1b-4c2d-8e3f-405162738495",
+          "resource_type": "site",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "text",
+            "value": "Remove Machines from Machine Catalog 'Finance VDAs'"
+          },
+          {
+            "key": "target_types",
+            "value": "Catalog,Machine"
+          },
+          {
+            "key": "Catalog",
+            "value": "Finance VDAs"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_id",
+            "value": "0d96ecf1-4c73-4a0c-9476-000000000005"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-20T05:11:02Z"
+          },
+          {
+            "key": "labels",
+            "value": "change-1042"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792476012000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "AdminActivity",
+      "event_name": "Log off Session",
+      "event_source": "Monitor",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "akim@example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "3061173e-0a1b-4c2d-8e3f-405162738495",
+          "resource_type": "site",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "text",
+            "value": "Log off Session 'EXAMPLE\\jsmith'"
+          },
+          {
+            "key": "target_types",
+            "value": "Session"
+          },
+          {
+            "key": "Session",
+            "value": "EXAMPLE\\jsmith"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_id",
+            "value": "0d96ecf1-4c73-4a0c-9476-000000000006"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-20T06:00:14Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792480360110000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "akim@example.com",
+      "target_domain_name": "EXAMPLE",
+      "user_display_name": "Alex Kim",
+      "extra_samaccountname": "akim",
+      "extra_userprincipalname": "akim@example.com",
+      "source_address": "198.51.100.44",
+      "extra_workstationname": "LAPTOP-07",
+      "target_host_name": "vda-fin-01.corp.example.com",
+      "session_id": "00000000-0000-4000-8000-000000000101",
+      "auth_system": "Citrix DaaS",
+      "application_name": "Workspace",
+      "logon_application_family": "HDX",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_type": "REMOTEINTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "exampleco1x2y"
+          },
+          {
+            "key": "connection_id",
+            "value": "408601"
+          },
+          {
+            "key": "client_platform",
+            "value": "Windows"
+          },
+          {
+            "key": "client_version",
+            "value": "24.9.10.28"
+          },
+          {
+            "key": "reconnect",
+            "value": "false"
+          },
+          {
+            "key": "connected_via",
+            "value": "192.0.2.36"
+          },
+          {
+            "key": "logon_end",
+            "value": "2026-10-20T07:12:53.133Z"
+          },
+          {
+            "key": "delivery_group_id",
+            "value": "b62f4949-0756-4a1e-94d9-e70cdfd0a198"
+          },
+          {
+            "key": "user_sid",
+            "value": "S-1-5-21-1004336348-1177238915-682003330-1105"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792489202517000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "akim@example.com",
+      "target_domain_name": "EXAMPLE",
+      "user_display_name": "Alex Kim",
+      "extra_samaccountname": "akim",
+      "extra_userprincipalname": "akim@example.com",
+      "source_address": "203.0.113.70",
+      "extra_workstationname": "MACBOOK-AIR",
+      "target_host_name": "vda-fin-01.corp.example.com",
+      "session_id": "00000000-0000-4000-8000-000000000101",
+      "auth_system": "Citrix DaaS",
+      "application_name": "Workspace",
+      "logon_application_family": "HDX",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_type": "REMOTEINTERACTIVE",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "customer_id",
+            "value": "exampleco1x2y"
+          },
+          {
+            "key": "connection_id",
+            "value": "408655"
+          },
+          {
+            "key": "client_platform",
+            "value": "Macintosh"
+          },
+          {
+            "key": "client_version",
+            "value": "24.08.0.32"
+          },
+          {
+            "key": "reconnect",
+            "value": "true"
+          },
+          {
+            "key": "connected_via",
+            "value": "192.0.2.37"
+          },
+          {
+            "key": "gateway",
+            "value": "gateway.example.com"
+          },
+          {
+            "key": "delivery_group_id",
+            "value": "b62f4949-0756-4a1e-94d9-e70cdfd0a198"
+          },
+          {
+            "key": "user_sid",
+            "value": "S-1-5-21-1004336348-1177238915-682003330-1105"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "CITRIX_CLOUD_JSON_PARENT > CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Citrix DaaS",
+      "event_time_usec": 1792509672000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "ConfigurationChange",
+      "event_name": "Remove Application",
+      "event_source": "Broker SDK",
+      "recipient_account_id": "exampleco1x2y",
+      "user_name": "jsmith@example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "3061173e-0a1b-4c2d-8e3f-405162738495",
+          "resource_type": "site",
+          "resource_account_id": "exampleco1x2y"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "text",
+            "value": "Remove Application 'DataExplorer'"
+          },
+          {
+            "key": "target_types",
+            "value": "Application"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_id",
+            "value": "0d96ecf1-4c73-4a0c-9476-000000000009"
+          }
+        ]
+      }
+    }
+  }
+]
