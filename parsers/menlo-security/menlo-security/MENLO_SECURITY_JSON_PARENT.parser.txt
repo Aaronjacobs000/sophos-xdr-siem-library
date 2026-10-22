@@ -1,0 +1,29 @@
+!SAMPLE={"menlo_record":"web","event_time":"2026-10-21T21:02:11.218000","name":"page_request","userid":"akim@example.com","x-client-ip":"203.0.113.10","x-client-country":"AU","xff_ip":"NA","egress_ip":"198.51.100.200","egress_country":"AU","origin_ip":"192.0.2.80","origin_country":"US","dst":"192.0.2.80","domain":"login.example.net","url":"https://login.example.net/account/verify?session=8812","top_url":"https://login.example.net/account/verify?session=8812","referer":"https://mail.example.com/","protocol":"https","request_type":"GET","response_code":"200","content-type":"text/html; charset=utf-8","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","browser_and_version":"Chrome_141","ua_type":"supported_browser","categories":"Business","threats":"cats_Phishing & Fraud","threat_types":"Phishing","risk_score":"high","risk_tally":"3","pe_action":"isolate","pe_rulename":"Isolate risky sites","pe_reason":"6c6ea27d-5350","filename":"NA","file_size":"NA","sha256":"NA","has_password":"false","is_iframe":"false","tab_id":"1","full_session_id":"KbJQIDPS-1","region":"ap-southeast-2a","region_name":"Sydney","severity":"5","version":"2.0","product":"MSIP","vendor":"Menlo Security"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"menlo_record"\s*:\s*"[a-z_]+"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Menlo Security events from the Menlo Log API, pulled by the example bridge in
+# bridges/menlo-security-logs and posted to HTTP Ingest as JSON lines. The bridge puts
+# "menlo_record" first, with the event's log type, such as "web" or "audit".
+# Parent: hands web logs (page requests, file downloads and proxy events) to the HTTP child and
+# admin audit logs to the CloudAudit child. Other log types, such as email or dlp, stay here as
+# generic records, with the time and the log format version only.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Menlo Security"
+logType = json["$.menlo_record"]
+name = json["$.name"]
+# version is the log format version, such as 2.0.
+sensorVersion$ = json["$.version"]
+# event_time has no zone, such as 2026-10-21T21:02:11.218000, and is read as UTC.
+eventTimeUsec$ = DATETIME(json["$.event_time"], "2006-01-02T15:04:05.999999999")
+eventType$ = "other"
+eventType$ = IF logType == "web" THEN "http" ELSE eventType$
+eventType$ = IF logType == "audit" THEN "audit" ELSE eventType$
