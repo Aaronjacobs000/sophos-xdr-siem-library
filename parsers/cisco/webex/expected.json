@@ -1,0 +1,536 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792620072304000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "M2U0ZjVhNmItN2M4ZC00ZTlmLThhMWItMmMzZDRlNWY2YTdi",
+      "auth_system": "Cisco Webex",
+      "target_user_name": "sam.admin@example.com",
+      "user_display_name": "Sam Admin",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "status": "An Admin logged in",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "logon_application_family": "Control Hub",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record",
+            "value": "admin_audit"
+          },
+          {
+            "key": "event_category",
+            "value": "LOGINS"
+          },
+          {
+            "key": "action_text",
+            "value": "Sam Admin logged into organization Acme Inc."
+          },
+          {
+            "key": "actor_id",
+            "value": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "admin_role",
+            "value": "Full_Admin"
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792620340118000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "N2E1YzMwZDItOGI0Zi00YjE5LWE3ZTQtM2Y5YjBjMWQ1YTZl",
+      "event_type": "USERS",
+      "event_source": "Webex Control Hub",
+      "event_name": "A user was created",
+      "user_name": "sam.admin@example.com",
+      "user_id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "recipient_account_id": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY",
+      "target_user_name": "new.starter@example.com",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZjliNmMxZC04ZTNhLTRiN2YtOWQyYy01YTFlMGYzYjdjNjQ",
+          "resource_type": "USER",
+          "resource_account_id": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_text",
+            "value": "Sam Admin created user new.starter@example.com"
+          },
+          {
+            "key": "target_name",
+            "value": "new.starter@example.com"
+          },
+          {
+            "key": "actor_name",
+            "value": "Sam Admin"
+          },
+          {
+            "key": "admin_role",
+            "value": "Full_Admin"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_1d2e3f40-5a6b-4c7d-8e9f-a0b1c2d3e4f5_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792620543950000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "OWIzYzRkNWUtNmY3YS00YjhjLTlkMGUtMWYyYTNiNGM1ZDZl",
+      "event_type": "LICENSES",
+      "event_source": "Webex Control Hub",
+      "event_name": "User license was updated",
+      "user_name": "sam.admin@example.com",
+      "user_id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY",
+      "source_address": "2001:db8::10",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "recipient_account_id": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY",
+      "target_user_name": "new.starter@example.com",
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZjliNmMxZC04ZTNhLTRiN2YtOWQyYy01YTFlMGYzYjdjNjQ",
+          "resource_type": "USER",
+          "resource_account_id": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "action_text",
+            "value": "Sam Admin updated the licenses of new.starter@example.com: Webex Calling Professional added"
+          },
+          {
+            "key": "target_name",
+            "value": "new.starter@example.com"
+          },
+          {
+            "key": "actor_name",
+            "value": "Sam Admin"
+          },
+          {
+            "key": "admin_role",
+            "value": "Full_Admin"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_9a8b7c6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792621827002000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "ZjFlMmQzYzQtYjVhNi00Nzk4LTg5YWItY2RlZjAxMjM0NTY3",
+      "auth_system": "Cisco Webex",
+      "target_user_name": "sam.admin@example.com",
+      "user_display_name": "Sam Admin",
+      "source_address": "192.0.2.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "status": "An Admin logged out",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "logon_application_family": "Control Hub",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record",
+            "value": "admin_audit"
+          },
+          {
+            "key": "event_category",
+            "value": "LOGOUT"
+          },
+          {
+            "key": "action_text",
+            "value": "Sam Admin logged out of organization Acme Inc."
+          },
+          {
+            "key": "actor_id",
+            "value": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "admin_role",
+            "value": "Full_Admin"
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_0f1e2d3c-4b5a-4968-8776-655443322110_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792624495731000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "YjdjOGQ5ZTAtZjFhMi00YjNjLTlkNGUtNWY2YTdiOGM5ZDBl",
+      "auth_system": "Cisco Webex",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "198.51.100.20",
+      "user_agent": "Webex/45.10.0.33234 (Windows 11; x64)",
+      "status": "A user logged in",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record",
+            "value": "security_audit"
+          },
+          {
+            "key": "event_category",
+            "value": "LOGINS"
+          },
+          {
+            "key": "action_text",
+            "value": "Pat Example logged into organization Acme Inc."
+          },
+          {
+            "key": "actor_id",
+            "value": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZDNlNGY1YS02YjdjLTRkOGUtOWYwYS0xYjJjM2Q0ZTVmNmE"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792627082410000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "YzhkOWUwZjEtYTJiMy00YzRkLWFlNWYtNmE3YjhjOWQwZTFm",
+      "auth_system": "Cisco Webex",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "198.51.100.20",
+      "user_agent": "Webex/45.10.0.33234 (Windows 11; x64)",
+      "status": "A user logged out",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "record",
+            "value": "security_audit"
+          },
+          {
+            "key": "event_category",
+            "value": "LOGOUT"
+          },
+          {
+            "key": "action_text",
+            "value": "Pat Example logged out of organization Acme Inc."
+          },
+          {
+            "key": "actor_id",
+            "value": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZDNlNGY1YS02YjdjLTRkOGUtOWYwYS0xYjJjM2Q0ZTVmNmE"
+          },
+          {
+            "key": "actor_org_name",
+            "value": "Acme Inc."
+          },
+          {
+            "key": "tracking_id",
+            "value": "ATLAS_8c9d0e1f-2a3b-4c4d-9e5f-6a7b8c9d0e1f_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_CALLS",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792621816545000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f0001",
+      "event_type": "ORIGINATING",
+      "event_source": "Webex Calling",
+      "event_name": "SIP_INTERNATIONAL",
+      "user_name": "Pat Example",
+      "user_id": "6f7a8b9c-0d1e-4f2a-9b3c-4d5e6f7a8b9c",
+      "user_type": "User",
+      "recipient_account_id": "4a7f0e2c-1b3d-4c5e-8f60-7a8b9c0d1e2f",
+      "source_address": "203.0.113.77",
+      "status": "Success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "calling_number",
+            "value": "+61255501234"
+          },
+          {
+            "key": "called_number",
+            "value": "+442079460123"
+          },
+          {
+            "key": "dialed_digits",
+            "value": "0011442079460123"
+          },
+          {
+            "key": "international_country",
+            "value": "GB"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "1049"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_outcome_reason",
+            "value": "Normal"
+          },
+          {
+            "key": "answered",
+            "value": "true"
+          },
+          {
+            "key": "location",
+            "value": "Sydney"
+          },
+          {
+            "key": "client_type",
+            "value": "WXC_CLIENT"
+          },
+          {
+            "key": "pstn_vendor_name",
+            "value": "Cisco Calling Plans"
+          },
+          {
+            "key": "outbound_trunk",
+            "value": "OutTrunk"
+          },
+          {
+            "key": "correlation_id",
+            "value": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_CALLS",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792624791002000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f0002",
+      "event_type": "TERMINATING",
+      "event_source": "Webex Calling",
+      "event_name": "SIP_INBOUND",
+      "user_name": "Lee Example",
+      "user_id": "58a1e1d3-a16b-45dd-981e-8b4ebf96ad7d",
+      "user_type": "User",
+      "recipient_account_id": "4a7f0e2c-1b3d-4c5e-8f60-7a8b9c0d1e2f",
+      "status": "Refusal",
+      "error_message": "CallRejected",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "calling_number",
+            "value": "+15550123"
+          },
+          {
+            "key": "called_number",
+            "value": "+61255501240"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "0"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location",
+            "value": "Sydney"
+          },
+          {
+            "key": "client_type",
+            "value": "WXC_DEVICE"
+          },
+          {
+            "key": "device_mac",
+            "value": "00005E005343"
+          },
+          {
+            "key": "caller_reputation_score",
+            "value": "0.8"
+          },
+          {
+            "key": "caller_reputation_score_reason",
+            "value": "Robocall"
+          },
+          {
+            "key": "caller_reputation_service_result",
+            "value": "block"
+          },
+          {
+            "key": "inbound_trunk",
+            "value": "InTrunk"
+          },
+          {
+            "key": "correlation_id",
+            "value": "9f9f2ed8-5a36-46a6-8ad8-37348a935646"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "WEBEX_JSON_PARENT > WEBEX_JSON_CHILD_CALLS",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Cisco Webex",
+      "event_time_usec": 1792627351270000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f0003",
+      "event_type": "ORIGINATING",
+      "event_source": "Webex Calling",
+      "event_name": "SIP_PREMIUM",
+      "user_name": "Lobby Phone",
+      "user_id": "69b2f2e4-b27c-46ee-a92f-9c5fc0a7be8e",
+      "user_type": "Place",
+      "recipient_account_id": "4a7f0e2c-1b3d-4c5e-8f60-7a8b9c0d1e2f",
+      "status": "Failure",
+      "error_message": "InternalError",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "calling_number",
+            "value": "+61255501250"
+          },
+          {
+            "key": "called_number",
+            "value": "+611900555123"
+          },
+          {
+            "key": "dialed_digits",
+            "value": "01900555123"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "0"
+          },
+          {
+            "key": "redirect_reason",
+            "value": "Unconditional"
+          },
+          {
+            "key": "redirecting_number",
+            "value": "+61255501251"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "location",
+            "value": "Melbourne"
+          },
+          {
+            "key": "client_type",
+            "value": "WXC_DEVICE"
+          },
+          {
+            "key": "device_mac",
+            "value": "00005E005344"
+          },
+          {
+            "key": "authorization_code_used",
+            "value": "true"
+          },
+          {
+            "key": "correlation_id",
+            "value": "a0a03fe9-6b47-47b7-9be9-48459ba46757"
+          }
+        ]
+      }
+    }
+  }
+]

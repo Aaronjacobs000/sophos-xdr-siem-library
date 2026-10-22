@@ -1,0 +1,36 @@
+!SAMPLE={"webex_record":"admin_audit","id":"N2E1YzMwZDItOGI0Zi00YjE5LWE3ZTQtM2Y5YjBjMWQ1YTZl","actorOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actorId":"Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY","created":"2026-10-21T22:05:40.118Z","data":{"actorOrgName":"Acme Inc.","targetName":"new.starter@example.com","eventDescription":"A user was created","actorName":"Sam Admin","actorEmail":"sam.admin@example.com","adminRoles":["Full_Admin"],"trackingId":"ATLAS_1d2e3f40-5a6b-4c7d-8e9f-a0b1c2d3e4f5_0","targetType":"USER","targetId":"Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZjliNmMxZC04ZTNhLTRiN2YtOWQyYy01YTFlMGYzYjdjNjQ","eventCategory":"USERS","actorUserAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","actorIp":"192.0.2.10","targetOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actionText":"Sam Admin created user new.starter@example.com","targetOrgName":"Acme Inc."}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"webex_record"\s*:\s*"(?:admin_audit|security_audit|cdr)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Webex admin audit events, security audit events (sign-ins and sign-outs) and Webex
+# Calling detailed call history, pulled by the example bridge in bridges/webex-audit-and-call-history
+# and posted to HTTP Ingest as JSON lines. The bridge puts "webex_record" first (admin_audit,
+# security_audit or cdr).
+# Parent: hands sign-ins and sign-outs (security audit events, and admin audit events in the LOGINS
+# and LOGOUT categories) to the Auth child, other admin audit events to the CloudAudit child, and call
+# records to the call CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Cisco Webex"
+kind = json["$.webex_record"]
+cdr = kind == "cdr"
+# The API's examples write categories as EventCategory.LOGINS; Webex's records and the security audit
+# example write LOGINS. Both are read.
+cat = REPLACE(STRING(json["$.data.eventCategory"]), "EventCategory.", "")
+sensorEventId$ = IF cdr THEN json["$['Report ID']"] ELSE json["$.id"]
+# Times are ISO 8601 in UTC, such as 2019-01-02T16:58:36.845Z: created for audit events, and the
+# call's Start time for call records.
+when = IF cdr THEN json["$['Start time']"] ELSE json["$.created"]
+eventTimeUsec$ = DATETIME(when, "2006-01-02T15:04:05.999999999Z07:00")
+signin = kind == "security_audit" OR (kind == "admin_audit" AND (cat == "LOGINS" OR cat == "LOGOUT"))
+route = "audit"
+route = IF signin THEN "auth" ELSE route
+route = IF cdr THEN "call" ELSE route
+eventType$ = route
