@@ -1,0 +1,239 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctl01",
+      "client_hostname": "ctl01",
+      "target_hostname": "web01",
+      "channel": "ansible-command",
+      "operation_name": "task ok",
+      "operation": "task",
+      "result": "ok",
+      "command": "systemctl restart nginx"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctl01",
+      "client_hostname": "ctl01",
+      "target_hostname": "db01",
+      "channel": "ansible-command",
+      "operation_name": "task failed",
+      "operation": "task",
+      "result": "failed",
+      "command": "[\"psql\",\"-c\",\"DROP TABLE audit_log\"]",
+      "possible_cause": "ERROR:  permission denied for table audit_log"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctl01",
+      "client_hostname": "ctl01",
+      "target_hostname": "web03",
+      "channel": "ansible-command",
+      "operation_name": "task unreachable",
+      "operation": "task",
+      "result": "unreachable",
+      "possible_cause": "Failed to connect to the host via ssh: ssh: connect to host 192.0.2.53 port 22: Connection timed out"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctl01",
+      "client_hostname": "ctl01",
+      "target_hostname": "web02",
+      "channel": "ansible-command",
+      "operation_name": "task skipped",
+      "operation": "task",
+      "result": "skipped"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "ctl01",
+      "client_hostname": "ctl01",
+      "target_hostname": "db01",
+      "channel": "ansible-command",
+      "operation_name": "task ok",
+      "operation": "task",
+      "result": "ok"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534205118000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-web-01",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "target_host_name": "awx-web-01",
+      "auth_system": "Ansible AWX",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534241902000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-web-01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.61",
+      "target_host_name": "awx-web-01",
+      "auth_system": "Ansible AWX",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "extra_failurereason": "Login failed for user admin from 203.0.113.61"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534337330000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-web-01",
+      "username": "jsmith",
+      "operation": "create",
+      "operation_name": "create credential",
+      "namespace": "credential",
+      "command": "{\"credential_type\":\"Machine-1\",\"description\":\"\",\"id\":12,\"inputs\":{\"ssh_key_data\":\"hidden\",\"username\":\"deploy\"},\"name\":\"prod-ssh\",\"organization\":\"Default-1\"}",
+      "client_hostname": "awx-web-01",
+      "channel": "activity stream",
+      "result": "success"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534382551000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-web-01",
+      "username": "jsmith",
+      "operation": "create",
+      "operation_name": "create job",
+      "namespace": "job",
+      "command": "{\"credentials\":[\"prod-ssh (12)\"],\"extra_vars\":\"{}\",\"id\":123,\"inventory\":\"Production-2\",\"job_type\":\"run\",\"limit\":\"web*\",\"name\":\"Deploy web\",\"playbook\":\"site.yml\",\"project\":\"web-project-4\"}",
+      "client_hostname": "awx-web-01",
+      "channel": "activity stream",
+      "result": "success"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534480006000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-web-01",
+      "username": "admin",
+      "operation": "associate",
+      "operation_name": "associate user role",
+      "namespace": "user",
+      "command": "{\"action\":\"associate\",\"object1\":\"user\",\"object1_pk\":9,\"object2\":\"role\",\"object2_pk\":31,\"relationship\":\"awx.main.models.rbac.Role_members+\"}",
+      "client_hostname": "awx-web-01",
+      "channel": "activity stream",
+      "result": "success"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JOB_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534400774000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-task-01",
+      "target_hostname": "web01",
+      "operation_name": "ansible.builtin.service",
+      "operation": "runner_on_failed",
+      "command": "Restart nginx",
+      "namespace": "site.yml",
+      "event_id": 123,
+      "client_hostname": "awx-task-01",
+      "channel": "job events",
+      "result": "failed",
+      "possible_cause": "Unable to restart service nginx: Job for nginx.service failed"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT > ANSIBLE_AWX_JOB_EVENTS_JSON_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534404120000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "awx-task-01",
+      "target_hostname": "web02",
+      "operation_name": "ansible.builtin.shell",
+      "operation": "runner_on_ok",
+      "command": "echo \"$KEY\" >> /home/deploy/.ssh/authorized_keys",
+      "namespace": "site.yml",
+      "event_id": 123,
+      "client_hostname": "awx-task-01",
+      "channel": "job events",
+      "result": "ok"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ANSIBLE_AWX_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Ansible AWX",
+      "event_time_usec": 1792534385410000,
+      "host_id": "awx-task-01"
+    }
+  }
+]

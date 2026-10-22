@@ -1,0 +1,39 @@
+!SAMPLE=<11>ctl01 ansible-command: task execution FAILED; host: db01; message: {"changed": true, "cmd": ["psql", "-c", "DROP TABLE audit_log"], "delta": "0:00:00.051000", "end": "2026-10-21 09:16:02.101200", "msg": "non-zero return code", "rc": 1, "start": "2026-10-21 09:16:02.050200", "stderr": "ERROR:  permission denied for table audit_log", "stderr_lines": ["ERROR:  permission denied for table audit_log"], "stdout": "", "stdout_lines": []}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^(?:<\d{1,3}>)?\S*\s?ansible-command: task execution (?:OK|FAILED|UNREACHABLE|SKIPPED); host: [^;]*; message: 
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: ansible-core runs with the community.general.syslog_json callback plugin, which sends one
+# syslog message (UDP) per task result to the data collector, with no time and with a NUL at the end:
+#   <PRI><controller> ansible-command: task execution OK|FAILED|UNREACHABLE|SKIPPED; host: <inventory host>; message: <result JSON, or skipped>
+# Standalone parser for Management Event: the managed host as the target, the controller as the
+# client, the status as the result, the module's command (cmd) as the command, and the module's
+# message as the cause of a failure. Results hidden by no_log carry no command.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+c = originalData$|^(?:<\d{1,3}>)?(?P<ctl>\S*)\s?ansible-command: task execution (?P<status>OK|FAILED|UNREACHABLE|SKIPPED); host: (?P<host>[^;]*); message: (?P<msg>.*?)\x00?\s*$
+status = c["status"]
+msg = STRING(c["msg"])
+jb = msg|^(?P<b>\{)
+isJson = STRING(jb["b"]) != ""
+j = IF isJson THEN JSON(msg) ELSE NULL
+
+sensorType$ = "Ansible"
+ctl = STRING(c["ctl"])
+hostId$ = IF ctl != "" THEN ctl ELSE NULL
+clientHostname$ = IF ctl != "" THEN ctl ELSE NULL
+targetHostname$ = c["host"]
+channel$ = "ansible-command"
+operationName$ = "task " + LOWERCASE(status)
+operation$ = "task"
+result$ = LOWERCASE(status)
+# cmd is text for shell and a list of arguments for command.
+cmd = IF isJson THEN STRING(j["$.cmd"]) ELSE ""
+command$ = IF cmd != "" THEN cmd ELSE NULL
+why = IF isJson THEN STRING(j["$.msg"]) ELSE ""
+err = IF isJson THEN STRING(j["$.stderr"]) ELSE ""
+why = IF why == "" OR why == "non-zero return code" THEN (IF err != "" THEN err ELSE why) ELSE why
+possibleCause$ = IF status != "OK" AND why != "" THEN why ELSE NULL

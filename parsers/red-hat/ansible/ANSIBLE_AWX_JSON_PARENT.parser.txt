@@ -1,0 +1,40 @@
+!SAMPLE={"@timestamp": "2026-10-20T22:10:05.118Z", "message": "User jsmith logged in from 192.0.2.25", "host": "awx-web-01", "level": "INFO", "logger_name": "awx.api.generics", "stack_info": null, "guid": "-", "cluster_host_id": "awx-web-01", "tower_uuid": "5f0c9a3e-8d2b-4c71-9e4a-2b6f1d3c8a90"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^(?:<\d{1,3}>)?[^{]*\{"@timestamp":\s*"\d{4}-\d{2}-\d{2}T[^"]*",\s*"message":.*"logger_name":\s*"awx\.
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Ansible AWX and Red Hat Ansible Automation Platform controller external logging (Settings >
+# Logging), one JSON record per line over TCP or UDP to the data collector:
+#   {"@timestamp": "<UTC>", "message": "<text>", "host": "<node>", "level": "<level>", "logger_name": "<logger>", <fields>,
+#    "cluster_host_id": "<node>", "tower_uuid": "<install>"}
+# Parent: claims every record from an awx logger and hands them on:
+#   awx.api.generics sign-ins, failed sign-ins and sign-outs        to the Auth child
+#   awx.analytics.activity_stream (the audit trail)                 to the Management Event child
+#   awx.analytics.job_events host results (runner_on_ok, _failed,
+#     _unreachable, _async_failed and the item results)             to the job events child
+# Other records (other job events, job_lifecycle, system_tracking, the rest of awx) stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
+
+jm = originalData$|(?P<j>\{"@timestamp":.*\})\s*$
+j = JSON(jm["j"])
+logger = STRING(j["$.logger_name"])
+msg = STRING(j["$.message"])
+node = STRING(j["$.cluster_host_id"])
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Ansible AWX"
+hostId$ = IF node != "" THEN node ELSE NULL
+# The key starts with @, which Sophos NG-SIEM reads only in brackets.
+eventTimeUsec$ = DATETIME(j["$['@timestamp']"], "2006-01-02T15:04:05.999999999Z07:00")
+
+event = STRING(j["$.event"])
+hostResult = event == "runner_on_ok" OR event == "runner_on_failed" OR event == "runner_on_unreachable" OR event == "runner_on_async_failed" OR event == "runner_item_on_ok" OR event == "runner_item_on_failed"
+lf = msg|^(?P<f>Login failed for user )
+signIn = logger == "awx.api.generics" AND (CONTAINS(msg, " logged in from ") OR STRING(lf["f"]) != "" OR CONTAINS(msg, " logged out."))
+eventType$ = "other"
+eventType$ = IF signIn THEN "auth" ELSE eventType$
+eventType$ = IF logger == "awx.analytics.activity_stream" THEN "activity" ELSE eventType$
+eventType$ = IF logger == "awx.analytics.job_events" AND hostResult THEN "job" ELSE eventType$
