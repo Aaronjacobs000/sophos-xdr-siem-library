@@ -1,0 +1,451 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "QUALYS_VMDR_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Qualys VMDR",
+      "event_time_usec": 1792548849000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Qualys",
+      "provider": "Qualys VMDR",
+      "log_type": "detection",
+      "alert_id": "8812004417",
+      "title": "Microsoft Windows HTTP Protocol Stack Remote Code Execution Vulnerability for October 2026",
+      "summary": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\HTTP\\Parameters\\EnableHttp2Tls = 1\nC:\\Windows\\System32\\drivers\\http.sys Version is 10.0.20348.2700",
+      "status": "New",
+      "confidence": "Confirmed",
+      "alert_category": "Windows",
+      "vendor_severity": "5",
+      "severity": "CRITICAL",
+      "risk_score": 95,
+      "updated_time_usec": 1792548849000000,
+      "created_time_usec": 1792548097000000,
+      "first_event_time_usec": 1792548097000000,
+      "last_event_time_usec": 1792548097000000,
+      "destination_address": "192.0.2.41",
+      "target_host_name": "web01",
+      "destination_port": 443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "qid",
+            "value": "92212"
+          },
+          {
+            "key": "qualys_host_id",
+            "value": "118204563"
+          },
+          {
+            "key": "qualys_platform",
+            "value": "qualysapi.example.com"
+          },
+          {
+            "key": "asset_id",
+            "value": "52611872"
+          },
+          {
+            "key": "tracking_method",
+            "value": "AGENT"
+          },
+          {
+            "key": "os",
+            "value": "Windows Server 2022 Datacenter 64 bit Edition Version 21H2 Build 20348.2762"
+          },
+          {
+            "key": "fqdn",
+            "value": "web01.corp.example.com"
+          },
+          {
+            "key": "netbios",
+            "value": "WEB01"
+          },
+          {
+            "key": "qds_severity",
+            "value": "CRITICAL"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-2026-40112"
+          },
+          {
+            "key": "cvss3_base",
+            "value": "9.8"
+          },
+          {
+            "key": "cvss3_vector",
+            "value": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          {
+            "key": "cvss_base",
+            "value": "9.3"
+          },
+          {
+            "key": "patchable",
+            "value": "1"
+          },
+          {
+            "key": "threat_intelligence",
+            "value": "Exploit_Public,Remote_Code_Execution,Unauthenticated_Exploitation"
+          },
+          {
+            "key": "times_found",
+            "value": "1"
+          },
+          {
+            "key": "ssl",
+            "value": "1"
+          },
+          {
+            "key": "vuln_type",
+            "value": "Vulnerability"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "QUALYS_VMDR_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Qualys VMDR",
+      "event_time_usec": 1792554051000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Qualys",
+      "provider": "Qualys VMDR",
+      "log_type": "detection",
+      "alert_id": "8812004502",
+      "title": "SNMP Default Community Name Vulnerability",
+      "summary": "public",
+      "status": "Active",
+      "confidence": "Potential",
+      "alert_category": "SNMP",
+      "vendor_severity": "3",
+      "severity": "MEDIUM",
+      "risk_score": 41,
+      "updated_time_usec": 1792554051000000,
+      "created_time_usec": 1788319124000000,
+      "first_event_time_usec": 1788319124000000,
+      "last_event_time_usec": 1792552930000000,
+      "destination_address": "198.51.100.17",
+      "target_host_name": "edge-rtr02",
+      "destination_port": 161,
+      "protocol": 17,
+      "additional_data": {
+        "record": [
+          {
+            "key": "qid",
+            "value": "78031"
+          },
+          {
+            "key": "qualys_host_id",
+            "value": "118204590"
+          },
+          {
+            "key": "qualys_platform",
+            "value": "qualysapi.example.com"
+          },
+          {
+            "key": "asset_id",
+            "value": "52611905"
+          },
+          {
+            "key": "tracking_method",
+            "value": "IP"
+          },
+          {
+            "key": "os",
+            "value": "Cisco IOS XE 17.9"
+          },
+          {
+            "key": "fqdn",
+            "value": "edge-rtr02.example.net"
+          },
+          {
+            "key": "qds_severity",
+            "value": "MEDIUM"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-1999-0517"
+          },
+          {
+            "key": "cvss3_base",
+            "value": "7.3"
+          },
+          {
+            "key": "cvss3_vector",
+            "value": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"
+          },
+          {
+            "key": "cvss_base",
+            "value": "7.5"
+          },
+          {
+            "key": "patchable",
+            "value": "0"
+          },
+          {
+            "key": "threat_intelligence",
+            "value": "Easy_Exploit,High_Lateral_Movement"
+          },
+          {
+            "key": "times_found",
+            "value": "8"
+          },
+          {
+            "key": "vuln_type",
+            "value": "Vulnerability"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "QUALYS_VMDR_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Qualys VMDR",
+      "event_time_usec": 1792559402000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Qualys",
+      "provider": "Qualys VMDR",
+      "log_type": "detection",
+      "alert_id": "8811837120",
+      "title": "Ubuntu Security Notification for OpenSSL Vulnerabilities (USN-8012-1)",
+      "summary": "Package Installed Version Required Version\nopenssl 3.0.2-0ubuntu1.18 3.0.2-0ubuntu1.20",
+      "status": "Fixed",
+      "confidence": "Confirmed",
+      "alert_category": "Ubuntu",
+      "vendor_severity": "4",
+      "severity": "HIGH",
+      "risk_score": 70,
+      "updated_time_usec": 1792559402000000,
+      "created_time_usec": 1790744531000000,
+      "first_event_time_usec": 1790744531000000,
+      "last_event_time_usec": 1791953860000000,
+      "closed_time_usec": 1792558713000000,
+      "destination_address": "203.0.113.88",
+      "target_host_name": "db03",
+      "additional_data": {
+        "record": [
+          {
+            "key": "qid",
+            "value": "6150442"
+          },
+          {
+            "key": "qualys_host_id",
+            "value": "118204611"
+          },
+          {
+            "key": "qualys_platform",
+            "value": "qualysapi.example.com"
+          },
+          {
+            "key": "asset_id",
+            "value": "52611930"
+          },
+          {
+            "key": "tracking_method",
+            "value": "AGENT"
+          },
+          {
+            "key": "os",
+            "value": "Ubuntu Linux 22.04.5 LTS"
+          },
+          {
+            "key": "fqdn",
+            "value": "db03.corp.example.com"
+          },
+          {
+            "key": "qds_severity",
+            "value": "HIGH"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-2026-31470,CVE-2026-31471"
+          },
+          {
+            "key": "cvss3_base",
+            "value": "7.5"
+          },
+          {
+            "key": "cvss3_vector",
+            "value": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          {
+            "key": "cvss_base",
+            "value": "6.8"
+          },
+          {
+            "key": "patchable",
+            "value": "1"
+          },
+          {
+            "key": "threat_intelligence",
+            "value": "Denial_of_Service"
+          },
+          {
+            "key": "times_found",
+            "value": "3"
+          },
+          {
+            "key": "vuln_type",
+            "value": "Vulnerability"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "QUALYS_VMDR_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Qualys VMDR",
+      "event_time_usec": 1792564399000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Qualys",
+      "provider": "Qualys VMDR",
+      "log_type": "detection",
+      "alert_id": "8810066291",
+      "title": "QID 380112",
+      "summary": "%ProgramFiles%\\Example Viewer\\viewer.exe Version is 4.2.1 (build 7)",
+      "status": "Re-Opened",
+      "confidence": "Confirmed",
+      "vendor_severity": "2",
+      "severity": "LOW",
+      "risk_score": 28,
+      "updated_time_usec": 1792564399000000,
+      "created_time_usec": 1783491175000000,
+      "first_event_time_usec": 1783491175000000,
+      "last_event_time_usec": 1792564202000000,
+      "destination_address": "2001:db8:10::25",
+      "target_host_name": "LAPTOP-JLEE",
+      "additional_data": {
+        "record": [
+          {
+            "key": "qid",
+            "value": "380112"
+          },
+          {
+            "key": "qualys_host_id",
+            "value": "118204677"
+          },
+          {
+            "key": "qualys_platform",
+            "value": "qualysapi.example.com"
+          },
+          {
+            "key": "asset_id",
+            "value": "52612004"
+          },
+          {
+            "key": "tracking_method",
+            "value": "AGENT"
+          },
+          {
+            "key": "os",
+            "value": "Windows 11 Enterprise 64 bit Edition Version 24H2"
+          },
+          {
+            "key": "netbios",
+            "value": "LAPTOP-JLEE"
+          },
+          {
+            "key": "qds_severity",
+            "value": "LOW"
+          },
+          {
+            "key": "times_found",
+            "value": "14"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "QUALYS_VMDR_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Qualys VMDR",
+      "event_time_usec": 1792548849000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Qualys",
+      "provider": "Qualys VMDR",
+      "log_type": "detection",
+      "alert_id": "8812004433",
+      "title": "Host Scan Time - Scanner",
+      "summary": "Host Name: web01",
+      "status": "New",
+      "confidence": "Info",
+      "alert_category": "Information gathering",
+      "vendor_severity": "1",
+      "severity": "INFO",
+      "updated_time_usec": 1792548849000000,
+      "created_time_usec": 1792548097000000,
+      "first_event_time_usec": 1792548097000000,
+      "last_event_time_usec": 1792548097000000,
+      "destination_address": "192.0.2.41",
+      "target_host_name": "web01",
+      "destination_port": 3389,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "qid",
+            "value": "45038"
+          },
+          {
+            "key": "qualys_host_id",
+            "value": "118204563"
+          },
+          {
+            "key": "qualys_platform",
+            "value": "qualysapi.example.com"
+          },
+          {
+            "key": "asset_id",
+            "value": "52611872"
+          },
+          {
+            "key": "tracking_method",
+            "value": "AGENT"
+          },
+          {
+            "key": "os",
+            "value": "Windows Server 2022 Datacenter 64 bit Edition Version 21H2 Build 20348.2762"
+          },
+          {
+            "key": "fqdn",
+            "value": "web01.corp.example.com"
+          },
+          {
+            "key": "netbios",
+            "value": "WEB01"
+          },
+          {
+            "key": "patchable",
+            "value": "0"
+          },
+          {
+            "key": "times_found",
+            "value": "1"
+          },
+          {
+            "key": "ssl",
+            "value": "1"
+          },
+          {
+            "key": "vuln_type",
+            "value": "Information Gathered"
+          }
+        ]
+      }
+    }
+  }
+]
