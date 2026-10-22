@@ -1,0 +1,61 @@
+{
+  "vendor": "Red Hat",
+  "product": "Ansible",
+  "versions": [
+    "ansible-core 2.15 to 2.20",
+    "AWX 24",
+    "Ansible Automation Platform 2.5 and 2.6"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://docs.ansible.com/ansible/latest/collections/community/general/syslog_json_callback.html",
+    "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/configuring_automation_execution/assembly-controller-logging-aggregation",
+    "https://github.com/ansible/awx/blob/devel/docs/logging_integration.md",
+    "https://github.com/ansible/awx/blob/devel/awx/main/utils/formatters.py"
+  ],
+  "notes": "For ansible-core task results from the community.general.syslog_json callback, and for AWX or Ansible Automation Platform controller external logging sent as JSON over TCP or UDP; the README has the steps. syslog_json lines (<PRI><controller> ansible-command: task execution OK|FAILED|UNREACHABLE|SKIPPED; host: <host>; message: <result JSON>) go to Management Event with the managed host as the target, the controller as the client, the status as the result, the module's cmd as the command, and msg or stderr as the cause of a failure. The plugin sends no time, so the event time is the ingest time, and it ends each message with a NUL, which the parser allows. The controller parent claims records from awx loggers. Sign-ins, failed sign-ins and sign-outs (logger awx.api.generics) go to Auth with the user and address. The activity stream (awx.analytics.activity_stream) goes to Management Event: the actor, the operation, object1 and object2, and the changes JSON as the command; a job launch is create on job. Job events with a host's task result (runner_on_ok, _failed, _unreachable, _async_failed and the item results) go to Management Event with the host, module, task, playbook, cmd, job ID and result. Other records stay generic. Times come from @timestamp (UTC). The controller's HTTPS output sends Basic authentication or a Splunk token, not the bearer token HTTP Ingest needs, so the README uses TCP or UDP. How sure this is: the callback line comes from the plugin's source (GPL-3.0, read only) and the controller records from AWX's formatter and logging source (Apache-2.0); neither Red Hat nor AWX publishes example records, so the samples are made up from the source. That the data collector takes the controller's JSON lines with no syslog header is inferred. Each parser passed Run Test in a lab tenant on 2026-10-22: 129 of 134 fields matched the emulator in each of 3 runs; the other 5 are the callback lines' event times, the ingest time in the tenant and the entry's reference_time in the emulator. A callback line ending with a NUL gave the same fields there. The parent's confirm string picked the same lines. Each child also passed Run Test as a separate parser under its parent (82 of 82 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 runs. Sophos NG-SIEM rejects the JSONPath $.@timestamp, so the parent reads $['@timestamp'].",
+  "parsers": [
+    {
+      "name": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT",
+      "file": "ANSIBLE_SYSLOG_JSON_STANDALONE_MGMT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "ANSIBLE_AWX_JSON_PARENT",
+      "file": "ANSIBLE_AWX_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "ANSIBLE_AWX_JSON_CHILD_AUTH",
+      "file": "ANSIBLE_AWX_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "ANSIBLE_AWX_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "ANSIBLE_AWX_JSON_CHILD_MGMT",
+      "file": "ANSIBLE_AWX_JSON_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "ANSIBLE_AWX_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "ANSIBLE_AWX_JOB_EVENTS_JSON_CHILD_MGMT",
+      "file": "ANSIBLE_AWX_JOB_EVENTS_JSON_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "ANSIBLE_AWX_JSON_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

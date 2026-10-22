@@ -1,0 +1,31 @@
+!SAMPLE={"@timestamp": "2026-10-20T22:13:02.551Z", "message": "Activity Stream update entry for job", "host": "awx-web-01", "level": "INFO", "logger_name": "awx.analytics.activity_stream", "stack_info": null, "changes": {"name": "Deploy web", "job_type": "run", "inventory": "Production-2", "project": "web-project-4", "playbook": "site.yml", "limit": "web*", "credentials": ["prod-ssh (12)"], "extra_vars": "{}", "id": 123}, "relationship": "", "actor": "jsmith", "operation": "create", "object1": "job", "object2": "", "summary_fields": {"job": [{"id": 123, "name": "Deploy web"}], "actor": {"id": 3, "username": "jsmith", "first_name": "Jane", "last_name": "Smith"}}, "cluster_host_id": "awx-web-01", "tower_uuid": "5f0c9a3e-8d2b-4c71-9e4a-2b6f1d3c8a90"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="activity"
+!SCHEMA=scwx.managementevent
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Ansible AWX or Automation Platform controller external logging, JSON.
+# Child of ANSIBLE_AWX_JSON_PARENT: the activity stream (logger awx.analytics.activity_stream), the
+# controller's audit trail, to Management Event: who (actor) created, updated, deleted, associated
+# or disassociated what (object1, and object2 for an association), with the changes as the command.
+# A job launch is operation create on object1 job, with the inventory, limit and credentials in
+# the changes. Secrets in the changes arrive as hidden.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from the values.
+# j, node, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+actor = STRING(j["$.actor"])
+username$ = IF actor != "" THEN actor ELSE NULL
+op = STRING(j["$.operation"])
+o1 = STRING(j["$.object1"])
+o2 = STRING(j["$.object2"])
+operation$ = IF op != "" THEN op ELSE NULL
+operationName$ = IF o2 != "" THEN op + " " + o1 + " " + o2 ELSE op + " " + o1
+namespace$ = IF o1 != "" THEN o1 ELSE NULL
+# changes is a JSON object: the fields of a new or deleted object, [old, new] pairs for an update,
+# or the two objects of an association.
+command$ = STRING(j["$.changes"])
+clientHostname$ = IF node != "" THEN node ELSE NULL
+channel$ = "activity stream"
+result$ = "success"

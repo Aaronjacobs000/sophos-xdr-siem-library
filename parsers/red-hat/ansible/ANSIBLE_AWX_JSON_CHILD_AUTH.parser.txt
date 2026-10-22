@@ -1,0 +1,33 @@
+!SAMPLE={"@timestamp": "2026-10-20T22:10:41.902Z", "message": "Login failed for user admin from 203.0.113.61", "host": "awx-web-01", "level": "WARNING", "logger_name": "awx.api.generics", "stack_info": null, "guid": "-", "cluster_host_id": "awx-web-01", "tower_uuid": "5f0c9a3e-8d2b-4c71-9e4a-2b6f1d3c8a90"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Ansible AWX or Automation Platform controller external logging, JSON.
+# Child of ANSIBLE_AWX_JSON_PARENT: sign-ins to the controller's API and web interface, from logger
+# awx.api.generics, to Auth:
+#   User <user> logged in from <address>
+#   Login failed for user <user> from <address>
+#   User <user> logged out.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces from the values.
+# msg, node, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+a = msg|^(?:User (?P<u1>\S+) logged in from (?P<ip1>\S+)|Login failed for user (?P<u2>\S*) from (?P<ip2>\S+)|User (?P<u3>\S+) logged out\.)
+user = STRING(a["u1"]) + STRING(a["u2"]) + STRING(a["u3"])
+ip = STRING(a["ip1"]) + STRING(a["ip2"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+sourceAddress$ = IF IS_VALID_IP(ip) THEN ip ELSE NULL
+targetHostName$ = IF node != "" THEN node ELSE NULL
+authSystem$ = "Ansible AWX"
+logonApplicationFamily$ = "Web"
+failed = STRING(a["ip2"]) != ""
+out = STRING(a["u3"]) != ""
+authCategory$ = IF out THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF out THEN "LOGOFF" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+failureCategory$ = IF failed THEN "INCORRECT_USER_OR_PASSWORD" ELSE NULL
+extraFailurereason$ = IF failed THEN msg ELSE NULL
