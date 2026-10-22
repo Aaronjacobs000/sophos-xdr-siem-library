@@ -1,0 +1,101 @@
+!SAMPLE={"webex_record":"cdr","Report ID":"5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f0001","Report time":"2026-10-21T22:47:52.723Z","Start time":"2026-10-21T22:30:16.545Z","Answer time":"2026-10-21T22:30:21.102Z","Release time":"2026-10-21 22:47:50.391","Call ID":"SSE2230163211405201218829100@192.0.2.40","Correlation ID":"7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d","Call type":"SIP_INTERNATIONAL","Direction":"ORIGINATING","Calling number":"+61255501234","Called number":"+442079460123","Dialed digits":"0011442079460123","International country":"GB","Duration":1049,"Answered":"true","Call outcome":"Success","Call outcome reason":"Normal","Releasing party":"Local","User":"Pat Example","User UUID":"6f7a8b9c-0d1e-4f2a-9b3c-4d5e6f7a8b9c","User type":"User","User number":"+61255501234","Location":"Sydney","Client type":"WXC_CLIENT","Client version":"45.10.0.33234","OS type":"windows","Public Calling IP Address":"203.0.113.77","Public Called IP Address":"0.0.0.0","PSTN Vendor Name":"Cisco Calling Plans","Outbound trunk":"OutTrunk","Org UUID":"4a7f0e2c-1b3d-4c5e-8f60-7a8b9c0d1e2f","Site UUID":"5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e","Local call ID":"113104021:0","Remote call ID":"113103977:0","Network call ID":"BW2230451711108231501755806@192.0.2.41"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="call"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Webex Calling detailed call history (GET /v1/cdr_stream) from the example bridge: one record
+# per call leg, with keys that hold spaces, such as "Call type".
+# Child of WEBEX_JSON_PARENT: each one to CloudAudit, with the call type (such as SIP_INTERNATIONAL,
+# SIP_PREMIUM or SIP_INBOUND) as the event name, the direction (ORIGINATING or TERMINATING) as the
+# event type, the call outcome as the status, and the device's public address as the source.
+# Call records have no NG-SIEM schema of their own; CloudAudit keeps the user, the call type, the
+# outcome and the numbers searchable. An authorization code stays in original_data: only that one was
+# used goes to additional_event_data.
+# json, kind, cat, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Webex Calling"
+eventName$ = json["$['Call type']"]
+eventType$ = json["$.Direction"]
+userName$ = json["$.User"]
+userId$ = json["$['User UUID']"]
+userType$ = json["$['User type']"]
+recipientAccountId$ = json["$['Org UUID']"]
+ip = STRING(json["$['Public Calling IP Address']"])
+sourceAddress$ = IF ip != "" AND ip != "0.0.0.0" THEN ip ELSE NULL
+outcome = STRING(json["$['Call outcome']"])
+status$ = IF outcome != "" THEN outcome ELSE NULL
+reason = json["$['Call outcome reason']"]
+errorMessage$ = IF outcome != "" AND outcome != "Success" THEN reason ELSE NULL
+
+p1.key$ = "calling_number"
+p1.value$ = json["$['Calling number']"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+p2.key$ = "called_number"
+p2.value$ = json["$['Called number']"]
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+p3.key$ = "dialed_digits"
+p3.value$ = json["$['Dialed digits']"]
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+# International country is set for international calls only.
+p4.key$ = "international_country"
+p4.value$ = json["$['International country']"]
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+dur = json["$.Duration"]
+p5.key$ = "duration_seconds"
+p5.value$ = STRING(dur)
+requestParameters$.record$ = IF dur != NULL THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+p6.key$ = "redirect_reason"
+p6.value$ = json["$['Redirect reason']"]
+requestParameters$.record$ = IF p6.value$ THEN requestParameters$.record$ + [p6] ELSE requestParameters$.record$
+p7.key$ = "redirecting_number"
+p7.value$ = json["$['Redirecting number']"]
+requestParameters$.record$ = IF p7.value$ THEN requestParameters$.record$ + [p7] ELSE requestParameters$.record$
+
+d1.key$ = "call_outcome_reason"
+d1.value$ = reason
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF outcome == "Success" AND d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+d2.key$ = "answered"
+d2.value$ = json["$.Answered"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "location"
+d3.value$ = json["$.Location"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "client_type"
+d4.value$ = json["$['Client type']"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "device_mac"
+d5.value$ = json["$['Device MAC']"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+# The caller reputation score runs from 0.0 to 5.0, with the provider's reason and, on terminating
+# calls, the service's result (allow, captcha-allow, captcha-block or block).
+d6.key$ = "caller_reputation_score"
+d6.value$ = json["$['Caller Reputation Score']"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "caller_reputation_score_reason"
+d7.value$ = json["$['Caller Reputation Score Reason']"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "caller_reputation_service_result"
+d8.value$ = json["$['Caller Reputation Service Result']"]
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+d9.key$ = "pstn_vendor_name"
+d9.value$ = json["$['PSTN Vendor Name']"]
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+d10.key$ = "inbound_trunk"
+d10.value$ = json["$['Inbound trunk']"]
+additionalEventData$.record$ = IF d10.value$ THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$
+d11.key$ = "outbound_trunk"
+d11.value$ = json["$['Outbound trunk']"]
+additionalEventData$.record$ = IF d11.value$ THEN additionalEventData$.record$ + [d11] ELSE additionalEventData$.record$
+d12.key$ = "authorization_code_used"
+d12.value$ = "true"
+additionalEventData$.record$ = IF json["$['Authorization code']"] THEN additionalEventData$.record$ + [d12] ELSE additionalEventData$.record$
+d13.key$ = "correlation_id"
+d13.value$ = json["$['Correlation ID']"]
+additionalEventData$.record$ = IF d13.value$ THEN additionalEventData$.record$ + [d13] ELSE additionalEventData$.record$

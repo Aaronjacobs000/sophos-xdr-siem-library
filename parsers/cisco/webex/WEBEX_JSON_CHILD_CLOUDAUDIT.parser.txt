@@ -1,0 +1,55 @@
+!SAMPLE={"webex_record":"admin_audit","id":"N2E1YzMwZDItOGI0Zi00YjE5LWE3ZTQtM2Y5YjBjMWQ1YTZl","actorOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actorId":"Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY","created":"2026-10-21T22:05:40.118Z","data":{"actorOrgName":"Acme Inc.","targetName":"new.starter@example.com","eventDescription":"A user was created","actorName":"Sam Admin","actorEmail":"sam.admin@example.com","adminRoles":["Full_Admin"],"trackingId":"ATLAS_1d2e3f40-5a6b-4c7d-8e9f-a0b1c2d3e4f5_0","targetType":"USER","targetId":"Y2lzY29zcGFyazovL3VzL1BFT1BMRS8yZjliNmMxZC04ZTNhLTRiN2YtOWQyYy01YTFlMGYzYjdjNjQ","eventCategory":"USERS","actorUserAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","actorIp":"192.0.2.10","targetOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actionText":"Sam Admin created user new.starter@example.com","targetOrgName":"Acme Inc."}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Webex admin audit events (GET /v1/adminAudit/events) from the example bridge, apart from the
+# LOGINS and LOGOUT categories: user, license, role, device, calling and organization changes made in
+# Control Hub.
+# Child of WEBEX_JSON_PARENT: each one to CloudAudit, with the event description as the event name,
+# the category as the event type, the admin as the user and the changed resource, and a user as the
+# target user.
+# json, kind, cat, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Webex Control Hub"
+eventName$ = json["$.data.eventDescription"]
+eventType$ = cat
+userName$ = json["$.data.actorEmail"]
+userId$ = json["$.actorId"]
+sourceAddress$ = json["$.data.actorIp"]
+userAgent$ = json["$.data.actorUserAgent"]
+recipientAccountId$ = json["$.data.targetOrgId"]
+# The API's examples write target types with a TargetResourceType prefix; both forms are read.
+ttype = REPLACE(STRING(json["$.data.targetType"]), "TargetResourceType.", "")
+targetUserName$ = IF ttype == "USER" THEN json["$.data.targetName"] ELSE NULL
+managementEvent$ = TRUE
+
+r1.resourceId$ = json["$.data.targetId"]
+r1.resourceType$ = ttype
+r1.resourceAccountId$ = json["$.data.targetOrgId"]
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+d1.key$ = "action_text"
+d1.value$ = json["$.data.actionText"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+d2.key$ = "target_name"
+d2.value$ = json["$.data.targetName"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "actor_name"
+d3.value$ = json["$.data.actorName"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "admin_role"
+d4.value$ = json["$.data.adminRoles[0]"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "actor_org_name"
+d5.value$ = json["$.data.actorOrgName"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "tracking_id"
+d6.value$ = json["$.data.trackingId"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

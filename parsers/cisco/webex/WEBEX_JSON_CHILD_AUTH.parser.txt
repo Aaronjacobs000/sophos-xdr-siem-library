@@ -1,0 +1,56 @@
+!SAMPLE={"webex_record":"admin_audit","id":"M2U0ZjVhNmItN2M4ZC00ZTlmLThhMWItMmMzZDRlNWY2YTdi","actorOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actorId":"Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xYzJkM2U0Zi01YTZiLTRjN2QtOGU5Zi0wYTFiMmMzZDRlNWY","created":"2026-10-21T22:01:12.304Z","data":{"actorOrgName":"Acme Inc.","targetName":"Acme Inc.","eventDescription":"An Admin logged in","actorName":"Sam Admin","actorEmail":"sam.admin@example.com","adminRoles":["Full_Admin"],"trackingId":"ATLAS_4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c_0","targetType":"ORG","targetId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","eventCategory":"LOGINS","actorUserAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","actorIp":"192.0.2.10","targetOrgId":"Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi80YTdmMGUyYy0xYjNkLTRjNWUtOGY2MC03YThiOWMwZDFlMmY","actionText":"Sam Admin logged into organization Acme Inc.","targetOrgName":"Acme Inc."}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Webex security audit events (GET /v1/admin/securityAudit/events: user sign-ins and sign-outs,
+# with Pro Pack and Allow user authentication data on) and admin audit events in the LOGINS and LOGOUT
+# categories (an admin signing in to or out of Control Hub), from the example bridge.
+# Child of WEBEX_JSON_PARENT: each one to Auth, with the user's email as the target user and the
+# address and user agent they signed in from. LOGOUT, or "logged out" in the text, is a sign-out.
+# Webex documents no failure shape for these events; a description or action text that says "fail"
+# counts as a failure.
+# json, kind, cat, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Cisco Webex"
+targetUserName$ = json["$.data.actorEmail"]
+userDisplayName$ = json["$.data.actorName"]
+sourceAddress$ = json["$.data.actorIp"]
+userAgent$ = json["$.data.actorUserAgent"]
+desc = STRING(json["$.data.eventDescription"])
+status$ = IF desc != "" THEN desc ELSE NULL
+text = LOWERCASE(desc + " " + STRING(json["$.data.actionText"]))
+out = cat == "LOGOUT" OR CONTAINS(text, "logged out") OR CONTAINS(text, "signed out")
+failed = CONTAINS(text, "fail")
+authCategory$ = IF out THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF out AND NOT failed THEN "LOGOFF" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+# Admin audit events are events performed in Control Hub.
+logonApplicationFamily$ = IF kind == "admin_audit" THEN "Control Hub" ELSE NULL
+
+m1.key$ = "record"
+m1.value$ = kind
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "event_category"
+m2.value$ = cat
+eventMetadata$.record$ = IF cat != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "action_text"
+m3.value$ = json["$.data.actionText"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "actor_id"
+m4.value$ = json["$.actorId"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "actor_org_name"
+m5.value$ = json["$.data.actorOrgName"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "admin_role"
+m6.value$ = json["$.data.adminRoles[0]"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "tracking_id"
+m7.value$ = json["$.data.trackingId"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
