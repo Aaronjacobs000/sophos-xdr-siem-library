@@ -448,29 +448,45 @@ class BridgeTest(unittest.TestCase):
         q = self.mock.requests[0]["query"]
         self.assertEqual(c._parse_time(q["to"]) - c._parse_time(q["from"]), 601)
 
+    # The cap tests run collect with a fixed now on a whole minute, so where the windows start, and
+    # which window each entry falls in, never depends on the clock. With run_once, entries a few
+    # milliseconds apart could straddle a window's end and arrive in two windows.
+    NOW = 1792620000.0  # 2026-10-21T22:00:00Z
+
+    def collect_at_now(self, **extra):
+        cfg = self.cfg(**extra)
+        sink = c.Sink(cfg, False)
+        return c.collect(cfg, {}, sink, lambda: None, c.Workday(cfg), self.NOW)
+
+    def at(self, seconds_before):
+        return datetime.fromtimestamp(self.NOW - seconds_before, timezone.utc)
+
     def test_a_window_that_reaches_the_cap_is_read_in_halves(self):
-        # One query returns at most instancesReturned times INSTANCES (5 here) entries.
+        # One query returns at most instancesReturned times INSTANCES (5 here) entries. The 12
+        # entries, 4 minutes apart, sit in the hour from 2 hours to 1 hour before NOW.
         c.INSTANCES = 5
-        self.mock.entries = [entry(i, self.ago(50 - 4 * i)) for i in range(12)]
-        c.run_once(self.cfg(BRIDGE_WINDOW_MINUTES="60"))
+        self.mock.entries = [entry(i, self.at(7200 - 300 - 240 * i)) for i in range(12)]
+        self.assertEqual(self.collect_at_now(BRIDGE_LOOKBACK_HOURS="3", BRIDGE_WINDOW_MINUTES="60"), 12)
         self.assertEqual(sorted(r["sessionId"] for r in self.sent()), sorted(e["sessionId"] for e in self.mock.entries))
         self.assertEqual(len(self.sent()), 12)
         self.assertIn("reading it in halves", self.logbuf.getvalue())
         self.assertEqual({r["query"]["instancesReturned"] for r in self.mock.requests}, {"1"})
 
     def test_a_shortest_window_that_reaches_the_cap_uses_the_most_instances(self):
+        # The entries are a few milliseconds apart, 20 seconds into the one-minute window that
+        # starts 10 minutes before NOW, so they all fall in that window and no other.
         c.INSTANCES = 5
-        when = self.ago(10)
+        when = self.at(600 - 20)
         self.mock.entries = [entry(i, when + timedelta(milliseconds=i)) for i in range(7)]
-        c.run_once(self.cfg(BRIDGE_WINDOW_MINUTES="1"))
+        self.assertEqual(self.collect_at_now(BRIDGE_LOOKBACK_HOURS="1", BRIDGE_WINDOW_MINUTES="1"), 7)
         self.assertEqual(len(self.sent()), 7)
         self.assertIn("25", {r["query"]["instancesReturned"] for r in self.mock.requests})
         # At 25 already, the most one query returns is all there is: the rest is logged as lost.
         self.mock.requests.clear()
         self.mock.ingested.clear()
-        os.remove(self.state)
         self.mock.entries = [entry(i, when + timedelta(milliseconds=i)) for i in range(130)]
-        c.run_once(self.cfg(BRIDGE_WINDOW_MINUTES="1", WORKDAY_INSTANCES_RETURNED="25"))
+        self.assertEqual(self.collect_at_now(BRIDGE_LOOKBACK_HOURS="1", BRIDGE_WINDOW_MINUTES="1",
+                                             WORKDAY_INSTANCES_RETURNED="25"), 125)
         self.assertEqual(len(self.sent()), 125)
         self.assertIn("matched 130 entries, and Workday returns at most 125", self.logbuf.getvalue())
 
