@@ -1,0 +1,50 @@
+{
+  "vendor": "Cybereason",
+  "product": "Cybereason",
+  "versions": [],
+  "format": "cef",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://docs.cloud.google.com/chronicle/docs/ingestion/default-parsers/cybereason-edr",
+    "https://docs.fortinet.com/document/fortisiem/7.6.1/external-systems-configuration-guide/95416/cybereason",
+    "https://web.archive.org/web/2023/https://docs.cybereason.com/en/latest/Syslog/"
+  ],
+  "notes": "For Cybereason (LevelBlue) MalOp syslog from the Detection Server and User Audit syslog from the WebApp server, CEF over TCP, which Cybereason Technical Support turns on; the README has the steps. The parent claims CEF lines from Cybereason with the event class Malop, Malware or UserAction and reads the extension with CEF(), whose csN and cnN values it reads by their labels (malopId, malopKeySuspicion, username, actionSuccess and so on); deviceCustomDateN values are matched to their labels in the parser, since CEF() doesn't resolve those. Malop lines go to Thirdparty: the MalOp ID as the alert ID, the key suspicion as the title, the name, detection type and suspect as the summary, the activity type as the category, created and updated times from malopCreationTime and malopUpdateTime (written as Oct 20 2026, 22:12:41 UTC), the status from the name, and the CEF severity as the vendor severity, mapped 1 to 3 low, 4 to 6 medium, 7 and 8 high, 9 and 10 critical; Cybereason sends 10 for every MalOp line. Machine Information lines set the affected machine as the target host. UserAction General/Login lines go to Auth with the user (without the leading slash Cybereason adds), machineIP as the source address and actionSuccess as the result; other UserAction lines go to Management Event with the action, the query or MalOp and machine acted on, and the result. Malware lines stay generic. The event time is the update or action time. How sure this is: Cybereason's own syslog pages are no longer online. The MalOp and UserAction layout follows the lines quoted in Fortinet's FortiSIEM guide and LogRhythm's Cybereason log source, both read only, with Cybereason's label names; the setup and event categories follow Google Security Operations' Cybereason parser docs. The Login, MachineIsolation and Closed lines and the machineName and machineIP labels are inferred from summaries of Cybereason's docs, and the syslog header with a PRI is inferred too. The CEF Forwarder's layout isn't covered. Samples are made up in those shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (112 of 112 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (112 of 112 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 runs.",
+  "parsers": [
+    {
+      "name": "CYBEREASON_CEF_PARENT",
+      "file": "CYBEREASON_CEF_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CYBEREASON_CEF_CHILD_THIRDPARTYALERT",
+      "file": "CYBEREASON_CEF_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "CYBEREASON_CEF_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "CYBEREASON_CEF_CHILD_AUTH",
+      "file": "CYBEREASON_CEF_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "CYBEREASON_CEF_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "CYBEREASON_CEF_CHILD_MGMT",
+      "file": "CYBEREASON_CEF_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "CYBEREASON_CEF_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

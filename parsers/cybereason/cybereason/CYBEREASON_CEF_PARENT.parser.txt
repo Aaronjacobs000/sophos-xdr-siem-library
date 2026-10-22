@@ -1,0 +1,54 @@
+!SAMPLE=Oct 20 22:46:29 cr-web01 auditSyslogLogger CEF:0|Cybereason|Cybereason||UserAction|Investigation/Query|0|cs1Label=username cs1=/jsmith@example.com cn1Label=actionSuccess cn1=1 deviceCustomDate1Label=userActionTime deviceCustomDate1=Oct 20 2026, 22:46:29 UTC cs2Label=QueryDetails cs2=User > Process > Connection
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=CEF:\d+\|Cybereason\|Cybereason\|[^|]*\|(?:Malop|UserAction|Malware)\|
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cybereason (LevelBlue) Detection Server and WebApp server syslog in CEF, which Cybereason
+# Technical Support turns on for a collector address and port:
+#   <time> <server> syslogLogger CEF:0|Cybereason|Cybereason|<version>|Malop|<name>|<severity>|<extension>
+#   <time> <server> auditSyslogLogger CEF:0|Cybereason|Cybereason|<version>|UserAction|<category>/<action>|0|<extension>
+# Parent: claims Malop, Malware and UserAction lines and hands them on:
+#   Malop Created, Updated, Closed and Machine Information        to the Thirdparty child
+#   UserAction General/Login                                       to the Auth child
+#   other UserAction lines (queries, isolation, remediation ...)   to the Management Event child
+# Malware lines stay generic: their extension isn't documented in public.
+
+cm = originalData$|(?P<cef>CEF:\d+\|Cybereason\|.*)$
+# CEF() reads the extension: values hold spaces, and csN and cnN values are read by their labels.
+kv = CEF(cm["cef"])
+sig = STRING(kv["4"])
+name = STRING(kv["5"])
+hm = originalData$|^(?:<\d{1,3}>)?[A-Z][a-z]{2}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}\s+(?P<host>\S+)\s+(?P<logger>[A-Za-z]+)\s+CEF:
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Cybereason"
+host = STRING(hm["host"])
+hostId$ = IF host != "" THEN host ELSE NULL
+ver = STRING(kv["3"])
+sensorVersion$ = IF ver != "" THEN ver ELSE NULL
+sensorEventId$ = sig + "|" + name
+
+# deviceCustomDateN aren't read by their labels, so each date is found by its label here. Times are
+# written as Oct 20 2026, 22:12:41 UTC.
+d1 = STRING(kv["deviceCustomDate1"])
+d2 = STRING(kv["deviceCustomDate2"])
+l1 = STRING(kv["deviceCustomDate1Label"])
+l2 = STRING(kv["deviceCustomDate2Label"])
+created = IF l1 == "malopCreationTime" THEN d1 ELSE (IF l2 == "malopCreationTime" THEN d2 ELSE "")
+updated = IF l1 == "malopUpdateTime" OR l1 == "userActionTime" THEN d1 ELSE (IF l2 == "malopUpdateTime" OR l2 == "userActionTime" THEN d2 ELSE "")
+createdUsec = IF created != "" THEN DATETIME(created, "Jan _2 2006, 15:04:05 MST") ELSE NULL
+updatedUsec = IF updated != "" THEN DATETIME(updated, "Jan _2 2006, 15:04:05 MST") ELSE NULL
+eventTimeUsec$ = IF updated != "" THEN updatedUsec ELSE (IF created != "" THEN createdUsec ELSE eventTimeUsec$)
+
+# The username comes with a leading slash, as in /jsmith@example.com.
+uname = STRING(kv["username"])
+um = uname|^/?(?P<u>.*)$
+user = STRING(um["u"])
+success = STRING(kv["actionSuccess"]) == "1"
+
+eventType$ = "other"
+eventType$ = IF sig == "Malop" THEN "malop" ELSE eventType$
+eventType$ = IF sig == "UserAction" THEN "action" ELSE eventType$
+eventType$ = IF sig == "UserAction" AND name == "General/Login" THEN "login" ELSE eventType$

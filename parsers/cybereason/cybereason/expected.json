@@ -1,0 +1,273 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792534361000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-detect01",
+      "sensor_event_id": "Malop|Malop Created",
+      "alert_id": "11.-1587922454714582908",
+      "title": "Malicious use of PowerShell / .NET",
+      "summary": "Malop Created: CNC, suspect powershell.exe",
+      "alert_category": "MALICIOUS_INFECTION",
+      "vendor": "Cybereason",
+      "provider": "Cybereason EDR",
+      "log_type": "Malop",
+      "created_time_usec": 1792534361000000,
+      "updated_time_usec": 1792534361000000,
+      "status": "created",
+      "vendor_severity": "10",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Malop Created"
+          },
+          {
+            "key": "detection_type",
+            "value": "CNC"
+          },
+          {
+            "key": "suspect",
+            "value": "powershell.exe"
+          },
+          {
+            "key": "affected_machines",
+            "value": "1"
+          },
+          {
+            "key": "affected_users",
+            "value": "1"
+          },
+          {
+            "key": "link",
+            "value": "https://cr.example.com:443/#/malop/11.-1587922454714582908"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792534361000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-detect01",
+      "sensor_event_id": "Malop|Malop Machine Information",
+      "alert_id": "11.-1587922454714582908",
+      "title": "Malop Machine Information",
+      "summary": "Malop Machine Information",
+      "target_host_name": "WKS-0425",
+      "vendor": "Cybereason",
+      "provider": "Cybereason EDR",
+      "log_type": "Malop",
+      "updated_time_usec": 1792534361000000,
+      "vendor_severity": "10",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Malop Machine Information"
+          },
+          {
+            "key": "affected_machines",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792537510000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-detect01",
+      "sensor_version": "23.1.82",
+      "sensor_event_id": "Malop|Malop Updated",
+      "alert_id": "11.2410556438743392178",
+      "title": "Malicious By Code Injection",
+      "summary": "Malop Updated: HIJACKED_PROCESS, suspect injected (updater.exe > chrome.exe)",
+      "alert_category": "MALICIOUS_INFECTION",
+      "vendor": "Cybereason",
+      "provider": "Cybereason EDR",
+      "log_type": "Malop",
+      "created_time_usec": 1792394228000000,
+      "updated_time_usec": 1792537510000000,
+      "status": "updated",
+      "vendor_severity": "10",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Malop Updated"
+          },
+          {
+            "key": "detection_type",
+            "value": "HIJACKED_PROCESS"
+          },
+          {
+            "key": "suspect",
+            "value": "injected (updater.exe > chrome.exe)"
+          },
+          {
+            "key": "affected_machines",
+            "value": "3"
+          },
+          {
+            "key": "affected_users",
+            "value": "2"
+          },
+          {
+            "key": "link",
+            "value": "https://cr.example.com:8443/#/malop/MalopProcess/maliciousByCodeInjection/11.2410556438743392178"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792537510000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-detect01",
+      "sensor_version": "23.1.82",
+      "sensor_event_id": "Malop|Malop Machine Information",
+      "alert_id": "11.2410556438743392178",
+      "title": "Malop Machine Information",
+      "summary": "Malop Machine Information",
+      "target_host_name": "SRV-FILE02",
+      "vendor": "Cybereason",
+      "provider": "Cybereason EDR",
+      "log_type": "Malop",
+      "updated_time_usec": 1792537510000000,
+      "vendor_severity": "10",
+      "severity": "CRITICAL",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event_name",
+            "value": "Malop Machine Information"
+          },
+          {
+            "key": "affected_machines",
+            "value": "3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "sensor_id": "cr-web01",
+      "event_time_usec": 1792536389000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-web01",
+      "sensor_event_id": "UserAction|Investigation/Query",
+      "username": "jsmith@example.com",
+      "operation_name": "Investigation/Query",
+      "operation": "Query",
+      "command": "User > Process > Connection",
+      "channel": "Cybereason console",
+      "result": "success"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792536663000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-web01",
+      "sensor_event_id": "UserAction|Malop Investigation/MachineIsolation",
+      "username": "jsmith@example.com",
+      "operation_name": "Malop Investigation/MachineIsolation",
+      "operation": "MachineIsolation",
+      "command": "malop 11.-1587922454714582908",
+      "target_hostname": "WKS-0425",
+      "channel": "Cybereason console",
+      "result": "success"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792536012000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-web01",
+      "sensor_event_id": "UserAction|General/Login",
+      "target_user_name": "jsmith@example.com",
+      "source_address": "192.0.2.25",
+      "auth_system": "Cybereason",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "user_action",
+            "value": "General/Login"
+          },
+          {
+            "key": "machine_name",
+            "value": "JSMITH-LT"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "CYBEREASON_CEF_PARENT > CYBEREASON_CEF_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cybereason",
+      "event_time_usec": 1792536117000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "cr-web01",
+      "sensor_event_id": "UserAction|General/Login",
+      "target_user_name": "admin@example.com",
+      "source_address": "203.0.113.61",
+      "auth_system": "Cybereason",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "user_action",
+            "value": "General/Login"
+          }
+        ]
+      }
+    }
+  }
+]

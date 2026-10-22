@@ -1,0 +1,30 @@
+!SAMPLE=<134>Oct 20 22:40:12 cr-web01 auditSyslogLogger CEF:0|Cybereason|Cybereason||UserAction|General/Login|0|cs1Label=username cs1=/jsmith@example.com cn1Label=actionSuccess cn1=1 deviceCustomDate1Label=userActionTime deviceCustomDate1=Oct 20 2026, 22:40:12 UTC cs4Label=machineName cs4=JSMITH-LT cs5Label=machineIP cs5=192.0.2.25
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="login"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cybereason (LevelBlue) user audit syslog in CEF.
+# Child of CYBEREASON_CEF_PARENT: console sign-ins (UserAction General/Login) to Auth, with the
+# user, the machine and its address (machineName and machineIP), and actionSuccess as the result.
+# kv, name, user, success, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = IF user != "" THEN user ELSE NULL
+ip = STRING(kv["machineIP"])
+sourceAddress$ = IF IS_VALID_IP(ip) THEN ip ELSE NULL
+mn = STRING(kv["machineName"])
+authSystem$ = "Cybereason"
+logonApplicationFamily$ = "Web"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+# The user action and the machine signed in from go to event_metadata.
+a1.key$ = "user_action"
+a1.value$ = name
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1]
+a2.key$ = "machine_name"
+a2.value$ = mn
+eventMetadata$.record$ = IF mn != "" THEN eventMetadata$.record$ + [a2] ELSE eventMetadata$.record$

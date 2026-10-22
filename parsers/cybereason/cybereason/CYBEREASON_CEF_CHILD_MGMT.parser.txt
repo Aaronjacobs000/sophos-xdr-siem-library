@@ -1,0 +1,26 @@
+!SAMPLE=<134>Oct 20 22:51:03 cr-web01 auditSyslogLogger CEF:0|Cybereason|Cybereason||UserAction|Malop Investigation/MachineIsolation|0|cs1Label=username cs1=/jsmith@example.com cn1Label=actionSuccess cn1=1 deviceCustomDate1Label=userActionTime deviceCustomDate1=Oct 20 2026, 22:51:03 UTC cs2Label=malopId cs2=11.-1587922454714582908 cs3Label=machineName cs3=WKS-0425
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="action"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cybereason (LevelBlue) user audit syslog in CEF.
+# Child of CYBEREASON_CEF_PARENT: console user actions other than sign-ins (UserAction
+# <category>/<action>, such as Investigation/Query or Malop Investigation/MachineIsolation) to
+# Management Event, with the user, the action, the query or the MalOp and machine acted on, and
+# actionSuccess as the result.
+# kv, name, user, success, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+username$ = IF user != "" THEN user ELSE NULL
+operationName$ = name
+am = name|/(?P<a>[^/]+)$
+operation$ = IF STRING(am["a"]) != "" THEN am["a"] ELSE name
+query = STRING(kv["QueryDetails"])
+malop = STRING(kv["malopId"])
+machine = STRING(kv["machineName"])
+command$ = IF query != "" THEN query ELSE NULL
+command$ = IF query == "" AND malop != "" THEN "malop " + malop ELSE command$
+targetHostname$ = IF machine != "" THEN machine ELSE NULL
+channel$ = "Cybereason console"
+result$ = IF success THEN "success" ELSE "failure"
