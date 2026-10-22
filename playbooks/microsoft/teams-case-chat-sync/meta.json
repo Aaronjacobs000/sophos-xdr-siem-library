@@ -16,7 +16,7 @@
   "tested": {
     "validated": "2026-10-21",
     "tenant": {
-      "date": "2026-10-21",
+      "date": "2026-10-22",
       "region": "eu02"
     }
   },
@@ -27,5 +27,5 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
-  "notes": "On 2026-10-21 it passed playbookValidateDSLV2 with no errors or warnings, and a renamed copy ran by hand in a Sophos Fusion tenant against a test case, with case and comment events given as inputs: the Teams connector posted the card to a test endpoint standing in for the Workflows webhook, and it was not shown in Teams. A case post arrived; a comment starting with [chat-sync] and an event with no comment text sent nothing; another comment arrived with its text. A case-triggered run is untested: the Cases API refused to create a test case that day."
+  "notes": "Live tested on 2026-10-22 on a Sophos Fusion test tenant and Microsoft Teams. A renamed copy ran on case events and posted three cards to a real Teams channel through a Workflows webhook, which accepted each one with HTTP 202: one for a reopened case and two for status changes made through the chat bridge. The bridge's own [chat-sync] comments also fired the playbook, which skipped them, so nothing looped. The test cards left out the Open in Sophos Fusion button. The Create event is untested, because the Cases API refused to create a test case. On 2026-10-21 it passed playbookValidateDSLV2 with no errors or warnings, and a run by hand with a person's comment as its input posted the comment's text."
 }

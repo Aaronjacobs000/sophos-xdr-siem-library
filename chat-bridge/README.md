@@ -1,6 +1,6 @@
 # Chat bridge for Sophos Fusion cases (unofficial)
 
-> **Unofficial, and not yet run against a real Slack workspace or Teams team.** It has run in the Cloudflare Workers runtime against a real Sophos Fusion tenant in dry run, where it found cases, checked statuses and verdicts and reported the exact change and comment it would write. Its unit tests sign requests the way Slack and Microsoft document, including Slack's own published example. A live write to a case through the bridge is untested: on the test day the Sophos Fusion Cases API refused to create a test case to write to. Run it with dry run on first.
+> **Unofficial, and not yet run with a real Slack workspace or a real Teams outgoing webhook.** On 2026-10-22 it ran locally in the Cloudflare Workers runtime (`wrangler dev`), with dry run off, against a Sophos Fusion test tenant. Signed requests shaped like a Teams outgoing webhook's set a case to Active, added a comment and closed the case with a verdict, and each change read back on the case. A request with a bad signature got 401. Its unit tests sign requests the way Slack and Microsoft document, including Slack's own published example. Run it with dry run on first.
 
 Sophos Fusion playbooks can post a case to Teams or Slack, but nothing in a playbook can receive a reply. This bridge takes a Slack button or form, or a Teams outgoing webhook command, checks that the request came from Slack or Teams, and sets the case status or adds a case comment through the Sophos Fusion Cases API. Every write adds a case comment that names the person who acted.
 
@@ -99,7 +99,7 @@ Each action logs one JSON line with the time, platform, user ID and name, action
 
 ## Limits
 
-- Teams waits five seconds. A first request after the Worker starts takes about three, to sign in to Sophos; if the bridge runs past four seconds it answers that it is still working and finishes the change. The case comment, and the playbook's next card, show the result.
+- Teams waits five seconds. A first request after the Worker starts takes about three, to sign in to Sophos; if the bridge runs past four seconds it answers that it is still working and finishes the change. The case comment, and the playbook's next card, show the result. A close makes five Sophos Fusion calls, so it can pass four seconds: in the 2026-10-22 test one took 4.2 seconds, got the still-working answer, and the case closed.
 - Teams outgoing webhooks only work in standard channels, and only when someone @mentions them.
 - Slack forms must open within three seconds of the click, so the bridge opens them before it answers Slack.
 - The bridge keeps nothing between requests except the Sophos sign-in token in memory.
