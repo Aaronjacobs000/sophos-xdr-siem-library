@@ -1,0 +1,323 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792616531218000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "View Worker",
+      "event_type": "READ",
+      "read_only": true,
+      "recipient_account_id": "acme_prod",
+      "user_name": "akim",
+      "source_address": "203.0.113.10",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "3aa5550b7fe348b98d7b5741afc65534",
+          "resource_type": "Workday instance",
+          "resource_account_id": "acme_prod"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "d9e41a8c446c11de98360015c5e6daf6"
+          },
+          {
+            "key": "session_id",
+            "value": "a91f27"
+          },
+          {
+            "key": "target",
+            "value": "Jordan Lee"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792617340904000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "Edit Integration System Security Group (Unconstrained)",
+      "event_type": "WRITE",
+      "read_only": false,
+      "recipient_account_id": "acme_prod",
+      "user_name": "jlee",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+      "resources": [
+        {
+          "resource_id": "6d0f2c9e1a7b4c3d8e5f60718293a4b5",
+          "resource_type": "Workday instance",
+          "resource_account_id": "acme_prod"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "c4d0f7e2446c11de98360015c5e6daf6"
+          },
+          {
+            "key": "session_id",
+            "value": "b2c4e1"
+          },
+          {
+            "key": "target",
+            "value": "Payroll Integrations"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792618202377000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "Compensation Review Statement History",
+      "event_type": "DOWNLOAD",
+      "read_only": true,
+      "recipient_account_id": "acme_prod",
+      "user_name": "pnguyen",
+      "source_address": "192.0.2.44",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "resources": [
+        {
+          "resource_id": "8f1e2d3c4b5a69788796a5b4c3d2e1f0",
+          "resource_type": "Workday instance",
+          "resource_account_id": "acme_prod"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "7e2b9c4d1f6a4e8b9c0d2e4f6a8b0c1d"
+          },
+          {
+            "key": "session_id",
+            "value": "c7d3a0"
+          },
+          {
+            "key": "target",
+            "value": "Compensation Review - Annual Pay.pdf"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792618879050000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "Register API Client for Integrations",
+      "event_type": "WRITE",
+      "read_only": false,
+      "recipient_account_id": "acme_prod",
+      "user_name": "jlee",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+      "resources": [
+        {
+          "resource_id": "0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+          "resource_type": "Workday instance",
+          "resource_account_id": "acme_prod"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "b1e9c6d4446c11de98360015c5e6daf6"
+          },
+          {
+            "key": "session_id",
+            "value": "b2c4e1"
+          },
+          {
+            "key": "target",
+            "value": "Expense Sync"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792620045612000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "wql/data/view (POST) (v1 -  )",
+      "event_type": "READ",
+      "read_only": true,
+      "recipient_account_id": "acme_prod",
+      "user_name": "akim",
+      "source_address": "203.0.113.10",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "0f6c3b2a9e8d47c1b5a4d3e2f1a0b9c8"
+          },
+          {
+            "key": "session_id",
+            "value": "d40e99"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792620252003000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "Workday System Status",
+      "event_type": "OTHER",
+      "read_only": false,
+      "recipient_account_id": "acme_prod",
+      "user_name": "wd-environments",
+      "source_address": "127.0.0.1",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "f3b8d2e6446c11de98360015c5e6daf6"
+          },
+          {
+            "key": "session_id",
+            "value": "e5f6a7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792620633481000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "privacy/activityLogging/userActivity (GET) (v1 -  )",
+      "event_type": "READ",
+      "read_only": true,
+      "recipient_account_id": "acme_prod",
+      "user_name": "ISU_Sophos_Bridge",
+      "source_address": "198.51.100.5",
+      "user_agent": "sophos-xdr-siem-library-workday-activity-bridge/0.1.0",
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "e67b812850dc100047be196f396d745f"
+          },
+          {
+            "key": "session_id",
+            "value": "f1a2b3"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          },
+          {
+            "key": "activity_log_read",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Workday User Activity",
+      "event_time_usec": 1792620950127000,
+      "event_time_fidelity": "MICRO",
+      "event_source": "Workday",
+      "event_name": "Edit Tenant Setup - Security",
+      "event_type": "WRITE",
+      "read_only": false,
+      "recipient_account_id": "acme_prod",
+      "user_name": "jlee",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+      "resources": [
+        {
+          "resource_id": "ca1516de621b1000b8ebe7001d850001",
+          "resource_type": "Workday instance",
+          "resource_account_id": "acme_prod"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "task_id",
+            "value": "a7f3e9b1446c11de98360015c5e6daf6"
+          },
+          {
+            "key": "session_id",
+            "value": "b2c4e1"
+          },
+          {
+            "key": "target",
+            "value": "Acme Corporation"
+          },
+          {
+            "key": "device_type",
+            "value": "Desktop"
+          }
+        ]
+      }
+    }
+  }
+]
