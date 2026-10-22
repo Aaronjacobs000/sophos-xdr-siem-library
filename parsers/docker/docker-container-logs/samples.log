@@ -1,0 +1,8 @@
+<30>Oct 20 22:12:41 5790672ab6a0[9103]: Starting worker process 7
+<27>Oct 20 22:12:44 5790672ab6a0[9103]: level=error msg="cannot connect to db01.example.com:5432: connection refused" attempt=3
+<30>Oct 20 22:13:02 docker01 web-api/5790672ab6a0[9103]: listening on 0.0.0.0:8080
+<30>1 2026-10-21T09:13:30+11:00 docker01 5790672ab6a0 9103 5790672ab6a0 - worker 3 started
+<27>1 2026-10-21T09:14:05.123456+11:00 docker01 registry.example.com/billing:1.4/billing-worker/9d2c41b7e0aa 9103 registry.example.com/billing:1.4/billing-worker/9d2c41b7e0aa - Traceback (most recent call last):
+<134>Oct 20 22:15:00 docker01 docker-json: {"log":"health check ok\n","stream":"stdout","time":"2026-10-20T22:15:00.123456789Z"}
+<134>Oct 20 22:15:20 docker01 docker-json: {"log":"payment queue backlog 120\n","stream":"stderr","attrs":{"tag":"billing-worker/9d2c41b7e0aa"},"time":"2026-10-20T22:15:20.000000001Z"}
+{"log":"user jsmith signed in from 192.0.2.25\n","stream":"stdout","attrs":{"com.example.service":"auth","tag":"auth/3f1a9c22d4e8"},"time":"2026-10-20T22:16:05.5Z"}

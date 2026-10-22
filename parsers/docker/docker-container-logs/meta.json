@@ -1,0 +1,39 @@
+{
+  "vendor": "Docker",
+  "product": "Docker container logs",
+  "versions": [
+    "28",
+    "29"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://docs.docker.com/engine/logging/drivers/syslog/",
+    "https://docs.docker.com/engine/logging/drivers/json-file/",
+    "https://docs.docker.com/engine/logging/log_tags/",
+    "https://docs.docker.com/engine/logging/configure/"
+  ],
+  "notes": "For Docker container output from the syslog logging driver, or from the json-file driver through a file forwarder; the README has the steps. A container's output is its application's own text, so both parsers keep the generic schema and set what Docker adds: sensor_type Docker, the Docker host as host_id where the line carries it (rfc3164, rfc5424, or the forwarder's header for json-file), the tag as sensor_id, and the event time. The syslog parser takes lines whose tag is the 12-character container ID or ends with it ({{.ID}}, the default, or a template such as {{.Name}}/{{.ID}}), in the default format (no host), rfc3164, rfc5424 and rfc5424micro. rfc5424 times carry the offset; the default and rfc3164 times are dockerd's local time with no year or zone, read as UTC in the current year. Lines with a tag that doesn't end with the ID aren't claimed, since nothing else marks them as Docker's. The json-file parser takes {\"log\":...,\"stream\":...,[\"attrs\":{...},]\"time\":...} lines and reads the container from attrs.tag, which the tag log option sets; without it the line has no container. The time is the driver's RFC 3339 UTC time. stdout or stderr has no generic field, so it stays in the raw line. How sure this is: the line layouts come from the Docker logging driver docs and the moby source of the syslog driver (Apache-2.0), with the formatter of the srslog library it uses (BSD-3-Clause); Docker's docs show only partial examples. Samples are made up in those shapes. Each parser passed Run Test in a lab tenant on 2026-10-22: 21 of 21 compared fields matched the emulator in each of 3 runs, and sensor_id, which the comparison skips, matched on every line. No built-in parser claimed these lines in 5 runs.",
+  "parsers": [
+    {
+      "name": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+      "file": "DOCKER_SYSLOG_STANDALONE_GENERIC.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "DOCKER_JSONFILE_STANDALONE_GENERIC",
+      "file": "DOCKER_JSONFILE_STANDALONE_GENERIC.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.generic"
+    }
+  ]
+}
