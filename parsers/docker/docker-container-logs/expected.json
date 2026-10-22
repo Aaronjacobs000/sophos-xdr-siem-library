@@ -1,0 +1,86 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "5790672ab6a0",
+      "event_time_usec": 1792534361000000
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "5790672ab6a0",
+      "event_time_usec": 1792534364000000
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "web-api/5790672ab6a0",
+      "event_time_usec": 1792534382000000,
+      "host_id": "docker01"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "5790672ab6a0",
+      "event_time_usec": 1792534410000000,
+      "host_id": "docker01"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "DOCKER_SYSLOG_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "registry.example.com/billing:1.4/billing-worker/9d2c41b7e0aa",
+      "event_time_usec": 1792534445123456,
+      "host_id": "docker01"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "DOCKER_JSONFILE_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "event_time_usec": 1792534500123456,
+      "host_id": "docker01"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "DOCKER_JSONFILE_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "billing-worker/9d2c41b7e0aa",
+      "event_time_usec": 1792534520000000,
+      "host_id": "docker01"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "DOCKER_JSONFILE_STANDALONE_GENERIC",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Docker",
+      "sensor_id": "auth/3f1a9c22d4e8",
+      "event_time_usec": 1792534565500000
+    }
+  }
+]
