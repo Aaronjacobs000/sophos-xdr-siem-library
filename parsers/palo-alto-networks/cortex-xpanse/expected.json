@@ -1,0 +1,436 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "PANW_CORTEXXPANSE_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cortex Xpanse",
+      "event_time_usec": 1792545249000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex Xpanse",
+      "log_type": "alert",
+      "alert_id": "113716",
+      "title": "Insecure TLS at 192.0.2.41:443",
+      "summary": "This issue flags services that accept TLS 1.0 or TLS 1.1, which are deprecated and have known weaknesses.",
+      "status": "STATUS_010_NEW",
+      "alert_category": "Insecure TLS",
+      "vendor_severity": "high",
+      "severity": "HIGH",
+      "created_time_usec": 1792545249000000,
+      "updated_time_usec": 1792548849000000,
+      "last_event_time_usec": 1792545100000000,
+      "destination_address": "192.0.2.41",
+      "target_host_name": "shop.example.com",
+      "destination_port": 443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "xpanse_tenant",
+            "value": "xpanse.example.com"
+          },
+          {
+            "key": "attack_surface_rule_id",
+            "value": "InsecureTLS"
+          },
+          {
+            "key": "external_id",
+            "value": "6b51f815-982e-365c-8aed-9d944423555f-0"
+          },
+          {
+            "key": "asm_alert_categories",
+            "value": "Attack Surface Reduction"
+          },
+          {
+            "key": "remediation_guidance",
+            "value": "Turn off TLS 1.0 and TLS 1.1 on the service and allow only TLS 1.2 or later."
+          },
+          {
+            "key": "ipv4_addresses",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "domain_names",
+            "value": "shop.example.com"
+          },
+          {
+            "key": "tags",
+            "value": "AR:Registered to You,BU:Acme Retail"
+          },
+          {
+            "key": "asset_ids",
+            "value": "3aa22188-b754-3b7d-8ab9-e6a716590d16"
+          },
+          {
+            "key": "service_ids",
+            "value": "8b4ea64b-e3da-3942-9fdd-aaa5289cfdc1"
+          },
+          {
+            "key": "cloud_providers",
+            "value": "On Prem"
+          },
+          {
+            "key": "certificate_subject",
+            "value": "shop.example.com"
+          },
+          {
+            "key": "certificate_issuer",
+            "value": "Example Issuing CA 2026"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1190 - Exploit Public-Facing Application"
+          },
+          {
+            "key": "case_id",
+            "value": "71"
+          },
+          {
+            "key": "cloud_management_status",
+            "value": "Not Applicable"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "PANW_CORTEXXPANSE_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cortex Xpanse",
+      "event_time_usec": 1792553400000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex Xpanse",
+      "log_type": "alert",
+      "alert_id": "113802",
+      "title": "RDP Server at 198.51.100.17:3389",
+      "summary": "Remote Desktop Protocol (RDP) servers on the internet are a common target for brute force attacks and exploits.",
+      "status": "STATUS_010_NEW",
+      "alert_category": "RDP Server",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "created_time_usec": 1792553400000000,
+      "updated_time_usec": 1792554051000000,
+      "last_event_time_usec": 1792553300000000,
+      "destination_address": "198.51.100.17",
+      "destination_port": 3389,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "xpanse_tenant",
+            "value": "xpanse.example.com"
+          },
+          {
+            "key": "attack_surface_rule_id",
+            "value": "RdpServer"
+          },
+          {
+            "key": "external_id",
+            "value": "0f3c2d1e-7a6b-3c5d-9e8f-1a2b3c4d5e6f-0"
+          },
+          {
+            "key": "asm_alert_categories",
+            "value": "Attack Surface Reduction"
+          },
+          {
+            "key": "remediation_guidance",
+            "value": "Take the server off the internet, or put it behind a VPN or a gateway that needs multi-factor authentication."
+          },
+          {
+            "key": "ipv4_addresses",
+            "value": "198.51.100.17"
+          },
+          {
+            "key": "tags",
+            "value": "AR:Registered to You,BU:Acme Retail"
+          },
+          {
+            "key": "asset_ids",
+            "value": "7e6d5c4b-3a29-3817-a6f5-e4d3c2b1a098"
+          },
+          {
+            "key": "service_ids",
+            "value": "4c3b2a19-8f7e-3d6c-b5a4-938271605f4e"
+          },
+          {
+            "key": "cloud_providers",
+            "value": "Amazon Web Services"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1133 - External Remote Services"
+          },
+          {
+            "key": "case_id",
+            "value": "72"
+          },
+          {
+            "key": "cloud_management_status",
+            "value": "Managed Cloud"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "PANW_CORTEXXPANSE_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cortex Xpanse",
+      "event_time_usec": 1792558600000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex Xpanse",
+      "log_type": "alert",
+      "alert_id": "113845",
+      "title": "Insecure OpenSSH (8.9p1) at 203.0.113.88:22",
+      "summary": "This issue flags OpenSSH servers below the version that fixes known vulnerabilities.",
+      "status": "STATUS_020_UNDER_INVESTIGATION",
+      "alert_category": "Insecure OpenSSH",
+      "vendor_severity": "medium",
+      "severity": "MEDIUM",
+      "created_time_usec": 1792558600000000,
+      "updated_time_usec": 1792562313000000,
+      "last_event_time_usec": 1792558500000000,
+      "destination_address": "203.0.113.88",
+      "target_host_name": "sftp.example.net",
+      "destination_port": 22,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "xpanse_tenant",
+            "value": "xpanse.example.com"
+          },
+          {
+            "key": "attack_surface_rule_id",
+            "value": "InsecureOpenSSH"
+          },
+          {
+            "key": "external_id",
+            "value": "9a8b7c6d-5e4f-3a2b-8c1d-0e9f8a7b6c5d-0"
+          },
+          {
+            "key": "asm_alert_categories",
+            "value": "Attack Surface Reduction,Vulnerability"
+          },
+          {
+            "key": "remediation_guidance",
+            "value": "Upgrade OpenSSH to the latest version."
+          },
+          {
+            "key": "ipv4_addresses",
+            "value": "203.0.113.88"
+          },
+          {
+            "key": "domain_names",
+            "value": "sftp.example.net"
+          },
+          {
+            "key": "tags",
+            "value": "BU:Acme Logistics"
+          },
+          {
+            "key": "asset_ids",
+            "value": "2b1a0f9e-8d7c-36b5-a493-82716f5e4d3c"
+          },
+          {
+            "key": "service_ids",
+            "value": "5d4c3b2a-1908-3f7e-8d6c-5b4a39281706"
+          },
+          {
+            "key": "cloud_providers",
+            "value": "On Prem"
+          },
+          {
+            "key": "mitre_technique",
+            "value": "T1190 - Exploit Public-Facing Application"
+          },
+          {
+            "key": "case_id",
+            "value": "73"
+          },
+          {
+            "key": "cloud_management_status",
+            "value": "Not Applicable"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "PANW_CORTEXXPANSE_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cortex Xpanse",
+      "event_time_usec": 1792564000000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex Xpanse",
+      "log_type": "alert",
+      "alert_id": "113901",
+      "title": "Self-Signed Certificate at portal.example.org",
+      "summary": "This issue flags services that present a self-signed certificate, which browsers and clients can't verify.",
+      "status": "STATUS_010_NEW",
+      "alert_category": "Self-Signed Certificate",
+      "vendor_severity": "low",
+      "severity": "LOW",
+      "created_time_usec": 1792564000000000,
+      "updated_time_usec": 1792564202000000,
+      "last_event_time_usec": 1792563900000000,
+      "destination_address": "2001:db8:10::25",
+      "target_host_name": "portal.example.org",
+      "destination_port": 8443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "xpanse_tenant",
+            "value": "xpanse.example.com"
+          },
+          {
+            "key": "attack_surface_rule_id",
+            "value": "SelfSignedCertificate"
+          },
+          {
+            "key": "external_id",
+            "value": "1e2d3c4b-5a69-3878-a7b6-c5d4e3f2a1b0-0"
+          },
+          {
+            "key": "asm_alert_categories",
+            "value": "Attack Surface Reduction"
+          },
+          {
+            "key": "remediation_guidance",
+            "value": "Replace the certificate with one from a trusted certificate authority."
+          },
+          {
+            "key": "domain_names",
+            "value": "portal.example.org"
+          },
+          {
+            "key": "tags",
+            "value": "AR:Registered to You"
+          },
+          {
+            "key": "asset_ids",
+            "value": "8f7e6d5c-4b3a-3291-c8d7-e6f5a4b3c2d1"
+          },
+          {
+            "key": "service_ids",
+            "value": "6e5d4c3b-2a19-3087-b6a5-d4c3b2a1f0e9"
+          },
+          {
+            "key": "cloud_providers",
+            "value": "Microsoft Azure"
+          },
+          {
+            "key": "certificate_subject",
+            "value": "portal.example.org"
+          },
+          {
+            "key": "certificate_issuer",
+            "value": "portal.example.org"
+          },
+          {
+            "key": "case_id",
+            "value": "74"
+          },
+          {
+            "key": "cloud_management_status",
+            "value": "Not Applicable"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "PANW_CORTEXXPANSE_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Cortex Xpanse",
+      "event_time_usec": 1792569800000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Palo Alto Networks",
+      "provider": "Cortex Xpanse",
+      "log_type": "alert",
+      "alert_id": "113955",
+      "title": "Unencrypted FTP Server at 192.0.2.77:21",
+      "summary": "This issue flags FTP servers that accept logins without encryption.",
+      "status": "STATUS_010_NEW",
+      "alert_category": "Unencrypted FTP Server",
+      "vendor_severity": "informational",
+      "severity": "INFO",
+      "created_time_usec": 1792569800000000,
+      "updated_time_usec": 1792570000000000,
+      "last_event_time_usec": 1792569700000000,
+      "destination_address": "192.0.2.77",
+      "target_host_name": "ftp.example.net",
+      "destination_port": 21,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "xpanse_tenant",
+            "value": "xpanse.example.com"
+          },
+          {
+            "key": "attack_surface_rule_id",
+            "value": "UnencryptedFTPServer"
+          },
+          {
+            "key": "external_id",
+            "value": "3c4d5e6f-7a8b-39c0-d1e2-f3a4b5c6d7e8-0"
+          },
+          {
+            "key": "asm_alert_categories",
+            "value": "Attack Surface Reduction"
+          },
+          {
+            "key": "remediation_guidance",
+            "value": "Use SFTP or FTPS, or take the server off the internet."
+          },
+          {
+            "key": "ipv4_addresses",
+            "value": "192.0.2.77,192.0.2.78"
+          },
+          {
+            "key": "domain_names",
+            "value": "ftp.example.net,files.example.net"
+          },
+          {
+            "key": "tags",
+            "value": "BU:Acme Logistics"
+          },
+          {
+            "key": "asset_ids",
+            "value": "9a8b7c6d-5e4f-33a2-b1c0-d9e8f7a6b5c4"
+          },
+          {
+            "key": "service_ids",
+            "value": "7f6e5d4c-3b2a-3198-a7b6-c5d4e3f2a1b0"
+          },
+          {
+            "key": "cloud_providers",
+            "value": "On Prem"
+          },
+          {
+            "key": "case_id",
+            "value": "75"
+          },
+          {
+            "key": "cloud_management_status",
+            "value": "Not Applicable"
+          }
+        ]
+      }
+    }
+  }
+]
