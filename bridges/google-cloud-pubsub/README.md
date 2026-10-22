@@ -76,6 +76,8 @@ EnvironmentFile=/etc/google-cloud-pubsub.env
 LoadCredential=key.json:/etc/google-cloud-pubsub/key.json
 Environment=PUBSUB_SERVICE_ACCOUNT_KEY_FILE=%d/key.json
 DynamicUser=yes
+StateDirectory=google-cloud-pubsub
+WorkingDirectory=/var/lib/google-cloud-pubsub
 Restart=on-failure
 RestartSec=60
 
@@ -83,7 +85,7 @@ RestartSec=60
 WantedBy=multi-user.target
 ```
 
-`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet. The bridge keeps no state file: Pub/Sub keeps its place.
+`Restart=on-failure` starts the bridge again a minute after it stops, for example when it started before the network was up: a host name that doesn't resolve stops it if no run has worked yet. The unit gives the bridge a state directory, as the other bridges' units do, though it saves nothing there: Pub/Sub keeps its place.
 
 ## How it reads Pub/Sub
 
