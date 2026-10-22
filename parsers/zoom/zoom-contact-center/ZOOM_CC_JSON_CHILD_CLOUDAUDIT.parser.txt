@@ -1,0 +1,51 @@
+!SAMPLE={"zoom_record":"cc_operation","account_id":"Ex4mpleAcc0untId01","time":"2026-10-20T04:01:10Z","operator":"lead@example.com","category":"Engagement","object_name":"Engagement Ex4mpleEngagement0001","operation_log_id":"Ex4mpleOpLog0000000001","action":"Unmask","operation_detail":"Unmask consumer phone number","object_id":"Ex4mpleEngagement0001","team_name":"Support Team","agent_region_name":"Main Region"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zoom Contact Center operation logs (GET /contact_center/reports/operation_logs) from the
+# example bridge: admin changes, and agents and supervisors who unmask, download, listen to or
+# export customer data and recordings.
+# Child of ZOOM_CC_JSON_PARENT: each one to CloudAudit, with the action as the event name, the
+# category as the event type and the object as the resource. Unmask, Download, Listen and Export
+# read data, so they are read-only data events; every other action is a management event.
+# json, kind, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Zoom Contact Center"
+act = json["$.action"]
+eventName$ = act
+category = json["$.category"]
+eventType$ = category
+userName$ = json["$.operator"]
+account = json["$.account_id"]
+recipientAccountId$ = account
+lact = LOWERCASE(STRING(act))
+readOnly$ = lact == "unmask" OR lact == "download" OR lact == "listen" OR lact == "export"
+managementEvent$ = NOT readOnly$
+
+r1.resourceId$ = json["$.object_id"]
+r1.resourceType$ = category
+r1.resourceAccountId$ = account
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+d1.key$ = "operation_detail"
+d1.value$ = json["$.operation_detail"]
+d2.key$ = "object_name"
+d2.value$ = json["$.object_name"]
+d3.key$ = "team_name"
+d3.value$ = json["$.team_name"]
+d4.key$ = "agent_region_name"
+d4.value$ = json["$.agent_region_name"]
+d5.key$ = "division_name"
+d5.value$ = json["$.division_name"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$

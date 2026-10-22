@@ -1,0 +1,234 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ZOOM_CC_JSON_PARENT > ZOOM_CC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792468870000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Ex4mpleOpLog0000000001",
+      "event_type": "Engagement",
+      "event_source": "Zoom Contact Center",
+      "event_name": "Unmask",
+      "user_name": "lead@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "Ex4mpleEngagement0001",
+          "resource_type": "Engagement",
+          "resource_account_id": "Ex4mpleAcc0untId01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Unmask consumer phone number"
+          },
+          {
+            "key": "object_name",
+            "value": "Engagement Ex4mpleEngagement0001"
+          },
+          {
+            "key": "team_name",
+            "value": "Support Team"
+          },
+          {
+            "key": "agent_region_name",
+            "value": "Main Region"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ZOOM_CC_JSON_PARENT > ZOOM_CC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792469564000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Ex4mpleOpLog0000000002",
+      "event_type": "Recording",
+      "event_source": "Zoom Contact Center",
+      "event_name": "Download",
+      "user_name": "lead@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "Ex4mpleRecording000001",
+          "resource_type": "Recording",
+          "resource_account_id": "Ex4mpleAcc0untId01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Download recording"
+          },
+          {
+            "key": "object_name",
+            "value": "Recording of engagement Ex4mpleEngagement0001"
+          },
+          {
+            "key": "team_name",
+            "value": "Support Team"
+          },
+          {
+            "key": "agent_region_name",
+            "value": "Main Region"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ZOOM_CC_JSON_PARENT > ZOOM_CC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792470031000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Ex4mpleOpLog0000000003",
+      "event_type": "Recording",
+      "event_source": "Zoom Contact Center",
+      "event_name": "Listen",
+      "user_name": "sam@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "Ex4mpleRecording000001",
+          "resource_type": "Recording",
+          "resource_account_id": "Ex4mpleAcc0untId01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Listen to recording"
+          },
+          {
+            "key": "object_name",
+            "value": "Recording of engagement Ex4mpleEngagement0001"
+          },
+          {
+            "key": "team_name",
+            "value": "Support Team"
+          },
+          {
+            "key": "agent_region_name",
+            "value": "Main Region"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ZOOM_CC_JSON_PARENT > ZOOM_CC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792470902000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Ex4mpleOpLog0000000004",
+      "event_type": "Report",
+      "event_source": "Zoom Contact Center",
+      "event_name": "Export",
+      "user_name": "cc.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "read_only": true,
+      "management_event": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Export engagement report for 2026-10-19"
+          },
+          {
+            "key": "object_name",
+            "value": "Engagement report"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ZOOM_CC_JSON_PARENT > ZOOM_CC_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792471699000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "Ex4mpleOpLog0000000005",
+      "event_type": "Flows",
+      "event_source": "Zoom Contact Center",
+      "event_name": "Add",
+      "user_name": "cc.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "Ex4mpleFlow0000000005",
+          "resource_type": "Flows",
+          "resource_account_id": "Ex4mpleAcc0untId01"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Add Flows: [after-hours]"
+          },
+          {
+            "key": "object_name",
+            "value": "After hours flow"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ZOOM_CC_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792468200000000,
+      "sensor_event_id": "Ex4mpleEngagement0001"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ZOOM_CC_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792473015000000,
+      "sensor_event_id": "Ex4mpleEngagement0002"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ZOOM_CC_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Contact Center",
+      "event_time_usec": 1792476120000000,
+      "sensor_event_id": "Ex4mpleEngagement0003"
+    }
+  }
+]
