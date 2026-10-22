@@ -1,0 +1,55 @@
+!SAMPLE=<133>[S=92165] RAISE-ALARM:acIDSBlacklistNotification; Textual Description: Added IP 203.0.113.50(NI:0) to blacklist; Severity:indeterminate; Source:; Unique ID:30;
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alarm"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AudioCodes Mediant SBC alarms raised in syslog, as the device writes them:
+#   RAISE-ALARM:<name>; Textual Description: <text>; Severity:<severity>; Source:<source>; Unique ID:<n>;
+# and as the manual's template gives them ("Severity <severity>; Source <source>; Unique ID: <n>.").
+# IDS alarms (acIDSPolicyAlarm, acIDSThresholdCrossNotification, acIDSBlacklistNotification) name the
+# attacking address.
+# Child of AUDIOCODES_SBC_SYSLOG_PARENT: each one to Thirdparty, with the alarm name as the title, its
+# text as the summary and its severity.
+# msg, alarm, board, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+a = msg|^RAISE-ALARM:\s*(?P<name>[A-Za-z0-9]+);\s*Textual Description:\s*(?P<desc>.*?);\s*Severity:?\s*(?P<sev>[A-Za-z]+);\s*Source:?\s*(?P<src>[^;]*?);\s*Unique ID:\s*(?P<uid>\d+)
+name = a["name"]
+desc = a["desc"]
+title$ = name
+summary$ = desc
+alertId$ = a["uid"]
+vendor$ = "AudioCodes"
+provider$ = "Mediant SBC"
+vendorSeverity$ = a["sev"]
+sev = LOWERCASE(STRING(a["sev"]))
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "critical" THEN "CRITICAL" ELSE severity$
+severity$ = IF sev == "major" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "minor" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "warning" THEN "LOW" ELSE severity$
+severity$ = IF sev == "indeterminate" OR sev == "cleared" THEN "INFO" ELSE severity$
+ids = CONTAINS(STRING(name), "IDS")
+alertCategory$ = IF ids THEN "intrusion detection" ELSE "device alarm"
+targetHostName$ = hostId$
+
+# The attacking address an IDS alarm names: "Added IP 203.0.113.50(NI:0) to blacklist", "scope value
+# 203.0.113.51." or "Source: 203.0.113.50:62990udp".
+attacker = desc|(?:Added IP |Removed IP |scope value |Source: )(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(?P<port>\d+))?
+sourceAddress$ = IF ids THEN attacker["ip"] ELSE NULL
+sourcePort$ = IF ids AND attacker["port"] THEN INT(attacker["port"], 10) ELSE NULL
+action$ = IF CONTAINS(STRING(desc), "to blacklist") THEN "BLOCKED" ELSE NULL
+
+d1.key$ = "alarm_source"
+d1.value$ = a["src"]
+d2.key$ = "board_id"
+d2.value$ = board
+info = msg|Additional Info1:\s*(?P<v>[^;]*)
+d3.key$ = "additional_info1"
+d3.value$ = info["v"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = []
+additionalData$.record$ = IF d1.value$ THEN additionalData$.record$ + [d1] ELSE additionalData$.record$
+additionalData$.record$ = IF d2.value$ THEN additionalData$.record$ + [d2] ELSE additionalData$.record$
+additionalData$.record$ = IF d3.value$ THEN additionalData$.record$ + [d3] ELSE additionalData$.record$

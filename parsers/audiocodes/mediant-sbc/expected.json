@@ -1,0 +1,425 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600762000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "Admin",
+      "source_address": "198.51.100.23",
+      "auth_system": "AudioCodes WEB",
+      "logon_application_family": "WEB",
+      "target_address": "192.0.2.10",
+      "target_port_number": 443,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "WEB: Successful login at 192.0.2.10:443"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600801000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "Admin",
+      "source_address": "203.0.113.77",
+      "auth_system": "AudioCodes WEB",
+      "logon_application_family": "WEB",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "bad credentials",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "Unauthorized access attempt to Login Page. Reason: bad credentials"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600858000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "opsuser",
+      "source_address": "198.51.100.24",
+      "auth_system": "AudioCodes WEB",
+      "logon_application_family": "Web",
+      "target_address": "192.0.2.10",
+      "target_port_number": 80,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "Successful user login at 192.0.2.10:80"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600862000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "Admin",
+      "source_address": "198.51.100.23",
+      "auth_system": "AudioCodes SSH",
+      "logon_application_family": "SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "User login succeeded"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600890000000,
+      "event_time_fidelity": "MICRO",
+      "username": "Admin",
+      "source_address": "198.51.100.23",
+      "channel": "AudioCodes SSH",
+      "operation": "CLI: 'configure troubleshoot'",
+      "command": "configure troubleshoot",
+      "operation_name": "command"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600930000000,
+      "event_time_fidelity": "MICRO",
+      "username": "Admin",
+      "source_address": "198.51.100.23",
+      "channel": "AudioCodes WEB",
+      "operation": "Local Users Table row 1 (opsuser) -  'User Level' was changed from 'Administrator' to 'Security Administrator'",
+      "operation_name": "parameter changed"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600980000000,
+      "event_time_fidelity": "MICRO",
+      "username": "Admin",
+      "source_address": "198.51.100.23",
+      "channel": "AudioCodes WEB",
+      "operation": "Syslog Server IP was changed from '192.0.2.200' to '192.0.2.201'",
+      "operation_name": "parameter changed"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792600985000000,
+      "event_time_fidelity": "MICRO",
+      "username": "Admin",
+      "source_address": "198.51.100.23",
+      "channel": "AudioCodes WEB",
+      "operation": "System configuration has been saved",
+      "operation_name": "configuration saved"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792601112000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "Admin",
+      "source_address": "198.51.100.23",
+      "auth_system": "AudioCodes WEB",
+      "logon_application_family": "WEB",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "WEB: User logout"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792601140000000,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "Admin",
+      "source_address": "198.51.100.23",
+      "auth_system": "AudioCodes SSH",
+      "logon_application_family": "SSH",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "User logged out"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602131000000,
+      "event_time_fidelity": "MICRO",
+      "title": "acIDSPolicyAlarm",
+      "summary": "Major threshold (3) cross. Policy: SIP-Guard (3), Rule: Malformed messages, Last event: SIP parser error, Source: 203.0.113.50:62990udp, SIP Interface: SIPInterface_0 (0).",
+      "alert_id": "212",
+      "vendor": "AudioCodes",
+      "provider": "Mediant SBC",
+      "vendor_severity": "major",
+      "severity": "HIGH",
+      "alert_category": "intrusion detection",
+      "source_address": "203.0.113.50",
+      "source_port": 62990,
+      "additional_data": {
+        "record": [
+          {
+            "key": "alarm_source",
+            "value": "Board#1/IDSMatch#0/IDSRule#1"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792627200000000,
+      "event_time_fidelity": "MICRO",
+      "title": "acIDSBlacklistNotification",
+      "summary": "Added IP 203.0.113.50(NI:0) to blacklist",
+      "alert_id": "30",
+      "vendor": "AudioCodes",
+      "provider": "Mediant SBC",
+      "vendor_severity": "indeterminate",
+      "severity": "INFO",
+      "alert_category": "intrusion detection",
+      "source_address": "203.0.113.50",
+      "action": "BLOCKED"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602135000000,
+      "event_time_fidelity": "MICRO",
+      "title": "acIDSThresholdCrossNotification",
+      "summary": "Threshold crossed for scope value 203.0.113.51. Severity=major. Current value=12",
+      "alert_id": "214",
+      "vendor": "AudioCodes",
+      "provider": "Mediant SBC",
+      "vendor_severity": "indeterminate",
+      "severity": "INFO",
+      "alert_category": "intrusion detection",
+      "source_address": "203.0.113.51",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alarm_source",
+            "value": "Board#1/IDSMatch#0/IDSRule#1"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602640000000,
+      "event_time_fidelity": "MICRO",
+      "title": "acProxyConnectionLost",
+      "summary": "Proxy Set 1 (\"ITSP\"): Server 198.51.100.80:5060 is down - one or more servers in the proxy set are offline",
+      "alert_id": "41",
+      "vendor": "AudioCodes",
+      "provider": "Mediant SBC",
+      "vendor_severity": "minor",
+      "severity": "MEDIUM",
+      "alert_category": "device alarm",
+      "additional_data": {
+        "record": [
+          {
+            "key": "alarm_source",
+            "value": "System#0"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602721000000
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602900000000
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792627200000000
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792602064000000
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "AUDIOCODES_SBC_SYSLOG_PARENT > AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "AudioCodes Mediant SBC",
+      "event_time_usec": 1792601161000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "sbc01.example.com",
+      "target_user_name": "Admin",
+      "source_address": "198.51.100.25",
+      "auth_system": "AudioCodes WEB",
+      "logon_application_family": "WEB",
+      "target_address": "192.0.2.10",
+      "target_port_number": 443,
+      "target_host_name": "sbc01.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "activity",
+            "value": "WEB: Successful login at 192.0.2.10:443"
+          },
+          {
+            "key": "board_id",
+            "value": "5b1035:7"
+          }
+        ]
+      }
+    }
+  }
+]
