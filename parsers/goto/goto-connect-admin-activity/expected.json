@@ -1,0 +1,330 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GOTO_ADMIN_JOBS_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GoTo",
+      "event_time_usec": 1792541564218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9b2e47d1c03a4f8e",
+      "event_source": "GoTo Admin",
+      "event_name": "updateuser",
+      "event_type": "ea",
+      "recipient_account_id": "7216448010834567201",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_id": "5550001",
+      "user_type": "admin",
+      "status": "COMPLETED",
+      "target_user_name": "sam.lee@example.com",
+      "resources": [
+        {
+          "resource_id": "7770031",
+          "resource_type": "user",
+          "resource_account_id": "7216448010834567201"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "method",
+            "value": "PUT"
+          },
+          {
+            "key": "uri",
+            "value": "/ext-admin/rest/accounts/7216448010834567201/users/7770031"
+          },
+          {
+            "key": "content",
+            "value": "{\"adminRoles\":[\"MANAGE_SEATS\",\"MANAGE_USERS\"]}"
+          }
+        ]
+      },
+      "responses": {
+        "record": [
+          {
+            "key": "status",
+            "value": "204"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Jane Smith"
+          },
+          {
+            "key": "target_user_name",
+            "value": "Sam Lee"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GOTO_ADMIN_JOBS_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GoTo",
+      "event_time_usec": 1792541702456000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4f81c2a9e6b7d053",
+      "event_source": "GoTo Admin",
+      "event_name": "addusers",
+      "event_type": "ea",
+      "recipient_account_id": "7216448010834567201",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_id": "5550001",
+      "user_type": "admin",
+      "status": "COMPLETED",
+      "target_user_name": "bob.jones@example.com",
+      "resources": [
+        {
+          "resource_id": "7770044",
+          "resource_type": "user",
+          "resource_account_id": "7216448010834567201"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "method",
+            "value": "POST"
+          },
+          {
+            "key": "uri",
+            "value": "/ext-admin/rest/accounts/7216448010834567201/users"
+          },
+          {
+            "key": "content",
+            "value": "{\"users\":[{\"email\":\"bob.jones@example.com\",\"firstName\":\"Bob\",\"lastName\":\"Jones\"}]}"
+          }
+        ]
+      },
+      "responses": {
+        "record": [
+          {
+            "key": "status",
+            "value": "200"
+          },
+          {
+            "key": "content",
+            "value": "{\"key\":\"7770044\",\"email\":\"bob.jones@example.com\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Jane Smith"
+          },
+          {
+            "key": "target_user_name",
+            "value": "Bob Jones"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GOTO_ADMIN_JOBS_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GoTo",
+      "event_time_usec": 1792544553120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "c5d06e1f72a84b39",
+      "event_source": "GoTo Admin",
+      "event_name": "deleteusers",
+      "event_type": "ea",
+      "recipient_account_id": "7216448010834567201",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "helpdesk@example.com",
+      "user_id": "5550007",
+      "user_type": "admin",
+      "status": "FAILED",
+      "error_code": "403",
+      "target_user_name": "sam.lee@example.com",
+      "resources": [
+        {
+          "resource_id": "7770031",
+          "resource_type": "user",
+          "resource_account_id": "7216448010834567201"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "method",
+            "value": "DELETE"
+          },
+          {
+            "key": "uri",
+            "value": "/ext-admin/rest/accounts/7216448010834567201/users/7770031"
+          }
+        ]
+      },
+      "responses": {
+        "record": [
+          {
+            "key": "status",
+            "value": "403"
+          },
+          {
+            "key": "content",
+            "value": "{\"incidentId\":5512,\"errors\":[{\"code\":\"insufficient.permissions\"}]}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Help Desk"
+          },
+          {
+            "key": "target_user_name",
+            "value": "Sam Lee"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GOTO_ADMIN_JOBS_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GoTo",
+      "event_time_usec": 1792550830000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e18a3b5c9d0f4276",
+      "event_source": "GoTo Admin",
+      "event_name": "updateline",
+      "event_type": "g2c",
+      "recipient_account_id": "7216448010834567201",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "jsmith@example.com",
+      "user_id": "5550001",
+      "user_type": "admin",
+      "source_address": "203.0.113.10",
+      "status": "COMPLETED",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "method",
+            "value": "PATCH"
+          },
+          {
+            "key": "uri",
+            "value": "/voice-admin/v1/lines/line-1103"
+          },
+          {
+            "key": "action",
+            "value": "UPDATE"
+          },
+          {
+            "key": "target",
+            "value": "line-1103"
+          },
+          {
+            "key": "correlation_id",
+            "value": "7f3a8b2c-4f1a-4b3e-9c2d-1a2b3c4d5e6f"
+          }
+        ]
+      },
+      "responses": {
+        "record": [
+          {
+            "key": "status",
+            "value": "200"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Jane Smith"
+          },
+          {
+            "key": "context",
+            "value": "{\"extension\":\"1103\",\"setting\":\"callForwarding\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GOTO_ADMIN_JOBS_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "GoTo",
+      "event_time_usec": 1792552010500000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "0a7c9e2b4d6f8135",
+      "event_source": "GoTo Admin",
+      "event_name": "setuserrolesets",
+      "event_type": "ea",
+      "recipient_account_id": "7216448010834567201",
+      "management_event": true,
+      "read_only": false,
+      "user_name": "sync@example.com",
+      "user_id": "5550090",
+      "user_type": "sync user",
+      "status": "SUBMITTED",
+      "target_user_name": "bob.jones@example.com",
+      "resources": [
+        {
+          "resource_id": "7770044",
+          "resource_type": "user",
+          "resource_account_id": "7216448010834567201"
+        },
+        {
+          "resource_id": "7770052",
+          "resource_type": "user",
+          "resource_account_id": "7216448010834567201"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "method",
+            "value": "PUT"
+          },
+          {
+            "key": "uri",
+            "value": "/ext-admin/rest/accounts/7216448010834567201/rolesets/31/users"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "admin_name",
+            "value": "Directory Sync"
+          },
+          {
+            "key": "target_user_name",
+            "value": "Bob Jones"
+          },
+          {
+            "key": "role_set",
+            "value": "Phone System Admins"
+          }
+        ]
+      }
+    }
+  }
+]

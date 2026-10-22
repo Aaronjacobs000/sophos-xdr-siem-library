@@ -1,0 +1,120 @@
+!SAMPLE={"goto_record":"admin_job","goto_account_key":"7216448010834567201","system":"ea","id":"9b2e47d1c03a4f8e","type":"updateuser","submitTime":1792541564218,"startTime":1792541564260,"endTime":1792541565120,"status":"COMPLETED","admin":{"key":5550001,"email":"jsmith@example.com","firstName":"Jane","lastName":"Smith","systemUser":false,"syncUser":false},"request":{"method":"PUT","uri":"/ext-admin/rest/accounts/7216448010834567201/users/7770031","content":"{\"adminRoles\":[\"MANAGE_SEATS\",\"MANAGE_USERS\"]}"},"response":{"status":204},"metadata":{"users":[{"key":7770031,"email":"sam.lee@example.com","firstName":"Sam","lastName":"Lee"}]}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"goto_record"\s*:\s*"admin_job"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: GoTo Admin job records (GoTo's audit records of admin changes, GoTo Connect's included) from
+# the GoTo Admin API, pulled by the example bridge in bridges/goto-admin-jobs and posted to HTTP Ingest
+# as JSON lines. The bridge puts "goto_record": "admin_job" and the account key first.
+# Standalone parser for the CloudAudit schema: each job, with its type (such as updateuser) as the event
+# name and its system ("ea" for GoTo Admin, or another system's name) as the event type.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "GoTo"
+sensorEventId$ = json["$.id"]
+# submitTime is milliseconds since the epoch.
+eventTimeUsec$ = IF json["$.submitTime"] THEN json["$.submitTime"] * 1000 ELSE eventTimeUsec$
+
+eventSource$ = "GoTo Admin"
+eventName$ = json["$.type"]
+eventType$ = json["$.system"]
+recipientAccountId$ = json["$.goto_account_key"]
+managementEvent$ = TRUE
+action = json["$.action"]
+readOnly$ = action == "EXPORT"
+
+# Who made the change: the admin, by email and key. A system user or a directory sync user is named so.
+userName$ = json["$.admin.email"]
+userId$ = STRING(json["$.admin.key"])
+kind = "admin"
+kind = IF STRING(json["$.admin.syncUser"]) == "true" THEN "sync user" ELSE kind
+kind = IF STRING(json["$.admin.systemUser"]) == "true" THEN "system user" ELSE kind
+userType$ = kind
+# GoTo gives the admin's address only for jobs of other systems.
+sourceAddress$ = json["$.admin.ip"]
+
+# The job's state (SUBMITTED, STARTED, COMPLETED or FAILED), and the outcome's HTTP status when it
+# failed.
+status$ = json["$.status"]
+code = json["$.response.status"]
+errorCode$ = IF code >= 400 THEN STRING(code) ELSE NULL
+
+# What it touched: the first user in the metadata as the target user, and the first two users, the
+# first device and the first group as resources.
+targetUserName$ = json["$.metadata.users[0].email"]
+account = json["$.goto_account_key"]
+r1.resourceId$ = STRING(json["$.metadata.users[0].key"])
+r1.resourceType$ = "user"
+r1.resourceAccountId$ = account
+r2.resourceId$ = STRING(json["$.metadata.users[1].key"])
+r2.resourceType$ = "user"
+r2.resourceAccountId$ = account
+r3.resourceId$ = STRING(json["$.metadata.devices[0].key"])
+r3.resourceType$ = "device"
+r3.resourceAccountId$ = account
+r4.resourceId$ = STRING(json["$.metadata.groups[0].key"])
+r4.resourceType$ = "group"
+r4.resourceAccountId$ = account
+resources$ = []
+resources$ = IF json["$.metadata.users[0].key"] != NULL THEN resources$ + [r1] ELSE resources$
+resources$ = IF json["$.metadata.users[1].key"] != NULL THEN resources$ + [r2] ELSE resources$
+resources$ = IF json["$.metadata.devices[0].key"] != NULL THEN resources$ + [r3] ELSE resources$
+resources$ = IF json["$.metadata.groups[0].key"] != NULL THEN resources$ + [r4] ELSE resources$
+
+# The request: method and URI, the external system's action, target and correlation ID, and the body
+# GoTo keeps as text.
+p1.key$ = "method"
+p1.value$ = json["$.request.method"]
+p2.key$ = "uri"
+p2.value$ = json["$.request.uri"]
+p3.key$ = "action"
+p3.value$ = action
+p4.key$ = "target"
+p4.value$ = json["$.target"]
+p5.key$ = "correlation_id"
+p5.value$ = json["$.correlationId"]
+p6.key$ = "content"
+p6.value$ = json["$.request.content"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p5.value$ THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p6.value$ THEN requestParameters$.record$ + [p6] ELSE requestParameters$.record$
+
+o1.key$ = "status"
+o1.value$ = STRING(code)
+o2.key$ = "content"
+o2.value$ = json["$.response.content"]
+# Assign the list first: reading responses$.record$ before it is set fails the event.
+responses$.record$ = []
+responses$.record$ = IF code != NULL THEN responses$.record$ + [o1] ELSE responses$.record$
+responses$.record$ = IF o2.value$ THEN responses$.record$ + [o2] ELSE responses$.record$
+
+d1.key$ = "admin_name"
+d1.value$ = STRING(json["$.admin.firstName"]) + " " + STRING(json["$.admin.lastName"])
+d2.key$ = "context"
+d2.value$ = json["$.context"]
+d3.key$ = "target_user_name"
+d3.value$ = STRING(json["$.metadata.users[0].firstName"]) + " " + STRING(json["$.metadata.users[0].lastName"])
+d4.key$ = "role_set"
+d4.value$ = json["$.metadata.roleSets[0].name"]
+d5.key$ = "group"
+d5.value$ = json["$.metadata.groups[0].name"]
+d6.key$ = "device"
+d6.value$ = json["$.metadata.devices[0].name"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF json["$.admin.firstName"] THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF json["$.metadata.users[0].firstName"] THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
