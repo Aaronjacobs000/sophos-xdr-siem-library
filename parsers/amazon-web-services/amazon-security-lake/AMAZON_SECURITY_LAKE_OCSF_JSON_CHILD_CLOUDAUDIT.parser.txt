@@ -1,0 +1,118 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_cloud_trail_mgmt_2_0","activity_id":4,"activity_name":"Delete","category_name":"Application Activity","category_uid":6,"class_name":"API Activity","class_uid":6003,"severity":"Informational","severity_id":1,"time":1792459211000,"time_dt":"2026-10-20 01:20:11.000 UTC","type_name":"API Activity: Delete","type_uid":600304,"metadata":{"product":{"name":"CloudTrail","vendor_name":"AWS","feature":{"name":"Management"}},"profiles":["cloud","datetime"],"version":"1.1.0","event_code":"AwsApiCall","uid":"6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e02"},"actor":{"user":{"type":"IAMUser","name":"ci-deploy","uid":"arn:aws:iam::111122223333:user/ci-deploy","uid_alt":"AIDAEXAMPLECIDEPLOY1","credential_uid":"EXAMPLEUSERKEYID0002","account":{"uid":"111122223333"}}},"api":{"operation":"DeleteTrail","request":{"uid":"0a1b2c3d-1111-4222-8333-944455556602","data":"{\"name\":\"org-trail\"}"},"response":{"error":"AccessDenied","message":"User is not authorized to perform: cloudtrail:DeleteTrail"},"service":{"name":"cloudtrail.amazonaws.com"}},"cloud":{"provider":"AWS","region":"ap-southeast-2"},"http_request":{"user_agent":"Boto3/1.35.10 Python/3.11.9 Linux/5.10"},"src_endpoint":{"ip":"198.51.100.77"},"status":"Failure","status_id":2,"resources":[{"uid":"arn:aws:cloudtrail:ap-southeast-2:111122223333:trail/org-trail","type":"AWS::CloudTrail::Trail","owner":{"account":{"uid":"111122223333"}}}],"unmapped":{"recipientAccountId":"111122223333","managementEvent":"true","readOnly":"false"},"accountid":"111122223333","region":"ap-southeast-2"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake API Activity (6003), Account Change (3001), User Access Management
+# (3005) and Group Management (3006) records from the example bridge: CloudTrail management events,
+# Lambda and S3 data events, and EKS audit logs.
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to CloudAudit, with the API operation as
+# the event name and the service as the event source.
+# json, table, cls, activity, product, account, region, eventType$, sensorType$, sensorEventId$ and
+# eventTimeUsec$ come from the parent.
+
+eventName$ = json["$.api.operation"]
+eventSource$ = json["$.api.service.name"]
+eventSource$ = IF eventSource$ THEN eventSource$ ELSE product
+code = json["$.metadata.event_code"]
+eventType$ = IF code THEN code ELSE json["$.class_name"]
+
+# The caller: an IAM user's name, else the principal's ARN (an assumed role has no name).
+name = json["$.actor.user.name"]
+uid = json["$.actor.user.uid"]
+userName$ = IF name THEN name ELSE uid
+alt = json["$.actor.user.uid_alt"]
+userId$ = IF alt THEN alt ELSE uid
+userType$ = json["$.actor.user.type"]
+accessKey$ = json["$.actor.user.credential_uid"]
+mfa = json["$.actor.session.is_mfa"]
+mfaUsed$ = IF mfa == NULL THEN NULL ELSE STRING(mfa) == "true"
+# Account Change records name the user or role that changed.
+target = json["$.user.name"]
+targetUserName$ = IF target THEN target ELSE json["$.user.uid"]
+
+recipientAccountId$ = account
+recipient = json["$.unmapped.recipientAccountId"]
+recipientAccountId$ = IF recipient THEN recipient ELSE recipientAccountId$
+region$ = region
+sourceAddress$ = json["$.src_endpoint.ip"]
+userAgent$ = json["$.http_request.user_agent"]
+status$ = json["$.status"]
+errorCode$ = json["$.api.response.error"]
+errorMessage$ = json["$.api.response.message"]
+
+# CloudTrail's readOnly and managementEvent come through in unmapped as text. Without them, a
+# Read activity of API Activity is read-only, and the management events table is management events.
+ro = json["$.unmapped.readOnly"]
+readOnly$ = IF ro != NULL THEN STRING(ro) == "true" ELSE (cls == "6003" AND activity == "2")
+me = json["$.unmapped.managementEvent"]
+managementEvent$ = IF me != NULL THEN STRING(me) == "true" ELSE CONTAINS(table, "_cloud_trail_mgmt_")
+
+# The first three resources: an ARN, or a Kubernetes object's name.
+r1id = json["$.resources[0].uid"]
+r1.resourceId$ = IF r1id THEN r1id ELSE json["$.resources[0].name"]
+r1.resourceType$ = json["$.resources[0].type"]
+r1own = json["$.resources[0].owner.account.uid"]
+r1.resourceAccountId$ = IF r1own THEN r1own ELSE account
+r2id = json["$.resources[1].uid"]
+r2.resourceId$ = IF r2id THEN r2id ELSE json["$.resources[1].name"]
+r2.resourceType$ = json["$.resources[1].type"]
+r2own = json["$.resources[1].owner.account.uid"]
+r2.resourceAccountId$ = IF r2own THEN r2own ELSE account
+r3id = json["$.resources[2].uid"]
+r3.resourceId$ = IF r3id THEN r3id ELSE json["$.resources[2].name"]
+r3.resourceType$ = json["$.resources[2].type"]
+r3own = json["$.resources[2].owner.account.uid"]
+r3.resourceAccountId$ = IF r3own THEN r3own ELSE account
+# Assign the list first: reading resources$ before it is set fails the event.
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+resources$ = IF r3.resourceId$ THEN resources$ + [r3] ELSE resources$
+
+# CloudTrail's requestParameters and responseElements arrive as JSON text in api.request.data and
+# api.response.data. EKS gives the request path and the response code.
+p1.key$ = "request_data"
+p1.value$ = json["$.api.request.data"]
+p2.key$ = "url_path"
+p2.value$ = json["$.http_request.url.path"]
+p3.key$ = "namespace"
+p3.value$ = json["$.resources[0].namespace"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+
+s1.key$ = "response_data"
+s1.value$ = json["$.api.response.data"]
+s2.key$ = "response_code"
+s2.value$ = STRING(json["$.api.response.code"])
+# Assign the list first: reading responses$.record$ before it is set fails the event.
+responses$.record$ = []
+responses$.record$ = IF s1.value$ THEN responses$.record$ + [s1] ELSE responses$.record$
+responses$.record$ = IF s2.value$ != "" THEN responses$.record$ + [s2] ELSE responses$.record$
+
+d1.key$ = "product"
+d1.value$ = product
+d2.key$ = "ocsf_class"
+d2.value$ = json["$.class_name"]
+d3.key$ = "activity"
+d3.value$ = json["$.activity_name"]
+d4.key$ = "request_id"
+d4.value$ = json["$.api.request.uid"]
+d5.key$ = "session_issuer"
+d5.value$ = json["$.actor.session.issuer"]
+d6.key$ = "security_lake_table"
+d6.value$ = table
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$

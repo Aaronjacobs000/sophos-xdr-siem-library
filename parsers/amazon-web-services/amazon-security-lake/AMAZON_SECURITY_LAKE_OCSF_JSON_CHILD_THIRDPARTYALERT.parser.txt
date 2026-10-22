@@ -1,0 +1,91 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_sh_findings_2_0","activity_id":1,"activity_name":"Create","category_name":"Findings","category_uid":2,"class_name":"Detection Finding","class_uid":2004,"severity":"Medium","severity_id":3,"time":1792479922487,"time_dt":"2026-10-20 07:05:22.487 UTC","type_name":"Detection Finding: Create","type_uid":200401,"metadata":{"log_version":"2018-10-08","product":{"feature":{"uid":"arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0"},"name":"GuardDuty","uid":"arn:aws:securityhub:ap-southeast-2::product/aws/guardduty","vendor_name":"Amazon"},"profiles":["cloud","datetime"],"version":"1.1.0"},"cloud":{"account":{"uid":"111122223333"},"provider":"AWS","region":"ap-southeast-2"},"evidences":[{"api":{"operation":"ListBuckets","service":{"name":"s3.amazonaws.com"}},"src_endpoint":{"ip":"198.51.100.77"}}],"finding_info":{"created_time":1792479922487,"created_time_dt":"2026-10-20 07:05:22.487 UTC","desc":"API ListBuckets, commonly used in reconnaissance attacks, was invoked from IP address 198.51.100.77 on the list of known malicious IP addresses.","first_seen_time":1792479309000,"first_seen_time_dt":"2026-10-20 06:55:09.000 UTC","last_seen_time":1792479700000,"last_seen_time_dt":"2026-10-20 07:01:40.000 UTC","modified_time":1792479922487,"modified_time_dt":"2026-10-20 07:05:22.487 UTC","src_url":"https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f","title":"API ListBuckets was invoked from a known malicious IP address.","types":["TTPs/Discovery/Recon:IAMUser-MaliciousIPCaller"],"uid":"arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f"},"resources":[{"cloud_partition":"aws","region":"ap-southeast-2","type":"AwsIamAccessKey","uid":"AWS::IAM::AccessKey:EXAMPLEKEYID","data":"{\"AwsIamAccessKey\":{\"PrincipalName\":\"ci-deploy\",\"PrincipalType\":\"IAMUser\"}}"}],"status":"New","status_id":1,"unmapped":{"Severity.Normalized":"50","RecordState":"ACTIVE","WorkflowState":"NEW"},"accountid":"111122223333","region":"ap-southeast-2"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake findings from the example bridge: Security Hub findings as Detection
+# (2004), Compliance (2003) and Vulnerability (2002) Findings, and Security Finding (2001).
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to Thirdparty, with the title,
+# description, severity, status, the finding's times, and the product that raised it.
+# json, cls, account, region, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+title$ = json["$.finding_info.title"]
+summary$ = json["$.finding_info.desc"]
+alertId$ = json["$.finding_info.uid"]
+alertCategory$ = json["$.finding_info.types[0]"]
+logType$ = json["$.class_name"]
+status$ = json["$.status"]
+vendor$ = json["$.metadata.product.vendor_name"]
+provider$ = json["$.metadata.product.name"]
+vendorSeverity$ = json["$.severity"]
+conf = json["$.confidence"]
+confidence$ = IF conf != NULL THEN STRING(conf) ELSE NULL
+
+# severity_id runs from 1 (Informational) to 6 (Fatal); 0 is Unknown and 99 Other.
+sev = STRING(json["$.severity_id"])
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "1" THEN "INFO" ELSE severity$
+severity$ = IF sev == "2" THEN "LOW" ELSE severity$
+severity$ = IF sev == "3" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "4" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "5" OR sev == "6" THEN "CRITICAL" ELSE severity$
+
+# The finding's times are milliseconds since the epoch.
+ct = STRING(json["$.finding_info.created_time"])
+mt = STRING(json["$.finding_info.modified_time"])
+ft = STRING(json["$.finding_info.first_seen_time"])
+lt = STRING(json["$.finding_info.last_seen_time"])
+createdTimeUsec$ = IF ct != "" THEN INT(ct, 10) * 1000 ELSE NULL
+updatedTimeUsec$ = IF mt != "" THEN INT(mt, 10) * 1000 ELSE NULL
+firstEventTimeUsec$ = IF ft != "" THEN INT(ft, 10) * 1000 ELSE NULL
+lastEventTimeUsec$ = IF lt != "" THEN INT(lt, 10) * 1000 ELSE NULL
+
+# GuardDuty findings carry the caller's address and the API call as evidence.
+sourceAddress$ = json["$.evidences[0].src_endpoint.ip"]
+# The resource the finding is about: one of resources, or the single resource of a compliance finding.
+resType = json["$.resources[0].type"]
+resType = IF resType THEN resType ELSE json["$.resource.type"]
+resId = json["$.resources[0].uid"]
+resId = IF resId THEN resId ELSE json["$.resource.uid"]
+resText = STRING(resId)
+inst = resText|instance/(?P<id>i-[0-9a-f]+)$
+targetHostName$ = IF inst["id"] != "" THEN inst["id"] ELSE NULL
+
+d1.key$ = "account"
+d1.value$ = account
+d2.key$ = "region"
+d2.value$ = region
+d3.key$ = "resource_type"
+d3.value$ = resType
+d4.key$ = "resource_id"
+d4.value$ = resId
+d5.key$ = "compliance_status"
+d5.value$ = json["$.compliance.status"]
+d6.key$ = "compliance_control"
+d6.value$ = json["$.compliance.control"]
+d7.key$ = "vulnerability_id"
+d7.value$ = json["$.vulnerabilities[0].cve.uid"]
+d8.key$ = "api_call"
+d8.value$ = json["$.evidences[0].api.operation"]
+d9.key$ = "source_url"
+d9.value$ = json["$.finding_info.src_url"]
+d10.key$ = "product_id"
+d10.value$ = json["$.metadata.product.uid"]
+d11.key$ = "detector"
+d11.value$ = json["$.metadata.product.feature.uid"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = []
+additionalData$.record$ = IF d1.value$ THEN additionalData$.record$ + [d1] ELSE additionalData$.record$
+additionalData$.record$ = IF d2.value$ THEN additionalData$.record$ + [d2] ELSE additionalData$.record$
+additionalData$.record$ = IF d3.value$ THEN additionalData$.record$ + [d3] ELSE additionalData$.record$
+additionalData$.record$ = IF d4.value$ THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+additionalData$.record$ = IF d5.value$ THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+additionalData$.record$ = IF d6.value$ THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+additionalData$.record$ = IF d7.value$ THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+additionalData$.record$ = IF d8.value$ THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+additionalData$.record$ = IF d9.value$ THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+additionalData$.record$ = IF d10.value$ THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+additionalData$.record$ = IF d11.value$ THEN additionalData$.record$ + [d11] ELSE additionalData$.record$

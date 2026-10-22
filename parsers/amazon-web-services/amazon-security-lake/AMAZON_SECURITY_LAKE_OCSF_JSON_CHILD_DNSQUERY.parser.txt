@@ -1,0 +1,138 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_route53_2_0","activity_id":6,"activity_name":"Traffic","category_name":"Network Activity","category_uid":4,"class_name":"DNS Activity","class_uid":4003,"severity":"Informational","severity_id":1,"time":1792469402000,"time_dt":"2026-10-20 04:10:02.000 UTC","type_name":"DNS Activity: Traffic","type_uid":400306,"metadata":{"product":{"name":"Route 53","vendor_name":"AWS","feature":{"name":"Resolver Query Logs"},"version":"1.100000"},"profiles":["cloud","security_control","datetime"],"version":"1.1.0"},"answers":[{"class":"IN","rdata":"cdn.example.net.","type":"CNAME"},{"class":"IN","rdata":"203.0.113.80","type":"A"}],"cloud":{"account":{"uid":"111122223333"},"provider":"AWS","region":"ap-southeast-2"},"connection_info":{"direction":"Unknown","direction_id":0,"protocol_name":"UDP"},"query":{"class":"IN","hostname":"www.example.org.","type":"A"},"rcode":"NoError","rcode_id":0,"src_endpoint":{"instance_uid":"i-0a1b2c3d4e5f60718","ip":"192.0.2.50","port":53122,"vpc_uid":"vpc-0a1b2c3d4e5f60718"},"accountid":"111122223333","region":"ap-southeast-2"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="dns"
+!SCHEMA=scwx.dnsquery
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake DNS Activity (4003) records from the example bridge: Route 53
+# Resolver query logs.
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to the DNS schema, with the name, the
+# type and class as numbers, the response code, the client and the first four answers.
+# Setting query_name lets the Domain Generation Algorithms and Domain Watchlist detectors use these events.
+# json, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = json["$.src_endpoint.ip"]
+destinationAddress$ = json["$.dst_endpoint.ip"]
+# The instance that asked, or the inbound endpoint a query from your network came through.
+hostId$ = json["$.src_endpoint.instance_uid"]
+hostId$ = IF hostId$ == NULL THEN json["$.dst_endpoint.instance_uid"] ELSE hostId$
+
+# Route 53 writes the name fully qualified, with a trailing dot. Drop it so names match watchlists.
+qn = json["$.query.hostname"]|^(?P<name>.*?)\.?$
+qname = qn["name"]
+queryName$ = qname
+# Reverse lookups (in-addr.arpa and ip6.arpa names) have no private domain to mark.
+rev = qname|\.arpa$
+tld = IDX_OF_TLD(qname)
+indexOfTopPrivateDomain$ = IF rev[0] == "" THEN tld ELSE NULL
+isTopPrivateDomainParsed$ = IF rev[0] == "" THEN tld != -1 ELSE NULL
+
+# query_type, query_class and response_code take the DNS numbers (IANA); OCSF gives the names.
+qt = UPPERCASE(STRING(json["$.query.type"]))
+queryType$ = NULL
+queryType$ = IF qt == "A" THEN 1 ELSE queryType$
+queryType$ = IF qt == "NS" THEN 2 ELSE queryType$
+queryType$ = IF qt == "CNAME" THEN 5 ELSE queryType$
+queryType$ = IF qt == "SOA" THEN 6 ELSE queryType$
+queryType$ = IF qt == "PTR" THEN 12 ELSE queryType$
+queryType$ = IF qt == "MX" THEN 15 ELSE queryType$
+queryType$ = IF qt == "TXT" THEN 16 ELSE queryType$
+queryType$ = IF qt == "AAAA" THEN 28 ELSE queryType$
+queryType$ = IF qt == "SRV" THEN 33 ELSE queryType$
+queryType$ = IF qt == "NAPTR" THEN 35 ELSE queryType$
+queryType$ = IF qt == "DS" THEN 43 ELSE queryType$
+queryType$ = IF qt == "SVCB" THEN 64 ELSE queryType$
+queryType$ = IF qt == "HTTPS" THEN 65 ELSE queryType$
+queryType$ = IF qt == "SPF" THEN 99 ELSE queryType$
+queryType$ = IF qt == "ANY" THEN 255 ELSE queryType$
+queryType$ = IF qt == "CAA" THEN 257 ELSE queryType$
+
+qc = UPPERCASE(STRING(json["$.query.class"]))
+queryClass$ = NULL
+queryClass$ = IF qc == "IN" THEN 1 ELSE queryClass$
+queryClass$ = IF qc == "CH" THEN 3 ELSE queryClass$
+queryClass$ = IF qc == "HS" THEN 4 ELSE queryClass$
+queryClass$ = IF qc == "ANY" THEN 255 ELSE queryClass$
+
+# rcode_id is the DNS RCODE number, except 99 (Other). Without it, the name is mapped.
+rid = STRING(json["$.rcode_id"])
+ridn = rid|^(?P<n>\d{1,2})$
+responseCode$ = IF ridn["n"] != "" AND rid != "99" THEN INT(ridn["n"], 10) ELSE NULL
+rc = REPLACE_REGEX(UPPERCASE(STRING(json["$.rcode"])), `[^A-Z]`, "")
+responseCode$ = IF responseCode$ == NULL AND rc == "NOERROR" THEN 0 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND (rc == "FORMERR" OR rc == "FORMERROR") THEN 1 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND (rc == "SERVFAIL" OR rc == "SERVERROR") THEN 2 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "NXDOMAIN" THEN 3 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "NOTIMP" THEN 4 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "REFUSED" THEN 5 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "YXDOMAIN" THEN 6 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "YXRRSET" THEN 7 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "NXRRSET" THEN 8 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "NOTAUTH" THEN 9 ELSE responseCode$
+responseCode$ = IF responseCode$ == NULL AND rc == "NOTZONE" THEN 10 ELSE responseCode$
+
+# The first four answers go to responses. Each record takes the type number and the data.
+a1.responseData$ = json["$.answers[0].rdata"]
+t1 = UPPERCASE(STRING(json["$.answers[0].type"]))
+a1.responseType$ = NULL
+a1.responseType$ = IF t1 == "A" THEN 1 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "NS" THEN 2 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "CNAME" THEN 5 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SOA" THEN 6 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "PTR" THEN 12 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "MX" THEN 15 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "TXT" THEN 16 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "AAAA" THEN 28 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "SRV" THEN 33 ELSE a1.responseType$
+a1.responseType$ = IF t1 == "HTTPS" THEN 65 ELSE a1.responseType$
+
+a2.responseData$ = json["$.answers[1].rdata"]
+t2 = UPPERCASE(STRING(json["$.answers[1].type"]))
+a2.responseType$ = NULL
+a2.responseType$ = IF t2 == "A" THEN 1 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "NS" THEN 2 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "CNAME" THEN 5 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SOA" THEN 6 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "PTR" THEN 12 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "MX" THEN 15 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "TXT" THEN 16 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "AAAA" THEN 28 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "SRV" THEN 33 ELSE a2.responseType$
+a2.responseType$ = IF t2 == "HTTPS" THEN 65 ELSE a2.responseType$
+
+a3.responseData$ = json["$.answers[2].rdata"]
+t3 = UPPERCASE(STRING(json["$.answers[2].type"]))
+a3.responseType$ = NULL
+a3.responseType$ = IF t3 == "A" THEN 1 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "NS" THEN 2 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "CNAME" THEN 5 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SOA" THEN 6 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "PTR" THEN 12 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "MX" THEN 15 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "TXT" THEN 16 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "AAAA" THEN 28 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "SRV" THEN 33 ELSE a3.responseType$
+a3.responseType$ = IF t3 == "HTTPS" THEN 65 ELSE a3.responseType$
+
+a4.responseData$ = json["$.answers[3].rdata"]
+t4 = UPPERCASE(STRING(json["$.answers[3].type"]))
+a4.responseType$ = NULL
+a4.responseType$ = IF t4 == "A" THEN 1 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "NS" THEN 2 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "CNAME" THEN 5 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SOA" THEN 6 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "PTR" THEN 12 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "MX" THEN 15 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "TXT" THEN 16 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "AAAA" THEN 28 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "SRV" THEN 33 ELSE a4.responseType$
+a4.responseType$ = IF t4 == "HTTPS" THEN 65 ELSE a4.responseType$
+
+# Assign the list before reading it: reading responses$.records$ before it is set fails the event.
+responses$.records$ = []
+responses$.records$ = IF a1.responseData$ THEN responses$.records$ + [a1] ELSE responses$.records$
+responses$.records$ = IF a2.responseData$ THEN responses$.records$ + [a2] ELSE responses$.records$
+responses$.records$ = IF a3.responseData$ THEN responses$.records$ + [a3] ELSE responses$.records$
+responses$.records$ = IF a4.responseData$ THEN responses$.records$ + [a4] ELSE responses$.records$
