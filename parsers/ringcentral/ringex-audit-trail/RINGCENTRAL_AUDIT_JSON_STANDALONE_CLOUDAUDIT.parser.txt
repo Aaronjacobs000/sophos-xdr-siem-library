@@ -1,0 +1,80 @@
+!SAMPLE={"ringcentral_record":"audit_trail","id":"9835bead-397b-4ba8-b457-73f07ab79997","eventTime":"2026-10-21T00:12:44.218Z","initiator":{"extensionId":"402539300008","extensionNumber":"101","name":"Alice Smith","role":"Super Admin"},"actionId":"CHANGE_SECRET_INFO","eventType":"UPDATE","accountId":"403858014008","accountName":"Acme","target":{"objectId":"404611540004","objectType":"Extension","name":"Charlie Williams","extensionNumber":"103","siteId":"871836004"},"clientIp":"203.0.113.10","details":{"parameters":[{"key":"settingName","value":"Password"}]}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"ringcentral_record"\s*:\s*"audit_trail"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: RingCentral (RingEX) audit trail records from the Audit Trail API, pulled by the example
+# bridge in bridges/ringcentral-audit-trail and posted to HTTP Ingest as JSON lines. The bridge puts
+# "ringcentral_record": "audit_trail" first.
+# Standalone parser for the CloudAudit schema: every record, with actionId (such as CHANGE_USER_INFO)
+# as the event name and eventType (CREATE, UPDATE, DELETE or another value) as the event type.
+# RingCentral says the audit trail holds Admin Portal sign-ins and failed sign-ins and lockouts too,
+# but publishes no action IDs for them, so they land here the same way.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "RingCentral"
+sensorEventId$ = json["$.id"]
+# eventTime is RFC 3339 in UTC, such as 2026-10-21T00:12:44.218Z.
+eventTimeUsec$ = DATETIME(json["$.eventTime"], "2006-01-02T15:04:05.999999999Z07:00")
+
+eventSource$ = "RingCentral"
+eventName$ = json["$.actionId"]
+eventType$ = json["$.eventType"]
+account = json["$.accountId"]
+recipientAccountId$ = account
+managementEvent$ = TRUE
+
+# Who made the change: the initiator, by name, admin role and extension ID.
+userName$ = json["$.initiator.name"]
+userType$ = json["$.initiator.role"]
+userId$ = json["$.initiator.extensionId"]
+sourceAddress$ = json["$.clientIp"]
+
+# What it changed: an extension (a user), or the company ("0" with objectType Company), an account
+# or a template.
+ttype = json["$.target.objectType"]
+targetUserName$ = IF ttype == "Extension" THEN json["$.target.name"] ELSE NULL
+r1.resourceId$ = json["$.target.objectId"]
+r1.resourceType$ = ttype
+r1.resourceAccountId$ = account
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+# details.parameters lists key and value pairs, such as settingName and Password; the first three go here.
+p1.key$ = json["$.details.parameters[0].key"]
+p1.value$ = json["$.details.parameters[0].value"]
+p2.key$ = json["$.details.parameters[1].key"]
+p2.value$ = json["$.details.parameters[1].value"]
+p3.key$ = json["$.details.parameters[2].key"]
+p3.value$ = json["$.details.parameters[2].value"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.key$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.key$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.key$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+
+d1.key$ = "account_name"
+d1.value$ = json["$.accountName"]
+d2.key$ = "initiator_extension_number"
+d2.value$ = json["$.initiator.extensionNumber"]
+d3.key$ = "target_name"
+d3.value$ = json["$.target.name"]
+d4.key$ = "target_extension_number"
+d4.value$ = json["$.target.extensionNumber"]
+d5.key$ = "site_id"
+d5.value$ = json["$.target.siteId"]
+d6.key$ = "comment"
+d6.value$ = json["$.comment"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
