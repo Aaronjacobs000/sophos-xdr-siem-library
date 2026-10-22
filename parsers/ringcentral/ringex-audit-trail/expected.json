@@ -1,0 +1,233 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RingCentral",
+      "event_time_usec": 1792541564218000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9835bead-397b-4ba8-b457-73f07ab79997",
+      "event_source": "RingCentral",
+      "event_name": "CHANGE_SECRET_INFO",
+      "event_type": "UPDATE",
+      "recipient_account_id": "403858014008",
+      "management_event": true,
+      "user_name": "Alice Smith",
+      "user_type": "Super Admin",
+      "user_id": "402539300008",
+      "source_address": "203.0.113.10",
+      "target_user_name": "Charlie Williams",
+      "resources": [
+        {
+          "resource_id": "404611540004",
+          "resource_type": "Extension",
+          "resource_account_id": "403858014008"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "settingName",
+            "value": "Password"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Acme"
+          },
+          {
+            "key": "initiator_extension_number",
+            "value": "101"
+          },
+          {
+            "key": "target_name",
+            "value": "Charlie Williams"
+          },
+          {
+            "key": "target_extension_number",
+            "value": "103"
+          },
+          {
+            "key": "site_id",
+            "value": "871836004"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RingCentral",
+      "event_time_usec": 1792541702456000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "4c1f7a2e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "event_source": "RingCentral",
+      "event_name": "CHANGE_USER_INFO",
+      "event_type": "UPDATE",
+      "recipient_account_id": "403858014008",
+      "management_event": true,
+      "user_name": "Alice Smith",
+      "user_type": "Super Admin",
+      "user_id": "402539300008",
+      "source_address": "203.0.113.10",
+      "target_user_name": "Dana Lee",
+      "resources": [
+        {
+          "resource_id": "404611540012",
+          "resource_type": "Extension",
+          "resource_account_id": "403858014008"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "settingName",
+            "value": "Email"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Acme"
+          },
+          {
+            "key": "initiator_extension_number",
+            "value": "101"
+          },
+          {
+            "key": "target_name",
+            "value": "Dana Lee"
+          },
+          {
+            "key": "target_extension_number",
+            "value": "112"
+          },
+          {
+            "key": "site_id",
+            "value": "871836004"
+          },
+          {
+            "key": "comment",
+            "value": "Updated from the Admin Portal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RingCentral",
+      "event_time_usec": 1792544553120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7e2d9b14-0c5a-4f38-b6e1-93a8d7c2f405",
+      "event_source": "RingCentral",
+      "event_name": "CHANGE_USER_INFO",
+      "event_type": "CREATE",
+      "recipient_account_id": "403858014008",
+      "management_event": true,
+      "user_name": "Bob Jones",
+      "user_type": "Phone System Admin",
+      "user_id": "402539300015",
+      "source_address": "2001:db8:4::17",
+      "target_user_name": "Erin Park",
+      "resources": [
+        {
+          "resource_id": "404611540027",
+          "resource_type": "Extension",
+          "resource_account_id": "403858014008"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "settingName",
+            "value": "Extension"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Acme"
+          },
+          {
+            "key": "initiator_extension_number",
+            "value": "105"
+          },
+          {
+            "key": "target_name",
+            "value": "Erin Park"
+          },
+          {
+            "key": "target_extension_number",
+            "value": "127"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "RingCentral",
+      "event_time_usec": 1792550830000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b03e6c58-21f4-4a9d-8e7b-5c6d7e8f9a12",
+      "event_source": "RingCentral",
+      "event_name": "CHANGE_USER_INFO",
+      "event_type": "UPDATE",
+      "recipient_account_id": "403858014008",
+      "management_event": true,
+      "user_name": "Alice Smith",
+      "user_type": "Super Admin",
+      "user_id": "402539300008",
+      "source_address": "198.51.100.23",
+      "resources": [
+        {
+          "resource_id": "0",
+          "resource_type": "Company",
+          "resource_account_id": "403858014008"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "settingName",
+            "value": "Company Address"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "account_name",
+            "value": "Acme"
+          },
+          {
+            "key": "initiator_extension_number",
+            "value": "101"
+          },
+          {
+            "key": "target_name",
+            "value": "Acme"
+          }
+        ]
+      }
+    }
+  }
+]

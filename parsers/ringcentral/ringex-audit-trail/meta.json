@@ -1,0 +1,31 @@
+{
+  "vendor": "RingCentral",
+  "product": "RingEX audit trail",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://developers.ringcentral.com/guide/account/audit-trail",
+    "https://support.ringcentral.com/article-v2/Audit-Trail-Configuration-Changes-Tracked.html",
+    "https://netstorage.ringcentral.com/dpw/api-reference/specs/rc-platform.yml",
+    "https://developers.ringcentral.com/guide/basics/rate-limits"
+  ],
+  "notes": "RingCentral audit trail records are pull only, so this parser reads the records the example bridge in bridges/ringcentral-audit-trail polls from the Audit Trail API and posts to HTTP Ingest, with \"ringcentral_record\" first. Give the bridge a private app with the JWT auth flow and the Read Audit Trail permission, and a JWT credential of an admin who can see the audit trail. RingCentral still calls the API beta, and keeps 180 days or 10,000 records per account, whichever is less. Every record goes to CloudAudit: actionId as the event name, eventType (CREATE, UPDATE, DELETE or another value) as the event type, the initiator's name, admin role and extension ID as the user, clientIp as the source address, an extension target as the target user, the target as a resource, the first three details.parameters as request parameters, and the account name, extension numbers, site and comment as additional event data. RingCentral says the audit trail also holds Admin Portal sign-ins and failed sign-ins and lockouts from every client, but publishes no action IDs for them, so they land in CloudAudit the same way, marked as management events like every record; search on the event name once you have seen them. Samples use the record schema in RingCentral's OpenAPI spec (AccountHistoryPublicRecord) with the two action IDs it lists, CHANGE_SECRET_INFO and CHANGE_USER_INFO, on settings from RingCentral's list of tracked changes, and made-up values. The parser passed Run Test in a lab tenant on 2026-10-22 (63 of 63 fields matched the emulator in each of 3 runs), and its confirm string picked the same records there. No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "RINGCENTRAL_AUDIT_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/ringcentral-audit-trail"
+}
