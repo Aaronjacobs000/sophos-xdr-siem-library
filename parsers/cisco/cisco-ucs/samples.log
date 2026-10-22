@@ -1,0 +1,12 @@
+<190>: 2026 Oct 21 09:12:41 AEDT: %UCSM-6-AUDIT: [session][internal][creation][internal][3852391][sys/user-ext/web-login-jsmith-web_40207_B][id:web_40207_B, name:jsmith, policyOwner:local][] Web B: remote user jsmith logged in from 192.0.2.25
+<190>: 2026 Oct 21 09:13:02 AEDT: %UCSM-6-AUDIT: [session][internal][creation][] Fabric A: remote user admin logged in from 192.0.2.30
+<190>: 2026 Oct 21 09:14:10 AEDT: %UCSM-6-AUDIT: [admin][ucs-corp\jsmith][modification][] server 1/7 power-cycle/reset action requested: hard-reset-immediate
+<190>: 2026 Oct 21 09:15:02 AEDT: %UCSM-6-AUDIT: [admin][ucs-corp\jsmith][creation][web_40207_B][3852602][sys/user-ext/user-tempadmin][expiration:never, name:tempadmin][] Local user tempadmin created
+<190>: 2026 Oct 20 22:16:45 UTC: %UCSM-6-AUDIT: [admin][admin][deletion][cli_8812_A][3852640][sys/user-ext/user-mlee/role-read-only][sys/user-ext/user-mlee/role-read-only][] User role read-only removed from user mlee
+<187>: 2026 Oct 21 09:15:44 AEDT: %UCSM-3-CONFIGURATION_FAILURE: [F0327][major][configuration-failure][org-root/ls-web01] Service profile web01 configuration failed due to insufficient-resources
+<190>: 2026 Oct 21 09:16:20 AEDT: %UCSM-6-EVENT: [E4195931][456249][transition][ucs-corp\jsmith][] [FSM:BEGIN]: Hard-reset server sys/chassis-1/blade-7(FSM:sam:dme:ComputePhysicalHardreset)
+<187>: 2026 Oct 21 09:20:13 AEDT: %AUTHPRIV-3-SYSTEM_MSG: pam_aaa:Authentication failed for user admin from 203.0.113.61 - sshd[15735]
+<190>Oct 20 22:22:31 UTC: %CIMC-6-LOG_CAPACITY: [F0461][info][log-capacity][sys/rack-unit-1/mgmt/log-SEL-0] Log capacity on Management Controller on server 1/7 is very-low
+<37>Oct 20 22:24:05 c220-node01 AUDIT[2257]: CIMC Locator LED is modified to "ON" by User:admin from Interface:redfish Remote IP:192.0.2.25
+<37>Oct 20 22:25:12 c220-node01 AUDIT[2257]: Local Syslog Severity changed to "Debug" by User:(null) from Interface:
+<37>Oct 20 22:26:40 c220-node01 AUDIT[2257]: Password Expiration Parameters (password_history:5,password_expiry_state:disabled,password_expiry_duration:0,notification_period:15,grace_period:0) has been updated by User:admin from Interface:redfish Remote IP:192.0.2.25

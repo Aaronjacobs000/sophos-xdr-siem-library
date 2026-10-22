@@ -1,0 +1,192 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "CISCO_UCS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco UCS Manager",
+      "event_time_usec": 1792534361000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UCSM-6-AUDIT",
+      "target_user_name": "jsmith",
+      "source_address": "192.0.2.25",
+      "auth_system": "Cisco UCS Manager",
+      "logon_application_family": "Web",
+      "session_id": "web_40207_B",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "fabric_interconnect",
+            "value": "B"
+          },
+          {
+            "key": "audit_record",
+            "value": "3852391"
+          },
+          {
+            "key": "affected_dn",
+            "value": "sys/user-ext/web-login-jsmith-web_40207_B"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "CISCO_UCS_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Cisco UCS Manager",
+      "event_time_usec": 1792534382000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UCSM-6-AUDIT",
+      "target_user_name": "admin",
+      "source_address": "192.0.2.30",
+      "auth_system": "Cisco UCS Manager",
+      "logon_application_family": "SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "fabric_interconnect",
+            "value": "A"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "CISCO_UCS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco UCS Manager",
+      "event_time_usec": 1792534450000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UCSM-6-AUDIT",
+      "username": "ucs-corp\\jsmith",
+      "operation_name": "modification",
+      "operation": "admin",
+      "command": "server 1/7 power-cycle/reset action requested: hard-reset-immediate",
+      "result": "success"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "CISCO_UCS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco UCS Manager",
+      "event_time_usec": 1792534502000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UCSM-6-AUDIT",
+      "username": "ucs-corp\\jsmith",
+      "operation_name": "creation",
+      "operation": "admin",
+      "command": "Local user tempadmin created",
+      "namespace": "sys/user-ext/user-tempadmin",
+      "channel": "web",
+      "event_id": 3852602,
+      "result": "success"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "CISCO_UCS_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco UCS Manager",
+      "event_time_usec": 1792534605000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "UCSM-6-AUDIT",
+      "username": "admin",
+      "operation_name": "deletion",
+      "operation": "admin",
+      "command": "User role read-only removed from user mlee",
+      "namespace": "sys/user-ext/user-mlee/role-read-only",
+      "channel": "cli",
+      "event_id": 3852640,
+      "result": "success"
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 7,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 8,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 9,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  },
+  {
+    "line": 10,
+    "extractor_path": "CISCO_IMC_SYSLOG_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco IMC",
+      "event_time_usec": 1792535045000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AUDIT",
+      "host_id": "c220-node01",
+      "target_hostname": "c220-node01",
+      "username": "admin",
+      "channel": "redfish",
+      "source_address": "192.0.2.25",
+      "command": "CIMC Locator LED is modified to \"ON\"",
+      "result": "success"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "CISCO_IMC_SYSLOG_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco IMC",
+      "event_time_usec": 1792535112000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AUDIT",
+      "host_id": "c220-node01",
+      "target_hostname": "c220-node01",
+      "command": "Local Syslog Severity changed to \"Debug\"",
+      "result": "success"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "CISCO_IMC_SYSLOG_STANDALONE_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Cisco IMC",
+      "event_time_usec": 1792535200000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "AUDIT",
+      "host_id": "c220-node01",
+      "target_hostname": "c220-node01",
+      "username": "admin",
+      "channel": "redfish",
+      "source_address": "192.0.2.25",
+      "command": "Password Expiration Parameters (password_history:5,password_expiry_state:disabled,password_expiry_duration:0,notification_period:15,grace_period:0) has been updated",
+      "result": "success"
+    }
+  }
+]

@@ -1,0 +1,81 @@
+!SAMPLE=<190>: 2026 Oct 21 09:15:02 AEDT: %UCSM-6-AUDIT: [admin][ucs-corp\jsmith][creation][web_40207_B][3852602][sys/user-ext/user-tempadmin][expiration:never, name:tempadmin][] Local user tempadmin created
+!PARENT=Cisco_IOS_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%UCSM-[0-7]-AUDIT:\s*\[(?:admin|oper|special|authorization)\]\[
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco UCS Manager syslog from the fabric interconnects, with audits turned on as a source
+# (enable syslog source audits):
+#   <PRI>: <year> <Mon> <day> <hh:mm:ss> <zone>: %UCSM-<severity>-<MNEMONIC>: <body>
+#   AUDIT bodies: [trigger][user][change][] <description>, or on newer releases
+#   [trigger][user][change][session][record][affected DN][change set][] <description>
+# Child of the global parser Cisco_IOS_Master, which claims %UCSM lines and leaves them without a
+# schema. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads the whole
+# line itself, not the parent's variables.
+# Changes made by an administrator or a process to Management Event: AUDIT records with the trigger
+# admin, oper, special or authorization. The user, the change (creation, modification, deletion or
+# failure), the affected object (DN), the session and the description go to their own fields.
+# Faults, FSM events and the fabric interconnects' own NX-OS lines stay with the built-in parsers.
+
+# The time carries the zone the fabric interconnects are set to, as a name. The common names below
+# are read with their offset (CST as US Central); any other name is read as UTC, so keep the
+# fabric interconnects on UTC or one of these zones.
+hm = originalData$|^(?:<\d{1,3}>)?:?\s*(?:(?P<host>[^\s:]+)\s*:\s*)?(?P<t>\d{4}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})(?:\.\d+)?\s*(?P<tz>[A-Za-z]{1,6})?\s*:\s*%UCSM-(?P<sev>[0-7])-(?P<mn>[A-Z0-9_]+):\s*(?P<body>.*?)\s*$
+body = STRING(hm["body"])
+host = STRING(hm["host"])
+tzn = UPPERCASE(STRING(hm["tz"]))
+off = "+0000"
+off = IF tzn == "AEST" THEN "+1000" ELSE off
+off = IF tzn == "AEDT" THEN "+1100" ELSE off
+off = IF tzn == "ACST" THEN "+0930" ELSE off
+off = IF tzn == "ACDT" THEN "+1030" ELSE off
+off = IF tzn == "AWST" THEN "+0800" ELSE off
+off = IF tzn == "NZST" THEN "+1200" ELSE off
+off = IF tzn == "NZDT" THEN "+1300" ELSE off
+off = IF tzn == "JST" THEN "+0900" ELSE off
+off = IF tzn == "KST" THEN "+0900" ELSE off
+off = IF tzn == "SGT" THEN "+0800" ELSE off
+off = IF tzn == "HKT" THEN "+0800" ELSE off
+off = IF tzn == "CET" THEN "+0100" ELSE off
+off = IF tzn == "CEST" THEN "+0200" ELSE off
+off = IF tzn == "EET" THEN "+0200" ELSE off
+off = IF tzn == "EEST" THEN "+0300" ELSE off
+off = IF tzn == "WEST" THEN "+0100" ELSE off
+off = IF tzn == "BST" THEN "+0100" ELSE off
+off = IF tzn == "EST" THEN "-0500" ELSE off
+off = IF tzn == "EDT" THEN "-0400" ELSE off
+off = IF tzn == "CST" THEN "-0600" ELSE off
+off = IF tzn == "CDT" THEN "-0500" ELSE off
+off = IF tzn == "MST" THEN "-0700" ELSE off
+off = IF tzn == "MDT" THEN "-0600" ELSE off
+off = IF tzn == "PST" THEN "-0800" ELSE off
+off = IF tzn == "PDT" THEN "-0700" ELSE off
+eventTimeUsec$ = IF STRING(hm["t"]) != "" THEN DATETIME(hm["t"] + " " + off, "2006 Jan _2 15:04:05 -0700") ELSE eventTimeUsec$
+
+sensorType$ = "Cisco UCS Manager"
+sensorEventId$ = "UCSM-" + hm["sev"] + "-" + hm["mn"]
+hostId$ = IF host != "" THEN host ELSE NULL
+
+a = body|^\[(?P<trig>[^\]]*)\]\[(?P<user>[^\]]*)\]\[(?P<ind>[^\]]*)\](?:\[(?P<sess>[^\]]*)\]\[(?P<tx>[^\]]*)\]\[(?P<dn>[^\]]*)\]\[(?P<cs>[^\]]*)\])?\[\]\s*(?P<desc>.*)$
+sess = STRING(a["sess"])
+tx = STRING(a["tx"])
+dn = STRING(a["dn"])
+desc = STRING(a["desc"])
+
+user = STRING(a["user"])
+username$ = IF user != "" THEN user ELSE NULL
+ind = STRING(a["ind"])
+operationName$ = IF ind != "" THEN ind ELSE NULL
+operation$ = IF STRING(a["trig"]) != "" THEN a["trig"] ELSE NULL
+command$ = IF desc != "" THEN desc ELSE NULL
+# The affected object's distinguished name, such as sys/user-ext/user-<name>.
+namespace$ = IF dn != "" THEN dn ELSE NULL
+# A session such as web_40207_B or cli_8812_A names the interface it came from.
+ch = sess|^(?P<c>[A-Za-z]+)_
+channel$ = IF STRING(ch["c"]) != "" THEN ch["c"] ELSE NULL
+num = tx|^(?P<n>\d+)$
+eventId$ = IF STRING(num["n"]) != "" THEN num["n"] ELSE NULL
+targetHostname$ = IF host != "" THEN host ELSE NULL
+result$ = IF ind == "failure" THEN "failure" ELSE "success"
