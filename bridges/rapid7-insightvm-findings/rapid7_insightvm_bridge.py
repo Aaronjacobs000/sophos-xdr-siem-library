@@ -493,9 +493,12 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: Rapid7, now: int) 
     key = f"{cfg['region']}@{_host(cfg['api_url'])}"
     cur = state.setdefault(key, {})
     pending = cur.get("pending") if isinstance(cur.get("pending"), dict) else None
+    since = None
     if pending and _seconds(pending.get("current")) is not None:
+        # The same window, from the next page: its times and asset filter stay as they were.
         comparison, current = pending.get("comparison"), pending["current"]
         cursor = pending.get("cursor") if isinstance(pending.get("cursor"), str) else None
+        since = pending.get("since") if _seconds(pending.get("since")) is not None else None
     else:
         last = _seconds(cur.get("current"))
         end = now - cfg["delay_seconds"]
@@ -509,7 +512,7 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: Rapid7, now: int) 
     # The first run, with no earlier time, reads every current finding ("same") of the assets
     # assessed in the lookback. Later runs read the assets assessed since the last run.
     first = comparison is None
-    since = _when(now - int(cfg["lookback_hours"] * 3600)) if first else comparison
+    since = since or (_when(now - int(cfg["lookback_hours"] * 3600)) if first else comparison)
     same = first or cfg["include_same"]
     sent = 0
     for _ in range(MAX_PAGES):
@@ -527,7 +530,7 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: Rapid7, now: int) 
             sent += len(fresh)
         if nxt:
             cursor = nxt
-            cur["pending"] = {"comparison": comparison, "current": current, "cursor": cursor}
+            cur["pending"] = {"comparison": comparison, "current": current, "since": since, "cursor": cursor}
             save()
             continue
         cur.pop("pending", None)

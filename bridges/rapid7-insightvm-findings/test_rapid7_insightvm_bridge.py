@@ -486,13 +486,16 @@ class BridgeTest(unittest.TestCase):
         self.assertEqual(base64.b64decode(state["pending"]["cursor"]).decode(), "offset:2")
         self.assertNotIn("current", state)
         first = self.mock.queries[0]["query"]
+        self.mock_first_body = self.mock.queries[0]["body"]
+        self.assertEqual(state["pending"]["since"], c._when(int(self.clock) - 24 * 3600))
         self.assertEqual(self.mock.queries[1]["query"]["cursor"], state["pending"]["cursor"])
         self.mock.ingested.clear()
         self.mock.queries.clear()
         self.later(1)
         c.run_once(self.cfg(RAPID7_PAGE_SIZE="2"))
-        # The same window, from the third asset: the same times, an hour later.
+        # The same window, from the third asset: the same times and asset filter, an hour later.
         self.assertEqual([q["query"]["currentTime"] for q in self.mock.queries], [first["currentTime"]] * 2)
+        self.assertEqual([q["body"] for q in self.mock.queries], [self.mock_first_body] * 2)
         self.assertEqual([base64.b64decode(q["query"]["cursor"]).decode() for q in self.mock.queries], ["offset:2", "offset:4"])
         self.assertEqual([r["asset"]["ip"] for r in self.sent()], ["192.0.2.12", "192.0.2.13", "192.0.2.14"])
         state = self.saved()[self.key()]
