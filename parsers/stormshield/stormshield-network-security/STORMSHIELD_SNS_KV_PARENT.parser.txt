@@ -1,0 +1,53 @@
+!SAMPLE=<13>1 2026-10-21T10:02:20+11:00 fw-syd-01 routerd - - - id=firewall time="2026-10-21 10:02:20" fw="fw-syd-01" tz=+1100 startime="2026-10-21 10:02:20" pri=5 service=routerd msg="routerd daemon configuration reloaded, modules: pbr_route, ip_version: all (reason: Refresh)" logtype="system"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\btime="?\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}"? fw="?[^"\s]+"? tz=[+-]\d{4} startime=
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) firewalls, audit logs sent by a syslog profile to the
+# data collector. Each log is one WELF line of key=value pairs, values in double quotes when they
+# hold spaces, after the syslog header of the profile's format (RFC5424, LEGACY or LEGACY-LONG):
+#   id=firewall time="<local time>" fw="<firewall name>" tz=<+HHMM> startime="<local time>" ... logtype="<log>"
+# Parent: claims every audit log line and hands them on by logtype:
+#   connection, filter and plugin                      to the Netflow child
+#   alarm with a source address (intrusion prevention) to the NIDS child
+#   web (HTTP proxy)                                   to the HTTP child
+#   auth, and xvpn (SSL VPN) sign-in results           to the Auth child
+#   server (administration commands by a user)         to the Management Event child
+# Other logs (system, vpn, ssl, sandboxing, smtp, pop3, ftp, monitor, filterstat, count and the
+# rest) and system alarms with no addresses stay generic.
+
+# The pairs start at id=firewall, or at time= where a profile leaves id out, after any header.
+kvm = originalData$|(?P<kv>(?:id=firewall\s+)?time="?\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.*?)\s*$
+# CEF() reads the pairs: it keeps a quoted value whole even when it holds " key=" text, such as an
+# administration command with its arguments, which SPLIT_NAME_VALUES cuts in Sophos NG-SIEM.
+kv = CEF("CEF:0|Stormshield|SNS|0|kv|kv|0|" + kvm["kv"])
+logType = LOWERCASE(STRING(kv["logtype"]))
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Stormshield SNS"
+fw = STRING(kv["fw"])
+hostId$ = IF fw != "" THEN fw ELSE NULL
+alarmId = STRING(kv["alarmid"])
+sensorEventId$ = IF alarmId != "" THEN alarmId ELSE NULL
+
+# time is the firewall's local time when the log was written and tz its offset from UTC.
+t = STRING(kv["time"])
+tz = STRING(kv["tz"])
+eventTimeUsec$ = IF tz != "" THEN DATETIME(t + " " + tz, "2006-01-02 15:04:05 -0700") ELSE DATETIME(t, "2006-01-02 15:04:05")
+st = STRING(kv["startime"])
+startUsec = IF st != "" AND tz != "" THEN DATETIME(st + " " + tz, "2006-01-02 15:04:05 -0700") ELSE NULL
+
+src = STRING(kv["src"])
+msg = STRING(kv["msg"])
+lmsg = LOWERCASE(msg)
+err = STRING(kv["error"])
+flow = logType == "connection" OR logType == "filter" OR logType == "plugin"
+signIn = (logType == "auth" OR logType == "xvpn") AND (err != "" OR CONTAINS(lmsg, "authentic"))
+eventType$ = "other"
+eventType$ = IF flow THEN "flow" ELSE eventType$
+eventType$ = IF logType == "alarm" AND IS_VALID_IP(src) THEN "alarm" ELSE eventType$
+eventType$ = IF logType == "web" THEN "web" ELSE eventType$
+eventType$ = IF signIn THEN "auth" ELSE eventType$
+eventType$ = IF logType == "server" AND STRING(kv["user"]) != "" THEN "admin" ELSE eventType$

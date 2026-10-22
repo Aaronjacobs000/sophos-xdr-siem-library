@@ -1,0 +1,130 @@
+!SAMPLE=<14>1 2026-10-21T09:12:41+11:00 fw-syd-01 asqd - - - id=firewall time="2026-10-21 09:12:41" fw="fw-syd-01" tz=+1100 startime="2026-10-21 09:10:05" pri=5 confid=01 slotlevel=2 ruleid=14 srcif="Ethernet1" srcifname="in" ipproto=tcp dstif="Ethernet0" dstifname="out" proto=https src=192.0.2.25 srcport=51544 srcportname=ephemeral_fw_tcp srcname=wks-025 srcmac=00:00:5e:00:53:25 dst=203.0.113.80 dstport=443 dstportname=https dstname=www.example.com dstcontinent="na" dstcountry="us" modsrc=198.51.100.2 modsrcport=20311 origdst=203.0.113.80 origdstport=443 ipv=4 sent=5120 rcvd=88200 duration=156.34 user="jsmith" domain="corp.example.com" clientappid=firefox serverappid=https action=pass logtype="connection"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) audit logs over syslog.
+# Child of STORMSHIELD_SNS_KV_PARENT: network connections (l_connection, written when a connection
+# ends), filter and NAT rule logs (l_filter, from rules set to log) and application plugin
+# connections (l_plugin) to Netflow.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, logType, src, startUsec, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# Addresses are the ones before translation: src, and origdst when the firewall sends it. The
+# translated source (modsrc) and destination (dst) go to the NAT fields when they differ.
+dst = STRING(kv["dst"])
+odst = STRING(kv["origdst"])
+preDst = IF odst != "" THEN odst ELSE dst
+sourceAddress$ = IF IS_VALID_IP(src) THEN src ELSE NULL
+destinationAddress$ = IF IS_VALID_IP(preDst) THEN preDst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sport = STRING(kv["srcport"])
+sourcePort$ = sport
+odport = STRING(kv["origdstport"])
+dport = STRING(kv["dstport"])
+destinationPort$ = IF odport != "" THEN odport ELSE dport
+modsrc = STRING(kv["modsrc"])
+modport = STRING(kv["modsrcport"])
+sourceNatAddress$ = IF IS_VALID_IP(modsrc) AND modsrc != src THEN modsrc ELSE NULL
+sourceNatPort$ = IF modsrc != "" AND (modsrc != src OR modport != sport) THEN modport ELSE NULL
+destinationNatAddress$ = IF odst != "" AND IS_VALID_IP(dst) AND dst != odst THEN dst ELSE NULL
+destinationNatPort$ = IF odst != "" AND (dst != odst OR dport != odport) THEN dport ELSE NULL
+smac = STRING(kv["srcmac"])
+dmac = STRING(kv["dstmac"])
+sourceMac$ = IF smac != "" THEN smac ELSE NULL
+destinationMac$ = IF dmac != "" THEN dmac ELSE NULL
+
+# protocol takes the IANA number; Stormshield sends the name of the protocol above IP.
+proto = LOWERCASE(STRING(kv["ipproto"]))
+protocol$ = NULL
+protocol$ = IF proto == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF proto == "icmpv6" OR proto == "ipv6-icmp" THEN 58 ELSE protocol$
+protocol$ = IF proto == "gre" THEN 47 ELSE protocol$
+protocol$ = IF proto == "esp" THEN 50 ELSE protocol$
+protocol$ = IF proto == "ah" THEN 51 ELSE protocol$
+protocol$ = IF proto == "sctp" THEN 132 ELSE protocol$
+
+# sent and rcvd are the bytes each way, from the side that opened the connection.
+txByteCount$ = STRING(kv["sent"])
+rxByteCount$ = STRING(kv["rcvd"])
+service = STRING(kv["proto"])
+applicationName$ = IF service != "" THEN service ELSE NULL
+
+# action is pass or block, and empty for a rule set only to log. Connection logs cover passed
+# connections only.
+act = LOWERCASE(STRING(kv["action"]))
+flowAction$ = NULL
+flowAction$ = IF act == "pass" OR (act == "" AND logType == "connection") THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "block" THEN "FW_BLOCKED" ELSE flowAction$
+startTimestampUsec$ = startUsec
+endTimestampUsec$ = IF logType == "connection" THEN eventTimeUsec$ ELSE NULL
+
+# Keys with no Netflow field go to event_metadata.
+f1.key$ = "log_type"
+f1.value$ = logType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [f1]
+f2.key$ = "rule_id"
+f2.value$ = STRING(kv["ruleid"])
+eventMetadata$.record$ = IF f2.value$ != "" THEN eventMetadata$.record$ + [f2] ELSE eventMetadata$.record$
+f3.key$ = "rule_level"
+f3.value$ = STRING(kv["slotlevel"])
+eventMetadata$.record$ = IF f3.value$ != "" THEN eventMetadata$.record$ + [f3] ELSE eventMetadata$.record$
+f4.key$ = "source_interface"
+f4.value$ = STRING(kv["srcifname"])
+eventMetadata$.record$ = IF f4.value$ != "" THEN eventMetadata$.record$ + [f4] ELSE eventMetadata$.record$
+f5.key$ = "destination_interface"
+f5.value$ = STRING(kv["dstifname"])
+eventMetadata$.record$ = IF f5.value$ != "" THEN eventMetadata$.record$ + [f5] ELSE eventMetadata$.record$
+f6.key$ = "source_name"
+f6.value$ = STRING(kv["srcname"])
+eventMetadata$.record$ = IF f6.value$ != "" THEN eventMetadata$.record$ + [f6] ELSE eventMetadata$.record$
+f7.key$ = "destination_name"
+f7.value$ = STRING(kv["dstname"])
+eventMetadata$.record$ = IF f7.value$ != "" THEN eventMetadata$.record$ + [f7] ELSE eventMetadata$.record$
+f8.key$ = "user"
+f8.value$ = STRING(kv["user"])
+eventMetadata$.record$ = IF f8.value$ != "" THEN eventMetadata$.record$ + [f8] ELSE eventMetadata$.record$
+f9.key$ = "domain"
+f9.value$ = STRING(kv["domain"])
+eventMetadata$.record$ = IF f9.value$ != "" THEN eventMetadata$.record$ + [f9] ELSE eventMetadata$.record$
+f10.key$ = "duration"
+f10.value$ = STRING(kv["duration"])
+eventMetadata$.record$ = IF f10.value$ != "" THEN eventMetadata$.record$ + [f10] ELSE eventMetadata$.record$
+f11.key$ = "client_application"
+f11.value$ = STRING(kv["clientappid"])
+eventMetadata$.record$ = IF f11.value$ != "" THEN eventMetadata$.record$ + [f11] ELSE eventMetadata$.record$
+f12.key$ = "server_application"
+f12.value$ = STRING(kv["serverappid"])
+eventMetadata$.record$ = IF f12.value$ != "" THEN eventMetadata$.record$ + [f12] ELSE eventMetadata$.record$
+f13.key$ = "operation"
+f13.value$ = STRING(kv["op"])
+eventMetadata$.record$ = IF f13.value$ != "" THEN eventMetadata$.record$ + [f13] ELSE eventMetadata$.record$
+f14.key$ = "result"
+f14.value$ = STRING(kv["result"])
+eventMetadata$.record$ = IF f14.value$ != "" THEN eventMetadata$.record$ + [f14] ELSE eventMetadata$.record$
+f15.key$ = "argument"
+f15.value$ = STRING(kv["arg"])
+eventMetadata$.record$ = IF f15.value$ != "" THEN eventMetadata$.record$ + [f15] ELSE eventMetadata$.record$
+f16.key$ = "icmp_type"
+f16.value$ = STRING(kv["icmptype"])
+eventMetadata$.record$ = IF f16.value$ != "" THEN eventMetadata$.record$ + [f16] ELSE eventMetadata$.record$
+f17.key$ = "icmp_code"
+f17.value$ = STRING(kv["icmpcode"])
+eventMetadata$.record$ = IF f17.value$ != "" THEN eventMetadata$.record$ + [f17] ELSE eventMetadata$.record$
+f18.key$ = "source_country"
+f18.value$ = STRING(kv["srccountry"])
+eventMetadata$.record$ = IF f18.value$ != "" THEN eventMetadata$.record$ + [f18] ELSE eventMetadata$.record$
+f19.key$ = "destination_country"
+f19.value$ = STRING(kv["dstcountry"])
+eventMetadata$.record$ = IF f19.value$ != "" THEN eventMetadata$.record$ + [f19] ELSE eventMetadata$.record$
+f20.key$ = "source_reputation"
+f20.value$ = STRING(kv["srciprep"])
+eventMetadata$.record$ = IF f20.value$ != "" THEN eventMetadata$.record$ + [f20] ELSE eventMetadata$.record$
+f21.key$ = "destination_reputation"
+f21.value$ = STRING(kv["dstiprep"])
+eventMetadata$.record$ = IF f21.value$ != "" THEN eventMetadata$.record$ + [f21] ELSE eventMetadata$.record$

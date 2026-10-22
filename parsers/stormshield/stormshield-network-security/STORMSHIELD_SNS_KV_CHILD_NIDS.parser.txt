@@ -1,0 +1,95 @@
+!SAMPLE=<9>1 2026-10-21T09:16:20+11:00 fw-syd-01 asqd - - - id=firewall time="2026-10-21 09:16:20" fw="fw-syd-01" tz=+1100 startime="2026-10-21 09:16:20" pri=1 confid=01 slotlevel=2 ruleid=2 srcif="Ethernet0" srcifname="out" ipproto=tcp dstif="Ethernet2" dstifname="dmz1" proto=http src=198.51.100.23 srcport=44812 srcportname=ephemeral_fw_tcp srccontinent="eu" srccountry="nl" srciprep="scanner" dst=192.0.2.140 dstport=80 dstportname=http dstname=srv-web-02 ipv=4 action=block msg="SQL injection attempt in a URL parameter: id=1 OR 1=1" class=protocol classification=0 alarmid=140 target=dst risk=80 repeat=0 logtype="alarm"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alarm"
+!SCHEMA=scwx.nids
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) audit logs over syslog.
+# Child of STORMSHIELD_SNS_KV_PARENT: intrusion prevention alarms (l_alarm lines with a source
+# address) to NIDS, with the alarm ID as the signature. Alarms with no addresses, such as class
+# system, stay generic.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, logType, src, msg, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+dst = STRING(kv["dst"])
+sourceAddress$ = src
+destinationAddress$ = IF IS_VALID_IP(dst) THEN dst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["srcport"])
+destinationPort$ = STRING(kv["dstport"])
+proto = LOWERCASE(STRING(kv["ipproto"]))
+protocol$ = NULL
+protocol$ = IF proto == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF proto == "icmpv6" OR proto == "ipv6-icmp" THEN 58 ELSE protocol$
+protocol$ = IF proto == "gre" THEN 47 ELSE protocol$
+protocol$ = IF proto == "esp" THEN 50 ELSE protocol$
+protocol$ = IF proto == "ah" THEN 51 ELSE protocol$
+protocol$ = IF proto == "sctp" THEN 132 ELSE protocol$
+icmpType$ = STRING(kv["icmptype"])
+icmpCode$ = STRING(kv["icmpcode"])
+service = STRING(kv["proto"])
+applicationName$ = IF service != "" THEN service ELSE NULL
+user = STRING(kv["user"])
+sourceUsername$ = IF user != "" THEN user ELSE NULL
+
+message$ = IF msg != "" THEN msg ELSE NULL
+cls = STRING(kv["class"])
+classification$ = IF cls != "" THEN cls ELSE NULL
+signatureId$ = STRING(kv["alarmid"])
+# pri is the alarm level as a syslog severity: 1 for a major alarm, 4 for a minor one.
+priority$ = STRING(kv["pri"])
+act = LOWERCASE(STRING(kv["action"]))
+action$ = IF act != "" THEN act ELSE NULL
+blocked$ = IF act == "block" THEN 1 ELSE 0
+countermeasureAuthor$ = "VENDOR_OF_SENSOR"
+
+# Keys with no NIDS field go to event_metadata.
+n1.key$ = "log_type"
+n1.value$ = logType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [n1]
+n2.key$ = "rule_id"
+n2.value$ = STRING(kv["ruleid"])
+eventMetadata$.record$ = IF n2.value$ != "" THEN eventMetadata$.record$ + [n2] ELSE eventMetadata$.record$
+n3.key$ = "rule_level"
+n3.value$ = STRING(kv["slotlevel"])
+eventMetadata$.record$ = IF n3.value$ != "" THEN eventMetadata$.record$ + [n3] ELSE eventMetadata$.record$
+n4.key$ = "target"
+n4.value$ = STRING(kv["target"])
+eventMetadata$.record$ = IF n4.value$ != "" THEN eventMetadata$.record$ + [n4] ELSE eventMetadata$.record$
+n5.key$ = "risk"
+n5.value$ = STRING(kv["risk"])
+eventMetadata$.record$ = IF n5.value$ != "" THEN eventMetadata$.record$ + [n5] ELSE eventMetadata$.record$
+n6.key$ = "repeat"
+n6.value$ = STRING(kv["repeat"])
+eventMetadata$.record$ = IF n6.value$ != "" THEN eventMetadata$.record$ + [n6] ELSE eventMetadata$.record$
+n7.key$ = "classification_code"
+n7.value$ = STRING(kv["classification"])
+eventMetadata$.record$ = IF n7.value$ != "" THEN eventMetadata$.record$ + [n7] ELSE eventMetadata$.record$
+n8.key$ = "source_interface"
+n8.value$ = STRING(kv["srcifname"])
+eventMetadata$.record$ = IF n8.value$ != "" THEN eventMetadata$.record$ + [n8] ELSE eventMetadata$.record$
+n9.key$ = "destination_interface"
+n9.value$ = STRING(kv["dstifname"])
+eventMetadata$.record$ = IF n9.value$ != "" THEN eventMetadata$.record$ + [n9] ELSE eventMetadata$.record$
+n10.key$ = "source_name"
+n10.value$ = STRING(kv["srcname"])
+eventMetadata$.record$ = IF n10.value$ != "" THEN eventMetadata$.record$ + [n10] ELSE eventMetadata$.record$
+n11.key$ = "destination_name"
+n11.value$ = STRING(kv["dstname"])
+eventMetadata$.record$ = IF n11.value$ != "" THEN eventMetadata$.record$ + [n11] ELSE eventMetadata$.record$
+n12.key$ = "source_country"
+n12.value$ = STRING(kv["srccountry"])
+eventMetadata$.record$ = IF n12.value$ != "" THEN eventMetadata$.record$ + [n12] ELSE eventMetadata$.record$
+n13.key$ = "destination_country"
+n13.value$ = STRING(kv["dstcountry"])
+eventMetadata$.record$ = IF n13.value$ != "" THEN eventMetadata$.record$ + [n13] ELSE eventMetadata$.record$
+n14.key$ = "source_reputation"
+n14.value$ = STRING(kv["srciprep"])
+eventMetadata$.record$ = IF n14.value$ != "" THEN eventMetadata$.record$ + [n14] ELSE eventMetadata$.record$
+n15.key$ = "destination_reputation"
+n15.value$ = STRING(kv["dstiprep"])
+eventMetadata$.record$ = IF n15.value$ != "" THEN eventMetadata$.record$ + [n15] ELSE eventMetadata$.record$

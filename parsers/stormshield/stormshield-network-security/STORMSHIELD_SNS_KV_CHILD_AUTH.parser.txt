@@ -1,0 +1,61 @@
+!SAMPLE=<13>1 2026-10-21T08:57:40+11:00 fw-syd-01 authd - - - id=firewall time="2026-10-21 08:57:40" fw="fw-syd-01" tz=+1100 startime="2026-10-21 08:57:40" user="mlee" src=203.0.113.61 domain="corp.example.com" confid=1 ruleid=0 method="OPENVPN" error=3 msg="Authentication Failed" logtype="auth"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) audit logs over syslog.
+# Child of STORMSHIELD_SNS_KV_PARENT: user authentication on the firewall (l_auth) and SSL VPN
+# sign-ins (l_xvpn) to Auth: lines with an error code, or a message about authentication. Other
+# l_auth and l_xvpn lines, such as tunnel and enrollment notices, stay generic.
+# error is 0 for a success. A line with no error code is a failure when its message says failed
+# or error.
+# kv, logType, src, msg, lmsg, err, fw, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+user = STRING(kv["user"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+dom = STRING(kv["domain"])
+targetDomainName$ = IF dom != "" THEN dom ELSE NULL
+# src can be the text unknown.
+sourceAddress$ = IF IS_VALID_IP(src) THEN src ELSE NULL
+targetHostName$ = IF fw != "" THEN fw ELSE NULL
+authSystem$ = "Stormshield SNS"
+logonApplicationFamily$ = IF logType == "xvpn" THEN "SSL VPN" ELSE NULL
+logonApplicationFamily$ = IF logType == "auth" AND CONTAINS(lmsg, "ssh") THEN "SSH" ELSE logonApplicationFamily$
+
+success = IF err != "" THEN err == "0" ELSE NOT (CONTAINS(lmsg, "fail") OR CONTAINS(lmsg, "error"))
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+extraFailurereason$ = IF NOT success AND msg != "" THEN msg ELSE NULL
+failureCategory$ = IF success THEN NULL ELSE "OTHER_ERROR"
+failureCategory$ = IF NOT success AND CONTAINS(lmsg, "password") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF NOT success AND CONTAINS(lmsg, "not found") THEN "INVALID_ACCOUNT" ELSE failureCategory$
+totp = LOWERCASE(STRING(kv["totp"]))
+mfaUsed$ = IF totp == "yes" THEN TRUE ELSE NULL
+mfaUsed$ = IF totp == "no" THEN FALSE ELSE mfaUsed$
+
+# Keys with no Auth field go to event_metadata.
+a1.key$ = "log_type"
+a1.value$ = logType
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [a1]
+a2.key$ = "method"
+a2.value$ = STRING(kv["method"])
+eventMetadata$.record$ = IF a2.value$ != "" THEN eventMetadata$.record$ + [a2] ELSE eventMetadata$.record$
+a3.key$ = "error"
+a3.value$ = err
+eventMetadata$.record$ = IF a3.value$ != "" THEN eventMetadata$.record$ + [a3] ELSE eventMetadata$.record$
+a4.key$ = "message"
+a4.value$ = msg
+eventMetadata$.record$ = IF a4.value$ != "" THEN eventMetadata$.record$ + [a4] ELSE eventMetadata$.record$
+a5.key$ = "rule_id"
+a5.value$ = STRING(kv["ruleid"])
+eventMetadata$.record$ = IF a5.value$ != "" THEN eventMetadata$.record$ + [a5] ELSE eventMetadata$.record$
+a6.key$ = "sso_agent"
+a6.value$ = STRING(kv["agentid"])
+eventMetadata$.record$ = IF a6.value$ != "" THEN eventMetadata$.record$ + [a6] ELSE eventMetadata$.record$
+a7.key$ = "user_group"
+a7.value$ = STRING(kv["usergroup"])
+eventMetadata$.record$ = IF a7.value$ != "" THEN eventMetadata$.record$ + [a7] ELSE eventMetadata$.record$

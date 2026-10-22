@@ -1,0 +1,786 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534361000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.80",
+      "source_port": 51544,
+      "destination_port": 443,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 20311,
+      "source_mac": "00:00:5e:00:53:25",
+      "protocol": 6,
+      "tx_byte_count": 5120,
+      "rx_byte_count": 88200,
+      "application_name": "https",
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1792534205000000,
+      "end_timestamp_usec": 1792534361000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "connection"
+          },
+          {
+            "key": "rule_id",
+            "value": "14"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "source_interface",
+            "value": "in"
+          },
+          {
+            "key": "destination_interface",
+            "value": "out"
+          },
+          {
+            "key": "source_name",
+            "value": "wks-025"
+          },
+          {
+            "key": "destination_name",
+            "value": "www.example.com"
+          },
+          {
+            "key": "user",
+            "value": "jsmith"
+          },
+          {
+            "key": "domain",
+            "value": "corp.example.com"
+          },
+          {
+            "key": "duration",
+            "value": "156.34"
+          },
+          {
+            "key": "client_application",
+            "value": "firefox"
+          },
+          {
+            "key": "server_application",
+            "value": "https"
+          },
+          {
+            "key": "destination_country",
+            "value": "us"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534382000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "192.0.2.31",
+      "destination_address": "198.51.100.53",
+      "source_port": 53111,
+      "destination_port": 53,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 20412,
+      "protocol": 17,
+      "tx_byte_count": 74,
+      "rx_byte_count": 162,
+      "application_name": "dns",
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1792534382000000,
+      "end_timestamp_usec": 1792534382000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "connection"
+          },
+          {
+            "key": "rule_id",
+            "value": "9"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "source_interface",
+            "value": "in"
+          },
+          {
+            "key": "destination_interface",
+            "value": "out"
+          },
+          {
+            "key": "destination_name",
+            "value": "dns_resolver"
+          },
+          {
+            "key": "duration",
+            "value": "0.02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534450000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "protocol": 1,
+      "flow_action": "FW_BLOCKED",
+      "start_timestamp_usec": 1792534450000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "filter"
+          },
+          {
+            "key": "rule_id",
+            "value": "31"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "source_interface",
+            "value": "out"
+          },
+          {
+            "key": "destination_interface",
+            "value": "in"
+          },
+          {
+            "key": "source_name",
+            "value": "host_198.51.100.77"
+          },
+          {
+            "key": "destination_name",
+            "value": "srv-web-01"
+          },
+          {
+            "key": "icmp_type",
+            "value": "8"
+          },
+          {
+            "key": "icmp_code",
+            "value": "0"
+          },
+          {
+            "key": "source_country",
+            "value": "fr"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792538433000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "SN310A0000000001",
+      "source_address": "192.0.2.140",
+      "destination_address": "192.0.2.10",
+      "source_port": 60122,
+      "destination_port": 22,
+      "source_mac": "00:00:5e:00:53:8c",
+      "protocol": 6,
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "application_name": "ssh",
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1792538433000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "filter"
+          },
+          {
+            "key": "rule_id",
+            "value": "4"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "source_interface",
+            "value": "dmz1"
+          },
+          {
+            "key": "destination_interface",
+            "value": "in"
+          },
+          {
+            "key": "destination_name",
+            "value": "srv-web-01"
+          },
+          {
+            "key": "duration",
+            "value": "0.00"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534544000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.44",
+      "source_port": 51602,
+      "destination_port": 80,
+      "source_nat_address": "198.51.100.2",
+      "source_nat_port": 20533,
+      "protocol": 6,
+      "tx_byte_count": 412,
+      "rx_byte_count": 18230,
+      "application_name": "http",
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1792534543000000,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "plugin"
+          },
+          {
+            "key": "rule_id",
+            "value": "11"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "destination_interface",
+            "value": "out"
+          },
+          {
+            "key": "source_name",
+            "value": "wks-025"
+          },
+          {
+            "key": "destination_name",
+            "value": "downloads.example.net"
+          },
+          {
+            "key": "duration",
+            "value": "0.41"
+          },
+          {
+            "key": "operation",
+            "value": "GET"
+          },
+          {
+            "key": "result",
+            "value": "200"
+          },
+          {
+            "key": "argument",
+            "value": "/files/setup.msi"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534580000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "sensor_event_id": "140",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.140",
+      "source_port": 44812,
+      "destination_port": 80,
+      "protocol": 6,
+      "application_name": "http",
+      "message": "SQL injection attempt in a URL parameter: id=1 OR 1=1",
+      "classification": "protocol",
+      "signature_id": 140,
+      "priority": 1,
+      "action": "block",
+      "blocked": 1,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "alarm"
+          },
+          {
+            "key": "rule_id",
+            "value": "2"
+          },
+          {
+            "key": "rule_level",
+            "value": "2"
+          },
+          {
+            "key": "target",
+            "value": "dst"
+          },
+          {
+            "key": "risk",
+            "value": "80"
+          },
+          {
+            "key": "repeat",
+            "value": "0"
+          },
+          {
+            "key": "classification_code",
+            "value": "0"
+          },
+          {
+            "key": "source_interface",
+            "value": "out"
+          },
+          {
+            "key": "destination_interface",
+            "value": "dmz1"
+          },
+          {
+            "key": "destination_name",
+            "value": "srv-web-02"
+          },
+          {
+            "key": "source_country",
+            "value": "nl"
+          },
+          {
+            "key": "source_reputation",
+            "value": "scanner"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_NIDS",
+    "schema": "scwx.nids",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534622000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "sensor_event_id": "85",
+      "source_address": "203.0.113.9",
+      "destination_address": "192.0.2.1",
+      "source_port": 54937,
+      "destination_port": 22,
+      "protocol": 6,
+      "application_name": "ssh",
+      "message": "Interactive connection detected",
+      "classification": "protocol",
+      "signature_id": 85,
+      "priority": 4,
+      "action": "pass",
+      "blocked": 0,
+      "countermeasure_author": "VENDOR_OF_SENSOR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "alarm"
+          },
+          {
+            "key": "classification_code",
+            "value": "0"
+          },
+          {
+            "key": "source_interface",
+            "value": "out"
+          },
+          {
+            "key": "destination_name",
+            "value": "Firewall_out"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534813000000,
+      "host_id": "fw-syd-01",
+      "sensor_event_id": "56"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792534951000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "192.0.2.25",
+      "destination_address": "203.0.113.150",
+      "source_port": 51710,
+      "destination_port": 80,
+      "tx_byte_count": 512,
+      "rx_byte_count": 1203,
+      "source_username": "jsmith",
+      "l7_protocol": "http",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "response_code": 403,
+      "uri_host": "login.example.org",
+      "uri_path": "/account/verify.php",
+      "uri_query": "id=7731&lang=en",
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "{phishing}"
+          },
+          {
+            "key": "message",
+            "value": "Blocked url"
+          },
+          {
+            "key": "url_rule_id",
+            "value": "3"
+          },
+          {
+            "key": "rule_id",
+            "value": "12"
+          },
+          {
+            "key": "content_policy",
+            "value": "00"
+          },
+          {
+            "key": "risk",
+            "value": "60"
+          },
+          {
+            "key": "source_nat_address",
+            "value": "198.51.100.2"
+          },
+          {
+            "key": "destination_country",
+            "value": "de"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792535045000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "source_address": "192.0.2.31",
+      "destination_address": "203.0.113.44",
+      "source_port": 53140,
+      "destination_port": 80,
+      "tx_byte_count": 640,
+      "rx_byte_count": 920448,
+      "source_username": "mlee",
+      "l7_protocol": "http",
+      "uri_scheme": "http",
+      "http_method": "GET",
+      "response_code": 200,
+      "uri_host": "downloads.example.net",
+      "uri_path": "/search",
+      "uri_query": "q=firewall+logs&page=2",
+      "blocked": 0,
+      "sensor_type_actions": "HTTP_ALLOWED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "{it}"
+          },
+          {
+            "key": "url_rule_id",
+            "value": "1"
+          },
+          {
+            "key": "rule_id",
+            "value": "12"
+          },
+          {
+            "key": "content_policy",
+            "value": "00"
+          },
+          {
+            "key": "virus",
+            "value": "clean"
+          },
+          {
+            "key": "source_nat_address",
+            "value": "198.51.100.2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792533304000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "target_user_name": "jsmith",
+      "target_domain_name": "corp.example.com",
+      "source_address": "192.0.2.25",
+      "target_host_name": "fw-syd-01",
+      "auth_system": "Stormshield SNS",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "mfa_used": true,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "auth"
+          },
+          {
+            "key": "method",
+            "value": "LDAP"
+          },
+          {
+            "key": "error",
+            "value": "0"
+          },
+          {
+            "key": "message",
+            "value": "User authenticated"
+          },
+          {
+            "key": "rule_id",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792533460000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "target_user_name": "mlee",
+      "target_domain_name": "corp.example.com",
+      "source_address": "203.0.113.61",
+      "target_host_name": "fw-syd-01",
+      "auth_system": "Stormshield SNS",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Authentication Failed",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "auth"
+          },
+          {
+            "key": "method",
+            "value": "OPENVPN"
+          },
+          {
+            "key": "error",
+            "value": "3"
+          },
+          {
+            "key": "message",
+            "value": "Authentication Failed"
+          },
+          {
+            "key": "rule_id",
+            "value": "0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792533552000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.90",
+      "target_host_name": "fw-syd-01",
+      "auth_system": "Stormshield SNS",
+      "logon_application_family": "SSH",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "SSH authentication failed: user not found in ldap",
+      "failure_category": "INVALID_ACCOUNT",
+      "mfa_used": false,
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "auth"
+          },
+          {
+            "key": "message",
+            "value": "SSH authentication failed: user not found in ldap"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792533716000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "target_user_name": "mlee",
+      "target_domain_name": "corp.example.com",
+      "source_address": "203.0.113.61",
+      "target_host_name": "fw-syd-01",
+      "auth_system": "Stormshield SNS",
+      "logon_application_family": "SSL VPN",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Error during authentication : authentication failed, bad password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_type",
+            "value": "xvpn"
+          },
+          {
+            "key": "message",
+            "value": "Error during authentication : authentication failed, bad password"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792537335000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "username": "admin",
+      "source_address": "192.0.2.11",
+      "target_hostname": "fw-syd-01",
+      "command": "CONFIG COMMUNICATION SYSLOG PROFILE UPDATE index=1 State=1 Protocol=TLS",
+      "operation_name": "CONFIG COMMUNICATION SYSLOG PROFILE UPDATE",
+      "operation": "CONFIG COMMUNICATION SYSLOG PROFILE UPDATE",
+      "channel": "serverd",
+      "result": "success"
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT > STORMSHIELD_SNS_KV_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792537338000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "fw-syd-01",
+      "username": "admin",
+      "source_address": "192.0.2.11",
+      "target_hostname": "fw-syd-01",
+      "command": "CONFIG FILTER ACTIVATE",
+      "operation_name": "CONFIG FILTER ACTIVATE",
+      "operation": "CONFIG FILTER ACTIVATE",
+      "channel": "serverd",
+      "result": "success"
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792537340000000,
+      "host_id": "fw-syd-01"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "STORMSHIELD_SNS_KV_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Stormshield SNS",
+      "event_time_usec": 1792539009000000,
+      "host_id": "SN310A0000000001"
+    }
+  }
+]

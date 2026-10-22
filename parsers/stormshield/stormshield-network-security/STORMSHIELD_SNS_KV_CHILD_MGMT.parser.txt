@@ -1,0 +1,29 @@
+!SAMPLE=<13>1 2026-10-21T10:02:15+11:00 fw-syd-01 serverd - - - id=firewall time="2026-10-21 10:02:15" fw="fw-syd-01" tz=+1100 startime="2026-10-21 10:02:15" error=0 user="admin" address=192.0.2.11 sessionid=7 msg="CONFIG COMMUNICATION SYSLOG PROFILE UPDATE index=1 State=1 Protocol=TLS" logtype="server"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) audit logs over syslog.
+# Child of STORMSHIELD_SNS_KV_PARENT: administration of the firewall (l_server), one line per
+# command an administrator's session sends to the serverd service, from the web interface or the
+# CLI, to Management Event. msg is the command with its arguments, such as
+# "CONFIG FILTER ACTIVATE" or "CONFIG COMMUNICATION SYSLOG PROFILE UPDATE index=1 State=1".
+# kv, msg, err, fw, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+username$ = kv["user"]
+addr = STRING(kv["address"])
+sourceAddress$ = IF IS_VALID_IP(addr) THEN addr ELSE NULL
+targetHostname$ = IF fw != "" THEN fw ELSE NULL
+command$ = IF msg != "" THEN msg ELSE NULL
+# The command name is its leading words in capitals, before the first argument (a word with a
+# lowercase letter or an =).
+cm = msg|^(?P<name>[A-Z][A-Z0-9_ ]*?)\s*(?:\s\S*[a-z=].*)?$
+name = STRING(cm["name"])
+operationName$ = IF name != "" THEN name ELSE NULL
+operation$ = IF name != "" THEN name ELSE NULL
+channel$ = "serverd"
+# error is the command's return code as sent; 0 is a success.
+result$ = IF err != "" THEN "error " + err ELSE NULL
+result$ = IF err == "0" THEN "success" ELSE result$
