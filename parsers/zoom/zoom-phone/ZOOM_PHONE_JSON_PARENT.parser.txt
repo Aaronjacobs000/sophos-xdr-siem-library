@@ -1,0 +1,27 @@
+!SAMPLE={"zoom_record":"phone_call","account_id":"Ex4mpleAcc0untId01","call_history_uuid":"20261020-5f1e2d3c-4b5a-4c6d-8e7f-0a1b2c3d4e5f","call_id":"7018317023722940001","direction":"outbound","international":true,"start_time":"2026-10-20T02:10:04Z","answer_time":"2026-10-20T02:10:12Z","end_time":"2026-10-20T02:41:15Z","duration":1871,"connect_type":"external","call_type":"general","call_result":"answered","hide_caller_id":false,"end_to_end":false,"caller_ext_number":"101","caller_name":"Pat Example","caller_email":"pat@example.com","caller_ext_type":"user","caller_number_type":"zoom_pstn","caller_device_type":"MAC_Client(6.5.3.12345)","callee_did_number":"+441632960123","callee_number_type":"external_pstn","callee_country_iso_code":"GB","site_name":"Sydney","recording_status":"non_recorded"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"zoom_record"\s*:\s*"phone_(?:operation|call)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zoom Phone's phone system operation logs (GET /phone/reports/operationlogs) and the
+# account's call history (GET /phone/call_history), pulled by the example bridge in
+# bridges/zoom-report-logs and posted to HTTP Ingest as JSON lines. The bridge puts "zoom_record"
+# first ("phone_operation" or "phone_call") and adds account_id.
+# Parent: hands operation logs to the CloudAudit child. Calls fit no schema, so they stay here in
+# Generic, with the call history ID as the event ID and the call's start as the event time.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to the child.
+sensorType$ = "Zoom Phone"
+kind = json["$.zoom_record"]
+call = kind == "phone_call"
+# Times are ISO 8601 in UTC, such as 2026-10-20T02:10:04Z.
+when = IF call THEN json["$.start_time"] ELSE json["$.time"]
+eventTimeUsec$ = DATETIME(when, "2006-01-02T15:04:05.999999999Z07:00")
+sensorEventId$ = IF call THEN json["$.call_history_uuid"] ELSE NULL
+eventType$ = IF call THEN "call" ELSE "audit"

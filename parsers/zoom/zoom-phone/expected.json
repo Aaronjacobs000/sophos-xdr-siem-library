@@ -1,0 +1,167 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT > ZOOM_PHONE_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792458123000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Phone Number",
+      "event_source": "Zoom Phone",
+      "event_name": "ADD",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Add BYOC +61 2 5550 1234"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT > ZOOM_PHONE_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792458940000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Call Forwarding",
+      "event_source": "Zoom Phone",
+      "event_name": "Update",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Update call forwarding of extension 101 to +44 1632 960123"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT > ZOOM_PHONE_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792459269000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Calling Plan",
+      "event_source": "Zoom Phone",
+      "event_name": "Update",
+      "user_name": "lee@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Assign International Calling plan to pat@example.com"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT > ZOOM_PHONE_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792459855000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Zoom Phone Roles",
+      "event_source": "Zoom Phone",
+      "event_name": "Delete",
+      "user_name": "sam.admin@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Remove lee@example.com from role Phone Admin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT > ZOOM_PHONE_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792460658000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Call Recordings",
+      "event_source": "Zoom Phone",
+      "event_name": "Export",
+      "user_name": "pat@example.com",
+      "recipient_account_id": "Ex4mpleAcc0untId01",
+      "management_event": true,
+      "read_only": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "operation_detail",
+            "value": "Export call recordings list"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792462204000000,
+      "sensor_event_id": "20261020-5f1e2d3c-4b5a-4c6d-8e7f-0a1b2c3d4e5f"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792465541000000,
+      "sensor_event_id": "20261020-6a2b3c4d-5e6f-4a7b-9c8d-1e2f3a4b5c6d"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792467000000000,
+      "sensor_event_id": "20261020-7b3c4d5e-6f7a-4b8c-8d9e-2f3a4b5c6d7e"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ZOOM_PHONE_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Zoom Phone",
+      "event_time_usec": 1792504931000000,
+      "sensor_event_id": "20261020-8c4d5e6f-7a8b-4c9d-9e0f-3a4b5c6d7e8f"
+    }
+  }
+]
