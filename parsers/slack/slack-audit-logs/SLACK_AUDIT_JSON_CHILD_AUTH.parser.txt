@@ -1,0 +1,66 @@
+!SAMPLE={"slack_record":"audit","id":"4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c02","date_create":1792616740,"action":"user_login_failed","actor":{"type":"user","user":{"id":"W0PNGU003","name":"Priya Nguyen","email":"pnguyen@example.com","team":"T0EXMPL02"}},"entity":{"type":"user","user":{"id":"W0PNGU003","name":"Priya Nguyen","email":"pnguyen@example.com","team":"T0EXMPL02"}},"context":{"location":{"type":"enterprise","id":"E0EXMPL01","name":"Example Org","domain":"example-org"},"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0","session_id":null,"ip_address":"198.51.100.23"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Slack audit log sign-in entries from the example bridge:
+#   user_login, user_login_failed    a member signed in, or failed to
+#   cli_login                        a member signed in with the Slack CLI
+#   user_logout and user_logout_*    a member signed out, or Slack signed them out, such as
+#                                    user_logout_compromised for a compromised device
+# Child of SLACK_AUDIT_JSON_PARENT: each one to Auth, as a logon, a failure or a logoff.
+# json, kind, etype, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+# The member is the entity when it is a user, else the actor. A forced sign-out has Slack's own
+# USLACKSECURITY account as the actor.
+email = IF etype == "user" THEN json["$.entity.user.email"] ELSE json["$.actor.user.email"]
+name = IF etype == "user" THEN json["$.entity.user.name"] ELSE json["$.actor.user.name"]
+targetUserName$ = IF email THEN email ELSE name
+userDisplayName$ = name
+authSystem$ = "Slack"
+sourceAddress$ = json["$.context.ip_address"]
+userAgent$ = json["$.context.ua"]
+sid = json["$.context.session_id"]
+sessionId$ = IF sid == NULL THEN NULL ELSE STRING(sid)
+applicationName$ = IF kind == "cli_login" THEN "Slack CLI" ELSE json["$.context.app.name"]
+
+logoff = CONTAINS(kind, "user_logout")
+failed = kind == "user_login_failed"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE "LOGON"
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+reason = json["$.details.reason"]
+extraFailurereason$ = IF failed AND reason THEN STRING(reason) ELSE NULL
+
+m1.key$ = "action"
+m1.value$ = kind
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "user_id"
+m2.value$ = IF etype == "user" THEN json["$.entity.user.id"] ELSE json["$.actor.user.id"]
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "team"
+m3.value$ = IF etype == "user" THEN json["$.entity.user.team"] ELSE json["$.actor.user.team"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "location_type"
+m4.value$ = json["$.context.location.type"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "location_id"
+m5.value$ = json["$.context.location.id"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "location_name"
+m6.value$ = json["$.context.location.name"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "location_domain"
+m7.value$ = json["$.context.location.domain"]
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "actor_id"
+m8.value$ = json["$.actor.user.id"]
+eventMetadata$.record$ = IF m8.value$ != m2.value$ AND m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "app_id"
+m9.value$ = json["$.context.app.id"]
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$

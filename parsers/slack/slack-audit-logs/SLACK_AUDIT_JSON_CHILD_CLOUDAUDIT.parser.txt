@@ -1,0 +1,93 @@
+!SAMPLE={"slack_record":"audit","id":"4f6b2c1a-8d3e-4a7b-9c0d-1e2f3a4b5c10","date_create":1792621915,"action":"pref.sso_setting_changed","actor":{"type":"user","user":{"id":"W0AKIM001","name":"Alex Kim","email":"akim@example.com","team":"T0EXMPL02"}},"entity":{"type":"enterprise","enterprise":{"id":"E0EXMPL01","name":"Example Org","domain":"example-org"}},"context":{"location":{"type":"enterprise","id":"E0EXMPL01","name":"Example Org","domain":"example-org"},"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","session_id":"7214490041102","ip_address":"203.0.113.10"},"details":{"previous_value":"sso_optional","new_value":"sso_required"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Slack audit log entries from the example bridge that aren't sign-ins or anomalies: user,
+# role and session changes, channel, file, canvas and message actions, app installs and scope
+# changes, workflows, and workspace and organization settings.
+# Child of SLACK_AUDIT_JSON_PARENT: each one to CloudAudit, with the action as the event name and
+# the entity type (such as user, channel, file, app or enterprise) as the event type.
+# json, kind, etype, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Slack"
+eventName$ = kind
+eventType$ = etype
+# The workspace or organization the action happened in.
+where = json["$.context.location.id"]
+recipientAccountId$ = where
+# Who acted: a member, an app's bot user, or Slack itself (USLACKSECURITY, or USLACKUSER when
+# no actor is known).
+email = json["$.actor.user.email"]
+userName$ = IF email THEN email ELSE json["$.actor.user.name"]
+userId$ = json["$.actor.user.id"]
+userType$ = json["$.actor.type"]
+sourceAddress$ = json["$.context.ip_address"]
+userAgent$ = json["$.context.ua"]
+appName = json["$.context.app.name"]
+logonApplicationFamily$ = appName
+
+# The member the action is about, when the entity is a user.
+temail = json["$.entity.user.email"]
+target = IF temail THEN temail ELSE json["$.entity.user.name"]
+targetUserName$ = IF etype == "user" THEN target ELSE NULL
+
+# Downloads, opens, views and exports read data; file, message, canvas, list and huddle actions
+# are data, the rest change settings or accounts.
+readOnly$ = CONTAINS(kind, "download") OR CONTAINS(kind, "_opened") OR CONTAINS(kind, "_viewed") OR CONTAINS(kind, "export")
+data = etype == "file" OR etype == "message" OR etype == "canvas" OR etype == "list" OR etype == "huddle"
+managementEvent$ = NOT data
+
+# The entity is under a key named for its type, such as entity.channel.id.
+r1.resourceId$ = IF etype THEN json["$.entity." + etype + ".id"] ELSE NULL
+r1.resourceType$ = etype
+r1.resourceAccountId$ = where
+r2.resourceId$ = json["$.context.app.id"]
+r2.resourceType$ = "app"
+r2.resourceAccountId$ = where
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+
+# details holds what changed, such as previous_value and new_value for a setting.
+p1.key$ = "previous_value"
+p1.value$ = STRING(json["$.details.previous_value"])
+p2.key$ = "new_value"
+p2.value$ = STRING(json["$.details.new_value"])
+p3.key$ = "previous_scopes"
+p3.value$ = STRING(json["$.details.previous_scopes"])
+p4.key$ = "new_scopes"
+p4.value$ = STRING(json["$.details.new_scopes"])
+p5.key$ = "type"
+p5.value$ = json["$.details.type"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF json["$.details.previous_value"] != NULL THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF json["$.details.new_value"] != NULL THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF json["$.details.previous_scopes"] != NULL THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF json["$.details.new_scopes"] != NULL THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p5.value$ THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+
+d1.key$ = "location_type"
+d1.value$ = json["$.context.location.type"]
+d2.key$ = "location_name"
+d2.value$ = json["$.context.location.name"]
+d3.key$ = "entity_name"
+d3.value$ = IF etype THEN json["$.entity." + etype + ".name"] ELSE NULL
+d4.key$ = "channel_privacy"
+d4.value$ = json["$.entity.channel.privacy"]
+d5.key$ = "app_name"
+d5.value$ = appName
+d6.key$ = "session_id"
+d6.value$ = STRING(json["$.context.session_id"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF json["$.context.session_id"] != NULL THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
