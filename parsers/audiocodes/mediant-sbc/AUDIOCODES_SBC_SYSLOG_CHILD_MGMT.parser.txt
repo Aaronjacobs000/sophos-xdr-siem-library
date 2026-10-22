@@ -1,0 +1,30 @@
+!SAMPLE=<133>[S=19] [BID=5b1035:7]  Activity Log: Local Users Table row 1 (opsuser) -  'User Level' was changed from 'Administrator' to 'Security Administrator'. User: Admin. Session: WEB (198.51.100.23) [Time:21-10@16:42:10.500]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AudioCodes Mediant SBC Activity Log lines that aren't sign-ins, over syslog: parameter and
+# table changes ("<parameter> was changed from '<old>' to '<new>'"), CLI commands ("CLI: '<command>'"),
+# saves, resets, file loads and other actions the Activity Log Settings turn on.
+# Child of AUDIOCODES_SBC_SYSLOG_PARENT: each one to ManagementEvent, with the user, the session's
+# address and protocol, and the action.
+# act, activity, board, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+username$ = act["user"]
+sourceAddress$ = act["ip"]
+channel$ = "AudioCodes " + UPPERCASE(act["proto"])
+targetHostname$ = hostId$
+operation$ = activity
+cli = activity|^CLI:\s*'(?P<cmd>.*)'$
+command$ = cli["cmd"]
+change = activity|^(?P<what>.*?)\s+was changed from\s+'.*'\s+to\s+'.*'$
+op = "activity"
+op = IF change["what"] THEN "parameter changed" ELSE op
+op = IF cli["cmd"] THEN "command" ELSE op
+op = IF CONTAINS(activity, "Executing multiple CLI commands") THEN "command" ELSE op
+op = IF CONTAINS(activity, "configuration has been saved") THEN "configuration saved" ELSE op
+op = IF CONTAINS(activity, "Device Reset") THEN "device reset" ELSE op
+operationName$ = op
+# A change's old and new values stay in operation, the whole action as the Activity Log writes it.

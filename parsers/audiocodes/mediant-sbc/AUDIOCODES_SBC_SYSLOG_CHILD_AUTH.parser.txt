@@ -1,0 +1,46 @@
+!SAMPLE=<133>[S=5] [BID=5b1035:7]  Activity Log: Unauthorized access attempt to Login Page. Reason: bad credentials. User: Admin. Session: WEB (203.0.113.77) [Time:21-10@16:40:01.102]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: AudioCodes Mediant SBC Activity Log sign-ins and sign-outs over syslog:
+#   WEB: Successful login at <device ip>:<port>       Successful user login at <device ip>:<port>
+#   User login succeeded                              (CLI, over SSH or Telnet)
+#   Unauthorized access attempt to Login Page. Reason: <reason>
+#   WEB: User logout                                  User logged out
+# Child of AUDIOCODES_SBC_SYSLOG_PARENT: each one to Auth, as a logon, a failure or a logoff.
+# act, activity, board, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+targetUserName$ = act["user"]
+sourceAddress$ = act["ip"]
+proto = UPPERCASE(act["proto"])
+authSystem$ = "AudioCodes " + proto
+logonApplicationFamily$ = act["proto"]
+# A web login names the device address and port it was made to.
+at = activity|login at (?P<ip>[0-9a-fA-F.:\[\]]+?):(?P<port>\d+)$
+targetAddress$ = at["ip"]
+targetPortNumber$ = IF at["port"] THEN INT(at["port"], 10) ELSE NULL
+targetHostName$ = hostId$
+
+failed = CONTAINS(activity, "Unauthorized access attempt")
+logout = CONTAINS(activity, "logout") OR CONTAINS(activity, "logged out")
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = "LOGON"
+action$ = IF logout THEN "LOGOFF" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+why = activity|Reason:\s*(?P<v>.+)$
+extraFailurereason$ = IF failed THEN why["v"] ELSE NULL
+category = "OTHER_ERROR"
+category = IF CONTAINS(LOWERCASE(STRING(why["v"])), "credentials") THEN "INCORRECT_USER_OR_PASSWORD" ELSE category
+failureCategory$ = IF failed THEN category ELSE NULL
+
+m1.key$ = "activity"
+m1.value$ = activity
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "board_id"
+m2.value$ = board
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$

@@ -1,0 +1,58 @@
+{
+  "vendor": "AudioCodes",
+  "product": "Mediant SBC",
+  "versions": [
+    "7.2",
+    "7.4",
+    "7.6"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://techdocs.audiocodes.com/session-border-controller-sbc/mediant-9000-sbc/user-manual/version-760/Content/UM/Syslog%20Message%20Format.htm",
+    "https://techdocs.audiocodes.com/session-border-controller-sbc/mediant-9000-sbc/user-manual/version-760/Content/UM/Configuring%20Reporting%20of%20Management%20User%20Activities.htm",
+    "https://techdocs.audiocodes.com/session-border-controller-sbc/mediant-9000-sbc/user-manual/version-760/Content/UM/SNMP%20Alarms%20in%20Syslog%20Messages.htm",
+    "https://techdocs.audiocodes.com/session-border-controller-sbc/mediant-9000-sbc/user-manual/version-760/Content/UM/Viewing-IDS-Alarms.htm",
+    "https://techdocs.audiocodes.com/session-border-controller-sbc/mediant-9000-sbc/user-manual/version-760/Content/UM/CDR%20Field%20Description.htm",
+    "https://www.audiocodes.com/media/14787/syslog-viewer-users-guide.pdf",
+    "https://www.audiocodes.com/media/0mvfhmft/sbc-gateway-snmp-alarm-reference-guide-ver-76.pdf"
+  ],
+  "notes": "AudioCodes Mediant SBC syslog: the device sends <PRI> and then its own fields ([S=n] [BID=...]), with no time or host name, and a relay's header in front works too. Turn on syslog with VoIP Debug Level at Basic (AudioCodes sends nothing while it is off) and every Activity Type to Report; CLI commands need activity-log turned on from the CLI. The README has the steps. Activity Log logins, failed logins (\"Unauthorized access attempt to Login Page. Reason: bad credentials\") and logouts go to Auth with the user, the session's protocol and address, and the device address and port a web login was made to. Every other Activity Log line goes to ManagementEvent: parameter and table changes with their old and new values in the operation, CLI commands, saves and resets, with the user, address and protocol. Raised alarms go to Thirdparty with the alarm name as the title, its text as the summary, its severity (critical, major, minor, warning, indeterminate) and source; IDS alarms (acIDSPolicyAlarm, acIDSThresholdCrossNotification, acIDSBlacklistNotification) give the attacking address, and a blacklist addition is marked blocked. Cleared alarms, the acKeepAlive heartbeat, signaling CDRs (their columns follow the CDR Format table and the title line comes only now and then) and debug lines stay generic. The device's [Time:dd-mm@hh:mm:ss.mmm] has no year or zone, so the parser takes this year and reads it as UTC. Samples follow the line formats in AudioCodes' Mediant 9000 manual (7.2 to 7.6), its Syslog Viewer guide and its alarm reference, with made-up values; that the packet starts with <PRI> straight before [S=n] is seen in third-party captures, not stated by AudioCodes. The children, each combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22: 163 of 165 fields matched the emulator in each of 3 runs, and the 2 that differ are the ingest time on lines with no time of their own; the parent's confirm string picked the same lines there. As separate parsers under their parent they matched 156 of 157 fields, the one difference the same ingest time, each line taken in 5 of 5 runs. No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "AUDIOCODES_SBC_SYSLOG_PARENT",
+      "file": "AUDIOCODES_SBC_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "AUDIOCODES_SBC_SYSLOG_CHILD_AUTH",
+      "file": "AUDIOCODES_SBC_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "AUDIOCODES_SBC_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "AUDIOCODES_SBC_SYSLOG_CHILD_MGMT",
+      "file": "AUDIOCODES_SBC_SYSLOG_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "AUDIOCODES_SBC_SYSLOG_PARENT",
+      "schema": "scwx.managementevent"
+    },
+    {
+      "name": "AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT",
+      "file": "AUDIOCODES_SBC_SYSLOG_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "AUDIOCODES_SBC_SYSLOG_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}
