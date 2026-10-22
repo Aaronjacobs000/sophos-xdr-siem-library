@@ -1,0 +1,148 @@
+!SAMPLE={"qualys_record":"detection","qualys_platform":"qualysapi.example.com","HOST":{"ID":"118204590","ASSET_ID":"52611905","IP":"198.51.100.17","TRACKING_METHOD":"IP","NETWORK_ID":"0","OS":"Cisco IOS XE 17.9","DNS":"edge-rtr02.example.net","DNS_DATA":{"HOSTNAME":"edge-rtr02","DOMAIN":"example.net","FQDN":"edge-rtr02.example.net"},"LAST_SCAN_DATETIME":"2026-10-21T03:40:51Z","LAST_VM_SCANNED_DATE":"2026-10-21T03:22:10Z","LAST_VM_SCANNED_DURATION":"1084"},"DETECTION":{"UNIQUE_VULN_ID":"8812004502","QID":"78031","TYPE":"Potential","SEVERITY":"3","PORT":"161","PROTOCOL":"udp","SSL":"0","RESULTS":"public","STATUS":"Active","FIRST_FOUND_DATETIME":"2026-09-02T03:18:44Z","LAST_FOUND_DATETIME":"2026-10-21T03:22:10Z","QDS":{"value":"41","severity":"MEDIUM"},"TIMES_FOUND":"8","LAST_TEST_DATETIME":"2026-10-21T03:22:10Z","LAST_UPDATE_DATETIME":"2026-10-21T03:40:51Z","IS_IGNORED":"0","IS_DISABLED":"0","LAST_PROCESSED_DATETIME":"2026-10-21T03:40:51Z"},"KB":{"TITLE":"SNMP Default Community Name Vulnerability","VULN_TYPE":"Vulnerability","SEVERITY_LEVEL":"3","CATEGORY":"SNMP","PUBLISHED_DATETIME":"1999-01-01T08:00:00Z","PATCHABLE":"0","CVE_LIST":["CVE-1999-0517"],"CVSS":{"BASE":"7.5","TEMPORAL":"5.5"},"CVSS_V3":{"BASE":"7.3","TEMPORAL":"6.4","VECTOR_STRING":"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"},"THREAT_INTELLIGENCE":["Easy_Exploit","High_Lateral_Movement"]}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"qualys_record"\s*:\s*"detection"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Qualys VMDR detections from the Host List Detection API, read by the example bridge in
+# bridges/qualys-vmdr-detections and posted to HTTP Ingest as JSON lines. Each record is one
+# detection: "qualys_record": "detection" and the API server first, then the host's XML elements
+# under HOST, the detection's under DETECTION and the QID's KnowledgeBase entry under KB, every value
+# as the XML's text. The bridge sends a detection each time its status changes.
+# Standalone: every detection to the third-party alert schema. Sophos Fusion has no vulnerability
+# schema for custom parsers, and its schema list puts alerts from sources outside Sophos Fusion in
+# Third Party Alerts.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+h = "$.HOST."
+d = "$.DETECTION."
+k = "$.KB."
+
+sensorType$ = "Qualys VMDR"
+vendor$ = "Qualys"
+provider$ = "Qualys VMDR"
+logType$ = "detection"
+# Qualys says the unique vulnerability ID and the QID together name a detection, so the QID goes to
+# additional_data with it.
+alertId$ = json[d + "UNIQUE_VULN_ID"]
+qid = STRING(json[d + "QID"])
+# A detection carries only its QID. The bridge adds the KnowledgeBase title, unless QUALYS_KB=0.
+kbTitle = json[k + "TITLE"]
+title$ = IF kbTitle != NULL THEN kbTitle ELSE "QID " + qid
+summary$ = json[d + "RESULTS"]
+# New, Active, Re-Opened or Fixed.
+status$ = json[d + "STATUS"]
+# Confirmed, Potential (Qualys couldn't confirm it) or Info (information gathered).
+confidence$ = json[d + "TYPE"]
+alertCategory$ = json[k + "CATEGORY"]
+
+# Qualys severity levels: 1 minimal, 2 medium, 3 serious, 4 critical, 5 urgent.
+sev = STRING(json[d + "SEVERITY"])
+vendorSeverity$ = json[d + "SEVERITY"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sev == "1" THEN "INFO" ELSE severity$
+severity$ = IF sev == "2" THEN "LOW" ELSE severity$
+severity$ = IF sev == "3" THEN "MEDIUM" ELSE severity$
+severity$ = IF sev == "4" THEN "HIGH" ELSE severity$
+severity$ = IF sev == "5" THEN "CRITICAL" ELSE severity$
+# The Qualys Detection Score runs from 1 to 100.
+qdsText = STRING(json[d + "QDS.value"])
+qds = qdsText|^(?P<n>\d+(?:\.\d+)?)$
+riskScore$ = IF qds["n"] != "" THEN qds["n"] + 0 ELSE NULL
+
+# Qualys gives UTC to the second. Each record is a change of status, so the event time is when the
+# status last changed.
+layout = "2006-01-02T15:04:05Z07:00"
+updated = json[d + "LAST_UPDATE_DATETIME"]
+updated = IF updated == NULL THEN json[d + "LAST_PROCESSED_DATETIME"] ELSE updated
+updated = IF updated == NULL THEN json[d + "LAST_FOUND_DATETIME"] ELSE updated
+eventTimeUsec$ = DATETIME(updated, layout)
+updatedTimeUsec$ = DATETIME(updated, layout)
+createdTimeUsec$ = DATETIME(json[d + "FIRST_FOUND_DATETIME"], layout)
+firstEventTimeUsec$ = DATETIME(json[d + "FIRST_FOUND_DATETIME"], layout)
+lastEventTimeUsec$ = DATETIME(json[d + "LAST_FOUND_DATETIME"], layout)
+fixed = status$ == "Fixed"
+closedTimeUsec$ = IF fixed THEN DATETIME(json[d + "LAST_FIXED_DATETIME"], layout) ELSE NULL
+
+# The scanned host is the target: its address, the port and protocol of a service detection, and a
+# name from DNS, then NetBIOS.
+ip = json[h + "IP"]
+ip = IF ip == NULL THEN json[h + "IPV6"] ELSE ip
+destinationAddress$ = ip
+name = json[h + "DNS_DATA.HOSTNAME"]
+name = IF name == NULL OR name == "" THEN json[h + "NETBIOS"] ELSE name
+name = IF name == NULL OR name == "" THEN json[h + "DNS"] ELSE name
+targetHostName$ = name
+port = STRING(json[d + "PORT"])
+p = port|^(?P<n>\d{1,5})$
+destinationPort$ = IF p["n"] != "" THEN INT(p["n"], 10) ELSE NULL
+proto = LOWERCASE(STRING(json[d + "PROTOCOL"]))
+protocol$ = IF proto == "tcp" THEN 6 ELSE NULL
+protocol$ = IF proto == "udp" THEN 17 ELSE protocol$
+protocol$ = IF proto == "icmp" THEN 1 ELSE protocol$
+
+# Keys with no third-party alert field of their own go to additional_data.
+a1.key$ = "qid"
+a1.value$ = qid
+a2.key$ = "qualys_host_id"
+a2.value$ = STRING(json[h + "ID"])
+a3.key$ = "qualys_platform"
+a3.value$ = json["$.qualys_platform"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1, a2, a3]
+a4.key$ = "asset_id"
+a4.value$ = json[h + "ASSET_ID"]
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "tracking_method"
+a5.value$ = json[h + "TRACKING_METHOD"]
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "os"
+a6.value$ = json[h + "OS"]
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "fqdn"
+a7.value$ = json[h + "DNS_DATA.FQDN"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "netbios"
+a8.value$ = json[h + "NETBIOS"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "qds_severity"
+a9.value$ = json[d + "QDS.severity"]
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+cveText = STRING(json[k + "CVE_LIST"])
+a10.key$ = "cves"
+a10.value$ = REPLACE_REGEX(cveText, `[\[\]" ]`, "")
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "cvss3_base"
+a11.value$ = json[k + "CVSS_V3.BASE"]
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "cvss3_vector"
+a12.value$ = json[k + "CVSS_V3.VECTOR_STRING"]
+additionalData$.record$ = IF a12.value$ THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "cvss_base"
+a13.value$ = json[k + "CVSS.BASE"]
+additionalData$.record$ = IF a13.value$ THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "patchable"
+a14.value$ = json[k + "PATCHABLE"]
+additionalData$.record$ = IF a14.value$ THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
+tiText = STRING(json[k + "THREAT_INTELLIGENCE"])
+a15.key$ = "threat_intelligence"
+a15.value$ = REPLACE_REGEX(tiText, `[\[\]" ]`, "")
+additionalData$.record$ = IF a15.value$ THEN additionalData$.record$ + [a15] ELSE additionalData$.record$
+a16.key$ = "times_found"
+a16.value$ = json[d + "TIMES_FOUND"]
+additionalData$.record$ = IF a16.value$ THEN additionalData$.record$ + [a16] ELSE additionalData$.record$
+a17.key$ = "ssl"
+a17.value$ = json[d + "SSL"]
+additionalData$.record$ = IF a17.value$ == "1" THEN additionalData$.record$ + [a17] ELSE additionalData$.record$
+a18.key$ = "is_ignored"
+a18.value$ = json[d + "IS_IGNORED"]
+additionalData$.record$ = IF a18.value$ == "1" THEN additionalData$.record$ + [a18] ELSE additionalData$.record$
+a19.key$ = "is_disabled"
+a19.value$ = json[d + "IS_DISABLED"]
+additionalData$.record$ = IF a19.value$ == "1" THEN additionalData$.record$ + [a19] ELSE additionalData$.record$
+a20.key$ = "vuln_type"
+a20.value$ = json[k + "VULN_TYPE"]
+additionalData$.record$ = IF a20.value$ THEN additionalData$.record$ + [a20] ELSE additionalData$.record$
