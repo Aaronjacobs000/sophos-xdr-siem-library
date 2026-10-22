@@ -1,0 +1,67 @@
+!SAMPLE=<134>Oct 20 22:12:41 cr-detect01 syslogLogger CEF:0|Cybereason|Cybereason||Malop|Malop Created|10|cs1Label=malopId cs1=11.-1587922454714582908 cs2Label=malopDetectionType cs2=CNC cs3Label=malopActivityType cs3=MALICIOUS_INFECTION cs4Label=malopSuspect cs4=powershell.exe cs5Label=malopKeySuspicion cs5=Malicious use of PowerShell / .NET deviceCustomDate1Label=malopCreationTime deviceCustomDate1=Oct 20 2026, 22:12:41 UTC deviceCustomDate2Label=malopUpdateTime deviceCustomDate2=Oct 20 2026, 22:12:41 UTC cn1Label=affectedMachinesCount cn1=1 cn2Label=affectedUsers cn2=1 cs6Label=linkToMalop cs6=https://cr.example.com:443/#/malop/11.-1587922454714582908
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="malop"
+!SCHEMA=scwx.thirdpartyalert
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cybereason (LevelBlue) MalOp syslog in CEF.
+# Child of CYBEREASON_CEF_PARENT: MalOp lines to Thirdparty. Created, Updated and Closed lines carry
+# the MalOp's detection type, activity type, suspect, key suspicion, counts and console link; a
+# Machine Information line names one affected machine, as the target host.
+# kv, name, createdUsec, updatedUsec, eventType$, sensorType$, sensorEventId$, hostId$ and eventTimeUsec$ come from the parent.
+
+malop = STRING(kv["malopId"])
+alertId$ = IF malop != "" THEN malop ELSE NULL
+key = STRING(kv["malopKeySuspicion"])
+title$ = IF key != "" THEN key ELSE name
+detection = STRING(kv["malopDetectionType"])
+suspect = STRING(kv["malopSuspect"])
+summary$ = name + (IF detection != "" THEN ": " + detection ELSE "") + (IF suspect != "" THEN ", suspect " + suspect ELSE "")
+activity = STRING(kv["malopActivityType"])
+alertCategory$ = IF activity != "" THEN activity ELSE NULL
+machine = STRING(kv["affectedMachine"])
+targetHostName$ = IF machine != "" THEN machine ELSE NULL
+vendor$ = "Cybereason"
+provider$ = "Cybereason EDR"
+logType$ = "Malop"
+createdTimeUsec$ = createdUsec
+updatedTimeUsec$ = updatedUsec
+lname = LOWERCASE(name)
+status$ = NULL
+status$ = IF CONTAINS(lname, "created") THEN "created" ELSE status$
+status$ = IF CONTAINS(lname, "updated") THEN "updated" ELSE status$
+status$ = IF CONTAINS(lname, "closed") THEN "closed" ELSE status$
+
+# CEF severity 0 to 10, which Cybereason sets to 10 for every MalOp line.
+sev = STRING(kv["6"])
+vendorSeverity$ = sev
+n = sev|^(?P<n>\d+)$
+s = INT(IF STRING(n["n"]) != "" THEN n["n"] ELSE "0", 10)
+severity$ = "INFO"
+severity$ = IF s >= 1 THEN "LOW" ELSE severity$
+severity$ = IF s >= 4 THEN "MEDIUM" ELSE severity$
+severity$ = IF s >= 7 THEN "HIGH" ELSE severity$
+severity$ = IF s >= 9 THEN "CRITICAL" ELSE severity$
+
+# Keys with no Thirdparty field go to additional_data.
+users = STRING(kv["affectedUsers"]) + STRING(kv["affectedUsersCount"])
+x1.key$ = "event_name"
+x1.value$ = name
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [x1]
+x2.key$ = "detection_type"
+x2.value$ = detection
+additionalData$.record$ = IF x2.value$ != "" THEN additionalData$.record$ + [x2] ELSE additionalData$.record$
+x3.key$ = "suspect"
+x3.value$ = suspect
+additionalData$.record$ = IF x3.value$ != "" THEN additionalData$.record$ + [x3] ELSE additionalData$.record$
+x4.key$ = "affected_machines"
+x4.value$ = STRING(kv["affectedMachinesCount"])
+additionalData$.record$ = IF x4.value$ != "" THEN additionalData$.record$ + [x4] ELSE additionalData$.record$
+x5.key$ = "affected_users"
+x5.value$ = users
+additionalData$.record$ = IF x5.value$ != "" THEN additionalData$.record$ + [x5] ELSE additionalData$.record$
+x6.key$ = "link"
+x6.value$ = STRING(kv["linkToMalop"])
+additionalData$.record$ = IF x6.value$ != "" THEN additionalData$.record$ + [x6] ELSE additionalData$.record$
