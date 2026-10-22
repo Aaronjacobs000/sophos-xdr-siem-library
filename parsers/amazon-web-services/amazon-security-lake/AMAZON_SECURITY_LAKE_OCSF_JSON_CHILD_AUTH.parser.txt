@@ -1,0 +1,68 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_cloud_trail_mgmt_2_0","activity_id":1,"activity_name":"Logon","category_name":"Identity & Access Management","category_uid":3,"class_name":"Authentication","class_uid":3002,"severity":"Informational","severity_id":1,"time":1792457698000,"time_dt":"2026-10-20 00:54:58.000 UTC","type_name":"Authentication: Logon","type_uid":300201,"metadata":{"product":{"name":"CloudTrail","vendor_name":"AWS","feature":{"name":"Management"}},"profiles":["cloud","datetime"],"version":"1.1.0","event_code":"AwsConsoleSignIn","uid":"6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e04"},"actor":{"user":{"type":"IAMUser","name":"akim","uid":"arn:aws:iam::111122223333:user/akim","uid_alt":"AIDAEXAMPLEAKIM00001","account":{"uid":"111122223333"}}},"api":{"operation":"ConsoleLogin","response":{"data":"{\"ConsoleLogin\":\"Success\"}"},"service":{"name":"signin.amazonaws.com"}},"cloud":{"provider":"AWS","region":"us-east-1"},"dst_endpoint":{"svc_name":"https://console.aws.amazon.com/console/home?state=hashArgs%23&isauthcode=true"},"http_request":{"user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"},"is_mfa":true,"src_endpoint":{"ip":"203.0.113.25"},"status":"Success","status_id":1,"user":{"name":"akim","uid":"arn:aws:iam::111122223333:user/akim","uid_alt":"AIDAEXAMPLEAKIM00001"},"unmapped":{"additionalEventData.MFAIdentifier":"arn:aws:iam::111122223333:mfa/akim","additionalEventData.MobileVersion":"No","recipientAccountId":"111122223333"},"accountid":"111122223333","region":"us-east-1"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake Authentication (3002) records from the example bridge, such as
+# CloudTrail console sign-ins (ConsoleLogin).
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to Auth, as a logon, a logoff or a
+# failure.
+# json, cls, activity, product, account, region, eventType$, sensorType$, sensorEventId$ and
+# eventTimeUsec$ come from the parent.
+
+# Who signed in: the user, else the actor.
+user = json["$.user.name"]
+user = IF user THEN user ELSE json["$.actor.user.name"]
+user = IF user THEN user ELSE json["$.user.uid"]
+user = IF user THEN user ELSE json["$.actor.user.uid"]
+targetUserName$ = user
+sourceAddress$ = json["$.src_endpoint.ip"]
+userAgent$ = json["$.http_request.user_agent"]
+service = json["$.api.service.name"]
+serviceName$ = service
+authSystem$ = IF service THEN service ELSE product
+applicationName$ = json["$.api.operation"]
+mfa = json["$.is_mfa"]
+mfaUsed$ = IF mfa == NULL THEN NULL ELSE STRING(mfa) == "true"
+
+# status_id is 1 for success and 2 for failure. activity_id 2 is a logoff.
+st = STRING(json["$.status_id"])
+logoff = activity == "2"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE "LOGON"
+action$ = IF st == "2" THEN "FAILURE" ELSE action$
+actionResult$ = NULL
+actionResult$ = IF st == "1" THEN "SUCCESS" ELSE actionResult$
+actionResult$ = IF st == "2" THEN "FAILED" ELSE actionResult$
+status$ = json["$.status"]
+detail = json["$.status_detail"]
+extraFailurereason$ = IF st == "2" THEN detail ELSE NULL
+failureCategory$ = IF st == "2" THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF st == "2" AND CONTAINS(LOWERCASE(STRING(detail)), "failed authentication") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+
+m1.key$ = "account"
+m1.value$ = account
+m2.key$ = "region"
+m2.value$ = region
+m3.key$ = "event_code"
+m3.value$ = json["$.metadata.event_code"]
+m4.key$ = "user_uid"
+m4.value$ = json["$.user.uid"]
+m5.key$ = "login_url"
+m5.value$ = json["$.dst_endpoint.svc_name"]
+m6.key$ = "mfa_identifier"
+m6.value$ = json["$.unmapped['additionalEventData.MFAIdentifier']"]
+m7.key$ = "product"
+m7.value$ = product
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$

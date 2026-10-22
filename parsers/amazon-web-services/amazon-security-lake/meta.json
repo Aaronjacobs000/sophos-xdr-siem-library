@@ -1,0 +1,77 @@
+{
+  "vendor": "Amazon Web Services",
+  "product": "Amazon Security Lake",
+  "versions": [
+    "2.0"
+  ],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-21T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://docs.aws.amazon.com/security-lake/latest/userguide/open-cybersecurity-schema-framework.html",
+    "https://docs.aws.amazon.com/security-lake/latest/userguide/subscriber-query-examples2.html",
+    "https://docs.aws.amazon.com/security-lake/latest/userguide/create-query-subscriber-procedures.html",
+    "https://docs.aws.amazon.com/athena/latest/ug/unload.html",
+    "https://schema.ocsf.io/1.1.0/",
+    "https://github.com/ocsf/examples/tree/main/mappings/markdown/AWS"
+  ],
+  "notes": "Amazon Security Lake keeps its records as Apache Parquet, which Sophos NG-SIEM can't read, so these parsers read the records the example bridge in bridges/amazon-security-lake has Athena write out as JSON and posts to HTTP Ingest, with \"security_lake_record\": \"ocsf\" and \"security_lake_table\" first. Sophos Fusion has no Security Lake integration. The parent sends each OCSF 1.1.0 record (source version 2) to a child by its class. API Activity, Account Change, User Access Management and Group Management (CloudTrail management and data events, EKS audit logs) go to CloudAudit, with the operation, service, caller, access key, MFA, account, region, error and the first three resources. Authentication (console sign-ins) goes to Auth; Network Activity (VPC Flow Logs) to Netflow; HTTP Activity (AWS WAF) to HTTP, with the first six request headers; DNS Activity (Route 53 Resolver) to the DNS schema, with the first four answers; and Security, Vulnerability, Compliance and Detection Findings (Security Hub) to Thirdparty. Other classes, such as a custom source's, stay generic. The event time is OCSF's time, in milliseconds. The bridge writes the *_dt timestamps as text, such as 2026-10-20 01:12:40.000 UTC, and the parsers read the millisecond fields. Source version 1 records (OCSF 1.0.0-rc.2) use other class IDs and fields, so few of their fields are mapped. Samples are made up in the shapes of the OCSF 1.1.0 classes and the AWS mapping examples the Security Lake docs link, with made-up values. How Athena's JSON writer renders each column wasn't checked against a live workgroup. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (208 of 208 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (206 of 206 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_AUTH",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_NETFLOW",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_HTTP",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_DNSQUERY",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_DNSQUERY.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.dnsquery"
+    },
+    {
+      "name": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_THIRDPARTYALERT",
+      "file": "AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ],
+  "bridge": "bridges/amazon-security-lake"
+}

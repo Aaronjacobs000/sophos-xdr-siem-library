@@ -1,0 +1,754 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792458760000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e01",
+      "event_type": "AwsApiCall",
+      "event_name": "DescribeInstances",
+      "event_source": "ec2.amazonaws.com",
+      "user_name": "arn:aws:sts::111122223333:assumed-role/OpsAdmin/jsmith",
+      "user_id": "AROAEXAMPLEOPSROLE01:jsmith",
+      "user_type": "AssumedRole",
+      "access_key": "EXAMPLESESSIONKEYID1",
+      "mfa_used": true,
+      "recipient_account_id": "111122223333",
+      "region": "ap-southeast-2",
+      "source_address": "203.0.113.25",
+      "user_agent": "aws-cli/2.17.40 Python/3.12.6 Linux/6.1",
+      "status": "Success",
+      "read_only": true,
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "CloudTrail"
+          },
+          {
+            "key": "ocsf_class",
+            "value": "API Activity"
+          },
+          {
+            "key": "activity",
+            "value": "Read"
+          },
+          {
+            "key": "request_id",
+            "value": "0a1b2c3d-1111-4222-8333-944455556601"
+          },
+          {
+            "key": "session_issuer",
+            "value": "arn:aws:iam::111122223333:role/OpsAdmin"
+          },
+          {
+            "key": "security_lake_table",
+            "value": "amazon_security_lake_table_ap_southeast_2_cloud_trail_mgmt_2_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792459211000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e02",
+      "event_type": "AwsApiCall",
+      "event_name": "DeleteTrail",
+      "event_source": "cloudtrail.amazonaws.com",
+      "user_name": "ci-deploy",
+      "user_id": "AIDAEXAMPLECIDEPLOY1",
+      "user_type": "IAMUser",
+      "access_key": "EXAMPLEUSERKEYID0002",
+      "recipient_account_id": "111122223333",
+      "region": "ap-southeast-2",
+      "source_address": "198.51.100.77",
+      "user_agent": "Boto3/1.35.10 Python/3.11.9 Linux/5.10",
+      "status": "Failure",
+      "error_code": "AccessDenied",
+      "error_message": "User is not authorized to perform: cloudtrail:DeleteTrail",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "arn:aws:cloudtrail:ap-southeast-2:111122223333:trail/org-trail",
+          "resource_type": "AWS::CloudTrail::Trail",
+          "resource_account_id": "111122223333"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_data",
+            "value": "{\"name\":\"org-trail\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "CloudTrail"
+          },
+          {
+            "key": "ocsf_class",
+            "value": "API Activity"
+          },
+          {
+            "key": "activity",
+            "value": "Delete"
+          },
+          {
+            "key": "request_id",
+            "value": "0a1b2c3d-1111-4222-8333-944455556602"
+          },
+          {
+            "key": "security_lake_table",
+            "value": "amazon_security_lake_table_ap_southeast_2_cloud_trail_mgmt_2_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792461824000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e03",
+      "event_type": "AwsApiCall",
+      "event_name": "CreateUser",
+      "event_source": "iam.amazonaws.com",
+      "user_name": "arn:aws:sts::111122223333:assumed-role/OpsAdmin/jsmith",
+      "user_id": "AROAEXAMPLEOPSROLE01:jsmith",
+      "user_type": "AssumedRole",
+      "access_key": "EXAMPLESESSIONKEYID1",
+      "mfa_used": true,
+      "target_user_name": "svc-backup",
+      "recipient_account_id": "111122223333",
+      "region": "us-east-1",
+      "source_address": "203.0.113.25",
+      "user_agent": "AWS Internal",
+      "status": "Success",
+      "read_only": false,
+      "management_event": true,
+      "request_parameters": {
+        "record": [
+          {
+            "key": "request_data",
+            "value": "{\"userName\":\"svc-backup\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "CloudTrail"
+          },
+          {
+            "key": "ocsf_class",
+            "value": "Account Change"
+          },
+          {
+            "key": "activity",
+            "value": "Create"
+          },
+          {
+            "key": "request_id",
+            "value": "0a1b2c3d-1111-4222-8333-944455556603"
+          },
+          {
+            "key": "session_issuer",
+            "value": "arn:aws:iam::111122223333:role/OpsAdmin"
+          },
+          {
+            "key": "security_lake_table",
+            "value": "amazon_security_lake_table_ap_southeast_2_cloud_trail_mgmt_2_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792457698000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e04",
+      "target_user_name": "akim",
+      "source_address": "203.0.113.25",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15",
+      "service_name": "signin.amazonaws.com",
+      "auth_system": "signin.amazonaws.com",
+      "application_name": "ConsoleLogin",
+      "mfa_used": true,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "Success",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "us-east-1"
+          },
+          {
+            "key": "event_code",
+            "value": "AwsConsoleSignIn"
+          },
+          {
+            "key": "user_uid",
+            "value": "arn:aws:iam::111122223333:user/akim"
+          },
+          {
+            "key": "login_url",
+            "value": "https://console.aws.amazon.com/console/home?state=hashArgs%23&isauthcode=true"
+          },
+          {
+            "key": "mfa_identifier",
+            "value": "arn:aws:iam::111122223333:mfa/akim"
+          },
+          {
+            "key": "product",
+            "value": "CloudTrail"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792467669000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "6f1d2c3b-4a59-4e68-8d7c-1b2a3c4d5e05",
+      "target_user_name": "akim",
+      "source_address": "198.51.100.140",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
+      "service_name": "signin.amazonaws.com",
+      "auth_system": "signin.amazonaws.com",
+      "application_name": "ConsoleLogin",
+      "mfa_used": false,
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "status": "Failure",
+      "extra_failurereason": "Failed authentication",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "us-east-1"
+          },
+          {
+            "key": "event_code",
+            "value": "AwsConsoleSignIn"
+          },
+          {
+            "key": "login_url",
+            "value": "https://console.aws.amazon.com/console/home"
+          },
+          {
+            "key": "product",
+            "value": "CloudTrail"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792469402000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.50",
+      "host_id": "i-0a1b2c3d4e5f60718",
+      "query_name": "www.example.org",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "query_class": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "cdn.example.net.",
+            "response_type": 5
+          },
+          {
+            "response_data": "203.0.113.80",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_DNSQUERY",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792469497000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.23",
+      "host_id": "rslvr-in-0123456789abcdef0",
+      "query_name": "xk2jq9vz7c1m4t.example.net",
+      "index_of_top_private_domain": 15,
+      "is_top_private_domain_parsed": true,
+      "query_type": 16,
+      "query_class": 1,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792472412000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.50",
+      "destination_address": "198.51.100.10",
+      "source_port": 49812,
+      "destination_port": 443,
+      "protocol": 6,
+      "tx_byte_count": 52310,
+      "tx_packet_count": 41,
+      "direction": "OUTBOUND",
+      "flow_action": "FW_ALLOWED",
+      "start_timestamp_usec": 1792472412000000,
+      "end_timestamp_usec": 1792472470000000,
+      "host_id": "i-0a1b2c3d4e5f60718",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "zone",
+            "value": "apse2-az1"
+          },
+          {
+            "key": "interface_id",
+            "value": "eni-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "vpc_id",
+            "value": "vpc-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "subnet_id",
+            "value": "subnet-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "19"
+          },
+          {
+            "key": "status",
+            "value": "OK"
+          },
+          {
+            "key": "product",
+            "value": "Amazon VPC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792472560000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.200",
+      "destination_address": "192.0.2.61",
+      "source_port": 56858,
+      "destination_port": 3389,
+      "protocol": 6,
+      "tx_byte_count": 44,
+      "tx_packet_count": 1,
+      "direction": "INBOUND",
+      "flow_action": "FW_BLOCKED",
+      "start_timestamp_usec": 1792472560000000,
+      "end_timestamp_usec": 1792472611000000,
+      "host_id": "i-0c1d2e3f4a5b6c7d8",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "zone",
+            "value": "apse2-az1"
+          },
+          {
+            "key": "interface_id",
+            "value": "eni-0c1d2e3f4a5b6c7d8"
+          },
+          {
+            "key": "vpc_id",
+            "value": "vpc-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "subnet_id",
+            "value": "subnet-0a1b2c3d4e5f60718"
+          },
+          {
+            "key": "tcp_flags",
+            "value": "2"
+          },
+          {
+            "key": "status",
+            "value": "OK"
+          },
+          {
+            "key": "product",
+            "value": "Amazon VPC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792476921512000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.66",
+      "http_method": "GET",
+      "uri_host": "shop.example.com",
+      "uri_path": "/products",
+      "uri_query": "id=1%27%20OR%201%3D1",
+      "user_agent": "sqlmap/1.8.9#stable",
+      "index_of_top_private_domain": 5,
+      "is_top_private_domain_parsed": true,
+      "request_direction": "INBOUND",
+      "response_code": 403,
+      "blocked": 1,
+      "sensor_type_actions": "HTTP_BLOCKED",
+      "http_request_headers": {
+        "record": [
+          {
+            "key": "Host",
+            "value": "shop.example.com"
+          },
+          {
+            "key": "User-Agent",
+            "value": "sqlmap/1.8.9#stable"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*"
+          }
+        ]
+      },
+      "event_metadata": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "web_acl",
+            "value": "arn:aws:wafv2:ap-southeast-2:111122223333:regional/webacl/shop-acl/5a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+          },
+          {
+            "key": "rule",
+            "value": "AWS-AWSManagedRulesSQLiRuleSet"
+          },
+          {
+            "key": "rule_type",
+            "value": "MANAGED_RULE_GROUP"
+          },
+          {
+            "key": "match",
+            "value": "SQL_INJECTION"
+          },
+          {
+            "key": "match_location",
+            "value": "QUERY_STRING"
+          },
+          {
+            "key": "request_id",
+            "value": "1-6713f2a1-0a1b2c3d4e5f60718293a4b5"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          },
+          {
+            "key": "source_service",
+            "value": "ALB"
+          },
+          {
+            "key": "source_country",
+            "value": "NL"
+          },
+          {
+            "key": "resource",
+            "value": "arn:aws:elasticloadbalancing:ap-southeast-2:111122223333:loadbalancer/app/shop-alb/0a1b2c3d4e5f6071"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792479922487000,
+      "event_time_fidelity": "MICRO",
+      "title": "API ListBuckets was invoked from a known malicious IP address.",
+      "summary": "API ListBuckets, commonly used in reconnaissance attacks, was invoked from IP address 198.51.100.77 on the list of known malicious IP addresses.",
+      "alert_id": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0/finding/0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f",
+      "alert_category": "TTPs/Discovery/Recon:IAMUser-MaliciousIPCaller",
+      "log_type": "Detection Finding",
+      "status": "New",
+      "vendor": "Amazon",
+      "provider": "GuardDuty",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "created_time_usec": 1792479922487000,
+      "updated_time_usec": 1792479922487000,
+      "first_event_time_usec": 1792479309000000,
+      "last_event_time_usec": 1792479700000000,
+      "source_address": "198.51.100.77",
+      "additional_data": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsIamAccessKey"
+          },
+          {
+            "key": "resource_id",
+            "value": "AWS::IAM::AccessKey:EXAMPLEKEYID"
+          },
+          {
+            "key": "api_call",
+            "value": "ListBuckets"
+          },
+          {
+            "key": "source_url",
+            "value": "https://ap-southeast-2.console.aws.amazon.com/guardduty/home?region=ap-southeast-2#/findings?macros=current&fId=0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f"
+          },
+          {
+            "key": "product_id",
+            "value": "arn:aws:securityhub:ap-southeast-2::product/aws/guardduty"
+          },
+          {
+            "key": "detector",
+            "value": "arn:aws:guardduty:ap-southeast-2:111122223333:detector/12abc34d567e8fa901bc2d34e56789f0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792483913060000,
+      "event_time_fidelity": "MICRO",
+      "title": "CloudTrail should be enabled and configured with at least one multi-Region trail",
+      "summary": "This control checks whether CloudTrail is enabled with at least one multi-Region trail.",
+      "alert_id": "arn:aws:securityhub:ap-southeast-2:111122223333:security-control/CloudTrail.1/finding/2b3c4d5e-6f70-4a81-9b2c-3d4e5f607182",
+      "alert_category": "Software and Configuration Checks/Industry and Regulatory Standards/AWS-Foundational-Security-Best-Practices",
+      "log_type": "Compliance Finding",
+      "status": "New",
+      "vendor": "AWS",
+      "provider": "Security Hub",
+      "vendor_severity": "Medium",
+      "severity": "MEDIUM",
+      "created_time_usec": 1788318524967000,
+      "updated_time_usec": 1792483913060000,
+      "additional_data": {
+        "record": [
+          {
+            "key": "account",
+            "value": "111122223333"
+          },
+          {
+            "key": "region",
+            "value": "ap-southeast-2"
+          },
+          {
+            "key": "resource_type",
+            "value": "AwsAccount"
+          },
+          {
+            "key": "resource_id",
+            "value": "AWS::::Account:111122223333"
+          },
+          {
+            "key": "compliance_status",
+            "value": "FAILED"
+          },
+          {
+            "key": "compliance_control",
+            "value": "CloudTrail.1"
+          },
+          {
+            "key": "product_id",
+            "value": "arn:aws:securityhub:ap-southeast-2::product/aws/securityhub"
+          },
+          {
+            "key": "detector",
+            "value": "security-control/CloudTrail.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT > AMAZON_SECURITY_LAKE_OCSF_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792489050642000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "API Activity",
+      "event_name": "delete",
+      "event_source": "Amazon EKS",
+      "user_name": "kubernetes-admin",
+      "user_id": "aws-iam-authenticator:111122223333:AROAEXAMPLEOPSROLE01",
+      "recipient_account_id": "111122223333",
+      "region": "ap-southeast-2",
+      "source_address": "203.0.113.25",
+      "user_agent": "kubectl/v1.31.1 (darwin/arm64) kubernetes/948afe5",
+      "status": "Success",
+      "read_only": false,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "db-creds",
+          "resource_type": "secrets",
+          "resource_account_id": "111122223333"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "url_path",
+            "value": "/api/v1/namespaces/payments/secrets/db-creds"
+          },
+          {
+            "key": "namespace",
+            "value": "payments"
+          }
+        ]
+      },
+      "responses": {
+        "record": [
+          {
+            "key": "response_code",
+            "value": "200"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "product",
+            "value": "Amazon EKS"
+          },
+          {
+            "key": "ocsf_class",
+            "value": "API Activity"
+          },
+          {
+            "key": "activity",
+            "value": "Delete"
+          },
+          {
+            "key": "request_id",
+            "value": "f47c68f2-d3ac-4f96-b2f4-5d497bf79b64"
+          },
+          {
+            "key": "session_issuer",
+            "value": "arn:aws:iam::111122223333:role/OpsAdmin"
+          },
+          {
+            "key": "security_lake_table",
+            "value": "amazon_security_lake_table_ap_southeast_2_eks_audit_2_0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Amazon Security Lake",
+      "event_time_usec": 1792490400000000
+    }
+  }
+]

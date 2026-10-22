@@ -1,0 +1,101 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_waf_2_0","activity_id":3,"activity_name":"Get","category_name":"Network Activity","category_uid":4,"class_name":"HTTP Activity","class_uid":4002,"severity":"Informational","severity_id":1,"time":1792476921512,"time_dt":"2026-10-20 06:15:21.512 UTC","type_name":"HTTP Activity: Get","type_uid":400203,"metadata":{"product":{"name":"AWS WAF","vendor_name":"AWS","version":"1","feature":{"uid":"arn:aws:wafv2:ap-southeast-2:111122223333:regional/webacl/shop-acl/5a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}},"profiles":["cloud","security_control","datetime"],"version":"1.1.0"},"action":"Denied","action_id":2,"disposition":"Blocked","disposition_id":2,"cloud":{"provider":"AWS","region":"ap-southeast-2"},"firewall_rule":{"condition":"SQL_INJECTION","match_location":"QUERY_STRING","type":"MANAGED_RULE_GROUP","uid":"AWS-AWSManagedRulesSQLiRuleSet"},"http_request":{"args":"id=1%27%20OR%201%3D1","http_headers":[{"name":"Host","value":"shop.example.com"},{"name":"User-Agent","value":"sqlmap/1.8.9#stable"},{"name":"Accept","value":"*/*"}],"http_method":"GET","uid":"1-6713f2a1-0a1b2c3d4e5f60718293a4b5","url":{"hostname":"shop.example.com","path":"/products"},"user_agent":"sqlmap/1.8.9#stable","version":"HTTP/1.1"},"http_response":{"code":403},"src_endpoint":{"ip":"198.51.100.66","location":{"country":"NL"},"svc_name":"ALB","uid":"arn:aws:elasticloadbalancing:ap-southeast-2:111122223333:loadbalancer/app/shop-alb/0a1b2c3d4e5f6071"},"unmapped":{"terminatingRuleMatchDetails[].conditionType":"SQL_INJECTION"},"accountid":"111122223333","region":"ap-southeast-2"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="http"
+!SCHEMA=scwx.http
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake HTTP Activity (4002) records from the example bridge: AWS WAF logs.
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to HTTP, with the client, the method,
+# host, path and query, the user agent, the first six request headers, and whether WAF blocked it.
+# json, account, region, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = json["$.src_endpoint.ip"]
+destinationAddress$ = json["$.dst_endpoint.ip"]
+httpMethod$ = json["$.http_request.http_method"]
+host = json["$.http_request.url.hostname"]
+uriHost$ = host
+uriPath$ = json["$.http_request.url.path"]
+# WAF logs the query string in http_request.args.
+query = json["$.http_request.url.query_string"]
+uriQuery$ = IF query THEN query ELSE json["$.http_request.args"]
+userAgent$ = json["$.http_request.user_agent"]
+referer$ = json["$.http_request.referrer"]
+tld = IDX_OF_TLD(STRING(host))
+indexOfTopPrivateDomain$ = IF host THEN tld ELSE NULL
+isTopPrivateDomainParsed$ = IF host THEN tld != -1 ELSE NULL
+# WAF sits in front of your application, so each request comes in.
+requestDirection$ = "INBOUND"
+
+code = STRING(json["$.http_response.code"])
+code = IF code == "" THEN STRING(json["$.http_status"]) ELSE code
+cd = code|^(?P<n>\d{3})$
+responseCode$ = IF cd["n"] != "" THEN INT(cd["n"], 10) ELSE NULL
+
+# action_id is 1 for allowed and 2 for denied.
+act = STRING(json["$.action_id"])
+blocked$ = IF act == "2" THEN 1 ELSE 0
+sensorTypeActions$ = NULL
+sensorTypeActions$ = IF act == "1" THEN "HTTP_ALLOWED" ELSE sensorTypeActions$
+sensorTypeActions$ = IF act == "2" THEN "HTTP_BLOCKED" ELSE sensorTypeActions$
+
+h1.key$ = json["$.http_request.http_headers[0].name"]
+h1.value$ = json["$.http_request.http_headers[0].value"]
+h2.key$ = json["$.http_request.http_headers[1].name"]
+h2.value$ = json["$.http_request.http_headers[1].value"]
+h3.key$ = json["$.http_request.http_headers[2].name"]
+h3.value$ = json["$.http_request.http_headers[2].value"]
+h4.key$ = json["$.http_request.http_headers[3].name"]
+h4.value$ = json["$.http_request.http_headers[3].value"]
+h5.key$ = json["$.http_request.http_headers[4].name"]
+h5.value$ = json["$.http_request.http_headers[4].value"]
+h6.key$ = json["$.http_request.http_headers[5].name"]
+h6.value$ = json["$.http_request.http_headers[5].value"]
+# Assign the list first: reading httpRequestHeaders$.record$ before it is set fails the event.
+httpRequestHeaders$.record$ = []
+httpRequestHeaders$.record$ = IF h1.key$ THEN httpRequestHeaders$.record$ + [h1] ELSE httpRequestHeaders$.record$
+httpRequestHeaders$.record$ = IF h2.key$ THEN httpRequestHeaders$.record$ + [h2] ELSE httpRequestHeaders$.record$
+httpRequestHeaders$.record$ = IF h3.key$ THEN httpRequestHeaders$.record$ + [h3] ELSE httpRequestHeaders$.record$
+httpRequestHeaders$.record$ = IF h4.key$ THEN httpRequestHeaders$.record$ + [h4] ELSE httpRequestHeaders$.record$
+httpRequestHeaders$.record$ = IF h5.key$ THEN httpRequestHeaders$.record$ + [h5] ELSE httpRequestHeaders$.record$
+httpRequestHeaders$.record$ = IF h6.key$ THEN httpRequestHeaders$.record$ + [h6] ELSE httpRequestHeaders$.record$
+
+m1.key$ = "account"
+m1.value$ = account
+m2.key$ = "region"
+m2.value$ = region
+m3.key$ = "web_acl"
+m3.value$ = json["$.metadata.product.feature.uid"]
+m4.key$ = "rule"
+m4.value$ = json["$.firewall_rule.uid"]
+m5.key$ = "rule_type"
+m5.value$ = json["$.firewall_rule.type"]
+m6.key$ = "match"
+m6.value$ = json["$.firewall_rule.condition"]
+m7.key$ = "match_location"
+m7.value$ = json["$.firewall_rule.match_location"]
+m8.key$ = "request_id"
+m8.value$ = json["$.http_request.uid"]
+m9.key$ = "http_version"
+m9.value$ = json["$.http_request.version"]
+m10.key$ = "source_service"
+m10.value$ = json["$.src_endpoint.svc_name"]
+m11.key$ = "source_country"
+m11.value$ = json["$.src_endpoint.location.country"]
+m12.key$ = "resource"
+m12.value$ = json["$.src_endpoint.uid"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m11.value$ THEN eventMetadata$.record$ + [m11] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m12.value$ THEN eventMetadata$.record$ + [m12] ELSE eventMetadata$.record$

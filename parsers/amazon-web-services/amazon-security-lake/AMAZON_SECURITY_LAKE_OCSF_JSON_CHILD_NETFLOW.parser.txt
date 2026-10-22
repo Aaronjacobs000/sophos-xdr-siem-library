@@ -1,0 +1,94 @@
+!SAMPLE={"security_lake_record":"ocsf","security_lake_table":"amazon_security_lake_table_ap_southeast_2_vpc_flow_2_0","activity_id":6,"activity_name":"Traffic","category_name":"Network Activity","category_uid":4,"class_name":"Network Activity","class_uid":4001,"severity":"Informational","severity_id":1,"time":1792472412000,"time_dt":"2026-10-20 05:00:12.000 UTC","type_name":"Network Activity: Traffic","type_uid":400106,"metadata":{"product":{"name":"Amazon VPC","vendor_name":"AWS","feature":{"name":"Flowlogs"},"version":"5"},"profiles":["cloud","security_control","datetime"],"version":"1.1.0"},"action":"Allowed","action_id":1,"disposition":"Allowed","disposition_id":1,"cloud":{"account":{"uid":"111122223333"},"provider":"AWS","region":"ap-southeast-2","zone":"apse2-az1"},"connection_info":{"boundary":"-","boundary_id":99,"direction":"Outbound","direction_id":2,"protocol_num":6,"protocol_ver":"IPv4","tcp_flags":19},"dst_endpoint":{"ip":"198.51.100.10","port":443,"svc_name":"-"},"src_endpoint":{"instance_uid":"i-0a1b2c3d4e5f60718","interface_uid":"eni-0a1b2c3d4e5f60718","ip":"192.0.2.50","port":49812,"subnet_uid":"subnet-0a1b2c3d4e5f60718","svc_name":"-","vpc_uid":"vpc-0a1b2c3d4e5f60718"},"start_time":1792472412000,"start_time_dt":"2026-10-20 05:00:12.000 UTC","end_time":1792472470000,"end_time_dt":"2026-10-20 05:01:10.000 UTC","status_code":"OK","traffic":{"bytes":52310,"packets":41},"unmapped":{"sublocation_id":"-","sublocation_type":"-"},"accountid":"111122223333","region":"ap-southeast-2"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Amazon Security Lake Network Activity (4001) records from the example bridge: VPC Flow
+# Logs.
+# Child of AMAZON_SECURITY_LAKE_OCSF_JSON_PARENT: each one to Netflow, with the addresses, ports,
+# protocol, bytes and packets, the direction, the accept or reject, and the flow's start and end.
+# json, account, region, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+sourceAddress$ = json["$.src_endpoint.ip"]
+destinationAddress$ = json["$.dst_endpoint.ip"]
+spt = STRING(json["$.src_endpoint.port"])
+dpt = STRING(json["$.dst_endpoint.port"])
+sp = spt|^(?P<n>\d{1,5})$
+dp = dpt|^(?P<n>\d{1,5})$
+sourcePort$ = IF sp["n"] != "" THEN INT(sp["n"], 10) ELSE NULL
+destinationPort$ = IF dp["n"] != "" THEN INT(dp["n"], 10) ELSE NULL
+prt = STRING(json["$.connection_info.protocol_num"])
+pr = prt|^(?P<n>\d{1,3})$
+protocol$ = IF pr["n"] != "" THEN INT(pr["n"], 10) ELSE NULL
+
+# A VPC flow record counts one direction, from the source, in traffic.bytes and traffic.packets.
+# Records with both directions use bytes_out and bytes_in.
+tb = STRING(json["$.traffic.bytes_out"])
+tb = IF tb == "" THEN STRING(json["$.traffic.bytes"]) ELSE tb
+tp = STRING(json["$.traffic.packets_out"])
+tp = IF tp == "" THEN STRING(json["$.traffic.packets"]) ELSE tp
+rb = STRING(json["$.traffic.bytes_in"])
+rp = STRING(json["$.traffic.packets_in"])
+txByteCount$ = IF tb != "" THEN INT(tb, 10) ELSE NULL
+txPacketCount$ = IF tp != "" THEN INT(tp, 10) ELSE NULL
+rxByteCount$ = IF rb != "" THEN INT(rb, 10) ELSE NULL
+rxPacketCount$ = IF rp != "" THEN INT(rp, 10) ELSE NULL
+
+# direction_id is 1 for inbound and 2 for outbound; action_id 1 for allowed and 2 for denied.
+dir = STRING(json["$.connection_info.direction_id"])
+direction$ = NULL
+direction$ = IF dir == "1" THEN "INBOUND" ELSE direction$
+direction$ = IF dir == "2" THEN "OUTBOUND" ELSE direction$
+act = STRING(json["$.action_id"])
+flowAction$ = NULL
+flowAction$ = IF act == "1" THEN "FW_ALLOWED" ELSE flowAction$
+flowAction$ = IF act == "2" THEN "FW_BLOCKED" ELSE flowAction$
+
+# start_time and end_time are milliseconds since the epoch.
+st = STRING(json["$.start_time"])
+et = STRING(json["$.end_time"])
+startTimestampUsec$ = IF st != "" THEN INT(st, 10) * 1000 ELSE NULL
+endTimestampUsec$ = IF et != "" THEN INT(et, 10) * 1000 ELSE NULL
+
+# The flow log's instance is whichever end has one.
+hostId$ = json["$.src_endpoint.instance_uid"]
+hostId$ = IF hostId$ == NULL THEN json["$.dst_endpoint.instance_uid"] ELSE hostId$
+eni = json["$.src_endpoint.interface_uid"]
+eni = IF eni THEN eni ELSE json["$.dst_endpoint.interface_uid"]
+vpc = json["$.src_endpoint.vpc_uid"]
+vpc = IF vpc THEN vpc ELSE json["$.dst_endpoint.vpc_uid"]
+subnet = json["$.src_endpoint.subnet_uid"]
+subnet = IF subnet THEN subnet ELSE json["$.dst_endpoint.subnet_uid"]
+
+m1.key$ = "account"
+m1.value$ = account
+m2.key$ = "region"
+m2.value$ = region
+m3.key$ = "zone"
+m3.value$ = json["$.cloud.zone"]
+m4.key$ = "interface_id"
+m4.value$ = eni
+m5.key$ = "vpc_id"
+m5.value$ = vpc
+m6.key$ = "subnet_id"
+m6.value$ = subnet
+m7.key$ = "tcp_flags"
+m7.value$ = STRING(json["$.connection_info.tcp_flags"])
+m8.key$ = "status"
+m8.value$ = json["$.status_code"]
+m9.key$ = "product"
+m9.value$ = json["$.metadata.product.name"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
