@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Pull Zoom sign-in and sign-out activity and operation logs from the Zoom Reports API and send them
-to a Sophos NG-SIEM HTTP Ingest integration, one JSON record per line. Python 3 standard library only.
+"""Pull Zoom sign-in and sign-out activity and operation logs from the Zoom Reports API, and on request
+Zoom Phone and Zoom Contact Center operation logs and calls, and send them to a Sophos NG-SIEM HTTP
+Ingest integration, one JSON record per line. Python 3 standard library only.
 
 Zoom's webhooks need an endpoint that answers Zoom's URL validation challenge within 3 seconds, and
 the sign-in webhook carries no IP address, so this script polls the Reports API instead, with a
@@ -10,8 +11,17 @@ Server-to-Server OAuth app that has only the report read scopes:
   GET  https://api.zoom.us/v2/report/activities     (from, to, page_size, next_page_token)
   GET  https://api.zoom.us/v2/report/operationlogs  (from, to, page_size, next_page_token, category_type)
 
-Each record goes on with "zoom_record" first ("signin" or "operation") and the account ID, so the
-library parsers in parsers/zoom/zoom-sign-in-and-operation-logs can normalize them.
+Only when ZOOM_REPORTS names them, since they need those products and their own scopes:
+
+  GET  https://api.zoom.us/v2/phone/reports/operationlogs           (from, to, page_size, next_page_token)
+  GET  https://api.zoom.us/v2/phone/call_history                    (from, to, time_type=end_time, ...)
+  GET  https://api.zoom.us/v2/contact_center/reports/operation_logs (from, to, page_size, next_page_token)
+  GET  https://api.zoom.us/v2/contact_center/voice_calls            (from, to, page_size, next_page_token)
+
+Each record goes on with "zoom_record" first ("signin", "operation", "phone_operation", "phone_call",
+"cc_operation" or "cc_voice_call") and the account ID, so the library parsers in
+parsers/zoom/zoom-sign-in-and-operation-logs, parsers/zoom/zoom-phone and
+parsers/zoom/zoom-contact-center can normalize them.
 
 The request and response shapes follow Zoom's API reference and OpenAPI document. Configuration
 comes from environment variables (see README.md). A window's end only moves after HTTP Ingest
@@ -55,14 +65,33 @@ RECORD_KEY = "zoom_record"
 # Zoom keeps these reports for six months and gives at most a month per request.
 RETENTION_DAYS = 180
 MAX_RANGE_DAYS = 30
-# Each report: its path, its list key, the record name, the fields that identify a record, and the
-# extra query parameters it takes.
+# Each report: its path, its list key, the record name, the fields that identify a record, the field
+# that holds the record's time, the largest page Zoom serves, the fixed query parameters it takes,
+# and what goes after the from and to dates. A call is identified by its ID and end time, which keeps
+# the saved state small on a busy account. The two call reports take a time of day, so the bridge
+# names the first and last second of each day in UTC rather than leave Zoom to decide what a date
+# means. Calls are read by end time, so a call shows up once it is over. Phone and Contact Center
+# reports are read only when ZOOM_REPORTS names them.
 REPORTS = {
     "activities": ("/report/activities", "activity_logs", "signin",
-                   ("time", "email", "type", "ip_address", "client_type", "version")),
+                   ("time", "email", "type", "ip_address", "client_type", "version"), "time", 300, {}, ("", "")),
     "operationlogs": ("/report/operationlogs", "operation_logs", "operation",
-                      ("time", "operator", "category_type", "action", "operation_detail")),
+                      ("time", "operator", "category_type", "action", "operation_detail"), "time", 300, {}, ("", "")),
+    "phone_operationlogs": ("/phone/reports/operationlogs", "operation_logs", "phone_operation",
+                            ("time", "operator", "category_type", "action", "operation_detail"), "time", 300, {},
+                            ("", "")),
+    "phone_call_history": ("/phone/call_history", "call_history", "phone_call",
+                           ("call_history_uuid", "end_time"), "end_time", 300,
+                           {"time_type": "end_time"}, ("T00:00:00Z", "T23:59:59Z")),
+    "cc_operation_logs": ("/contact_center/reports/operation_logs", "operation_logs", "cc_operation",
+                          ("operation_log_id", "time", "operator", "category", "action", "object_name",
+                           "operation_detail"), "time", 300, {}, ("", "")),
+    # Zoom reads the Z of yyyy-MM-ddTHH:mm:ssZ as a plain letter here, so the offset is spelled out.
+    "cc_voice_calls": ("/contact_center/voice_calls", "voice_calls", "cc_voice_call",
+                       ("engagement_id", "end_time"), "end_time", 100, {},
+                       ("T00:00:00+00:00", "T23:59:59+00:00")),
 }
+DEFAULT_REPORTS = "activities,operationlogs"
 CATEGORIES = ("all", "user", "user_settings", "account", "billing", "im", "recording", "phone_contacts",
               "webinar", "sub_account", "role", "zoom_rooms")
 
@@ -143,7 +172,7 @@ def load_config(env: dict | None = None) -> dict:
         "account_id": _env(env, "ZOOM_ACCOUNT_ID"),
         "client_id": _env(env, "ZOOM_CLIENT_ID"),
         "client_secret": _env(env, "ZOOM_CLIENT_SECRET"),
-        "reports": [r.strip() for r in (_env(env, "ZOOM_REPORTS", "activities,operationlogs") or "").split(",") if r.strip()],
+        "reports": [r.strip() for r in (_env(env, "ZOOM_REPORTS", DEFAULT_REPORTS) or "").split(",") if r.strip()],
         "category": _env(env, "ZOOM_OPERATION_CATEGORY", "all"),
         "page_size": _number(env, "ZOOM_PAGE_SIZE", "300", low=1, high=300),
         "state_file": _env(env, "BRIDGE_STATE_FILE", "zoom_report_state.json"),
@@ -162,7 +191,7 @@ def load_config(env: dict | None = None) -> dict:
     if ":" in cfg["client_id"]:
         raise BridgeError("ZOOM_CLIENT_ID can't contain a colon")
     if not cfg["reports"] or any(r not in REPORTS for r in cfg["reports"]):
-        raise BridgeError("ZOOM_REPORTS takes activities, operationlogs or both, comma separated")
+        raise BridgeError("ZOOM_REPORTS takes " + ", ".join(REPORTS) + ", comma separated")
     cfg["reports"] = list(dict.fromkeys(cfg["reports"]))
     if cfg["category"] not in CATEGORIES:
         raise BridgeError("ZOOM_OPERATION_CATEGORY must be one of " + ", ".join(CATEGORIES))
@@ -332,6 +361,16 @@ def _zoom_error(body: bytes) -> str:
 
 # ---------------------------------------------------------------- Zoom API
 
+def _needs(name: str) -> str:
+    """What a report needs, for the error when Zoom refuses it."""
+    if name.startswith("phone_"):
+        return ("the app has the Zoom Phone read scopes and the account has Zoom Phone (call history needs a Business "
+                "or Enterprise account)")
+    if name.startswith("cc_"):
+        return "the app has the Contact Center read scopes and the account has Zoom Contact Center"
+    return "the app has the report read scopes and the account is on a Pro plan or higher"
+
+
 class Zoom:
     """Gets an access token with the account credentials grant and reads the Reports API with
     'Authorization: Bearer <token>'. Tokens last an hour; one is renewed a minute before it
@@ -372,8 +411,8 @@ class Zoom:
         return self._token
 
     def report(self, name: str, start: str, end: str, page_token: str | None) -> dict:
-        path = REPORTS[name][0]
-        params = {"from": start, "to": end, "page_size": self.cfg["page_size"]}
+        path, _, _, _, _, most, fixed, (first, last) = REPORTS[name]
+        params = {"from": start + first, "to": end + last, "page_size": min(self.cfg["page_size"], most), **fixed}
         if name == "operationlogs":
             params["category_type"] = self.cfg["category"]
         if page_token:
@@ -389,8 +428,8 @@ class Zoom:
                 if e.code == 401 and not renew:
                     continue
                 if e.code in (400, 401, 403, 404):
-                    raise BridgeError(f"Zoom refused the {what} (HTTP {e.code}): {_zoom_error(e.body)}; check that the "
-                                      "app has the report read scopes and the account is on a Pro plan or higher") from None
+                    raise BridgeError(f"Zoom refused the {what} (HTTP {e.code}): {_zoom_error(e.body)}; check that "
+                                      f"{_needs(name)}") from None
                 raise
         data = _json(raw, what)
         if not isinstance(data, dict):
@@ -457,7 +496,8 @@ def _fromisoformat(text: str) -> datetime:
 
 
 def _parse_time(value) -> float | None:
-    """time is ISO 8601 in UTC, such as 2026-10-13T01:10:04Z."""
+    """time is ISO 8601 in UTC, such as 2026-10-13T01:10:04Z. Contact Center times carry an offset,
+    such as 2026-10-13T01:10:04+00:00."""
     v = str(value or "").strip()
     try:
         dt = _fromisoformat(v)
@@ -495,7 +535,7 @@ def collect_report(cfg: dict, name: str, state: dict, sink: Sink, save, client: 
     before are dropped by key: the fields that identify a record, and how many times the same
     fields came before it in the window, so two identical records in one second both go on. The
     window's end is saved only after every page of it was sent."""
-    path, list_key, _, fields = REPORTS[name]
+    _, list_key, _, fields, time_field = REPORTS[name][:5]
     cur = state.setdefault(name, {})
     since = cur.get("until")
     # A saved end later than now (the clock went back) counts as now.
@@ -519,7 +559,7 @@ def collect_report(cfg: dict, name: str, state: dict, sink: Sink, save, client: 
                 counts[base] = n + 1
                 key = f"{base}#{n}"
                 if key not in seen:
-                    t = _parse_time(row.get("time"))
+                    t = _parse_time(row.get(time_field))
                     fresh[key] = (t if t is not None else now, tag(name, row, cfg))
             if fresh:
                 sink.send([rec for _, rec in fresh.values()])
@@ -579,7 +619,8 @@ def _where(e: BaseException) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Send Zoom sign-in and operation logs to Sophos NG-SIEM HTTP Ingest.")
+    ap = argparse.ArgumentParser(description="Send Zoom sign-in, operation, Zoom Phone and Zoom Contact Center logs to "
+                                             "Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="print the NDJSON that would be sent; send and save nothing")
     ap.add_argument("--interval", type=int, default=0, help="poll every N seconds instead of running once")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
