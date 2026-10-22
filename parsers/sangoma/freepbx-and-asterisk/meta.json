@@ -1,0 +1,45 @@
+{
+  "vendor": "Sangoma",
+  "product": "FreePBX and Asterisk",
+  "versions": [
+    "FreePBX 16 and 17",
+    "Asterisk 18 to 22"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://docs.asterisk.org/Configuration/Core-Configuration/Logging-Configuration/",
+    "https://github.com/asterisk/asterisk/blob/master/res/res_security_log.c",
+    "https://github.com/asterisk/asterisk/blob/master/main/security_events.c",
+    "https://github.com/asterisk/asterisk/blob/master/res/res_pjsip/pjsip_distributor.c",
+    "https://github.com/asterisk/asterisk/blob/master/main/manager.c",
+    "https://github.com/asterisk/asterisk/blob/20/channels/chan_sip.c",
+    "https://github.com/FreePBX/framework/blob/release/17.0/amp_conf/htdocs/admin/libraries/BMO/Logger.class.php",
+    "https://github.com/FreePBX/framework/blob/release/17.0/amp_conf/htdocs/admin/libraries/gui_auth.php",
+    "https://github.com/FreePBX/userman/blob/release/17.0/Userman.class.php"
+  ],
+  "notes": "Asterisk security events, failed PJSIP and chan_sip requests, failed AMI logins and FreePBX web logins, sent by the PBX's syslog daemon in RFC 3164 or RFC 5424 form. Asterisk sends none of them until logger.conf has a syslog channel with the security level, and FreePBX writes its security log to a file until FreePBX Log Routing (AMPSYSLOGLEVEL) is a syslog level; the README has the steps. Sign-ins go to Auth: the SuccessfulAuth, InvalidAccountID, ChallengeResponseFailed, InvalidPassword, FailedACL, AuthMethodNotAllowed, UnexpectedAddress and InvalidTransport security events, PJSIP's \"Request ... failed for\" and chan_sip's \"Registration from ... failed for\" notices, AMI's \"failed to authenticate as\", FreePBX's \"Authentication failure\" (Administrator and User Control Panel) and \"Authentication successful\" (User Control Panel) lines, and User Management's \"Remote auth\" lines. Each gives the account, the source address and port, the PBX address for security events, the reason and a failure category. With security logging on, a failed SIP request gives both a security event and a notice, so count one kind. ChallengeSent, the request, session, memory and load events and every other line stay generic. Security events carry their zone; FreePBX times and RFC 3164 headers have none and are read as UTC. Samples are made up in the formats of Asterisk's res_security_log.c, security_events.c, pjsip_distributor.c, manager.c and chan_sip.c (Asterisk 20), and FreePBX 17's Logger, gui_auth.php and User Management code, since neither project publishes example lines. The child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (270 of 270 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. The child also passed Run Test as a separate parser under its parent (261 of 261 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines.",
+  "parsers": [
+    {
+      "name": "SANGOMA_FREEPBX_SYSLOG_PARENT",
+      "file": "SANGOMA_FREEPBX_SYSLOG_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+      "file": "SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "SANGOMA_FREEPBX_SYSLOG_PARENT",
+      "schema": "scwx.auth"
+    }
+  ]
+}

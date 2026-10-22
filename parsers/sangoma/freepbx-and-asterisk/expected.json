@@ -1,0 +1,605 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792505551204000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "100",
+      "source_address": "203.0.113.45",
+      "source_port_number": 5070,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "5bb2c0e4a1d34f0b",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "InvalidAccountID",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "InvalidAccountID"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792545154000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "101",
+      "source_address": "203.0.113.45",
+      "source_port_number": 5070,
+      "target_host_name": "pbx01",
+      "session_id": "77d0aa13e58c41c2",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "No matching endpoint found",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sip_method",
+            "value": "REGISTER"
+          },
+          {
+            "key": "sip_uri",
+            "value": "<sip:101@192.0.2.10>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792505582880000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1001",
+      "source_address": "203.0.113.45",
+      "source_port_number": 5070,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "c3e81b9f0d2a4e65",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "ChallengeResponseFailed",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "ChallengeResponseFailed"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792545182000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1001",
+      "source_address": "203.0.113.45",
+      "source_port_number": 5070,
+      "target_host_name": "pbx01",
+      "session_id": "c3e81b9f0d2a4e65",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Failed to authenticate",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sip_method",
+            "value": "REGISTER"
+          },
+          {
+            "key": "sip_uri",
+            "value": "\"1001\" <sip:1001@192.0.2.10>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792531870051000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1002",
+      "source_address": "192.0.2.52",
+      "source_port_number": 5060,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "0f6a2d8c5e7b4913",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "SuccessfulAuth"
+          },
+          {
+            "key": "event_severity",
+            "value": "Informational"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792531870044000,
+      "host_id": "pbx01"
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792533764733000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.30",
+      "source_port_number": 50124,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5038,
+      "target_host_name": "pbx01",
+      "session_id": "0x7f3a2c001b40",
+      "auth_system": "Asterisk AMI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "InvalidPassword",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "InvalidPassword"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "TCP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792573364000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.30",
+      "target_host_name": "pbx01",
+      "auth_system": "Asterisk AMI",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Failed to authenticate",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792536017390000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1003",
+      "source_address": "198.51.100.61",
+      "source_port_number": 5060,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "e41a7c90b25d4f18",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "FailedACL: not_match_endpoint_acl",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "FailedACL"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792575617000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1003",
+      "source_address": "198.51.100.61",
+      "source_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "e41a7c90b25d4f18",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Not match Endpoint ACL",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sip_method",
+            "value": "INVITE"
+          },
+          {
+            "key": "sip_uri",
+            "value": "\"Front Desk\" <sip:1003@192.0.2.10>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792537552618000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1004",
+      "source_address": "2001:db8:0:5::25",
+      "source_port_number": 5062,
+      "target_address": "2001:db8::10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "9a2f61c0d4b84e37",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "SuccessfulAuth"
+          },
+          {
+            "key": "event_severity",
+            "value": "Informational"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792538403112000,
+      "host_id": "pbx01"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792583249000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx02",
+      "target_user_name": "201",
+      "source_address": "203.0.113.120",
+      "source_port_number": 5061,
+      "target_host_name": "pbx02",
+      "auth_system": "Asterisk SIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Wrong password",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sip_uri",
+            "value": "\"201\" <sip:201@192.0.2.11>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792583251000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx02",
+      "target_user_name": "9999",
+      "source_address": "203.0.113.120",
+      "source_port_number": 5061,
+      "target_host_name": "pbx02",
+      "auth_system": "Asterisk SIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "No matching peer found",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "sip_uri",
+            "value": "<sip:9999@192.0.2.11>"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "event_time_usec": 1792544594551000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "admin",
+      "source_address": "198.51.100.200",
+      "source_port_number": 5080,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "2e7f0d9a6c1b4a53",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "InvalidAccountID",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "InvalidAccountID"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "FreePBX",
+      "event_time_usec": 1792574401000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.77",
+      "target_host_name": "pbx01",
+      "auth_system": "FreePBX",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "Authentication failure",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD"
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "FreePBX",
+      "event_time_usec": 1792574475000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "1002",
+      "source_address": "198.51.100.40",
+      "target_host_name": "pbx01",
+      "auth_system": "FreePBX",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "FreePBX",
+      "event_time_usec": 1792575042000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "jsmith",
+      "source_address": "203.0.113.81",
+      "target_host_name": "pbx01",
+      "auth_system": "FreePBX User Management",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "invalid_credentials",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD"
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "FreePBX",
+      "event_time_usec": 1792575065000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "jsmith",
+      "source_address": "198.51.100.41",
+      "target_host_name": "pbx01",
+      "auth_system": "FreePBX User Management",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "FreePBX",
+      "event_time_usec": 1792575230000000,
+      "host_id": "pbx01"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "SANGOMA_FREEPBX_SYSLOG_PARENT > SANGOMA_FREEPBX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Asterisk",
+      "sensor_id": "pbx01",
+      "event_time_usec": 1792548909006000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "pbx01",
+      "target_user_name": "test",
+      "source_address": "203.0.113.45",
+      "source_port_number": 5070,
+      "target_address": "192.0.2.10",
+      "target_port_number": 5060,
+      "target_host_name": "pbx01",
+      "session_id": "71c4b2e8f09d4a6e",
+      "auth_system": "Asterisk PJSIP",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "extra_failurereason": "InvalidAccountID",
+      "failure_category": "INVALID_ACCOUNT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "security_event",
+            "value": "InvalidAccountID"
+          },
+          {
+            "key": "event_severity",
+            "value": "Error"
+          },
+          {
+            "key": "transport",
+            "value": "UDP"
+          }
+        ]
+      }
+    }
+  }
+]

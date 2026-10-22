@@ -1,0 +1,50 @@
+!SAMPLE=<133>Oct 21 01:12:31 pbx01 asterisk[2211]: SECURITY[2287]: res_security_log.c:114 in security_event_stasis_cb: SecurityEvent="InvalidAccountID",EventTV="2026-10-21T01:12:31.204+1100",Severity="Error",Service="PJSIP",EventVersion="1",AccountID="100",SessionID="5bb2c0e4a1d34f0b",LocalAddress="IPV4/UDP/192.0.2.10/5060",RemoteAddress="IPV4/UDP/203.0.113.45/5070"
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\s(?:asterisk(?:\[\d+\]:|\s+\d+\s+-\s+-)\s+[A-Z]+\[\d+\](?:\[C-[0-9a-f]+\])?:\s+\S+:\d+\s+in\s+\S+:\s|freepbx_security(?:\[\d+\]:|\s+\d+\s+-\s+-)\s+\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]\s+\[freepbx_security\.[A-Z]+\]:\s)
+!SCHEMA=scwx.generic
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Asterisk (on its own, or under Sangoma FreePBX) and the FreePBX security log, sent by the
+# PBX's syslog daemon to the data collector, in RFC 3164 or RFC 5424 form:
+#   asterisk[pid]: SECURITY[lwp]: res_security_log.c:114 in security_event_stasis_cb: SecurityEvent="...",...
+#   asterisk[pid]: NOTICE[lwp]: <file>:<line> in <function>: <message>
+#   freepbx_security[pid]: [YYYY-MM-DD HH:MM:SS] [freepbx_security.NOTICE]: <message> [] []
+# Asterisk writes SECURITY lines once logger.conf sends the security level to syslog, and FreePBX
+# writes its security log to syslog once AMPSYSLOGLEVEL is a syslog level. The file and line number
+# in an Asterisk prefix change between versions, so nothing here depends on them.
+# Parent: hands sign-in and registration results to the Auth child: Asterisk security events of the
+# sign-in kinds, the PJSIP and chan_sip failed requests, failed AMI logins, and FreePBX web logins.
+# Every other Asterisk and FreePBX line stays in the generic schema.
+
+hdr = originalData$|^(?:<\d{1,3}>)?(?:1\s+(?P<iso>\d{4}-\d{2}-\d{2}T\S+)|(?P<bsd>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}))\s+(?P<host>\S+)\s+(?P<tag>asterisk|freepbx_security)(?:\[\d+\]:|\s+\d+\s+-\s+-)\s+(?P<msg>.*)$
+ast = hdr["msg"]|^(?P<level>[A-Z]+)\[\d+\](?:\[(?P<callid>C-[0-9a-f]+)\])?:\s+\S+:\d+\s+in\s+\S+:\s+(?P<text>.*)$
+web = hdr["msg"]|^\[(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+\[freepbx_security\.(?P<level>[A-Z]+)\]:\s+(?P<text>.*?)\s*(?:\[\]\s*\[\])?$
+
+# Variables and $ fields set here are visible to the child.
+isAsterisk = hdr["tag"] == "asterisk"
+sensorType$ = IF isAsterisk THEN "Asterisk" ELSE "FreePBX"
+hostId$ = hdr["host"]
+text = IF isAsterisk THEN ast["text"] ELSE web["text"]
+level = IF isAsterisk THEN ast["level"] ELSE web["level"]
+
+# What the line is: a security event (by name), a PJSIP or chan_sip failed request, a failed AMI
+# login, or a FreePBX login.
+k = text|^(?:SecurityEvent="(?P<sec>[A-Za-z]+)"|(?P<pjsip>Request) '|(?P<chansip>Registration) from '|\S+ failed to (?P<ami>authenticate) as '|(?P<web>Authentication failure|Authentication successful|Remote auth failure|Remote auth success) for )
+sec = IF isAsterisk AND level == "SECURITY" THEN k["sec"] ELSE NULL
+# ChallengeSent comes before every digest check, and the request, session, memory and load events
+# aren't sign-ins, so they stay generic.
+signin = sec == "SuccessfulAuth" OR sec == "InvalidAccountID" OR sec == "ChallengeResponseFailed" OR sec == "InvalidPassword" OR sec == "FailedACL" OR sec == "AuthMethodNotAllowed" OR sec == "UnexpectedAddress" OR sec == "InvalidTransport"
+notice = isAsterisk AND level == "NOTICE" AND (k["pjsip"] OR k["chansip"] OR k["ami"])
+login = NOT isAsterisk AND k["web"]
+eventType$ = IF signin OR notice OR login THEN "auth" ELSE "other"
+
+# The time: a security event's EventTV carries its zone, as does an RFC 5424 header. The FreePBX
+# time and an RFC 3164 header have none, so they are read as UTC: keep the PBX on UTC, or expect
+# those times to be off by its offset. An RFC 3164 header has no year either, so DATETIME picks it.
+tv = text|EventTV="(?P<v>[^"]+)"
+when = IF hdr["bsd"] THEN DATETIME(hdr["bsd"], "Jan _2 15:04:05", TRUE) ELSE NULL
+when = IF web["time"] THEN DATETIME(web["time"], "2006-01-02 15:04:05") ELSE when
+when = IF hdr["iso"] THEN DATETIME(hdr["iso"], "2006-01-02T15:04:05.999999999Z07:00") ELSE when
+when = IF tv["v"] THEN DATETIME(tv["v"], "2006-01-02T15:04:05.999999999-0700") ELSE when
+eventTimeUsec$ = when
