@@ -1,0 +1,351 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534361000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "192.0.2.10",
+      "response_code": 401,
+      "rx_byte_count": 2473,
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/manager/html",
+      "uri_path": "/manager/html",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "common"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "tomcat-access"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534375000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "192.0.2.10",
+      "source_username": "tomcat",
+      "response_code": 200,
+      "rx_byte_count": 15112,
+      "request_direction": "INBOUND",
+      "http_method": "POST",
+      "uri_path_raw": "/manager/html/upload",
+      "uri_path": "/manager/html/upload",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "common"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "tomcat-access"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534390000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "198.51.100.23",
+      "response_code": 200,
+      "rx_byte_count": 37,
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/shell/cmd.jsp",
+      "uri_path": "/shell/cmd.jsp",
+      "uri_query_raw": "c=id",
+      "uri_query": "c=id",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "common"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "tomcat-access"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534411000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "2001:db8::25",
+      "response_code": 200,
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/healthz",
+      "uri_path": "/healthz",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "common"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534442000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.80",
+      "response_code": 401,
+      "rx_byte_count": 2473,
+      "request_direction": "INBOUND",
+      "http_method": "GET",
+      "uri_path_raw": "/manager/text/list",
+      "uri_path": "/manager/text/list",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "json"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "tomcat-access"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TOMCAT_ACCESS_STANDALONE_HTTP",
+    "schema": "scwx.http",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534460000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "source_address": "203.0.113.80",
+      "source_username": "deployer",
+      "response_code": 200,
+      "rx_byte_count": 52,
+      "request_direction": "INBOUND",
+      "user_agent": "curl/8.7.1",
+      "http_method": "PUT",
+      "uri_path_raw": "/manager/text/deploy",
+      "uri_path": "/manager/text/deploy",
+      "uri_query_raw": "path=/shell",
+      "uri_query": "path=/shell",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_format",
+            "value": "json"
+          },
+          {
+            "key": "syslog_tag",
+            "value": "tomcat-access"
+          },
+          {
+            "key": "http_version",
+            "value": "HTTP/1.1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534370000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "target_user_name": "admin",
+      "target_host_name": "web01",
+      "auth_system": "Apache Tomcat",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "extra_failurereason": "An attempt was made to authenticate the locked user [admin]"
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534385000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "HTMLManager: Uploading WAR file to /opt/tomcat/webapps/shell.war",
+      "target_hostname": "web01",
+      "channel": "HTMLManager",
+      "operation_name": "upload",
+      "operation": "upload",
+      "namespace": "/opt/tomcat/webapps/shell.war",
+      "result": "success"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534385000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "Deploying web application archive [/opt/tomcat/webapps/shell.war]",
+      "target_hostname": "web01",
+      "channel": "HostConfig",
+      "operation_name": "deploy",
+      "operation": "deploy",
+      "namespace": "/opt/tomcat/webapps/shell.war",
+      "result": "success"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TOMCAT_JULI_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534386000000,
+      "host_id": "web01"
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534562000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "HTMLManager: undeploy: Undeploying web application at '/shell'",
+      "target_hostname": "web01",
+      "channel": "HTMLManager",
+      "operation_name": "undeploy",
+      "operation": "undeploy",
+      "namespace": "/shell",
+      "result": "success"
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534720000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "Manager: deploy: Deploying web application '/reports'",
+      "target_hostname": "web01",
+      "channel": "Manager",
+      "operation_name": "deploy",
+      "operation": "deploy",
+      "namespace": "/reports",
+      "result": "success"
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534751000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "Invalid shutdown command [GET / HTTP/1.1] received",
+      "target_hostname": "web01",
+      "channel": "shutdown port",
+      "operation_name": "shutdown",
+      "operation": "shutdown",
+      "result": "refused"
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "TOMCAT_JULI_PARENT > TOMCAT_JULI_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534800000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "web01",
+      "command": "A valid shutdown command was received via the shutdown port. Stopping the Server instance.",
+      "target_hostname": "web01",
+      "channel": "shutdown port",
+      "operation_name": "shutdown",
+      "operation": "shutdown",
+      "result": "success"
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "TOMCAT_JULI_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "Apache Tomcat",
+      "event_time_usec": 1792534811000000
+    }
+  }
+]

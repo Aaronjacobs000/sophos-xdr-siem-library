@@ -1,0 +1,42 @@
+!SAMPLE=<134>Oct 20 22:13:05 web01 tomcat: 20-Oct-2026 22:13:05.530 INFO [http-nio-8080-exec-5] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive [/opt/tomcat/webapps/shell.war]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="admin"
+!SCHEMA=scwx.managementevent
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Apache Tomcat's own logs, OneLineFormatter layout.
+# Child of TOMCAT_JULI_PARENT: changes to the web applications and shutdowns, to Management Event:
+#   HostConfig: Deploying web application archive|directory [<path>], Deploying deployment
+#     descriptor [<path>], Undeploying context [<path>], Reloading context [<path>]
+#   Manager application (ApplicationContext.log): Manager|HTMLManager: deploy|undeploy|start|stop|
+#     restart|install: ... '<context>', and Uploading WAR file to <path>
+#   StandardServer: A valid shutdown command was received via the shutdown port, and Invalid
+#     shutdown command [<text>] received
+# Tomcat doesn't log the Manager user; the access log has it (%u) for the same request.
+# src, msg, servlet, mcmd, upload, host, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+command$ = msg
+targetHostname$ = IF host != "" THEN host ELSE NULL
+channel$ = IF servlet != "" THEN servlet ELSE NULL
+channel$ = IF CONTAINS(src, ".HostConfig.") THEN "HostConfig" ELSE channel$
+channel$ = IF CONTAINS(src, ".StandardServer.") THEN "shutdown port" ELSE channel$
+
+op = mcmd
+op = IF upload THEN "upload" ELSE op
+op = IF CONTAINS(src, ".HostConfig.") AND CONTAINS(msg, "Deploying ") THEN "deploy" ELSE op
+op = IF CONTAINS(src, ".HostConfig.") AND CONTAINS(msg, "Undeploying ") THEN "undeploy" ELSE op
+op = IF CONTAINS(src, ".HostConfig.") AND CONTAINS(msg, "Reloading context ") THEN "reload" ELSE op
+op = IF CONTAINS(src, ".StandardServer.") THEN "shutdown" ELSE op
+operationName$ = op
+operation$ = op
+
+# The web application: the context in quotes, or the path in brackets or after "to ".
+q = msg|'(?P<c>[^']+)'
+b = msg|\[(?P<p>[^\]]+)\]
+u = msg|Uploading WAR file to (?P<p>\S+)
+app = STRING(q["c"])
+app = IF app == "" AND NOT CONTAINS(src, ".StandardServer.") THEN STRING(b["p"]) ELSE app
+app = IF upload THEN STRING(u["p"]) ELSE app
+namespace$ = IF app != "" THEN app ELSE NULL
+result$ = IF CONTAINS(msg, "Invalid shutdown command") THEN "refused" ELSE "success"

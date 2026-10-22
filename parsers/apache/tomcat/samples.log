@@ -1,0 +1,15 @@
+<134>Oct 21 09:12:41 web01 tomcat-access: 192.0.2.10 - - [21/Oct/2026:09:12:41 +1100] "GET /manager/html HTTP/1.1" 401 2473
+<134>Oct 21 09:12:55 web01 tomcat-access: 192.0.2.10 - tomcat [21/Oct/2026:09:12:55 +1100] "POST /manager/html/upload HTTP/1.1" 200 15112
+<134>Oct 21 09:13:10 web01 tomcat-access: 198.51.100.23 - - [21/Oct/2026:09:13:10 +1100] "GET /shell/cmd.jsp?c=id HTTP/1.1" 200 37
+2001:db8::25 - - [21/Oct/2026:09:13:31 +1100] "GET /healthz HTTP/1.1" 200 -
+<134>Oct 21 09:14:02 web01 tomcat-access: {"host":"203.0.113.80","logicalUserName":"-","user":"-","time":"[21/Oct/2026:09:14:02 +1100]","request":"GET /manager/text/list HTTP/1.1","statusCode":"401","size":"2473"}
+<134>Oct 21 09:14:20 web01 tomcat-access: {"host":"203.0.113.80","logicalUserName":"-","user":"deployer","time":"[21/Oct/2026:09:14:20 +1100]","request":"PUT /manager/text/deploy?path=/shell HTTP/1.1","statusCode":"200","size":"52","requestHeaders": {"Referer":"-","User-Agent":"curl/8.7.1"}}
+<132>Oct 20 22:12:50 web01 tomcat: 20-Oct-2026 22:12:50.204 WARNING [http-nio-8080-exec-3] org.apache.catalina.realm.LockOutRealm.filterLockedAccounts An attempt was made to authenticate the locked user [admin]
+<134>Oct 20 22:13:05 web01 tomcat: 20-Oct-2026 22:13:05.512 INFO [http-nio-8080-exec-5] org.apache.catalina.core.ApplicationContext.log HTMLManager: Uploading WAR file to /opt/tomcat/webapps/shell.war
+<134>Oct 20 22:13:05 web01 tomcat: 20-Oct-2026 22:13:05.530 INFO [http-nio-8080-exec-5] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive [/opt/tomcat/webapps/shell.war]
+<134>Oct 20 22:13:06 web01 tomcat: 20-Oct-2026 22:13:06.214 INFO [http-nio-8080-exec-5] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive [/opt/tomcat/webapps/shell.war] has finished in [684] ms
+<134>Oct 20 22:16:02 web01 tomcat: 20-Oct-2026 22:16:02.877 INFO [http-nio-8080-exec-7] org.apache.catalina.core.ApplicationContext.log HTMLManager: undeploy: Undeploying web application at '/shell'
+<134>Oct 20 22:18:40 web01 tomcat: 20-Oct-2026 22:18:40.051 INFO [http-nio-8080-exec-2] org.apache.catalina.core.ApplicationContext.log Manager: deploy: Deploying web application '/reports'
+<132>Oct 20 22:19:11 web01 tomcat: 20-Oct-2026 22:19:11.300 WARNING [main] org.apache.catalina.core.StandardServer.await Invalid shutdown command [GET / HTTP/1.1] received
+<134>Oct 20 22:20:00 web01 tomcat: 20-Oct-2026 22:20:00.004 INFO [main] org.apache.catalina.core.StandardServer.await A valid shutdown command was received via the shutdown port. Stopping the Server instance.
+20-Oct-2026 22:20:11.010 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in [1534] milliseconds

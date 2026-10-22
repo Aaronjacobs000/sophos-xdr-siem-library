@@ -1,0 +1,23 @@
+!SAMPLE=<132>Oct 20 22:12:50 web01 tomcat: 20-Oct-2026 22:12:50.204 WARNING [http-nio-8080-exec-3] org.apache.catalina.realm.LockOutRealm.filterLockedAccounts An attempt was made to authenticate the locked user [admin]
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="lockout"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Apache Tomcat's own logs, OneLineFormatter layout.
+# Child of TOMCAT_JULI_PARENT: sign-ins refused because LockOutRealm (in the default server.xml, 5
+# failures lock a user for 300 seconds) has locked the user, to Auth:
+#   LockOutRealm.filterLockedAccounts An attempt was made to authenticate the locked user [<user>]
+# Tomcat logs no other failed sign-in by default; the access log shows them as 401 responses.
+# msg, host, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+lu = msg|authenticate the locked user \[(?P<user>[^\]]*)\]
+targetUserName$ = lu["user"]
+targetHostName$ = IF host != "" THEN host ELSE NULL
+authSystem$ = "Apache Tomcat"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = "FAILURE"
+actionResult$ = "FAILED"
+failureCategory$ = "ACCOUNT_LOCKED_OUT"
+extraFailurereason$ = msg

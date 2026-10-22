@@ -1,0 +1,55 @@
+{
+  "vendor": "Apache",
+  "product": "Tomcat",
+  "versions": [
+    "9.0",
+    "10.1",
+    "11.0"
+  ],
+  "format": "syslog",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://tomcat.apache.org/tomcat-10.1-doc/config/valve.html#Access_Log_Valve",
+    "https://tomcat.apache.org/tomcat-10.1-doc/config/valve.html#JSON_Access_Log_Valve",
+    "https://tomcat.apache.org/tomcat-10.1-doc/logging.html",
+    "https://tomcat.apache.org/tomcat-10.1-doc/config/realm.html#LockOut_Realm_-_org.apache.catalina.realm.LockOutRealm",
+    "https://tomcat.apache.org/tomcat-10.1-doc/manager-howto.html"
+  ],
+  "notes": "For Apache Tomcat 9.0, 10.1 and 11.0 logs that a forwarder reads from the files and sends to the data collector, since Tomcat has no syslog output; the README has the steps. TOMCAT_ACCESS_STANDALONE_HTTP reads the AccessLogValve's default pattern (common: %h %l %u %t \"%r\" %s %b) and JsonAccessLogValve lines with %t before %s, with or without the forwarder's syslog header, to HTTP: the client address, the user, the method, path and query from the request line, the status, the bytes sent and, from JSON with headers, the user agent and referer. The time comes from %t with its offset. Apache httpd and nginx lines in the common format match too, with sensor_type Apache Tomcat; combined lines are left to the library's nginx and Apache access log entry. TOMCAT_JULI_PARENT claims OneLineFormatter lines from Tomcat's own classes (org.apache.catalina, coyote, tomcat, jasper and juli); a web application's lines don't match. Its children take LockOutRealm's An attempt was made to authenticate the locked user [<user>] to Auth as a failure with ACCOUNT_LOCKED_OUT, and deployments to Management Event: HostConfig deploying, undeploying and reloading, the Manager application's deploy, undeploy, start, stop, restart, install and WAR upload lines, and the valid and invalid shutdown port commands, with the operation, the servlet or HostConfig as the channel and the web application as the namespace. Other lines stay generic. These lines carry the JVM's local time with no zone, read as UTC. Tomcat logs no other failed sign-in by default, and the Manager's lines don't name the user; the access log has both, as 401 responses and %u. How sure this is: the access log layouts and the JSON keys come from Tomcat's valve docs and source, and the message texts from Tomcat's LocalStrings.properties and the Manager servlet source (Apache-2.0); Tomcat's docs show no log lines, so the samples are made up from those strings. Each parser, and each child combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (145 of 145 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (69 of 69 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 runs.",
+  "parsers": [
+    {
+      "name": "TOMCAT_ACCESS_STANDALONE_HTTP",
+      "file": "TOMCAT_ACCESS_STANDALONE_HTTP.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "TOMCAT_JULI_PARENT",
+      "file": "TOMCAT_JULI_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TOMCAT_JULI_CHILD_AUTH",
+      "file": "TOMCAT_JULI_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "TOMCAT_JULI_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "TOMCAT_JULI_CHILD_MGMT",
+      "file": "TOMCAT_JULI_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "TOMCAT_JULI_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}
