@@ -1,0 +1,233 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792458123469213,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.43",
+      "host_id": "2838092002611613780",
+      "query_name": "www.example.com",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "cdn.example.net.",
+            "response_type": 5
+          },
+          {
+            "response_data": "203.0.113.80",
+            "response_type": 1
+          },
+          {
+            "response_data": "203.0.113.81",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792458259154591,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.43",
+      "host_id": "2838092002611613780",
+      "query_name": "xk2jq9vz7c1m4t.example.net",
+      "index_of_top_private_domain": 15,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "response_code": 3
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792462200000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.44",
+      "host_id": "2838092002611613780",
+      "query_name": "db-01.corp.example.com",
+      "index_of_top_private_domain": 11,
+      "is_top_private_domain_parsed": true,
+      "query_type": 28,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "2001:db8::25",
+            "response_type": 28
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792467045250000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.45",
+      "destination_address": "198.51.100.53",
+      "host_id": "2838092002611613780",
+      "query_name": "fileserver.office.example.org",
+      "index_of_top_private_domain": 18,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "response_code": 2
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792468801700000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.77",
+      "query_name": "_dmarc.example.com",
+      "index_of_top_private_domain": 7,
+      "is_top_private_domain_parsed": true,
+      "query_type": 16,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "\"v=DMARC1; p=reject\"",
+            "response_type": 16
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792473153000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.43",
+      "host_id": "2838092002611613780",
+      "query_name": "5.2.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa",
+      "query_type": 12,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "db-01.corp.example.com.",
+            "response_type": 12
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792478755469213,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.43",
+      "host_id": "2838092002611613780",
+      "query_name": "api.example.com",
+      "index_of_top_private_domain": 4,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "api-alv.example.net.",
+            "response_type": 5
+          },
+          {
+            "response_data": "198.51.100.174",
+            "response_type": 1
+          },
+          {
+            "response_data": "198.51.100.175",
+            "response_type": 1
+          },
+          {
+            "response_data": "198.51.100.176",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792481099349280,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.46",
+      "host_id": "2838092002611613780",
+      "query_name": "mail.example.com",
+      "index_of_top_private_domain": 5,
+      "is_top_private_domain_parsed": true,
+      "query_type": 15,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "10 mx1.example.com.",
+            "response_type": 15
+          },
+          {
+            "response_data": "20 mx2.example.com.",
+            "response_type": 15
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "GOOGLE_CLOUD_DNS_JSON_STANDALONE_DNS",
+    "schema": "scwx.dnsquery",
+    "normalized": {
+      "sensor_type": "Google Cloud DNS",
+      "event_time_usec": 1792483262000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.43",
+      "host_id": "2838092002611613780",
+      "query_name": "updates.example.org",
+      "index_of_top_private_domain": 8,
+      "is_top_private_domain_parsed": true,
+      "query_type": 1,
+      "response_code": 0,
+      "responses": {
+        "records": [
+          {
+            "response_data": "192.0.2.200",
+            "response_type": 1
+          }
+        ]
+      }
+    }
+  }
+]
