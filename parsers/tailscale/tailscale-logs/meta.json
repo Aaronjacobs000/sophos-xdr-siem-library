@@ -1,0 +1,53 @@
+{
+  "vendor": "Tailscale",
+  "product": "Tailscale logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-21T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://tailscale.com/docs/features/logging/audit-logging",
+    "https://tailscale.com/docs/features/logging/network-flow-logs",
+    "https://tailscale.com/api",
+    "https://tailscale.com/docs/features/oauth-clients",
+    "https://tailscale.com/docs/features/logging/log-streaming"
+  ],
+  "notes": "Tailscale's configuration audit logs and network flow logs are pulled from the Tailscale API by the example bridge in bridges/tailscale-logs and posted to HTTP Ingest, with \"tailscale_record\" and \"tailscale_tailnet\" first. Tailscale's log streaming to Splunk HTTP Event Collector sends concatenated HEC objects, which HTTP Ingest doesn't document taking, so the bridge polls instead. Give it an OAuth client with only the logs:configuration:read and logs:network:read scopes. Network flow logs need the Premium or Enterprise plan and are off by default. Sophos Fusion has no Tailscale integration. Sign-ins and sign-outs on the admin console, the web interface and nodes (LOGIN and LOGOUT) go to Auth; Tailscale doesn't log failed sign-ins. Every other configuration event goes to CloudAudit, named as Tailscale's event filter names it (such as NODE.UPDATE.KEY_EXPIRY_TIME), with the origin as the event source, the old and new values as JSON text, and the error of a change that failed. A flow log holds every connection a node saw in a few seconds, so the bridge sends one record per connection and each goes to Netflow, with the addresses, ports, protocol, packets and bytes each way, the start and end, the logging node as host_id, and the traffic kind (virtual, subnet, exit or physical) and the nodes' names, users and tags in event_metadata. Exit traffic has no protocol or destination unless destination logging is on. A physical destination of 127.3.3.40 is a DERP relay. Samples follow the fields and examples in Tailscale's logging docs and API reference with made-up values. They use documentation addresses in place of the shared (carrier-grade NAT) IPv4 and unique local IPv6 addresses Tailscale assigns, and example.com names in place of MagicDNS names, since the library's sample scan takes neither. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (164 of 164 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (164 of 164 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "TAILSCALE_LOGS_JSON_PARENT",
+      "file": "TAILSCALE_LOGS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TAILSCALE_LOGS_JSON_CHILD_AUTH",
+      "file": "TAILSCALE_LOGS_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "TAILSCALE_LOGS_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+      "file": "TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "TAILSCALE_LOGS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+      "file": "TAILSCALE_LOGS_JSON_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "TAILSCALE_LOGS_JSON_PARENT",
+      "schema": "scwx.netflow"
+    }
+  ],
+  "bridge": "bridges/tailscale-logs"
+}

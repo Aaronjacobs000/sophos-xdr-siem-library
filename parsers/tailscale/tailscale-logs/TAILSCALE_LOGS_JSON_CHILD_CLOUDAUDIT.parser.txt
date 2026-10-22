@@ -1,0 +1,78 @@
+!SAMPLE={"tailscale_record":"configuration","tailscale_tailnet":"example.com","action":"UPDATE","actor":{"displayName":"Alex Kim","id":"uAk3x9CNTRL","loginName":"akim@example.com","type":"USER"},"deferredAt":"0001-01-01T00:00:00Z","eventGroupID":"0378d8f57300d172ef7ae3826e097e03","eventTime":"2026-10-20T01:05:30.136022207Z","new":"2027-04-18T01:05:30.134350003Z","old":"2026-10-21T01:05:30.134350003Z","origin":"ADMIN_CONSOLE","target":{"id":"nB7cdef1CNTRL","name":"build-01.example.com","property":"KEY_EXPIRY_TIME","type":"NODE"},"type":"CONFIG"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tailscale configuration audit events from the example bridge, other than sign-ins: changes
+# to the tailnet, its policy file, users, groups, nodes, keys, invites, shares, webhooks and billing.
+# Child of TAILSCALE_LOGS_JSON_PARENT: each one to CloudAudit, named as Tailscale's event filter
+# names them (TARGET.ACTION.PROPERTY, such as NODE.UPDATE.KEY_EXPIRY_TIME), with the origin as the
+# event source, the old and new values, and the error of a change that failed.
+# json, tailnet, action, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+ttype = UPPERCASE(STRING(json["$.target.type"]))
+prop = json["$.target.property"]
+eventName$ = IF prop THEN ttype + "." + action + "." + prop ELSE ttype + "." + action
+eventType$ = json["$.target.type"]
+eventSource$ = json["$.origin"]
+recipientAccountId$ = tailnet
+
+login = json["$.actor.loginName"]
+display = json["$.actor.displayName"]
+user = IF login THEN login ELSE display
+userName$ = IF user THEN user ELSE json["$.actor.id"]
+userId$ = json["$.actor.id"]
+userType$ = json["$.actor.type"]
+tname = json["$.target.name"]
+targetUserName$ = IF ttype == "USER" THEN tname ELSE NULL
+targetHostname$ = IF ttype == "NODE" THEN tname ELSE NULL
+
+err = json["$.error"]
+status$ = IF err THEN "Failure" ELSE "Success"
+errorMessage$ = err
+managementEvent$ = TRUE
+readOnly$ = FALSE
+
+r1.resourceId$ = json["$.target.id"]
+r1.resourceType$ = json["$.target.type"]
+r1.resourceAccountId$ = tailnet
+# Assign the list first: reading resources$ before it is set fails the event.
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+# old and new can be text, a list or an object (a policy file change carries a diff), so they are
+# written out as JSON text.
+p1.key$ = "property"
+p1.value$ = prop
+p2.key$ = "old"
+p2.value$ = STRING(json["$.old"])
+p3.key$ = "new"
+p3.value$ = STRING(json["$.new"])
+p4.key$ = "action_details"
+p4.value$ = json["$.actionDetails"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.value$ != "" THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p3.value$ != "" THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+
+d1.key$ = "event_group_id"
+d1.value$ = json["$.eventGroupID"]
+d2.key$ = "target_name"
+d2.value$ = tname
+d3.key$ = "actor_display_name"
+d3.value$ = display
+# deferredAt is the zero time unless Tailscale's rate limiter held the event back.
+deferred = json["$.deferredAt"]
+d4.key$ = "deferred_at"
+d4.value$ = IF deferred != "0001-01-01T00:00:00Z" THEN deferred ELSE NULL
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$

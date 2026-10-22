@@ -1,0 +1,34 @@
+!SAMPLE={"tailscale_record":"configuration","tailscale_tailnet":"example.com","action":"UPDATE","actor":{"displayName":"Alex Kim","id":"uAk3x9CNTRL","loginName":"akim@example.com","type":"USER"},"deferredAt":"0001-01-01T00:00:00Z","eventGroupID":"0378d8f57300d172ef7ae3826e097e03","eventTime":"2026-10-20T01:05:30.136022207Z","new":"2027-04-18T01:05:30.134350003Z","old":"2026-10-21T01:05:30.134350003Z","origin":"ADMIN_CONSOLE","target":{"id":"nB7cdef1CNTRL","name":"build-01.example.com","property":"KEY_EXPIRY_TIME","type":"NODE"},"type":"CONFIG"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"tailscale_record"\s*:\s*"(?:configuration|network)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tailscale configuration audit logs and network flow logs, pulled from the Tailscale API by
+# the example bridge in bridges/tailscale-logs and posted to HTTP Ingest as JSON lines, with
+# "tailscale_record" and "tailscale_tailnet" first. The bridge sends one record per connection of
+# a network flow log.
+# Parent: hands sign-ins and sign-outs (LOGIN and LOGOUT, on the admin console, the web interface
+# and nodes) to the Auth child, every other configuration audit event to the CloudAudit child,
+# and each network connection to the Netflow child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Tailscale"
+kind = json["$.tailscale_record"]
+tailnet = json["$.tailscale_tailnet"]
+action = UPPERCASE(STRING(json["$.action"]))
+# eventTime, and a flow's start, are RFC 3339 in UTC, with up to nine fraction digits.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+when = json["$.eventTime"]
+when = IF when THEN when ELSE json["$.start"]
+eventTimeUsec$ = DATETIME(when, layout)
+
+eventType$ = "other"
+eventType$ = IF kind == "network" THEN "flow" ELSE eventType$
+eventType$ = IF kind == "configuration" THEN "audit" ELSE eventType$
+eventType$ = IF kind == "configuration" AND (action == "LOGIN" OR action == "LOGOUT") THEN "auth" ELSE eventType$
