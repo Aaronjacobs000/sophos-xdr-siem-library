@@ -7,8 +7,14 @@ grant_type=account_credentials and account_id; answering {"access_token", "token
 "next_page_token", "activity_logs": [{email, time, type, ip_address, client_type, version}]}) and
 GET /v2/report/operationlogs ({"next_page_token", "page_size", "operation_logs": [{time, operator,
 category_type, action, operation_detail}]}), with from and to as dates in UTC, and {"code",
-"message"} on failure, including Zoom's per-second and daily 429 messages. Plus a Sophos NG-SIEM
-HTTP Ingest endpoint. No real service is called.
+"message"} on failure, including Zoom's per-second and daily 429 messages. Also the Zoom Phone and
+Zoom Contact Center reports from Zoom's Phone and Contact Center OpenAPI documents: GET
+/v2/phone/reports/operationlogs ({"operation_logs": [{time, operator, category_type, action,
+operation_detail}]}), GET /v2/phone/call_history ({"call_history": [...]}, from and to as
+yyyy-MM-ddTHH:mm:ssZ, time_type start_time or end_time), GET /v2/contact_center/reports/operation_logs
+({"operation_logs": [{operation_log_id, time, operator, category, action, object_name,
+operation_detail}]}) and GET /v2/contact_center/voice_calls ({"voice_calls": [...]}, from and to with
+an offset, at most 100 a page). Plus a Sophos NG-SIEM HTTP Ingest endpoint. No real service is called.
 
   python3 -m unittest discover -s bridges/zoom-report-logs -p 'test_*.py' -v
 """
@@ -55,6 +61,43 @@ def operation(i, when, action="Update"):
             "action": action, "operation_detail": f"Update user - user{i}@example.com"}
 
 
+def phone_operation(i, when):
+    return {"time": iso(when), "operator": "admin@example.com", "category_type": "Call Forwarding", "action": "Update",
+            "operation_detail": f"Forward extension 10{i} to +441632960123"}
+
+
+def phone_call(i, start, minutes=5):
+    return {"call_history_uuid": f"20261015-call-{i:04d}", "call_id": f"70183170237229{i:05d}", "direction": "outbound",
+            "international": True, "start_time": iso(start), "answer_time": iso(start + timedelta(seconds=8)),
+            "end_time": iso(start + timedelta(minutes=minutes)), "duration": minutes * 60, "connect_type": "external",
+            "call_type": "general", "call_result": "answered", "caller_ext_number": "101", "caller_email": "pat@example.com",
+            "callee_did_number": "+441632960123", "callee_country_iso_code": "GB"}
+
+
+def cc_operation(i, when, action="Unmask"):
+    return {"time": iso(when), "operator": "lead@example.com", "category": "Engagement", "object_name": f"Engagement {i}",
+            "operation_log_id": f"opLog{i:04d}", "action": action, "operation_detail": "Unmask consumer phone number"}
+
+
+def cc_call(i, start, minutes=4):
+    at = "%Y-%m-%dT%H:%M:%S+00:00"
+    return {"engagement_id": f"eng{i:04d}", "direction": "inbound", "caller_number": "+61255501234",
+            "callee_number": "+61255509876", "start_time": start.astimezone(timezone.utc).strftime(at),
+            "end_time": (start + timedelta(minutes=minutes)).astimezone(timezone.utc).strftime(at),
+            "total_duration": minutes * 60, "country_name": "Australia", "result": "completed", "charge": "$0.019",
+            "agents": [{"user_id": "agent1", "display_name": "Sam Agent", "user_email": "sam@example.com"}]}
+
+
+# The Zoom Phone and Contact Center reports on the mock: the list key, the Mock attribute that holds
+# the rows, the from and to format, and the largest page Zoom serves.
+PRODUCT_REPORTS = {
+    "/v2/phone/reports/operationlogs": ("operation_logs", "phone_operations", "%Y-%m-%d", 300),
+    "/v2/phone/call_history": ("call_history", "phone_calls", "%Y-%m-%dT%H:%M:%SZ", 300),
+    "/v2/contact_center/reports/operation_logs": ("operation_logs", "cc_operations", "%Y-%m-%d", 300),
+    "/v2/contact_center/voice_calls": ("voice_calls", "cc_calls", "%Y-%m-%dT%H:%M:%S+00:00", 100),
+}
+
+
 class Mock:
     def __init__(self):
         self.activities = []
@@ -66,6 +109,11 @@ class Mock:
         self.token_forms = []
         self.refuse_token_once = False
         self.daily_limit = False
+        self.phone_operations = []
+        self.phone_calls = []
+        self.cc_operations = []
+        self.cc_calls = []
+        self.no_products = False  # the account has neither Zoom Phone nor Zoom Contact Center
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -98,6 +146,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(429, {"code": 429, "message": "You have reached the maximum per-second rate limit for this API. Try again later."})
             return self._send(code, {"code": code, "message": "try again"})
         q = dict(urllib.parse.parse_qsl(parts.query))
+        if parts.path in PRODUCT_REPORTS:
+            return self._product_report(parts.path, q)
         if parts.path == "/v2/report/activities":
             rows, key = m.activities, "activity_logs"
         elif parts.path == "/v2/report/operationlogs":
@@ -114,6 +164,31 @@ class Handler(BaseHTTPRequestHandler):
         out = {key: rows[pos:pos + size], "page_size": size, "next_page_token": str(pos + size) if pos + size < len(rows) else ""}
         if key == "activity_logs":
             out.update({"from": q["from"], "to": q["to"]})
+        return self._send(200, out)
+
+    def _product_report(self, path, q):
+        """A Zoom Phone or Contact Center report. A date covers the whole day; a time is exact. Calls
+        are filtered by start time unless time_type is end_time."""
+        m = self.mock
+        key, attr, fmt, most = PRODUCT_REPORTS[path]
+        m.queries.append({"path": path, **q})
+        if m.no_products:
+            return self._send(404, {"code": 124, "message": "Account does not exist: " + ACCOUNT + "."})
+        try:
+            first, last = (datetime.strptime(q[k], fmt).replace(tzinfo=timezone.utc) for k in ("from", "to"))
+        except (KeyError, ValueError):
+            return self._send(400, {"code": 300, "message": "Invalid parameter: from or to."})
+        if fmt == "%Y-%m-%d":
+            last += timedelta(days=1, seconds=-1)
+        if (last - first).days > 31:
+            return self._send(400, {"code": 300, "message": "The date range can't exceed one month."})
+        size, pos = int(q.get("page_size", 30)), int(q.get("next_page_token") or 0)
+        if size > most:
+            return self._send(400, {"code": 300, "message": f"page_size can't be more than {most}."})
+        field = "end_time" if q.get("time_type") == "end_time" else "start_time" if attr.endswith("calls") else "time"
+        rows = [r for r in getattr(m, attr) if first.timestamp() <= c._parse_time(r[field]) <= last.timestamp()]
+        out = {key: rows[pos:pos + size], "page_size": size, "next_page_token": str(pos + size) if pos + size < len(rows) else "",
+               "total_records": len(rows)}
         return self._send(200, out)
 
     def do_POST(self):
@@ -559,6 +634,91 @@ class BridgeTest(unittest.TestCase):
                 with self.subTest(name=name, extra=extra):
                     value = self.cfg(**extra)[key]
                     self.assertEqual((value, type(value)), (expected, cast))
+
+    def test_phone_and_contact_center_reports_are_paged_and_tagged(self):
+        m = self.mock
+        m.phone_operations = [phone_operation(i, self.ago(50 - i)) for i in range(3)]
+        m.phone_calls = [phone_call(i, self.ago(40 - i)) for i in range(4)]
+        m.cc_operations = [cc_operation(i, self.ago(30 - i)) for i in range(2)]
+        m.cc_calls = [cc_call(i, self.ago(20 - i)) for i in range(5)]
+        reports = "phone_operationlogs,phone_call_history,cc_operation_logs,cc_voice_calls"
+        self.assertEqual(c.run_once(self.cfg(ZOOM_REPORTS=reports, ZOOM_PAGE_SIZE="2")), 14)
+        for record, rows in (("phone_operation", m.phone_operations), ("phone_call", m.phone_calls),
+                             ("cc_operation", m.cc_operations), ("cc_voice_call", m.cc_calls)):
+            with self.subTest(record=record):
+                sent = self.sent(record)
+                self.assertEqual(sorted(json.dumps({k: v for k, v in r.items() if k not in ("zoom_record", "account_id")}, sort_keys=True)
+                                        for r in sent), sorted(json.dumps(r, sort_keys=True) for r in rows))
+                self.assertTrue(all(list(r)[:2] == ["zoom_record", "account_id"] and r["account_id"] == ACCOUNT for r in sent))
+        today = self.now.strftime("%Y-%m-%d")
+        asked = {path: [x for x in m.queries if x["path"] == path] for path in PRODUCT_REPORTS}
+        calls = asked["/v2/phone/call_history"]
+        self.assertTrue(all(x["time_type"] == "end_time" and x["from"].endswith("T00:00:00Z") for x in calls))
+        self.assertEqual(calls[-1]["to"], today + "T23:59:59Z")
+        self.assertEqual([x.get("next_page_token") for x in calls if x["to"].startswith(today)], [None, "2"])
+        cc = asked["/v2/contact_center/voice_calls"]
+        self.assertTrue(all(x["from"].endswith("T00:00:00+00:00") and "time_type" not in x for x in cc))
+        self.assertEqual(cc[-1]["to"], today + "T23:59:59+00:00")
+        for path in ("/v2/phone/reports/operationlogs", "/v2/contact_center/reports/operation_logs"):
+            self.assertEqual(asked[path][-1]["to"], today)
+            self.assertTrue(all("category_type" not in x and "category" not in x for x in asked[path]))
+        # Only the reports ZOOM_REPORTS names are read.
+        self.assertEqual([x for x in m.queries if x["path"].startswith("/v2/report/")], [])
+
+    def test_contact_center_calls_are_read_100_at_a_time(self):
+        # Zoom serves at most 100 voice calls a page and 300 of everything else.
+        self.mock.cc_calls = [cc_call(i, self.ago(30)) for i in range(150)]
+        self.mock.phone_calls = [phone_call(0, self.ago(30))]
+        self.assertEqual(c.run_once(self.cfg(ZOOM_REPORTS="cc_voice_calls,phone_call_history")), 151)
+        sizes = {(x["path"], x["page_size"]) for x in self.mock.queries}
+        self.assertEqual(sizes, {("/v2/contact_center/voice_calls", "100"), ("/v2/phone/call_history", "300")})
+        self.assertEqual(len(self.sent("cc_voice_call")), 150)
+
+    def test_a_long_call_is_kept_by_its_end_time_and_not_sent_twice(self):
+        # Calls are read by end time. A call is remembered by its end time too, so one that started
+        # before the days read again isn't forgotten and sent a second time.
+        long_call = phone_call(1, self.now - timedelta(hours=30), minutes=30 * 60 - 2)
+        self.mock.phone_calls = [long_call]
+        cfg = self.cfg(ZOOM_REPORTS="phone_call_history")
+        c.run_once(cfg)
+        self.assertEqual(len(self.sent()), 1)
+        self.mock.ingested.clear()
+        self.mock.phone_calls.append(phone_call(2, self.ago(6)))
+        c.run_once(cfg)
+        self.assertEqual([r["call_history_uuid"] for r in self.sent()], ["20261015-call-0002"])
+        seen = self.saved()["phone_call_history"]["seen"]
+        self.assertEqual(sorted(seen.values()), sorted(c._parse_time(r["end_time"]) for r in self.mock.phone_calls))
+
+    def test_contact_center_call_repeats_are_dropped(self):
+        self.mock.cc_calls = [cc_call(i, self.ago(30 - i)) for i in range(3)]
+        cfg = self.cfg(ZOOM_REPORTS="cc_voice_calls,cc_operation_logs")
+        self.mock.cc_operations = [cc_operation(0, self.ago(25))]
+        self.assertEqual(c.run_once(cfg), 4)
+        self.mock.ingested.clear()
+        self.mock.cc_calls.append(cc_call(9, self.ago(10)))
+        self.mock.cc_operations.append(cc_operation(1, self.ago(5), action="Download"))
+        self.assertEqual(c.run_once(cfg), 2)
+        self.assertEqual(sorted((r["zoom_record"], r.get("engagement_id") or r["operation_log_id"]) for r in self.sent()),
+                         [("cc_operation", "opLog0001"), ("cc_voice_call", "eng0009")])
+
+    def test_a_refused_phone_or_contact_center_report_says_what_it_needs(self):
+        self.mock.no_products = True
+        for reports, needs in (("phone_operationlogs", "Zoom Phone read scopes"), ("phone_call_history", "Business or Enterprise"),
+                               ("cc_operation_logs", "Contact Center read scopes"), ("cc_voice_calls", "has Zoom Contact Center")):
+            with self.subTest(reports=reports), self.assertRaises(c.BridgeError) as caught:
+                c.run_once(self.cfg(ZOOM_REPORTS=reports))
+            self.assertIn("HTTP 404", str(caught.exception))
+            self.assertIn(needs, str(caught.exception))
+            self.assertNotIsInstance(caught.exception, c.NetworkError)
+        self.assertFalse(os.path.exists(self.state) and any("until" in v for v in self.saved().values()))
+
+    def test_phone_and_contact_center_reports_are_read_only_when_named(self):
+        self.assertEqual(c.load_config(BASE)["reports"], ["activities", "operationlogs"])
+        every = "activities,operationlogs,phone_operationlogs,phone_call_history,cc_operation_logs,cc_voice_calls"
+        self.assertEqual(c.load_config({**BASE, "ZOOM_REPORTS": every})["reports"], every.split(","))
+        with self.assertRaisesRegex(c.BridgeError, "^ZOOM_REPORTS takes activities, operationlogs, phone_operationlogs, "
+                                    "phone_call_history, cc_operation_logs, cc_voice_calls, comma separated$"):
+            c.load_config({**BASE, "ZOOM_REPORTS": "phone"})
 
     def test_times_read_alike_on_python_3_9_to_3_13(self):
         # Z or z, an offset with or without its colon, and 0 to 9 fraction digits. Before 3.11,
