@@ -1,0 +1,46 @@
+{
+  "vendor": "Microsoft",
+  "product": "Teams Phone call logs",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T06:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://learn.microsoft.com/en-us/graph/api/callrecords-callrecord-getpstncalls?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/callrecords-callrecord-getdirectroutingcalls?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/resources/callrecords-pstncalllogrow?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/resources/callrecords-directroutinglogrow?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/microsoftteams/teams-analytics-and-reports/pstn-usage-report"
+  ],
+  "notes": "Teams Phone call logs are pull only, so these parsers read the PSTN and Direct Routing call logs that the example bridge in bridges/teams-phone-call-logs polls from Microsoft Graph (getPstnCalls and getDirectRoutingCalls) and posts to HTTP Ingest, with \"teams_record\" (pstn or direct_routing) and teams_tenant_id first. The Entra app needs the CallRecords.Read.All application permission with admin consent. The Sophos Fusion Microsoft 365 integration takes Teams admin and user activity but not these call logs, and Microsoft says getPstnCalls doesn't return Telstra Calling Plan calls. Call records have no NG-SIEM schema of their own, and the generic schema keeps only the sensor type, event ID and time, so both children go to CloudAudit: the call type (such as user_out, user_out_forwarding, conf_out, ucap_in, ByotOut or dr_in_bot) as the event name, pstn or direct_routing as the event type, the user's UPN and ID as the user, the tenant as the recipient account and the row's id as the event ID. The caller and callee numbers, the duration and, for PSTN calls, the destination (Domestic or International, and the country) and the charges go to request_parameters; the call ID, operator, country, license, display name and end time go to additional_event_data. A Direct Routing call's successfulCall gives the status, a failed call's final SIP code and phrase the error, and the session border controller's FQDN the target host. Bot call types carry no user. The event time is the call's start time. STRING() keeps only the whole part of a number in Sophos NG-SIEM, so the charges are read as the record writes them. Samples follow the row properties and examples in Microsoft's Graph reference with made-up values. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (92 of 92 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (92 of 92 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "TEAMS_CALLS_JSON_PARENT",
+      "file": "TEAMS_CALLS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "TEAMS_CALLS_JSON_CHILD_PSTN",
+      "file": "TEAMS_CALLS_JSON_CHILD_PSTN.parser.txt",
+      "role": "child",
+      "parent": "TEAMS_CALLS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "TEAMS_CALLS_JSON_CHILD_DIRECT_ROUTING",
+      "file": "TEAMS_CALLS_JSON_CHILD_DIRECT_ROUTING.parser.txt",
+      "role": "child",
+      "parent": "TEAMS_CALLS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/teams-phone-call-logs"
+}
