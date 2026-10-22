@@ -1,0 +1,119 @@
+!SAMPLE=<133>Oct 21 01:13:02 pbx01 asterisk[2211]: NOTICE[2290]: res_pjsip/pjsip_distributor.c:722 in log_failed_request: Request 'REGISTER' from '"1001" <sip:1001@192.0.2.10>' failed for '203.0.113.45:5070' (callid: c3e81b9f0d2a4e65) - Failed to authenticate
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Asterisk and FreePBX sign-in and registration results over syslog:
+#   SecurityEvent="SuccessfulAuth", "InvalidAccountID", "ChallengeResponseFailed", "InvalidPassword",
+#     "FailedACL", "AuthMethodNotAllowed", "UnexpectedAddress", "InvalidTransport"   (res_security_log)
+#   Request '<method>' from '<from>' failed for '<ip:port>' (callid: <id>) - <reason>  (PJSIP)
+#   Registration from '<to>' failed for '<ip:port>' - <reason>                         (chan_sip)
+#   <ip> failed to authenticate as '<user>'                                             (AMI)
+#   Authentication failure|successful for <user> from <ip>                              (FreePBX)
+#   Remote auth failure|success for <user> from <ip> via userman auth AJAX (<reason>)   (FreePBX)
+# Child of SANGOMA_FREEPBX_SYSLOG_PARENT: each one to Auth, as a logon or a failure.
+# text, k, sec, isAsterisk, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+# Security events: "Key="value"" pairs separated by commas, in the order Asterisk's
+# security_events.c lists them. Each one is read on its own, so a value with a space stays whole.
+acct = text|,AccountID="(?P<v>[^"]*)"
+svc = text|,Service="(?P<v>[^"]*)"
+sid = text|,SessionID="(?P<v>[^"]*)"
+evSeverity = text|,Severity="(?P<v>[^"]*)"
+# Addresses are IPV4 or IPV6, the transport when there is one, the address (in brackets for IPv6)
+# and the port: "IPV4/UDP/203.0.113.45/5070".
+remote = text|,RemoteAddress="IPV[46]/(?:(?P<tr>[A-Z]+)/)?\[?(?P<ip>[^"\]/]+)\]?/(?P<port>\d+)"
+local = text|,LocalAddress="IPV[46]/(?:(?P<tr>[A-Z]+)/)?\[?(?P<ip>[^"\]/]+)\]?/(?P<port>\d+)"
+acl = text|,ACLName="(?P<v>[^"]*)"
+authMethod = text|,AuthMethod="(?P<v>[^"]*)"
+attempted = text|,AttemptedTransport="(?P<v>[^"]*)"
+
+# PJSIP, chan_sip and AMI notices, and FreePBX logins.
+pj = text|^Request '(?P<method>[^']*)' from '(?P<from>.*?)' failed for '(?P<addr>[^']*)' \(callid: (?P<callid>.*?)\) - (?P<reason>.+?)(?: after \d+ tries in [0-9.]+ ms)?$
+cs = text|^Registration from '(?P<to>.*?)' failed for '(?P<addr>[^']*)' - (?P<reason>.+)$
+ami = text|^(?P<ip>\S+) failed to authenticate as '(?P<user>.*)'$
+fw = text|^(?P<what>Authentication failure|Authentication successful|Remote auth failure|Remote auth success) for (?P<user>.*?) from (?P<ip>\S+?)(?: via userman auth AJAX(?: \((?P<reason>[^)]*)\))?)?$
+
+# The user part of the SIP URI in From (PJSIP) or To (chan_sip): "1001" <sip:1001@192.0.2.10>.
+uri = IF pj["from"] THEN pj["from"] ELSE cs["to"]
+sipUser = uri|^[^<]*<?sips?:(?P<u>[^@;>]+)@
+# PJSIP and chan_sip give the source as ip:port, in brackets for IPv6.
+addr = IF pj["addr"] THEN pj["addr"] ELSE cs["addr"]
+src = addr|^\[?(?P<ip>[^\]]+?)\]?:(?P<port>\d+)$
+
+user = acct["v"]
+user = IF sipUser["u"] THEN sipUser["u"] ELSE user
+user = IF ami["user"] THEN ami["user"] ELSE user
+user = IF fw["user"] THEN fw["user"] ELSE user
+targetUserName$ = user
+
+ip = remote["ip"]
+ip = IF src["ip"] THEN src["ip"] ELSE ip
+ip = IF ami["ip"] THEN ami["ip"] ELSE ip
+ip = IF fw["ip"] THEN fw["ip"] ELSE ip
+sourceAddress$ = ip
+port = IF remote["port"] THEN remote["port"] ELSE src["port"]
+sourcePortNumber$ = IF port THEN INT(port, 10) ELSE NULL
+targetAddress$ = local["ip"]
+targetPortNumber$ = IF local["port"] THEN INT(local["port"], 10) ELSE NULL
+targetHostName$ = hostId$
+sessionId$ = IF sid["v"] THEN sid["v"] ELSE pj["callid"]
+
+system = "Asterisk " + svc["v"]
+system = IF pj["method"] THEN "Asterisk PJSIP" ELSE system
+system = IF cs["to"] OR cs["addr"] THEN "Asterisk SIP" ELSE system
+system = IF ami["ip"] THEN "Asterisk AMI" ELSE system
+system = IF fw["what"] THEN "FreePBX" ELSE system
+system = IF fw["what"] == "Remote auth failure" OR fw["what"] == "Remote auth success" THEN "FreePBX User Management" ELSE system
+authSystem$ = system
+
+success = sec == "SuccessfulAuth" OR fw["what"] == "Authentication successful" OR fw["what"] == "Remote auth success"
+authCategory$ = "ACCOUNT_LOGON"
+action$ = IF success THEN "LOGON" ELSE "FAILURE"
+actionResult$ = IF success THEN "SUCCESS" ELSE "FAILED"
+
+# Why it failed: the security event's name (with the ACL for FailedACL), the PJSIP or chan_sip
+# reason, or the User Management reason.
+reason = sec
+reason = IF sec == "FailedACL" AND acl["v"] THEN "FailedACL: " + acl["v"] ELSE reason
+reason = IF pj["reason"] THEN pj["reason"] ELSE reason
+reason = IF cs["reason"] THEN cs["reason"] ELSE reason
+reason = IF ami["ip"] THEN "Failed to authenticate" ELSE reason
+reason = IF fw["what"] THEN fw["what"] ELSE reason
+reason = IF fw["reason"] THEN fw["reason"] ELSE reason
+extraFailurereason$ = IF success THEN NULL ELSE reason
+
+badAccount = sec == "InvalidAccountID" OR reason == "No matching endpoint found" OR reason == "No matching peer found"
+badSecret = sec == "ChallengeResponseFailed" OR sec == "InvalidPassword" OR reason == "Failed to authenticate" OR reason == "Wrong password" OR reason == "Username/auth name mismatch" OR reason == "Authentication failure" OR reason == "Remote auth failure" OR reason == "invalid_credentials"
+locked = reason == "lockout" OR reason == "rate_limited"
+category = "OTHER_ERROR"
+category = IF badSecret THEN "INCORRECT_USER_OR_PASSWORD" ELSE category
+category = IF badAccount THEN "INVALID_ACCOUNT" ELSE category
+category = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE category
+failureCategory$ = IF success THEN NULL ELSE category
+
+m1.key$ = "security_event"
+m1.value$ = sec
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+m2.key$ = "event_severity"
+m2.value$ = evSeverity["v"]
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "transport"
+m3.value$ = remote["tr"]
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "sip_method"
+m4.value$ = pj["method"]
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "auth_method"
+m5.value$ = authMethod["v"]
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "attempted_transport"
+m6.value$ = attempted["v"]
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "sip_uri"
+m7.value$ = uri
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
