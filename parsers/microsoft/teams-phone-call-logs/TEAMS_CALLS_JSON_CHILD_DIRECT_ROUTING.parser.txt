@@ -1,0 +1,77 @@
+!SAMPLE={"teams_record":"direct_routing","teams_tenant_id":"00000000-0000-4000-8000-00000000c0de","id":"9e8bba57-dc14-533a-a7dd-f0da65750001","correlationId":"c98e1515-a937-4b81-b8a8-3992afde64e0","userId":"db03c14b-06eb-4189-939b-7cbf3a20ba27","userPrincipalName":"pat@example.com","userDisplayName":"Pat Example","startDateTime":"2026-10-21T22:30:25.105Z","inviteDateTime":"2026-10-21T22:30:21.949Z","failureDateTime":"0001-01-01T00:00:00Z","endDateTime":"2026-10-21T22:42:30.105Z","duration":725,"callType":"ByotOut","successfulCall":true,"callerNumber":"+61255501234","calleeNumber":"+61370104455","mediaPathLocation":"AUEA","signalingLocation":"AUSE","finalSipCode":0,"callEndSubReason":540000,"finalSipCodePhrase":"BYE","trunkFullyQualifiedDomainName":"sbc01.example.com","mediaBypassEnabled":false}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="direct_routing"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Teams Phone Direct Routing calls, Graph's directRoutingLogRow, from the example bridge.
+# Child of TEAMS_CALLS_JSON_PARENT: each call to CloudAudit, with the call type (such as ByotOut,
+# ByotIn or dr_in_bot) as the event name, successfulCall as the status, the final SIP code and phrase
+# of a failed call as the error, and the session border controller as the target host.
+# Call records have no NG-SIEM schema of their own; CloudAudit keeps the user, the call type, the
+# outcome and the numbers searchable. Bot call types carry no user.
+# json, kind, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Microsoft Teams Phone"
+eventName$ = json["$.callType"]
+userName$ = json["$.userPrincipalName"]
+userId$ = json["$.userId"]
+recipientAccountId$ = json["$.teams_tenant_id"]
+targetHostname$ = json["$.trunkFullyQualifiedDomainName"]
+ok = STRING(json["$.successfulCall"]) == "true"
+status$ = IF ok THEN "success" ELSE "failure"
+status$ = IF json["$.successfulCall"] == NULL THEN NULL ELSE status$
+sip = json["$.finalSipCode"]
+errorCode$ = IF NOT ok AND sip != NULL THEN STRING(sip) ELSE NULL
+errorMessage$ = IF NOT ok THEN json["$.finalSipCodePhrase"] ELSE NULL
+
+p1.key$ = "caller_number"
+p1.value$ = json["$.callerNumber"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+p2.key$ = "callee_number"
+p2.value$ = json["$.calleeNumber"]
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+dur = json["$.duration"]
+p3.key$ = "duration_seconds"
+p3.value$ = STRING(dur)
+requestParameters$.record$ = IF dur != NULL THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+
+d1.key$ = "correlation_id"
+d1.value$ = json["$.correlationId"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+sub = json["$.callEndSubReason"]
+d2.key$ = "call_end_sub_reason"
+d2.value$ = STRING(sub)
+additionalEventData$.record$ = IF sub != NULL THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "final_sip_code_phrase"
+d3.value$ = json["$.finalSipCodePhrase"]
+additionalEventData$.record$ = IF ok AND d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "signaling_location"
+d4.value$ = json["$.signalingLocation"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "media_path_location"
+d5.value$ = json["$.mediaPathLocation"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+bypass = json["$.mediaBypassEnabled"]
+d6.key$ = "media_bypass_enabled"
+d6.value$ = STRING(bypass)
+additionalEventData$.record$ = IF bypass != NULL THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "user_display_name"
+d7.value$ = json["$.userDisplayName"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+# endDateTime is set only for calls that were set up, failureDateTime only for failed ones; the other
+# holds 0001-01-01T00:00:00Z.
+endAt = STRING(json["$.endDateTime"])
+d8.key$ = "end_time"
+d8.value$ = endAt
+additionalEventData$.record$ = IF endAt != "" AND NOT CONTAINS(endAt, "0001-01-01") THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+failAt = STRING(json["$.failureDateTime"])
+d9.key$ = "failure_time"
+d9.value$ = failAt
+additionalEventData$.record$ = IF failAt != "" AND NOT CONTAINS(failAt, "0001-01-01") THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$

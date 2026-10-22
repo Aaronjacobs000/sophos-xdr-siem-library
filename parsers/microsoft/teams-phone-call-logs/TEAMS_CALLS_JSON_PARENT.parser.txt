@@ -1,0 +1,23 @@
+!SAMPLE={"teams_record":"pstn","teams_tenant_id":"00000000-0000-4000-8000-00000000c0de","id":"9c4984c7-6c3c-427d-a30c-bd0b2eac0001","callId":"1835317186_112562680@192.0.2.176","userId":"db03c14b-06eb-4189-939b-7cbf3a20ba27","userPrincipalName":"pat@example.com","userDisplayName":"Pat Example","startDateTime":"2026-10-21T22:15:08.2589935Z","endDateTime":"2026-10-21T22:48:47.2589935Z","duration":2019,"charge":18.45,"callType":"user_out","currency":"AUD","calleeNumber":"+442079460123","usageCountryCode":"AU","tenantCountryCode":"AU","connectionCharge":0.35,"callerNumber":"+61255501234","destinationContext":"International","destinationName":"United Kingdom","conferenceId":null,"licenseCapability":"MCOPSTN2","inventoryType":"Subscriber","operator":"Microsoft","callDurationSource":"microsoft"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"teams_record"\s*:\s*"(?:pstn|direct_routing)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Microsoft Teams Phone call logs from Microsoft Graph (getPstnCalls and getDirectRoutingCalls),
+# pulled by the example bridge in bridges/teams-phone-call-logs and posted to HTTP Ingest as JSON lines.
+# The bridge puts "teams_record" first ("pstn" or "direct_routing") and adds teams_tenant_id.
+# Parent: hands PSTN calls and Direct Routing calls to their CloudAudit children.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Microsoft Teams Phone"
+kind = json["$.teams_record"]
+sensorEventId$ = json["$.id"]
+# startDateTime is ISO 8601 in UTC with up to 7 fraction digits, such as 2019-11-01T00:00:08.2589935Z.
+eventTimeUsec$ = DATETIME(json["$.startDateTime"], "2006-01-02T15:04:05.999999999Z07:00")
+eventType$ = kind

@@ -1,0 +1,598 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_PSTN",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792620908258993,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4984c7-6c3c-427d-a30c-bd0b2eac0001",
+      "event_type": "pstn",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "user_out",
+      "user_name": "pat@example.com",
+      "user_id": "db03c14b-06eb-4189-939b-7cbf3a20ba27",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61255501234"
+          },
+          {
+            "key": "callee_number",
+            "value": "+442079460123"
+          },
+          {
+            "key": "destination_context",
+            "value": "International"
+          },
+          {
+            "key": "destination_name",
+            "value": "United Kingdom"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "2019"
+          },
+          {
+            "key": "charge",
+            "value": "18.45 AUD"
+          },
+          {
+            "key": "connection_charge",
+            "value": "0.35 AUD"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_id",
+            "value": "1835317186_112562680@192.0.2.176"
+          },
+          {
+            "key": "operator",
+            "value": "Microsoft"
+          },
+          {
+            "key": "usage_country_code",
+            "value": "AU"
+          },
+          {
+            "key": "license_capability",
+            "value": "MCOPSTN2"
+          },
+          {
+            "key": "inventory_type",
+            "value": "Subscriber"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Pat Example"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-21T22:48:47.2589935Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_PSTN",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792623731501682,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4984c7-6c3c-427d-a30c-bd0b2eac0002",
+      "event_type": "pstn",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "user_in",
+      "user_name": "lee@example.com",
+      "user_id": "5f2e7a10-8b3c-4d9e-a1f2-0c3d4e5f6a7b",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61370104455"
+          },
+          {
+            "key": "callee_number",
+            "value": "+61255501240"
+          },
+          {
+            "key": "destination_name",
+            "value": "Australia"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "209"
+          },
+          {
+            "key": "charge",
+            "value": "0 AUD"
+          },
+          {
+            "key": "connection_charge",
+            "value": "0 AUD"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_id",
+            "value": "1835317201_112562702@192.0.2.176"
+          },
+          {
+            "key": "operator",
+            "value": "Contoso Telecom"
+          },
+          {
+            "key": "usage_country_code",
+            "value": "AU"
+          },
+          {
+            "key": "license_capability",
+            "value": "MCOEV"
+          },
+          {
+            "key": "inventory_type",
+            "value": "Subscriber"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Lee Example"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-21T23:05:40.5016824Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_PSTN",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792626000000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4984c7-6c3c-427d-a30c-bd0b2eac0003",
+      "event_type": "pstn",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "user_out_forwarding",
+      "user_name": "pat@example.com",
+      "user_id": "db03c14b-06eb-4189-939b-7cbf3a20ba27",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61255501234"
+          },
+          {
+            "key": "callee_number",
+            "value": "+15550155"
+          },
+          {
+            "key": "destination_context",
+            "value": "International"
+          },
+          {
+            "key": "destination_name",
+            "value": "United States"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "75"
+          },
+          {
+            "key": "charge",
+            "value": "0.5 AUD"
+          },
+          {
+            "key": "connection_charge",
+            "value": "0 AUD"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_id",
+            "value": "1835317244_112562733@192.0.2.176"
+          },
+          {
+            "key": "operator",
+            "value": "Microsoft"
+          },
+          {
+            "key": "usage_country_code",
+            "value": "AU"
+          },
+          {
+            "key": "license_capability",
+            "value": "MCOPSTN2"
+          },
+          {
+            "key": "inventory_type",
+            "value": "Subscriber"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Pat Example"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-21T23:41:15.0000000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_PSTN",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792626930120000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4984c7-6c3c-427d-a30c-bd0b2eac0004",
+      "event_type": "pstn",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "ucap_in",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61370104490"
+          },
+          {
+            "key": "callee_number",
+            "value": "+61255501200"
+          },
+          {
+            "key": "destination_name",
+            "value": "Australia"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "92"
+          },
+          {
+            "key": "charge",
+            "value": "0 AUD"
+          },
+          {
+            "key": "connection_charge",
+            "value": "0 AUD"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_id",
+            "value": "1835317266_112562750@192.0.2.176"
+          },
+          {
+            "key": "operator",
+            "value": "Microsoft"
+          },
+          {
+            "key": "usage_country_code",
+            "value": "AU"
+          },
+          {
+            "key": "license_capability",
+            "value": "MCOCAP"
+          },
+          {
+            "key": "inventory_type",
+            "value": "Service"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-21T23:57:02.1200000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_PSTN",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792627844900000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9c4984c7-6c3c-427d-a30c-bd0b2eac0005",
+      "event_type": "pstn",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "conf_out",
+      "user_name": "lee@example.com",
+      "user_id": "5f2e7a10-8b3c-4d9e-a1f2-0c3d4e5f6a7b",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61255501200"
+          },
+          {
+            "key": "callee_number",
+            "value": "+61255509876"
+          },
+          {
+            "key": "destination_context",
+            "value": "Domestic"
+          },
+          {
+            "key": "destination_name",
+            "value": "Australia"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "1260"
+          },
+          {
+            "key": "charge",
+            "value": "2.1 AUD"
+          },
+          {
+            "key": "connection_charge",
+            "value": "0 AUD"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "call_id",
+            "value": "1835317301_112562790@192.0.2.176"
+          },
+          {
+            "key": "operator",
+            "value": "Microsoft"
+          },
+          {
+            "key": "usage_country_code",
+            "value": "AU"
+          },
+          {
+            "key": "license_capability",
+            "value": "MCOMEETADV"
+          },
+          {
+            "key": "inventory_type",
+            "value": "Service"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Lee Example"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-22T00:31:44.9000000Z"
+          },
+          {
+            "key": "conference_id",
+            "value": "8c27e1b4-2a91-4f3c-9d10-5b6e7f8a9b0c"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_DIRECT_ROUTING",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792621825105000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9e8bba57-dc14-533a-a7dd-f0da65750001",
+      "event_type": "direct_routing",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "ByotOut",
+      "user_name": "pat@example.com",
+      "user_id": "db03c14b-06eb-4189-939b-7cbf3a20ba27",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "target_hostname": "sbc01.example.com",
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61255501234"
+          },
+          {
+            "key": "callee_number",
+            "value": "+61370104455"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "725"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "correlation_id",
+            "value": "c98e1515-a937-4b81-b8a8-3992afde64e0"
+          },
+          {
+            "key": "call_end_sub_reason",
+            "value": "540000"
+          },
+          {
+            "key": "final_sip_code_phrase",
+            "value": "BYE"
+          },
+          {
+            "key": "signaling_location",
+            "value": "AUSE"
+          },
+          {
+            "key": "media_path_location",
+            "value": "AUEA"
+          },
+          {
+            "key": "media_bypass_enabled",
+            "value": "false"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Pat Example"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-21T22:42:30.105Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_DIRECT_ROUTING",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792624323410000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9e8bba57-dc14-533a-a7dd-f0da65750002",
+      "event_type": "direct_routing",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "ByotOut",
+      "user_name": "lee@example.com",
+      "user_id": "5f2e7a10-8b3c-4d9e-a1f2-0c3d4e5f6a7b",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "target_hostname": "sbc01.example.com",
+      "status": "failure",
+      "error_code": "403",
+      "error_message": "Forbidden",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61255501240"
+          },
+          {
+            "key": "callee_number",
+            "value": "+882355501234"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "0"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "correlation_id",
+            "value": "0d1e2f3a-4b5c-4d6e-8f70-81a2b3c4d5e6"
+          },
+          {
+            "key": "call_end_sub_reason",
+            "value": "560403"
+          },
+          {
+            "key": "signaling_location",
+            "value": "AUSE"
+          },
+          {
+            "key": "media_bypass_enabled",
+            "value": "true"
+          },
+          {
+            "key": "user_display_name",
+            "value": "Lee Example"
+          },
+          {
+            "key": "failure_time",
+            "value": "2026-10-21T23:12:04.020Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TEAMS_CALLS_JSON_PARENT > TEAMS_CALLS_JSON_CHILD_DIRECT_ROUTING",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Microsoft Teams Phone",
+      "event_time_usec": 1792627551877000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9e8bba57-dc14-533a-a7dd-f0da65750003",
+      "event_type": "direct_routing",
+      "event_source": "Microsoft Teams Phone",
+      "event_name": "dr_in_bot",
+      "recipient_account_id": "00000000-0000-4000-8000-00000000c0de",
+      "target_hostname": "sbc02.example.com",
+      "status": "success",
+      "request_parameters": {
+        "record": [
+          {
+            "key": "caller_number",
+            "value": "+61370104490"
+          },
+          {
+            "key": "callee_number",
+            "value": "+61255501200"
+          },
+          {
+            "key": "duration_seconds",
+            "value": "70"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "correlation_id",
+            "value": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          },
+          {
+            "key": "call_end_sub_reason",
+            "value": "540200"
+          },
+          {
+            "key": "final_sip_code_phrase",
+            "value": "BYE"
+          },
+          {
+            "key": "signaling_location",
+            "value": "AUEA"
+          },
+          {
+            "key": "media_path_location",
+            "value": "AUEA"
+          },
+          {
+            "key": "media_bypass_enabled",
+            "value": "false"
+          },
+          {
+            "key": "end_time",
+            "value": "2026-10-22T00:07:01.877Z"
+          }
+        ]
+      }
+    }
+  }
+]

@@ -1,0 +1,78 @@
+!SAMPLE={"teams_record":"pstn","teams_tenant_id":"00000000-0000-4000-8000-00000000c0de","id":"9c4984c7-6c3c-427d-a30c-bd0b2eac0001","callId":"1835317186_112562680@192.0.2.176","userId":"db03c14b-06eb-4189-939b-7cbf3a20ba27","userPrincipalName":"pat@example.com","userDisplayName":"Pat Example","startDateTime":"2026-10-21T22:15:08.2589935Z","endDateTime":"2026-10-21T22:48:47.2589935Z","duration":2019,"charge":18.45,"callType":"user_out","currency":"AUD","calleeNumber":"+442079460123","usageCountryCode":"AU","tenantCountryCode":"AU","connectionCharge":0.35,"callerNumber":"+61255501234","destinationContext":"International","destinationName":"United Kingdom","conferenceId":null,"licenseCapability":"MCOPSTN2","inventoryType":"Subscriber","operator":"Microsoft","callDurationSource":"microsoft"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="pstn"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Teams Phone PSTN calls (Calling Plans and Operator Connect), Graph's pstnCallLogRow, from
+# the example bridge.
+# Child of TEAMS_CALLS_JSON_PARENT: each call to CloudAudit, with the call type (such as user_out,
+# user_in, user_out_forwarding, conf_out or ucap_in) as the event name and the user as the user.
+# Call records have no NG-SIEM schema of their own; CloudAudit keeps the user, the call type and the
+# numbers searchable. Bot call types (ucap_in, ucap_out) carry no user.
+# json, kind, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Microsoft Teams Phone"
+eventName$ = json["$.callType"]
+userName$ = json["$.userPrincipalName"]
+userId$ = json["$.userId"]
+recipientAccountId$ = json["$.teams_tenant_id"]
+
+# The numbers, where the call went, how long it lasted and what it cost.
+p1.key$ = "caller_number"
+p1.value$ = json["$.callerNumber"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.value$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+p2.key$ = "callee_number"
+p2.value$ = json["$.calleeNumber"]
+requestParameters$.record$ = IF p2.value$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+# destinationContext is Domestic or International, from the user's location.
+p3.key$ = "destination_context"
+p3.value$ = json["$.destinationContext"]
+requestParameters$.record$ = IF p3.value$ THEN requestParameters$.record$ + [p3] ELSE requestParameters$.record$
+p4.key$ = "destination_name"
+p4.value$ = json["$.destinationName"]
+requestParameters$.record$ = IF p4.value$ THEN requestParameters$.record$ + [p4] ELSE requestParameters$.record$
+dur = json["$.duration"]
+p5.key$ = "duration_seconds"
+p5.value$ = STRING(dur)
+requestParameters$.record$ = IF dur != NULL THEN requestParameters$.record$ + [p5] ELSE requestParameters$.record$
+# STRING() keeps only the whole part of a number, so the charges are read as the record writes them.
+chg = originalData$|"charge"\s*:\s*(?P<v>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)
+p6.key$ = "charge"
+p6.value$ = chg["v"] + " " + STRING(json["$.currency"])
+requestParameters$.record$ = IF chg["v"] != "" THEN requestParameters$.record$ + [p6] ELSE requestParameters$.record$
+conn = originalData$|"connectionCharge"\s*:\s*(?P<v>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)
+p7.key$ = "connection_charge"
+p7.value$ = conn["v"] + " " + STRING(json["$.currency"])
+requestParameters$.record$ = IF conn["v"] != "" THEN requestParameters$.record$ + [p7] ELSE requestParameters$.record$
+
+d1.key$ = "call_id"
+d1.value$ = json["$.callId"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+d2.key$ = "operator"
+d2.value$ = json["$.operator"]
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+d3.key$ = "usage_country_code"
+d3.value$ = json["$.usageCountryCode"]
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+d4.key$ = "license_capability"
+d4.value$ = json["$.licenseCapability"]
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+d5.key$ = "inventory_type"
+d5.value$ = json["$.inventoryType"]
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+d6.key$ = "user_display_name"
+d6.value$ = json["$.userDisplayName"]
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+d7.key$ = "end_time"
+d7.value$ = json["$.endDateTime"]
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+d8.key$ = "conference_id"
+d8.value$ = json["$.conferenceId"]
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
