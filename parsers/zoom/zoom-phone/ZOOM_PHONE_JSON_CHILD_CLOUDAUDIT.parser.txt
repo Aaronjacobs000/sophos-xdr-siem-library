@@ -1,0 +1,31 @@
+!SAMPLE={"zoom_record":"phone_operation","account_id":"Ex4mpleAcc0untId01","time":"2026-10-20T01:02:03Z","operator":"sam.admin@example.com","category_type":"Phone Number","action":"ADD","operation_detail":"Add BYOC +61 2 5550 1234"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Zoom Phone's phone system operation logs (GET /phone/reports/operationlogs) from the
+# example bridge: who added, changed or removed phone numbers, call forwarding, calling plans,
+# roles, recordings and other Zoom Phone settings.
+# Child of ZOOM_PHONE_JSON_PARENT: each one to CloudAudit, with the action as the event name and
+# the category as the event type. operation_detail is free text, so it goes to the additional data.
+# json, kind, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Zoom Phone"
+act = json["$.action"]
+eventName$ = act
+eventType$ = json["$.category_type"]
+userName$ = json["$.operator"]
+recipientAccountId$ = json["$.account_id"]
+managementEvent$ = TRUE
+lact = LOWERCASE(STRING(act))
+readOnly$ = CONTAINS(lact, "view") OR CONTAINS(lact, "export") OR CONTAINS(lact, "download")
+
+detail = json["$.operation_detail"]
+d1.key$ = "operation_detail"
+d1.value$ = detail
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF detail THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
