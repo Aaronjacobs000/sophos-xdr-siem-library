@@ -1,0 +1,70 @@
+{
+  "vendor": "Stormshield",
+  "product": "Stormshield Network Security",
+  "versions": [
+    "4",
+    "5"
+  ],
+  "format": "kv",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://documentation.stormshield.eu/SNS/v5/en/Content/Description_of_Audit_logs/Understand_log_files.htm",
+    "https://documentation.stormshield.eu/SNS/v5/en/Content/Description_of_Audit_logs/Specific-Fields.htm",
+    "https://documentation.stormshield.eu/SNS/v5/en/Content/PDF/SNS-TechnicalNotes/sns-en-description_of_audit_logs_technical_note_v5.pdf",
+    "https://documentation.stormshield.eu/SNS/v5/en/Content/User_Configuration_Manual_SNS_v5/Logs-syslog/Syslog_tab.htm",
+    "https://documentation.stormshield.eu/SNS/v5/en/Content/CLI_Serverd_Commands_reference_Guide_v5/Commands/serverd/CONFIG.COMMUNICATION.SYSLOG.PROFILE.UPDATE.htm",
+    "https://www.elastic.co/docs/current/integrations/stormshield"
+  ],
+  "notes": "For Stormshield Network Security (SNS) firewalls sending audit logs to the data collector from a syslog profile; the README has the steps. Each log is one WELF line of key=value pairs. The parent claims a line by its common fields (time, fw, tz, startime) and hands it on by logtype. Connection, filter and plugin logs go to Netflow: addresses before translation, the translated source and destination, ports, protocol, bytes each way, start and end times and the action (pass allowed, block blocked), with the rule, interfaces, object names, user, applications and plugin operation in event_metadata. Alarms with a source address go to NIDS with the alarm ID as the signature, msg, class, pri as the priority and blocked when action is block; system alarms with no addresses stay generic. HTTP proxy (web) logs go to HTTP with op, result, dstname as the host, arg as the path and query, the URL category and the block. Auth logs and SSL VPN (xvpn) lines with an error code or a message about authentication go to Auth: error 0 is a success, and with no code a message with failed or error is a failure; totp sets mfa_used. Administration (server) logs with a user go to Management Event with the command (msg), its name, the client address and the return code. Other logs stay generic with the firewall name, the alarm ID and the time, which comes from time and tz, the firewall's local time and offset. The pairs are read with CEF(), because Sophos NG-SIEM's SPLIT_NAME_VALUES cuts a quoted value that holds \" key=\" text, such as a serverd command with its arguments; the samples have such values. How sure this is: Stormshield's audit log technical note defines the fields and the line layout. The RFC5424 header, with app names asqd, serverd and routerd and a BOM before the message, follows Elastic's published sample; the LEGACY header in one sample is inferred, and the parsers don't depend on the header. Auth error codes other than 0 aren't documented. App names authd, sslvpnd and vpnd, alarm IDs and messages in the samples are made up. Samples are made up in those shapes. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (235 of 235 fields matched the emulator in each of 4 runs), and the parent's confirm string picked the same lines there. Each child also passed Run Test as a separate parser under its parent (225 of 225 fields, each line taken in 5 of 5 runs). No built-in parser claimed these lines in 5 runs.",
+  "parsers": [
+    {
+      "name": "STORMSHIELD_SNS_KV_PARENT",
+      "file": "STORMSHIELD_SNS_KV_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "STORMSHIELD_SNS_KV_CHILD_NETFLOW",
+      "file": "STORMSHIELD_SNS_KV_CHILD_NETFLOW.parser.txt",
+      "role": "child",
+      "parent": "STORMSHIELD_SNS_KV_PARENT",
+      "schema": "scwx.netflow"
+    },
+    {
+      "name": "STORMSHIELD_SNS_KV_CHILD_NIDS",
+      "file": "STORMSHIELD_SNS_KV_CHILD_NIDS.parser.txt",
+      "role": "child",
+      "parent": "STORMSHIELD_SNS_KV_PARENT",
+      "schema": "scwx.nids"
+    },
+    {
+      "name": "STORMSHIELD_SNS_KV_CHILD_HTTP",
+      "file": "STORMSHIELD_SNS_KV_CHILD_HTTP.parser.txt",
+      "role": "child",
+      "parent": "STORMSHIELD_SNS_KV_PARENT",
+      "schema": "scwx.http"
+    },
+    {
+      "name": "STORMSHIELD_SNS_KV_CHILD_AUTH",
+      "file": "STORMSHIELD_SNS_KV_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "STORMSHIELD_SNS_KV_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "STORMSHIELD_SNS_KV_CHILD_MGMT",
+      "file": "STORMSHIELD_SNS_KV_CHILD_MGMT.parser.txt",
+      "role": "child",
+      "parent": "STORMSHIELD_SNS_KV_PARENT",
+      "schema": "scwx.managementevent"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+!SAMPLE=<14>1 2026-10-21T09:22:31+11:00 fw-syd-01 asqd - - - id=firewall time="2026-10-21 09:22:31" fw="fw-syd-01" tz=+1100 startime="2026-10-21 09:22:30" pri=5 confid=01 slotlevel=2 ruleid=12 proto=http src=192.0.2.25 srcport=51710 srcportname=ephemeral_fw_tcp srcname=wks-025 dst=203.0.113.150 dstport=80 dstportname=http dstname=login.example.org dstcontinent="eu" dstcountry="de" modsrc=198.51.100.2 modsrcport=20618 origdst=203.0.113.150 origdstport=80 ipv=4 sent=512 rcvd=1203 duration=0.12 user="jsmith" action=block contentpolicy=00 urlruleid=3 op=GET result=403 arg="/account/verify.php?id=7731&lang=en" cat_site="{phishing}" risk=60 msg="Blocked url" logtype="web"
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="web"
+!SCHEMA=scwx.http
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Stormshield Network Security (SNS) audit logs over syslog.
+# Child of STORMSHIELD_SNS_KV_PARENT: HTTP proxy logs (l_web) to HTTP, with the method (op), the
+# response code (result), the requested path and query (arg), the host (dstname) and whether URL
+# filtering blocked the request.
+# Setting source_address and destination_address lets the IP Watchlist detector use these events.
+# kv, src, msg, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+dst = STRING(kv["dst"])
+odst = STRING(kv["origdst"])
+preDst = IF odst != "" THEN odst ELSE dst
+sourceAddress$ = IF IS_VALID_IP(src) THEN src ELSE NULL
+destinationAddress$ = IF IS_VALID_IP(preDst) THEN preDst ELSE NULL
+# Text into a number field keeps its digits, so an empty port stays unset.
+sourcePort$ = STRING(kv["srcport"])
+odport = STRING(kv["origdstport"])
+destinationPort$ = IF odport != "" THEN odport ELSE STRING(kv["dstport"])
+txByteCount$ = STRING(kv["sent"])
+rxByteCount$ = STRING(kv["rcvd"])
+user = STRING(kv["user"])
+sourceUsername$ = IF user != "" THEN user ELSE NULL
+service = LOWERCASE(STRING(kv["proto"]))
+l7Protocol$ = IF service != "" THEN service ELSE NULL
+uriScheme$ = IF service == "http" OR service == "https" THEN service ELSE NULL
+op = STRING(kv["op"])
+httpMethod$ = IF op != "" THEN op ELSE NULL
+responseCode$ = STRING(kv["result"])
+host = STRING(kv["dstname"])
+uriHost$ = IF host != "" THEN host ELSE NULL
+arg = STRING(kv["arg"])
+pq = arg|^(?P<path>[^?#]*)(?:\?(?P<query>[^#]*))?
+uriPath$ = IF STRING(pq["path"]) != "" THEN pq["path"] ELSE NULL
+uriQuery$ = IF STRING(pq["query"]) != "" THEN pq["query"] ELSE NULL
+act = LOWERCASE(STRING(kv["action"]))
+blocked$ = IF act == "block" THEN 1 ELSE 0
+sensorTypeActions$ = IF act == "block" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
+
+# Keys with no HTTP field go to event_metadata.
+w1.key$ = "category"
+w1.value$ = STRING(kv["cat_site"])
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [w1]
+w2.key$ = "message"
+w2.value$ = msg
+eventMetadata$.record$ = IF w2.value$ != "" THEN eventMetadata$.record$ + [w2] ELSE eventMetadata$.record$
+w3.key$ = "url_rule_id"
+w3.value$ = STRING(kv["urlruleid"])
+eventMetadata$.record$ = IF w3.value$ != "" THEN eventMetadata$.record$ + [w3] ELSE eventMetadata$.record$
+w4.key$ = "rule_id"
+w4.value$ = STRING(kv["ruleid"])
+eventMetadata$.record$ = IF w4.value$ != "" THEN eventMetadata$.record$ + [w4] ELSE eventMetadata$.record$
+w5.key$ = "content_policy"
+w5.value$ = STRING(kv["contentpolicy"])
+eventMetadata$.record$ = IF w5.value$ != "" THEN eventMetadata$.record$ + [w5] ELSE eventMetadata$.record$
+w6.key$ = "risk"
+w6.value$ = STRING(kv["risk"])
+eventMetadata$.record$ = IF w6.value$ != "" THEN eventMetadata$.record$ + [w6] ELSE eventMetadata$.record$
+w7.key$ = "virus"
+w7.value$ = STRING(kv["virus"])
+eventMetadata$.record$ = IF w7.value$ != "" THEN eventMetadata$.record$ + [w7] ELSE eventMetadata$.record$
+w8.key$ = "file_name"
+w8.value$ = STRING(kv["filename"])
+eventMetadata$.record$ = IF w8.value$ != "" THEN eventMetadata$.record$ + [w8] ELSE eventMetadata$.record$
+w9.key$ = "file_hash"
+w9.value$ = STRING(kv["hash"])
+eventMetadata$.record$ = IF w9.value$ != "" THEN eventMetadata$.record$ + [w9] ELSE eventMetadata$.record$
+w10.key$ = "sandboxing"
+w10.value$ = STRING(kv["sandboxing"])
+eventMetadata$.record$ = IF w10.value$ != "" THEN eventMetadata$.record$ + [w10] ELSE eventMetadata$.record$
+w11.key$ = "source_nat_address"
+w11.value$ = STRING(kv["modsrc"])
+eventMetadata$.record$ = IF w11.value$ != "" THEN eventMetadata$.record$ + [w11] ELSE eventMetadata$.record$
+w12.key$ = "destination_country"
+w12.value$ = STRING(kv["dstcountry"])
+eventMetadata$.record$ = IF w12.value$ != "" THEN eventMetadata$.record$ + [w12] ELSE eventMetadata$.record$
