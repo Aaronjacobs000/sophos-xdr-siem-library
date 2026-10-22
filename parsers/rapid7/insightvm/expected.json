@@ -1,0 +1,389 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Rapid7 InsightVM",
+      "event_time_usec": 1792548097204000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Rapid7",
+      "provider": "InsightVM",
+      "log_type": "finding",
+      "alert_id": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1182:apache-httpd-cve-2026-23918",
+      "title": "Apache HTTPD: CVE-2026-23918: HTTP request smuggling in mod_proxy",
+      "summary": "Running HTTPS service Product HTTPD exists -- Apache HTTPD 2.4.58 Vulnerable version of product HTTPD found -- Apache HTTPD 2.4.58",
+      "status": "same",
+      "confidence": "VULNERABLE_VERS",
+      "alert_category": "Apache,Apache HTTP Server,Web",
+      "vendor_severity": "severe",
+      "severity": "HIGH",
+      "risk_score": 631.08,
+      "updated_time_usec": 1792548097204000,
+      "created_time_usec": 1791338591000000,
+      "first_event_time_usec": 1791338591000000,
+      "last_event_time_usec": 1792548097204000,
+      "destination_address": "192.0.2.41",
+      "target_host_name": "web01.corp.example.com",
+      "destination_mac": "00:50:56:8B:62:45",
+      "destination_port": 443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "vulnerability_id",
+            "value": "apache-httpd-cve-2026-23918"
+          },
+          {
+            "key": "asset_id",
+            "value": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1182"
+          },
+          {
+            "key": "rapid7_region",
+            "value": "au"
+          },
+          {
+            "key": "os",
+            "value": "Ubuntu Linux 22.04"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-2026-23918"
+          },
+          {
+            "key": "cvss_v3_score",
+            "value": "7.5"
+          },
+          {
+            "key": "cvss_v3_vector",
+            "value": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          {
+            "key": "cvss_v2_score",
+            "value": "6.4"
+          },
+          {
+            "key": "severity_score",
+            "value": "7"
+          },
+          {
+            "key": "solution_id",
+            "value": "apache-httpd-upgrade-latest"
+          },
+          {
+            "key": "solution_summary",
+            "value": "Upgrade to the latest version of Apache HTTPD"
+          },
+          {
+            "key": "solution_type",
+            "value": "PATCH"
+          },
+          {
+            "key": "nic",
+            "value": "eth0"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Rapid7 InsightVM",
+      "event_time_usec": 1792552930000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Rapid7",
+      "provider": "InsightVM",
+      "log_type": "finding",
+      "alert_id": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1207:msft-cve-2026-21307",
+      "title": "Microsoft CVE-2026-21307: Remote Desktop Services Remote Code Execution Vulnerability",
+      "summary": "Vulnerable OS: Microsoft Windows Server 2019 Standard Edition 1809 Based on the following 2 results: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion - key exists Termdd.sys version is 10.0.17763.6893",
+      "status": "new",
+      "confidence": "VULNERABLE_EXPL",
+      "alert_category": "Microsoft,Microsoft Windows,Remote Execution,RDP",
+      "vendor_severity": "critical",
+      "severity": "CRITICAL",
+      "risk_score": 982.4,
+      "updated_time_usec": 1792552930000000,
+      "created_time_usec": 1792552930000000,
+      "first_event_time_usec": 1792552930000000,
+      "last_event_time_usec": 1792552930000000,
+      "destination_address": "198.51.100.17",
+      "target_host_name": "rdp-gw02.example.net",
+      "destination_port": 3389,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "vulnerability_id",
+            "value": "msft-cve-2026-21307"
+          },
+          {
+            "key": "asset_id",
+            "value": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1207"
+          },
+          {
+            "key": "rapid7_region",
+            "value": "au"
+          },
+          {
+            "key": "os",
+            "value": "Microsoft Windows Server 2019 Standard Edition 1809"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-2026-21307"
+          },
+          {
+            "key": "cvss_v3_score",
+            "value": "9.8"
+          },
+          {
+            "key": "cvss_v3_vector",
+            "value": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          {
+            "key": "cvss_v2_score",
+            "value": "10.0"
+          },
+          {
+            "key": "severity_score",
+            "value": "10"
+          },
+          {
+            "key": "solution_id",
+            "value": "msft-kb5066586"
+          },
+          {
+            "key": "solution_summary",
+            "value": "Install the October 2026 security update for Windows Server 2019"
+          },
+          {
+            "key": "solution_type",
+            "value": "PATCH"
+          },
+          {
+            "key": "check_id",
+            "value": "msft-cve-2026-21307-kb5066586"
+          },
+          {
+            "key": "exploits",
+            "value": "rdp_rce_cve_2026_21307"
+          },
+          {
+            "key": "malware_kits",
+            "value": "Example Kit"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Rapid7 InsightVM",
+      "event_time_usec": 1792558713000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Rapid7",
+      "provider": "InsightVM",
+      "log_type": "finding",
+      "alert_id": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1215:redhat_linux-cve-2026-31470",
+      "title": "Red Hat: CVE-2026-31470: openssl: denial of service in X.509 name checks",
+      "summary": "Vulnerable OS: Red Hat Enterprise Linux 9.4 openssl-libs 1:3.0.7-27.el9 is installed",
+      "status": "remediated",
+      "confidence": "VULNERABLE_VERS",
+      "alert_category": "Red Hat,Red Hat Linux,OpenSSL,Denial of Service",
+      "vendor_severity": "moderate",
+      "severity": "MEDIUM",
+      "risk_score": 198.6,
+      "updated_time_usec": 1792558713000000,
+      "created_time_usec": 1790744531000000,
+      "first_event_time_usec": 1790744531000000,
+      "last_event_time_usec": 1791953860000000,
+      "closed_time_usec": 1792558713000000,
+      "destination_address": "203.0.113.88",
+      "target_host_name": "db03.corp.example.com",
+      "additional_data": {
+        "record": [
+          {
+            "key": "vulnerability_id",
+            "value": "redhat_linux-cve-2026-31470"
+          },
+          {
+            "key": "asset_id",
+            "value": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1215"
+          },
+          {
+            "key": "rapid7_region",
+            "value": "au"
+          },
+          {
+            "key": "os",
+            "value": "Red Hat Enterprise Linux 9.4"
+          },
+          {
+            "key": "cves",
+            "value": "CVE-2026-31470"
+          },
+          {
+            "key": "cvss_v3_score",
+            "value": "5.9"
+          },
+          {
+            "key": "cvss_v3_vector",
+            "value": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          {
+            "key": "cvss_v2_score",
+            "value": "5.0"
+          },
+          {
+            "key": "severity_score",
+            "value": "5"
+          },
+          {
+            "key": "solution_id",
+            "value": "redhat-upgrade-openssl"
+          },
+          {
+            "key": "solution_summary",
+            "value": "Upgrade openssl"
+          },
+          {
+            "key": "solution_type",
+            "value": "PATCH"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Rapid7 InsightVM",
+      "event_time_usec": 1792564202000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Rapid7",
+      "provider": "InsightVM",
+      "log_type": "finding",
+      "alert_id": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1230:example-viewer-cve-2026-40118",
+      "title": "example-viewer-cve-2026-40118",
+      "summary": "Vulnerable software installed: Example Viewer 4.2.1",
+      "status": "new",
+      "confidence": "VULNERABLE_VERS",
+      "updated_time_usec": 1792564202000000,
+      "created_time_usec": 1792564202000000,
+      "first_event_time_usec": 1792564202000000,
+      "last_event_time_usec": 1792564202000000,
+      "destination_address": "2001:db8:10::25",
+      "additional_data": {
+        "record": [
+          {
+            "key": "vulnerability_id",
+            "value": "example-viewer-cve-2026-40118"
+          },
+          {
+            "key": "asset_id",
+            "value": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1230"
+          },
+          {
+            "key": "rapid7_region",
+            "value": "au"
+          },
+          {
+            "key": "os",
+            "value": "Microsoft Windows 11 Enterprise Edition 24H2"
+          },
+          {
+            "key": "solution_id",
+            "value": "example-viewer-upgrade-latest"
+          },
+          {
+            "key": "solution_summary",
+            "value": "Upgrade to the latest version of Example Viewer"
+          },
+          {
+            "key": "solution_type",
+            "value": "PATCH"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Rapid7 InsightVM",
+      "event_time_usec": 1792552930000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Rapid7",
+      "provider": "InsightVM",
+      "log_type": "finding",
+      "alert_id": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1207:tls-server-cert-expired",
+      "title": "X.509 Server Certificate Is Invalid/Expired",
+      "summary": "The certificate is not valid after Sat, 03 Oct 2026 23:59:59 UTC",
+      "status": "same",
+      "confidence": "VULNERABLE_POTENTIAL",
+      "alert_category": "Network,SSL",
+      "vendor_severity": "low",
+      "severity": "LOW",
+      "risk_score": 0,
+      "updated_time_usec": 1792552930000000,
+      "created_time_usec": 1788319124000000,
+      "first_event_time_usec": 1788319124000000,
+      "last_event_time_usec": 1792552930000000,
+      "destination_address": "198.51.100.17",
+      "target_host_name": "rdp-gw02.example.net",
+      "destination_port": 8443,
+      "protocol": 6,
+      "additional_data": {
+        "record": [
+          {
+            "key": "vulnerability_id",
+            "value": "tls-server-cert-expired"
+          },
+          {
+            "key": "asset_id",
+            "value": "452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1207"
+          },
+          {
+            "key": "rapid7_region",
+            "value": "au"
+          },
+          {
+            "key": "os",
+            "value": "Microsoft Windows Server 2019 Standard Edition 1809"
+          },
+          {
+            "key": "cvss_v2_score",
+            "value": "3.0"
+          },
+          {
+            "key": "severity_score",
+            "value": "3"
+          },
+          {
+            "key": "solution_id",
+            "value": "replace-certificate"
+          },
+          {
+            "key": "solution_summary",
+            "value": "Obtain a new certificate and install it"
+          },
+          {
+            "key": "solution_type",
+            "value": "WORKAROUND"
+          }
+        ]
+      }
+    }
+  }
+]

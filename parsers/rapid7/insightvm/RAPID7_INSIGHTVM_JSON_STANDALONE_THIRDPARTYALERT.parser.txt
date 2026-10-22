@@ -1,0 +1,141 @@
+!SAMPLE={"rapid7_record":"finding","rapid7_region":"au","rapid7_state":"remediated","asset":{"assessed_for_policies":false,"assessed_for_vulnerabilities":true,"critical_vulnerabilities":0,"exploits":0,"host_name":"db03.corp.example.com","id":"452534235-25a7-40a3-9321-28ce0b5cc90e-default-asset-1215","ip":"203.0.113.88","last_assessed_for_vulnerabilities":"2026-10-21T05:10:02.000Z","last_scan_end":"2026-10-21T05:10:02.000Z","last_scan_start":"2026-10-21T04:58:33.000Z","malware_kits":0,"moderate_vulnerabilities":2,"os_description":"Red Hat Enterprise Linux 9.4","os_family":"Linux","os_name":"Linux","os_system_name":"Red Hat Enterprise Linux","os_vendor":"Red Hat","os_version":"9.4","risk_score":812.5,"severe_vulnerabilities":0,"tags":[{"name":"Databases","type":"SITE"}],"total_vulnerabilities":2,"type":"guest"},"finding":{"check_id":null,"first_found":"2026-09-30T05:02:11Z","key":"","last_found":"2026-10-14T04:57:40Z","nic":null,"port":null,"proof":"<p><p>Vulnerable OS: Red Hat Enterprise Linux 9.4</p><ul><li>openssl-libs 1:3.0.7-27.el9 is installed</li></ul></p>","protocol":null,"reintroduced":null,"solution_fix":"<p>Upgrade to the latest version.</p>","solution_id":"redhat-upgrade-openssl","solution_summary":"Upgrade openssl","solution_type":"PATCH","status":"VULNERABLE_VERS","vulnerability_id":"redhat_linux-cve-2026-31470","remediation_date":"2026-10-21T04:58:33Z"},"vulnerability":{"id":"redhat_linux-cve-2026-31470","title":"Red Hat: CVE-2026-31470: openssl: denial of service in X.509 name checks","severity":"moderate","severity_score":5,"risk_score":198.6,"cvss_v2_score":5.0,"cvss_v2_vector":"AV:N/AC:L/Au:N/C:N/I:N/A:P","cvss_v3_score":5.9,"cvss_v3_vector":"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H","cves":"CVE-2026-31470","categories":"Red Hat,Red Hat Linux,OpenSSL,Denial of Service","published":"2026-09-24T00:00:00Z","modified":"2026-10-02T00:00:00Z","added":"2026-09-25T00:00:00Z","denial_of_service":true,"exploits":[],"malware_kits":[]}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"rapid7_record"\s*:\s*"finding"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Rapid7 InsightVM findings from the InsightVM Cloud Integrations API (v4), read by the
+# example bridge in bridges/rapid7-insightvm-findings and posted to HTTP Ingest as JSON lines. Each
+# record is one finding: "rapid7_record": "finding", the region and the state first (new, remediated
+# or same), then the asset, the finding and the vulnerability's definition as Rapid7 returns them.
+# Standalone: every finding to the third-party alert schema. Sophos Fusion has no vulnerability
+# schema for custom parsers, and its schema list puts alerts from sources outside Sophos Fusion in
+# Third Party Alerts.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+a = "$.asset."
+f = "$.finding."
+v = "$.vulnerability."
+
+sensorType$ = "Rapid7 InsightVM"
+vendor$ = "Rapid7"
+provider$ = "InsightVM"
+logType$ = "finding"
+vid = json[f + "vulnerability_id"]
+assetId = json[a + "id"]
+# A finding has no ID of its own: the asset and the vulnerability name it.
+alertId$ = STRING(assetId) + ":" + STRING(vid)
+# The bridge adds the definition's title, unless RAPID7_DEFINITIONS=0.
+vtitle = json[v + "title"]
+title$ = IF vtitle != NULL THEN vtitle ELSE vid
+# The proof is HTML, so its tags become spaces.
+proof = json[f + "proof"]
+proofText = REPLACE_REGEX(REPLACE_REGEX(STRING(proof), `<[^>]*>`, " "), `\s+`, " ")
+summary$ = IF proof != NULL THEN TRIM(proofText) ELSE NULL
+# new (on the asset now, not at the bridge's last run), remediated (gone since then) or same.
+status$ = json["$.rapid7_state"]
+# VULNERABLE_EXPL (an exploit confirmed it), VULNERABLE_VERS (a version check) or VULNERABLE_POTENTIAL.
+confidence$ = json[f + "status"]
+alertCategory$ = json[v + "categories"]
+
+# Rapid7 severities: critical, severe, moderate, low, informational and none.
+sevText = LOWERCASE(STRING(json[v + "severity"]))
+vendorSeverity$ = json[v + "severity"]
+severity$ = "UNKNOWN_SEVERITY"
+severity$ = IF sevText == "informational" OR sevText == "none" THEN "INFO" ELSE severity$
+severity$ = IF sevText == "low" THEN "LOW" ELSE severity$
+severity$ = IF sevText == "moderate" THEN "MEDIUM" ELSE severity$
+severity$ = IF sevText == "severe" THEN "HIGH" ELSE severity$
+severity$ = IF sevText == "critical" THEN "CRITICAL" ELSE severity$
+# Rapid7's Real Risk score of the vulnerability, 0 to 1000.
+riskScore$ = json[v + "risk_score"]
+
+# Rapid7 gives UTC, with or without milliseconds. A remediated finding's time is its remediation
+# date; any other's is when a scan last found it.
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+fixedAt = json[f + "remediation_date"]
+seen = json[f + "last_found"]
+seen = IF seen == NULL THEN json[f + "first_found"] ELSE seen
+seen = IF seen == NULL THEN json[a + "last_assessed_for_vulnerabilities"] ELSE seen
+at = IF fixedAt != NULL THEN fixedAt ELSE seen
+eventTimeUsec$ = DATETIME(at, layout)
+updatedTimeUsec$ = DATETIME(at, layout)
+createdTimeUsec$ = DATETIME(json[f + "first_found"], layout)
+firstEventTimeUsec$ = DATETIME(json[f + "first_found"], layout)
+lastEventTimeUsec$ = DATETIME(json[f + "last_found"], layout)
+closedTimeUsec$ = DATETIME(fixedAt, layout)
+
+# The scanned asset is the target: its address, name and MAC, and the port and protocol of a
+# service finding.
+destinationAddress$ = json[a + "ip"]
+targetHostName$ = json[a + "host_name"]
+destinationMac$ = json[a + "mac"]
+port = STRING(json[f + "port"])
+p = port|^(?P<n>\d{1,5})$
+destinationPort$ = IF p["n"] != "" THEN INT(p["n"], 10) ELSE NULL
+proto = UPPERCASE(STRING(json[f + "protocol"]))
+protocol$ = IF proto == "TCP" THEN 6 ELSE NULL
+protocol$ = IF proto == "UDP" THEN 17 ELSE protocol$
+protocol$ = IF proto == "ICMP" THEN 1 ELSE protocol$
+
+# Keys with no third-party alert field of their own go to additional_data.
+d1.key$ = "vulnerability_id"
+d1.value$ = vid
+d2.key$ = "asset_id"
+d2.value$ = assetId
+d3.key$ = "rapid7_region"
+d3.value$ = json["$.rapid7_region"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [d1, d2, d3]
+d4.key$ = "os"
+d4.value$ = json[a + "os_description"]
+additionalData$.record$ = IF d4.value$ THEN additionalData$.record$ + [d4] ELSE additionalData$.record$
+d5.key$ = "cves"
+d5.value$ = json[v + "cves"]
+additionalData$.record$ = IF d5.value$ THEN additionalData$.record$ + [d5] ELSE additionalData$.record$
+# STRING() drops a number's fraction, so the CVSS scores are read from the record's text, which the
+# bridge writes as compact JSON.
+c3 = originalData$|"cvss_v3_score":(?P<n>\d+(?:\.\d+)?)[,}]
+d6.key$ = "cvss_v3_score"
+d6.value$ = IF c3["n"] != "" THEN c3["n"] ELSE NULL
+additionalData$.record$ = IF d6.value$ THEN additionalData$.record$ + [d6] ELSE additionalData$.record$
+d7.key$ = "cvss_v3_vector"
+d7.value$ = json[v + "cvss_v3_vector"]
+additionalData$.record$ = IF d7.value$ THEN additionalData$.record$ + [d7] ELSE additionalData$.record$
+c2 = originalData$|"cvss_v2_score":(?P<n>\d+(?:\.\d+)?)[,}]
+d8.key$ = "cvss_v2_score"
+d8.value$ = IF c2["n"] != "" THEN c2["n"] ELSE NULL
+additionalData$.record$ = IF d8.value$ THEN additionalData$.record$ + [d8] ELSE additionalData$.record$
+ss = json[v + "severity_score"]
+d9.key$ = "severity_score"
+d9.value$ = IF ss != NULL THEN STRING(ss) ELSE NULL
+additionalData$.record$ = IF d9.value$ THEN additionalData$.record$ + [d9] ELSE additionalData$.record$
+d10.key$ = "solution_id"
+d10.value$ = json[f + "solution_id"]
+additionalData$.record$ = IF d10.value$ THEN additionalData$.record$ + [d10] ELSE additionalData$.record$
+d11.key$ = "solution_summary"
+d11.value$ = json[f + "solution_summary"]
+additionalData$.record$ = IF d11.value$ THEN additionalData$.record$ + [d11] ELSE additionalData$.record$
+d12.key$ = "solution_type"
+d12.value$ = json[f + "solution_type"]
+additionalData$.record$ = IF d12.value$ THEN additionalData$.record$ + [d12] ELSE additionalData$.record$
+d13.key$ = "check_id"
+d13.value$ = json[f + "check_id"]
+additionalData$.record$ = IF d13.value$ THEN additionalData$.record$ + [d13] ELSE additionalData$.record$
+d14.key$ = "nic"
+d14.value$ = json[f + "nic"]
+additionalData$.record$ = IF d14.value$ THEN additionalData$.record$ + [d14] ELSE additionalData$.record$
+d15.key$ = "reintroduced"
+d15.value$ = json[f + "reintroduced"]
+additionalData$.record$ = IF d15.value$ THEN additionalData$.record$ + [d15] ELSE additionalData$.record$
+exploitNames = REPLACE_REGEX(STRING(json[v + "exploits[*].name"]), `[\[\]"]`, "")
+d16.key$ = "exploits"
+d16.value$ = exploitNames
+additionalData$.record$ = IF d16.value$ THEN additionalData$.record$ + [d16] ELSE additionalData$.record$
+kitNames = REPLACE_REGEX(STRING(json[v + "malware_kits[*].name"]), `[\[\]"]`, "")
+d17.key$ = "malware_kits"
+d17.value$ = kitNames
+additionalData$.record$ = IF d17.value$ THEN additionalData$.record$ + [d17] ELSE additionalData$.record$

@@ -1,0 +1,30 @@
+{
+  "vendor": "Rapid7",
+  "product": "InsightVM",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://help.rapid7.com/insightvm/en-us/api/integrations.html",
+    "https://docs.rapid7.com/insight/managing-platform-api-keys/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Search/DataLakeSearch/SchemasLogicalTypes/Schemas/"
+  ],
+  "notes": "InsightVM has no push for findings, so this parser reads the records the example bridge in bridges/rapid7-insightvm-findings pulls from the InsightVM Cloud Integrations API (v4) on the Insight Platform and posts to HTTP Ingest: one JSON record per finding, with \"rapid7_record\", the region and the state first, then the asset, the finding and the vulnerability's definition as Rapid7 returns them. Give the bridge a user key whose InsightVM user has the User role for the sites it should read. Each run sends the findings new on each asset since the last run and those remediated since then; the first run sends each current finding of the assets assessed in the lookback, as same. Sophos Fusion has no vulnerability schema for custom parsers (its Tenable integration fills the Vulnerabilities tab of a detection, which a custom parser can't write), so each finding goes to Thirdparty, the schema the Sophos Fusion schema list gives alerts from sources outside Sophos Fusion: the definition's title as the title (the vulnerability ID when the bridge runs with RAPID7_DEFINITIONS=0), the proof with its HTML tags taken out as the summary, the asset and vulnerability IDs as alert_id, the state (new, remediated or same) as the status, the finding's status (such as VULNERABLE_EXPL) as confidence, the categories, critical, severe, moderate, low and informational as critical, high, medium, low and info, the Real Risk score as risk_score, the asset's address, name and MAC, the port and protocol, and the found and remediation times. A remediated finding's event time is its remediation date; any other's is when a scan last found it. The vulnerability and asset IDs, OS, CVEs, CVSS scores, severity score, solution, check ID, NIC, exploits and malware kits go to additional_data. The CVSS scores are read from the record's text, because STRING() drops a number's fraction. Samples are made up in the shapes of the asset and vulnerability examples in Rapid7's v4 API reference. Passed Run Test in a lab tenant on 2026-10-22 (107 of 107 fields matched the emulator in each of 3 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT",
+      "file": "RAPID7_INSIGHTVM_JSON_STANDALONE_THIRDPARTYALERT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ],
+  "bridge": "bridges/rapid7-insightvm-findings"
+}
