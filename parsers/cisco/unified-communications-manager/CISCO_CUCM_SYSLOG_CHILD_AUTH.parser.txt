@@ -1,0 +1,180 @@
+!SAMPLE=<188>8105: cucm-pub.example.com: Oct 15 2026 14:13:40.007 UTC :  %UC_LOGIN-4-AuthenticationFailed: %[LoginFrom=203.0.113.50][TimeStamp=Thu Oct 15 14:13:40 UTC 2026][UserID=administrator][Interface=Cisco CallManager Administration][AppID=Cisco Tomcat][ClusterID=StandAloneCluster][NodeID=cucm-pub]: Login Authentication failed.
+!PARENT=Cisco_IOS_Master
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=%UC_LOGIN-\d-(?:AuthenticationFailed|AuthenticationSucceeded|PlatformAdminAccountLocked)\s?:\s*%\[|%UC_CALLMANAGER-\d-DeviceTransientConnection\s?:\s*%\[.*\[\s*Reason\s*[=]\s*(?:2|3|4|10|11|17|28|35)\s*\]|%UC_AUDITLOG-\d-(?:Administrative|Security|Critical)Event\s?:\s*%\[.*\[\s*EventType\s*[=]\s*UserLogging\s*\]
+!SCHEMA=scwx.auth
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Cisco Unified Communications Manager (CUCM) remote syslog, alarms and audit events:
+#   [<PRI>]<seq>: [<host>:] <Mon> <dd> [<yyyy>] <hh:mm:ss>[ AM|PM][.mmm] [<zone>] :  %<FACILITY>-<sev>-<name>: %[Key=value]...: <text>
+# Older releases pad the keys ("[ UserID =x]") and write App ID, Cluster ID and Node ID with spaces.
+# The UC_LOGIN keys are LoginFrom, UserID and Interface in Cisco's alarm catalog, and Login IP
+# Address/Hostname, Login UserID and Login Interface in older releases; both are read.
+# Child of the global parser Cisco_IOS_Master, which claims CUCM's lines and leaves them without a
+# schema. In Sophos Fusion, turn on Set Global Parent in Parser Script. The parser reads the whole
+# line itself, not the parent's variables.
+# To Auth:
+#   %UC_LOGIN-4-AuthenticationFailed and %UC_LOGIN-6-AuthenticationSucceeded: sign-ins to the web
+#     pages, the AXL API (Interface Apache-Axis2) and the other interfaces, with the address.
+#   %UC_LOGIN-4-PlatformAdminAccountLocked: a platform account locked after failed sign-ins.
+#   %UC_CALLMANAGER-*-DeviceTransientConnection with a Reason that points at a device that isn't
+#     allowed or failed to authenticate: 2 and 3 (not in the database), 4 (no Authorization header
+#     after a 401), 10 (TLS or SIP digest authentication failed), 11 (X.509 name mismatch),
+#     17 (a device with the same name is already registered), 28 (security mismatch) and
+#     35 (authorization error). Other reasons, such as 6 (connectivity), stay with the parent.
+#   %UC_AUDITLOG-*-*Event audit events of the UserLogging type: sign-ins and sign-outs.
+
+line = originalData$
+hdr = line|(?P<mon>[A-Z][a-z]{2})\s+(?P<day>\d{1,2})\s+(?:(?P<yr>\d{4})\s+)?(?P<hms>\d{1,2}:\d{2}:\d{2})(?:\s+(?P<ap>[AP]M))?(?:\.(?P<frac>\d+))?(?:\s+(?P<tz>[A-Za-z]{2,5}))?\s*:\s+%(?P<fac>UC_[A-Z0-9_]+)-(?P<sev>\d)-(?P<mn>[A-Za-z0-9_]+)\s?:
+fac = STRING(hdr["fac"])
+mn = STRING(hdr["mn"])
+host = line|^(?:<\d{1,3}>)?\s*\d+:\s+(?P<h>[A-Za-z0-9][A-Za-z0-9._-]*):\s+[A-Z][a-z]{2}\s
+
+sensorType$ = "Cisco Unified CM"
+sensorEventId$ = fac + "-" + STRING(hdr["sev"]) + "-" + mn
+authSystem$ = "Cisco Unified CM"
+
+# The time, read as UTC, which CUCM writes. A time in another zone keeps the ingest time. A time
+# without the year is read to the second.
+zone = UPPERCASE(STRING(hdr["tz"]))
+utc = zone == "" OR zone == "UTC" OR zone == "GMT"
+frac = IF hdr["frac"] != "" THEN "." + hdr["frac"] ELSE ""
+ap = IF hdr["ap"] != "" THEN " " + hdr["ap"] ELSE ""
+clock = STRING(hdr["mon"]) + " " + STRING(hdr["day"]) + " " + STRING(hdr["yr"]) + " " + STRING(hdr["hms"]) + frac + ap
+short = STRING(hdr["mon"]) + " " + STRING(hdr["day"]) + " " + STRING(hdr["hms"]) + frac + ap
+layout = IF hdr["ap"] != "" THEN "03:04:05 PM" ELSE "15:04:05"
+eventTimeUsec$ = IF utc AND hdr["yr"] != "" THEN DATETIME(clock, "Jan _2 2006 " + layout) ELSE eventTimeUsec$
+eventTimeUsec$ = IF utc AND hdr["yr"] == "" AND hdr["hms"] != "" THEN DATETIME(short, "Jan _2 " + layout, TRUE) ELSE eventTimeUsec$
+
+# The bracketed values, with or without spaces around the key.
+kUser = line|\[\s*(?:Login\s)?UserID\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kFrom = line|\[\s*(?:LoginFrom|Login IP Address/Hostname)\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kIf = line|\[\s*(?:Login\s)?Interface\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kApp = line|\[\s*App\s?ID\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kCluster = line|\[\s*Cluster\s?ID\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kNode = line|\[\s*Node\s?ID\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kClient = line|\[\s*ClientAddress\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kStatus = line|\[\s*EventStatus\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kRes = line|\[\s*ResourceAccessed\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kComp = line|\[\s*ComponentID\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kDetails = line|\[\s*AuditDetails\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kCat = line|\[\s*AuditCategory\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kUnlock = line|\[\s*UnlockTime\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kCount = line|\[\s*FailedLoginCount\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kIp = line|\[\s*IPAddress\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kIp6 = line|\[\s*IPV6Address\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kDev = line|\[\s*DeviceName\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kMac = line|\[\s*MACAddress\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kDevType = line|\[\s*DeviceType\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kProto = line|\[\s*Protocol\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+kReason = line|\[\s*Reason\s*[=]\s*(?P<v>\d+)\s*\]
+kPort = line|\[\s*ConnectingPort\s*[=]\s*(?P<v>\d+)\s*\]
+kSip = line|\[\s*SIPUser\s*[=]\s*(?P<v>[^\]]*?)\s*\]
+
+login = mn == "AuthenticationFailed" OR mn == "AuthenticationSucceeded"
+locked = mn == "PlatformAdminAccountLocked"
+device = mn == "DeviceTransientConnection"
+audit = fac == "UC_AUDITLOG"
+
+node = STRING(kNode["v"])
+hname = STRING(host["h"])
+hostId$ = IF node != "" THEN node ELSE NULL
+hostId$ = IF hostId$ == NULL AND hname != "" THEN hname ELSE hostId$
+targetHostName$ = hostId$
+applicationName$ = IF kApp["v"] != "" THEN kApp["v"] ELSE NULL
+
+# A sign-in or audit event names the account; a device names its SIP digest user or, without one,
+# the device.
+user = STRING(kUser["v"])
+sip = STRING(kSip["v"])
+dev = STRING(kDev["v"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+targetUserName$ = IF device AND sip != "" THEN sip ELSE targetUserName$
+targetUserName$ = IF device AND sip == "" AND dev != "" THEN dev ELSE targetUserName$
+
+src = STRING(kFrom["v"])
+src = IF src == "" THEN STRING(kClient["v"]) ELSE src
+src = IF src == "" THEN STRING(kIp["v"]) ELSE src
+src = IF src == "" THEN STRING(kIp6["v"]) ELSE src
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+
+# The interface signed in to: Cisco CallManager Administration, Cisco Unified OS Administration,
+# Apache-Axis2 (the AXL API) and others for UC_LOGIN; the resource for an audit event; SIP or SCCP
+# for a device.
+via = STRING(kIf["v"])
+via = IF via == "" THEN STRING(kRes["v"]) ELSE via
+via = IF via == "" THEN STRING(kProto["v"]) ELSE via
+logonApplicationFamily$ = IF via != "" THEN via ELSE NULL
+targetPortNumber$ = IF kPort["v"] != "" THEN INT(kPort["v"], 10) ELSE NULL
+status = STRING(kStatus["v"])
+status$ = IF status != "" THEN status ELSE NULL
+
+# An audit event's status is Success or Failure. Its details tell a sign-in ("Successfully Logged
+# into Cisco Unified CM Admin Webpages", or "Failed to Log into ...") from a sign-out ("Successfully
+# Logged out Cisco Unified Administration Web Pages").
+details = STRING(kDetails["v"])
+ld = LOWERCASE(details)
+loggedOut = audit AND (CONTAINS(ld, "logout") OR CONTAINS(ld, "logged out") OR CONTAINS(ld, "log out") OR CONTAINS(ld, "logoff") OR CONTAINS(ld, "signed out"))
+ls = LOWERCASE(status)
+failed = mn == "AuthenticationFailed" OR device OR (audit AND (CONTAINS(ls, "fail") OR CONTAINS(ls, "denied") OR CONTAINS(ld, "fail")))
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF loggedOut THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF locked THEN "ACCOUNT_LOCK" ELSE authCategory$
+action$ = IF failed THEN "FAILURE" ELSE "LOGON"
+action$ = IF loggedOut AND NOT failed THEN "LOGOFF" ELSE action$
+action$ = IF locked THEN "ACCOUNT" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+actionResult$ = IF locked THEN NULL ELSE actionResult$
+failureCategory$ = IF locked THEN "ACCOUNT_LOCKED_OUT" ELSE NULL
+
+# Device registration reasons from Cisco's alarm catalog.
+reason = STRING(kReason["v"])
+why = ""
+why = IF reason == "2" THEN "NoEntryInDatabase" ELSE why
+why = IF reason == "3" THEN "DatabaseConfigurationError" ELSE why
+why = IF reason == "4" THEN "DeviceNameUnresolveable" ELSE why
+why = IF reason == "10" THEN "AuthenticationError" ELSE why
+why = IF reason == "11" THEN "InvalidX509NameInCertificate" ELSE why
+why = IF reason == "17" THEN "AuthenticatedDeviceAlreadyExists" ELSE why
+why = IF reason == "28" THEN "SecurityMismatch" ELSE why
+why = IF reason == "35" THEN "AuthorizationError" ELSE why
+failureCategory$ = IF device AND reason == "10" THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF device AND (reason == "2" OR reason == "3") THEN "INVALID_ACCOUNT" ELSE failureCategory$
+failureCategory$ = IF device AND failureCategory$ == NULL THEN "OTHER_ERROR" ELSE failureCategory$
+extraFailurereason$ = IF device AND why != "" THEN why ELSE NULL
+extraFailurereason$ = IF audit AND failed AND details != "" THEN details ELSE extraFailurereason$
+
+m1.key$ = "cluster_id"
+m1.value$ = kCluster["v"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF kCluster["v"] != "" THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+m2.key$ = "audit_details"
+m2.value$ = details
+eventMetadata$.record$ = IF details != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "component"
+m3.value$ = kComp["v"]
+eventMetadata$.record$ = IF kComp["v"] != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "audit_category"
+m4.value$ = kCat["v"]
+eventMetadata$.record$ = IF kCat["v"] != "" THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "unlock_time_seconds"
+m5.value$ = kUnlock["v"]
+eventMetadata$.record$ = IF kUnlock["v"] != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "failed_login_count"
+m6.value$ = kCount["v"]
+eventMetadata$.record$ = IF kCount["v"] != "" THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+m7.key$ = "reason"
+m7.value$ = reason
+eventMetadata$.record$ = IF reason != "" THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "device_name"
+m8.value$ = dev
+eventMetadata$.record$ = IF device AND dev != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+m9.key$ = "mac_address"
+m9.value$ = kMac["v"]
+eventMetadata$.record$ = IF kMac["v"] != "" THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+m10.key$ = "device_type"
+m10.value$ = kDevType["v"]
+eventMetadata$.record$ = IF kDevType["v"] != "" THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
