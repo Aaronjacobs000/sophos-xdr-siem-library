@@ -1,0 +1,26 @@
+!SAMPLE={"genesys_record":"audit","id":"7c8d9e0f-1a2b-4c3d-8e4f-000000000001","userHomeOrgId":"6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e","user":{"id":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","name":"Pat Example","selfUri":"/api/v2/users/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"},"client":{"id":""},"remoteIp":["203.0.113.10"],"serviceName":"PeoplePermissions","level":"USER","eventDate":"2026-10-20T22:01:05.123Z","message":{"localizableMessageCode":"USER_AUTHENTICATION_SUCCESS","message":"successful authentication by user","messageWithParams":"","messageParams":{}},"action":"Authenticate","entity":{"id":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","name":"pat@example.com"},"entityType":"AuthUser","status":"SUCCESS","application":"","initiatingAction":{},"transactionInitiator":true,"propertyChanges":[],"context":{},"entityChanges":[]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"genesys_record"\s*:\s*"audit"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Genesys Cloud CX audit events (AuditLogMessage) from the Audit API's asynchronous query,
+# pulled by the example bridge in bridges/genesys-cloud-audit-logs and posted to HTTP Ingest as JSON
+# lines. The bridge puts "genesys_record": "audit" first.
+# Parent: hands sign-ins, failed sign-ins, password changes and SAML sign-outs (the AuthUser and
+# UserSamlAuthentication entity types) to the Auth child, and every other event to the CloudAudit child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to both children.
+sensorType$ = "Genesys Cloud"
+sensorEventId$ = json["$.id"]
+# eventDate is ISO 8601 in UTC, such as 2026-10-20T22:01:05Z or 2026-10-20T22:01:05.123Z.
+eventTimeUsec$ = DATETIME(json["$.eventDate"], "2006-01-02T15:04:05.999999999Z07:00")
+etype = json["$.entityType"]
+act = json["$.action"]
+signin = etype == "AuthUser" OR etype == "UserSamlAuthentication"
+eventType$ = IF signin THEN "auth" ELSE "audit"

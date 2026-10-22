@@ -1,0 +1,73 @@
+!SAMPLE={"genesys_record":"audit","id":"7c8d9e0f-1a2b-4c3d-8e4f-000000000006","userHomeOrgId":"6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e","user":{"id":"2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e","name":"Sam Admin","selfUri":"/api/v2/users/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e"},"client":{"id":""},"remoteIp":["203.0.113.40"],"serviceName":"PeoplePermissions","level":"USER","eventDate":"2026-10-20T22:31:09Z","message":{"localizableMessageCode":"","message":"","messageWithParams":"","messageParams":{}},"action":"Create","entity":{"id":"00000000-0000-4000-8000-000000000042","name":"Reporting export"},"entityType":"OAuthClient","status":"SUCCESS","application":"","initiatingAction":{},"transactionInitiator":true,"propertyChanges":[{"property":"name","oldValues":[""],"newValues":["Reporting export"]},{"property":"authorizedGrantType","oldValues":[""],"newValues":["CLIENT-CREDENTIALS"]}],"context":{},"entityChanges":[]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: every other Genesys Cloud audit event: OAuth clients and access tokens, roles and
+# permissions, identity providers, users, queues, trunks, phone numbers, recordings, integrations and
+# the rest of the services in Genesys's Action Catalog.
+# Child of GENESYS_CLOUD_AUDIT_JSON_PARENT: each one to CloudAudit, with the action as the event name,
+# the service as the event type, the entity as the resource and the OAuth client as the access key.
+# The first two property changes go to the request parameters with their new values, and their old
+# values to the additional data. Read, View, Download and Export are read-only data events; every
+# other action is a management event.
+# json, etype, act, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+eventSource$ = "Genesys Cloud"
+eventName$ = act
+eventType$ = json["$.serviceName"]
+uname = json["$.user.name"]
+uid = json["$.user.id"]
+userName$ = IF uname THEN uname ELSE uid
+userId$ = uid
+cid = json["$.client.id"]
+accessKey$ = IF cid THEN cid ELSE NULL
+sourceAddress$ = json["$.remoteIp[0]"]
+org = json["$.userHomeOrgId"]
+recipientAccountId$ = org
+st = json["$.status"]
+status$ = st
+errorMessage$ = IF st == "FAILURE" THEN json["$.message.message"] ELSE NULL
+entityName = json["$.entity.name"]
+targetUserName$ = IF etype == "User" THEN entityName ELSE NULL
+readOnly$ = act == "Read" OR act == "View" OR act == "Download" OR act == "Export"
+managementEvent$ = NOT readOnly$
+
+r1.resourceId$ = json["$.entity.id"]
+r1.resourceType$ = etype
+r1.resourceAccountId$ = org
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+p1.key$ = json["$.propertyChanges[0].property"]
+p1.value$ = json["$.propertyChanges[0].newValues[0]"]
+p2.key$ = json["$.propertyChanges[1].property"]
+p2.value$ = json["$.propertyChanges[1].newValues[0]"]
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF p1.key$ THEN requestParameters$.record$ + [p1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF p2.key$ THEN requestParameters$.record$ + [p2] ELSE requestParameters$.record$
+
+d1.key$ = "entity_name"
+d1.value$ = entityName
+d2.key$ = "message"
+d2.value$ = json["$.message.message"]
+d3.key$ = "level"
+d3.value$ = json["$.level"]
+d4.key$ = "application"
+d4.value$ = json["$.application"]
+o1.key$ = STRING(p1.key$) + " (old)"
+o1.value$ = json["$.propertyChanges[0].oldValues[0]"]
+o2.key$ = STRING(p2.key$) + " (old)"
+o2.value$ = json["$.propertyChanges[1].oldValues[0]"]
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF o1.value$ THEN additionalEventData$.record$ + [o1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF o2.value$ THEN additionalEventData$.record$ + [o2] ELSE additionalEventData$.record$

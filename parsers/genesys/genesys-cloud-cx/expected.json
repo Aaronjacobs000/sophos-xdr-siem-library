@@ -1,0 +1,493 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792533665123000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000001",
+      "auth_system": "Genesys Cloud",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "status": "SUCCESS",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entity_type",
+            "value": "AuthUser"
+          },
+          {
+            "key": "action",
+            "value": "Authenticate"
+          },
+          {
+            "key": "user_id",
+            "value": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          },
+          {
+            "key": "message",
+            "value": "successful authentication by user"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          },
+          {
+            "key": "org_id",
+            "value": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792533881000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000002",
+      "auth_system": "Genesys Cloud",
+      "target_user_name": "pat@example.com",
+      "source_address": "198.51.100.77",
+      "status": "FAILURE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entity_type",
+            "value": "AuthUser"
+          },
+          {
+            "key": "action",
+            "value": "AuthenticationFailed"
+          },
+          {
+            "key": "message",
+            "value": "failed authentication by user"
+          },
+          {
+            "key": "level",
+            "value": "SYSTEM"
+          },
+          {
+            "key": "org_id",
+            "value": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792534213000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000003",
+      "auth_system": "Genesys Cloud",
+      "target_user_name": "lee@example.com",
+      "source_address": "203.0.113.25",
+      "status": "SUCCESS",
+      "logon_application_family": "SAML",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entity_type",
+            "value": "UserSamlAuthentication"
+          },
+          {
+            "key": "action",
+            "value": "Authenticate"
+          },
+          {
+            "key": "message",
+            "value": "successful SAML authentication by user"
+          },
+          {
+            "key": "level",
+            "value": "SYSTEM"
+          },
+          {
+            "key": "org_id",
+            "value": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+          },
+          {
+            "key": "correlation_id",
+            "value": "c0ffee00-1111-4222-8333-444455556666"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792539000000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000004",
+      "auth_system": "Genesys Cloud",
+      "target_user_name": "lee@example.com",
+      "status": "SUCCESS",
+      "logon_application_family": "SAML",
+      "auth_category": "ACCOUNT_LOGOFF",
+      "action": "LOGOFF",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entity_type",
+            "value": "UserSamlAuthentication"
+          },
+          {
+            "key": "action",
+            "value": "SingleLogout"
+          },
+          {
+            "key": "message",
+            "value": "successful single logout request by user"
+          },
+          {
+            "key": "level",
+            "value": "SYSTEM"
+          },
+          {
+            "key": "org_id",
+            "value": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+          },
+          {
+            "key": "correlation_id",
+            "value": "c0ffee00-7777-4888-9999-aaaabbbbcccc"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792534831000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000005",
+      "auth_system": "Genesys Cloud",
+      "target_user_name": "pat@example.com",
+      "user_display_name": "Pat Example",
+      "source_address": "203.0.113.10",
+      "status": "SUCCESS",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "entity_type",
+            "value": "AuthUser"
+          },
+          {
+            "key": "action",
+            "value": "ChangePassword"
+          },
+          {
+            "key": "user_id",
+            "value": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          },
+          {
+            "key": "org_id",
+            "value": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792535469000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000006",
+      "event_type": "PeoplePermissions",
+      "event_source": "Genesys Cloud",
+      "event_name": "Create",
+      "user_name": "Sam Admin",
+      "user_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "source_address": "203.0.113.40",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "00000000-0000-4000-8000-000000000042",
+          "resource_type": "OAuthClient",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "name",
+            "value": "Reporting export"
+          },
+          {
+            "key": "authorizedGrantType",
+            "value": "CLIENT-CREDENTIALS"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "Reporting export"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792535627000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000007",
+      "event_type": "PeoplePermissions",
+      "event_source": "Genesys Cloud",
+      "event_name": "Create",
+      "user_name": "Sam Admin",
+      "user_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "access_key": "00000000-0000-4000-8000-000000000042",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "Ex4mpleT0kenEntityId01",
+          "resource_type": "AccessToken",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "level",
+            "value": "USER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792536002000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000008",
+      "event_type": "PeoplePermissions",
+      "event_source": "Genesys Cloud",
+      "event_name": "MemberAdd",
+      "user_name": "Sam Admin",
+      "user_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "source_address": "203.0.113.40",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "4d5e6f7a-8b9c-4d0e-9f1a-3b4c5d6e7f8a",
+          "resource_type": "Role",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "members",
+            "value": "user:1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "Master Admin"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792536738000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-000000000009",
+      "event_type": "Telephony",
+      "event_source": "Genesys Cloud",
+      "event_name": "Update",
+      "user_name": "Sam Admin",
+      "user_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "source_address": "203.0.113.40",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "5e6f7a8b-9c0d-4e1f-8a2b-4c5d6e7f8a9b",
+          "resource_type": "Trunk",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "outboundCallingRestriction",
+            "value": "INTERNATIONAL"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "BYOC Carrier trunk"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          },
+          {
+            "key": "outboundCallingRestriction (old)",
+            "value": "DOMESTIC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792537544000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-00000000000a",
+      "event_type": "Quality",
+      "event_source": "Genesys Cloud",
+      "event_name": "Download",
+      "user_name": "Pat Example",
+      "user_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "source_address": "203.0.113.10",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "read_only": true,
+      "management_event": false,
+      "resources": [
+        {
+          "resource_id": "6f7a8b9c-0d1e-4f2a-9b3c-5d6e7f8a9b0c",
+          "resource_type": "Recording",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "level",
+            "value": "USER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "GENESYS_CLOUD_AUDIT_JSON_PARENT > GENESYS_CLOUD_AUDIT_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Genesys Cloud",
+      "event_time_usec": 1792537946000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7c8d9e0f-1a2b-4c3d-8e4f-00000000000b",
+      "event_type": "Directory",
+      "event_source": "Genesys Cloud",
+      "event_name": "Delete",
+      "user_name": "Sam Admin",
+      "user_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "source_address": "203.0.113.40",
+      "recipient_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e",
+      "status": "SUCCESS",
+      "target_user_name": "Former Staff",
+      "read_only": false,
+      "management_event": true,
+      "resources": [
+        {
+          "resource_id": "7a8b9c0d-1e2f-4a3b-8c4d-6e7f8a9b0c1d",
+          "resource_type": "User",
+          "resource_account_id": "6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "entity_name",
+            "value": "Former Staff"
+          },
+          {
+            "key": "level",
+            "value": "USER"
+          }
+        ]
+      }
+    }
+  }
+]

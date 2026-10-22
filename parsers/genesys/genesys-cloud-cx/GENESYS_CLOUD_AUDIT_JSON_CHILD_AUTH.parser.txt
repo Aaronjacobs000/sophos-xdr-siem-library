@@ -1,0 +1,64 @@
+!SAMPLE={"genesys_record":"audit","id":"7c8d9e0f-1a2b-4c3d-8e4f-000000000001","userHomeOrgId":"6b5f4c3d-2e1a-4b9c-8d7e-0f1a2b3c4d5e","user":{"id":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","name":"Pat Example","selfUri":"/api/v2/users/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"},"client":{"id":""},"remoteIp":["203.0.113.10"],"serviceName":"PeoplePermissions","level":"USER","eventDate":"2026-10-20T22:01:05.123Z","message":{"localizableMessageCode":"USER_AUTHENTICATION_SUCCESS","message":"successful authentication by user","messageWithParams":"","messageParams":{}},"action":"Authenticate","entity":{"id":"1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d","name":"pat@example.com"},"entityType":"AuthUser","status":"SUCCESS","application":"","initiatingAction":{},"transactionInitiator":true,"propertyChanges":[],"context":{},"entityChanges":[]}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Genesys Cloud audit events for the AuthUser and UserSamlAuthentication entity types: sign-ins
+# (Authenticate), failed sign-ins (AuthenticationFailed), password changes (ChangePassword) and SAML
+# sign-outs (SingleLogout, SingleLogoutFailed). The asynchronous query returns successful sign-ins;
+# the real-time query doesn't.
+# Child of GENESYS_CLOUD_AUDIT_JSON_PARENT: each one to Auth. The entity's name (the email address on a
+# SAML sign-in, where user is empty) is the target user, else the user's name, else the user's ID.
+# remoteIp lists the systems that originated or handled the request; the first is the source.
+# json, etype, act, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Genesys Cloud"
+entityName = json["$.entity.name"]
+uname = json["$.user.name"]
+targetUserName$ = IF entityName THEN entityName ELSE uname
+targetUserName$ = IF targetUserName$ THEN targetUserName$ ELSE json["$.user.id"]
+userDisplayName$ = uname
+sourceAddress$ = json["$.remoteIp[0]"]
+st = json["$.status"]
+status$ = st
+saml = etype == "UserSamlAuthentication"
+logonApplicationFamily$ = IF saml THEN "SAML" ELSE NULL
+
+logout = act == "SingleLogout" OR act == "SingleLogoutFailed"
+password = act == "ChangePassword"
+failed = st == "FAILURE" OR act == "AuthenticationFailed" OR act == "SingleLogoutFailed"
+signinFailed = failed AND NOT logout AND NOT password
+authCategory$ = IF logout THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+authCategory$ = IF password THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF logout THEN "LOGOFF" ELSE "LOGON"
+action$ = IF password THEN "ACCOUNT" ELSE action$
+action$ = IF signinFailed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+# The audit event gives no reason for a failed sign-in.
+failureCategory$ = IF signinFailed THEN "OTHER_ERROR" ELSE NULL
+
+m1.key$ = "entity_type"
+m1.value$ = etype
+m2.key$ = "action"
+m2.value$ = act
+m3.key$ = "user_id"
+m3.value$ = json["$.user.id"]
+m4.key$ = "message"
+m4.value$ = json["$.message.message"]
+m5.key$ = "level"
+m5.value$ = json["$.level"]
+m6.key$ = "org_id"
+m6.value$ = json["$.userHomeOrgId"]
+m7.key$ = "correlation_id"
+m7.value$ = json["$.context.correlation_id"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
