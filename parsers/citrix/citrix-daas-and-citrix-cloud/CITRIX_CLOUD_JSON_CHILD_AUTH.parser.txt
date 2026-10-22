@@ -1,0 +1,68 @@
+!SAMPLE={"citrix_record":"connection","citrix_customer_id":"exampleco1x2y","Id":408601,"ClientName":"LAPTOP-07","ClientAddress":"198.51.100.44","ClientVersion":"24.9.10.28","ClientPlatform":"Windows","ConnectedViaHostName":null,"ConnectedViaIPAddress":"192.0.2.36","LaunchedViaHostName":"Workspace","LaunchedViaIPAddress":null,"IsReconnect":false,"IsSecureIca":false,"Protocol":"HDX","LogOnStartDate":"2026-10-20T07:12:40.110Z","LogOnEndDate":"2026-10-20T07:12:53.133Z","DisconnectCode":0,"DisconnectDate":null,"SessionKey":"00000000-0000-4000-8000-000000000101","CreatedDate":"2026-10-20T07:12:53.133Z","ModifiedDate":"2026-10-20T07:12:53.133Z","Session":{"SessionKey":"00000000-0000-4000-8000-000000000101","StartDate":"2026-10-20T07:12:40.110Z","LogOnDuration":13023,"EndDate":null,"ExitCode":null,"FailureId":null,"FailureDate":null,"ConnectionState":5,"LifecycleState":0,"UserId":1505,"MachineId":"7ff93079-914a-4e6e-b9fe-5ce6e7578684","SessionType":0,"IsAnonymous":false,"CreatedDate":"2026-10-20T07:12:53.133Z","ModifiedDate":"2026-10-20T07:12:53.133Z","User":{"Id":1505,"Sid":"S-1-5-21-1004336348-1177238915-682003330-1105","Upn":"akim@example.com","UserName":"akim","FullName":"Alex Kim","Domain":"EXAMPLE"},"Machine":{"Id":"7ff93079-914a-4e6e-b9fe-5ce6e7578684","Name":"EXAMPLE\\VDA-FIN-01","DnsName":"vda-fin-01.corp.example.com","DesktopGroupId":"b62f4949-0756-4a1e-94d9-e70cdfd0a198","IsInMaintenanceMode":false}}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="connection"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Citrix DaaS Monitor connections from the example bridge: each connection to a virtual app
+# or desktop session, sent once when Monitor records it, with its session, user and machine.
+# Child of CITRIX_CLOUD_JSON_PARENT: each one to Auth, as a remote interactive logon, with the
+# user, the client's address and name, and the machine the session runs on.
+# json, customer, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+upn = json["$.Session.User.Upn"]
+name = json["$.Session.User.UserName"]
+targetUserName$ = IF upn THEN upn ELSE name
+targetDomainName$ = json["$.Session.User.Domain"]
+userDisplayName$ = json["$.Session.User.FullName"]
+extraSamaccountname$ = name
+extraUserprincipalname$ = upn
+sourceAddress$ = json["$.ClientAddress"]
+extraWorkstationname$ = json["$.ClientName"]
+dns = json["$.Session.Machine.DnsName"]
+targetHostName$ = IF dns THEN dns ELSE json["$.Session.Machine.Name"]
+sessionId$ = json["$.SessionKey"]
+authSystem$ = "Citrix DaaS"
+applicationName$ = json["$.LaunchedViaHostName"]
+logonApplicationFamily$ = json["$.Protocol"]
+
+# Monitor records a connection once the session is brokered, so each one is a logon that worked.
+authCategory$ = "ACCOUNT_LOGON"
+action$ = "LOGON"
+actionResult$ = "SUCCESS"
+logonType$ = "REMOTEINTERACTIVE"
+
+m1.key$ = "customer_id"
+m1.value$ = customer
+m2.key$ = "connection_id"
+m2.value$ = STRING(json["$.Id"])
+m3.key$ = "client_platform"
+m3.value$ = json["$.ClientPlatform"]
+m4.key$ = "client_version"
+m4.value$ = json["$.ClientVersion"]
+m5.key$ = "reconnect"
+m5.value$ = STRING(json["$.IsReconnect"])
+m6.key$ = "connected_via"
+m6.value$ = json["$.ConnectedViaIPAddress"]
+m7.key$ = "gateway"
+m7.value$ = json["$.ConnectedViaHostName"]
+m8.key$ = "logon_end"
+m8.value$ = json["$.LogOnEndDate"]
+m9.key$ = "delivery_group_id"
+m9.value$ = json["$.Session.Machine.DesktopGroupId"]
+m10.key$ = "user_sid"
+m10.value$ = json["$.Session.User.Sid"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ != "" THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$

@@ -1,0 +1,38 @@
+!SAMPLE={"citrix_record":"configlog","citrix_customer_id":"exampleco1x2y","citrix_site_id":"3061173e-0a1b-4c2d-8e3f-405162738495","Id":"0d96ecf1-4c73-4a0c-9476-000000000004","AdminMachineIP":"192.0.2.15","EndTime":"10/20/2026 : 4:05:31 AM","FormattedEndTime":"2026-10-20T04:05:31Z","IsSuccessful":true,"OperationType":"ConfigurationChange","Parameters":[{"Name":"Name","Value":"Finance Desktops"},{"Name":"DesktopKind","Value":"Shared"},{"Name":"SessionSupport","Value":"MultiSession"}],"Source":"Studio","StartTime":"10/20/2026 : 4:05:29 AM","FormattedStartTime":"2026-10-20T04:05:29Z","TargetTypes":["DesktopGroup"],"Text":"Create Delivery Group 'Finance Desktops'","User":"EXAMPLE\\akim","UserIdentity":"S-1-5-21-1004336348-1177238915-682003330-1105","Labels":[],"Metadata":[]}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"citrix_record"\s*:\s*"(?:systemlog|configlog|connection)"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Citrix Cloud System Log records, Citrix DaaS Configuration Logging operations and Citrix
+# DaaS Monitor connections, pulled from the Citrix Cloud APIs by the example bridge in
+# bridges/citrix-cloud-logs and posted to HTTP Ingest as JSON lines, with "citrix_record" and
+# "citrix_customer_id" first.
+# Parent: hands System Log records and Configuration Logging operations to their CloudAudit
+# children, and connections to the Auth child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+kind = json["$.citrix_record"]
+customer = json["$.citrix_customer_id"]
+sensorType$ = IF kind == "systemlog" THEN "Citrix Cloud" ELSE "Citrix DaaS"
+layout = "2006-01-02T15:04:05.999999999Z07:00"
+
+# System Log gives UtcTimestamp; an operation FormattedStartTime (RFC 3339) and StartTime, such as
+# 10/20/2026 : 4:05:29 AM, in UTC since the bridge asks for it; a connection LogOnStartDate, or
+# CreatedDate for a reconnection.
+t = json["$.UtcTimestamp"]
+t = IF t THEN t ELSE json["$.FormattedStartTime"]
+t = IF t THEN t ELSE json["$.LogOnStartDate"]
+t = IF t THEN t ELSE json["$.CreatedDate"]
+local = json["$.StartTime"]
+eventTimeUsec$ = IF t THEN DATETIME(t, layout) ELSE DATETIME(local, "1/2/2006 : 3:04:05 PM")
+
+eventType$ = "other"
+eventType$ = IF kind == "systemlog" THEN "systemlog" ELSE eventType$
+eventType$ = IF kind == "configlog" THEN "configlog" ELSE eventType$
+eventType$ = IF kind == "connection" THEN "connection" ELSE eventType$

@@ -1,0 +1,54 @@
+{
+  "vendor": "Citrix",
+  "product": "Citrix DaaS and Citrix Cloud",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-21T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://developer-docs.citrix.com/en-us/citrix-cloud/citrix-cloud-systemlog/gettingstarted",
+    "https://docs.citrix.com/us/en/citrix-cloud/system-log.html",
+    "https://docs.citrix.com/us/en/citrix-cloud/events.html",
+    "https://developer-docs.citrix.com/en-us/citrix-daas-service-apis/citrix-daas-rest-apis/how-to-get-configuration-operations.html",
+    "https://docs.citrix.com/us/en/citrix-daas/manage-deployment/configuration-logging.html",
+    "https://developer-docs.citrix.com/en-us/monitor-service-odata-api/how-to-get-connections"
+  ],
+  "notes": "Citrix offers its Citrix Cloud and Citrix DaaS logs only through pull APIs, so these parsers read the records the example bridge in bridges/citrix-cloud-logs reads with a Citrix Cloud service principal and posts to HTTP Ingest, with \"citrix_record\" and \"citrix_customer_id\" first. Sophos Fusion's NetScaler integration covers NetScaler ADC only. Citrix Cloud System Log records (administrators, service principals, identity providers, domains, connectors, Workspace) go to CloudAudit, with the event type as the event name, the actor, the target, the message and the changes before and after as JSON text; an event type that ends in failed is a failure. DaaS Configuration Logging operations (changes in Studio, Web Studio, PowerShell and the APIs, and admin activities such as logging off a session) go to CloudAudit, with the operation (the text before its first quoted name, such as Create Delivery Group) as the event name, the console or SDK as the event source, the administrator's address, the site, and the first three parameters. DaaS Monitor connections go to Auth as remote interactive logons, with the user, the client's address and name, the session's machine, the session key and the protocol; reconnections are logons too. Connection failures, which Monitor keeps in its ConnectionFailureLogs data, aren't covered. Citrix Analytics for Security isn't covered: it exports to SIEMs only over Kafka. Samples follow Citrix's API references and examples with made-up values; the bridge writes System Log keys with a capital first letter, as Citrix's examples show them. Each child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-22 (132 of 132 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there. Each child also passed Run Test as a separate parser under its parent (132 of 132 fields, each line taken in 5 of 5 runs). No built-in parser claimed these records in 5 Run Tests.",
+  "parsers": [
+    {
+      "name": "CITRIX_CLOUD_JSON_PARENT",
+      "file": "CITRIX_CLOUD_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_SYSTEMLOG",
+      "file": "CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_SYSTEMLOG.parser.txt",
+      "role": "child",
+      "parent": "CITRIX_CLOUD_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG",
+      "file": "CITRIX_CLOUD_JSON_CHILD_CLOUDAUDIT_CONFIGLOG.parser.txt",
+      "role": "child",
+      "parent": "CITRIX_CLOUD_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "CITRIX_CLOUD_JSON_CHILD_AUTH",
+      "file": "CITRIX_CLOUD_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "CITRIX_CLOUD_JSON_PARENT",
+      "schema": "scwx.auth"
+    }
+  ],
+  "bridge": "bridges/citrix-cloud-logs"
+}
