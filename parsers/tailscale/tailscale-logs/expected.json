@@ -1,0 +1,640 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792455164583893,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "akim@example.com",
+      "user_display_name": "Alex Kim",
+      "auth_system": "Tailscale",
+      "application_name": "ADMIN_CONSOLE",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "origin",
+            "value": "ADMIN_CONSOLE"
+          },
+          {
+            "key": "actor_id",
+            "value": "uAk3x9CNTRL"
+          },
+          {
+            "key": "actor_type",
+            "value": "USER"
+          },
+          {
+            "key": "target_id",
+            "value": "uAk3x9CNTRL"
+          },
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792456269104512,
+      "event_time_fidelity": "MICRO",
+      "target_user_name": "jsmith@example.com",
+      "user_display_name": "Jo Smith",
+      "auth_system": "Tailscale",
+      "application_name": "NODE",
+      "target_host_name": "build-01.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "origin",
+            "value": "NODE"
+          },
+          {
+            "key": "actor_id",
+            "value": "uJs7q2CNTRL"
+          },
+          {
+            "key": "actor_type",
+            "value": "USER"
+          },
+          {
+            "key": "target_id",
+            "value": "nB7cdef1CNTRL"
+          },
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792458330136022,
+      "event_time_fidelity": "MICRO",
+      "event_type": "NODE",
+      "event_name": "NODE.UPDATE.KEY_EXPIRY_TIME",
+      "event_source": "ADMIN_CONSOLE",
+      "recipient_account_id": "example.com",
+      "user_name": "akim@example.com",
+      "user_id": "uAk3x9CNTRL",
+      "user_type": "USER",
+      "target_hostname": "build-01.example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "nB7cdef1CNTRL",
+          "resource_type": "NODE",
+          "resource_account_id": "example.com"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "property",
+            "value": "KEY_EXPIRY_TIME"
+          },
+          {
+            "key": "old",
+            "value": "2026-10-21T01:05:30.134350003Z"
+          },
+          {
+            "key": "new",
+            "value": "2027-04-18T01:05:30.134350003Z"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e03"
+          },
+          {
+            "key": "target_name",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "actor_display_name",
+            "value": "Alex Kim"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792462680512301,
+      "event_time_fidelity": "MICRO",
+      "event_type": "NODE",
+      "event_name": "NODE.UPDATE.ALLOWED_IPS",
+      "event_source": "CONFIG_API",
+      "recipient_account_id": "example.com",
+      "user_name": "terraform",
+      "user_id": "kT9fz1CNTRL",
+      "user_type": "OAUTH_CLIENT",
+      "target_hostname": "router-01.example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "nR2tr0utCNTRL",
+          "resource_type": "NODE",
+          "resource_account_id": "example.com"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "property",
+            "value": "ALLOWED_IPS"
+          },
+          {
+            "key": "old",
+            "value": "[\"192.0.2.0/24\"]"
+          },
+          {
+            "key": "new",
+            "value": "[\"192.0.2.0/24\",\"198.51.100.0/24\"]"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e04"
+          },
+          {
+            "key": "target_name",
+            "value": "router-01.example.com"
+          },
+          {
+            "key": "actor_display_name",
+            "value": "terraform"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792467658838529,
+      "event_time_fidelity": "MICRO",
+      "event_type": "API_KEY",
+      "event_name": "API_KEY.CREATE",
+      "event_source": "ADMIN_CONSOLE",
+      "recipient_account_id": "example.com",
+      "user_name": "akim@example.com",
+      "user_id": "uAk3x9CNTRL",
+      "user_type": "USER",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "kA1pi2CNTRL",
+          "resource_type": "API_KEY",
+          "resource_account_id": "example.com"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "new",
+            "value": "{\"capabilities\":[\"CONTROL_API_SCOPE_ALL_READ\",\"CONTROL_API_SCOPE_ALL\"],\"expires\":\"2027-01-18 03:40:58.653877012 +0000 UTC\"}"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e05"
+          },
+          {
+            "key": "target_name",
+            "value": "Control API key"
+          },
+          {
+            "key": "actor_display_name",
+            "value": "Alex Kim"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792468931402930,
+      "event_time_fidelity": "MICRO",
+      "event_type": "USER",
+      "event_name": "USER.UPDATE.USER_ROLE",
+      "event_source": "ADMIN_CONSOLE",
+      "recipient_account_id": "example.com",
+      "user_name": "akim@example.com",
+      "user_id": "uAk3x9CNTRL",
+      "user_type": "USER",
+      "target_user_name": "jsmith@example.com",
+      "status": "Success",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "uJs7q2CNTRL",
+          "resource_type": "USER",
+          "resource_account_id": "example.com"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "property",
+            "value": "USER_ROLE"
+          },
+          {
+            "key": "old",
+            "value": "member"
+          },
+          {
+            "key": "new",
+            "value": "admin"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e06"
+          },
+          {
+            "key": "target_name",
+            "value": "jsmith@example.com"
+          },
+          {
+            "key": "actor_display_name",
+            "value": "Alex Kim"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792473342990110,
+      "event_time_fidelity": "MICRO",
+      "event_type": "TAILNET",
+      "event_name": "TAILNET.UPDATE.ACL",
+      "event_source": "ADMIN_CONSOLE",
+      "recipient_account_id": "example.com",
+      "user_name": "akim@example.com",
+      "user_id": "uAk3x9CNTRL",
+      "user_type": "USER",
+      "status": "Failure",
+      "error_message": "policy file has a syntax error on line 12",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "T1a2b3c4d5CNTRL",
+          "resource_type": "TAILNET",
+          "resource_account_id": "example.com"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "property",
+            "value": "ACL"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_group_id",
+            "value": "0378d8f57300d172ef7ae3826e097e07"
+          },
+          {
+            "key": "target_name",
+            "value": "example.com"
+          },
+          {
+            "key": "actor_display_name",
+            "value": "Alex Kim"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792476000890385,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.10",
+      "destination_address": "192.0.2.44",
+      "source_port": 52811,
+      "destination_port": 22,
+      "protocol": 6,
+      "tx_packet_count": 22,
+      "tx_byte_count": 4180,
+      "rx_packet_count": 19,
+      "rx_byte_count": 6236,
+      "start_timestamp_usec": 1792476000890385,
+      "end_timestamp_usec": 1792476005886545,
+      "host_id": "nB7cdef1CNTRL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "traffic",
+            "value": "virtual"
+          },
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "source_node",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "source_user",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "source_os",
+            "value": "linux"
+          },
+          {
+            "key": "destination_node",
+            "value": "laptop-07.example.com"
+          },
+          {
+            "key": "destination_user",
+            "value": "jsmith@example.com"
+          },
+          {
+            "key": "logged",
+            "value": "2026-10-20T06:00:08.290605382Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792476000890385,
+      "event_time_fidelity": "MICRO",
+      "source_address": "2001:db8::a",
+      "destination_address": "192.0.2.66",
+      "source_port": 864,
+      "destination_port": 2049,
+      "protocol": 6,
+      "tx_packet_count": 6,
+      "tx_byte_count": 900,
+      "rx_packet_count": 3,
+      "rx_byte_count": 728,
+      "start_timestamp_usec": 1792476000890385,
+      "end_timestamp_usec": 1792476005886545,
+      "host_id": "nB7cdef1CNTRL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "traffic",
+            "value": "virtual"
+          },
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "source_node",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "source_user",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "source_os",
+            "value": "linux"
+          },
+          {
+            "key": "destination_node",
+            "value": "db-01.example.com"
+          },
+          {
+            "key": "destination_tags",
+            "value": "tag:prod"
+          },
+          {
+            "key": "logged",
+            "value": "2026-10-20T06:00:08.290605382Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792476000890385,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.10",
+      "destination_address": "198.51.100.53",
+      "source_port": 5353,
+      "destination_port": 53,
+      "protocol": 17,
+      "tx_packet_count": 1,
+      "tx_byte_count": 64,
+      "rx_packet_count": 1,
+      "rx_byte_count": 128,
+      "start_timestamp_usec": 1792476000890385,
+      "end_timestamp_usec": 1792476005886545,
+      "host_id": "nB7cdef1CNTRL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "traffic",
+            "value": "subnet"
+          },
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "source_node",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "source_user",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "source_os",
+            "value": "linux"
+          },
+          {
+            "key": "logged",
+            "value": "2026-10-20T06:00:08.290605382Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792476000890385,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.10",
+      "tx_packet_count": 40,
+      "tx_byte_count": 51200,
+      "rx_packet_count": 38,
+      "rx_byte_count": 120400,
+      "start_timestamp_usec": 1792476000890385,
+      "end_timestamp_usec": 1792476005886545,
+      "host_id": "nB7cdef1CNTRL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "traffic",
+            "value": "exit"
+          },
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "source_node",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "source_user",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "source_os",
+            "value": "linux"
+          },
+          {
+            "key": "logged",
+            "value": "2026-10-20T06:00:08.290605382Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "TAILSCALE_LOGS_JSON_PARENT > TAILSCALE_LOGS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Tailscale",
+      "event_time_usec": 1792476000890385,
+      "event_time_fidelity": "MICRO",
+      "source_address": "192.0.2.66",
+      "destination_address": "203.0.113.20",
+      "destination_port": 41641,
+      "tx_packet_count": 4,
+      "tx_byte_count": 384,
+      "rx_packet_count": 4,
+      "rx_byte_count": 384,
+      "start_timestamp_usec": 1792476000890385,
+      "end_timestamp_usec": 1792476005886545,
+      "host_id": "nB7cdef1CNTRL",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "traffic",
+            "value": "physical"
+          },
+          {
+            "key": "tailnet",
+            "value": "example.com"
+          },
+          {
+            "key": "source_node",
+            "value": "build-01.example.com"
+          },
+          {
+            "key": "source_user",
+            "value": "akim@example.com"
+          },
+          {
+            "key": "source_os",
+            "value": "linux"
+          },
+          {
+            "key": "peer_node",
+            "value": "db-01.example.com"
+          },
+          {
+            "key": "logged",
+            "value": "2026-10-20T06:00:08.290605382Z"
+          }
+        ]
+      }
+    }
+  }
+]

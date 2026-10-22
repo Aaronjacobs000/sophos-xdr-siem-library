@@ -1,0 +1,55 @@
+!SAMPLE={"tailscale_record":"configuration","tailscale_tailnet":"example.com","action":"LOGIN","actor":{"displayName":"Alex Kim","id":"uAk3x9CNTRL","loginName":"akim@example.com","type":"USER"},"deferredAt":"0001-01-01T00:00:00Z","eventGroupID":"0378d8f57300d172ef7ae3826e097e01","eventTime":"2026-10-20T00:12:44.583893Z","origin":"ADMIN_CONSOLE","target":{"id":"uAk3x9CNTRL","name":"akim@example.com","type":"ADMIN_CONSOLE"},"type":"CONFIG"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tailscale configuration audit events from the example bridge whose action is LOGIN or
+# LOGOUT: sign-ins to the admin console (ADMIN_CONSOLE), the web interface (WEB_INTERFACE) and
+# nodes (NODE, which includes Tailscale SSH check mode re-authentication).
+# Child of TAILSCALE_LOGS_JSON_PARENT: each one to Auth, as a logon or a logoff. Tailscale doesn't
+# log failed sign-ins; the identity provider does.
+# json, tailnet, action, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+login = json["$.actor.loginName"]
+display = json["$.actor.displayName"]
+user = IF login THEN login ELSE display
+user = IF user THEN user ELSE json["$.actor.id"]
+targetUserName$ = user
+userDisplayName$ = display
+authSystem$ = "Tailscale"
+ttype = UPPERCASE(STRING(json["$.target.type"]))
+applicationName$ = json["$.target.type"]
+targetHostName$ = IF ttype == "NODE" THEN json["$.target.name"] ELSE NULL
+
+logoff = action == "LOGOUT"
+err = json["$.error"]
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE "ACCOUNT_LOGON"
+action$ = IF logoff THEN "LOGOFF" ELSE "LOGON"
+action$ = IF err THEN "FAILURE" ELSE action$
+actionResult$ = IF err THEN "FAILED" ELSE "SUCCESS"
+extraFailurereason$ = err
+failureCategory$ = IF err THEN "OTHER_ERROR" ELSE NULL
+
+m1.key$ = "tailnet"
+m1.value$ = tailnet
+m2.key$ = "origin"
+m2.value$ = json["$.origin"]
+m3.key$ = "actor_id"
+m3.value$ = json["$.actor.id"]
+m4.key$ = "actor_type"
+m4.value$ = json["$.actor.type"]
+m5.key$ = "target_id"
+m5.value$ = json["$.target.id"]
+m6.key$ = "event_group_id"
+m6.value$ = json["$.eventGroupID"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$

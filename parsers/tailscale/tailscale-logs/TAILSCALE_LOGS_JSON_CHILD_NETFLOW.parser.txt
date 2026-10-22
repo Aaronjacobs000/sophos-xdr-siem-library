@@ -1,0 +1,91 @@
+!SAMPLE={"tailscale_record":"network","tailscale_tailnet":"example.com","nodeId":"nB7cdef1CNTRL","logged":"2026-10-20T06:00:08.290605382Z","start":"2026-10-20T06:00:00.890385065Z","end":"2026-10-20T06:00:05.886545512Z","traffic":"virtual","proto":6,"src":"192.0.2.10:52811","dst":"192.0.2.44:22","txPkts":22,"txBytes":4180,"rxPkts":19,"rxBytes":6236,"srcNode":{"nodeId":"nB7cdef1CNTRL","addresses":["192.0.2.10","2001:db8::a"],"os":"linux","name":"build-01.example.com","user":"akim@example.com"},"dstNode":{"nodeId":"n22daC8CNTRL","addresses":["192.0.2.44","2001:db8::2c"],"os":"windows","name":"laptop-07.example.com","user":"jsmith@example.com"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="flow"
+!SCHEMA=scwx.netflow
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Tailscale network flow logs from the example bridge, one record per connection:
+# virtual (between nodes), subnet (through a subnet router), exit (through an exit node) and
+# physical (the WireGuard traffic underneath, to a peer's endpoint).
+# Child of TAILSCALE_LOGS_JSON_PARENT: each one to Netflow, with the addresses and ports, the
+# protocol, the packets and bytes each way, the flow's start and end, and the node that logged it.
+# json, tailnet, layout, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+# src and dst are addr:port, or [addr]:port for IPv6. Exit traffic has no port or destination
+# unless destination logging is on.
+srcText = STRING(json["$.src"])
+dstText = STRING(json["$.dst"])
+s6 = srcText|^\[(?P<ip>[0-9A-Fa-f:.]+)\](?::(?P<port>\d{1,5}))?$
+s4 = srcText|^(?P<ip>[0-9.]+)(?::(?P<port>\d{1,5}))?$
+s0 = srcText|^(?P<ip>[0-9A-Fa-f]*:[0-9A-Fa-f:.]*)$
+d6 = dstText|^\[(?P<ip>[0-9A-Fa-f:.]+)\](?::(?P<port>\d{1,5}))?$
+d4 = dstText|^(?P<ip>[0-9.]+)(?::(?P<port>\d{1,5}))?$
+d0 = dstText|^(?P<ip>[0-9A-Fa-f]*:[0-9A-Fa-f:.]*)$
+sip = IF s6["ip"] != "" THEN s6["ip"] ELSE s4["ip"]
+sip = IF sip != "" THEN sip ELSE s0["ip"]
+dip = IF d6["ip"] != "" THEN d6["ip"] ELSE d4["ip"]
+dip = IF dip != "" THEN dip ELSE d0["ip"]
+sport = IF s6["port"] != "" THEN s6["port"] ELSE s4["port"]
+dport = IF d6["port"] != "" THEN d6["port"] ELSE d4["port"]
+sourceAddress$ = IF sip != "" THEN sip ELSE NULL
+destinationAddress$ = IF dip != "" THEN dip ELSE NULL
+# Port 0 is how physical traffic writes the Tailscale side.
+sourcePort$ = IF sport != "" AND sport != "0" THEN INT(sport, 10) ELSE NULL
+destinationPort$ = IF dport != "" AND dport != "0" THEN INT(dport, 10) ELSE NULL
+
+# proto is the IANA protocol number. Tailscale leaves out zero values, so a missing count is none.
+protoText = STRING(json["$.proto"])
+pn = protoText|^(?P<n>\d{1,3})$
+protocol$ = IF pn["n"] != "" THEN INT(pn["n"], 10) ELSE NULL
+lp = LOWERCASE(protoText)
+protocol$ = IF protocol$ == NULL AND lp == "tcp" THEN 6 ELSE protocol$
+protocol$ = IF protocol$ == NULL AND lp == "udp" THEN 17 ELSE protocol$
+protocol$ = IF protocol$ == NULL AND lp == "icmp" THEN 1 ELSE protocol$
+protocol$ = IF protocol$ == NULL AND lp == "ipv6-icmp" THEN 58 ELSE protocol$
+tp = STRING(json["$.txPkts"])
+tb = STRING(json["$.txBytes"])
+rp = STRING(json["$.rxPkts"])
+rb = STRING(json["$.rxBytes"])
+txPacketCount$ = IF tp != "" THEN INT(tp, 10) ELSE NULL
+txByteCount$ = IF tb != "" THEN INT(tb, 10) ELSE NULL
+rxPacketCount$ = IF rp != "" THEN INT(rp, 10) ELSE NULL
+rxByteCount$ = IF rb != "" THEN INT(rb, 10) ELSE NULL
+
+startTimestampUsec$ = DATETIME(json["$.start"], layout)
+endTimestampUsec$ = DATETIME(json["$.end"], layout)
+hostId$ = json["$.nodeId"]
+
+m1.key$ = "traffic"
+m1.value$ = json["$.traffic"]
+m2.key$ = "tailnet"
+m2.value$ = tailnet
+m3.key$ = "source_node"
+m3.value$ = json["$.srcNode.name"]
+m4.key$ = "source_user"
+m4.value$ = json["$.srcNode.user"]
+m5.key$ = "source_os"
+m5.value$ = json["$.srcNode.os"]
+m6.key$ = "destination_node"
+m6.value$ = json["$.dstNode.name"]
+m7.key$ = "destination_user"
+m7.value$ = json["$.dstNode.user"]
+m8.key$ = "destination_tags"
+m8.value$ = REPLACE_REGEX(STRING(json["$.dstNode.tags"]), `[\[\]"]`, "")
+m9.key$ = "peer_node"
+m9.value$ = json["$.peerNode.name"]
+m10.key$ = "logged"
+m10.value$ = json["$.logged"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF m1.value$ THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m8.value$ != "" THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m9.value$ THEN eventMetadata$.record$ + [m9] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF m10.value$ THEN eventMetadata$.record$ + [m10] ELSE eventMetadata$.record$
