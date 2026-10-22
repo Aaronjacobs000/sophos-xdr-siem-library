@@ -1,0 +1,30 @@
+{
+  "vendor": "Workday",
+  "product": "Workday user activity",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-22T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-22"
+  },
+  "docs": [
+    "https://community.workday.com/sites/default/files/file-hosting/restapi/privacy_v1_20261003_oas2.json",
+    "https://doc.workday.com/admin-guide/en-us/manage-workday/tenant-configuration/user-activity-logging/unv1636547598141.html",
+    "https://doc.workday.com/admin-guide/en-us/manage-workday/tenant-configuration/it-administrator-resources/limitations-and-availability/dan1370797408285.html"
+  ],
+  "notes": "Workday's user activity log is pull only, through the activityLogging resource of the Privacy REST API, so this parser reads the entries the example bridge in bridges/workday-user-activity polls and posts to HTTP Ingest, with \"workday_record\": \"user_activity\" and \"workday_tenant\" first. Turn on Enable User Activity Logging in Edit Tenant Setup - System. Give the bridge an API client for integrations with only the System scope, and the refresh token of an integration system user in an unconstrained integration system security group with Get and View on the System Auditing domain. Workday keeps the log for 30 days. Every entry goes to CloudAudit: the task, report or REST operation (taskDisplayName) as the event name, the activity category as the event type (READ viewed data, WRITE changed it, DOWNLOAD saved a report or file, OTHER is Workday's own work), the Workday account (systemAccount) as the user, the tenant as the account, the instance the task ran on (target) as a resource, and the task ID, session ID, target name and device type as additional data. READ and DOWNLOAD are read-only. Reads of the user activity log itself, such as the bridge's own, are marked activity_log_read. The log holds no sign-ins or failed sign-ins: Workday keeps those in its sign-on reports, which this entry doesn't read. Entries have no ID, so there is no sensor event ID. Samples follow the userActivityTracking entry in Workday's Privacy API reference (v1, 2026-10-03) and the activity categories on Workday's user activity logging page, with made-up values. The activityLogging operation's task ID is the one in the reference; the other IDs are made up in Workday's 32-character hex form. The parser passed Run Test in a lab tenant on 2026-10-22 (87 of 87 fields matched the emulator in each of 3 runs). No built-in parser claimed these records.",
+  "parsers": [
+    {
+      "name": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT",
+      "file": "WORKDAY_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT.parser.txt",
+      "role": "standalone",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/workday-user-activity"
+}

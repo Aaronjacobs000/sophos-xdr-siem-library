@@ -1,0 +1,59 @@
+!SAMPLE={"workday_record":"user_activity","workday_tenant":"acme_prod","activityAction":"WRITE","systemAccount":"jlee","requestTime":"2026-10-21T21:15:40.904Z","taskDisplayName":"Edit Integration System Security Group (Unconstrained)","sessionId":"b2c4e1","target":{"descriptor":"Payroll Integrations","id":"6d0f2c9e1a7b4c3d8e5f60718293a4b5"},"taskId":"c4d0f7e2446c11de98360015c5e6daf6","ipAddress":"198.51.100.23","deviceType":"Desktop","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=^\{\s*"workday_record"\s*:\s*"user_activity"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Workday user activity entries from the activityLogging resource of the Privacy REST API,
+# pulled by the example bridge in bridges/workday-user-activity and posted to HTTP Ingest as JSON
+# lines. The bridge puts "workday_record": "user_activity" and "workday_tenant" first.
+# Standalone: each entry to CloudAudit, with the task, report or REST operation as the event name
+# and the activity category (READ, WRITE, DOWNLOAD or OTHER) as the event type.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+sensorType$ = "Workday User Activity"
+# requestTime is ISO 8601 in UTC, such as 2026-10-03T07:00:00.000Z.
+eventTimeUsec$ = DATETIME(json["$.requestTime"], "2006-01-02T15:04:05.999999999Z07:00")
+eventSource$ = "Workday"
+task = json["$.taskDisplayName"]
+eventName$ = task
+# READ viewed data, WRITE changed it, DOWNLOAD saved a report or file, OTHER is Workday's own work.
+category = json["$.activityAction"]
+eventType$ = category
+readOnly$ = category == "READ" OR category == "DOWNLOAD"
+tenant = json["$.workday_tenant"]
+recipientAccountId$ = tenant
+# The Workday account that ran it: a user name, an email or an integration system user.
+userName$ = json["$.systemAccount"]
+sourceAddress$ = json["$.ipAddress"]
+userAgent$ = json["$.userAgent"]
+
+# The instance the task ran on, such as a worker, a security group or a document.
+r1.resourceId$ = json["$.target.id"]
+r1.resourceType$ = "Workday instance"
+r1.resourceAccountId$ = tenant
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+
+d1.key$ = "task_id"
+d1.value$ = json["$.taskId"]
+d2.key$ = "session_id"
+d2.value$ = json["$.sessionId"]
+d3.key$ = "target"
+d3.value$ = json["$.target.descriptor"]
+d4.key$ = "device_type"
+d4.value$ = json["$.deviceType"]
+# Reads of the user activity log itself, such as the bridge's own, by an integration system user.
+d5.key$ = "activity_log_read"
+d5.value$ = "true"
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF CONTAINS(STRING(task), "privacy/activityLogging") THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
