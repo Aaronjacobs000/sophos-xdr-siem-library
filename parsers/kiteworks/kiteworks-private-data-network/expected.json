@@ -1,0 +1,886 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793048531000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310442",
+      "auth_system": "Kiteworks",
+      "target_user_name": "jlee@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "application_name": "Kiteworks Web",
+      "session_id": "8f2c41d07a6b4e1d9c3a",
+      "target_host_name": "files.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "user_logged_in"
+          },
+          {
+            "key": "description",
+            "value": "Logged in"
+          },
+          {
+            "key": "user_id",
+            "value": "118"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793048747000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310457",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+      "application_name": "Kiteworks Web",
+      "target_host_name": "files.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "INCORRECT_USER_OR_PASSWORD",
+      "extra_failurereason": "Invalid username or password",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "user_login_failed"
+          },
+          {
+            "key": "description",
+            "value": "User login failed"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793048970000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310480",
+      "auth_system": "Kiteworks",
+      "target_user_name": "kw.admin@example.com",
+      "source_address": "192.0.2.15",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+      "application_name": "Kiteworks Admin",
+      "session_id": "51a9e7c2b04d4f8e8a17",
+      "target_host_name": "files.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "admin_logged_in"
+          },
+          {
+            "key": "description",
+            "value": "Admin logged in"
+          },
+          {
+            "key": "user_id",
+            "value": "3"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-admin"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793049242000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310512",
+      "event_type": "file",
+      "event_source": "Kiteworks",
+      "event_name": "add_file",
+      "user_name": "jlee@example.com",
+      "user_id": "118",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "logon_application_family": "Kiteworks Web",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "object_key": "/Finance/Q3/q3-forecast.xlsx",
+      "read_only": false,
+      "management_event": false,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "55120",
+          "resource_type": "file"
+        },
+        {
+          "resource_id": "2201",
+          "resource_type": "folder"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Uploaded file q3-forecast.xlsx"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "file_name",
+            "value": "q3-forecast.xlsx"
+          },
+          {
+            "key": "file_size",
+            "value": "48213"
+          },
+          {
+            "key": "file_mime",
+            "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          },
+          {
+            "key": "file_hash",
+            "value": "de040babfb52b1f7f5530069408a49067ca9484137707aa637c92113ff63af03"
+          },
+          {
+            "key": "file_hash_algo",
+            "value": "sha256"
+          },
+          {
+            "key": "folder_path",
+            "value": "/Finance/Q3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793049636000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310547",
+      "event_type": "mail",
+      "event_source": "Kiteworks",
+      "event_name": "send_mail",
+      "user_name": "jlee@example.com",
+      "user_id": "118",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "logon_application_family": "Kiteworks Web",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "read_only": false,
+      "management_event": false,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "77140",
+          "resource_type": "mail"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Q3 forecast"
+          },
+          {
+            "key": "sender",
+            "value": "jlee@example.com"
+          },
+          {
+            "key": "recipients",
+            "value": "[{\"name\":\"ana.ruiz@example.net\"}]"
+          },
+          {
+            "key": "attachments",
+            "value": "[{\"hash\":\"de040babfb52b1f7f5530069408a49067ca9484137707aa637c92113ff63af03\",\"hash_algo\":\"sha256\",\"mime\":\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\"name\":\"q3-forecast.xlsx\",\"size\":48213}]"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Sent e-mail Subject: \"Q3 forecast\" To: ana.ruiz@example.net with files [q3-forecast.xlsx]"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793050011000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310590",
+      "event_type": "folder",
+      "event_source": "Kiteworks",
+      "event_name": "delete_folder_permanent",
+      "user_name": "kw.admin@example.com",
+      "user_id": "3",
+      "source_address": "192.0.2.15",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+      "logon_application_family": "Kiteworks Web",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "object_key": "/Legal/Old Contracts",
+      "read_only": false,
+      "management_event": false,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "1984",
+          "resource_type": "folder"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Permanently deleted folder \"Old Contracts\""
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-02"
+          },
+          {
+            "key": "folder_path",
+            "value": "/Legal/Old Contracts"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793050278000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310611",
+      "event_type": "user",
+      "event_source": "Kiteworks",
+      "event_name": "add_user",
+      "user_name": "kw.admin@example.com",
+      "user_id": "3",
+      "source_address": "192.0.2.15",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+      "logon_application_family": "Kiteworks Admin",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "target_user_name": "ana.ruiz@example.net",
+      "read_only": false,
+      "management_event": true,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "4b84e54c-d869-4db2-ae89-012de409b2d4",
+          "resource_type": "user"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Added user ana.ruiz@example.net"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-admin"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-02"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793050604000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9310640",
+      "alert_id": "9310640",
+      "vendor": "Kiteworks",
+      "provider": "Kiteworks",
+      "log_type": "add_file",
+      "alert_category": "ATP",
+      "title": "Kiteworks ATP scan: malicious file",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "action_reason": "Malicious file detected",
+      "source_user_name": "ana.ruiz@example.net",
+      "source_user_id": "241",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+      "target_host_name": "files.example.com",
+      "summary": "Kiteworks flagged invoice-2210.pdf as malicious for ana.ruiz@example.net",
+      "additional_data": {
+        "record": [
+          {
+            "key": "event",
+            "value": "add_file"
+          },
+          {
+            "key": "file_name",
+            "value": "invoice-2210.pdf"
+          },
+          {
+            "key": "file_path",
+            "value": "/Inbound/Supplier Uploads/invoice-2210.pdf"
+          },
+          {
+            "key": "file_id",
+            "value": "55188"
+          },
+          {
+            "key": "file_size",
+            "value": "183044"
+          },
+          {
+            "key": "file_mime",
+            "value": "application/pdf"
+          },
+          {
+            "key": "file_hash",
+            "value": "aca766a35993580777fd8db79c2a80e7ba26f7ee2dd1c50d6d66d316136d1b69"
+          },
+          {
+            "key": "file_hash_algo",
+            "value": "sha256"
+          },
+          {
+            "key": "description",
+            "value": "Uploaded file invoice-2210.pdf"
+          },
+          {
+            "key": "client_name",
+            "value": "Kiteworks Web"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "verdict",
+            "value": "malicious"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793050869000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "user_login_failed"
+          },
+          {
+            "key": "description",
+            "value": "User login failed"
+          },
+          {
+            "key": "activity_group",
+            "value": "authentication"
+          },
+          {
+            "key": "user_id",
+            "value": "207"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "user_label",
+            "value": "db405afb-401d-4e25-a67d-c5afdf61b896"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793050912000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "auth_category": "ACCOUNT_LOCK",
+      "action": "ACCOUNT",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "user_login_lockout"
+          },
+          {
+            "key": "description",
+            "value": "User account locked"
+          },
+          {
+            "key": "activity_group",
+            "value": "authentication"
+          },
+          {
+            "key": "user_id",
+            "value": "207"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "user_label",
+            "value": "db405afb-401d-4e25-a67d-c5afdf61b896"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793051812000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "auth_category": "ACCOUNT_UNLOCK",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "user_login_unlock"
+          },
+          {
+            "key": "description",
+            "value": "User account unlocked by lockout cooldown"
+          },
+          {
+            "key": "activity_group",
+            "value": "authentication"
+          },
+          {
+            "key": "user_id",
+            "value": "207"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "user_label",
+            "value": "db405afb-401d-4e25-a67d-c5afdf61b896"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793052195000000,
+      "event_time_fidelity": "MICRO",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "auth_category": "PASSWORD_RESET_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "reset_password"
+          },
+          {
+            "key": "description",
+            "value": "Reset password"
+          },
+          {
+            "key": "activity_group",
+            "value": "user_preferences"
+          },
+          {
+            "key": "user_id",
+            "value": "207"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          },
+          {
+            "key": "user_label",
+            "value": "db405afb-401d-4e25-a67d-c5afdf61b896"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793052627000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "user_management",
+      "event_source": "Kiteworks",
+      "event_name": "reactivate_user",
+      "user_name": "kw.admin@example.com",
+      "user_id": "3",
+      "source_address": "192.0.2.15",
+      "target_user_name": "tomas.k@example.org",
+      "read_only": false,
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "User reactivated: tomas.k@example.org"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-02"
+          },
+          {
+            "key": "user_label",
+            "value": "c3a5e459-625d-4ae6-a813-13ddd599dc22"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793053115000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "file_changes",
+      "event_source": "Kiteworks",
+      "event_name": "cleanup_upload",
+      "source_address": "192.0.2.40",
+      "read_only": false,
+      "management_event": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Clean up failed upload attempt of file draft-terms.eml"
+          },
+          {
+            "key": "app_host",
+            "value": "kw-app-01"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793053900410000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "40102cab-969a-4f94-8b77-e1022258efa9",
+      "auth_system": "Kiteworks",
+      "target_user_name": "jlee@example.com",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "target_host_name": "files.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "login"
+          },
+          {
+            "key": "user_id",
+            "value": "118"
+          },
+          {
+            "key": "webhook_id",
+            "value": "1d0c04ba-5a6b-4dfc-9688-cb008c4e8877"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793053982080000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "9a7c3e21-5b4d-4f60-8e19-2c6d0b7a4f33",
+      "auth_system": "Kiteworks",
+      "target_user_name": "priya.n@example.com",
+      "source_address": "198.51.100.23",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+      "target_host_name": "files.example.com",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "failure_category": "OTHER_ERROR",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "event",
+            "value": "login"
+          },
+          {
+            "key": "user_id",
+            "value": "207"
+          },
+          {
+            "key": "webhook_id",
+            "value": "1d0c04ba-5a6b-4dfc-9688-cb008c4e8877"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793054415770000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7e2f9d14-3c8a-4b5e-a061-d4f2b8c9e735",
+      "event_type": "file",
+      "event_source": "Kiteworks",
+      "event_name": "upload",
+      "user_name": "jlee@example.com",
+      "user_id": "118",
+      "source_address": "203.0.113.24",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "logon_application_family": "Kiteworks Web",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "read_only": false,
+      "management_event": false,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "55203",
+          "resource_type": "file"
+        },
+        {
+          "resource_id": "2201",
+          "resource_type": "folder"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Uploaded file budget-2027.xlsx"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "file_name",
+            "value": "budget-2027.xlsx"
+          },
+          {
+            "key": "node_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "event_id",
+            "value": "44102"
+          },
+          {
+            "key": "webhook_id",
+            "value": "1d0c04ba-5a6b-4dfc-9688-cb008c4e8877"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "KITEWORKS_PARENT > KITEWORKS_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Kiteworks",
+      "event_time_usec": 1793054698520000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b3e8a0c7-6d21-4f9e-9c54-1a7e2d0f8b46",
+      "event_type": "file",
+      "event_source": "Kiteworks",
+      "event_name": "download",
+      "user_name": "ana.ruiz@example.net",
+      "user_id": "241",
+      "source_address": "198.51.100.77",
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+      "logon_application_family": "Kiteworks Web",
+      "target_hostname": "files.example.com",
+      "recipient_account_id": "1",
+      "read_only": true,
+      "management_event": false,
+      "status": "success",
+      "resources": [
+        {
+          "resource_id": "55120",
+          "resource_type": "file"
+        },
+        {
+          "resource_id": "2201",
+          "resource_type": "folder"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Downloaded file q3-forecast.xlsx"
+          },
+          {
+            "key": "client_id",
+            "value": "kw-web"
+          },
+          {
+            "key": "file_name",
+            "value": "q3-forecast.xlsx"
+          },
+          {
+            "key": "node_ip",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "event_id",
+            "value": "44117"
+          },
+          {
+            "key": "webhook_id",
+            "value": "1d0c04ba-5a6b-4dfc-9688-cb008c4e8877"
+          }
+        ]
+      }
+    }
+  }
+]

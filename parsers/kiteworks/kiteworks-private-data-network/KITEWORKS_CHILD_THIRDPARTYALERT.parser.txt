@@ -1,0 +1,85 @@
+!SAMPLE=<132>Oct 26 21:36:44 kw-app-01 rest_server.py: {"id": 9310640, "event": "add_file", "description": "Uploaded file invoice-2210.pdf", "successful": 0, "user_id": 241, "user_name": "ana.ruiz@example.net", "user_ip": "198.51.100.77", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "app_host": "kw-app-01", "url_host": "files.example.com", "client_id": "kw-web", "client_name": "Kiteworks Web", "client_device": "None", "tenant_id": 1, "data": {"file": {"id": 55188, "name": "invoice-2210.pdf", "path": "/Inbound/Supplier Uploads/invoice-2210.pdf", "size": 183044, "mime": "application/pdf", "hash": "aca766a35993580777fd8db79c2a80e7ba26f7ee2dd1c50d6d66d316136d1b69", "hash_algo": "sha256"}, "scanning_type": "ATP", "malicious": 1, "quarantined": 1, "status_reason": "Malicious file detected"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kiteworks activity in JSON (syslog or PubSub) where a scan flagged a file: data.malicious,
+# data.prohibited or data.quarantined is 1, with the scan in data.scanning_type (such as AV, ATP
+# or DLP) and the reason in data.status_reason or data.error_msg.
+# Child of KITEWORKS_PARENT: each one to Thirdparty. Malicious files are high severity, the rest
+# medium. A quarantined file, or an action that didn't complete, counts as blocked.
+# json, p, kind, desc, user, uid, ip, ua, client, urlHost, appHost, failedJ, isMal, isPro, isQua,
+# eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+alertId$ = sensorEventId$
+vendor$ = "Kiteworks"
+provider$ = "Kiteworks"
+logType$ = STRING(kind)
+scan = json[p + "data.scanning_type"]
+alertCategory$ = IF scan THEN STRING(scan) ELSE NULL
+
+verdict = "quarantined"
+verdict = IF isPro THEN "prohibited" ELSE verdict
+verdict = IF isMal THEN "malicious" ELSE verdict
+title$ = IF scan THEN "Kiteworks " + STRING(scan) + " scan: " + verdict + " file" ELSE "Kiteworks scan: " + verdict + " file"
+severity$ = IF isMal THEN "HIGH" ELSE "MEDIUM"
+okStr2 = STRING(json[p + "successful"])
+action$ = IF isQua OR failedJ THEN "BLOCKED" ELSE NULL
+action$ = IF action$ == NULL AND (okStr2 == "1" OR okStr2 == "true") THEN "SUCCEEDED" ELSE action$
+reason = json[p + "data.status_reason"]
+reason = IF reason THEN reason ELSE json[p + "data.error_msg"]
+actionReason$ = IF reason THEN STRING(reason) ELSE NULL
+
+sourceUserName$ = user
+sourceUserId$ = uid
+sourceAddress$ = ip
+userAgent$ = ua
+targetHostName$ = urlHost
+
+fname = json[p + "data.file.name"]
+summary$ = "Kiteworks flagged " + STRING(fname) + " as " + verdict
+summary$ = IF user THEN summary$ + " for " + user ELSE summary$
+
+a1.key$ = "event"
+a1.value$ = STRING(kind)
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = [a1]
+a2.key$ = "file_name"
+a2.value$ = fname
+additionalData$.record$ = IF a2.value$ THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "file_path"
+a3.value$ = json[p + "data.file.path"]
+additionalData$.record$ = IF a3.value$ THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "file_id"
+fid = json[p + "data.file.id"]
+a4.value$ = IF fid THEN STRING(fid) ELSE NULL
+additionalData$.record$ = IF a4.value$ THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "file_size"
+fsize = json[p + "data.file.size"]
+a5.value$ = IF fsize THEN STRING(fsize) ELSE NULL
+additionalData$.record$ = IF a5.value$ THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "file_mime"
+a6.value$ = json[p + "data.file.mime"]
+additionalData$.record$ = IF a6.value$ THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+# hash_algo names the algorithm of data.file.hash, such as sha256 or md5.
+a7.key$ = "file_hash"
+a7.value$ = json[p + "data.file.hash"]
+additionalData$.record$ = IF a7.value$ THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "file_hash_algo"
+a8.value$ = json[p + "data.file.hash_algo"]
+additionalData$.record$ = IF a8.value$ THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "description"
+a9.value$ = desc
+additionalData$.record$ = IF a9.value$ THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "client_name"
+a10.value$ = client
+additionalData$.record$ = IF a10.value$ THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "app_host"
+a11.value$ = appHost
+additionalData$.record$ = IF a11.value$ THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "verdict"
+a12.value$ = verdict
+additionalData$.record$ = additionalData$.record$ + [a12]
