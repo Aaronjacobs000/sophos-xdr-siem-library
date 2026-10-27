@@ -24,5 +24,6 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
-  "notes": "Not run against IT Glue: there was no account to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted."
+  "summary": "This playbook finds the IT Glue configuration for a host in a case and comments on the case with its organization, type, status, location, contact, primary IP and a link to the record. An analyst runs it from the host as a response action, and it reads IT Glue through the library's IT Glue connector. It needs an IT Glue API key without password access.",
+  "notes": "Testing:\n- Not run against IT Glue: there was no account to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted."
 }

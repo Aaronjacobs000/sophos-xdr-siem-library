@@ -17,5 +17,6 @@
   "docs": [
     "https://api.itglue.com/developer/"
   ],
-  "notes": "Not run against IT Glue: there was no account to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. IT Glue's name filter matches the whole name, so a hostname that differs in its domain part won't match."
+  "summary": "This connector lets Sophos Fusion playbooks find IT Glue configurations by name and read organizations through the IT Glue API. It only reads, and it never reads passwords. The connection signs in with an API key in the x-api-key header, from a key without password access, and takes the data center's API host as a connection setting.",
+  "notes": "How it works:\n- IT Glue's name filter matches the whole name, so a hostname that differs in its domain part won't match.\n\nTesting:\n- Not run against IT Glue: there was no account to test with.\n- On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted."
 }

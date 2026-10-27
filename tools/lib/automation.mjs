@@ -200,8 +200,7 @@ function checkCommonMeta(r, meta, kind) {
   if (!LICENSES.includes(meta.license)) err(`license must be one of ${LICENSES.join(', ')}`);
   if (!Array.isArray(meta.docs) || !meta.docs.length || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u))) err('docs must list the https pages of the vendor\'s public docs the entry follows');
   // The About text: a short summary, then notes in labelled sections, as for parser entries.
-  // Entries from before the summary existed get warnings until they have one.
-  for (const p of aboutProblems(meta, { kind, required: false })) r.add(p.level, 'about', p.message, null, 'meta.json');
+  for (const p of aboutProblems(meta, { kind })) r.add(p.level, 'about', p.message, null, 'meta.json');
   const t = meta.tested;
   if (!t || typeof t !== 'object' || Array.isArray(t)) err('tested must be an object like {"validated": "YYYY-MM-DD", "tenant": null}');
   else {

@@ -24,5 +24,6 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
-  "notes": "Not run against Rewst: there was no Rewst organization to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported, exported again unchanged apart from the tenant's own fields, and was deleted. The document it sends is fixed: see What leaves Sophos Fusion in the template documentation."
+  "summary": "This playbook hands each new or changed case to a Rewst workflow, which then tickets, documents or notifies across the MSP's PSA, RMM and documentation tools. It runs on case Create, Update and Comment Added events and sends the case to a Rewst webhook trigger through the Generic Webhook connector Sophos manages. It needs a Rewst organization with a workflow that starts from a webhook trigger.",
+  "notes": "How it works:\n- The document it sends is fixed: see What leaves Sophos Fusion in the template documentation.\n\nTesting:\n- Not run against Rewst: there was no Rewst organization to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported, exported again unchanged apart from the tenant's own fields, and was deleted."
 }

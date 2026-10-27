@@ -24,5 +24,6 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
-  "notes": "Not run against NinjaOne: there was no instance to test with. On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted. It matches the host's short name against the NinjaOne system and DNS names."
+  "summary": "This playbook finds the NinjaOne device behind a host in a case and comments on the case with its organization, online state, last contact, last logged-on user, operating system and a link to it. An analyst runs it from the host as a response action, and it reads NinjaOne through the library's NinjaOne connector. It needs a NinjaOne API Services client app with the monitoring scope.",
+  "notes": "How it works:\n- It matches the host's short name against the NinjaOne system and DNS names.\n\nTesting:\n- Not run against NinjaOne: there was no instance to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted."
 }

@@ -22,5 +22,6 @@
     "https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketsEntity.htm",
     "https://www.autotask.net/help/developerhelp/Content/APIs/REST/Entities/TicketNotesEntity.htm"
   ],
-  "notes": "Not run against Autotask: there was no instance to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. Whether Sophos Fusion's API Key sign-in sends the Secret header alongside the two static headers, the child Notes path and the ticket link format are untested."
+  "summary": "This connector lets Sophos Fusion playbooks create, read and update Autotask PSA tickets and add notes to them through the Autotask PSA REST API; it can't delete tickets. The connection signs in with an API user's secret in the Secret header, with its user name, integration code and zone host as connection settings. The Autotask PSA case sync playbook uses it.",
+  "notes": "Testing:\n- Not run against Autotask: there was no instance to test with.\n- On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted.\n\nKnown gaps:\n- Whether Sophos Fusion's API Key sign-in sends the Secret header alongside the two static headers, the child Notes path and the ticket link format are untested."
 }
