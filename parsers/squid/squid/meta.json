@@ -18,7 +18,8 @@
     "https://wiki.squid-cache.org/Features/LogFormat",
     "https://www.squid-cache.org/Doc/config/access_log/"
   ],
-  "notes": "Squid's native access.log format sent to syslog, for example access_log syslog:local4.info squid. Custom logformat lines won't match. Samples are made up in the documented column order.",
+  "summary": "This parser reads Squid's native access.log lines, sent to syslog and on to the data collector. Each request goes to HTTP.",
+  "notes": "Setup:\n- Send Squid's native access.log format to syslog, for example access_log syslog:local4.info squid.\n\nMade up in the samples:\n- Samples are made up in the documented column order.\n\nKnown gaps:\n- Custom logformat lines won't match.",
   "parsers": [
     {
       "name": "SQUID_ACCESS_SYSLOG_STANDALONE_HTTP",

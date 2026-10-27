@@ -21,7 +21,8 @@
     "https://docs.nxlog.co/integrate/synology.html",
     "https://www.it-connect.fr/nas-synology-notification-par-e-mail-quand-un-utilisateur-se-connecte/"
   ],
-  "notes": "In Log Center > Log Sending, send to the data collector in BSD (RFC 3164) format and include the Connection category. DSM sign-in successes and failures go to Auth; every other line is left to the parsers already in the tenant. Synology doesn't publish its log messages, so this entry covers only the sign-in lines shown in Synology's failed login article and in public third-party guides (linked), and other admin and security events aren't covered. Check a few of your own lines with Parse Message first. The BSD syslog time has no year or zone and is read as UTC. Passed Run Test in a lab tenant on 2026-10-13.",
+  "summary": "This parser reads Synology DSM sign-in lines from Log Center, sent in BSD (RFC 3164) syslog format to the data collector. Sign-in successes and failures go to Auth, and every other line is left to the parsers already in the tenant.",
+  "notes": "Setup:\n- In Log Center > Log Sending, send to the data collector in BSD (RFC 3164) format and include the Connection category.\n\nField mapping:\n- DSM sign-in successes and failures go to Auth; every other line is left to the parsers already in the tenant.\n\nTime:\n- The BSD syslog time has no year or zone and is read as UTC.\n\nSources and licenses:\n- Synology doesn't publish its log messages, so this entry covers only the sign-in lines shown in Synology's failed login article and in public third-party guides (linked).\n\nTesting:\n- Passed Run Test in a lab tenant on 2026-10-13.\n\nKnown gaps:\n- Other admin and security events aren't covered.\n- Check a few of your own lines with Parse Message first.",
   "parsers": [
     {
       "name": "SYNOLOGY_DSM_SYSLOG_STANDALONE_AUTH",

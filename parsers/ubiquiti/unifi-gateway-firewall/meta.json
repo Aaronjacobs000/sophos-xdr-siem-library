@@ -19,7 +19,8 @@
     "https://docs.wirespeed.co/integrations/unifi",
     "https://ipset.netfilter.org/iptables-extensions.man.html"
   ],
-  "notes": "For UniFi gateway firewall rule logs (CyberSecure > Traffic Logging to the data collector, with Syslog Logging turned on for each rule to log). The native UniFi integration reads only the IDS/IPS CEF records; this entry adds the firewall lines, to Netflow. The action comes from the rule tag (D drops, A accepts) or, failing that, a rule description that starts with Block or Allow. Ubiquiti doesn't document the firewall line itself, so samples follow the example in Graylog's UniFi content pack and the netfilter LOG fields. The BSD syslog time has no year or zone and is read as UTC. Passed Run Test in a lab tenant on 2026-10-13.",
+  "summary": "This parser reads UniFi gateway firewall rule logs. CyberSecure > Traffic Logging sends them as syslog to the data collector, with Syslog Logging turned on for each rule to log. The firewall lines go to Netflow.",
+  "notes": "Setup:\n- UniFi gateway firewall rule logs go to the data collector through CyberSecure > Traffic Logging, with Syslog Logging turned on for each rule to log.\n\nField mapping:\n- The native UniFi integration reads only the IDS/IPS CEF records; this entry adds the firewall lines, to Netflow.\n- The action comes from the rule tag (D drops, A accepts) or, failing that, a rule description that starts with Block or Allow.\n\nTime:\n- The BSD syslog time has no year or zone and is read as UTC.\n\nSources and licenses:\n- Ubiquiti doesn't document the firewall line itself.\n\nMade up in the samples:\n- Samples follow the example in Graylog's UniFi content pack and the netfilter LOG fields.\n\nTesting:\n- Passed Run Test in a lab tenant on 2026-10-13.",
   "parsers": [
     {
       "name": "UBIQUITI_UNIFI_FW_SYSLOG_STANDALONE_NETFLOW",
