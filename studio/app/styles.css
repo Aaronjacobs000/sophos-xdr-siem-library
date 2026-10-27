@@ -161,12 +161,12 @@ textarea.code::placeholder { color: #7E93B3; }
 table.map { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
 table.map th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.map td { padding: 6px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
-table.map td.src { font-family: var(--mono); font-size: 12px; font-weight: 600; min-width: 120px; }
+table.map td.src { font-family: var(--mono); font-size: 12px; font-weight: 600; min-width: 120px; max-width: 240px; overflow-wrap: break-word; }
 table.map td.val { font-family: var(--mono); font-size: 12px; color: var(--charcoal); max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 table.map tr.enum td { background: #F7F6FF; }
 table.map tr.unmapped td.src { color: var(--muted); font-weight: 500; }
 table.map select, table.map input { font-size: 12.5px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: #fff; max-width: 100%; }
-table.map select.field { font-family: var(--mono); color: var(--blue-ink); min-width: 170px; }
+table.map select.field { font-family: var(--mono); color: var(--blue-ink); min-width: 170px; width: 100%; }
 .restbox { margin-top: 12px; background: #F6F9FC; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; color: var(--charcoal); }
 .restbox .mono { color: var(--muted); }
 
