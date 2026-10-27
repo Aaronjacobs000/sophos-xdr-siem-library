@@ -17,7 +17,7 @@ export function renderHome(root) {
       ready ? `${L.entries.length} entries · ${parsers} parsers` : 'Loading…'),
     section('#/build/sample', 'Tool', 'Parser Studio', 'Write a custom parser in your browser: paste sample lines, map the fields, and test the scripts in an emulator of the parser language. Then share them to the library.',
       'Runs in this tab. Nothing is uploaded.'),
-    section('#/playbooks', 'Library', 'Playbooks', 'Sophos Fusion playbook templates to import, each with its setup steps, risk tier and rollback. They ship with dry run on, and the owner reviews every one.',
+    section('#/playbooks', 'Library', 'Playbooks', 'Sophos Fusion playbook templates to import, each with its setup steps, risk tier and rollback. The ones that change tickets or devices ship with dry run on, and the owner reviews every one.',
       ready ? count(L.playbooks, 'playbook') : 'Loading…'),
     section('#/connectors', 'Library', 'Connectors', 'Custom connectors for products that have no connector from Sophos, which the playbooks call. Each one calls only hosts its vendor documents.',
       ready ? count(L.connectors, 'connector') : 'Loading…'));
