@@ -1,4 +1,5 @@
 // An entry's About text: a summary of two or three sentences, then notes in labelled sections.
+// Parser entries, playbooks and connectors all use it.
 //
 // Notes are plain text, read line by line:
 //   a line that ends with a colon and holds nothing else   a section label, such as "Field mapping:"
@@ -13,6 +14,23 @@ export const NOTE_LINE_MAX = 600;
 export const NOTE_LABEL = /^([A-Z][^:\n]{0,47}):$/;
 // The usual sections, in the usual order. Other labels are allowed.
 export const NOTE_SECTIONS = ['Setup', 'Field mapping', 'Time', 'Sources and licenses', 'Made up in the samples', 'Testing', 'Known gaps'];
+export const AUTOMATION_NOTE_SECTIONS = ['Setup', 'How it works', 'Testing', 'Known gaps'];
+
+// What a summary says, and the sections to suggest, for each kind of entry.
+const KINDS = {
+  parser: {
+    summary: 'say what data the parsers read, how it reaches Sophos NG-SIEM (syslog to the data collector, HTTP Ingest, a bridge), and which schemas it lands in',
+    labels: '"Setup:" or "Field mapping:"',
+  },
+  playbook: {
+    summary: 'say what the playbook does, what starts it and which connectors it calls, and what it needs',
+    labels: '"Setup:" or "Testing:"',
+  },
+  connector: {
+    summary: 'say what the connector calls and can do, how its connection signs in, and what it needs',
+    labels: '"How it works:" or "Testing:"',
+  },
+};
 
 // [{type: 'label', text}, {type: 'list', items: [text]}, {type: 'para', text}]
 export function noteBlocks(text) {
@@ -42,15 +60,16 @@ export function sentenceCount(text) {
   return (s.match(/[.!?](?=\s+[A-Z0-9("]|\s*$)/g) || []).length || 1;
 }
 
-// Problems with a parser entry's summary and notes, as {level, message}. required: whether a
-// missing summary or unlabelled notes are errors (true) or warnings.
-export function aboutProblems(meta, { required = true } = {}) {
+// Problems with an entry's summary and notes, as {level, message}. required: whether a missing
+// summary or unlabelled notes are errors (true) or warnings. kind: parser, playbook or connector.
+export function aboutProblems(meta, { required = true, kind = 'parser' } = {}) {
+  const k = KINDS[kind] || KINDS.parser;
   const out = [];
   const err = (message) => out.push({ level: 'error', message });
   const need = (message) => out.push({ level: required ? 'error' : 'warning', message });
   const { summary, notes } = meta;
   if (summary === undefined || summary === null || (typeof summary === 'string' && !summary.trim())) {
-    need('summary is required: two or three plain sentences that say what data the parsers read, how it reaches Sophos NG-SIEM (syslog to the data collector, HTTP Ingest, a bridge), and which schemas it lands in');
+    need(`summary is required: two or three plain sentences that ${k.summary}`);
   } else if (typeof summary !== 'string') {
     err('summary must be text');
   } else {
@@ -61,7 +80,7 @@ export function aboutProblems(meta, { required = true } = {}) {
   if (notes === undefined || notes === null || notes === '') return out;
   if (typeof notes !== 'string' || notes.length > NOTES_MAX) { err(`notes must be text up to ${NOTES_MAX} characters`); return out; }
   const blocks = noteBlocks(notes);
-  if (blocks.length && blocks[0].type !== 'label') need('notes must start with a section label on its own line, such as "Setup:" or "Field mapping:", with "- " bullets under it');
+  if (blocks.length && blocks[0].type !== 'label') need(`notes must start with a section label on its own line, such as ${k.labels}, with "- " bullets under it`);
   blocks.forEach((b, i) => {
     if (b.type === 'label' && (!blocks[i + 1] || blocks[i + 1].type === 'label')) err(`notes: the section "${b.text}:" has nothing under it`);
   });
