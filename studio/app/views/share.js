@@ -9,6 +9,7 @@ import { libraryForLint, enginePayload } from './test.js';
 import { problemRow, SHIP_LABELS, FORMAT_LABELS } from './common.js';
 import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, vendorNames, FORMATS, LICENSES } from '../../core/library.js';
 import { makeZip } from '../../core/zip.js';
+import { NOTE_SECTIONS } from '../../core/notes.js';
 import { TOOL_VERSION, BRANCH } from '../../core/version.js';
 import { githubUrl } from '../library-client.js';
 
@@ -31,6 +32,7 @@ export function draftEntry(results) {
     reference_time: state.now || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     tested: { emulator: TOOL_VERSION, tenant: null },
     docs: origin && origin.docs ? [...origin.docs] : [],
+    summary: origin && origin.summary ? origin.summary : '',
     notes: origin && origin.notes ? origin.notes : '',
     parsers: state.parsers.map((p) => {
       const o = { name: p.name, file: `${p.name}.parser.txt`, role: p.role };
@@ -70,7 +72,9 @@ export function openShare() {
   const source = select([{ value: 'synthetic', label: 'Synthetic (made up)' }, { value: 'vendor-docs', label: 'From public vendor docs' }], m.sample_source, () => {}, { class: 'input' });
   const docs = h('textarea', { class: 'input', rows: '2', placeholder: 'https://vendor.example.com/docs/log-format (one per line)' });
   docs.value = m.docs.join('\n');
-  const notes = h('textarea', { class: 'input', rows: '3', placeholder: 'How to set up the source, what the parsers cover, what they leave out.' });
+  const summary = h('textarea', { class: 'input', rows: '3', placeholder: 'For example: These parsers read Acme Gateway firewall and VPN logs, sent as CEF over syslog to the data collector. Traffic lines go to Netflow and VPN sign-ins go to Auth. The rest stay generic.' });
+  summary.value = m.summary;
+  const notes = h('textarea', { class: 'input', rows: '8', placeholder: 'Setup:\n- How to send the logs, and any settings on the source\n\nField mapping:\n- Which lines go to which schema, and the fields they set\n\nKnown gaps:\n- What the parsers leave out' });
   notes.value = m.notes;
   const synthetic = h('input', { type: 'checkbox' });
   const agree = h('input', { type: 'checkbox' });
@@ -85,7 +89,8 @@ export function openShare() {
     h('div', { class: 'fields' }, field('Log format', format), field('Shipped by', ship)),
     h('div', { class: 'fields' }, field('Samples are', source), field('License', license)),
     field('Vendor docs for the log format', docs),
-    field('Notes', notes),
+    field('Summary', summary, 'Two or three plain sentences: what data the parsers read, how it reaches Sophos NG-SIEM, and which schemas it lands in. It opens the entry\'s About box.'),
+    field('Notes', notes, `Plain text in sections. A line that ends with a colon starts a section and lines that start with "- " are bullets. The usual sections: ${NOTE_SECTIONS.join(', ')}.`),
     h('label', { class: 'check' }, synthetic, h('span', { text: 'The samples are synthetic or copied from public vendor docs. They hold no customer data, real IP addresses, hostnames, user names, email addresses or keys.' })),
     h('label', { class: 'check' }, agree, h('span', {}, 'I agree to publish these parsers under the license above, in a public repo anyone can read.')),
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', onclick: () => check(), text: 'Run the library checks' }), h('button', { class: 'btn quiet', onclick: () => dlg.close(), text: 'Close' })),
@@ -98,7 +103,7 @@ export function openShare() {
       vendor: vendor.value.trim(), product: product.value.trim(),
       versions: versions.value.split(',').map((v) => v.trim()).filter(Boolean),
       author: state.shareAuthor, format: format.value, ship_method: ship.value, license: license.value, sample_source: source.value,
-      docs: docs.value.split(/\s+/).map((d) => d.trim()).filter(Boolean), notes: notes.value.trim(),
+      docs: docs.value.split(/\s+/).map((d) => d.trim()).filter(Boolean), summary: summary.value.replace(/\s+/g, ' ').trim(), notes: notes.value.trim(),
       reference_time: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     });
     entry.id = entryId(m);

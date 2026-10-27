@@ -16,7 +16,7 @@ import { trackedEntries, isTracked } from './tracked.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['meta.json', 'ACME_PULL_JSON_STANDALONE.parser.txt', 'samples.log', 'expected.json'];
-const META = { vendor: 'Acme', product: 'Pull API', versions: [], format: 'json', ship_method: 'http-ingest', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, parsers: [{ name: 'ACME_PULL_JSON_STANDALONE', file: 'ACME_PULL_JSON_STANDALONE.parser.txt', role: 'standalone' }] };
+const META = { vendor: 'Acme', product: 'Pull API', versions: [], format: 'json', ship_method: 'http-ingest', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, summary: 'This parser reads Acme Pull API audit records, which a bridge sends to HTTP Ingest. Every record stays in the generic schema.', parsers: [{ name: 'ACME_PULL_JSON_STANDALONE', file: 'ACME_PULL_JSON_STANDALONE.parser.txt', role: 'standalone' }] };
 const ON_MAIN = [{ path: 'bridges/acme-pull', files: ['README.md', 'acme_pull.py', 'test_acme_pull.py'] }];
 const problems = (meta, bridges) => validateMeta(meta, FILES, bridges ? { bridges } : {}).filter((p) => p.code === 'bridge');
 

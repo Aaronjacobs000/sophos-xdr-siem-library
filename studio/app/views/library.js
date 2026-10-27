@@ -4,6 +4,7 @@ import { go } from '../nav.js';
 import { loadEntry, loadBridge, engineParsers, githubUrl, bridgeFolder } from '../library-client.js';
 import { hasBridge, bridgeOf, searchText } from '../../core/library.js';
 import { renderMarkdown } from '../markdown.js';
+import { noteBlocks } from '../../core/notes.js';
 import { highlightSample, highlightScript } from '../highlight.js';
 import { call } from '../emulator-client.js';
 import { resultCard, resultDetail } from './test.js';
@@ -110,8 +111,10 @@ function drawEntry(root, e) {
     m.docs.filter((u) => /^https:\/\//.test(u)).forEach((u, i) => { if (i) d.append(h('br')); d.append(ext(u, u.replace(/^https:\/\//, '').slice(0, 70))); });
     row('Vendor docs', d);
   }
-  left.append(h('h2', { text: 'About this entry' }), dl);
-  if (m.notes) left.append(h('p', { class: 'sub', text: m.notes }));
+  left.append(h('h2', { text: 'About this entry' }));
+  if (typeof m.summary === 'string' && m.summary.trim()) left.append(h('p', { class: 'lead', text: m.summary }));
+  left.append(dl);
+  if (typeof m.notes === 'string' && m.notes.trim()) left.append(notesView(m.notes));
   left.append(h('p', { class: 'sub' }, ext(githubUrl(`/tree/main/parsers/${e.id}`), 'View the files on GitHub')));
 
   // Parsers
@@ -170,6 +173,17 @@ function drawEntry(root, e) {
   runBtn.addEventListener('click', () => run(ta.value.split(/\r?\n/).filter((l) => l.trim())));
   useLib.addEventListener('click', () => run(e.samples));
   right.append(h('div', { class: 'callout blue' }, pill('Emulator', 'blue'), h('span', { text: 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on.' })));
+}
+
+// An entry's notes as labelled sections with bullets and paragraphs. Every block goes in as text.
+function notesView(text) {
+  const box = h('div', { class: 'notes' });
+  for (const b of noteBlocks(text)) {
+    if (b.type === 'label') box.append(h('p', { class: 'nlabel' }, h('strong', { text: b.text })));
+    else if (b.type === 'list') box.append(h('ul', {}, b.items.map((t) => h('li', { text: t }))));
+    else box.append(h('p', { text: b.text }));
+  }
+  return box;
 }
 
 // Sources that need a bridge: its README and script, from the same commit as the entry.
