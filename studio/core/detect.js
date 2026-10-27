@@ -1,7 +1,7 @@
 // Looks at sample lines and works out the syslog header, the body format, the fields in each
 // line, the key that splits event types, and a confirm string. Rules only.
 
-import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, isIpv4, isIpv6 } from './formats.js';
+import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, splitCsv, isIpv4, isIpv6 } from './formats.js';
 import { goParse } from './gotime.js';
 import { compileGo } from './goregex.js';
 
@@ -109,6 +109,39 @@ function kvShape(body) {
   return best;
 }
 
+// The key name at the end of a pair's key text: letters, digits and . _ : / @ -, with single
+// spaces between whole words. Text glued in front of it, such as a syslog header, a tag or the end
+// of the previous value, isn't part of the name.
+function keyName(raw) {
+  const words = String(raw).trim().split(' ');
+  const last = words.pop();
+  let name = /[\w.:/@-]*$/.exec(last)[0];
+  if (name === last) while (words.length && /^\w+$/.test(words[words.length - 1])) name = `${words.pop()} ${name}`;
+  return name.replace(/^[^A-Za-z_@]+/, '');
+}
+
+// Where the pairs start: at the key name of the first item, split as SPLIT_NAME_VALUES() splits,
+// that has the separator after a key name. The parser cuts the line there too, so text in front
+// of it doesn't join the first key.
+function firstPairAt(text, delim, sep) {
+  let start = 0;
+  let quoted = false;
+  for (let i = 0; i <= text.length; i++) {
+    if (text[i] === '"') { quoted = !quoted; continue; }
+    if (i < text.length && (quoted || !text.startsWith(delim, i))) continue;
+    const item = text.slice(start, i);
+    const at = item.indexOf(sep);
+    if (at !== -1) {
+      const raw = item.slice(0, at).trimEnd();
+      const name = keyName(raw);
+      if (name) return start + raw.length - name.length;
+    }
+    start = i + delim.length;
+    i += delim.length - 1;
+  }
+  return 0;
+}
+
 // Analyse one line. Returns {header, tag, body, format, fields: [{key, path?, index?, value}], json?, kv?}
 export function analyseLine(line) {
   const header = splitSyslog(line);
@@ -150,11 +183,15 @@ export function analyseLine(line) {
   }
   const kv = kvShape(afterTag);
   if (kv) {
-    const obj = splitNameValues(afterTag, kv.delim, kv.sep, '"');
+    const text = afterTag.slice(firstPairAt(afterTag, kv.delim, kv.sep));
+    const obj = splitNameValues(text, kv.delim, kv.sep, '"');
     out.format = 'kv';
     out.kv = { delim: kv.delim, sep: kv.sep, quote: '"' };
-    out.kvText = afterTag;
-    for (const [k, v] of obj.map) out.fields.push({ key: k, value: v });
+    out.kvText = text;
+    // A later pair whose key has text from the previous value glued to it, as in "(SyslogId" or
+    // "<hash>; Reason", has that text in its name for SPLIT_NAME_VALUES() too, so the parser can't
+    // read it by its key name. It isn't listed.
+    for (const [k, v] of obj.map) if (keyName(k) === k) out.fields.push({ key: k, value: v });
     return out;
   }
   for (const d of [',', '\t', '|', ';']) {
@@ -163,14 +200,15 @@ export function analyseLine(line) {
   return out;
 }
 
-// Reads a line as delimited columns when it splits into at least 4 of them.
+// Reads a line as delimited columns when it splits into at least 4 of them. It splits the way
+// the parser's SPLIT() does, so a quoted value keeps the delimiters inside it.
 function readColumns(out, text, d) {
-  const parts = text.split(d);
+  const parts = splitCsv(text, d);
   if (parts.length < 4) return false;
   out.format = 'csv';
   out.csv = { delim: d };
   out.csvText = text;
-  out.fields = parts.map((v, i) => ({ key: `col${i}`, index: i, value: v.replace(/^"|"$/g, '') }));
+  out.fields = parts.map((v, i) => ({ key: `col${i}`, index: i, value: v }));
   return true;
 }
 
@@ -264,6 +302,10 @@ export function analyseSample(lines) {
       if (readColumns(e, text, delim)) { delete e.kv; delete e.kvText; }
     }
   }
+  // The parsers read every line the way the most common format reads, so a line in another format
+  // has no keys they can read. A plain-text sample is the exception: its capture pattern reads
+  // every line.
+  if (format !== 'text') for (const e of events) if (e.format !== format) e.fields = [];
   const formats = count(events.map((e) => e.format));
   const headers = count(events.map((e) => (e.header ? e.header.kind : 'none')));
   const header = Object.entries(headers).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
@@ -316,7 +358,7 @@ export function analyseSample(lines) {
   for (const k of keys.values()) {
     if (k.shape === 'time' && k.layout && !/Z07|-07|MST/.test(k.layout)) notes.push(`${k.key} has no time zone, so DATETIME() reads it as UTC. Check what the device sends.`);
   }
-  if (Object.keys(formats).length > 1) notes.push(`The lines mix formats (${Object.entries(formats).map(([f, n]) => `${n} ${f}`).join(', ')}). One parser family per format works best.`);
+  if (Object.keys(formats).length > 1) notes.push(`The lines mix formats (${Object.entries(formats).map(([f, n]) => `${n} ${f}`).join(', ')}). One parser family per format works best.${format === 'text' ? '' : ` The parsers are written for the ${format} lines, so keys from the other lines aren't listed.`}`);
   if (format === 'xml') notes.push('XML has no documented helper function, so it needs capture patterns.');
   if (format === 'text' && !template) notes.push('No structure found, so fields come from capture patterns you write in the parser.');
   if (keys.has('date') && keys.has('time')) notes.push('The date and time are in separate keys; the parser joins them before DATETIME().');

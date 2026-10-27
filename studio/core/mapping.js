@@ -294,9 +294,12 @@ export function pickSchema(keys, typeValue = '', { child = false, extraText = ''
 // Score each schema for an event type and return them best first.
 export function suggestSchema(keys, typeValue = '', extraText = '') {
   const scores = [];
+  // An address in a column with no name (colN, or fN from a capture pattern) could be a user, a
+  // sender or a recipient, so a user-name field guessed from its shape says nothing about the schema.
+  const unnamedAddress = new Set(keys.filter((k) => k.shape === 'email' && /^(col|f)\d+$/.test(k.key)).map((k) => k.key));
   for (const id of SCHEMA_IDS) {
     if (id === GENERIC) continue;
-    const mapped = suggestMappings(keys, id).filter((m) => !GENERAL_FIELDS.has(m.field) && !(m.transform.kind === 'enum' && !m.transform.map.length));
+    const mapped = suggestMappings(keys, id).filter((m) => !GENERAL_FIELDS.has(m.field) && !(m.transform.kind === 'enum' && !m.transform.map.length) && !(m.origin === 'shape' && unnamedAddress.has(m.key)));
     let score = mapped.length;
     if (mapped.length && DEFINING[id] && !mapped.some((m) => DEFINING[id].includes(m.field))) score -= 4;
     const hint = SCHEMA_HINTS.find(([sid]) => sid === id);

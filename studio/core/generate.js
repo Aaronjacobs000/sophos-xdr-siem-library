@@ -57,10 +57,12 @@ export function extraction(plan) {
     case 'kv': {
       const delim = x.delim ?? ' ';
       const sep = x.sep ?? '=';
-      const start = x.firstKey ? `(${escapeRe(x.firstKey)}${escapeRe(sep)}.*)$` : '(.*)$';
+      // The sample's lines start their pairs at one of these keys.
+      const first = x.firstKey ? [x.firstKey] : x.firstKeys || [];
+      const start = first.length ? `(${first.length > 1 ? `(?:${first.map(escapeRe).join('|')})` : escapeRe(first[0])}${escapeRe(sep)}.*)$` : '(.*)$';
       return {
         lines: [
-          `# Everything from the first ${x.firstKey || 'key'}${sep} on is ${delim === ' ' ? 'space' : JSON.stringify(delim)}-separated key${sep}value pairs.`,
+          `# Everything from the first ${first.length === 1 ? first[0] : 'key'}${sep} on is ${delim === ' ' ? 'space' : JSON.stringify(delim)}-separated key${sep}value pairs.`,
           `body = originalData$|${start}`,
           `vals = SPLIT_NAME_VALUES(body[1], ${q(delim)}, ${q(sep)}, "\\"")`,
         ],
@@ -71,7 +73,7 @@ export function extraction(plan) {
       const delim = x.delim ?? ',';
       return {
         lines: [
-          '# Delimited fields, read by position. A quoted value with the delimiter inside will shift the columns.',
+          '# Delimited fields, read by position. SPLIT() reads CSV quotes, so a quoted value keeps the delimiters inside it.',
           x.prefix ? `body = originalData$|${escapeRe(x.prefix)}(.*)$` : null,
           `parts = SPLIT(${x.prefix ? 'body[1]' : 'message'}, ${q(delim)})`,
         ].filter(Boolean),
