@@ -132,6 +132,8 @@ Every playbook ships off: you import it, choose Use this Template and leave the 
 - an honest rollback: what undoes it, or that nothing does
 - an MDR note: Sophos MDR doesn't run customer playbooks, and one can act on a host or device MDR is working on
 
+A playbook that acts only on the case that triggered it, such as a ticket sync, handles one case per run, so it needs no per-run limit. Its scoping can be filters on that case, such as a minimum severity or who manages it, in place of a scoping input.
+
 ### What the checks look at
 
 - The YAML parses, with no anchors, tags or tabs, and the fields are ones a template or connector has.
@@ -150,7 +152,7 @@ The checks run offline. Run `playbookValidateDSLV2` in your own tenant on the te
 ### What review looks at
 
 - What each acting task does, against the risk tier and the vendor's docs.
-- The dry run, scoping input and per-run limit, and that the defaults are safe.
+- The dry run, the scoping and any per-run limit, and that the defaults are safe.
 - Every use of the Generic Webhook or Fetch connectors, and exactly which fields leave the tenant.
 - Whether `SETUP.md` is enough to set it up without guessing.
 
