@@ -105,8 +105,9 @@ connectors/<vendor>/<name>/     connector.yaml, meta.json, README.md
 The folder comes from `meta.json`: the vendor and the title for a playbook, the vendor and the product for a connector, in lowercase with hyphens. [playbooks/sophos/sophos-mobile-lock](playbooks/sophos/sophos-mobile-lock/) and [connectors/sophos/sophos-mobile](connectors/sophos/sophos-mobile/) show the shape.
 
 - `template.yaml` and `connector.yaml` are the files as Sophos Fusion exports them (More Actions > Export on the template, or the Connector Library), with `tenantId` and `icon` taken out. Edit the raw text. A single-quoted value in a template is text, and a plain or double-quoted one is an expression, so a tool that reads and rewrites the YAML can change what a playbook does.
-- A playbook's `meta.json` has `title`, `vendor`, `product`, `use_case`, `trigger` (the trigger to set), `connections`, `requires` (the products it needs), `license`, `risk_tier`, `mdr_note`, `rollback`, `tested`, `connector` (the library connector it needs, or null), `author`, `docs` and optional `notes`.
-- A connector's `meta.json` has `title`, `vendor`, `product`, `auth` (how the connection signs in), `functions` (each function's risk tier), `license`, `tested`, `author`, `docs` and optional `notes`.
+- A playbook's `meta.json` has `title`, `vendor`, `product`, `use_case`, `trigger` (the trigger to set), `connections`, `requires` (the products it needs), `license`, `risk_tier`, `mdr_note`, `rollback`, `tested`, `connector` (the library connector it needs, or null), `author`, `docs`, `summary` and optional `notes`.
+- A connector's `meta.json` has `title`, `vendor`, `product`, `auth` (how the connection signs in), `functions` (each function's risk tier), `license`, `tested`, `author`, `docs`, `summary` and optional `notes`.
+- `summary` and `notes` are the About text, in the same format as a parser entry's (see [Write the About text](#write-the-about-text)). A playbook's summary says what it does, what starts it and which connectors it calls, and what it needs. A connector's says what it calls and can do, how its connection signs in, and what it needs. The usual notes sections, in this order, are `Setup:`, `How it works:`, `Testing:` and `Known gaps:`.
 - `tested` is `{"validated": "YYYY-MM-DD", "tenant": null}`: the date the template passed `playbookValidateDSLV2` (or the connector imported) in a tenant, and `{"date": "YYYY-MM-DD", "region": "us01"}` once it really ran in a tenant. Only record what happened.
 - `SETUP.md` lists what a template can't carry: the trigger, the run condition, the inputs, the connections, and the response mode where it applies. It says to pin the template version, because a configured playbook picks up minor and patch versions on its own, and to leave the playbook off until a test run.
 
@@ -134,6 +135,7 @@ Every playbook ships off: you import it, choose Use this Template and leave the 
 ### What the checks look at
 
 - The YAML parses, with no anchors, tags or tabs, and the fields are ones a template or connector has.
+- The About text has a `summary`, and `notes` in sections.
 - Names, versions (`1.0.0`), the `Taegis` prefix Sophos reserves, and the files and folder.
 - Dependencies: every `action`, `exec` and `call` is in the template's `connectors`, `playbooks` or `interfaces` list, the entry's own connector is listed at the version its `connector.yaml` has, and it has the functions the template calls.
 - Every CEL expression parses, and reads only tasks, `inputs`, `TDR` and `tenant`. A bare word that is none of them was probably meant as text, which needs single quotes.

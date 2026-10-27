@@ -175,6 +175,7 @@ const CONNECTOR_META = {
   title: 'Acme Widget', vendor: 'Acme', product: 'Acme Widget', auth: 'OAuth client credentials',
   functions: { validate: 'lookup', getWidget: 'lookup', lockWidget: 'reversible action' },
   license: 'MIT', tested: { validated: '2026-10-16', tenant: null }, author: 'octocat', docs: ['https://docs.example.com/api'],
+  summary: 'This connector lets playbooks read and lock Acme widgets through the Acme API. The connection signs in with OAuth client credentials.',
 };
 
 const TEMPLATE = `apiVersion: v0.0.1
@@ -251,6 +252,7 @@ const PLAYBOOK_META = {
   connections: ['Acme_Widget'], requires: 'Acme Widget', license: 'MIT', risk_tier: 'reversible action', mdr_note: 'Tell MDR.',
   rollback: 'Unlock it in the Acme console.', tested: { validated: '2026-10-16', tenant: null }, connector: 'connectors/acme/acme-widget',
   author: 'octocat', docs: ['https://docs.example.com/api'],
+  summary: 'This playbook locks the Acme widget behind a host in a case. An analyst runs it from the host, and it needs the library\'s Acme Widget connector.',
 };
 
 const SETUP = '# Setup\n\n1. Import it.\n2. Leave it off.\n';
@@ -371,6 +373,21 @@ test('checks: meta.json fields, the folder name and the allowed files', () => {
   const missing = playbookEntry();
   missing.files = missing.files.filter((f) => f.path !== 'SETUP.md');
   assert.ok(has(check(missing), 'files', /SETUP\.md is missing/));
+});
+
+test('checks: playbooks and connectors need a summary, and notes in labelled sections', () => {
+  const about = (r) => r.problems.filter((p) => p.code === 'about').map((p) => `${p.level}: ${p.message}`).join('\n');
+  for (const [entry, kind] of [[playbookEntry, 'playbook'], [connectorEntry, 'connector']]) {
+    assert.equal(about(check(entry({ meta: { notes: 'Testing:\n- Not run against Acme yet.\n\nKnown gaps:\n- The lock code is untested.' } }))), '', kind);
+    // Warnings until every playbook and connector has a summary.
+    assert.match(about(check(entry({ meta: { summary: undefined } }))), new RegExp(`^warning: summary is required: two or three plain sentences that say what the ${kind}`), kind);
+    assert.match(about(check(entry({ meta: { summary: '  ' } }))), /^warning: summary is required/, kind);
+    assert.match(about(check(entry({ meta: { summary: 'x'.repeat(501) } }))), /^error: summary must be up to 500 characters/, kind);
+    assert.match(about(check(entry({ meta: { notes: 'One paragraph of notes with no sections.' } }))), /^warning: notes must start with a section label/, kind);
+    assert.match(about(check(entry({ meta: { notes: `Testing:\n- ${'x'.repeat(2999)}` } }))), /^error: notes must be text up to 3000 characters/, kind);
+    assert.match(about(check(entry({ meta: { notes: 'Testing:\n* a star bullet' } }))), /^warning: notes are plain text/, kind);
+    assert.ok(check(entry({ meta: { summary: undefined } })).problems.filter((p) => p.code === 'about').every((p) => p.file === 'meta.json'), kind);
+  }
 });
 
 test('checks: the host allowlist itself must be well formed', () => {

@@ -5,6 +5,7 @@ import { h, clear, pill, ext, copyText, toast, download } from '../dom.js';
 import { state } from '../store.js';
 import { loadAutomationEntry, githubUrl } from '../library-client.js';
 import { renderMarkdown } from '../markdown.js';
+import { notesView } from './common.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const TIER_PILL = { lookup: 'green', notify: 'blue', 'reversible action': 'amber', destructive: 'red' };
@@ -122,6 +123,11 @@ function mdPanel(title, text, base) {
   return h('section', { class: 'panel mdpanel' }, h('h2', { text: title }), h('div', { class: 'mdview' }, renderMarkdown(text, { base })));
 }
 
+// The summary opens the About box, as on a parser entry. Nothing when there is none.
+function summaryView(m) {
+  return typeof m.summary === 'string' && m.summary.trim() ? h('p', { class: 'lead', text: m.summary }) : null;
+}
+
 function steps(items) {
   const ol = h('ol', { class: 'steps-list' });
   for (const s of items) ol.append(h('li', { text: s }));
@@ -136,7 +142,7 @@ function drawPlaybook(root, e) {
   const connector = m.connector ? (state.library.connectors || []).find((c) => `connectors/${c.id}` === m.connector) : null;
   const grid = h('div', { class: 'grid g-entry' });
   root.append(grid);
-  const left = h('section', { class: 'panel' }, h('h2', { text: 'About this playbook' }), kv([
+  const left = h('section', { class: 'panel' }, h('h2', { text: 'About this playbook' }), summaryView(m), kv([
     ['Use case', m.use_case],
     ['Risk tier', h('span', {}, tierPill(m.risk_tier), ' ', TIERS[m.risk_tier] || '')],
     ['Trigger to set', m.trigger],
@@ -150,7 +156,7 @@ function drawPlaybook(root, e) {
     ['License', m.license],
     ['Docs', docsLinks(m)],
   ]));
-  if (m.notes) left.append(h('p', { class: 'sub', text: m.notes }));
+  if (typeof m.notes === 'string' && m.notes.trim()) left.append(notesView(m.notes));
   left.append(h('p', { class: 'sub' }, ext(githubUrl(`/tree/main/playbooks/${e.id}`), 'View the files on GitHub')));
   const right = h('section', { class: 'panel' }, h('h2', { text: 'Import it' }), steps([
     m.connector ? 'Import the library connector it needs under Security Operations > Automations > Connectors > Connector Library > Import, then add a connection to it.' : 'Check you have a connection for each connector it lists.',
@@ -174,7 +180,7 @@ function drawConnector(root, e) {
   const usedBy = (state.library.playbooks || []).filter((p) => p.meta.connector === `connectors/${e.id}`);
   const grid = h('div', { class: 'grid g-entry' });
   root.append(grid);
-  const left = h('section', { class: 'panel' }, h('h2', { text: 'About this connector' }), kv([
+  const left = h('section', { class: 'panel' }, h('h2', { text: 'About this connector' }), summaryView(m), kv([
     ['Product', m.product],
     ['Sign-in', m.auth],
     ['Tested', testedText(m.tested, 'connectors')],
@@ -183,7 +189,7 @@ function drawConnector(root, e) {
     ['License', m.license],
     ['Docs', docsLinks(m)],
   ]), h('h3', { text: 'Functions' }), fns);
-  if (m.notes) left.append(h('p', { class: 'sub', text: m.notes }));
+  if (typeof m.notes === 'string' && m.notes.trim()) left.append(notesView(m.notes));
   left.append(h('p', { class: 'sub' }, ext(githubUrl(`/tree/main/connectors/${e.id}`), 'View the files on GitHub')));
   const right = h('section', { class: 'panel' }, h('h2', { text: 'Import it' }), steps([
     'Download connector.yaml below and import it under Security Operations > Automations > Connectors > Connector Library > Import.',

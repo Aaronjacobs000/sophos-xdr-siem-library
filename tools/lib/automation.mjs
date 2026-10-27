@@ -16,6 +16,7 @@ import { parseCel, freeNames, templateParts, CelError } from './cel.mjs';
 import { scanText } from '../../studio/core/scan.js';
 import { gitleaksProblems } from '../../studio/core/gitleaks.js';
 import { slug, LICENSES } from '../../studio/core/library.js';
+import { aboutProblems } from '../../studio/core/notes.js';
 
 export const TIERS = ['lookup', 'notify', 'reversible action', 'destructive'];
 const rank = (t) => TIERS.indexOf(t);
@@ -198,7 +199,9 @@ function checkCommonMeta(r, meta, kind) {
   if (typeof meta.author !== 'string' || !HANDLE.test(meta.author)) err('author must be a GitHub handle, without the @');
   if (!LICENSES.includes(meta.license)) err(`license must be one of ${LICENSES.join(', ')}`);
   if (!Array.isArray(meta.docs) || !meta.docs.length || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u))) err('docs must list the https pages of the vendor\'s public docs the entry follows');
-  text('notes', 2500, false);
+  // The About text: a short summary, then notes in labelled sections, as for parser entries.
+  // Entries from before the summary existed get warnings until they have one.
+  for (const p of aboutProblems(meta, { kind, required: false })) r.add(p.level, 'about', p.message, null, 'meta.json');
   const t = meta.tested;
   if (!t || typeof t !== 'object' || Array.isArray(t)) err('tested must be an object like {"validated": "YYYY-MM-DD", "tenant": null}');
   else {
@@ -221,7 +224,7 @@ function checkPlaybookMeta(r, meta) {
   if (!Array.isArray(meta.connections) || !meta.connections.length || meta.connections.some((c) => typeof c !== 'string' || !c.trim() || c.length > 200)) err('connections must list each connection the playbook needs, as text');
   if (!TIERS.includes(meta.risk_tier)) err(`risk_tier must be one of: ${TIERS.join(', ')}`);
   if (meta.connector !== null && !(typeof meta.connector === 'string' && CONNECTOR_PATH.test(meta.connector))) err('connector must be null or the path of the library connector the playbook needs, such as "connectors/sophos/sophos-mobile"');
-  const known = ['title', 'vendor', 'product', 'use_case', 'trigger', 'connections', 'requires', 'license', 'risk_tier', 'mdr_note', 'rollback', 'tested', 'connector', 'author', 'docs', 'notes'];
+  const known = ['title', 'vendor', 'product', 'use_case', 'trigger', 'connections', 'requires', 'license', 'risk_tier', 'mdr_note', 'rollback', 'tested', 'connector', 'author', 'docs', 'summary', 'notes'];
   for (const k of Object.keys(meta)) if (!known.includes(k)) err(`"${k}" is not a playbook meta.json field`);
 }
 
@@ -231,7 +234,7 @@ function checkConnectorMeta(r, meta) {
   if (typeof meta.auth !== 'string' || !meta.auth.trim() || meta.auth.length > 200) err('auth is required: how the connection signs in, as text');
   if (!meta.functions || typeof meta.functions !== 'object' || Array.isArray(meta.functions) || !Object.keys(meta.functions).length) err('functions must map each function in connector.yaml to its risk tier');
   else for (const [k, v] of Object.entries(meta.functions)) if (!TIERS.includes(v)) err(`functions.${k} must be one of: ${TIERS.join(', ')}`);
-  const known = ['title', 'vendor', 'product', 'auth', 'functions', 'license', 'tested', 'author', 'docs', 'notes'];
+  const known = ['title', 'vendor', 'product', 'auth', 'functions', 'license', 'tested', 'author', 'docs', 'summary', 'notes'];
   for (const k of Object.keys(meta)) if (!known.includes(k)) err(`"${k}" is not a connector meta.json field`);
 }
 

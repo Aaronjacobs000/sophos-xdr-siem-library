@@ -2,6 +2,7 @@ import { h, pill } from '../dom.js';
 import { state } from '../store.js';
 import { go } from '../nav.js';
 import { schemaInfo } from '../../core/schemas.js';
+import { noteBlocks } from '../../core/notes.js';
 
 export function steps(current, right) {
   const order = ['sample', 'map', 'test'];
@@ -47,3 +48,14 @@ export function problemRow(p, onLine) {
 
 export const SHIP_LABELS = { syslog: 'Syslog to the data collector', 'http-ingest': 'HTTP Ingest', s3: 'Amazon S3', azure: 'Azure Event Hubs', other: 'Other' };
 export const FORMAT_LABELS = { json: 'JSON', cef: 'CEF', leef: 'LEEF', kv: 'key=value', syslog: 'Plain syslog text', text: 'Plain text', csv: 'Delimited (CSV)', xml: 'XML', other: 'Other' };
+
+// An entry's notes as labelled sections with bullets and paragraphs. Every block goes in as text.
+export function notesView(text) {
+  const box = h('div', { class: 'notes' });
+  for (const b of noteBlocks(text)) {
+    if (b.type === 'label') box.append(h('p', { class: 'nlabel' }, h('strong', { text: b.text })));
+    else if (b.type === 'list') box.append(h('ul', {}, b.items.map((t) => h('li', { text: t }))));
+    else box.append(h('p', { text: b.text }));
+  }
+  return box;
+}
