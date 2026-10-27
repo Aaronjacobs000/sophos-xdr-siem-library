@@ -2,11 +2,11 @@
 
 ## Fonts
 
-`studio/assets/fonts/` bundles three fonts under the SIL Open Font License 1.1. The license texts sit next to the font files.
+`studio/assets/fonts/` bundles four fonts under the SIL Open Font License 1.1. The license texts sit next to the font files.
 
 | Font | Source | License file |
 | --- | --- | --- |
-| Zalando Sans and Zalando Sans Expanded (variable, Latin subset) | [zalando/sans](https://github.com/zalando/sans), via Google Fonts | `studio/assets/fonts/OFL-ZalandoSans.txt` |
+| Zalando Sans, Zalando Sans SemiExpanded and Zalando Sans Expanded (variable, Latin subset) | [zalando/sans](https://github.com/zalando/sans), via Google Fonts | `studio/assets/fonts/OFL-ZalandoSans.txt` |
 | Geist Mono (variable, Latin subset) | [vercel/geist-font](https://github.com/vercel/geist-font) | `studio/assets/fonts/OFL-GeistMono.txt` |
 
 ## Schema data
