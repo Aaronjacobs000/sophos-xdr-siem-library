@@ -6,7 +6,9 @@ import { lintParsers, overlaps } from '../studio/core/lint.js';
 import { analyseSample, analyseLine, textTemplate } from '../studio/core/detect.js';
 import { suggestMappings, pickSchema, guessEnum } from '../studio/core/mapping.js';
 import { buildPlan, writeParsers, keysFor, remap, setUnitSchema } from '../studio/app/plan.js';
-import { runParsers } from '../studio/core/engine.js';
+import { runParsers, execute, rootVars } from '../studio/core/engine.js';
+import { extraction } from '../studio/core/generate.js';
+import { toPlain } from '../studio/core/values.js';
 
 const codes = (r) => r.problems.map((p) => `${p.level}:${p.code}`);
 
@@ -260,6 +262,84 @@ test('detect: a delimited row with key=value text in a column is read as columns
   assert.equal(a.keys.find((k) => k.key === 'col5').values[2], 'S:TRA=ETR|ruleId=4c5d|st=10/12/2026|action=DeleteMessage');
   // A key=value sample still reads as key=value.
   assert.equal(analyseSample([lines[2]]).format, 'kv');
+});
+
+// Reads one key from a line in the emulator, with the statements the generated parser uses to split
+// the line.
+function readWithParser(plan, k, line) {
+  const ex = extraction(plan);
+  const { vars } = execute([...ex.lines, `x = ${ex.read(k)}`].join('\n'), Object.fromEntries(rootVars(line)));
+  return toPlain(vars.get('x'));
+}
+
+test('detect: a quoted delimited value keeps its delimiters, as SPLIT() reads it', () => {
+  const lines = [
+    '2026-10-12T11:40:15.611Z,192.0.2.21,"MDB:7f2c1e4a, Mailbox:9a8b7c6d, ClientType:StoreDriver",STOREDRIVER,DELIVER,jlee@example.com',
+    '2026-10-12T11:42:03.950Z,192.0.2.21,08DCEB1F2A3B4C61,SMTP,SEND,akim@example.com',
+  ];
+  const a = analyseSample(lines);
+  assert.deepEqual(a.keys.map((k) => k.key), ['col0', 'col1', 'col2', 'col3', 'col4', 'col5']);
+  assert.equal(a.keys[2].values[0], 'MDB:7f2c1e4a, Mailbox:9a8b7c6d, ClientType:StoreDriver');
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Mail', shipMethod: 'syslog' });
+  assert.match(writeParsers(plan, lines)[0].text, /SPLIT\(\) reads CSV quotes, so a quoted value keeps the delimiters inside it/);
+  for (const k of a.keys) assert.equal(readWithParser(plan, k, lines[0]), k.values[0], k.key);
+});
+
+test('detect: Exchange message tracking reads as its 30 columns and suggests the Email schema', () => {
+  const lines = readFileSync(new URL('../parsers/microsoft/exchange-server-message-tracking/samples.log', import.meta.url), 'utf8').split('\n').filter(Boolean);
+  const a = analyseSample(lines);
+  assert.equal(a.keys.length, 30);
+  const deliver = Object.fromEntries(a.events[1].fields.map((f) => [f.key, f.value]));
+  assert.equal(deliver.col8, 'DELIVER');
+  assert.equal(deliver.col13, '250 2.1.5 Recipient OK');
+  assert.equal(deliver.col18, 'Invoice 4471 for October');
+  // The address columns have no names, so they don't count as user names for CloudAudit.
+  assert.equal(pickSchema(a.keys, '', { extraText: a.hintText }), 'scwx.email');
+});
+
+test('detect: text in front of the first key=value pair isn\'t part of its key, and the parser cuts it off there too', () => {
+  const huawei = [
+    '<190>2026-10-15 09:22:01 fw01.example.com %%01SECLOG/6/SESSION_BUILT(l):CID=2160731923;IPVer=4,Protocol=6,SourceIP=192.0.2.25,DestinationIP=203.0.113.80,SourcePort=50123',
+    '<190>Oct 15 2026 09:21:40+10:00 fw02.example.com %%01SECLOG/6/SESSION_TEARDOWN(l):CID=2160731923;IPVer=4,Protocol=6,SourceIP=192.0.2.26,DestinationIP=203.0.113.81,SourcePort=50124',
+  ];
+  const a = analyseSample(huawei);
+  assert.deepEqual(a.keys.map((k) => k.key), ['CID', 'Protocol', 'SourceIP', 'DestinationIP', 'SourcePort']);
+  const plan = buildPlan(a, { vendor: 'Huawei', product: 'USG', shipMethod: 'syslog' });
+  assert.match(writeParsers(plan, huawei)[0].text, /^body = originalData\$\|\(CID=\.\*\)\$$/m);
+  for (const [i, line] of huawei.entries()) for (const k of a.keys) assert.equal(readWithParser(plan, k, line), k.values[i], k.key);
+  // Lines that start their pairs at different keys: the parser cuts at whichever comes first.
+  const bt = [
+    'Oct 13 01:22:07 pra01.example.com BG[24117]:3021:01:01:event=login;site=access.example.com;status=success;who_ip=203.0.113.10',
+    'Oct 13 01:30:12 pra01.example.com BG[24117]:3021:01:02:account=jsmith;site=access.example.com;status=disabled;who_ip=203.0.113.11',
+  ];
+  const b = analyseSample(bt);
+  assert.deepEqual(b.keys.map((k) => k.key), ['event', 'site', 'status', 'who_ip', 'account']);
+  const bp = buildPlan(b, { vendor: 'BeyondTrust', product: 'PRA', shipMethod: 'syslog' });
+  assert.match(writeParsers(bp, bt)[0].text, /^body = originalData\$\|\(\(\?:event\|account\)=\.\*\)\$$/m);
+  for (const [i, line] of bt.entries()) for (const k of b.keys.filter((x) => x.lines === 2)) assert.equal(readWithParser(bp, k, line), k.values[i], k.key);
+  // A later pair with the end of the previous value glued to its key has that text in its name
+  // for SPLIT_NAME_VALUES() too, so it isn't listed.
+  const aw = analyseLine('<46>1 2026-10-15T02:15:02.000000Z sysloghost CylancePROTECT - - - Event Type: AuditLog, Event Name: ThreatGlobalQuarantine, Message: SHA256: AF68C74F, F2BAD753; Reason: Confirmed malicious by the SOC., User: Jane Smith (jsmith@example.com)');
+  assert.deepEqual(aw.fields.map((f) => f.key), ['Event Type', 'Event Name', 'Message', 'User']);
+});
+
+test('detect: lines in another format than the sample\'s add no keys, so no mapping reads a key the parser can\'t', () => {
+  const csv = [
+    '2026/10/14 09:12:44 AEDT,FortiNAC,192.0.2.10,host-01,Login,jsmith,success',
+    '2026/10/14 09:13:50 AEDT,FortiNAC,192.0.2.11,host-02,Logout,akim,success',
+    '2026/10/14 09:14:20 AEDT,FortiNAC,192.0.2.12,host-03,Login,pkim,failure',
+  ];
+  const lines = [...csv, '{"srcAddr":"192.0.2.10","dstAddr":"198.51.100.2","action":"deny"}', 'CEF:0|Fortinet|FortiNAC|9.4|1001|Rogue host|5|src=192.0.2.12 shost=rogue-01 act=alert'];
+  const a = analyseSample(lines);
+  assert.equal(a.format, 'csv');
+  assert.deepEqual(a.keys.map((k) => k.key), ['col0', 'col1', 'col2', 'col3', 'col4', 'col5', 'col6']);
+  assert.match(a.notes.join(' '), /The parsers are written for the csv lines, so keys from the other lines aren't listed\./);
+  const plan = buildPlan(a, { vendor: 'Fortinet', product: 'FortiNAC', shipMethod: 'syslog' });
+  setUnitSchema(plan, a, plan.units[0], 'scwx.auth');
+  assert.doesNotMatch(writeParsers(plan, lines).map((p) => p.text).join('\n'), /undefined/);
+  // A key=value sample with a delimited row in it lists no columns.
+  const kv = analyseSample(['user=jsmith src=192.0.2.10 action=login result=ok', 'user=akim src=192.0.2.11 action=logout result=ok', '2026-10-14 09:04:33,NPS01,jsmith,192.0.2.10,1']);
+  assert.deepEqual(kv.keys.map((k) => k.key), ['user', 'src', 'action', 'result']);
 });
 
 test('lint: single-quoted strings are fine, as in Run Test and on save, and two side by side are a syntax error', () => {

@@ -36,10 +36,12 @@ function extractFor(analysis) {
   const x = {};
   if (analysis.format === 'json') x.jsonAtEnd = analysis.events.some((e) => e.jsonAtEnd);
   if (analysis.format === 'kv') {
-    const first = analysis.events.map((e) => (e.kv && e.fields[0] ? e.fields[0].key : null));
+    // The parser cuts each line at its first key, so text in front of it doesn't join that key.
+    const first = [...new Set(analysis.events.filter((e) => e.kv && e.fields[0]).map((e) => e.fields[0].key))];
     const kv = analysis.events.find((e) => e.kv);
     Object.assign(x, kv ? kv.kv : { delim: ' ', sep: '=' });
-    if (first.every((k) => k && k === first[0])) x.firstKey = first[0];
+    if (first.length === 1) x.firstKey = first[0];
+    else if (first.length > 1) x.firstKeys = first;
   }
   if (analysis.format === 'text' && analysis.template) x.pattern = analysis.template;
   if (analysis.format === 'csv') {

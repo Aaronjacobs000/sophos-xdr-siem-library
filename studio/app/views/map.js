@@ -133,7 +133,7 @@ function drawParent(main, side) {
     const kv = h('div', { class: 'fields three' },
       h('div', { class: 'field' }, h('label', { text: 'Pair delimiter' }), h('input', { class: 'input mono', value: plan.extract.delim === ' ' ? '(space)' : plan.extract.delim, oninput: (e) => { plan.extract.delim = e.target.value === '(space)' ? ' ' : e.target.value; } })),
       h('div', { class: 'field' }, h('label', { text: 'Key/value separator' }), h('input', { class: 'input mono', value: plan.extract.sep, oninput: (e) => { plan.extract.sep = e.target.value; } })),
-      h('div', { class: 'field' }, h('label', { text: 'First key' }), h('input', { class: 'input mono', value: plan.extract.firstKey || '', oninput: (e) => { plan.extract.firstKey = e.target.value || null; } })));
+      h('div', { class: 'field' }, h('label', { text: 'First key' }), h('input', { class: 'input mono', value: plan.extract.firstKey || '', placeholder: (plan.extract.firstKeys || []).join(' or '), oninput: (e) => { plan.extract.firstKey = e.target.value || null; } })));
     kv.style.marginTop = '12px';
     box.append(kv);
   }
