@@ -69,6 +69,9 @@ SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 # A sender gets this long in all, however slowly it sends, for its request line, headers and body.
 REQUEST_SECONDS = 30
 LINE_BREAK = re.compile(rb"\r\n|\r|\n")
+# Deepest JSON nesting the relay forwards; the vendors' webhooks nest a few levels. Some Pythons
+# raise RecursionError on deep nesting and some (3.14) parse 100,000 levels, so the relay counts.
+MAX_JSON_DEPTH = 64
 
 
 class RelayError(Exception):
@@ -243,15 +246,30 @@ def path_secret_matches(expected: str, given: str) -> bool:
 
 # ---------------------------------------------------------------- forwarding
 
+def _load_json(body: bytes):
+    """json.loads, with BodyError for JSON nested deeper than MAX_JSON_DEPTH. ValueError for a
+    body that isn't JSON."""
+    try:
+        data = json.loads(body)
+    except RecursionError:
+        raise BodyError("its JSON is nested too deeply") from None
+    containers = [(data, 1)] if isinstance(data, (dict, list)) else []
+    while containers:
+        value, depth = containers.pop()
+        if depth > MAX_JSON_DEPTH:
+            raise BodyError("its JSON is nested too deeply")
+        children = value.values() if isinstance(value, dict) else value
+        containers.extend((child, depth + 1) for child in children if isinstance(child, (dict, list)))
+    return data
+
+
 def one_record(body: bytes) -> tuple[bytes, str]:
     """HTTP Ingest reads each line as a separate record, and the library parsers expect one
     record per delivery. A body with no line break inside goes on byte for byte. Otherwise JSON
     gets its line breaks turned into spaces (JSON only allows them between values, so the data
     doesn't change), and text gets each line break replaced with the two characters \\n."""
     try:
-        is_json = isinstance(json.loads(body), dict)
-    except RecursionError:
-        raise BodyError("its JSON is nested too deeply") from None
+        is_json = isinstance(_load_json(body), dict)
     except ValueError:
         is_json = False
     ctype = "application/json" if is_json else "text/plain"
@@ -266,9 +284,7 @@ def split_batch(body: bytes) -> tuple[bytes, int] | None:
     event, each in the same envelope with only that event, and the number of lines. None for any
     other body, which goes on as one record."""
     try:
-        data = json.loads(body)
-    except RecursionError:
-        raise BodyError("its JSON is nested too deeply") from None
+        data = _load_json(body)
     except ValueError:
         return None
     if not isinstance(data, dict) or not isinstance(data.get("events"), list) or len(data["events"]) < 2:

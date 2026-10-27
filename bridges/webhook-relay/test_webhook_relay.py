@@ -290,6 +290,21 @@ class RelayTest(unittest.TestCase):
         self.assertEqual(len([l for l in lines if "timestamp is more than 5 minutes" in l]), 2)
         self.assertEqual(len([l for l in lines if "nested too deeply" in l]), 3)
 
+    def test_json_one_level_past_the_depth_limit_is_refused(self):
+        # A depth every Python parses, so the 400 comes from the relay's limit, not RecursionError.
+        self.start()
+        limit = r.MAX_JSON_DEPTH
+        at_limit = b'{"a":' * (limit - 1) + b"[1]" + b"}" * (limit - 1)
+        past = b'{"a":' * limit + b"[1]" + b"}" * limit
+        path = f"/hudu/{HUDU_SECRET}"
+        self.assertEqual(self.post(path, past), (400, "body can't be read\n"))
+        self.assertEqual(self.post(path, at_limit)[0], 200)
+        self.assertEqual(self.bodies(), [at_limit])
+        self.assertEqual(len([l for l in self.log.getvalue().splitlines() if "nested too deeply" in l]), 1)
+        batch = json.dumps({"topic": "audits", "events": [json.loads(past), {"a": 1}]}).encode()
+        with self.assertRaises(r.BodyError):
+            r.split_batch(batch)
+
     # -------------------------------------------------------------- Autotask
 
     def test_autotask_valid_signature_forwards(self):
