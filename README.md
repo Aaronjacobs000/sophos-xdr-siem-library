@@ -26,7 +26,7 @@ Mapping is rules only. There is no AI service and no backend.
 
 ## Privacy
 
-Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page's content security policy only lets it fetch from the site itself, and it only does that to read the library. The site never connects to a Sophos Fusion tenant.
+Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page counts visits with [GoatCounter](https://www.goatcounter.com/), an open-source counter that uses no cookies. It sends the route you open, such as `/parsers/vendor/product`, and on the first page the site that linked you there, and nothing you type or paste. GoatCounter works out the country from the IP address and doesn't keep the address or browser details. The page's content security policy only lets it fetch from the site itself, to read the library, and send those counts to GoatCounter. The site never connects to a Sophos Fusion tenant.
 
 ## The emulator and its limits
 
