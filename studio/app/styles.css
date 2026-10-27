@@ -170,7 +170,8 @@ table.map select.field { font-family: var(--mono); color: var(--blue-ink); min-w
 /* field select: fills its column once the table box is wide enough to fit it; narrower, the table scrolls and the select keeps its full width */
 @container (min-width: 820px) { table.map select.field { width: 100%; } }
 .restbox { margin-top: 12px; background: #F6F9FC; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; color: var(--charcoal); }
-.restbox .mono { color: var(--muted); }
+/* unmapped keys: a long key with no space breaks anywhere, so a phone doesn't scroll the page sideways */
+.restbox .mono { color: var(--muted); overflow-wrap: anywhere; }
 
 /* enum panel */
 .enumcard { border: 1px solid var(--line); border-radius: var(--radius); margin-top: 12px; overflow: hidden; }

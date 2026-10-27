@@ -174,7 +174,8 @@ function drawRight(right) {
   const status = h('div');
   const input = h('input', { class: 'input mono', value: state.confirm.text, 'aria-label': 'Confirm string', spellcheck: 'false' });
   const kind = select([{ value: 'PATTERN', label: 'PATTERN' }, { value: 'EXPRESSION', label: 'EXPRESSION' }], state.confirm.kind, (v) => { state.confirm.kind = v; state.plan = null; paintStatus(); }, { class: 'input', 'aria-label': 'Confirm with' });
-  input.addEventListener('input', () => { state.confirm.text = input.value; state.plan = null; paintStatus(); });
+  let mapBtn = null;
+  input.addEventListener('input', () => { state.confirm.text = input.value; state.plan = null; paintStatus(); if (mapBtn) mapBtn.disabled = !state.confirm.text; });
   right.append(h('div', { class: 'confirmbox' }, kind, input), status);
   function paintStatus() {
     clear(status);
@@ -220,9 +221,10 @@ function drawRight(right) {
   right.append(fields2);
 
   const n = a.split && a.types.length > 1 ? a.types.filter((t) => state.unitSchemas[t] !== GENERIC).length : 1;
+  mapBtn = h('button', { class: 'btn primary', disabled: !state.confirm.text, onclick: () => next(), text: n > 1 ? `Map fields for ${n} event types` : 'Map fields' });
   right.append(h('div', { class: 'actions' },
     h('span', { class: 'note', text: 'Names follow the pattern in the Sophos docs, for example VENDOR_PRODUCT_JSON_PARENT.' }),
-    h('button', { class: 'btn primary', disabled: !state.confirm.text, onclick: () => next(), text: n > 1 ? `Map fields for ${n} event types` : 'Map fields' })));
+    mapBtn));
 }
 
 function childSchema(keys, type) {
