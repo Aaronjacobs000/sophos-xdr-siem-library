@@ -158,16 +158,20 @@ export function analyseLine(line) {
     return out;
   }
   for (const d of [',', '\t', '|', ';']) {
-    const parts = afterTag.split(d);
-    if (parts.length >= 4) {
-      out.format = 'csv';
-      out.csv = { delim: d };
-      out.csvText = afterTag;
-      parts.forEach((v, i) => out.fields.push({ key: `col${i}`, index: i, value: v.replace(/^"|"$/g, '') }));
-      return out;
-    }
+    if (readColumns(out, afterTag, d)) return out;
   }
   return out;
+}
+
+// Reads a line as delimited columns when it splits into at least 4 of them.
+function readColumns(out, text, d) {
+  const parts = text.split(d);
+  if (parts.length < 4) return false;
+  out.format = 'csv';
+  out.csv = { delim: d };
+  out.csvText = text;
+  out.fields = parts.map((v, i) => ({ key: `col${i}`, index: i, value: v.replace(/^"|"$/g, '') }));
+  return true;
 }
 
 // ---------------------------------------------------------------- plain text
@@ -248,8 +252,19 @@ function commonPrefix(list) {
 // Returns a summary used by the studio's first step.
 export function analyseSample(lines) {
   const events = lines.map(analyseLine);
+  const format = Object.entries(count(events.map((e) => e.format))).sort((a, b) => b[1] - a[1])[0]?.[0] || 'text';
+  // A delimited row whose free-text column holds key=value pairs reads as key=value on its own,
+  // and the row up to its first = becomes a key. The parser SPLIT()s every line of a delimited
+  // sample, so such a row is read as columns too.
+  if (format === 'csv') {
+    const delim = events.find((e) => e.csv).csv.delim;
+    for (const e of events) {
+      if (e.format !== 'kv') continue;
+      const text = e.tag ? e.body.slice(e.tag.text.length).trimStart() : e.body;
+      if (readColumns(e, text, delim)) { delete e.kv; delete e.kvText; }
+    }
+  }
   const formats = count(events.map((e) => e.format));
-  const format = Object.entries(formats).sort((a, b) => b[1] - a[1])[0]?.[0] || 'text';
   const headers = count(events.map((e) => (e.header ? e.header.kind : 'none')));
   const header = Object.entries(headers).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
   const tags = count(events.map((e) => (e.tag ? e.tag.name : '')));

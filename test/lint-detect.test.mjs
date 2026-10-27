@@ -246,6 +246,22 @@ test('detection: a CEF line with a header shorter than 6 fields isn\'t read as C
   assert.notEqual(analyseLine('Oct 14 01:02:03 host CEF:0|V|P').format, 'cef');
 });
 
+test('detect: a delimited row with key=value text in a column is read as columns, not as a key', () => {
+  const lines = [
+    '2026-10-12T11:40:15.123Z,192.0.2.25,EXCH01,SMTP,RECEIVE,jlee@example.com',
+    '2026-10-12T11:42:03.950Z,192.0.2.21,EXCH01,SMTP,SEND,akim@example.com',
+    '2026-10-12T11:46:00.441Z,192.0.2.25,EXCH01,AGENT,DROP,S:TRA=ETR|ruleId=4c5d|st=10/12/2026|action=DeleteMessage',
+  ];
+  assert.equal(analyseLine(lines[2]).format, 'kv');
+  const a = analyseSample(lines);
+  assert.equal(a.format, 'csv');
+  assert.deepEqual(a.formats, { csv: 3 });
+  assert.deepEqual(a.keys.map((k) => k.key), ['col0', 'col1', 'col2', 'col3', 'col4', 'col5']);
+  assert.equal(a.keys.find((k) => k.key === 'col5').values[2], 'S:TRA=ETR|ruleId=4c5d|st=10/12/2026|action=DeleteMessage');
+  // A key=value sample still reads as key=value.
+  assert.equal(analyseSample([lines[2]]).format, 'kv');
+});
+
 test('lint: single-quoted strings are fine, as in Run Test and on save, and two side by side are a syntax error', () => {
   // The engine ran each good line and rejected 'it''s' as a syntax error, and Sophos Fusion saved a
   // parser with x = 'abc' and SPLIT('a,b', ',') as written (checked in a lab tenant).
