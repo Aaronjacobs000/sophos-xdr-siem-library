@@ -156,7 +156,7 @@ function drawRight(right) {
       const idx = a.events.map((e, i) => [e, i]).filter(([e]) => e.fields.some((f) => f.key === a.split.key && f.value === t)).map(([, i]) => i);
       if (!state.unitSchemas[t]) state.unitSchemas[t] = childSchema(keysFor(a, idx), t);
       tree.append(h('div', { class: 'row child' }, h('span', { class: 'name', text: '…_CHILD' }),
-        select(schemaOpts, state.unitSchemas[t], (v) => { state.unitSchemas[t] = v; state.plan = null; }, { 'aria-label': `Schema for ${t}` }),
+        select(schemaOpts, state.unitSchemas[t], (v) => { state.unitSchemas[t] = v; state.plan = null; mapBtn.textContent = mapLabel(); }, { 'aria-label': `Schema for ${t}` }),
         h('span', { class: 'why', text: `${t} · ${idx.length} line${idx.length === 1 ? '' : 's'}` })));
     }
   } else {
@@ -220,8 +220,12 @@ function drawRight(right) {
   fields2.style.marginTop = '10px';
   right.append(fields2);
 
-  const n = a.split && a.types.length > 1 ? a.types.filter((t) => state.unitSchemas[t] !== GENERIC).length : 1;
-  mapBtn = h('button', { class: 'btn primary', disabled: !state.confirm.text, onclick: () => next(), text: n > 1 ? `Map fields for ${n} event types` : 'Map fields' });
+  // Counts the children that get a parser, so a schema pick above updates it.
+  function mapLabel() {
+    const n = a.split && a.types.length > 1 ? a.types.filter((t) => state.unitSchemas[t] !== GENERIC).length : 1;
+    return n > 1 ? `Map fields for ${n} event types` : 'Map fields';
+  }
+  mapBtn = h('button', { class: 'btn primary', disabled: !state.confirm.text, onclick: () => next(), text: mapLabel() });
   right.append(h('div', { class: 'actions' },
     h('span', { class: 'note', text: 'Names follow the pattern in the Sophos docs, for example VENDOR_PRODUCT_JSON_PARENT.' }),
     mapBtn));
