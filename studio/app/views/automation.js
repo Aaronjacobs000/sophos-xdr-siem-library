@@ -16,7 +16,7 @@ const TIERS = {
   destructive: 'Changes something that can\'t be undone. Needs a recorded run in a real tenant before it can be in the library.',
 };
 const KIND = {
-  playbooks: { one: 'playbook', file: 'template.yaml', title: 'Playbooks', sub: 'Sophos Fusion playbook templates that people share. Each one ships with dry run on, and you set up its trigger and connections in your tenant.' },
+  playbooks: { one: 'playbook', file: 'template.yaml', title: 'Playbooks', sub: 'Sophos Fusion playbook templates that people share. Playbooks that change tickets or devices ship with dry run on; those that only post to chat, comment on the case or send a case to Rewst have none. You set up each one\'s trigger and connections in your tenant.' },
   connectors: { one: 'connector', file: 'connector.yaml', title: 'Connectors', sub: 'Custom connectors for Sophos Fusion playbooks, for products that have no connector from Sophos. Each one calls only hosts its vendor documents.' },
 };
 
@@ -30,7 +30,7 @@ const testedPill = (t) => (t && t.tenant && t.tenant.date ? pill(`tenant-tested 
 
 function readFirst(kind) {
   return h('div', { class: 'callout' }, pill('Read first', 'amber'), h('span', { text: kind === 'playbooks'
-    ? 'Playbooks act on your tenant. Every one here ships with dry run on, and its configured playbook stays off until you turn it on. Sophos doesn\'t make, maintain or support them. Import it, run it against a test target, and read what it did before you rely on it.'
+    ? 'Playbooks act on your tenant. Each configured playbook stays off until you turn it on, and the ones that change tickets or devices start with dry run on. Sophos doesn\'t make, maintain or support them. Import it, run it against a test target, and read what it did before you rely on it.'
     : 'A connector calls an outside API with a credential you store in Sophos Fusion. Give the credential the least role that works. Sophos doesn\'t make, maintain or support these connectors.' }));
 }
 
@@ -162,7 +162,9 @@ function drawPlaybook(root, e) {
     m.connector ? 'Import the library connector it needs under Security Operations > Automations > Connectors > Connector Library > Import, then add a connection to it.' : 'Check you have a connection for each connector it lists.',
     'Download template.yaml below and import it under Security Operations > Automations > Playbooks > Templates > Import.',
     'Choose Use this Template, set it up as the steps below say, and leave the playbook off.',
-    'Run it once against a test target with dry run on, read what it did, then turn it on.',
+    /^\s*dry_run:/m.test(e.texts['template.yaml'] || '')
+      ? 'Run it once against a test target with dry run on, read what it did, then turn it on.'
+      : 'It has no dry run, so run it once against a test case, read what it sent, then turn it on.',
   ]));
   grid.append(left, right);
   if (e.texts['SETUP.md']) root.append(mdPanel('Setup', e.texts['SETUP.md'], githubUrl(`/blob/main/playbooks/${e.id}/`)));
