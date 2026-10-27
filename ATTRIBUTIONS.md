@@ -65,7 +65,7 @@ Where a vendor's docs leave a line's shape open, some entries also follow open-s
 
 ## Code
 
-This project has no runtime or build dependencies. The emulator, the Go regex and time layout handling, the JSONPath reader, the ZIP writer, and the YAML and CEL readers the playbook checks use are written for this project.
+This project has no runtime or build dependencies apart from GoatCounter's count.js, which the page's visit counter loads from a copy in the repo. The emulator, the Go regex and time layout handling, the JSONPath reader, the ZIP writer, and the YAML and CEL readers the playbook checks use are written for this project.
 
 The library check runs a port of one rule of the secret scanner CI runs, so contributors see what CI would flag before they submit.
 
@@ -73,3 +73,4 @@ The library check runs a port of one rule of the secret scanner CI runs, so cont
 | --- | --- | --- |
 | `studio/core/gitleaks-rule.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `config/gitleaks.toml`, the `generic-api-key` rule's regex, keywords, entropy threshold, allowlists and stopword list, and the global allowlist, written by `tools/port-gitleaks.mjs`. The license text is in the file's header comment | MIT |
 | `studio/core/gitleaks.js` | [gitleaks](https://github.com/gitleaks/gitleaks) v8.30.1, copyright (c) 2019 Zachary Rice: from `detect/detect.go` and `config/allowlist.go`, how a match becomes a finding and how the allowlists apply. The license text is in the file's header comment | MIT |
+| `studio/app/vendor/goatcounter-count.v5.js` | [GoatCounter](https://github.com/arp242/goatcounter) count.js version 5, unchanged: `public/count.v5.js` in the v2.7.0 release, the same file as `https://gc.zgo.at/count.v5.js`, with the SRI hash GoatCounter publishes for it (`sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ`). The license line is in the file's header comment | ISC |

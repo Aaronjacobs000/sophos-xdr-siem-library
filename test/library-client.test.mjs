@@ -121,9 +121,9 @@ test('site paths are encoded, and links to the repo name it', () => {
   assert.equal(REPO, 'Aaronjacobs000/sophos-xdr-siem-library');
 });
 
-test('the page\'s content security policy lets it fetch from the site only', async () => {
+test('the page\'s content security policy lets it fetch from the site, and send visit counts to GoatCounter, only', async () => {
   const html = await readFile(path.join(ROOT, 'studio/index.html'), 'utf8');
   const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)[1];
   const connect = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('connect-src'));
-  assert.equal(connect, "connect-src 'self'");
+  assert.equal(connect, "connect-src 'self' https://xdr-siem-library.goatcounter.com/count");
 });

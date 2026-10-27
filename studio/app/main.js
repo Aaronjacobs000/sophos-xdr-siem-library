@@ -10,6 +10,7 @@ import { renderAutomationList, renderAutomationEntry } from './views/automation.
 import { TOOL_VERSION, SITE_NAME } from '../core/version.js';
 import { routeOf } from './routes.js';
 import { clear } from './dom.js';
+import { startCounting } from './analytics.js';
 
 const app = document.getElementById('app');
 
@@ -57,3 +58,4 @@ subscribe((what) => {
 route();
 updateMeta();
 refreshLibrary();
+startCounting();
