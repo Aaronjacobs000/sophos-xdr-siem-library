@@ -10,9 +10,7 @@ permissions:
 
 jobs:
   tests:
-    # Pinned: on ubuntu-26.04 (ubuntu-latest from 27/10/2026) the webhook relay's deep-nesting test
-    # fails, because that image's Python parses 100,000-deep JSON instead of raising RecursionError.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

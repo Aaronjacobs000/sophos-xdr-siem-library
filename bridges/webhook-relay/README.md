@@ -157,7 +157,7 @@ The timeouts above make the proxy, not the relay, wait on a slow sender. nginx a
 | 200 | HTTP Ingest took the delivery, or `--dry-run` checked it. |
 | 401 | The Huntress, Autotask or Mist signature is missing or wrong, or the Huntress timestamp is more than 5 minutes off. |
 | 404 | Unknown path, vendor not configured, or wrong path secret. |
-| 400, 405, 411, 413 | Empty body or JSON nested too deeply to read, not POST, no `Content-Length` (chunked), or body over `BRIDGE_MAX_BODY_BYTES`. |
+| 400, 405, 411, 413 | Empty body or JSON nested more than 64 levels deep, not POST, no `Content-Length` (chunked), or body over `BRIDGE_MAX_BODY_BYTES`. |
 | 502 | HTTP Ingest refused the delivery. Check the key and URL. |
 | 503 | HTTP Ingest stayed unavailable until the deadline, or `BRIDGE_MAX_CONNECTIONS` requests were already in progress. |
 
