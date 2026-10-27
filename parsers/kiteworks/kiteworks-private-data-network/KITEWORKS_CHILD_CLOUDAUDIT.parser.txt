@@ -1,0 +1,146 @@
+!SAMPLE=<134>Oct 26 21:14:02 kw-app-01 rest_server.py: {"id": 9310512, "event": "add_file", "description": "Uploaded file q3-forecast.xlsx", "successful": 1, "user_id": 118, "user_name": "jlee@example.com", "user_ip": "203.0.113.24", "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36", "app_host": "kw-app-01", "url_host": "files.example.com", "client_id": "kw-web", "client_name": "Kiteworks Web", "client_device": "None", "tenant_id": 1, "data": {"file": {"id": 55120, "name": "q3-forecast.xlsx", "path": "/Finance/Q3/q3-forecast.xlsx", "size": 48213, "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "hash": "de040babfb52b1f7f5530069408a49067ca9484137707aa637c92113ff63af03", "hash_algo": "sha256"}, "parent_folder": {"id": 2201, "name": "Q3", "path": "/Finance/Q3"}}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: every other Kiteworks activity in any of the parent's three shapes: files and folders
+# (add_file, upload, download, delete_folder_permanent, cleanup_upload), secure mail (send_mail,
+# created_draft, view_mail) and admin changes (add_user, delete_user, reactivate_user, settings).
+# Child of KITEWORKS_PARENT: each one to CloudAudit, with the event name as the event name and, as
+# the event type, the plain text Activity Group or the kind of object a JSON record carries (file,
+# folder, mail or user). Downloads and views are read-only; file, folder, mail and upload
+# activity is data, the rest is management.
+# json, p, t, isText, pubsub, kind, lk, group, desc, user, uid, ip, ua, client, clientId, urlHost,
+# appHost, okStr, failedJ, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the
+# parent.
+
+eventSource$ = "Kiteworks"
+eventName$ = STRING(kind)
+hasFile = IF json[p + "data.file"] THEN TRUE ELSE FALSE
+hasFolder = IF json[p + "data.folder"] THEN TRUE ELSE FALSE
+hasMail = IF json[p + "data.mail"] THEN TRUE ELSE FALSE
+hasUser = IF json[p + "data.user"] THEN TRUE ELSE FALSE
+otype = NULL
+otype = IF hasUser THEN "user" ELSE otype
+otype = IF hasMail THEN "mail" ELSE otype
+otype = IF hasFolder THEN "folder" ELSE otype
+otype = IF hasFile THEN "file" ELSE otype
+eventType$ = IF isText THEN group ELSE otype
+
+userName$ = user
+userId$ = uid
+sourceAddress$ = ip
+userAgent$ = ua
+logonApplicationFamily$ = client
+targetHostname$ = urlHost
+tenant = json[p + "tenant_id"]
+recipientAccountId$ = IF tenant THEN STRING(tenant) ELSE NULL
+
+# The user an admin action is about: data.user in JSON, or the name after "User reactivated:".
+descText = STRING(desc)
+react = descText|^User reactivated:\s*(?P<u>\S+)
+tuser = json[p + "data.user.name"]
+tuser = IF tuser THEN tuser ELSE react["u"]
+targetUserName$ = IF tuser THEN tuser ELSE NULL
+
+fpath = json[p + "data.file.path"]
+fname = json[p + "data.file.name"]
+dpath = json[p + "data.folder.path"]
+objectKey$ = IF fpath THEN fpath ELSE dpath
+
+readOnly$ = CONTAINS(lk, "download") OR CONTAINS(lk, "view")
+dataKw = CONTAINS(lk, "file") OR CONTAINS(lk, "folder") OR CONTAINS(lk, "mail") OR CONTAINS(lk, "upload") OR CONTAINS(lk, "download") OR CONTAINS(lk, "draft") OR CONTAINS(lk, "view")
+managementEvent$ = NOT dataKw
+status$ = IF okStr == "1" OR okStr == "true" THEN "success" ELSE NULL
+status$ = IF failedJ THEN "failed" ELSE status$
+err = json[p + "data.error_msg"]
+err = IF err THEN err ELSE json[p + "data.status_reason"]
+errorMessage$ = IF err THEN STRING(err) ELSE NULL
+
+# Each object the activity touched.
+fid = json[p + "data.file.id"]
+r1.resourceId$ = IF fid THEN STRING(fid) ELSE NULL
+r1.resourceType$ = "file"
+folderId = json[p + "data.folder.id"]
+folderId = IF folderId THEN folderId ELSE json[p + "data.parent_folder.id"]
+folderId = IF folderId THEN folderId ELSE json[p + "parent_folder_id"]
+r2.resourceId$ = IF folderId THEN STRING(folderId) ELSE NULL
+r2.resourceType$ = "folder"
+mid = json[p + "data.mail.id"]
+r3.resourceId$ = IF mid THEN STRING(mid) ELSE NULL
+r3.resourceType$ = "mail"
+ug = json[p + "data.user.guid"]
+ui = json[p + "data.user.id"]
+r4.resourceId$ = IF ug THEN STRING(ug) ELSE NULL
+r4.resourceId$ = IF r4.resourceId$ == NULL AND ui THEN STRING(ui) ELSE r4.resourceId$
+r4.resourceType$ = "user"
+resources$ = []
+resources$ = IF r1.resourceId$ THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ THEN resources$ + [r2] ELSE resources$
+resources$ = IF r3.resourceId$ THEN resources$ + [r3] ELSE resources$
+resources$ = IF r4.resourceId$ THEN resources$ + [r4] ELSE resources$
+
+# A secure mail's subject, recipients and attachments, as Kiteworks sends them.
+q1.key$ = "subject"
+q1.value$ = json[p + "data.mail.subject"]
+q2.key$ = "sender"
+q2.value$ = json[p + "data.mail.sender"]
+rcpt = json[p + "data.recipients"]
+q3.key$ = "recipients"
+q3.value$ = IF rcpt THEN STRING(rcpt) ELSE NULL
+att = json[p + "data.attachments"]
+q4.key$ = "attachments"
+q4.value$ = IF att THEN STRING(att) ELSE NULL
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF q1.value$ THEN requestParameters$.record$ + [q1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q2.value$ THEN requestParameters$.record$ + [q2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q3.value$ THEN requestParameters$.record$ + [q3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q4.value$ THEN requestParameters$.record$ + [q4] ELSE requestParameters$.record$
+
+d1.key$ = "description"
+d1.value$ = desc
+d2.key$ = "client_id"
+d2.value$ = IF clientId THEN STRING(clientId) ELSE NULL
+d3.key$ = "app_host"
+d3.value$ = appHost
+fsize = json[p + "data.file.size"]
+d4.key$ = "file_size"
+d4.value$ = IF fsize THEN STRING(fsize) ELSE NULL
+d5.key$ = "file_mime"
+d5.value$ = json[p + "data.file.mime"]
+d6.key$ = "file_hash"
+d6.value$ = json[p + "data.file.hash"]
+d7.key$ = "file_hash_algo"
+d7.value$ = json[p + "data.file.hash_algo"]
+d8.key$ = "folder_path"
+d8.value$ = IF dpath THEN dpath ELSE json[p + "data.parent_folder.path"]
+d9.key$ = "node_ip"
+d9.value$ = json[p + "node_ip"]
+eid = json[p + "event_id"]
+d10.key$ = "event_id"
+d10.value$ = IF eid THEN STRING(eid) ELSE NULL
+d11.key$ = "webhook_id"
+d11.value$ = json["$.webhookId"]
+d13.key$ = "file_name"
+d13.value$ = fname
+d12.key$ = "user_label"
+d12.value$ = IF isText THEN t["label"] ELSE NULL
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d13.value$ THEN additionalEventData$.record$ + [d13] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d7.value$ THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d8.value$ THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d9.value$ THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d10.value$ THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d11.value$ THEN additionalEventData$.record$ + [d11] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d12.value$ THEN additionalEventData$.record$ + [d12] ELSE additionalEventData$.record$

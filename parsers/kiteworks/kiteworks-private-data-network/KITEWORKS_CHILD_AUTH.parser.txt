@@ -1,0 +1,80 @@
+!SAMPLE=<132>Oct 26 21:05:47 kw-app-01 rest_server.py: {"id": 9310457, "event": "user_login_failed", "description": "User login failed", "successful": 0, "user_id": null, "user_name": "priya.n@example.com", "user_ip": "198.51.100.23", "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15", "app_host": "kw-app-01", "url_host": "files.example.com", "client_id": "kw-web", "client_name": "Kiteworks Web", "client_device": "None", "tenant_id": 1, "data": {"error_msg": "Invalid username or password"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kiteworks sign-in activity in any of the parent's three shapes:
+#   user_logged_in, admin_logged_in, login     a user or an admin signed in (login from PubSub)
+#   user_login_failed, or successful 0/false   a failed sign-in
+#   user_login_lockout, user_login_unlock      an account locked after failures, and unlocked
+#   reset_password, update_password            a password reset or change
+#   any event name with logout or logged_out   a sign-out
+# Child of KITEWORKS_PARENT: each one to Auth.
+# json, p, t, isText, pubsub, kind, lk, group, desc, user, uid, ip, ua, client, clientId, urlHost,
+# appHost, failedJ, eventType$, sensorType$, sensorEventId$ and eventTimeUsec$ come from the parent.
+
+authSystem$ = "Kiteworks"
+targetUserName$ = user
+sourceAddress$ = ip
+userAgent$ = ua
+applicationName$ = client
+sid = json[p + "data.session"]
+sessionId$ = IF sid THEN STRING(sid) ELSE NULL
+targetHostName$ = urlHost
+
+lockout = CONTAINS(lk, "lockout")
+unlock = CONTAINS(lk, "unlock")
+logoff = CONTAINS(lk, "logout") OR CONTAINS(lk, "logged_out")
+reset = lk == "reset_password"
+change = lk == "update_password"
+failed = failedJ OR CONTAINS(lk, "failed")
+
+authCategory$ = "ACCOUNT_LOGON"
+authCategory$ = IF logoff THEN "ACCOUNT_LOGOFF" ELSE authCategory$
+authCategory$ = IF lockout THEN "ACCOUNT_LOCK" ELSE authCategory$
+authCategory$ = IF unlock THEN "ACCOUNT_UNLOCK" ELSE authCategory$
+authCategory$ = IF reset THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+authCategory$ = IF change THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF logoff THEN "LOGOFF" ELSE "LOGON"
+action$ = IF lockout OR unlock OR reset OR change THEN "ACCOUNT" ELSE action$
+action$ = IF failed THEN "FAILURE" ELSE action$
+actionResult$ = IF failed THEN "FAILED" ELSE "SUCCESS"
+actionResult$ = IF lockout THEN NULL ELSE actionResult$
+
+# error_msg carries the reason for a failed sign-in in syslog JSON.
+err = json[p + "data.error_msg"]
+lerr = LOWERCASE(STRING(err))
+failureCategory$ = IF failed THEN "OTHER_ERROR" ELSE NULL
+failureCategory$ = IF failed AND CONTAINS(lerr, "password") THEN "INCORRECT_USER_OR_PASSWORD" ELSE failureCategory$
+failureCategory$ = IF lockout THEN "ACCOUNT_LOCKED_OUT" ELSE failureCategory$
+extraFailurereason$ = IF failed AND err THEN STRING(err) ELSE NULL
+
+m1.key$ = "event"
+m1.value$ = STRING(kind)
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = [m1]
+m2.key$ = "description"
+m2.value$ = desc
+eventMetadata$.record$ = IF m2.value$ THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+m3.key$ = "activity_group"
+m3.value$ = group
+eventMetadata$.record$ = IF m3.value$ THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$
+m4.key$ = "user_id"
+m4.value$ = uid
+eventMetadata$.record$ = IF m4.value$ THEN eventMetadata$.record$ + [m4] ELSE eventMetadata$.record$
+m5.key$ = "client_id"
+m5.value$ = IF clientId THEN STRING(clientId) ELSE NULL
+eventMetadata$.record$ = IF m5.value$ THEN eventMetadata$.record$ + [m5] ELSE eventMetadata$.record$
+m6.key$ = "app_host"
+m6.value$ = appHost
+eventMetadata$.record$ = IF m6.value$ THEN eventMetadata$.record$ + [m6] ELSE eventMetadata$.record$
+# What plain text puts in the brackets after the user ID isn't documented, so it's kept as is.
+m7.key$ = "user_label"
+m7.value$ = IF isText THEN t["label"] ELSE NULL
+eventMetadata$.record$ = IF m7.value$ THEN eventMetadata$.record$ + [m7] ELSE eventMetadata$.record$
+m8.key$ = "webhook_id"
+m8.value$ = json["$.webhookId"]
+eventMetadata$.record$ = IF m8.value$ THEN eventMetadata$.record$ + [m8] ELSE eventMetadata$.record$

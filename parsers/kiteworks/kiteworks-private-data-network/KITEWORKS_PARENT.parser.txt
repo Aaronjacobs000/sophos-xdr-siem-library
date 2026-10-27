@@ -1,0 +1,87 @@
+!SAMPLE=<134>Oct 26 21:02:11 kw-app-01 rest_server.py: {"id": 9310442, "event": "user_logged_in", "description": "Logged in", "successful": 1, "user_id": 118, "user_name": "jlee@example.com", "user_ip": "203.0.113.24", "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36", "app_host": "kw-app-01", "url_host": "files.example.com", "client_id": "kw-web", "client_name": "Kiteworks Web", "client_device": "None", "tenant_id": 1, "data": {"session": "8f2c41d07a6b4e1d9c3a"}}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=, Activity Type: [^,]+, Activity Group: [^,]+, Activity: |"app_host"\s*:.*"event"\s*:|"event"\s*:.*"app_host"\s*:|"webhookId"\s*:.*"event_name"\s*:|"event_name"\s*:.*"webhookId"\s*:
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Kiteworks Private Data Network activity (secure email, file sharing, SFTP, MFT and web
+# forms) in any of three shapes:
+#   Syslog, JSON Format (Locations > External Services > Syslog Settings), to the data collector:
+#     <134>Oct 26 21:02:11 kw-app-01 rest_server.py: {"id": 9310442, "event": "user_logged_in", ...}
+#   Syslog, plain text, from the same settings:
+#     <132>Oct 26 21:41:09 kw-app-01 rest_server.py: priya.n@example.com id=207 (...), 198.51.100.23,
+#     Activity Type: user_login_failed, Activity Group: authentication, Activity: User login failed
+#   PubSub webhook (Application Setup > Event Subscriptions, Kiteworks 9.4.0 or later) posted
+#   straight to HTTP Ingest, one event per request:
+#     {"tenantId":"0","webhookId":"...","payload":{"event_name":"login","username":"...",...}}
+# Parent: reads the three shapes into the same variables, then hands sign-ins, lockouts and
+# password resets to the Auth child, files that a scan flagged to the Thirdparty child, and every
+# other activity to the CloudAudit child. Appliance system lines (auditd, sendmail) aren't claimed.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+# The syslog header is optional, so lines whose header was taken off at ingest still parse.
+hdr = originalData$|^(?:<\d{1,3}>)?(?:(?P<time>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>\S+)\s+)?(?:[^\s{]+:\s+)?(?P<body>.*)$
+body = hdr["body"]
+
+# Plain text: an optional "<user> id=<n> (<label>)," then the client address and the activity.
+t = body|^(?:(?P<user>\S+)\s+id=(?P<uid>\d+)\s+\((?P<label>[^)]*)\),\s*)?(?P<ip>[0-9A-Fa-f.:]+),\s*Activity Type:\s*(?P<type>[^,]*),\s*Activity Group:\s*(?P<group>[^,]*),\s*Activity:\s*(?P<act>.*)$
+isText = IF t["type"] THEN TRUE ELSE FALSE
+json = JSON(IF isText THEN "{}" ELSE body)
+# A PubSub delivery wraps the event in payload; syslog JSON has it at the top level.
+pubsub = IF json["$.webhookId"] THEN TRUE ELSE FALSE
+p = IF pubsub THEN "$.payload." ELSE "$."
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Kiteworks"
+kind = IF isText THEN t["type"] ELSE json["$.event"]
+kind = IF pubsub THEN json["$.payload.event_name"] ELSE kind
+lk = LOWERCASE(STRING(kind))
+group = IF isText THEN t["group"] ELSE NULL
+desc = IF isText THEN t["act"] ELSE json["$.description"]
+desc = IF pubsub THEN json["$.payload.single_line"] ELSE desc
+user = IF isText THEN t["user"] ELSE json["$.user_name"]
+user = IF pubsub THEN json["$.payload.username"] ELSE user
+user = IF user THEN user ELSE NULL
+uidJ = json[p + "user_id"]
+uid = IF uidJ THEN STRING(uidJ) ELSE NULL
+uid = IF isText AND t["uid"] THEN t["uid"] ELSE uid
+ip = IF isText THEN t["ip"] ELSE json["$.user_ip"]
+ip = IF pubsub THEN json["$.payload.ip_address"] ELSE ip
+ua = json[p + "user_agent"]
+client = json[p + "client_name"]
+clientId = json[p + "client_id"]
+# url_host (syslog) and host (PubSub) are the address users reach Kiteworks on; app_host or the
+# syslog host is the server that logged it.
+urlHost = IF pubsub THEN json["$.payload.host"] ELSE json["$.url_host"]
+appHost = json["$.app_host"]
+appHost = IF appHost THEN appHost ELSE hdr["host"]
+appHost = IF appHost THEN appHost ELSE NULL
+# successful is 1 or 0 in syslog JSON and true or false from PubSub. Plain text has none.
+okStr = STRING(json[p + "successful"])
+failedJ = okStr == "0" OR okStr == "false"
+
+rid = json["$.id"]
+sensorEventId$ = IF rid THEN STRING(rid) ELSE NULL
+sensorEventId$ = IF pubsub THEN json["$.payload.guid"] ELSE sensorEventId$
+# The syslog time has no year or zone: DATETIME picks the year (TRUE) and reads UTC, the time zone
+# Kiteworks' syslog settings should be set to. PubSub's created is Unix seconds with a fraction.
+eventTimeUsec$ = IF hdr["time"] THEN DATETIME(hdr["time"], "Jan _2 15:04:05", TRUE) ELSE eventTimeUsec$
+created = json["$.payload.created"]
+eventTimeUsec$ = IF pubsub AND created THEN INT(STRING(created * 1000000), 10) ELSE eventTimeUsec$
+
+# Scan verdicts: data.malicious, data.prohibited and data.quarantined are 1 when a scan flagged
+# the file.
+mal = STRING(json[p + "data.malicious"])
+pro = STRING(json[p + "data.prohibited"])
+qua = STRING(json[p + "data.quarantined"])
+isMal = mal == "1" OR mal == "true"
+isPro = pro == "1" OR pro == "true"
+isQua = qua == "1" OR qua == "true"
+
+signin = CONTAINS(lk, "login") OR CONTAINS(lk, "logged_in") OR CONTAINS(lk, "logout") OR CONTAINS(lk, "logged_out")
+password = lk == "reset_password" OR lk == "update_password"
+eventType$ = "audit"
+eventType$ = IF signin OR password THEN "auth" ELSE eventType$
+eventType$ = IF isMal OR isPro OR isQua THEN "alert" ELSE eventType$
