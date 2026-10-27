@@ -7,6 +7,7 @@ body:
     attributes:
       value: |
         Use **Share to the library** on the Test step of [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample). It runs the library checks, then copies a submission for this form.
+        Write the summary and notes in that dialog: a two or three sentence summary of what the parsers read, how the logs get in and which schemas they land in, then notes in labelled sections. [CONTRIBUTING.md](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/blob/main/CONTRIBUTING.md#write-the-about-text) shows the format.
         A workflow checks the submission again and opens a pull request for it. You are recorded as the author.
   - type: textarea
     id: bundle

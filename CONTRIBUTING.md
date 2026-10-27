@@ -27,11 +27,26 @@ Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/s
 3. Run `node tools/update-expected.mjs parsers/<vendor>/<product>` and read the diff of `expected.json`.
 4. Run `npm run validate` and `npm test`, then open a pull request.
 
+### Write the About text
+
+The entry page's About box opens with `summary` and ends with `notes`, both in `meta.json`.
+
+- `summary`: two or three plain sentences, up to 500 characters, with no line breaks. Say what data the parsers read, how it reaches Sophos NG-SIEM (syslog to the data collector, HTTP Ingest, a bridge, Amazon S3 or Azure Event Hubs), and which schemas it lands in. Someone who reads only this should know what the entry does.
+- `notes`: the detail, up to 3000 characters, in sections. A line that ends with a colon and holds nothing else starts a section, and lines that start with `- ` are bullets. The usual sections, in this order, are `Setup:`, `Field mapping:`, `Time:`, `Sources and licenses:`, `Made up in the samples:`, `Testing:` and `Known gaps:`. Leave out any that don't apply, and keep each bullet under 600 characters.
+
+Both are plain text. The page shows sections, bullets and paragraphs, and shows anything else, such as `**` or HTML, as typed. In `meta.json` a line break is `\n`:
+
+```json
+"summary": "These parsers read Acme Gateway firewall and VPN logs, sent as CEF over syslog to the data collector. Traffic lines go to Netflow and VPN sign-ins go to Auth. The rest stay generic.",
+"notes": "Setup:\n- Set the log format to CEF under System > Logging.\n\nField mapping:\n- Traffic lines go to Netflow with the addresses, ports and action.\n\nKnown gaps:\n- IPS lines stay generic."
+```
+
 ## What the checks look at
 
 Every pull request that touches `parsers/` and every issue-form submission is checked with the code on the main branch:
 
 - `meta.json` has the required fields, the folder holds only the allowed files, and its path is `parsers/<vendor>/<product>/` from the vendor and product in `meta.json`.
+- The About text has a `summary`, and `notes` in sections (see [Write the About text](#write-the-about-text)).
 - The parsers lint without errors.
 - The emulator's output for `samples.log` matches `expected.json`.
 - Samples, parsers and metadata contain no secrets or keys, no private or real IP addresses, no real email addresses or hostnames, and no company names that could be customers.

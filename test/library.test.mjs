@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug, searchText, hasBridge } from '../studio/core/library.js';
 import { scanText } from '../studio/core/scan.js';
+import { noteBlocks, aboutProblems, sentenceCount, NOTES_MAX, SUMMARY_MAX, NOTE_LINE_MAX } from '../studio/core/notes.js';
 import { loadLibrary, loadEntryFromDir, listBridges } from '../tools/lib/fs-library.mjs';
 import { runParsers } from '../studio/core/engine.js';
 import { trackedEntries, isTracked } from './tracked.mjs';
@@ -52,7 +53,7 @@ test('the whole-library tests leave out entries git does not track', async () =>
 });
 
 test('metadata rules', () => {
-  const good = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
+  const good = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, summary: 'These parsers read Acme Gateway JSON logs sent over syslog to the data collector. Every line stays in the generic schema.', parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
   assert.deepEqual(validateMeta(good, ['meta.json', 'ACME_GW_JSON_PARENT.parser.txt', 'samples.log', 'expected.json']), []);
   const bad = validateMeta({ ...good, author: '@octo cat', license: 'GPL', sample_source: 'customer', format: 'yaml' }, ['meta.json', 'evil.exe']);
   const msgs = bad.map((p) => p.message).join('\n');
@@ -60,11 +61,60 @@ test('metadata rules', () => {
   assert.equal(slug('ESET PROTECT On-Prem'), 'eset-protect-on-prem');
 });
 
-test('notes take up to 2500 characters', () => {
-  const meta = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
-  const notes = (n) => validateMeta({ ...meta, notes: 'x'.repeat(n) }).map((p) => p.message);
-  assert.deepEqual(notes(2500), []);
-  assert.deepEqual(notes(2501), ['notes must be text up to 2500 characters']);
+test('notes take up to 3000 characters', () => {
+  const meta = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, summary: 'These parsers read Acme Gateway JSON logs sent over syslog to the data collector. Every line stays in the generic schema.', parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
+  const notes = (n) => {
+    let text = 'Setup:\n';
+    while (text.length < n) text += `- ${'x'.repeat(Math.min(400, n - text.length - 3))}\n`;
+    return validateMeta({ ...meta, notes: text.slice(0, n) }).map((p) => p.message);
+  };
+  assert.equal(NOTES_MAX, 3000);
+  assert.deepEqual(notes(3000), []);
+  assert.deepEqual(notes(3001), ['notes must be text up to 3000 characters']);
+});
+
+test('notes read as labelled sections, bullets and paragraphs, and stay plain text', () => {
+  assert.deepEqual(noteBlocks('Setup:\r\n- one\n-   two\n\nTime:\nThe time is read as UTC.\n- <b>bold</b> **stars** <script>x</script>\n\n- after a blank line\nNot a label: it has text after the colon\nlowercase:\n-\n'), [
+    { type: 'label', text: 'Setup' },
+    { type: 'list', items: ['one', 'two'] },
+    { type: 'label', text: 'Time' },
+    { type: 'para', text: 'The time is read as UTC.' },
+    { type: 'list', items: ['<b>bold</b> **stars** <script>x</script>'] },
+    { type: 'list', items: ['after a blank line'] },
+    { type: 'para', text: 'Not a label: it has text after the colon' },
+    { type: 'para', text: 'lowercase:' },
+    { type: 'para', text: '-' },
+  ]);
+  // An old single-paragraph note is one paragraph, as before.
+  assert.deepEqual(noteBlocks('One long paragraph. With two sentences.'), [{ type: 'para', text: 'One long paragraph. With two sentences.' }]);
+  assert.deepEqual(noteBlocks(''), []);
+  assert.deepEqual(noteBlocks(undefined), []);
+});
+
+test('the About summary and notes rules', () => {
+  const summary = 'These parsers read Acme Gateway JSON logs sent over syslog to the data collector. Sign-ins go to Auth.';
+  const notes = 'Setup:\n- Set Syslog export to JSON.\n\nKnown gaps:\n- Audit lines stay generic.';
+  const msgs = (meta, opts) => aboutProblems(meta, opts).map((p) => `${p.level}: ${p.message}`);
+  assert.deepEqual(msgs({ summary, notes }), []);
+  assert.deepEqual(msgs({ summary }), []);
+  // A missing summary or unlabelled notes are errors once required, warnings before.
+  for (const required of [true, false]) {
+    const level = required ? 'error' : 'warning';
+    for (const s of [undefined, null, '', '  ']) assert.match(msgs({ summary: s, notes }, { required }).join('\n'), new RegExp(`^${level}: summary is required`));
+    assert.match(msgs({ summary, notes: 'One long paragraph.' }, { required }).join('\n'), new RegExp(`^${level}: notes must start with a section label`));
+    assert.match(msgs({ summary, notes: `Setup:\n- ${'x'.repeat(NOTE_LINE_MAX + 1)}` }, { required }).join('\n'), new RegExp(`^${level}: notes: a bullet or paragraph is over ${NOTE_LINE_MAX} characters`));
+  }
+  assert.match(msgs({ summary: 'x'.repeat(SUMMARY_MAX + 1) }).join('\n'), /^error: summary must be up to 500 characters/);
+  assert.match(msgs({ summary: 'One line.\nTwo lines.' }).join('\n'), /^error: summary must be one paragraph/);
+  assert.match(msgs({ summary: 42 }).join('\n'), /^error: summary must be text/);
+  assert.match(msgs({ summary: 'One. Two. Three. Four.' }).join('\n'), /^warning: summary reads as more than three sentences/);
+  assert.match(msgs({ summary, notes: 'Setup:\n\nTime:\n- UTC.' }).join('\n'), /^error: notes: the section "Setup:" has nothing under it/);
+  assert.match(msgs({ summary, notes: 'Setup:\n- UTC.\nKnown gaps:' }).join('\n'), /^error: notes: the section "Known gaps:" has nothing under it/);
+  assert.match(msgs({ summary, notes: 'Setup:\n* a star bullet' }).join('\n'), /^warning: notes are plain text/);
+  assert.match(msgs({ summary, notes: 'Setup:\n## A heading' }).join('\n'), /^warning: notes are plain text/);
+  assert.deepEqual(msgs({ summary, notes: 'Setup:\n- Send <PRI> and **, as Huawei writes it, and Bearer <HTTP Ingest key>.' }), []);
+  assert.equal(sentenceCount('Kiteworks 9.4.0 or later sends to HTTP Ingest. Sign-ins go to Auth.'), 2);
+  assert.equal(sentenceCount('No full stop at the end'), 1);
 });
 
 test('the scan blocks secrets, private and real IPs, real emails, hostnames and company names', () => {

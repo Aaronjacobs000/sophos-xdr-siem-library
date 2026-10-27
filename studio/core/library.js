@@ -3,8 +3,8 @@
 //
 // parsers/<vendor-slug>/<product-slug>/
 //   meta.json            vendor, product, versions, format, ship method, author, license, parsers,
-//                        and an optional bridge (bridges/<name>) for pull-only sources
-//                        and webhooks that need a relay
+//                        the About text (summary and notes, see notes.js), and an optional
+//                        bridge (bridges/<name>) for pull-only sources and webhooks that need a relay
 //   <NAME>.parser.txt    one file per parser
 //   samples.log          synthetic sample lines, one event per line
 //   expected.json        the emulator result for each sample line
@@ -15,6 +15,7 @@ import { scanText } from './scan.js';
 import { gitleaksProblems } from './gitleaks.js';
 import { SCHEMA_IDS } from './schemas.js';
 import { TOOL_VERSION } from './version.js';
+import { aboutProblems } from './notes.js';
 
 export const FORMATS = ['json', 'cef', 'leef', 'kv', 'syslog', 'csv', 'xml', 'other'];
 export const SHIP_METHODS = ['syslog', 'http-ingest', 's3', 'azure', 'other'];
@@ -88,7 +89,7 @@ export function blankMeta() {
   return {
     vendor: '', product: '', versions: [], format: 'json', ship_method: 'syslog', author: '', license: 'MIT',
     sample_source: 'synthetic', reference_time: new Date().toISOString().replace(/\.\d+Z$/, 'Z'), tested: { emulator: TOOL_VERSION, tenant: null },
-    docs: [], notes: '', parsers: [],
+    docs: [], summary: '', notes: '', parsers: [],
   };
 }
 
@@ -111,7 +112,9 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
   if (!meta.tested || typeof meta.tested !== 'object') err('meta', 'tested must be an object like {"emulator": "0.1.0", "tenant": null}');
   else if (meta.tested.tenant !== null && meta.tested.tenant !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(meta.tested.tenant)) err('meta', 'tested.tenant must be null or the date (YYYY-MM-DD) the parsers passed Run Test in a tenant');
   if (meta.docs !== undefined && (!Array.isArray(meta.docs) || meta.docs.some((u) => typeof u !== 'string' || !/^https:\/\//.test(u)))) err('meta', 'docs must be a list of https links to the vendor\'s public log format docs');
-  if (meta.notes !== undefined && (typeof meta.notes !== 'string' || meta.notes.length > 2500)) err('meta', 'notes must be text up to 2500 characters');
+  // The About text: a short summary, then notes in labelled sections (core/notes.js). Entries from
+  // before the summary existed get warnings until they have one.
+  for (const p of aboutProblems(meta, { required: false })) (p.level === 'error' ? err : warn)('about', p.message);
   const named = (k) => meta[k] !== undefined && meta[k] !== null;
   if (named('collector')) {
     warn('bridge', named('bridge')

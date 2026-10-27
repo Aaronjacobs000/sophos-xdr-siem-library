@@ -122,6 +122,12 @@ textarea.code::placeholder { color: #7E93B3; }
 .kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 12px; font-size: 13.5px; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; overflow-wrap: anywhere; }
+.lead { font-size: 14px; line-height: 1.5; margin: 6px 0 14px; overflow-wrap: anywhere; }
+.notes { margin: 14px 0 12px; border-top: 1px solid var(--line-soft); font-size: 13px; line-height: 1.5; color: var(--charcoal); overflow-wrap: anywhere; }
+.notes .nlabel { margin: 12px 0 3px; color: var(--ink); }
+.notes ul { margin: 0; padding-left: 18px; }
+.notes li + li { margin-top: 3px; }
+.notes p:not(.nlabel) { margin-top: 3px; }
 .tree { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
 .tree .row { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 0; }
 .tree .row > .pill { justify-self: start; }
