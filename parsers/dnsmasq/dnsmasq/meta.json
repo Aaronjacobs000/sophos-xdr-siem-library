@@ -18,7 +18,8 @@
     "https://thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html",
     "https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=blob;f=src/cache.c"
   ],
-  "notes": "Run dnsmasq with --log-queries (log-queries in dnsmasq.conf) and the default log format; log-queries=extra adds a serial number and doesn't match. Pi-hole uses dnsmasq and logs the same query lines. Samples are made up in the format log_query() writes.",
+  "summary": "This parser reads dnsmasq query lines, sent over syslog to the data collector. Each query goes to DNS.",
+  "notes": "Setup:\n- Run dnsmasq with --log-queries (log-queries in dnsmasq.conf) and the default log format.\n- Pi-hole uses dnsmasq and logs the same query lines.\n\nMade up in the samples:\n- Samples are made up in the format log_query() writes.\n\nKnown gaps:\n- log-queries=extra adds a serial number and doesn't match.",
   "parsers": [
     {
       "name": "DNSMASQ_QUERY_SYSLOG_STANDALONE_DNS",

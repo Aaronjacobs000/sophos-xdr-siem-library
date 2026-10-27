@@ -18,7 +18,8 @@
     "https://httpd.apache.org/docs/2.4/logs.html",
     "https://httpd.apache.org/docs/2.4/mod/mod_log_config.html"
   ],
-  "notes": "One entry covers both servers because nginx and Apache httpd write the same combined format. nginx: access_log syslog:server=<collector> combined; (the tag is nginx). Apache httpd has no syslog output for access logs: pipe them to logger, for example CustomLog \"|/usr/bin/logger -t httpd -p local6.info\" combined, and let the host forward them. sensor_type comes from the syslog tag (nginx, httpd or apache, otherwise Web server). Custom log formats, the common format without referer and user agent, and error logs don't match. Samples are made up in the documented combined format. Passed Run Test in a lab tenant on 2026-10-13.",
+  "summary": "This parser reads nginx and Apache httpd access logs in the combined format. nginx sends them as syslog to the data collector, and Apache httpd pipes them to logger so the host forwards them. Each access log line goes to HTTP.",
+  "notes": "Setup:\n- One entry covers both servers because nginx and Apache httpd write the same combined format.\n- nginx: access_log syslog:server=<collector> combined; (the tag is nginx).\n- Apache httpd has no syslog output for access logs: pipe them to logger, for example CustomLog \"|/usr/bin/logger -t httpd -p local6.info\" combined, and let the host forward them.\n\nField mapping:\n- sensor_type comes from the syslog tag (nginx, httpd or apache, otherwise Web server).\n\nMade up in the samples:\n- Samples are made up in the documented combined format.\n\nTesting:\n- Passed Run Test in a lab tenant on 2026-10-13.\n\nKnown gaps:\n- Custom log formats, the common format without referer and user agent, and error logs don't match.",
   "parsers": [
     {
       "name": "NGINX_APACHE_COMBINED_SYSLOG_STANDALONE_HTTP",

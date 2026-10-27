@@ -16,7 +16,8 @@
     "https://www.draytek.co.uk/support/guides/kb-vigor-syslog-firewall",
     "https://www.draytek.com/support/knowledge-base/5023"
   ],
-  "notes": "For DrayOS Vigor routers (not the Linux-based Vigor2960 and Vigor3900). Turn on syslog to the data collector with the Firewall Log, and tick Syslog on the filter rules to log. Firewall IP Filter lines go to Netflow, with the action, rule and direction; CSM, VPN, user access and other lines are left to the parsers already in the tenant. DrayTek doesn't publish the text of its VPN or login messages, so they aren't covered. The router's BSD syslog time has no year or zone and is read as UTC. Samples are made up in the format DrayTek's firewall syslog guide describes. Passed Run Test in a lab tenant on 2026-10-13.",
+  "summary": "This parser reads Firewall IP Filter lines from DrayOS Vigor routers, sent over syslog to the data collector. Each line goes to Netflow with the action, rule and direction.",
+  "notes": "Setup:\n- For DrayOS Vigor routers (not the Linux-based Vigor2960 and Vigor3900).\n- Turn on syslog to the data collector with the Firewall Log, and tick Syslog on the filter rules to log.\n\nField mapping:\n- Firewall IP Filter lines go to Netflow, with the action, rule and direction.\n\nTime:\n- The router's BSD syslog time has no year or zone and is read as UTC.\n\nMade up in the samples:\n- Samples are made up in the format DrayTek's firewall syslog guide describes.\n\nTesting:\n- Passed Run Test in a lab tenant on 2026-10-13.\n\nKnown gaps:\n- CSM, VPN, user access and other lines are left to the parsers already in the tenant.\n- DrayTek doesn't publish the text of its VPN or login messages, so they aren't covered.",
   "parsers": [
     {
       "name": "DRAYTEK_VIGOR_SYSLOG_STANDALONE_NETFLOW",

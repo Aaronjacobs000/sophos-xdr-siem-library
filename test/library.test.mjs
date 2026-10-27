@@ -73,6 +73,14 @@ test('notes take up to 3000 characters', () => {
   assert.deepEqual(notes(3001), ['notes must be text up to 3000 characters']);
 });
 
+test('a library entry needs a summary, and notes in labelled sections', () => {
+  const meta = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
+  const errors = (m) => validateMeta(m).filter((p) => p.level === 'error').map((p) => p.message).join('\n');
+  assert.match(errors(meta), /summary is required/);
+  assert.match(errors({ ...meta, summary: 'These parsers read Acme Gateway logs.', notes: 'One paragraph of notes with no sections.' }), /notes must start with a section label/);
+  assert.equal(errors({ ...meta, summary: 'These parsers read Acme Gateway logs.', notes: 'Setup:\n- Send JSON over syslog.' }), '');
+});
+
 test('notes read as labelled sections, bullets and paragraphs, and stay plain text', () => {
   assert.deepEqual(noteBlocks('Setup:\r\n- one\n-   two\n\nTime:\nThe time is read as UTC.\n- <b>bold</b> **stars** <script>x</script>\n\n- after a blank line\nNot a label: it has text after the colon\nlowercase:\n-\n'), [
     { type: 'label', text: 'Setup' },
