@@ -20,5 +20,6 @@
     "https://www.ninjaone.com/docs/application-programming-interface-api/oauth-token-configuration/",
     "https://app.ninjarmm.com/apidocs-beta/"
   ],
-  "notes": "Not run against NinjaOne: there was no instance to test with. On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted. How Sophos Fusion's OAuth Client Credentials handler sends the client secret, the device search response shape and the device link format are untested."
+  "summary": "This connector lets Sophos Fusion playbooks search NinjaOne devices and read a device or an organization through the NinjaOne public API (v2). It only reads. The connection signs in with OAuth client credentials from a NinjaOne API Services client app with the monitoring scope, and takes the instance host as a connection setting.",
+  "notes": "Testing:\n- Not run against NinjaOne: there was no instance to test with.\n- On 2026-10-21 a renamed copy imported into a Sophos Fusion tenant, exported again, and was deleted.\n\nKnown gaps:\n- How Sophos Fusion's OAuth Client Credentials handler sends the client secret, the device search response shape and the device link format are untested."
 }

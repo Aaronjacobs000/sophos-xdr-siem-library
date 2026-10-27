@@ -379,11 +379,10 @@ test('checks: playbooks and connectors need a summary, and notes in labelled sec
   const about = (r) => r.problems.filter((p) => p.code === 'about').map((p) => `${p.level}: ${p.message}`).join('\n');
   for (const [entry, kind] of [[playbookEntry, 'playbook'], [connectorEntry, 'connector']]) {
     assert.equal(about(check(entry({ meta: { notes: 'Testing:\n- Not run against Acme yet.\n\nKnown gaps:\n- The lock code is untested.' } }))), '', kind);
-    // Warnings until every playbook and connector has a summary.
-    assert.match(about(check(entry({ meta: { summary: undefined } }))), new RegExp(`^warning: summary is required: two or three plain sentences that say what the ${kind}`), kind);
-    assert.match(about(check(entry({ meta: { summary: '  ' } }))), /^warning: summary is required/, kind);
+    assert.match(about(check(entry({ meta: { summary: undefined } }))), new RegExp(`^error: summary is required: two or three plain sentences that say what the ${kind}`), kind);
+    assert.match(about(check(entry({ meta: { summary: '  ' } }))), /^error: summary is required/, kind);
     assert.match(about(check(entry({ meta: { summary: 'x'.repeat(501) } }))), /^error: summary must be up to 500 characters/, kind);
-    assert.match(about(check(entry({ meta: { notes: 'One paragraph of notes with no sections.' } }))), /^warning: notes must start with a section label/, kind);
+    assert.match(about(check(entry({ meta: { notes: 'One paragraph of notes with no sections.' } }))), /^error: notes must start with a section label/, kind);
     assert.match(about(check(entry({ meta: { notes: `Testing:\n- ${'x'.repeat(2999)}` } }))), /^error: notes must be text up to 3000 characters/, kind);
     assert.match(about(check(entry({ meta: { notes: 'Testing:\n* a star bullet' } }))), /^warning: notes are plain text/, kind);
     assert.ok(check(entry({ meta: { summary: undefined } })).problems.filter((p) => p.code === 'about').every((p) => p.file === 'meta.json'), kind);

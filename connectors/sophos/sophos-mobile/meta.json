@@ -24,5 +24,6 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=API-credential-management",
     "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=unsupported-regions"
   ],
-  "notes": "Lock and send message only: no wipe, locate or unenroll. Not tested in a tenant with Sophos Mobile yet. On 2026-10-16 a renamed copy imported into a Sophos Fusion tenant without Sophos Mobile, exported again unchanged apart from the order of its functions, and was deleted."
+  "summary": "This connector lets Sophos Fusion playbooks lock Sophos Mobile devices, send them a message, and read a device and the actions it started, through the Sophos Mobile API. The connection signs in with OAuth client credentials: a Sophos Fusion API credential, a token from id.sophos.com with the scope token, and the tenant ID and Sophos Mobile API host as connection settings. The API serves the eu01, eu02, us01 and us03 data regions.",
+  "notes": "How it works:\n- Lock and send message only: no wipe, locate or unenroll.\n\nTesting:\n- Not tested in a tenant with Sophos Mobile yet.\n- On 2026-10-16 a renamed copy imported into a Sophos Fusion tenant without Sophos Mobile, exported again unchanged apart from the order of its functions, and was deleted."
 }
