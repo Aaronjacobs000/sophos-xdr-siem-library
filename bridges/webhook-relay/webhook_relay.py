@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP
-webhooks, check that each one came from the vendor, and forward the body to a Sophos NG-SIEM HTTP
-Ingest integration with the Authorization: Bearer header that all but Mist can't add. Python 3
-standard library only.
+"""Receive Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and
+Fireblocks webhooks, check that each one came from the vendor, and forward the body to a Sophos
+NG-SIEM HTTP Ingest integration with the Authorization: Bearer header that all but Mist can't add.
+Python 3 standard library only.
 
   POST /huntress                 Svix signature (HMAC-SHA256 over id, timestamp and body)
   POST /autotask                 X-Hook-Signature (HMAC-SHA1 over the body, base64)
@@ -10,6 +10,8 @@ standard library only.
   POST /screenconnect/<secret>   no signing option: a long random secret in the path
   POST /mist                     X-Mist-Signature-v2 (HMAC-SHA256 over the body, hex)
   POST /forticnapp/<secret>      no signing option: a long random secret in the path
+  POST /fireblocks               Fireblocks-Webhook-Signature (RS512 detached JWS, keys from
+                                 Fireblocks' JWKS)
 
 Mist sends several events in one body, {"topic": ..., "events": [...]}, for most topics. With
 BRIDGE_SPLIT_BATCHES=1 the relay forwards each event as its own record, in the same envelope with
@@ -64,6 +66,7 @@ VENDORS = {
     "screenconnect": "path",
     "mist": "mist",
     "forticnapp": "path",
+    "fireblocks": "fireblocks",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 # A sender gets this long in all, however slowly it sends, for its request line, headers and body.
@@ -72,6 +75,18 @@ LINE_BREAK = re.compile(rb"\r\n|\r|\n")
 # Deepest JSON nesting the relay forwards; the vendors' webhooks nest a few levels. Some Pythons
 # raise RecursionError on deep nesting and some (3.14) parse 100,000 levels, so the relay counts.
 MAX_JSON_DEPTH = 64
+# Fireblocks' signing keys: its JWKS says to cache them an hour. A key ID the relay doesn't know
+# fetches the set again, at most once a minute, and the last good set is used for up to a day while
+# the JWKS endpoint can't be reached.
+JWKS_MAX_AGE = 3600
+JWKS_RETRY_SECONDS = 60
+JWKS_STALE_SECONDS = 86400
+JWKS_MAX_BYTES = 1024 * 1024
+JWKS_TIMEOUT = 10
+MIN_RSA_BITS = 2048
+# DER DigestInfo prefix for SHA-512 (RFC 8017, section 9.2, note 1).
+SHA512_PREFIX = bytes.fromhex("3051300d060960864801650304020305000440")
+B64URL = re.compile(r"^[A-Za-z0-9_-]*$")
 
 
 class RelayError(Exception):
@@ -80,6 +95,12 @@ class RelayError(Exception):
 
 class BodyError(Exception):
     """A delivery body the relay can't read, refused with 400."""
+
+
+class KeysUnavailable(Exception):
+    """The relay can't check a Fireblocks signature right now: it has no current signing keys, or
+    the key a delivery names may be a new one it can't fetch yet. Answered with 503, so Fireblocks
+    sends the delivery again."""
 
 
 # ---------------------------------------------------------------- configuration
@@ -142,6 +163,17 @@ def _shared_secret(env: dict, name: str, max_chars: int | None = None) -> str | 
     return value
 
 
+def _jwks_url(env: dict) -> str | None:
+    """FIREBLOCKS_JWKS_URL: the JWKS endpoint for the workspace's environment. The relay trusts
+    whatever keys it serves, so only https is taken."""
+    url = _env(env, "FIREBLOCKS_JWKS_URL")
+    if url is None:
+        return None
+    _refuse_user_info(url, "FIREBLOCKS_JWKS_URL")
+    _require_https(url, "FIREBLOCKS_JWKS_URL")
+    return url
+
+
 def load_config(env: dict | None = None) -> dict:
     env = dict(os.environ if env is None else env)
     try:
@@ -164,11 +196,12 @@ def load_config(env: dict | None = None) -> dict:
         "screenconnect": _shared_secret(env, "SCREENCONNECT_PATH_SECRET"),
         "mist": _shared_secret(env, "MIST_WEBHOOK_SECRET"),
         "forticnapp": _shared_secret(env, "FORTICNAPP_PATH_SECRET"),
+        "fireblocks": _jwks_url(env),
     }
     cfg["vendors"] = {name: secret for name, secret in secrets.items() if secret}
     if not cfg["vendors"]:
         raise RelayError("set at least one of HUNTRESS_SIGNING_SECRET, AUTOTASK_SECRET_KEY, HUDU_PATH_SECRET, "
-                         "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET and FORTICNAPP_PATH_SECRET")
+                         "SCREENCONNECT_PATH_SECRET, MIST_WEBHOOK_SECRET, FORTICNAPP_PATH_SECRET and FIREBLOCKS_JWKS_URL")
     cfg["split_batches"] = _flag(env, "BRIDGE_SPLIT_BATCHES", False)
     if cfg["ingest_url"]:
         _refuse_user_info(cfg["ingest_url"], "NGSIEM_INGEST_URL")
@@ -242,6 +275,115 @@ def verify_mist(key: str, headers, body: bytes) -> str | None:
 
 def path_secret_matches(expected: str, given: str) -> bool:
     return hmac.compare_digest(given.encode("utf-8"), expected.encode("utf-8"))
+
+
+def _b64url_decode(text: str) -> bytes:
+    if not B64URL.match(text):
+        raise ValueError("not base64url")
+    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+
+
+class FireblocksKeys:
+    """Fireblocks' webhook signing keys, read from its JWKS endpoint ({"keys": [{"kty": "RSA",
+    "kid", "use": "sig", "alg": "RS512", "n", "e"}]}) and cached. Shared by every request thread."""
+
+    def __init__(self, url: str):
+        self.url = url
+        self.lock = threading.Lock()
+        self.keys: dict = {}
+        self.fetched = None  # monotonic time of the last good fetch
+        self.tried = None    # monotonic time of the last fetch, good or not
+        self.opener = urllib.request.build_opener(_NoRedirect)
+
+    def _fetch(self) -> dict:
+        req = urllib.request.Request(self.url, headers={"Accept": "application/json", "User-Agent": USER_AGENT})
+        try:
+            with self.opener.open(req, timeout=JWKS_TIMEOUT) as resp:
+                raw = resp.read(JWKS_MAX_BYTES + 1)
+        except urllib.error.HTTPError as e:
+            e.close()
+            # A redirect is refused like any other answer that isn't the key set.
+            raise ValueError(f"HTTP {e.code}") from None
+        if len(raw) > JWKS_MAX_BYTES:
+            raise ValueError("the key set is too large")
+        data = json.loads(raw)
+        keys = {}
+        for k in data.get("keys") or [] if isinstance(data, dict) else []:
+            if not isinstance(k, dict) or k.get("kty") != "RSA" or k.get("use", "sig") != "sig" or k.get("alg", "RS512") != "RS512":
+                continue
+            kid, n, e = k.get("kid"), k.get("n"), k.get("e")
+            if not (isinstance(kid, str) and kid and isinstance(n, str) and isinstance(e, str)):
+                continue
+            try:
+                n, e = int.from_bytes(_b64url_decode(n), "big"), int.from_bytes(_b64url_decode(e), "big")
+            except ValueError:
+                continue
+            if n.bit_length() >= MIN_RSA_BITS and e >= 3 and e % 2:
+                keys[kid] = (n, e)
+        if not keys:
+            raise ValueError("no RS512 signing keys")
+        return keys
+
+    def get(self, kid: str):
+        """The (n, e) for a key ID, or None when a key set fetched just now doesn't have it. Raises
+        KeysUnavailable when the relay can't tell: it has no current key set, or the key ID is new
+        and the set was fetched less than a minute ago."""
+        with self.lock:
+            now = time.monotonic()
+            stale = self.fetched is None or now - self.fetched >= JWKS_MAX_AGE
+            refreshed = False
+            if (stale or kid not in self.keys) and (self.tried is None or now - self.tried >= JWKS_RETRY_SECONDS):
+                self.tried = now
+                try:
+                    self.keys, self.fetched, refreshed = self._fetch(), now, True
+                except (OSError, http.client.HTTPException, ValueError) as e:
+                    # OSError covers URLError, timeouts (socket.timeout too, on Python 3.9) and
+                    # connection errors.
+                    reason = str(e) if isinstance(e, ValueError) and str(e).startswith(("HTTP ", "no RS512", "the key set")) \
+                        else type(e).__name__
+                    LOG.warning("fireblocks: couldn't fetch the signing keys from %s (%s)", _host(self.url), reason)
+            if self.fetched is None or now - self.fetched >= JWKS_STALE_SECONDS:
+                raise KeysUnavailable("no current Fireblocks signing keys")
+            if kid in self.keys:
+                return self.keys[kid]
+            if refreshed:
+                return None
+            raise KeysUnavailable("a signing key the relay hasn't fetched yet")
+
+
+def verify_fireblocks(keys: FireblocksKeys, headers, body: bytes) -> str | None:
+    """Fireblocks signs each delivery with a detached JWS in Fireblocks-Webhook-Signature,
+    "<header>..<signature>": RS512 (RSASSA-PKCS1-v1_5 with SHA-512) over "<header>.<the body in
+    base64url>", with the key named by the header's kid in Fireblocks' JWKS."""
+    given = (headers.get("Fireblocks-Webhook-Signature") or "").strip()
+    if not given:
+        return "missing Fireblocks-Webhook-Signature"
+    parts = given.split(".")
+    if len(parts) != 3 or parts[1] != "" or not parts[0] or not parts[2]:
+        return "Fireblocks-Webhook-Signature is not a detached JWS"
+    try:
+        header = json.loads(_b64url_decode(parts[0]))
+        sig = _b64url_decode(parts[2])
+    except ValueError:
+        return "Fireblocks-Webhook-Signature can't be read"
+    if not isinstance(header, dict) or header.get("alg") != "RS512":
+        return "the signature is not RS512"
+    if "crit" in header or header.get("b64", True) is not True:
+        return "the signature uses JWS options Fireblocks doesn't"
+    kid = header.get("kid")
+    if not isinstance(kid, str) or not kid or len(kid) > 256:
+        return "the signature names no key"
+    key = keys.get(kid)
+    if key is None:
+        return "the signature names a key that isn't one of Fireblocks' signing keys"
+    n, e = key
+    k = (n.bit_length() + 7) // 8
+    s = int.from_bytes(sig, "big")
+    if len(sig) != k or s >= n:
+        return "signature does not match"
+    t = SHA512_PREFIX + hashlib.sha512(parts[0].encode("ascii") + b"." + base64.urlsafe_b64encode(body).rstrip(b"=")).digest()
+    expected = b"\x00\x01" + b"\xff" * (k - len(t) - 3) + b"\x00" + t
+    return None if hmac.compare_digest(pow(s, e, n).to_bytes(k, "big"), expected) else "signature does not match"
 
 
 # ---------------------------------------------------------------- forwarding
@@ -325,6 +467,8 @@ class Relay:
         self.out = out or sys.stdout
         self.out_lock = threading.Lock()
         self.opener = urllib.request.build_opener(_NoRedirect)
+        url = cfg["vendors"].get("fireblocks")
+        self.fireblocks_keys = FireblocksKeys(url) if url else None
         if not dry_run and not (cfg["ingest_url"] and cfg["ingest_key"]):
             raise RelayError("NGSIEM_INGEST_URL and NGSIEM_INGEST_KEY are required unless --dry-run is set")
 
@@ -348,6 +492,8 @@ class Relay:
             return verify_autotask(self.cfg["vendors"][vendor], headers, body)
         if kind == "mist":
             return verify_mist(self.cfg["vendors"][vendor], headers, body)
+        if kind == "fireblocks":
+            return verify_fireblocks(self.fireblocks_keys, headers, body)
         return None  # path secret, already checked in route()
 
     def forward(self, vendor: str, body: bytes) -> tuple[int, str]:
@@ -496,7 +642,11 @@ class Handler(BaseHTTPRequestHandler):
         if len(body) != size:
             self.close_connection = True
             return self._reply(400, "body shorter than Content-Length")
-        problem = relay.verify(vendor, self.headers, body)
+        try:
+            problem = relay.verify(vendor, self.headers, body)
+        except KeysUnavailable as e:
+            LOG.warning("%s: answered 503 to a delivery from %s: %s", vendor, peer, e)
+            return self._reply(503, "can't check the signature yet, retry later")
         if problem:
             LOG.warning("%s: rejected a delivery from %s: %s", vendor, peer, problem)
             return self._reply(401, "authenticity check failed")
@@ -572,7 +722,7 @@ def make_server(cfg: dict, dry_run: bool = False, out=None) -> ThreadingHTTPServ
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP webhooks to Sophos NG-SIEM HTTP Ingest.")
+    ap = argparse.ArgumentParser(description="Relay Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and Fireblocks webhooks to Sophos NG-SIEM HTTP Ingest.")
     ap.add_argument("--dry-run", action="store_true", help="check deliveries and print each body; forward nothing")
     ap.add_argument("--log-level", default=_env(dict(os.environ), "BRIDGE_LOG_LEVEL", "INFO"))
     args = ap.parse_args(argv)

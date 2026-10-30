@@ -1,8 +1,8 @@
-# Webhook relay for Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist and FortiCNAPP
+# Webhook relay for Huntress, ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP and Fireblocks
 
-> **Unofficial, and tested against documented request shapes only.** This relay has not received real Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist or FortiCNAPP webhooks, or sent to a real Sophos NG-SIEM HTTP Ingest integration. Its unit tests sign deliveries the way each vendor documents and post to a local mock of HTTP Ingest. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented request shapes only.** This relay has not received real Huntress, ConnectWise ScreenConnect, Hudu, Autotask, Juniper Mist, FortiCNAPP or Fireblocks webhooks, or sent to a real Sophos NG-SIEM HTTP Ingest integration. Its unit tests sign deliveries the way each vendor documents and post to a local mock of HTTP Ingest. Run it with `--dry-run` first and check what it would send.
 
-Huntress, ScreenConnect, Hudu, Autotask and FortiCNAPP push webhooks, but none of them can add the `Authorization: Bearer` header that Sophos NG-SIEM HTTP Ingest needs. Juniper Mist can add the header, but sends most topics as a batch of events in one body, which HTTP Ingest would store as one record; with `BRIDGE_SPLIT_BATCHES=1` the relay forwards each event as its own record. Run this relay where the vendors can reach it over HTTPS. It takes each vendor's webhook on its own path, checks that the delivery came from that vendor, and forwards the body to HTTP Ingest with the header.
+Huntress, ScreenConnect, Hudu, Autotask, FortiCNAPP and Fireblocks push webhooks, but none of them can add the `Authorization: Bearer` header that Sophos NG-SIEM HTTP Ingest needs. Juniper Mist can add the header, but sends most topics as a batch of events in one body, which HTTP Ingest would store as one record; with `BRIDGE_SPLIT_BATCHES=1` the relay forwards each event as its own record. Run this relay where the vendors can reach it over HTTPS. It takes each vendor's webhook on its own path, checks that the delivery came from that vendor, and forwards the body to HTTP Ingest with the header.
 
 PingOne doesn't need the relay: its webhook posts NDJSON straight to HTTP Ingest with the header, as the [PingOne entry's README](../../parsers/ping-identity/pingone/README.md) describes, so the relay has no PingOne route.
 
@@ -14,6 +14,7 @@ PingOne doesn't need the relay: its webhook posts NDJSON straight to HTTP Ingest
 | ConnectWise ScreenConnect | `/screenconnect/<secret>` | Secret in the path. Perform Web Request has only URL, method, content type and body. | `parsers/connectwise/screenconnect` |
 | Juniper Mist | `/mist` | `X-Mist-Signature-v2`: HMAC-SHA256 over the body with the webhook's secret, in hex | `parsers/juniper/juniper-mist` |
 | FortiCNAPP (Lacework) | `/forticnapp/<secret>` | Secret in the path. A custom webhook alert channel has only a URL. | `parsers/fortinet/forticnapp` |
+| Fireblocks | `/fireblocks` | `Fireblocks-Webhook-Signature`: an RS512 detached JWS over the body, checked with the key its `kid` names in Fireblocks' JWKS | `parsers/fireblocks/fireblocks-platform` |
 
 Configure only the vendors you use; the other paths answer 404.
 
@@ -43,6 +44,17 @@ python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
 
 **FortiCNAPP.** Sign in to the FortiCNAPP console as an administrator and go to Settings > Notifications > Channels. Choose + Add new, then Webhook, then Next. Name the channel and set Webhook URL to `https://<relay name>/forticnapp/<FORTICNAPP_PATH_SECRET>`; FortiCNAPP takes only https. Fortinet's docs show a token in the query string, but the relay reads the secret from the path, so put it there. Save, then under Alert rules route the alerts you want to the channel. The [FortiCNAPP entry's README](../../parsers/fortinet/forticnapp/README.md) has what the parser reads.
 
+**Fireblocks.** Webhooks v2 send transactions, allowlisted wallets, vault accounts and more. Set `FIREBLOCKS_JWKS_URL` to the JWKS endpoint for the workspace's environment (below). An Owner, Admin or Non-Signing Admin goes to Developer center > Webhooks > Create webhook, sets Endpoint URL to `https://<relay name>/fireblocks` (Fireblocks takes only https on port 443), and under Listen for picks the categories or events, such as Transactions and Whitelist. Leave out balance updates unless you need them; they are many and say little about security. The audit log comes in through [bridges/fireblocks-audit-logs](../fireblocks-audit-logs/) instead, and the [Fireblocks entry](../../parsers/fireblocks/fireblocks-platform/) reads both. The relay checks `Fireblocks-Webhook-Signature`, the JWKS signature; Fireblocks sent the older static-key `Fireblocks-Signature` alongside it only until 20 March 2026, so the relay doesn't read that one.
+
+| Workspace | `FIREBLOCKS_JWKS_URL` |
+| --- | --- |
+| US production | `https://keys.fireblocks.io/.well-known/jwks.json` |
+| EU | `https://eu-keys.fireblocks.io/.well-known/jwks.json` |
+| EU2 | `https://eu2-keys.fireblocks.io/.well-known/jwks.json` |
+| Developer sandbox | `https://sandbox-keys.fireblocks.io/.well-known/jwks.json` |
+
+The Python and Go examples on Fireblocks' validation page use `https://api.fireblocks.io/.well-known/jwks.json` instead, which the page's endpoint table doesn't list. The URLs above follow the table and haven't been checked against a live workspace.
+
 **ScreenConnect.** Under Administration > Automations, create the security and session automations in the [ScreenConnect entry's README](../../parsers/connectwise/screenconnect/README.md). Set each Perform Web Request action to HTTP Method POST, Content Type `text/plain`, and URL `https://<relay name>/screenconnect/<SCREENCONNECT_PATH_SECRET>`.
 
 ## Configuration
@@ -59,6 +71,7 @@ Everything comes from environment variables. Keep secrets in a secrets manager o
 | `SCREENCONNECT_PATH_SECRET` | none | The secret in the ScreenConnect web request URL. Turns on `/screenconnect/<secret>`. |
 | `MIST_WEBHOOK_SECRET` | none | The Secret on your Mist webhook, at least 32 characters. Turns on `/mist`. |
 | `FORTICNAPP_PATH_SECRET` | none | The secret in the FortiCNAPP webhook URL. Turns on `/forticnapp/<secret>`. |
+| `FIREBLOCKS_JWKS_URL` | none | Fireblocks' JWKS endpoint for the workspace's environment (see Set up each vendor). Turns on `/fireblocks`. The relay trusts the keys it serves, so it takes only https. |
 | `BRIDGE_SPLIT_BATCHES` | `0` | Forward each event of a Mist batch, `{"topic": ..., "events": [...]}`, as its own record, in the same envelope with one event. Only Mist sends batches. |
 | `BRIDGE_LISTEN_HOST` | `127.0.0.1` | Address to listen on. Keep it on loopback behind the TLS proxy. |
 | `BRIDGE_LISTEN_PORT` | `8080` | Port to listen on. |
@@ -68,7 +81,7 @@ Everything comes from environment variables. Keep secrets in a secrets manager o
 | `BRIDGE_DRY_RUN` | `0` | Same as `--dry-run`. |
 | `BRIDGE_LOG_LEVEL` | `INFO` | Same as `--log-level`. |
 
-Set at least one vendor secret. Only an https HTTP Ingest URL is accepted, except plain http to this machine for testing.
+Set at least one vendor secret or `FIREBLOCKS_JWKS_URL`. Only an https HTTP Ingest URL is accepted, except plain http to this machine for testing.
 
 ## Run it
 
@@ -155,19 +168,20 @@ The timeouts above make the proxy, not the relay, wait on a slow sender. nginx a
 | The relay answers | When |
 | --- | --- |
 | 200 | HTTP Ingest took the delivery, or `--dry-run` checked it. |
-| 401 | The Huntress, Autotask or Mist signature is missing or wrong, or the Huntress timestamp is more than 5 minutes off. |
+| 401 | The Huntress, Autotask, Mist or Fireblocks signature is missing or wrong, or the Huntress timestamp is more than 5 minutes off. |
 | 404 | Unknown path, vendor not configured, or wrong path secret. |
 | 400, 405, 411, 413 | Empty body or JSON nested more than 64 levels deep, not POST, no `Content-Length` (chunked), or body over `BRIDGE_MAX_BODY_BYTES`. |
 | 502 | HTTP Ingest refused the delivery. Check the key and URL. |
-| 503 | HTTP Ingest stayed unavailable until the deadline, or `BRIDGE_MAX_CONNECTIONS` requests were already in progress. |
+| 503 | HTTP Ingest stayed unavailable until the deadline, `BRIDGE_MAX_CONNECTIONS` requests were already in progress, or the relay can't check a Fireblocks signature yet (see below). |
 
-After a non-2xx answer, Huntress (Svix) tries again after 5 seconds, 5 minutes, 30 minutes, then 2, 5, 10 and 10 hours. Autotask tries 5 times in 2 minutes, keeps the payload in its Webhook Error Log for 30 days, and turns the webhook off after 25 consecutive failures over more than 4 hours. Hudu, ScreenConnect, Mist and FortiCNAPP don't document retries, so a delivery the relay can't forward may be lost.
+After a non-2xx answer, Huntress (Svix) tries again after 5 seconds, 5 minutes, 30 minutes, then 2, 5, 10 and 10 hours. Autotask tries 5 times in 2 minutes, keeps the payload in its Webhook Error Log for 30 days, and turns the webhook off after 25 consecutive failures over more than 4 hours. Fireblocks retries a 5xx, 408 or 429 after 10 seconds, 30 seconds, 2, 5, 15 and 30 minutes, then 1, 2 and 4 hours, and drops the delivery after 10 tries; it doesn't retry any other 4xx. It can also resend notifications from the last 30 days on request. Hudu, ScreenConnect, Mist and FortiCNAPP don't document retries, so a delivery the relay can't forward may be lost.
 
 HTTP Ingest delivers at least once and does not remove duplicates, so a vendor retry after a lost 200 sends the record again.
 
 ## Security notes
 
 - Huntress, Autotask and Mist sign every delivery. The relay recomputes the HMAC and compares it in constant time. Autotask and Mist sign only the body, with no timestamp, so a captured delivery could be replayed; TLS is what stops capture.
+- Fireblocks signs every delivery with RSA (RS512), and the relay checks it with the public key the signature's `kid` names in Fireblocks' JWKS. It fetches the key set on the first delivery, keeps it for an hour as Fireblocks asks, and fetches again for a `kid` it doesn't know, at most once a minute. While it can't get a key set, or a new `kid` waits for the next fetch, it answers 503 so Fireblocks sends the delivery again; it keeps using the last key set it got for up to a day while the JWKS endpoint is down. Only the body is signed, with no timestamp, so a captured delivery could be replayed; TLS is what stops capture.
 - Hudu, ScreenConnect and FortiCNAPP can't sign, so the path secret is the only check, and it is weaker: anyone who sees the URL (in the vendor's settings, a proxy log or a screenshot) can post records. Rotate a secret that leaks: change the variable, restart the relay, and update the vendor.
 - The relay never logs secrets, the HTTP Ingest key, the HTTP Ingest URL path or bodies. It logs the vendor, the outcome, the size, Huntress delivery IDs, and the connecting address on rejections (the proxy's, behind a proxy).
 - It verifies the HTTP Ingest certificate and doesn't follow redirects, so the key only goes to the configured host.
@@ -179,7 +193,7 @@ HTTP Ingest delivers at least once and does not remove duplicates, so a vendor r
 python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
 ```
 
-The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor, and a FortiCNAPP secret in the query string, which the relay refuses; splitting a Mist batch into one record per event, and only when turned on; the size limit; line-break handling; retries, the deadline and refusals; the connection limit and the time limit for a slow sender; dry-run; and that no secret or body reaches the log.
+The tests sign deliveries the way each vendor documents, post them to the relay, and check forwarding with the header to a local mock of HTTP Ingest; valid, wrong, missing and stale signatures and path secrets for each vendor, and a FortiCNAPP secret in the query string, which the relay refuses; Fireblocks signatures against a local mock of its JWKS endpoint (a valid one, a wrong key, a tampered body, an attached payload, another algorithm, an unknown key ID, a key set that is fetched again for a new key and after an hour, an endpoint that is down or redirects, and key sets without a usable key); splitting a Mist batch into one record per event, and only when turned on; the size limit; line-break handling; retries, the deadline and refusals; the connection limit and the time limit for a slow sender; dry-run; and that no secret or body reaches the log.
 
 ## References
 
@@ -194,6 +208,10 @@ The tests sign deliveries the way each vendor documents, post them to the relay,
 - Juniper Mist webhooks (secret, X-Mist-Signature-v2, custom headers): https://www.juniper.net/documentation/us/en/software/mist/automation-integration/topics/task/webhooks-add-portal.html
 - Juniper Mist webhook messages (the batch envelope): https://www.juniper.net/documentation/us/en/software/mist/automation-integration/topics/topic-map/webhook-messages.html
 - FortiCNAPP custom webhook alert channel (URL only, the payload): https://docs.fortinet.com/document/forticnapp/latest/administration-guide/465696/custom-webhook-alert-channel
+- Fireblocks, validating webhooks (Fireblocks-Webhook-Signature, the JWKS endpoints, RS512): https://developers.fireblocks.com/reference/validating-webhooks
+- Fireblocks, configuring webhooks (https on port 443, who can set them up): https://developers.fireblocks.com/reference/webhooks-gettingstarted-configuringwebhooks
+- Fireblocks, responses and retries: https://developers.fireblocks.com/reference/webhooks-gettingstarted-responsesretries
+- Fireblocks webhook notification structure: https://developers.fireblocks.com/reference/webhooks-structures-notificationstructure
 - ScreenConnect session automations (Perform Web Request): https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/Create_a_new_session_automation
 - Sophos Fusion HTTP Ingest setup: https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Custom/HTTPIngest/Setup/index.html
 - HTTP Ingest API contract (bearer header, one record per line, size limits, status codes), in the Taegis docs for the same platform: https://docs.taegis.secureworks.com/apis/using_http_ingest_api/
