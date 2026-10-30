@@ -18,7 +18,7 @@
 
 # Cut the JSON object off the end of the line (after a syslog header or an audit prefix).
 jsonMatch = originalData$|(\{.*})$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 
 # Variables and $ fields set here are visible to both children.
 sensorType$ = "HashiCorp Vault"

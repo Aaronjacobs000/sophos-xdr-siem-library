@@ -19,7 +19,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
 
 jm = originalData$|(?P<j>\{"@timestamp":.*\})\s*$
-j = JSON(jm["j"])
+j = IF jm["j"] != "" THEN JSON(jm["j"]) ELSE NULL
 logger = STRING(j["$.logger_name"])
 msg = STRING(j["$.message"])
 node = STRING(j["$.cluster_host_id"])

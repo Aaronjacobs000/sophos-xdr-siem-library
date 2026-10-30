@@ -535,3 +535,25 @@ test('the studio\'s share check allows the same company names as the repo\'s che
     delete globalThis.self;
   }
 });
+
+test('a library parser that reads JSON from a capture checks it matched, so a line its confirm takes without the JSON doesn\'t fail', async () => {
+  // JSON() of a capture that didn't match fails the event in a tenant ("data type for JSON must be
+  // string"), as it did for 16 library parsers on their own sample lines with text after the JSON
+  // (checked in a lab tenant).
+  const lib = await loadLibrary(ROOT);
+  const tracked = trackedEntries(ROOT);
+  const reads = /^\s*\w+\s*=\s*(?:IF \S+ != "" THEN )?JSON\(\w+\[(?:\d+|"\w+")\]\)/m;
+  let checked = 0;
+  for (const e of lib.filter((x) => isTracked(tracked, x.id))) {
+    const all = runParsers(e.parsers, e.samples, { now: e.meta.reference_time });
+    for (const p of e.parsers.filter((x) => reads.test(x.text))) {
+      const routed = e.samples.filter((_, i) => (all[i].extractor_path || '').split(' > ').includes(p.name));
+      const res = runParsers([{ name: p.name, text: p.text }], routed.map((l) => `${l} trailing text`), { now: e.meta.reference_time });
+      for (const r of res.filter((x) => x.extractor_path)) {
+        checked++;
+        assert.equal(r.error ?? null, null, `${e.id} ${p.name}`);
+      }
+    }
+  }
+  assert.ok(checked >= 100, `${checked} lines checked`);
+});

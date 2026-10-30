@@ -615,3 +615,76 @@ test('detect: a CEF label is listed once per line, and one with a header field\'
   assert.deepEqual(['name', 'cs1', 'Customer'].map((k) => extraction(plan).read(key(k))), ['values[5]', 'values["cs1"]', 'values["Customer"]']);
   readsEveryKey(plan, a);
 });
+
+test('detect: CEF start and end in epoch milliseconds map to the event time as epoch milliseconds', () => {
+  // CEF's start and end, like rt, are either a date or epoch milliseconds. Cortex XDR sends the
+  // alert time as end; read as a date it gave NULL and the event got the ingest time (checked in a
+  // lab tenant).
+  const lines = [
+    '<180>1 2026-10-13T00:41:14.608731Z cortexxdr - - - - CEF:0|Palo Alto Networks|Cortex XDR|Cortex XDR 3.14|XDR Agent|Behavioral Threat Protection|8|end=1791852071102 shost=WS-FIN-041 cat=Malware act=Prevented (Blocked)',
+    '<180>1 2026-10-13T01:06:11.000000Z cortexxdr - - - - CEF:0|Palo Alto Networks|Cortex XDR|Cortex XDR 3.14|XDR Agent|Behavioral Threat Protection|8|end=1791853570694 shost=WS-FIN-042 cat=Malware act=Prevented (Blocked)',
+  ];
+  const a = analyseSample(lines);
+  assert.equal(a.keys.find((k) => k.key === 'end').shape, 'epoch-ms');
+  const plan = buildPlan(a, { vendor: 'Palo Alto Networks', product: 'Cortex XDR', shipMethod: 'syslog' });
+  const m = plan.units.flatMap((u) => u.mappings).find((x) => x.key === 'end');
+  assert.deepEqual([m.field, m.transform.kind], ['eventTimeUsec$', 'epoch-ms']);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [1791852071102000, 1791853570694000]);
+  // start reads the same way, in LEEF too, as Guardium sends it.
+  const g = analyseSample(['LEEF:1.0|IBM|Guardium|12.0|Failed logins|ruleID=20530\tstart=1791978289000\tsrc=192.0.2.4', 'LEEF:1.0|IBM|Guardium|12.0|Failed logins|ruleID=20531\tstart=1791978301000\tsrc=192.0.2.5']);
+  assert.equal(g.keys.find((k) => k.key === 'start').shape, 'epoch-ms');
+});
+
+test('mapping: a key named for the event time takes it from an earlier key with only a time\'s shape', () => {
+  // Tailscale sends deferredAt, the zero date when nothing was deferred, ahead of eventTime.
+  // deferredAt took the event time by its shape, so those lines got the ingest time; eventTime
+  // gives the engine the real time (checked in a lab tenant).
+  const lines = [
+    '{"tailscale_record":"configuration","action":"LOGIN","actor":{"loginName":"akim@example.com"},"deferredAt":"0001-01-01T00:00:00Z","eventTime":"2026-10-20T00:12:44.583893Z","origin":"ADMIN_CONSOLE","type":"CONFIG"}',
+    '{"tailscale_record":"configuration","action":"LOGIN","actor":{"loginName":"jsmith@example.com"},"deferredAt":"0001-01-01T00:00:00Z","eventTime":"2026-10-20T00:31:09.104512Z","origin":"NODE","type":"CONFIG"}',
+  ];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Tailscale', product: 'Tailscale', shipMethod: 'http-ingest' });
+  assert.deepEqual(plan.units.flatMap((u) => u.mappings).filter((m) => m.field === 'eventTimeUsec$').map((m) => m.key), ['eventTime']);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [1792455164583893, 1792456269104512]);
+  // A key named for it that has a value on fewer lines leaves the time to the key with the shape,
+  // as N-sight's empty StartTime does to ObservedAt.
+  const rows = ['{"ObservedAt":"2026-10-12T11:41:00Z","StartTime":"","CheckId":"23"}', '{"ObservedAt":"2026-10-12T11:46:00Z","StartTime":"","CheckId":"24"}'];
+  const keys = keysFor(analyseSample(rows), [0, 1]);
+  assert.deepEqual(suggestMappings(keys, 'scwx.thirdpartyalert').filter((m) => m.field === 'eventTimeUsec$').map((m) => m.key), ['ObservedAt']);
+});
+
+test('mapping: a number that doesn\'t fit a 32-bit field isn\'t mapped to it', () => {
+  // Cisco Secure Endpoint's 19-digit id went to event_id, a uint32 field, and the engine stored
+  // 31744 (checked in a lab tenant).
+  const ids = (id) => {
+    const rows = [`{"event_id":1090519112,"id":${id},"detection":"W32.Example"}`, `{"event_id":1090519113,"id":${id},"detection":"W32.Example"}`];
+    return suggestMappings(keysFor(analyseSample(rows), [0, 1]), 'scwx.nids').filter((m) => m.key === 'id').map((m) => m.field);
+  };
+  assert.deepEqual(ids('6180351977805871676'), []);
+  assert.deepEqual(ids('"6180351977805871676"'), []);
+  assert.deepEqual(ids('4294967296'), []);
+  assert.deepEqual(ids('-1'), []);
+  assert.deepEqual(ids('4294967295'), ['eventId$']);
+  assert.deepEqual(ids('"4294967295"'), ['eventId$']);
+});
+
+test('detect: a CEF extension key with a header field\'s name is listed as that key, and the header field as cef_<name>', () => {
+  // CEF() keeps name=x as values["name"] and the header's name only by number, values[5] (checked in
+  // a lab tenant), so the two are listed apart and each read the way the engine gives it.
+  const lines = [
+    'CEF:0|Acme|Gateway|1.0|100|Header Name|5|src=192.0.2.4 name=Ext Name msg=a',
+    'CEF:0|Acme|Gateway|1.0|101|Other Header|5|src=192.0.2.5 msg=b',
+  ];
+  const a = analyseSample(lines);
+  const key = (k) => a.keys.find((x) => x.key === k);
+  assert.deepEqual([key('name').values, key('cef_name').values], [['Ext Name'], ['Header Name', 'Other Header']]);
+  assert.ok(a.events.every((e) => new Set(e.fields.map((f) => f.key)).size === e.fields.length), 'no key is listed twice on a line');
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Gateway', shipMethod: 'syslog' });
+  assert.deepEqual(['name', 'cef_name'].map((k) => extraction(plan).read(key(k))), ['values["name"]', 'values[5]']);
+  readsEveryKey(plan, a);
+  // Without such a key, the header field keeps its name.
+  assert.ok(analyseSample(lines.slice(1)).keys.some((k) => k.key === 'name' && k.header));
+});

@@ -14,7 +14,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
 
 jsonMatch = originalData$|(\{.*})\s*$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 
 # Variables and $ fields set here are visible to the children.
 sensorType$ = "Airlock Digital"

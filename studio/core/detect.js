@@ -51,8 +51,8 @@ export function shapeOf(key, value) {
   if (/^(true|false)$/i.test(v)) return 'bool-string';
   if (/^\d+$/.test(v)) {
     if (/port/i.test(key) && Number(v) <= 65535) return 'port';
-    // CEF's rt (receipt time) is either a date or epoch milliseconds.
-    if (/time|date|_ts$|^ts$|^rt$|epoch/i.test(key) && (v.length === 10 || v.length === 13)) return v.length === 10 ? 'epoch-s' : 'epoch-ms';
+    // CEF's rt (receipt time), start and end are each either a date or epoch milliseconds.
+    if (/time|date|_ts$|^ts$|^rt$|^start$|^end$|epoch/i.test(key) && (v.length === 10 || v.length === 13)) return v.length === 10 ? 'epoch-s' : 'epoch-ms';
     return 'int-string';
   }
   if (/^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(v)) return /^file:/i.test(v) ? 'file-uri' : 'url';
@@ -338,6 +338,13 @@ export function analyseSample(lines) {
   // has no keys they can read. A plain-text sample is the exception: its capture pattern reads
   // every line.
   if (format !== 'text') for (const e of events) if (e.format !== format) e.fields = [];
+  // A CEF extension key with a header field's name, as in name=x, is a key of its own that
+  // values["name"] reads, while the parser reads the header field by its number. So in a sample
+  // with one, that header field is listed as cef_name on every line (checked in a lab tenant).
+  if (format === 'cef') {
+    const clash = new Set(events.flatMap((e) => e.fields.filter((f) => !f.header && !f.label && CEF_HEADER.indexOf(f.key) > 0).map((f) => f.key)));
+    for (const e of events) for (const f of e.fields) if (f.header && clash.has(f.key)) f.key = `cef_${f.key}`;
+  }
   const formats = count(events.map((e) => e.format));
   const headers = count(events.map((e) => (e.header ? e.header.kind : 'none')));
   const header = Object.entries(headers).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';

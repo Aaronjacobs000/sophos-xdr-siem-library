@@ -13,7 +13,7 @@
 
 # Cut the JSON object off the end of the syslog line, then parse it.
 jsonMatch = originalData$|(\{.*})$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 
 # Variables and $ fields set here are visible to every child.
 eventType$ = json["$.event_type"]

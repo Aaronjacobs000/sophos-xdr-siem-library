@@ -22,7 +22,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
 
 jsonMatch = originalData$|(\{.*\})\s*$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 # The LogForwarder wraps the record in "log"; rsyslog and the LogServer don't.
 wrapped = json["$.log.event_type"] != NULL
 ev = IF wrapped THEN JSON(STRING(json["$.log"])) ELSE json

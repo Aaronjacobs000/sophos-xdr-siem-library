@@ -171,9 +171,18 @@ const AMBIGUOUS = new Set(['version', 'id', 'type', 'name', 'state', 'flags', 't
 
 const NUMERIC_SHAPES = new Set(['int', 'int-string', 'port', 'epoch-s', 'epoch-ms', 'float', 'empty']);
 
+// Whether a number fits a 32-bit field of this type. One that doesn't wraps there, as Cisco
+// Secure Endpoint's 19-digit id does in event_id; text that isn't a number is left to the shape.
+function fits32(v, type) {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && /^\s*-?\d+\s*$/.test(v) ? Number(v) : null;
+  if (n === null) return true;
+  return type === 'uint32' ? n >= 0 && n <= 4294967295 : n >= -2147483648 && n <= 2147483647;
+}
+
 // Whether a key's values can go in a field of this type at all.
 function compatible(k, type, field) {
   if (!type) return false;
+  if (/^(u|s)?int32$/.test(type) && !k.values.every((v) => fits32(v, type))) return false;
   if (/^(u|s)?int(32|64)$/.test(type)) return NUMERIC_SHAPES.has(k.shape) || (/Usec\$$/.test(field) && k.shape === 'time') || field === 'protocol$' || field === 'queryType$' || (field === 'responseCode$' && type === 'int32');
   if (type === 'float' || type === 'double') return NUMERIC_SHAPES.has(k.shape);
   if (type === 'bool') return k.shape === 'bool' || k.shape === 'bool-string';
@@ -194,22 +203,28 @@ export function suggestMappings(keys, schemaId) {
   const used = new Set();
   const out = [];
   let k = null;
-  const available = (f) => {
+  const available = (f, key = k) => {
     const head = f.split('.')[0];
-    return fields.has(head) && !fields.get(head).derived && !used.has(f) && compatible(k, typeOf(fields, f), f);
+    return fields.has(head) && !fields.get(head).derived && !used.has(f) && compatible(key, typeOf(fields, f), f);
   };
-  for (k of keys) {
-    const short = n(k.key.split('.').pop());
-    const full = n(k.key);
-    let pick = null;
-    let origin = 'alias';
+  const aliasesOf = (key) => {
+    const short = n(key.key.split('.').pop());
+    const full = n(key.key);
     // A nested key with a generic last part (dns.version, flow.state) doesn't get the
     // top-level meaning of that name.
-    const nested = k.key.includes('.') || k.key.includes('[');
-    const cands = [...(ALIASES[full] || []), ...(nested && AMBIGUOUS.has(short) ? [] : ALIASES[short] || [])];
-    for (const c of cands) if (available(c)) { pick = c; break; }
+    const nested = key.key.includes('.') || key.key.includes('[');
+    return [...(ALIASES[full] || []), ...(nested && AMBIGUOUS.has(short) ? [] : ALIASES[short] || [])];
+  };
+  // A key with only a time's shape leaves a time field to a later key named for it that has a
+  // value on as many lines: Tailscale's deferredAt is a time, but eventTime is the event's.
+  const filled = (key) => key.values.filter((v) => v !== null && v !== '').length;
+  const named = (c) => /Usec\$$/.test(c) && keys.slice(keys.indexOf(k) + 1).some((x) => filled(x) >= filled(k) && aliasesOf(x).find((a) => available(a, x)) === c);
+  for (k of keys) {
+    let pick = null;
+    let origin = 'alias';
+    for (const c of aliasesOf(k)) if (available(c)) { pick = c; break; }
     if (!pick && SHAPE_FIELDS[k.shape]) {
-      for (const c of SHAPE_FIELDS[k.shape](k.key)) if (available(c)) { pick = c; origin = 'shape'; break; }
+      for (const c of SHAPE_FIELDS[k.shape](k.key)) if (available(c) && !named(c)) { pick = c; origin = 'shape'; break; }
     }
     if (!pick) continue;
     // A hash alias only fits when the value has that hash's length.
