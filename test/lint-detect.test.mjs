@@ -730,3 +730,26 @@ test('detect: LEEF() reads a CEF line among LEEF lines as CEF, and a LEEF header
   assert.deepEqual(results.map((r) => r.normalized.source_address), ['192.0.2.31', '203.0.113.77', '192.0.2.80']);
   assert.notEqual(analyseLine('<30>Oct 14 10:21:07 gcoll01.example.com guard_sender[4486]: LEEF:1.0|IBM|Guardium|12.0|Login failures').format, 'leef');
 });
+
+test('detect: a LEEF line with a CEF header later in it is read as LEEF, and a label LEEF() resolves adds no key', () => {
+  // CEF() and LEEF() read text from its first header, so a LEEF line that carries a CEF line in a
+  // value is LEEF to both, and the parser reads it with LEEF(). LEEF() drops the quotes around a
+  // quoted value and resolves cs1Label=Tier to a key of its own, as CEF() does, while the line
+  // still lists cs1 and cs1Label (checked in a lab tenant).
+  const lines = [
+    '<14>Oct 14 10:21:07 gw01.example.com acmegw[311]: LEEF:2.0|Acme|Gateway|2.1|login|^|src=192.0.2.5^usrName=jdoe^cs1=gold^cs1Label=Tier^msg=relayed CEF:0|Acme|Edge|1.0|100|login|5|src=198.51.100.9',
+    '<14>Oct 14 10:22:41 gw01.example.com acmegw[311]: LEEF:1.0|Acme|Gateway|2.1|login|src=192.0.2.6\tusrName=asmith\tcs1=silver\tcs1Label=Tier\tmsg="bye now"',
+  ];
+  assert.equal(analyseLine(lines[0]).format, 'leef');
+  const a = analyseSample(lines);
+  assert.equal(a.format, 'leef');
+  const key = (k) => a.keys.find((x) => x.key === k);
+  assert.deepEqual(key('msg').values, ['relayed CEF:0|Acme|Edge|1.0|100|login|5|src=198.51.100.9', 'bye now']);
+  assert.deepEqual(key('cs1').values, ['gold', 'silver']);
+  assert.equal(key('Tier'), undefined);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Gateway', shipMethod: 'syslog' });
+  readsEveryKey(plan, a);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-15T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.error?.message ?? null), [null, null]);
+  assert.deepEqual(results.map((r) => r.normalized.source_address), ['192.0.2.5', '192.0.2.6']);
+});

@@ -228,8 +228,10 @@ export const FUNCTIONS = {
     return withHeaderKeys(parseCef(str(s)));
   }],
   // LEEF(NULL) fails the event too, with or without a delimiter, and so does text with no LEEF:
-  // (see parseLeef; checked in a lab tenant).
+  // (see parseLeef). A delimiter that is "" or NULL fails it first, whatever the text (checked in a
+  // lab tenant).
   LEEF: [1, 2, (c, [s, d]) => {
+    if (d !== undefined && (d === null || str(d) === '')) throw new RuntimeError(`LEEF delimiter override cannot be empty: LEEF() got ${d === null ? 'NULL' : '""'} as its delimiter. Leave the delimiter out to use the one the line names, or a tab.`, 'leef-delimiter');
     if (s === null || s === undefined) throw new RuntimeError('message is not in LEEF format: LEEF() got NULL. Check the value is set before you read it as LEEF.', 'leef-header');
     return withHeaderKeys(parseLeef(str(s), d === undefined ? null : str(d)));
   }],

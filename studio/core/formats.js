@@ -174,34 +174,55 @@ export const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
 // cs3="a" b keeps its quotes. With no closing quote the value runs to the end (checked in a lab
 // tenant).
 //
-// Text with no CEF: in it fails the event, "" included, with the engine's "message is not in
-// LEEF format" (checked in a lab tenant).
-//
-// LEEF() reads text whose CEF: comes first this way too. With a delimiter whose first character
+// LEEF() reads text whose header is CEF this way too. With a delimiter whose first character
 // isn't a space, the extension splits on that character the way LEEF() splits its pairs (checked
 // in a lab tenant).
-export function parseCef(line, delimiter = null) {
-  if (line === null || line === undefined) return null;
-  const s = String(line);
-  const at = s.indexOf('CEF:');
-  if (at === -1) throw new RuntimeError('message is not in LEEF format: CEF() found no "CEF:" in the text. Check the value holds the CEF part of the line.', 'cef-header');
-  const parts = splitUnescaped(s.slice(at), '|', 8);
-  if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: CEF() needs a header of at least 6 fields separated by |, as in CEF:0|Vendor|Product|1.0|100|Name, and this has ${parts.length}`, 'cef-header');
-  if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): CEF() needs at least 6 header fields separated by |, and this has ${parts.length}`, 'cef-header');
+function readCef(s, delimiter, fn) {
+  const parts = splitUnescaped(s, '|', 8);
+  if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: ${fn}() needs a header of at least 6 fields separated by |, as in CEF:0|Vendor|Product|1.0|100|Name, and this has ${parts.length}`, `${fn.toLowerCase()}-header`);
+  if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): ${fn}() needs at least 6 header fields separated by |, and this has ${parts.length}`, `${fn.toLowerCase()}-header`);
   const short = parts.length === 6 || parts.length === 7;
   const header = short ? parts.slice(0, -1) : parts.slice(0, 7);
   const ext = short ? parts[parts.length - 1] : parts.length > 7 ? parts[7] : '';
   const d = delimiter ? leefDelimiter(delimiter) : ' ';
   const map = d === ' ' ? cefPairs(ext) : leefPairs(ext, d);
-  // labels: each label the engine resolved, to the key it labels.
+  return Object.assign(new ObjValue(map, header), { labels: resolveLabels(map, header) });
+}
+
+// Each label the engine resolved, to the key it labels. A key in LABELLED with a <key>Label gets
+// the label as a key of its own, unless a key or a header field already has that name: in
+// CEF:0|V|P|1|100|N|5, cs1Label=6 isn't resolved and cs1Label=7 is (checked in a lab tenant).
+function resolveLabels(map, header) {
   const labels = new Map();
   for (const [k, v] of [...map]) {
     if (k.endsWith('Label')) {
       const base = k.slice(0, -5);
-      if (LABELLED.test(base) && map.has(base) && !map.has(v)) { map.set(v, map.get(base)); labels.set(v, base); }
+      if (LABELLED.test(base) && map.has(base) && !map.has(v) && !header.some((h, i) => String(i) === v)) { map.set(v, map.get(base)); labels.set(v, base); }
     }
   }
-  return Object.assign(new ObjValue(map, header), { labels });
+  return labels;
+}
+
+// CEF() and LEEF() read text alike, from the first CEF: or LEEF: whose version, up to the next |,
+// is digits, dots and spaces. A tab, \n, \f and \r count as spaces and nothing else does, so CEF:|
+// and LEEF:x| aren't headers and LEEF: | is. A header that isn't one is passed over for a later
+// one, and the header found decides how the text is read, whichever function reads it: CEF()
+// reads text whose header is LEEF as LEEF() does, and LEEF() reads CEF as CEF() does.
+//
+// Text with no header fails the event, "" included, with the engine's "message is not in LEEF
+// format" (checked in a lab tenant).
+const CEF_LEEF_HEADER = /(CEF|LEEF):[0-9. \t\n\f\r]+\|/;
+
+function readCefLeef(line, delimiter, fn) {
+  const s = String(line);
+  const m = CEF_LEEF_HEADER.exec(s);
+  if (!m) throw new RuntimeError(`message is not in LEEF format: ${fn}() found no header such as CEF:0| or LEEF:1.0| in the text, and the version before the first | has only digits and dots. Check the value holds the ${fn} part of the line.`, `${fn.toLowerCase()}-header`);
+  return m[1] === 'CEF' ? readCef(s.slice(m.index), delimiter, fn) : readLeef(s.slice(m.index), delimiter, fn);
+}
+
+export function parseCef(line) {
+  if (line === null || line === undefined) return null;
+  return readCefLeef(line, null, 'CEF');
 }
 
 function cefPairs(ext) {
@@ -250,28 +271,48 @@ function leefDelimiter(spec) {
 // unless it is a delimiter at the start: x^a=1 gives a, and ^a=1 gives ^a. Keys keep their spaces,
 // an empty value isn't stored and a later pair with the same key replaces it. An = after an odd
 // number of backslashes starts no key, and a value has \\, \= and \" unescaped as in CEF, while
-// keys keep their backslashes (checked in a lab tenant).
+// keys keep their backslashes.
+//
+// A value that starts with a quote runs at least to the next unescaped quote, so delimiters and
+// key= inside the quotes don't end it, and the next key starts after that quote. When the value
+// also ends with a quote, its first and last quote go, as in CEF: a="x^b=2"^c=3 gives a x^b=2,
+// a="x"^y"^b=2 gives x"^y and a="" gives "", while a="x" y keeps its quotes. With no closing quote
+// the value runs to the end (checked in a lab tenant).
 function leefPairs(text, d) {
   const s = text.trim();
   const map = new Map();
-  const set = (k, v) => { if (v !== '') map.set(k, unescapeCefValue(v)); };
+  const set = (k, v, closed) => {
+    if (v === '') return;
+    if (closed && endsWithQuote(v)) v = v.slice(1, -1);
+    map.set(k, unescapeCefValue(v));
+  };
   let key = null;
   let from = 0;
+  let after = 0;
+  let closed = false;
   for (let eq = s.indexOf('='); eq !== -1; eq = s.indexOf('=', eq + 1)) {
     if (escapedAt(s, eq)) continue;
     const p = eq > 0 ? s.lastIndexOf(d, eq - 1) : -1;
     if (key === null) {
       key = p >= 1 ? s.slice(p + 1, eq) : s.slice(0, eq);
     } else {
-      if (p < from) continue;
+      if (p < after) continue;
       let end = p;
       while (end > from && s[end - 1] === d) end--;
-      set(key, s.slice(from, end));
+      set(key, s.slice(from, end), closed);
       key = s.slice(p + 1, eq);
     }
     from = eq + 1;
+    after = from;
+    closed = false;
+    if (s[from] === '"') {
+      const close = closingQuote(s, from);
+      if (close === -1) break;
+      closed = true;
+      after = close + 1;
+    }
   }
-  if (key !== null) set(key, s.slice(from));
+  if (key !== null) set(key, s.slice(from), closed);
   return map;
 }
 
@@ -288,25 +329,24 @@ function escapedAt(s, i) {
 // sends, has its first pair as the delimiter field. delimiterOverride wins over the field, and the
 // first pair stays a header field (checked in a lab tenant).
 //
-// Text whose CEF: comes before any LEEF: is read as CEF() reads it, as IBM Guardium's CEF line
-// (see parseCef). Other text with no LEEF: in it fails the event, "" included, with or without a
-// delimiter, and so does a header of fewer than 6 parts, an escaped | not counted: 3 to 5 parts
-// are too short, and fewer aren't LEEF (checked in a lab tenant).
-export function parseLeef(line, delimiterOverride = null) {
-  if (line === null || line === undefined) return null;
-  const s = String(line);
-  const at = s.indexOf('LEEF:');
-  const cef = s.indexOf('CEF:');
-  if (cef !== -1 && (at === -1 || cef < at)) return parseCef(s, delimiterOverride);
-  if (at === -1) throw new RuntimeError('message is not in LEEF format: LEEF() found no "LEEF:" in the text. Check the value holds the LEEF part of the line.', 'leef-header');
-  const parts = splitUnescaped(s.slice(at), '|', 7);
-  if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: LEEF() needs a header of at least 6 parts separated by |, as in LEEF:1.0|Vendor|Product|1.0|EventID|pairs, and this has ${parts.length}`, 'leef-header');
-  if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): LEEF() needs at least 6 parts separated by |, the pairs included, and this has ${parts.length}`, 'leef-header');
+// Text whose header is CEF is read as CEF() reads it, as IBM Guardium's CEF line, and text with
+// no header fails the event, with or without a delimiter (see readCefLeef). So does a header of
+// fewer than 6 parts, an escaped | not counted: 3 to 5 parts are too short, and fewer aren't LEEF.
+// The labels in LABELLED are resolved as in CEF (checked in a lab tenant).
+function readLeef(s, delimiterOverride, fn) {
+  const parts = splitUnescaped(s, '|', 7);
+  if (parts.length < 3) throw new RuntimeError(`message is not in LEEF format: ${fn}() needs a header of at least 6 parts separated by |, as in LEEF:1.0|Vendor|Product|1.0|EventID|pairs, and this has ${parts.length}`, `${fn.toLowerCase()}-header`);
+  if (parts.length < 6) throw new RuntimeError(`message isn't in CEF/LEEF format (header too short): ${fn}() needs at least 6 parts separated by |, the pairs included, and this has ${parts.length}`, `${fn.toLowerCase()}-header`);
   const full = parts.length === 7;
   const header = parts.slice(0, full ? 6 : 5);
   const attrs = full ? parts[6] : parts[5] ?? '';
-  const delim = leefDelimiter(delimiterOverride || (full ? header[5] : ''));
-  return new ObjValue(leefPairs(attrs, delim), header);
+  const map = leefPairs(attrs, leefDelimiter(delimiterOverride || (full ? header[5] : '')));
+  return Object.assign(new ObjValue(map, header), { labels: resolveLabels(map, header) });
+}
+
+export function parseLeef(line, delimiterOverride = null) {
+  if (line === null || line === undefined) return null;
+  return readCefLeef(line, delimiterOverride, 'LEEF');
 }
 
 // ---------------------------------------------------------------- name/value pairs
