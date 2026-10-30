@@ -126,7 +126,7 @@ function drawParent(main, side) {
   const dl = h('dl', { class: 'kv' });
   dl.style.marginTop = '14px';
   dl.append(h('dt', { text: 'Confirm with' }), h('dd', { class: 'mono', text: `${plan.confirm.kind}: ${plan.confirm.text}` }));
-  dl.append(h('dt', { text: 'Reads the line' }), h('dd', { text: { json: plan.extract.jsonAtEnd ? 'Cuts the JSON object off the end of the line with a capture, then JSON()' : 'JSON(originalData$)', cef: 'CEF(originalData$)', leef: 'LEEF(originalData$)', kv: 'SPLIT_NAME_VALUES() on the key=value part', csv: 'SPLIT() on the delimiter', text: 'Capture patterns you write', xml: 'Capture patterns you write' }[plan.format] || plan.format }));
+  dl.append(h('dt', { text: 'Reads the line' }), h('dd', { text: { json: plan.extract.jsonAtEnd ? 'Cuts the JSON object off the end of the line with a capture, then JSON()' : 'JSON(originalData$)', cef: 'CEF(originalData$)', leef: plan.extract.leefPipes ? 'LEEF(originalData$), with | as the delimiter on lines with | between their pairs' : 'LEEF(originalData$)', kv: 'SPLIT_NAME_VALUES() on the key=value part', csv: 'SPLIT() on the delimiter', text: 'Capture patterns you write', xml: 'Capture patterns you write' }[plan.format] || plan.format }));
   dl.append(h('dt', { text: 'Splits on' }), h('dd', {}, plan.split ? h('span', { class: 'mono', text: `eventType$ = ${plan.split.path || plan.split.key}` }) : 'nothing (standalone)'));
   box.append(dl);
   if (plan.format === 'kv') {

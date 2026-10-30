@@ -1596,6 +1596,63 @@ test('LEEF() fails on text with no LEEF:, "" included, with or without a delimit
   }
 });
 
+test('LEEF() reads a line with | between its pairs, as IBM Guardium sends, the way the engine does', () => {
+  // A line with a 7th |-separated part has a delimiter field, LEEF:1.0 or not, so on these lines
+  // the first pair is that field and the rest split on its first character, the r of ruleID.
+  // LEEF(l, "|") reads every pair but the first. What the engine gave in a lab tenant.
+  const g0 = 'LEEF:1.0|IBM|Guardium|12.0|Login failures|ruleID=20026|ruleDesc=Login failures|severity=INFO|devTime=2026-10-14 21:21:05|serverType=DB2|classification=|category=|dbProtocolVersion=3.0|usrName=|sourceProgram=DB2JCC_APPLICATION|start=1791976865000|dbUser=jsmith|dst=198.51.100.20|dstPort=50000|src=192.0.2.31|srcPort=38754|protocol=TCP|type=LOGIN_FAILED|violationID=15|sql=|error=08001-XXXX:30082-01';
+  const g1 = 'LEEF:1.0|IBM|Guardium|12.0|Unauthorized Users on Cardholder Objects - Alert|ruleID=159|ruleDesc=Unauthorized Users on Cardholder Objects - Alert|severity=MED|devTime=2026-10-14 21:23:42|serverType=MS SQL SERVER|classification=Violation|category=PCI|dbProtocolVersion=8.0|usrName=|sourceProgram=REPORTS.EXE|start=1791977022000|dbUser=svc_reports|dst=198.51.100.21|dstPort=1433|src=192.0.2.44|srcPort=60621|protocol=TCP|type=SQL_LANG|violationID=0|sql=SELECT name + \'|\' + card_number FROM cardholder WHERE region = \'APJ\'|error=';
+  const s = (l, expr) => get(`x = STRING(${expr})`, 'x', { l });
+  assert.equal(s(g0, 'LEEF(l)'), "{\"\":\"08001-XXXX:30082-01\",\"0\":\"LEEF:1.0\",\"1\":\"IBM\",\"2\":\"Guardium\",\"3\":\"12.0\",\"4\":\"Login failures\",\"5\":\"ruleID=20026\",\"Name\":\"|sourceProg\",\"Type\":\"DB2|classification=|catego\",\"am\":\"DB2JCC_APPLICATION|sta\",\"c\":\"192.0.2.31|srcPo\",\"ity\":\"INFO|devTime=2026-10-14 21:21:05|serve\",\"otocol\":\"TCP|type=LOGIN_FAILED|violationID=15|sql=|erro\",\"ruleDesc\":\"Login failures|seve\",\"sion\":\"3.0|us\",\"t\":\"38754|p\",\"y\":\"|dbProtocolVe\"}");
+  assert.equal(s(g0, 'LEEF(l, "|")'), "{\"0\":\"LEEF:1.0\",\"1\":\"IBM\",\"2\":\"Guardium\",\"3\":\"12.0\",\"4\":\"Login failures\",\"5\":\"ruleID=20026\",\"dbProtocolVersion\":\"3.0\",\"dbUser\":\"jsmith\",\"devTime\":\"2026-10-14 21:21:05\",\"dst\":\"198.51.100.20\",\"dstPort\":\"50000\",\"error\":\"08001-XXXX:30082-01\",\"protocol\":\"TCP\",\"ruleDesc\":\"Login failures\",\"serverType\":\"DB2\",\"severity\":\"INFO\",\"sourceProgram\":\"DB2JCC_APPLICATION\",\"src\":\"192.0.2.31\",\"srcPort\":\"38754\",\"start\":\"1791976865000\",\"type\":\"LOGIN_FAILED\",\"violationID\":\"15\"}");
+  assert.equal(s(g1, 'LEEF(l)'), "{\"\":\"svc_repo\",\"0\":\"LEEF:1.0\",\"1\":\"IBM\",\"2\":\"Guardium\",\"3\":\"12.0\",\"4\":\"Unauthorized Users on Cardholder Objects - Alert\",\"5\":\"ruleID=159\",\"Name\":\"|sourceProg\",\"Type\":\"MS SQL SERVER|classification=Violation|catego\",\"am\":\"REPORTS.EXE|sta\",\"c\":\"192.0.2.44|srcPo\",\"egion \":\" 'APJ'|erro\",\"ity\":\"MED|devTime=2026-10-14 21:23:42|serve\",\"otocol\":\"TCP|type=SQL_LANG|violationID=0|sql=SELECT name + '|' + card_number FROM cardholder WHERE \",\"ruleDesc\":\"Unauthorized Users on Cardholder Objects - Alert|seve\",\"sion\":\"8.0|us\",\"t\":\"60621|p\",\"ts|dst\":\"198.51.100.21|dstPo\",\"y\":\"PCI|dbProtocolVe\"}");
+  assert.equal(s(g1, 'LEEF(l, "|")'), "{\"' + card_number FROM cardholder WHERE region \":\" 'APJ'\",\"0\":\"LEEF:1.0\",\"1\":\"IBM\",\"2\":\"Guardium\",\"3\":\"12.0\",\"4\":\"Unauthorized Users on Cardholder Objects - Alert\",\"5\":\"ruleID=159\",\"category\":\"PCI\",\"classification\":\"Violation\",\"dbProtocolVersion\":\"8.0\",\"dbUser\":\"svc_reports\",\"devTime\":\"2026-10-14 21:23:42\",\"dst\":\"198.51.100.21\",\"dstPort\":\"1433\",\"protocol\":\"TCP\",\"ruleDesc\":\"Unauthorized Users on Cardholder Objects - Alert\",\"serverType\":\"MS SQL SERVER\",\"severity\":\"MED\",\"sourceProgram\":\"REPORTS.EXE\",\"sql\":\"SELECT name + '\",\"src\":\"192.0.2.44\",\"srcPort\":\"60621\",\"start\":\"1791977022000\",\"type\":\"SQL_LANG\",\"violationID\":\"0\"}");
+});
+
+test('LEEF() splits its pairs the way the engine does', () => {
+  // What the engine gave in a lab tenant for LEEF:1.0|ZZ|PS4|1.0|100| and each text, without the
+  // header fields 0 to 4.
+  const pairs = (text, head = 'LEEF:1.0|ZZ|PS4|1.0|100|') => {
+    const o = JSON.parse(get('x = STRING(LEEF(l))', 'x', { l: head + text }));
+    for (const k of ['0', '1', '2', '3', '4']) delete o[k];
+    return o;
+  };
+  for (const [text, want] of [
+    // Only the first character of the delimiter field counts, and a hex form isn't read.
+    ['^|a=1^b=2', { 5: '^', a: '1', b: '2' }],
+    ['xy|a=1xb=2yc=3', { 5: 'xy', a: '1', b: '2yc=3' }],
+    ['x5E|a=1^b=2xc=3', { 5: 'x5E', a: '1^b=2', c: '3' }],
+    [' ^ |a=1 ^b=2', { 5: ' ^ ', a: '1', '^b': '2' }],
+    ['|a=1\tb=2', { 5: '', a: '1', b: '2' }],
+    ['^|a=1^b=2|c=3^d=4', { 5: '^', a: '1', b: '2|c=3', d: '4' }],
+    // A key is the text after the last delimiter before its =, and a value runs to the delimiters
+    // before the next key, so it can hold a delimiter, an = or a part with no =.
+    ['^|a=1^^b=2', { 5: '^', a: '1', b: '2' }],
+    ['^|a=1^x^^b=2', { 5: '^', a: '1^x', b: '2' }],
+    ['^|a=1^ ^b=2', { 5: '^', a: '1^ ', b: '2' }],
+    ['^|a=1^b', { 5: '^', a: '1^b' }],
+    ['^|a=x=y^b=2', { 5: '^', a: 'x=y', b: '2' }],
+    ['^|a=1^=2^c=3', { 5: '^', a: '1', '': '2', c: '3' }],
+    ['^|a=x\\^b=2^c=3', { 5: '^', a: 'x\\', b: '2', c: '3' }],
+    // Text before the first key goes, unless it is a delimiter at the start, and spaces around
+    // the pairs go first.
+    ['^|x^y^a=1^b=2', { 5: '^', a: '1', b: '2' }],
+    ['^|^a=1^b=2', { 5: '^', '^a': '1', b: '2' }],
+    ['^| a=1^b=2', { 5: '^', a: '1', b: '2' }],
+    ['^|x a=1^b=2', { 5: '^', 'x a': '1', b: '2' }],
+    // Keys keep their spaces, and an empty value isn't stored.
+    ['^|a=1^ b =2', { 5: '^', a: '1', ' b ': '2' }],
+    ['^|a=1^b=^c=3', { 5: '^', a: '1', c: '3' }],
+    ['a=1\t\tb=2\t c =3', { a: '1', b: '2', ' c ': '3' }],
+  ]) assert.deepEqual(pairs(text), want, text);
+  // Six parts read the sixth as tab-separated pairs, LEEF:2.0 too.
+  assert.deepEqual(pairs('a=1\tb=2', 'LEEF:2.0|ZZ|PS4|1.0|100|'), { a: '1', b: '2' });
+  assert.deepEqual(pairs('a=1^b=2', 'LEEF:2.0|V|P|1|E|'), { a: '1^b=2' });
+  assert.deepEqual(pairs('a=1\tb=2 ', 'LEEF:1.0|V|P|1|E|'), { a: '1', b: '2' });
+  assert.deepEqual(pairs('^|  ^a=1^b=2', 'LEEF:1.0|V|P|1|E|'), { 5: '^', '^a': '1', b: '2' });
+  assert.deepEqual(pairs('^|a=1^b=  ', 'LEEF:1.0|V|P|1|E|'), { 5: '^', a: '1' });
+});
+
 test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', () => {
   // What the engine returned in a lab tenant, in microseconds. TRUE also picks the year.
   const usec = (expr) => toPlain(execute(`t = ${expr}\nx = STRING(t + 0)`, {}, { now: '2026-10-14T20:00:00Z' }).vars.get('x'));

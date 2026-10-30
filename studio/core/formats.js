@@ -223,14 +223,51 @@ export function parseCef(line) {
 
 // ---------------------------------------------------------------- LEEF
 
-// The engine takes the delimiter field literally: a hex form such as x5E is not decoded.
+// A LEEF line whose delimiter field holds an =, which is a line with | between its pairs. LEEF()
+// can't read its pairs, and LEEF(line, "|") reads every pair but the first (see parseLeef). A Go
+// pattern, also run as a JavaScript one.
+export const LEEF_PIPES = 'LEEF:[^|]*(?:\\|[^|]*){4}\\|[^|]*=[^|]*\\|';
+
+// Only the first character of the delimiter field counts, so a hex form such as x5E splits on x.
 function leefDelimiter(spec) {
   if (!spec) return '\t';
-  return spec;
+  return spec[0];
 }
 
-// LEEF:1.0 has five header fields then tab-separated attributes. LEEF:2.0 adds a sixth header
-// field naming the attribute delimiter. delimiterOverride wins over both.
+// The pairs of LEEF() split on delimiter d, with the spaces around them gone first. A key is the
+// text after the last delimiter before its =, and a value runs to the delimiters before the next
+// key, so a=1^x^^b=2 gives a "1^x" and a=x=y^b=2 gives a "x=y". Text before the first key goes,
+// unless it is a delimiter at the start: x^a=1 gives a, and ^a=1 gives ^a. Keys keep their spaces,
+// an empty value isn't stored and a later pair with the same key replaces it (checked in a lab
+// tenant).
+function leefPairs(text, d) {
+  const s = text.trim();
+  const map = new Map();
+  const set = (k, v) => { if (v !== '') map.set(k, v); };
+  let key = null;
+  let from = 0;
+  for (let eq = s.indexOf('='); eq !== -1; eq = s.indexOf('=', eq + 1)) {
+    const p = eq > 0 ? s.lastIndexOf(d, eq - 1) : -1;
+    if (key === null) {
+      key = p >= 1 ? s.slice(p + 1, eq) : s.slice(0, eq);
+    } else {
+      if (p < from) continue;
+      let end = p;
+      while (end > from && s[end - 1] === d) end--;
+      set(key, s.slice(from, end));
+      key = s.slice(p + 1, eq);
+    }
+    from = eq + 1;
+  }
+  if (key !== null) set(key, s.slice(from));
+  return map;
+}
+
+// The header splits on | into at most 7 parts, whatever the LEEF version. With 7, the sixth is
+// the delimiter field and the pairs are the rest of the line, | included; with 6, the sixth is the
+// pairs and the delimiter is a tab. So a LEEF:1.0 line with | between its pairs, as IBM Guardium
+// sends, has its first pair as the delimiter field. delimiterOverride wins over the field, and the
+// first pair stays a header field (checked in a lab tenant).
 //
 // Text with no LEEF: in it fails the event, "" included, with or without a delimiter (checked in
 // a lab tenant).
@@ -239,18 +276,12 @@ export function parseLeef(line, delimiterOverride = null) {
   const s = String(line);
   const at = s.indexOf('LEEF:');
   if (at === -1) throw new RuntimeError('message is not in LEEF format: LEEF() found no "LEEF:" in the text. Check the value holds the LEEF part of the line.', 'leef-header');
-  const body = s.slice(at);
-  const v2 = /^LEEF:2/.test(body);
-  const parts = splitUnescaped(body, '|', v2 ? 7 : 6);
-  const header = parts.slice(0, v2 ? 6 : 5);
-  const attrs = parts.length > header.length ? parts[header.length] : '';
-  const delim = delimiterOverride ? leefDelimiter(delimiterOverride) : v2 ? leefDelimiter(header[5]) : '\t';
-  const map = new Map();
-  for (const kv of attrs.split(delim)) {
-    const eq = kv.indexOf('=');
-    if (eq > 0) map.set(kv.slice(0, eq).trim(), kv.slice(eq + 1));
-  }
-  return new ObjValue(map, header);
+  const parts = splitUnescaped(s.slice(at), '|', 7);
+  const full = parts.length === 7;
+  const header = parts.slice(0, full ? 6 : 5);
+  const attrs = full ? parts[6] : parts[5] ?? '';
+  const delim = leefDelimiter(delimiterOverride || (full ? header[5] : ''));
+  return new ObjValue(leefPairs(attrs, delim), header);
 }
 
 // ---------------------------------------------------------------- name/value pairs

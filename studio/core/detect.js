@@ -1,7 +1,7 @@
 // Looks at sample lines and works out the syslog header, the body format, the fields in each
 // line, the key that splits event types, and a confirm string. Rules only.
 
-import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, splitCsv, isIpv4, isIpv6, LABELLED } from './formats.js';
+import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, splitCsv, isIpv4, isIpv6, LABELLED, LEEF_PIPES } from './formats.js';
 import { goParse } from './gotime.js';
 import { compileGo } from './goregex.js';
 
@@ -176,7 +176,9 @@ export function analyseLine(line) {
     return out;
   }
   if (/LEEF:\d(\.\d)?\|/.test(line)) {
-    const obj = parseLeef(line);
+    // A line with | between its pairs is read with | as the delimiter, as the parser reads it.
+    if (new RegExp(LEEF_PIPES).test(line)) out.leefPipes = true;
+    const obj = parseLeef(line, out.leefPipes ? '|' : null);
     out.format = 'leef';
     obj.header.forEach((v, i) => { if (i > 0 && i < 5) out.fields.push({ key: LEEF_HEADER[i], index: i, value: v, header: true }); });
     for (const [k, v] of obj.map) out.fields.push({ key: k, value: v });
@@ -397,6 +399,7 @@ export function analyseSample(lines) {
     else notes.push(`In Run Test the engine only strips a plain BSD syslog header from \`message\`. With a <PRI> prefix, an RFC 5424 header or an ISO time, \`message\` is the whole line, so read fields from \`originalData$\`.`);
   }
   if (formats.json && events.some((e) => e.jsonAtEnd)) notes.push('The JSON object sits at the end of the line, so the parser cuts it off with a capture before JSON().');
+  if (format === 'leef' && events.some((e) => e.leefPipes)) notes.push('Some lines put | between their pairs. LEEF() reads the first pair of such a line as its delimiter field, so the parser reads those lines with | as the delimiter, and their first pair isn\'t listed.');
   for (const k of keys.values()) {
     if (k.shape === 'time' && k.layout && !/Z07|-07|MST/.test(k.layout)) notes.push(`${k.key} has no time zone, so DATETIME() reads it as UTC. Check what the device sends.`);
   }

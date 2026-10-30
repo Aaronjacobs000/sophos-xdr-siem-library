@@ -43,6 +43,7 @@ function extractFor(analysis) {
     if (first.length === 1) x.firstKey = first[0];
     else if (first.length > 1) x.firstKeys = first;
   }
+  if (analysis.format === 'leef' && analysis.events.some((e) => e.format === 'leef' && e.leefPipes)) x.leefPipes = true;
   if (analysis.format === 'text' && analysis.template) x.pattern = analysis.template;
   if (analysis.format === 'csv') {
     const c = analysis.events.find((e) => e.csv);
