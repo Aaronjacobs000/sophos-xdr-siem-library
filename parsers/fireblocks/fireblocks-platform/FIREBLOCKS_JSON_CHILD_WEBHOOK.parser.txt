@@ -1,0 +1,166 @@
+!SAMPLE={"id":"bb1a7616-9555-4367-aa06-94b08d6deacd","resourceId":"230e5a91-cd9e-47dd-95ef-60fdffa70548","webhookId":"36964baa-d50d-41e2-9c2f-a042645a1a06","workspaceId":"52020d9c-c625-45e1-91e5-b4faa015b982","eventType":"transaction.status.updated","createdAt":1793240302064,"data":{"id":"230e5a91-cd9e-47dd-95ef-60fdffa70548","externalTxId":"payout-20261029-0043","status":"BLOCKED","subStatus":"BLOCKED_BY_POLICY","txHash":"","operation":"TRANSFER","note":"","assetId":"USDC","assetType":"ERC20","source":{"id":"3","type":"VAULT_ACCOUNT","name":"Treasury Hot","subType":""},"sourceAddress":"","destination":{"id":null,"type":"ONE_TIME_ADDRESS","name":"N/A","subType":""},"destinations":[],"destinationAddress":"0xe755d6e831e1b02e10d9d8d13820d647ea3e1241","destinationAddressDescription":"","destinationTag":"","amountInfo":{"amount":"1200000","requestedAmount":"1200000","netAmount":"-1","amountUSD":"1199940.00"},"treatAsGrossAmount":false,"feeInfo":{"networkFee":"0.00042117","gasPrice":"12.5"},"feeCurrency":"ETH","networkRecords":[],"createdAt":1793240301733,"lastUpdated":1793240301990,"createdBy":"fdbeec8b-8de2-479a-9afb-81bb68b24b78","signedBy":[],"rejectedBy":"","exchangeTxId":"","customerRefId":null,"signedMessages":[],"addressType":"ONE_TIME","nonce":"1187"}}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="webhook"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fireblocks Webhooks v2 notifications, relayed to HTTP Ingest by bridges/webhook-relay:
+#   transaction.created, transaction.status.updated,       the full transaction: status and
+#   transaction.approval_status.updated                    sub-status, source, destination,
+#                                                          amount, asset, initiator and signers
+#   transaction.alert.stuck                                transactions stuck in CONFIRMING
+#   internal_wallet.*, external_wallet.*, contract_wallet.* an allowlisted address added or removed
+#   vault_account.*, connection.*, exchange_account.*      vault, network and exchange changes
+# Child of FIREBLOCKS_JSON_PARENT: each one to CloudAudit, with the notification's eventType as the
+# event name and the part before the first dot (transaction, external_wallet, vault_account) as
+# the event type. The initiator is a user ID; Fireblocks sends no user names in webhooks.
+# Allowlist, vault, network and account changes are management events; transactions, balances,
+# settlements and Smart Transfer tickets are not.
+# json, hookType, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+eventSource$ = "Fireblocks"
+eventName$ = hookType
+kindM = hookType|^(?P<k>[a-z0-9_]+)\.
+eventType$ = IF kindM["k"] != "" THEN kindM["k"] ELSE NULL
+ws = STRING(json["$.workspaceId"])
+recipientAccountId$ = IF ws != "" THEN ws ELSE NULL
+isTx = kindM["k"] == "transaction"
+dataPlane = isTx OR kindM["k"] == "settlement" OR kindM["k"] == "collateral" OR kindM["k"] == "ticket" OR CONTAINS(hookType, "balance_updated") OR CONTAINS(hookType, "status.updated")
+managementEvent$ = NOT dataPlane
+readOnly$ = FALSE
+
+createdBy = STRING(json["$.data.createdBy"])
+userId$ = IF createdBy != "" THEN createdBy ELSE NULL
+st = STRING(json["$.data.status"])
+status$ = IF st != "" THEN st ELSE NULL
+sub = STRING(json["$.data.subStatus"])
+failed = st == "BLOCKED" OR st == "REJECTED" OR st == "FAILED" OR st == "CANCELLED" OR st == "TIMEOUT"
+errorCode$ = IF failed AND sub != "" THEN sub ELSE NULL
+issue = STRING(json["$.data.issueType"])
+errorCode$ = IF issue != "" THEN issue ELSE errorCode$
+desc = STRING(json["$.data.description"])
+errFromJob = STRING(json["$.data.errorMessage"])
+errorMessage$ = IF desc != "" THEN desc ELSE NULL
+errorMessage$ = IF errFromJob != "" THEN errFromJob ELSE errorMessage$
+
+# The transaction (or, for other events, the wallet or vault account) and its source and destination.
+txId = IF isTx THEN STRING(json["$.data.id"]) ELSE ""
+txId = IF isTx AND txId == "" THEN STRING(json["$.data.stuckTransactionDetails.txId"]) ELSE txId
+r1.resourceId$ = IF txId != "" THEN txId ELSE NULL
+r1.resourceType$ = "transaction"
+srcId = STRING(json["$.data.source.id"])
+r2.resourceId$ = IF srcId != "" THEN srcId ELSE NULL
+r2.resourceType$ = LOWERCASE(STRING(json["$.data.source.type"]))
+dstId = STRING(json["$.data.destination.id"])
+r3.resourceId$ = IF dstId != "" THEN dstId ELSE NULL
+r3.resourceType$ = LOWERCASE(STRING(json["$.data.destination.type"]))
+walletId = STRING(json["$.data.walletId"])
+r4.resourceId$ = IF walletId != "" THEN walletId ELSE NULL
+r4.resourceType$ = IF kindM["k"] != "" THEN kindM["k"] ELSE "wallet"
+vaultId = IF kindM["k"] == "vault_account" THEN STRING(json["$.data.id"]) ELSE ""
+vaultId = IF vaultId == "" THEN STRING(json["$.data.accountId"]) ELSE vaultId
+vaultId = IF vaultId == "" THEN STRING(json["$.data.vaultAccountId"]) ELSE vaultId
+r5.resourceId$ = IF vaultId != "" THEN vaultId ELSE NULL
+r5.resourceType$ = "vault_account"
+resources$ = []
+resources$ = IF r1.resourceId$ != NULL THEN resources$ + [r1] ELSE resources$
+resources$ = IF r2.resourceId$ != NULL THEN resources$ + [r2] ELSE resources$
+resources$ = IF r3.resourceId$ != NULL THEN resources$ + [r3] ELSE resources$
+resources$ = IF r4.resourceId$ != NULL THEN resources$ + [r4] ELSE resources$
+resources$ = IF r5.resourceId$ != NULL THEN resources$ + [r5] ELSE resources$
+
+# What the transaction asked for, or the allowlisted address or new vault account's details.
+srcType = STRING(json["$.data.source.type"])
+srcName = STRING(json["$.data.source.name"])
+dstType = STRING(json["$.data.destination.type"])
+dstName = STRING(json["$.data.destination.name"])
+q1.key$ = "operation"
+q1.value$ = STRING(json["$.data.operation"])
+q2.key$ = "asset_id"
+q2.value$ = STRING(json["$.data.assetId"])
+q2.value$ = IF q2.value$ == "" THEN STRING(json["$.data.baseAsset"]) ELSE q2.value$
+amt = STRING(json["$.data.amountInfo.amount"])
+q3.key$ = "amount"
+q3.value$ = IF amt != "" THEN amt ELSE STRING(json["$.data.amount"])
+q4.key$ = "amount_usd"
+q4.value$ = STRING(json["$.data.amountInfo.amountUSD"])
+q5.key$ = "source"
+q5.value$ = IF srcType != "" THEN srcType + ": " + srcName ELSE ""
+q6.key$ = "destination"
+q6.value$ = IF dstType != "" THEN dstType + ": " + dstName ELSE ""
+q7.key$ = "destination_address"
+q7.value$ = STRING(json["$.data.destinationAddress"])
+q8.key$ = "destination_tag"
+q8.value$ = STRING(json["$.data.destinationTag"])
+q9.key$ = "note"
+q9.value$ = STRING(json["$.data.note"])
+q10.key$ = "external_tx_id"
+q10.value$ = STRING(json["$.data.externalTxId"])
+q11.key$ = "address"
+q11.value$ = STRING(json["$.data.address"])
+q12.key$ = "tag"
+q12.value$ = STRING(json["$.data.tag"])
+q13.key$ = "name"
+q13.value$ = STRING(json["$.data.walletName"])
+q13.value$ = IF q13.value$ == "" AND kindM["k"] == "vault_account" THEN STRING(json["$.data.name"]) ELSE q13.value$
+q13.value$ = IF q13.value$ == "" THEN STRING(json["$.data.accountName"]) ELSE q13.value$
+# Assign the list first: reading requestParameters$.record$ before it is set fails the event.
+requestParameters$.record$ = []
+requestParameters$.record$ = IF q1.value$ != "" THEN requestParameters$.record$ + [q1] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q2.value$ != "" THEN requestParameters$.record$ + [q2] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q3.value$ != "" THEN requestParameters$.record$ + [q3] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q4.value$ != "" THEN requestParameters$.record$ + [q4] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q5.value$ != "" THEN requestParameters$.record$ + [q5] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q6.value$ != "" THEN requestParameters$.record$ + [q6] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q7.value$ != "" THEN requestParameters$.record$ + [q7] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q8.value$ != "" THEN requestParameters$.record$ + [q8] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q9.value$ != "" THEN requestParameters$.record$ + [q9] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q10.value$ != "" THEN requestParameters$.record$ + [q10] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q11.value$ != "" THEN requestParameters$.record$ + [q11] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q12.value$ != "" THEN requestParameters$.record$ + [q12] ELSE requestParameters$.record$
+requestParameters$.record$ = IF q13.value$ != "" THEN requestParameters$.record$ + [q13] ELSE requestParameters$.record$
+
+# Where it ended up on chain, who signed or rejected it, and the notification's own IDs.
+d1.key$ = "sub_status"
+d1.value$ = sub
+d2.key$ = "tx_hash"
+d2.value$ = STRING(json["$.data.txHash"])
+d2.value$ = IF d2.value$ == "" THEN STRING(json["$.data.stuckTransactionDetails.txHash"]) ELSE d2.value$
+d3.key$ = "source_address"
+d3.value$ = STRING(json["$.data.sourceAddress"])
+signers = STRING(json["$.data.signedBy"])
+d4.key$ = "signed_by"
+d4.value$ = IF signers != "[]" THEN signers ELSE ""
+d5.key$ = "rejected_by"
+d5.value$ = STRING(json["$.data.rejectedBy"])
+d6.key$ = "confirmations"
+d6.value$ = STRING(json["$.data.numOfConfirmations"])
+d7.key$ = "network_fee"
+d7.value$ = STRING(json["$.data.feeInfo.networkFee"])
+d8.key$ = "fee_currency"
+d8.value$ = STRING(json["$.data.feeCurrency"])
+d9.key$ = "severity"
+d9.value$ = STRING(json["$.data.severity"])
+d10.key$ = "recommended_action"
+d10.value$ = STRING(json["$.data.recommendedAction.action"])
+d11.key$ = "resource_id"
+d11.value$ = STRING(json["$.resourceId"])
+d12.key$ = "webhook_id"
+d12.value$ = STRING(json["$.webhookId"])
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ != "" THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d3.value$ != "" THEN additionalEventData$.record$ + [d3] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d4.value$ != "" THEN additionalEventData$.record$ + [d4] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d5.value$ != "" THEN additionalEventData$.record$ + [d5] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d6.value$ != "" THEN additionalEventData$.record$ + [d6] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d7.value$ != "" THEN additionalEventData$.record$ + [d7] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d8.value$ != "" THEN additionalEventData$.record$ + [d8] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d9.value$ != "" THEN additionalEventData$.record$ + [d9] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d10.value$ != "" THEN additionalEventData$.record$ + [d10] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d11.value$ != "" THEN additionalEventData$.record$ + [d11] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d12.value$ != "" THEN additionalEventData$.record$ + [d12] ELSE additionalEventData$.record$

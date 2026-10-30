@@ -1,0 +1,40 @@
+!SAMPLE={"fireblocks_record":"audit_log","id":"ac9bf075-554a-4b75-b7a3-5bcf724bcdd2","timestamp":1793237091447,"createdAt":1793237091627,"user":"Pat Example","subject":"Whitelisted address","event":"Added","category":"Whitelist","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="audit"
+!SCHEMA=scwx.cloudaudit
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: every other Fireblocks audit log event from the example bridge, across the 15 categories
+# (Administration, Policies, Whitelist, Keys, Wallets, Transactions, Compliance, Developers,
+# Exchanges, Settlements and more): user and role changes, admin quorum, policy (TAP) changes,
+# address and IP allowlists, signing keys and key backups, vaults, webhooks and transactions.
+# Child of FIREBLOCKS_JSON_PARENT: each one to CloudAudit, with "<subject>: <event>" as the event
+# name, such as "Whitelisted address: Added", and the category as the event type. Events outside
+# Transactions, Compliance and Orders are management events.
+# json, subject, event, eventType$, sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+eventSource$ = "Fireblocks"
+category = STRING(json["$.category"])
+eventType$ = IF category != "" THEN category ELSE NULL
+eventName$ = IF subject != "" THEN subject + ": " + event ELSE event
+user = STRING(json["$.user"])
+userName$ = IF user != "" THEN user ELSE NULL
+uid = STRING(json["$.userId"])
+userId$ = IF uid != "" THEN uid ELSE NULL
+# The Fireblocks workspace the event happened in.
+ws = STRING(json["$.tenantId"])
+recipientAccountId$ = IF ws != "" THEN ws ELSE NULL
+dataPlane = category == "Transactions" OR category == "Compliance" OR category == "Orders"
+managementEvent$ = NOT dataPlane
+
+d1.key$ = "subject"
+d1.value$ = subject
+d2.key$ = "event"
+d2.value$ = event
+# Assign the list first: reading additionalEventData$.record$ before it is set fails the event.
+additionalEventData$.record$ = []
+additionalEventData$.record$ = IF d1.value$ != "" THEN additionalEventData$.record$ + [d1] ELSE additionalEventData$.record$
+additionalEventData$.record$ = IF d2.value$ != "" THEN additionalEventData$.record$ + [d2] ELSE additionalEventData$.record$

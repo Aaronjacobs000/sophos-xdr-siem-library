@@ -1,0 +1,47 @@
+!SAMPLE={"fireblocks_record":"audit_log","id":"e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b","timestamp":1793235947210,"createdAt":1793235947390,"user":"Sam Admin","subject":"Sign in","event":"Failed","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"4f04b1c0-aec7-4678-b398-507d62cebab1"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="auth"
+!SCHEMA=scwx.auth
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fireblocks audit log sign-in events from the example bridge:
+#   User / Signed in                       a console user signed in
+#   Sign in / Failed                       a failed sign-in
+#   User / Access denied                   a user was refused access
+#   Sign in / Requested password change    a password change or reset was requested
+#   Sign in / Changed password             a password change
+#   Sign in / Reset 2FA                    a user's two-factor authentication was reset
+# Child of FIREBLOCKS_JSON_PARENT: each one to Auth, with the user who signed in as the target user.
+# Fireblocks audit events carry no source address or client, so the record has none.
+# json, subject, event, logon, failedLogon, denied, pwRequest, pwChange, mfaReset, eventType$,
+# sensorType$ and eventTimeUsec$ come from the parent.
+
+sensorEventId$ = json["$.id"]
+authSystem$ = "Fireblocks"
+user = STRING(json["$.user"])
+targetUserName$ = IF user != "" THEN user ELSE NULL
+
+authCategory$ = IF logon OR failedLogon THEN "ACCOUNT_LOGON" ELSE NULL
+authCategory$ = IF pwRequest THEN "PASSWORD_RESET_ATTEMPT" ELSE authCategory$
+authCategory$ = IF pwChange THEN "PASSWORD_CHANGE_ATTEMPT" ELSE authCategory$
+action$ = IF logon THEN "LOGON" ELSE "ACCOUNT"
+action$ = IF failedLogon OR denied THEN "FAILURE" ELSE action$
+actionResult$ = IF failedLogon OR denied THEN "FAILED" ELSE "SUCCESS"
+# A request isn't an outcome yet.
+actionResult$ = IF pwRequest THEN NULL ELSE actionResult$
+status$ = event
+subStatus$ = subject
+
+m1.key$ = "category"
+m1.value$ = json["$.category"]
+m2.key$ = "user_id"
+m2.value$ = json["$.userId"]
+m3.key$ = "workspace_id"
+m3.value$ = json["$.tenantId"]
+# Assign the list first: reading eventMetadata$.record$ before it is set fails the event.
+eventMetadata$.record$ = []
+eventMetadata$.record$ = IF STRING(m1.value$) != "" THEN eventMetadata$.record$ + [m1] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF STRING(m2.value$) != "" THEN eventMetadata$.record$ + [m2] ELSE eventMetadata$.record$
+eventMetadata$.record$ = IF STRING(m3.value$) != "" THEN eventMetadata$.record$ + [m3] ELSE eventMetadata$.record$

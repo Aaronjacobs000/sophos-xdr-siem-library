@@ -1,0 +1,942 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793235731482000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "b5d7e42f-e5d3-4bf7-b950-b5ffbb8f4baf",
+      "auth_system": "Fireblocks",
+      "target_user_name": "Pat Example",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "status": "Signed in",
+      "sub_status": "User",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Administration"
+          },
+          {
+            "key": "user_id",
+            "value": "ad0da9d5-4343-449c-af29-549e2691e2c8"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793235947210000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b",
+      "auth_system": "Fireblocks",
+      "target_user_name": "Sam Admin",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "status": "Failed",
+      "sub_status": "Sign in",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Administration"
+          },
+          {
+            "key": "user_id",
+            "value": "4f04b1c0-aec7-4678-b398-507d62cebab1"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793235962904000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "eb833a70-c142-43d3-bd8e-b04029bf42bf",
+      "auth_system": "Fireblocks",
+      "target_user_name": "Sam Admin",
+      "action": "FAILURE",
+      "action_result": "FAILED",
+      "status": "Access denied",
+      "sub_status": "User",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Administration"
+          },
+          {
+            "key": "user_id",
+            "value": "4f04b1c0-aec7-4678-b398-507d62cebab1"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793236170015000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "8f3ed4b1-8cbb-48f0-8abb-b3b0460053ea",
+      "auth_system": "Fireblocks",
+      "target_user_name": "Lee Approver",
+      "auth_category": "PASSWORD_CHANGE_ATTEMPT",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "status": "Changed password",
+      "sub_status": "Sign in",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Administration"
+          },
+          {
+            "key": "user_id",
+            "value": "d39ba6c2-b485-4ce5-8ad4-5cc5d75b1f34"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793236275660000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "bc547cc2-21f4-45bd-8d98-8808523a0ca6",
+      "auth_system": "Fireblocks",
+      "target_user_name": "Lee Approver",
+      "action": "ACCOUNT",
+      "action_result": "SUCCESS",
+      "status": "Reset 2FA",
+      "sub_status": "Sign in",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Administration"
+          },
+          {
+            "key": "user_id",
+            "value": "d39ba6c2-b485-4ce5-8ad4-5cc5d75b1f34"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793236442731000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Administration",
+      "sensor_event_id": "31c96fd3-3a24-4c30-8817-289f41d8e66c",
+      "event_source": "Fireblocks",
+      "event_name": "User: Changed role",
+      "user_name": "Sam Admin",
+      "user_id": "4f04b1c0-aec7-4678-b398-507d62cebab1",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "User"
+          },
+          {
+            "key": "event",
+            "value": "Changed role"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793236836118000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Policies",
+      "sensor_event_id": "15505a8c-db4b-4e56-b0ee-2d22ac0e958c",
+      "event_source": "Fireblocks",
+      "event_name": "Policy states: Published policy",
+      "user_name": "Sam Admin",
+      "user_id": "4f04b1c0-aec7-4678-b398-507d62cebab1",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Policy states"
+          },
+          {
+            "key": "event",
+            "value": "Published policy"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793237091447000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Whitelist",
+      "sensor_event_id": "ac9bf075-554a-4b75-b7a3-5bcf724bcdd2",
+      "event_source": "Fireblocks",
+      "event_name": "Whitelisted address: Added",
+      "user_name": "Pat Example",
+      "user_id": "ad0da9d5-4343-449c-af29-549e2691e2c8",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Whitelisted address"
+          },
+          {
+            "key": "event",
+            "value": "Added"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793237229302000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Administration",
+      "sensor_event_id": "b1d9a7e4-67d7-43b3-a529-d13e95ce47f2",
+      "event_source": "Fireblocks",
+      "event_name": "Whitelisted IP: List updated",
+      "user_name": "Sam Admin",
+      "user_id": "4f04b1c0-aec7-4678-b398-507d62cebab1",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Whitelisted IP"
+          },
+          {
+            "key": "event",
+            "value": "List updated"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793237504876000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Transactions",
+      "sensor_event_id": "0759155d-2ff7-44df-9251-e333e5de03c5",
+      "event_source": "Fireblocks",
+      "event_name": "Outgoing transaction: Submitted",
+      "user_name": "Treasury API",
+      "user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": false,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Outgoing transaction"
+          },
+          {
+            "key": "event",
+            "value": "Submitted"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793237900550000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Wallets",
+      "sensor_event_id": "ffc12abd-1500-4488-bebc-fc9970e98875",
+      "event_source": "Fireblocks",
+      "event_name": "Key backup: Requested",
+      "user_name": "Sam Admin",
+      "user_id": "4f04b1c0-aec7-4678-b398-507d62cebab1",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Key backup"
+          },
+          {
+            "key": "event",
+            "value": "Requested"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793238065129000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "Developers",
+      "sensor_event_id": "8df70070-1a68-49f2-be0b-c047da52b3a5",
+      "event_source": "Fireblocks",
+      "event_name": "Webhook endpoint: Added",
+      "user_name": "Sam Admin",
+      "user_id": "4f04b1c0-aec7-4678-b398-507d62cebab1",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "subject",
+            "value": "Webhook endpoint"
+          },
+          {
+            "key": "event",
+            "value": "Added"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793238312003000,
+      "event_time_fidelity": "MICRO",
+      "alert_id": "91dd9889-3d4c-4fff-9a06-0f954f186e70",
+      "vendor": "Fireblocks",
+      "provider": "Fireblocks",
+      "log_type": "audit_log",
+      "alert_category": "Transaction",
+      "title": "Fireblocks: transaction blocked by the Transaction Authorization Policy",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "source_user_name": "Treasury API",
+      "source_user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "summary": "Transaction: Blocked by TAP (Treasury API)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Transactions"
+          },
+          {
+            "key": "subject",
+            "value": "Transaction"
+          },
+          {
+            "key": "event",
+            "value": "Blocked by TAP"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793238757441000,
+      "event_time_fidelity": "MICRO",
+      "alert_id": "76229935-8bed-425d-aa26-6dd464ff1ac4",
+      "vendor": "Fireblocks",
+      "provider": "Fireblocks",
+      "log_type": "audit_log",
+      "alert_category": "Transaction",
+      "title": "Fireblocks: transaction rejected by AML screening",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "source_user_name": "Treasury API",
+      "source_user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "summary": "Transaction: Rejected by AML (Treasury API)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Transactions"
+          },
+          {
+            "key": "subject",
+            "value": "Transaction"
+          },
+          {
+            "key": "event",
+            "value": "Rejected by AML"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793239438917000,
+      "event_time_fidelity": "MICRO",
+      "alert_id": "d1447e06-647f-4b26-b412-e0e28dc40888",
+      "vendor": "Fireblocks",
+      "provider": "Fireblocks",
+      "log_type": "audit_log",
+      "alert_category": "FSPM",
+      "title": "Fireblocks: security posture finding created",
+      "severity": "MEDIUM",
+      "source_user_name": "System",
+      "summary": "FSPM: Finding created (System)",
+      "additional_data": {
+        "record": [
+          {
+            "key": "category",
+            "value": "Security"
+          },
+          {
+            "key": "subject",
+            "value": "FSPM"
+          },
+          {
+            "key": "event",
+            "value": "Finding created"
+          },
+          {
+            "key": "workspace_id",
+            "value": "52020d9c-c625-45e1-91e5-b4faa015b982"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793239804381000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "transaction",
+      "sensor_event_id": "f4cc89bb-39d5-422f-b74f-9fc8f997dfbe",
+      "event_source": "Fireblocks",
+      "event_name": "transaction.created",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": false,
+      "read_only": false,
+      "user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "status": "SUBMITTED",
+      "resources": [
+        {
+          "resource_id": "c096b023-d29d-4814-af0a-85ad2841c2f6",
+          "resource_type": "transaction"
+        },
+        {
+          "resource_id": "3",
+          "resource_type": "vault_account"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "TRANSFER"
+          },
+          {
+            "key": "asset_id",
+            "value": "USDC"
+          },
+          {
+            "key": "amount",
+            "value": "250000"
+          },
+          {
+            "key": "amount_usd",
+            "value": "249987.50"
+          },
+          {
+            "key": "source",
+            "value": "VAULT_ACCOUNT: Treasury Hot"
+          },
+          {
+            "key": "destination",
+            "value": "ONE_TIME_ADDRESS: N/A"
+          },
+          {
+            "key": "destination_address",
+            "value": "0xe755d6e831e1b02e10d9d8d13820d647ea3e1241"
+          },
+          {
+            "key": "note",
+            "value": "Q4 treasury rebalance"
+          },
+          {
+            "key": "external_tx_id",
+            "value": "payout-20261029-0042"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "network_fee",
+            "value": "0.00042117"
+          },
+          {
+            "key": "fee_currency",
+            "value": "ETH"
+          },
+          {
+            "key": "resource_id",
+            "value": "c096b023-d29d-4814-af0a-85ad2841c2f6"
+          },
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793240080907000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "transaction",
+      "sensor_event_id": "a6d5566c-a544-49d3-a16b-d95e5d01aa6e",
+      "event_source": "Fireblocks",
+      "event_name": "transaction.status.updated",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": false,
+      "read_only": false,
+      "user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "status": "COMPLETED",
+      "resources": [
+        {
+          "resource_id": "c096b023-d29d-4814-af0a-85ad2841c2f6",
+          "resource_type": "transaction"
+        },
+        {
+          "resource_id": "3",
+          "resource_type": "vault_account"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "TRANSFER"
+          },
+          {
+            "key": "asset_id",
+            "value": "USDC"
+          },
+          {
+            "key": "amount",
+            "value": "250000"
+          },
+          {
+            "key": "amount_usd",
+            "value": "249987.50"
+          },
+          {
+            "key": "source",
+            "value": "VAULT_ACCOUNT: Treasury Hot"
+          },
+          {
+            "key": "destination",
+            "value": "ONE_TIME_ADDRESS: N/A"
+          },
+          {
+            "key": "destination_address",
+            "value": "0xe755d6e831e1b02e10d9d8d13820d647ea3e1241"
+          },
+          {
+            "key": "note",
+            "value": "Q4 treasury rebalance"
+          },
+          {
+            "key": "external_tx_id",
+            "value": "payout-20261029-0042"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "sub_status",
+            "value": "CONFIRMED"
+          },
+          {
+            "key": "tx_hash",
+            "value": "0x1c3c99cf7ec34e892ee01f0071bc364e3d794e7367c9d6e6510157af8b35517a"
+          },
+          {
+            "key": "source_address",
+            "value": "0x558366eefec8f028c08b4afaacfa75667d059018"
+          },
+          {
+            "key": "signed_by",
+            "value": "[\"d39ba6c2-b485-4ce5-8ad4-5cc5d75b1f34\",\"4f04b1c0-aec7-4678-b398-507d62cebab1\"]"
+          },
+          {
+            "key": "confirmations",
+            "value": "12"
+          },
+          {
+            "key": "network_fee",
+            "value": "0.00042117"
+          },
+          {
+            "key": "fee_currency",
+            "value": "ETH"
+          },
+          {
+            "key": "resource_id",
+            "value": "c096b023-d29d-4814-af0a-85ad2841c2f6"
+          },
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793240302064000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "transaction",
+      "sensor_event_id": "bb1a7616-9555-4367-aa06-94b08d6deacd",
+      "event_source": "Fireblocks",
+      "event_name": "transaction.status.updated",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": false,
+      "read_only": false,
+      "user_id": "fdbeec8b-8de2-479a-9afb-81bb68b24b78",
+      "status": "BLOCKED",
+      "error_code": "BLOCKED_BY_POLICY",
+      "resources": [
+        {
+          "resource_id": "230e5a91-cd9e-47dd-95ef-60fdffa70548",
+          "resource_type": "transaction"
+        },
+        {
+          "resource_id": "3",
+          "resource_type": "vault_account"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "operation",
+            "value": "TRANSFER"
+          },
+          {
+            "key": "asset_id",
+            "value": "USDC"
+          },
+          {
+            "key": "amount",
+            "value": "1200000"
+          },
+          {
+            "key": "amount_usd",
+            "value": "1199940.00"
+          },
+          {
+            "key": "source",
+            "value": "VAULT_ACCOUNT: Treasury Hot"
+          },
+          {
+            "key": "destination",
+            "value": "ONE_TIME_ADDRESS: N/A"
+          },
+          {
+            "key": "destination_address",
+            "value": "0xe755d6e831e1b02e10d9d8d13820d647ea3e1241"
+          },
+          {
+            "key": "external_tx_id",
+            "value": "payout-20261029-0043"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "sub_status",
+            "value": "BLOCKED_BY_POLICY"
+          },
+          {
+            "key": "network_fee",
+            "value": "0.00042117"
+          },
+          {
+            "key": "fee_currency",
+            "value": "ETH"
+          },
+          {
+            "key": "resource_id",
+            "value": "230e5a91-cd9e-47dd-95ef-60fdffa70548"
+          },
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793240710512000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "external_wallet",
+      "sensor_event_id": "2fe76e55-d4f7-4112-bc87-d81ff17b5483",
+      "event_source": "Fireblocks",
+      "event_name": "external_wallet.asset.added",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "2bf3bff5-b666-4925-b62a-a1f5f19b5522",
+          "resource_type": "external_wallet"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "asset_id",
+            "value": "USDC"
+          },
+          {
+            "key": "address",
+            "value": "0xd57969d34706e0495938913878b41286e9b697b0"
+          },
+          {
+            "key": "name",
+            "value": "Acme OTC Desk"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793241107226000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "vault_account",
+      "sensor_event_id": "db0c0559-bbac-44f2-afd9-701f5ffabf9f",
+      "event_source": "Fireblocks",
+      "event_name": "vault_account.created",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "27",
+          "resource_type": "vault_account"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "name",
+            "value": "Payments Ops 7"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "FIREBLOCKS_JSON_PARENT > FIREBLOCKS_JSON_CHILD_WEBHOOK",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "Fireblocks",
+      "event_time_usec": 1793241619871000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "transaction",
+      "sensor_event_id": "428f7d78-e5f9-4043-a89f-2b3732065279",
+      "event_source": "Fireblocks",
+      "event_name": "transaction.alert.stuck",
+      "recipient_account_id": "52020d9c-c625-45e1-91e5-b4faa015b982",
+      "management_event": false,
+      "read_only": false,
+      "error_code": "LOW_FEE_TRANSACTION_DETECTED",
+      "error_message": "2 transactions stuck in CONFIRMING",
+      "resources": [
+        {
+          "resource_id": "26427c64-8181-45ec-abb0-1d3177bed1cc",
+          "resource_type": "transaction"
+        },
+        {
+          "resource_id": "3",
+          "resource_type": "vault_account"
+        }
+      ],
+      "request_parameters": {
+        "record": [
+          {
+            "key": "asset_id",
+            "value": "ETH"
+          }
+        ]
+      },
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "tx_hash",
+            "value": "0xbaaf843848f3ca7123d8e15864cb08ffda3cf3c28e5e263b9464200f9a99c7b6"
+          },
+          {
+            "key": "severity",
+            "value": "WARNING"
+          },
+          {
+            "key": "recommended_action",
+            "value": "BOOST_TRANSACTION"
+          },
+          {
+            "key": "resource_id",
+            "value": "26427c64-8181-45ec-abb0-1d3177bed1cc"
+          },
+          {
+            "key": "webhook_id",
+            "value": "36964baa-d50d-41e2-9c2f-a042645a1a06"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": null,
+    "schema": "scwx.generic",
+    "normalized": null
+  }
+]
