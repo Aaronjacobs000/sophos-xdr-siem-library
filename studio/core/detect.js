@@ -1,7 +1,7 @@
 // Looks at sample lines and works out the syslog header, the body format, the fields in each
 // line, the key that splits event types, and a confirm string. Rules only.
 
-import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, splitCsv, isIpv4, isIpv6 } from './formats.js';
+import { splitSyslog, rootSplit, parseCef, parseLeef, splitNameValues, splitCsv, isIpv4, isIpv6, LABELLED } from './formats.js';
 import { goParse } from './gotime.js';
 import { compileGo } from './goregex.js';
 
@@ -66,7 +66,9 @@ export function shapeOf(key, value) {
 
 // ---------------------------------------------------------------- per-line field extraction
 
-const pathPart = (p) => (typeof p === 'number' ? `[${p}]` : /^[A-Za-z_][A-Za-z0-9_@-]*$/.test(p) ? `.${p}` : `["${p.replace(/"/g, '\\"')}"]`);
+// A name with a - goes in brackets: the engine's JSONPath fails the event on $.detail-type and
+// reads $['detail-type'] (checked in a lab tenant).
+const pathPart = (p) => (typeof p === 'number' ? `[${p}]` : /^[A-Za-z_][A-Za-z0-9_@]*$/.test(p) ? `.${p}` : `['${p.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}']`);
 const keyPart = (p, i) => (typeof p === 'number' ? `[${p}]` : `${i ? '.' : ''}${p}`);
 
 // Flattens nested objects to keys like alert.signature with JSONPath $.alert.signature.
@@ -102,9 +104,11 @@ function kvShape(body) {
     { delim: '|', sep: '=', re: /(?:^|\|)[A-Za-z_][\w.-]*=/g },
   ];
   let best = null;
+  // On a tie with space, the other delimiter wins: "a=1, b=2, c=3" split on spaces leaves the
+  // comma on each value.
   for (const c of candidates) {
     const n = (body.match(c.re) || []).length;
-    if (n >= 3 && (!best || n > best.n)) best = { ...c, n };
+    if (n >= 3 && (!best || n > best.n || (n === best.n && best.delim === ' ' && c.sep === best.sep))) best = { ...c, n };
   }
   return best;
 }
@@ -183,15 +187,7 @@ export function analyseLine(line) {
   }
   const kv = kvShape(afterTag);
   if (kv) {
-    const text = afterTag.slice(firstPairAt(afterTag, kv.delim, kv.sep));
-    const obj = splitNameValues(text, kv.delim, kv.sep, '"');
-    out.format = 'kv';
-    out.kv = { delim: kv.delim, sep: kv.sep, quote: '"' };
-    out.kvText = text;
-    // A later pair whose key has text from the previous value glued to it, as in "(SyslogId" or
-    // "<hash>; Reason", has that text in its name for SPLIT_NAME_VALUES() too, so the parser can't
-    // read it by its key name. It isn't listed.
-    for (const [k, v] of obj.map) if (keyName(k) === k) out.fields.push({ key: k, value: v });
+    readPairs(out, afterTag, kv.delim, kv.sep);
     return out;
   }
   for (const d of [',', '\t', '|', ';']) {
@@ -200,11 +196,30 @@ export function analyseLine(line) {
   return out;
 }
 
-// Reads a line as delimited columns when it splits into at least 4 of them. It splits the way
+// The line after its syslog header and program tag, which the fields are read from.
+function afterTagOf(e) {
+  return e.tag ? e.body.slice(e.tag.text.length).trimStart() : e.body;
+}
+
+// Reads a line as key/value pairs split the way the parser's SPLIT_NAME_VALUES() splits them.
+function readPairs(out, afterTag, delim, sep) {
+  const text = afterTag.slice(firstPairAt(afterTag, delim, sep));
+  const obj = splitNameValues(text, delim, sep, '"');
+  out.format = 'kv';
+  out.kv = { delim, sep, quote: '"' };
+  out.kvText = text;
+  out.fields = [];
+  // A later pair whose key has text from the previous value glued to it, as in "(SyslogId" or
+  // "<hash>; Reason", has that text in its name for SPLIT_NAME_VALUES() too, so the parser can't
+  // read it by its key name. It isn't listed.
+  for (const [k, v] of obj.map) if (keyName(k) === k) out.fields.push({ key: k, value: v });
+}
+
+// Reads a line as delimited columns when it splits into at least min of them. It splits the way
 // the parser's SPLIT() does, so a quoted value keeps the delimiters inside it.
-function readColumns(out, text, d) {
+function readColumns(out, text, d, min = 4) {
   const parts = splitCsv(text, d);
-  if (parts.length < 4) return false;
+  if (parts.length < min) return false;
   out.format = 'csv';
   out.csv = { delim: d };
   out.csvText = text;
@@ -258,7 +273,9 @@ export function textTemplate(events, tagName = null, tagPid = false) {
     parts.push(`(?P<${k}>${shape === 'num' ? '\\d+' : '\\S+'})`);
   }
   const prefix = tagName ? `${escapeRe(tagName)}${tagPid ? '\\[\\d+\\]' : ''}:\\s+` : '';
-  return prefix + parts.join('\\s+');
+  // The engine keeps every match of a capture, so ^.*? holds the pattern to its first match in the
+  // line, the one the page reads.
+  return '^.*?' + prefix + parts.join('\\s+');
 }
 
 // Fields from a capture pattern's named groups, per line.
@@ -291,15 +308,21 @@ function commonPrefix(list) {
 export function analyseSample(lines) {
   const events = lines.map(analyseLine);
   const format = Object.entries(count(events.map((e) => e.format))).sort((a, b) => b[1] - a[1])[0]?.[0] || 'text';
+  // The parser splits every line with one delimiter, so each line is read with the one most lines
+  // use, not with its own.
+  if (format === 'kv') {
+    const { delim, sep } = mostCommon(events.filter((e) => e.kv).map((e) => e.kv), (kv) => `${kv.delim}\n${kv.sep}`);
+    for (const e of events) if (e.kv && (e.kv.delim !== delim || e.kv.sep !== sep)) readPairs(e, afterTagOf(e), delim, sep);
+  }
   // A delimited row whose free-text column holds key=value pairs reads as key=value on its own,
   // and the row up to its first = becomes a key. The parser SPLIT()s every line of a delimited
   // sample, so such a row is read as columns too.
   if (format === 'csv') {
-    const delim = events.find((e) => e.csv).csv.delim;
+    const delim = mostCommon(events.filter((e) => e.csv).map((e) => e.csv.delim), (d) => d);
     for (const e of events) {
+      if (e.csv && e.csv.delim !== delim) readColumns(e, e.csvText, delim, 0);
       if (e.format !== 'kv') continue;
-      const text = e.tag ? e.body.slice(e.tag.text.length).trimStart() : e.body;
-      if (readColumns(e, text, delim)) { delete e.kv; delete e.kvText; }
+      if (readColumns(e, afterTagOf(e), delim)) { delete e.kv; delete e.kvText; }
     }
   }
   // The parsers read every line the way the most common format reads, so a line in another format
@@ -326,6 +349,9 @@ export function analyseSample(lines) {
       const k = keys.get(f.key);
       k.values.push(f.value);
       k.lines++;
+      // CEF() doesn't resolve a label on cfpN, c6aN, deviceCustomDateN and the like, so the parser
+      // reads a key named by one from the key the label is on, which can differ from line to line.
+      if (f.label && !LABELLED.test(f.label) && !(k.labels ||= []).includes(f.label)) k.labels.push(f.label);
     }
   }
   for (const k of keys.values()) {
@@ -379,6 +405,15 @@ function count(list) {
   const out = {};
   for (const x of list) out[x] = (out[x] || 0) + 1;
   return out;
+}
+
+// The item the most entries share by key; on a tie, the one that comes first.
+function mostCommon(list, keyOf) {
+  const n = new Map();
+  for (const x of list) n.set(keyOf(x), (n.get(keyOf(x)) || 0) + 1);
+  let best = null;
+  for (const x of list) if (!best || n.get(keyOf(x)) > n.get(keyOf(best))) best = x;
+  return best;
 }
 
 export function headerLabel(kind) {

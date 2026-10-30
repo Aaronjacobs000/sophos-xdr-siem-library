@@ -47,6 +47,9 @@ function extractFor(analysis) {
   if (analysis.format === 'csv') {
     const c = analysis.events.find((e) => e.csv);
     x.delim = c ? c.csv.delim : ',';
+    // The columns start after the syslog header and program tag, which only a plain BSD header
+    // leaves `message` without, so the parser cuts both off the whole line.
+    if (analysis.events.some((e) => e.csv && e.csvText !== e.line)) x.syslogCut = true;
   }
   return x;
 }

@@ -155,7 +155,7 @@ function endsWithQuote(v) {
 // Extension keys whose <key>Label the engine resolves, so values["<label text>"] works (docs
 // example). cfpN, c6aN, deviceCustomDateN, flexDateN and the long deviceCustom* names are not
 // resolved (checked in a lab tenant).
-const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
+export const LABELLED = /^(?:cs|cn|flexString|flexNumber)\d+$/;
 
 // Header fields by number ([0] is "CEF:<version>", [1] vendor, [2] product, ...), extension
 // keys by name, and the labels in LABELLED resolved. A header with 6 or 7 fields, such as

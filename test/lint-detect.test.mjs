@@ -161,7 +161,7 @@ test('detect: CEF, LEEF, key=value, CSV and plain text', () => {
   assert.equal(csv.format, 'csv');
   const text = analyseSample(['Oct  7 22:40:11 h sshd[1]: Accepted password for alice from 192.0.2.10 port 51234 ssh2', 'Oct  7 22:41:05 h sshd[1]: Failed password for root from 198.51.100.7 port 40024 ssh2']);
   assert.equal(text.format, 'text');
-  assert.equal(text.template, 'sshd\\[\\d+\\]:\\s+(?P<f1>\\S+)\\s+password\\s+for\\s+(?P<user>\\S+)\\s+from\\s+(?P<src>\\S+)\\s+port\\s+(?P<port>\\d+)\\s+ssh2');
+  assert.equal(text.template, '^.*?sshd\\[\\d+\\]:\\s+(?P<f1>\\S+)\\s+password\\s+for\\s+(?P<user>\\S+)\\s+from\\s+(?P<src>\\S+)\\s+port\\s+(?P<port>\\d+)\\s+ssh2');
   assert.equal(text.keys.find((k) => k.key === 'src').values[1], '198.51.100.7');
 });
 
@@ -216,7 +216,7 @@ test('a lowercase or uppercase mapping works on a number, TRUE, FALSE or a missi
 
 test('text templates fall back to value-like tokens for a single line', () => {
   const ev = analyseSample(['Oct  7 22:00:00 h app[1]: user jdoe logged in from 192.0.2.4']).events;
-  assert.equal(textTemplate(ev, 'app', true), 'app\\[\\d+\\]:\\s+user\\s+jdoe\\s+logged\\s+in\\s+from\\s+(?P<src>\\S+)');
+  assert.equal(textTemplate(ev, 'app', true), '^.*?app\\[\\d+\\]:\\s+user\\s+jdoe\\s+logged\\s+in\\s+from\\s+(?P<src>\\S+)');
 });
 
 test('lint: *= anywhere in the code is an error, because Sophos Fusion won\'t save it', () => {
@@ -375,4 +375,140 @@ test('lint: a !PARENT line is a warning, because Sophos Fusion saves it only wit
   assert.deepEqual(hit('!PARENT=Azure_Monitor_Master\nkind = "a"'), ['warning:4']);
   assert.match(lintParsers([{ name: 'ACME_GW', text: `${head}!PARENT=Azure_Monitor_Master` }]).problems.find((p) => p.code === 'restricted-syntax').message, /saves a !PARENT line only with Set Global Parent in Parser Script turned on; without it the save fails with "code contains restricted syntax: !PARENT"/);
   assert.deepEqual(hit('# extend a global parser with !PARENT in the console\nkind = "a"'), []);
+});
+
+// Every field the page shows for every line, read back with the generated parser's statements. An
+// empty value may read as NULL.
+function readsEveryField(plan, a) {
+  for (const e of a.events) {
+    for (const f of e.fields) {
+      const got = readWithParser(plan, f, e.line);
+      if (!(f.value === '' && got === null)) assert.deepEqual(got, f.value, `${f.key} in ${e.line.slice(0, 60)}`);
+    }
+  }
+}
+
+test('detect: a JSON key with a - is read in brackets, since $.detail-type fails the event', () => {
+  // The engine fails the event on $.detail-type and reads $['detail-type'] (checked in a lab tenant).
+  const lines = [
+    '{"detail-type":"Security Hub Findings - Imported","source":"aws.securityhub","detail":{"user-agent":"curl/8.5.0","port":"443"}}',
+    '{"detail-type":"Security Hub Findings - Custom Action","source":"aws.securityhub","detail":{"user-agent":"Boto3/1.35","port":"22"}}',
+  ];
+  const a = analyseSample(lines);
+  assert.equal(a.keys.find((k) => k.key === 'detail-type').path, "$['detail-type']");
+  assert.equal(a.keys.find((k) => k.key === 'detail.user-agent').path, "$.detail['user-agent']");
+  assert.equal(a.keys.find((k) => k.key === 'detail.port').path, '$.detail.port');
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Hub', shipMethod: 'syslog' });
+  readsEveryField(plan, a);
+  const ps = writeParsers(plan, lines);
+  assert.doesNotMatch(ps.map((p) => p.text).join('\n'), /\$\.detail-type|\.user-agent/);
+  assert.deepEqual(runParsers(ps, lines).map((r) => r.error ?? null), [null, null]);
+});
+
+test('generated INT() mappings give NULL for "", "N/A" or other text instead of failing the event', () => {
+  // INT() fails the event on anything but a whole number. The engine ran this capture and INT() on
+  // "443", "", "N/A", " 1590", "x443", ISO text and a JSON number without failing (checked in a lab
+  // tenant).
+  const lines = [
+    '{"app":"zzacme","src":"192.0.2.4","sport":"443","ts":1792459211000}',
+    '{"app":"zzacme","src":"192.0.2.5","sport":"","ts":""}',
+    '{"app":"zzacme","src":"192.0.2.6","sport":"N/A","ts":"2026-10-12T12:05:01.631Z"}',
+    '{"app":"zzacme","src":"192.0.2.7","sport":" 1590","ts":1792459212000}',
+  ];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Flow', shipMethod: 'syslog' });
+  const unit = plan.units[0];
+  setUnitSchema(plan, a, unit, 'scwx.netflow');
+  unit.mappings = [['src', 'sourceAddress$', 'none'], ['sport', 'sourcePort$', 'int'], ['ts', 'eventTimeUsec$', 'epoch-ms']].map(([k, f, kind]) => ({ ...remap(unit, k, f), transform: { kind } }));
+  const ps = writeParsers(plan, lines);
+  assert.match(ps[0].text, /^sourcePortNum = sourcePortText\|\^\\s\*\(\?P<n>\[-\+\]\?\\d\{1,18\}\)\\s\*\$$/m);
+  assert.match(ps[0].text, /^sourcePort\$ = IF sourcePortNum\["n"\] != "" THEN INT\(sourcePortNum\["n"\], 10\) ELSE NULL$/m);
+  assert.match(ps[0].text, /^eventTimeUsec\$ = IF eventTimeUsecNum\["n"\] != "" THEN INT\(eventTimeUsecNum\["n"\], 10\) \* 1000 ELSE NULL$/m);
+  const results = runParsers(ps, lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.error ?? null), [null, null, null, null]);
+  assert.deepEqual(results.map((r) => r.normalized.source_port), [443, undefined, undefined, 1590]);
+  assert.equal(results[0].normalized.event_time_usec, 1792459211000000);
+  assert.deepEqual(lintParsers(ps, { samples: lines, now: '2026-10-30T00:00:00Z' }).problems.filter((p) => p.level === 'error'), []);
+});
+
+test('detect: a CEF key named by a label CEF() doesn\'t resolve is read from the key with that label, line by line', () => {
+  // CEF() resolves labels on csN, cnN, flexStringN and flexNumberN only, so values["SBRSScore"] is
+  // empty for cfp1Label=SBRSScore (checked in a lab tenant), and a label can sit on another key in
+  // another line.
+  const lines = [
+    'CEF:0|Acme|Mail|1.0|100|Mail|5|cs1Label=MailPolicy cs1=DEFAULT cfp1Label=SBRSScore cfp1=2.1 deviceCustomDate1Label=createdAt deviceCustomDate1=Oct 20 2026 22:12:41 deviceCustomDate2Label=updatedAt deviceCustomDate2=Oct 21 2026 01:00:00',
+    'CEF:0|Acme|Mail|1.0|100|Mail|5|cs1Label=MailPolicy cs1=STRICT cfp1Label=SBRSScore cfp1=-4.5 deviceCustomDate1Label=updatedAt deviceCustomDate1=Oct 22 2026 03:00:00',
+  ];
+  const a = analyseSample(lines);
+  const key = (k) => a.keys.find((x) => x.key === k);
+  assert.deepEqual(key('SBRSScore').labels, ['cfp1']);
+  assert.deepEqual(key('updatedAt').labels, ['deviceCustomDate2', 'deviceCustomDate1']);
+  assert.equal(key('MailPolicy').labels, undefined);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Mail', shipMethod: 'syslog' });
+  readsEveryField(plan, a);
+  assert.equal(extraction(plan).read(key('SBRSScore')), '(IF STRING(values["cfp1Label"]) == "SBRSScore" THEN values["cfp1"] ELSE values["SBRSScore"])');
+  assert.equal(extraction(plan).read(key('MailPolicy')), 'values["MailPolicy"]');
+  assert.equal(readWithParser(plan, key('updatedAt'), lines[0]), 'Oct 21 2026 01:00:00');
+  assert.equal(readWithParser(plan, key('updatedAt'), lines[1]), 'Oct 22 2026 03:00:00');
+});
+
+test('detect: delimited lines with a syslog header are split after the header and tag, where the page reads them', () => {
+  // message keeps the header unless it is a plain BSD one, and the tag either way, so the parser cuts
+  // both off originalData$. The engine read every column of the library's syslog-header samples
+  // this way (checked in a lab tenant).
+  const lines = [
+    '<174>Oct 12 22:40:15 exch01.example.com MSExchangeTracking: 2026-10-12T11:40:15.123Z,192.0.2.25,EXCH01,SMTP,RECEIVE',
+    'Oct 12 22:40:16 exch01.example.com MSExchangeTracking: 2026-10-12T11:40:16.123Z,192.0.2.26,EXCH01,SMTP,SEND',
+    '<133>1 2026-10-12T11:40:17.000Z exch02.example.com app[42]:  2026-10-12T11:40:17.123Z,192.0.2.27,EXCH02,SMTP,DROP',
+    '<37>Oct 12 22:40:18 : 2026-10-12T11:40:18.123Z,192.0.2.28,EXCH03,SMTP,FAIL',
+    '<13>2026-10-12T11:40:19.123Z,192.0.2.29,EXCH04,SMTP,FAIL',
+    '2026-10-12T11:40:20.123Z,192.0.2.30,EXCH05,SMTP,FAIL',
+  ];
+  const a = analyseSample(lines);
+  assert.ok(a.events.every((e) => e.format === 'csv' && /^2026-10-12T11:40:\d\d\.123Z$/.test(e.fields[0].value)), 'col0 is the time on every line');
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Mail', shipMethod: 'syslog' });
+  readsEveryField(plan, a);
+  assert.match(writeParsers(plan, lines)[0].text, /^parts = SPLIT\(body\[1\], ","\)$/m);
+  // A sample with no header or tag still splits message.
+  const bare = analyseSample(lines.slice(5).concat('2026-10-12T11:40:21.123Z,192.0.2.31,EXCH06,SMTP,FAIL'));
+  assert.match(writeParsers(buildPlan(bare, { vendor: 'Acme', product: 'Mail' }), lines)[0].text, /^parts = SPLIT\(message, ","\)$/m);
+  // Exchange: the time column maps to the event time on every tracking line.
+  const ex = readFileSync(new URL('../parsers/microsoft/exchange-server-message-tracking/samples.log', import.meta.url), 'utf8').split('\n').filter(Boolean);
+  const ea = analyseSample(ex);
+  const ep = buildPlan(ea, { vendor: 'Microsoft', product: 'Exchange', shipMethod: 'syslog' });
+  readsEveryField(ep, ea);
+  const results = runParsers(writeParsers(ep, ex), ex, { now: '2026-10-30T00:00:00Z' });
+  const tracking = results.filter((r) => /\d{4}-\d\d-\d\dT[\d:.]+Z,/.test(r.sample ?? ex[r.line - 1]));
+  assert.ok(tracking.length >= 8);
+  for (const r of tracking) assert.ok(!r.error && !r.notes.some((n) => n.code === 'ingest-time'), `line ${r.line} has its own event time`);
+});
+
+test('detect: every line is read with the delimiter most lines use, as the parser splits them all with one', () => {
+  const kv = analyseSample(['a=1,b=2,c=3,d=4', 'a=5,b=6,c=7,d=8', 'a=9 b=10 c=11 d=12']);
+  assert.deepEqual(kv.events.map((e) => e.kv.delim), [',', ',', ',']);
+  assert.equal(kv.events[2].fields.find((f) => f.key === 'a').value, '9 b=10 c=11 d=12');
+  readsEveryField(buildPlan(kv, { vendor: 'Acme', product: 'Fw' }), kv);
+  const csv = analyseSample(['x;y;z;w', 'p;q;r;s', 'a,b,c,d;e']);
+  assert.deepEqual(csv.events.map((e) => e.csv.delim), [';', ';', ';']);
+  assert.deepEqual(csv.events[2].fields.map((f) => f.value), ['a,b,c,d', 'e']);
+  readsEveryField(buildPlan(csv, { vendor: 'Acme', product: 'Fw' }), csv);
+});
+
+test('detect: when space and comma find as many pairs, comma splits them, so values keep no trailing comma', () => {
+  const line = '<189>Oct 15 2026 09:12:44+10:00 sw01.example.com %%01SHELL/5/LOGIN(l)[0]:The user succeeded in logging in to VTY0. (UserType=VTY, UserName=jsmith, Ip=192.0.2.25, VpnName=)';
+  const a = analyseSample([line]);
+  assert.equal(a.events[0].kv.delim, ',');
+  assert.deepEqual(a.events[0].fields.map((f) => [f.key, f.value]), [['UserType', 'VTY'], ['UserName', 'jsmith'], ['Ip', '192.0.2.25'], ['VpnName', ')']]);
+  readsEveryField(buildPlan(a, { vendor: 'Huawei', product: 'VRP' }), a);
+  // Space still wins when it finds more pairs.
+  assert.equal(analyseSample(['a=1 b=2,x c=3 d=4']).events[0].kv.delim, ' ');
+});
+
+test('a text template matches once in the line, since the engine keeps every match', () => {
+  const lines = readFileSync(new URL('../parsers/cisco/aci/samples.log', import.meta.url), 'utf8').split('\n').filter(Boolean);
+  const a = analyseSample(lines);
+  assert.equal(a.format, 'text');
+  assert.match(a.template, /^\^\.\*\?/);
+  // Each group reads one value, the one the page shows, not a list of every match.
+  readsEveryField(buildPlan(a, { vendor: 'Cisco', product: 'ACI' }), a);
 });

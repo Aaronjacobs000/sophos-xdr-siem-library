@@ -291,6 +291,17 @@ test('capture statements, numbered and named groups', () => {
   assert.equal(run('m = s|zzz\nx = m[1]', { s: 'ab' }).get('x'), null);
 });
 
+test('a capture drops an empty match right where the previous match ended, as Go does', () => {
+  // (.*)$ gives the line once, not the line and then "", and (\d*) gives this list, in Go's
+  // FindAllStringSubmatch and in the engine (checked in a lab tenant).
+  const line = 'zzps9p4u a1 {"p":"443","q-x":443,"t":1792459211000}';
+  assert.equal(get('m = s|(.*)$\nx = m[1]', 'x', { s: line }), line);
+  assert.deepEqual(get('m = s|(\\d*)\nx = m[1]', 'x', { s: line }), ['', '', '', '', '9', '4', '', '', '1', '', '', '', '', '', '', '443', '', '', '', '', '', '', '', '443', '', '', '', '', '1792459211000', '']);
+  assert.deepEqual(get('m = s|a*\nx = m[0]', 'x', { s: 'baaac' }), ['', 'aaa', '']);
+  // Matches that aren't empty are all kept.
+  assert.deepEqual(get('m = s|(\\S+)\\s+(\\S+)\nx = m[1]', 'x', { s: 'a b c d e' }), ['a', 'c']);
+});
+
 test('IF, AND, OR, comparisons, lists and records', () => {
   const v = run('a = IF 1 == 1 THEN "yes" ELSE "no"\nb = IF NULL THEN "yes" ELSE "no"\nc = IF "x" THEN "truthy" ELSE "falsy"\nd = 3 > 2 AND "a" != "b"\ne = 1 > 2 OR FALSE\nlist = [1, 2] + [3]\nlist = list + 4\ng.key$ = "k"\ng.value$ = "v"\nrecs = NULL + [g]\nk = g.key$');
   assert.equal(v.get('a'), 'yes');

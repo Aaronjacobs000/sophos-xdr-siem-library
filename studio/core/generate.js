@@ -39,6 +39,10 @@ const q = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 
 function escapeRe(s) { return String(s).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'); }
 
+// The syslog header (an optional <PRI>, then a version, a BSD or ISO time and the host) and the
+// program tag the studio takes off a line before reading its columns, as a Go pattern.
+const SYSLOG_CUT = '^(?:<\\d{1,3}>)?(?:(?:\\d\\s+)?(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?)\\s+\\S+\\s)?(?:[A-Za-z0-9_./-]+(?:\\[\\d+\\])?:\\s+)?';
+
 // Lines that split the message, and how to read one field from the result.
 export function extraction(plan) {
   const x = plan.extract || {};
@@ -50,8 +54,18 @@ export function extraction(plan) {
           : ['json = JSON(originalData$)'],
         read: (m) => `json[${q(m.path || `$.${m.key}`)}]`,
       };
-    case 'cef':
-      return { lines: ['values = CEF(originalData$)'], read: (m) => (m.index !== undefined && m.index !== null ? `values[${m.index}]` : `values[${q(m.key)}]`) };
+    case 'cef': {
+      // A key named by a label CEF() doesn't resolve is read from the key that has that label,
+      // checked on each line, since the label can sit on another key in another line.
+      const labelled = new Map((plan.keys || []).filter((k) => k.labels && k.labels.length).map((k) => [k.key, k.labels]));
+      const read = (m) => {
+        if (m.index !== undefined && m.index !== null) return `values[${m.index}]`;
+        let out = `values[${q(m.key)}]`;
+        for (const b of [...(labelled.get(m.key) || [])].reverse()) out = `(IF STRING(values[${q(`${b}Label`)}]) == ${q(m.key)} THEN values[${q(b)}] ELSE ${out})`;
+        return out;
+      };
+      return { lines: ['values = CEF(originalData$)'], read };
+    }
     case 'leef':
       return { lines: ['values = LEEF(originalData$)'], read: (m) => (m.index !== undefined && m.index !== null ? `values[${m.index}]` : `values[${q(m.key)}]`) };
     case 'kv': {
@@ -74,8 +88,9 @@ export function extraction(plan) {
       return {
         lines: [
           '# Delimited fields, read by position. SPLIT() reads CSV quotes, so a quoted value keeps the delimiters inside it.',
-          x.prefix ? `body = originalData$|${escapeRe(x.prefix)}(.*)$` : null,
-          `parts = SPLIT(${x.prefix ? 'body[1]' : 'message'}, ${q(delim)})`,
+          x.syslogCut ? '# The columns start after the syslog header and program tag, so both come off the line first.' : null,
+          x.syslogCut ? `body = originalData$|${SYSLOG_CUT}(.*)$` : x.prefix ? `body = originalData$|${escapeRe(x.prefix)}(.*)$` : null,
+          `parts = SPLIT(${x.syslogCut || x.prefix ? 'body[1]' : 'message'}, ${q(delim)})`,
         ].filter(Boolean),
         read: (m) => `parts[${m.index}]`,
       };
@@ -101,13 +116,25 @@ function varName(key, used) {
   return v;
 }
 
+// INT() fails the event on anything but a whole number, "" and "N/A" included, so the value goes
+// through a capture that only matches one, and anything else gives NULL (checked in a lab tenant).
+// A capture can't read a function call, so STRING() goes in a variable first.
+function intLines(field, src, scale = '') {
+  const v = field.replace(/\$/g, '').replace(/[^A-Za-z0-9_]/g, '_');
+  return [
+    `${v}Text = STRING(${src})`,
+    `${v}Num = ${v}Text|^\\s*(?P<n>[-+]?\\d{1,18})\\s*$`,
+    `${field} = IF ${v}Num["n"] != "" THEN INT(${v}Num["n"], 10)${scale} ELSE NULL`,
+  ];
+}
+
 // One mapping -> statements.
 export function mappingLines(m, read, sampleValues = []) {
   const src = read(m);
   const t = m.transform || { kind: 'none' };
   const field = m.field;
   switch (t.kind) {
-    case 'int': return [`${field} = INT(${src}, 10)`];
+    case 'int': return intLines(field, src);
     // LOWERCASE() and UPPERCASE() fail the event on a number, TRUE or FALSE, so the value goes
     // through STRING() first, which gives "" for a missing value (checked in a lab tenant).
     case 'lower': return [`${field} = LOWERCASE(STRING(${src}))`];
@@ -115,8 +142,8 @@ export function mappingLines(m, read, sampleValues = []) {
     case 'string': return [`${field} = STRING(${src})`];
     case 'replace': return [`${field} = REPLACE(${src}, ${q(t.from ?? '')}, ${q(t.to ?? '')})`];
     case 'bool': return [`${field} = LOWERCASE(STRING(${src})) == "true"`];
-    case 'epoch-s': return [`# ${m.key} is epoch seconds; the field takes microseconds.`, `${field} = INT(STRING(${src}), 10) * 1000000`];
-    case 'epoch-ms': return [`# ${m.key} is epoch milliseconds; the field takes microseconds.`, `${field} = INT(STRING(${src}), 10) * 1000`];
+    case 'epoch-s': return [`# ${m.key} is epoch seconds; the field takes microseconds.`, ...intLines(field, src, ' * 1000000')];
+    case 'epoch-ms': return [`# ${m.key} is epoch milliseconds; the field takes microseconds.`, ...intLines(field, src, ' * 1000')];
     case 'datetime': {
       const layout = t.layout || '2006-01-02T15:04:05Z07:00';
       const value = t.join ? `${src} + " " + ${read({ key: t.join, path: `$.${t.join}` })}` : src;
@@ -137,7 +164,7 @@ export function mappingLines(m, read, sampleValues = []) {
     ];
     case 'protocol': {
       const numeric = sampleValues.length && sampleValues.every((v) => /^\d+$/.test(String(v)));
-      if (numeric) return [`${field} = INT(STRING(${src}), 10)`];
+      if (numeric) return intLines(field, src);
       return [
         '# The field takes the IANA protocol number; the log sends a name.',
         `proto = UPPERCASE(STRING(${src}))`,
