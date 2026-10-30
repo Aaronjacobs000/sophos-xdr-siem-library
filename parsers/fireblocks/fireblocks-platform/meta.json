@@ -1,0 +1,64 @@
+{
+  "vendor": "Fireblocks",
+  "product": "Fireblocks Platform",
+  "versions": [],
+  "format": "json",
+  "ship_method": "http-ingest",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-10-30T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-10-30"
+  },
+  "docs": [
+    "https://developers.fireblocks.com/docs/audit-logs-api",
+    "https://developers.fireblocks.com/reference/audit-log-events",
+    "https://support.fireblocks.io/hc/en-us/articles/360015646820-Audit-Log",
+    "https://developers.fireblocks.com/reference/webhooks-structures-notificationstructure",
+    "https://developers.fireblocks.com/reference/webhooks-structures-eventtypes-transaction",
+    "https://developers.fireblocks.com/reference/webhooks-structures-eventtypes-whitelist",
+    "https://developers.fireblocks.com/reference/validating-webhooks",
+    "https://developers.fireblocks.com/reference/signing-a-request-jwt-structure"
+  ],
+  "summary": "These parsers read Fireblocks workspace activity: the audit log (sign-ins, user, policy, allowlist and key changes, transactions) and Webhooks v2 notifications for transactions, allowlisted wallets and vault accounts. The bridge in bridges/fireblocks-audit-logs pulls the audit log and the /fireblocks route of bridges/webhook-relay checks and forwards webhooks, both to HTTP Ingest. Sign-ins go to Auth, policy blocks, AML rejections and posture findings to Thirdparty, and the rest to CloudAudit.",
+  "notes": "Setup:\n- Fireblocks has no syslog. Its audit log is pull only, through GET /v1/management/audit_logs, which Fireblocks names as the route for SIEM tools. The bridge in bridges/fireblocks-audit-logs signs each request with the API user's RSA key (an RS256 JWT plus X-API-Key) and sends each event to HTTP Ingest with \"fireblocks_record\": \"audit_log\" first. The API user needs a role that can read the audit log, such as Auditor or Security Auditor.\n- Webhooks v2 can't add the Authorization header HTTP Ingest needs, so the /fireblocks route of bridges/webhook-relay checks each delivery's Fireblocks-Webhook-Signature (an RS512 JWS) against Fireblocks' published JWKS and forwards the body unchanged.\n\nField mapping:\n- Audit sign-ins (User: Signed in, Sign in: Failed, User: Access denied, password changes and 2FA resets) go to Auth with the user as the target user.\n- Transactions blocked by the Transaction Authorization Policy, rejected or flagged by AML screening, and new or reopened FSPM findings go to Thirdparty. An AML rejection is high severity, the rest medium.\n- Every other audit event goes to CloudAudit with \"<subject>: <event>\" as the event name, such as \"Whitelisted address: Added\", the category as the event type, the user, and the workspace as the recipient account.\n- Webhook notifications go to CloudAudit with the eventType as the event name, the transaction, source, destination, wallet or vault as resources, the amount, asset, addresses and note as request parameters, the status, and the sub-status as the error code when a transaction is blocked, rejected, failed or cancelled.\n\nTime:\n- An audit event's timestamp, read as epoch milliseconds or ISO 8601, and a webhook's createdAt.\n\nSources and licenses:\n- Built from Fireblocks' public developer docs, OpenAPI spec and Help Center: the audit log fields and event names, the webhook notification envelope and the transaction, wallet and alert objects.\n\nMade up in the samples:\n- Every value. Fireblocks documents the audit log's fields but publishes no full audit record, so the form of user (a name here) and id (a UUID here) is a guess. The FSPM sample's user is made up.\n\nTesting:\n- No built-in parser claimed these records in 3 Parse Message runs.\n- The children, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-10-30 (240 of 240 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same records there.\n- Each child also passed Run Test as a separate parser under its parent (240 of 240 fields, each record taken in 5 of 5 runs).\n\nKnown gaps:\n- Audit events carry no source address, client or object ID, so sign-ins have no address and alerts don't name the transaction or finding.\n- Not run against a real Fireblocks workspace: the bridge, the relay route and the samples follow the docs only.\n- Audit Event notification webhooks (Settings > Audit log > Manage subscriptions) send a payload Fireblocks doesn't document, so they aren't read.",
+  "parsers": [
+    {
+      "name": "FIREBLOCKS_JSON_PARENT",
+      "file": "FIREBLOCKS_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "FIREBLOCKS_JSON_CHILD_AUTH",
+      "file": "FIREBLOCKS_JSON_CHILD_AUTH.parser.txt",
+      "role": "child",
+      "parent": "FIREBLOCKS_JSON_PARENT",
+      "schema": "scwx.auth"
+    },
+    {
+      "name": "FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT",
+      "file": "FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "FIREBLOCKS_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    },
+    {
+      "name": "FIREBLOCKS_JSON_CHILD_CLOUDAUDIT",
+      "file": "FIREBLOCKS_JSON_CHILD_CLOUDAUDIT.parser.txt",
+      "role": "child",
+      "parent": "FIREBLOCKS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    },
+    {
+      "name": "FIREBLOCKS_JSON_CHILD_WEBHOOK",
+      "file": "FIREBLOCKS_JSON_CHILD_WEBHOOK.parser.txt",
+      "role": "child",
+      "parent": "FIREBLOCKS_JSON_PARENT",
+      "schema": "scwx.cloudaudit"
+    }
+  ],
+  "bridge": "bridges/fireblocks-audit-logs"
+}

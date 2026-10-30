@@ -1,0 +1,69 @@
+!SAMPLE={"fireblocks_record":"audit_log","id":"b5d7e42f-e5d3-4bf7-b950-b5ffbb8f4baf","timestamp":1793235731482,"createdAt":1793235731662,"user":"Pat Example","subject":"User","event":"Signed in","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING=\{\s*"fireblocks_record"\s*:\s*"audit_log"|"workspaceId"\s*:\s*"[0-9A-Fa-f-]{36}".*"eventType"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+"|"eventType"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+".*"workspaceId"\s*:\s*"[0-9A-Fa-f-]{36}"
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fireblocks workspace activity in either of two shapes, both sent to HTTP Ingest:
+#   Audit log events (GET /v1/management/audit_logs), pulled by the example bridge in
+#   bridges/fireblocks-audit-logs, which puts "fireblocks_record": "audit_log" first:
+#     {"fireblocks_record":"audit_log","id":"...","timestamp":...,"user":"...","subject":"Sign in",
+#      "event":"Failed","category":"Administration","tenantId":"...","userId":"..."}
+#   Webhooks v2 notifications (transactions, allowlisted wallets, vault accounts and more),
+#   passed on unchanged by the /fireblocks route of bridges/webhook-relay:
+#     {"id":"...","resourceId":"...","webhookId":"...","workspaceId":"...",
+#      "eventType":"transaction.status.updated","createdAt":...,"data":{...}}
+# Parent: hands audit log sign-ins to the Auth child, transactions a policy blocked or AML
+# screening rejected or flagged and new FSPM findings to the Thirdparty child, every other audit
+# log event to the CloudAudit child, and every webhook notification to the webhook child.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+json = JSON(originalData$)
+
+# Variables and $ fields set here are visible to every child.
+sensorType$ = "Fireblocks"
+isAudit = STRING(json["$.fireblocks_record"]) == "audit_log"
+hookType = STRING(json["$.eventType"])
+isHook = NOT isAudit AND hookType != "" AND STRING(json["$.workspaceId"]) != ""
+
+# An audit event's timestamp is epoch milliseconds in Fireblocks' API reference and ISO 8601 in its
+# Audit Logs guide, so both are read. A webhook notification's createdAt is epoch milliseconds.
+ts = STRING(json["$.timestamp"])
+tsMs = ts|^(?P<n>\d{13})$
+eventTimeUsec$ = IF isAudit AND tsMs["n"] != "" THEN INT(tsMs["n"], 10) * 1000 ELSE eventTimeUsec$
+tsIso = ts|^(?P<t>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2}))$
+eventTimeUsec$ = IF isAudit AND tsIso["t"] != "" THEN DATETIME(tsIso["t"], "2006-01-02T15:04:05.999999999Z07:00") ELSE eventTimeUsec$
+created = STRING(json["$.createdAt"])
+createdMs = created|^(?P<n>\d{13})$
+eventTimeUsec$ = IF isHook AND createdMs["n"] != "" THEN INT(createdMs["n"], 10) * 1000 ELSE eventTimeUsec$
+
+# Audit events name what happened as a subject and an event, such as "Sign in" and "Failed". The
+# Help Center lists the same events with other words, such as "Failed sign-in", so both are read.
+subject = STRING(json["$.subject"])
+event = STRING(json["$.event"])
+lsub = LOWERCASE(subject)
+lev = LOWERCASE(event)
+signSubject = CONTAINS(lsub, "sign") OR lsub == "user"
+logon = lev == "signed in" OR lev == "successful sign-in"
+failedLogon = lev == "failed sign-in" OR (CONTAINS(lsub, "sign") AND lev == "failed")
+denied = lev == "access denied"
+pwRequest = lev == "requested password change" OR lev == "password change requested"
+pwChange = lev == "changed password" OR lev == "password changed"
+mfaReset = lev == "reset 2fa" OR lev == "2fa reset"
+isAuth = isAudit AND signSubject AND (logon OR failedLogon OR denied OR pwRequest OR pwChange OR mfaReset)
+
+# Transactions the Transaction Authorization Policy (TAP) blocked, AML screening verdicts, and new
+# or reopened Fireblocks Security Posture Management (FSPM) findings.
+tapBlock = lev == "blocked by tap" OR lev == "blocked by policy"
+amlReject = lev == "rejected by aml"
+amlFlag = lev == "flagged by aml" OR lev == "alerted by aml"
+fspm = lsub == "fspm" AND (lev == "finding created" OR lev == "finding reopened")
+isAlert = isAudit AND (tapBlock OR amlReject OR amlFlag OR fspm)
+
+eventType$ = NULL
+eventType$ = IF isAudit THEN "audit" ELSE eventType$
+eventType$ = IF isAuth THEN "auth" ELSE eventType$
+eventType$ = IF isAlert THEN "alert" ELSE eventType$
+eventType$ = IF isHook THEN "webhook" ELSE eventType$

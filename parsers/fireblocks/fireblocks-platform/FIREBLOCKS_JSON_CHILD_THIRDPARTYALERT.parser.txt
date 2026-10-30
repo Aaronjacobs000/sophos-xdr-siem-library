@@ -1,0 +1,55 @@
+!SAMPLE={"fireblocks_record":"audit_log","id":"91dd9889-3d4c-4fff-9a06-0f954f186e70","timestamp":1793238312003,"createdAt":1793238312183,"user":"Treasury API","subject":"Transaction","event":"Blocked by TAP","category":"Transactions","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"fdbeec8b-8de2-479a-9afb-81bb68b24b78"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: Fireblocks audit log events that call for a look, from the example bridge:
+#   Transaction / Blocked by TAP     the Transaction Authorization Policy blocked a transaction
+#   Transaction / Rejected by AML    AML screening rejected a transaction
+#   Transaction / Flagged by AML     AML screening flagged a transaction
+#   FSPM / Finding created           a new Fireblocks Security Posture Management finding
+#   FSPM / Finding reopened          a finding that was resolved or accepted came back
+# Child of FIREBLOCKS_JSON_PARENT: each one to Thirdparty. An AML rejection is high severity and
+# the rest medium. A policy block or an AML rejection counts as blocked. The audit event names no
+# transaction or finding; the webhook child carries a transaction's detail.
+# json, subject, event, tapBlock, amlReject, amlFlag, fspm, eventType$, sensorType$ and
+# eventTimeUsec$ come from the parent.
+
+alertId$ = json["$.id"]
+vendor$ = "Fireblocks"
+provider$ = "Fireblocks"
+logType$ = "audit_log"
+alertCategory$ = subject
+
+title$ = "Fireblocks: " + subject + " " + LOWERCASE(event)
+title$ = IF tapBlock THEN "Fireblocks: transaction blocked by the Transaction Authorization Policy" ELSE title$
+title$ = IF amlReject THEN "Fireblocks: transaction rejected by AML screening" ELSE title$
+title$ = IF amlFlag THEN "Fireblocks: transaction flagged by AML screening" ELSE title$
+title$ = IF fspm THEN "Fireblocks: security posture " + LOWERCASE(event) ELSE title$
+severity$ = IF amlReject THEN "HIGH" ELSE "MEDIUM"
+action$ = IF tapBlock OR amlReject THEN "BLOCKED" ELSE NULL
+
+user = STRING(json["$.user"])
+sourceUserName$ = IF user != "" THEN user ELSE NULL
+uid = STRING(json["$.userId"])
+sourceUserId$ = IF uid != "" THEN uid ELSE NULL
+summary$ = subject + ": " + event
+summary$ = IF user != "" THEN summary$ + " (" + user + ")" ELSE summary$
+
+a1.key$ = "category"
+a1.value$ = json["$.category"]
+a2.key$ = "subject"
+a2.value$ = subject
+a3.key$ = "event"
+a3.value$ = event
+a4.key$ = "workspace_id"
+a4.value$ = json["$.tenantId"]
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = []
+additionalData$.record$ = IF STRING(a1.value$) != "" THEN additionalData$.record$ + [a1] ELSE additionalData$.record$
+additionalData$.record$ = IF a2.value$ != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+additionalData$.record$ = IF a3.value$ != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+additionalData$.record$ = IF STRING(a4.value$) != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
