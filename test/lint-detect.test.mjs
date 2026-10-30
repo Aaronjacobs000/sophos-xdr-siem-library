@@ -709,3 +709,24 @@ test('detect: a LEEF line with | between its pairs is read with | as the delimit
   const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-15T00:00:00Z' });
   assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [1792012865000000, 1792013022000000, 1792014289000000]);
 });
+
+test('detect: LEEF() reads a CEF line among LEEF lines as CEF, and a LEEF header under 6 parts isn\'t LEEF', () => {
+  // LEEF() reads a line whose CEF: comes first the way CEF() does, so IBM Guardium's CEF line
+  // doesn't fail the parser written for its LEEF lines. LEEF() fails a header shorter than 6 parts,
+  // so such a line isn't read as LEEF, and a value shows \\ as the \ LEEF() gives (checked in a lab
+  // tenant).
+  const lines = [
+    '<30>Oct 14 10:21:07 gcoll01.example.com guard_sender[4486]: LEEF:1.0|IBM|Guardium|12.0|Login failures|ruleID=20026|ruleDesc=Login failures|severity=INFO|devTime=2026-10-14 21:21:05|dbUser=jsmith|src=192.0.2.31',
+    '<29>Oct 14 10:44:51 gcoll02.example.com guard_sender[4512]: LEEF:1.0|IBM|Guardium|12.0|Failed logins|ruleID=20530\truleDesc=Failed logins\tseverity=LOW\tdevTime=2026-10-14 21:44:49\tdbUser=EXAMPLE\\\\root\tsrc=203.0.113.77',
+    '<29>Oct 14 10:40:02 gcoll01.example.com guard_sender[4486]: CEF:0|Guardium|Guardium|7.0|20412|Privileged user access to PHI|5|rt=1791978000000 cs1=LOW cs1Label=Severity duser=postgres src=192.0.2.80',
+  ];
+  const a = analyseSample(lines);
+  assert.equal(a.format, 'leef');
+  assert.deepEqual(a.keys.find((k) => k.key === 'dbUser').values, ['jsmith', 'EXAMPLE\\root']);
+  const plan = buildPlan(a, { vendor: 'IBM', product: 'Guardium', shipMethod: 'syslog' });
+  readsEveryKey(plan, a);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-15T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.error?.message ?? null), [null, null, null]);
+  assert.deepEqual(results.map((r) => r.normalized.source_address), ['192.0.2.31', '203.0.113.77', '192.0.2.80']);
+  assert.notEqual(analyseLine('<30>Oct 14 10:21:07 gcoll01.example.com guard_sender[4486]: LEEF:1.0|IBM|Guardium|12.0|Login failures').format, 'leef');
+});

@@ -1653,6 +1653,114 @@ test('LEEF() splits its pairs the way the engine does', () => {
   assert.deepEqual(pairs('^|a=1^b=  ', 'LEEF:1.0|V|P|1|E|'), { 5: '^', a: '1' });
 });
 
+test('LEEF() reads text whose CEF: comes before any LEEF: as CEF, as IBM Guardium\'s CEF line', () => {
+  // With no delimiter the engine read each line with LEEF() the way CEF() reads it. With one, it
+  // read the CEF header and split the extension on the delimiter's first character, the way LEEF()
+  // splits its pairs, labels resolved. What the engine gave in a lab tenant.
+  const guardium = '<29>Oct 14 10:40:02 gcoll01.corp.example.com guard_sender[4486]: CEF:0|Guardium|Guardium|7.0|20412|Privileged user access to PHI|5|rt=1791978000000 cs1=LOW cs1Label=Severity cs2=POSTGRESQL cs2Label=Server Type cs3=Violation cs3Label=Classification cat=HIPAA app=PostgreSQL cs4=3.0 cs4Label=DB Protocol Version suser= sproc=psql act=SQL_LANG start=1791977954000 externalId=48230 duser=postgres dst=198.51.100.40 dpt=5432 src=192.0.2.80 spt=40118 proto=TCP msg=SELECT * FROM patients WHERE mrn=?';
+  const s = (l, expr) => get(`x = STRING(${expr})`, 'x', { l });
+  for (const [l, want] of [
+    [guardium, "{\"0\":\"CEF:0\",\"1\":\"Guardium\",\"2\":\"Guardium\",\"3\":\"7.0\",\"4\":\"20412\",\"5\":\"Privileged user access to PHI\",\"6\":\"5\",\"Classification\":\"Violation\",\"DB Protocol Version\":\"3.0\",\"Server Type\":\"POSTGRESQL\",\"Severity\":\"LOW\",\"act\":\"SQL_LANG\",\"app\":\"PostgreSQL\",\"cat\":\"HIPAA\",\"cs1\":\"LOW\",\"cs1Label\":\"Severity\",\"cs2\":\"POSTGRESQL\",\"cs2Label\":\"Server Type\",\"cs3\":\"Violation\",\"cs3Label\":\"Classification\",\"cs4\":\"3.0\",\"cs4Label\":\"DB Protocol Version\",\"dpt\":\"5432\",\"dst\":\"198.51.100.40\",\"duser\":\"postgres\",\"externalId\":\"48230\",\"mrn\":\"?\",\"msg\":\"SELECT * FROM patients WHERE\",\"proto\":\"TCP\",\"rt\":\"1791978000000\",\"sproc\":\"psql\",\"spt\":\"40118\",\"src\":\"192.0.2.80\",\"start\":\"1791977954000\"}"],
+    ['CEF:0|V|P|1|100|N|5|cs1=x cs1Label=Lab q="a b" e=x\\=y\\\\z t=a\tb=c', "{\"0\":\"CEF:0\",\"1\":\"V\",\"2\":\"P\",\"3\":\"1\",\"4\":\"100\",\"5\":\"N\",\"6\":\"5\",\"Lab\":\"x\",\"cs1\":\"x\",\"cs1Label\":\"Lab\",\"e\":\"x=y\\\\z\",\"q\":\"a b\",\"t\":\"a\\tb=c\"}"],
+    ['CEF:0|V|P|1|100|N', "{\"0\":\"CEF:0\",\"1\":\"V\",\"2\":\"P\",\"3\":\"1\",\"4\":\"100\"}"],
+    ['zzps5 x CEF:0|V|P|1|100|N|5|c=3 m=LEEF:1.0|V|P|1|E|a=1\tb=2', "{\"0\":\"CEF:0\",\"1\":\"V\",\"2\":\"P\",\"3\":\"1\",\"4\":\"100\",\"5\":\"N\",\"6\":\"5\",\"c\":\"3\",\"m\":\"LEEF:1.0|V|P|1|E|a=1\\tb=2\"}"],
+    // LEEF: first is read as LEEF.
+    ['zzps5 x LEEF:1.0|V|P|1|E|a=1\tb=CEF:0|V|P|1|100|N|5|c=3', "{\"0\":\"LEEF:1.0\",\"1\":\"V\",\"2\":\"P\",\"3\":\"1\",\"4\":\"E\",\"5\":\"a=1\\tb=CEF:0\",\"V|P|1|100|N|5|c\":\"3\"}"],
+  ]) {
+    assert.equal(s(l, 'LEEF(l)'), want, l);
+    assert.equal(s(l, 'LEEF(l, " ")'), want, l);
+  }
+  const pairs = (text, delim) => {
+    const o = JSON.parse(s(`CEF:0|V|P|1|100|N|5|${text}`, `LEEF(l, "${delim}")`));
+    for (const k of ['0', '1', '2', '3', '4', '5', '6']) delete o[k];
+    return o;
+  };
+  for (const [text, delim, want] of [
+    ['a=1 ^b=2', '^', { a: '1 ', b: '2' }],
+    ['a=1^ ^b=2', '^', { a: '1^ ', b: '2' }],
+    ['a=^b=2^c= ^d=4', '^', { b: '2', c: ' ', d: '4' }],
+    ['a=1^^', '^', { a: '1^^' }],
+    ['x^a=1^=2^b=3', '^', { '': '2', a: '1', b: '3' }],
+    ['a=x\\^b=2', '^', { a: 'x\\', b: '2' }],
+    ['cs1=v^cs1Label=Lab', '^', { Lab: 'v', cs1: 'v', cs1Label: 'Lab' }],
+    ['a=1\tb=2', '^', { a: '1\tb=2' }],
+    ['a=1x^b=2xc=3', '^', { a: '1x', b: '2xc=3' }],
+    ['a=x\\\\^b=x\\=y^c=x\\"y', '^', { a: 'x\\', b: 'x=y', c: 'x"y' }],
+    ['a=1^ b =2', '^', { ' b ': '2', a: '1' }],
+    ['a=\t^b=2', '^', { a: '\t', b: '2' }],
+    ['a=1^b=2 ', '^', { a: '1', b: '2' }],
+    ['a=1^b=  ', '^', { a: '1' }],
+    ['a=1^^^b=2', '^', { a: '1', b: '2' }],
+    ['^a=1^b=2', '^', { '^a': '1', b: '2' }],
+    ['a=1^b=2^', '^', { a: '1', b: '2^' }],
+    ['a=^^b=2', '^', { b: '2' }],
+    ['a="x" y^b=2', '^', { a: '"x" y', b: '2' }],
+    ['a=1^b\\\\=c^d=2', '^', { a: '1', 'b\\\\': 'c', d: '2' }],
+    ['a=1^b\\\\\\=c^d=2', '^', { a: '1^b\\=c', d: '2' }],
+    ['x^a=1^=2^b=3', 'xy', { 'x^a': '1^=2^b=3' }],
+    ['a=1 b=2^c="x y"^d="q^e=5', 'xy', { ' y"^d': '"q^e=5', a: '1 b=2^c="' }],
+    ['a=x\\^b=2', 'xy', { '\\^b': '2' }],
+    ['a=1x^b=2xc=3', 'xy', { '^b': '2', a: '1', c: '3' }],
+    ['a=x\\\\^b=x\\=y^c=x\\"y', 'xy', { '\\=y^c': 'x"y' }],
+    ['cs1=x cs1Label=Lab q="a b" e=x\\=y\\\\z t=a\tb=c', '|', { cs1: 'x cs1Label=Lab q="a b" e=x=y\\z t=a\tb=c' }],
+    ['a=1|b=2 c=3', '|', { a: '1', b: '2 c=3' }],
+    ['a=x\\|y\tb=x\\\\y', '|', { a: 'x\\', 'y\tb': 'x\\y' }],
+  ]) assert.deepEqual(pairs(text, delim), want, `${delim} ${text}`);
+  // A CEF header fails as it does in CEF(), and cef: in lower case isn't read.
+  assert.throws(() => run('x = LEEF("CEF:0|V|P|1|100")'), /message isn't in CEF\/LEEF format \(header too short\)/);
+  assert.throws(() => run('x = LEEF("CEF:0|V|P|1|100", "^")'), /message isn't in CEF\/LEEF format \(header too short\)/);
+  assert.throws(() => run('x = LEEF("CEF:0|V")'), /message is not in LEEF format/);
+  assert.throws(() => run('x = LEEF("zzps5 cef:0|V|P|1|100|N|5|a=1")'), /message is not in LEEF format/);
+});
+
+test('LEEF() unescapes \\\\, \\= and \\" in a value, and an escaped = starts no key, as the engine does', () => {
+  // What the engine gave in a lab tenant for LEEF:1.0|V|P|1|E| and each text, without the header
+  // fields 0 to 4. Keys and the header keep their backslashes, and so does a backslash before
+  // anything else, the delimiter included. An = after an odd number of backslashes starts no key.
+  const pairs = (text, delim) => {
+    const o = JSON.parse(get(`x = STRING(LEEF(l${delim ? `, "${delim}"` : ''}))`, 'x', { l: `LEEF:1.0|V|P|1|E|${text}` }));
+    for (const k of ['0', '1', '2', '3', '4']) delete o[k];
+    return o;
+  };
+  for (const [text, want, delim] of [
+    ['a=x\\\\y\tb=2', { a: 'x\\y', b: '2' }],
+    ['a=x\\\\\\\\y\tb=x\\\\\\y', { a: 'x\\\\y', b: 'x\\\\y' }],
+    ['a=x\\y\tb=x\\', { a: 'x\\y', b: 'x\\' }],
+    ['a=x\\=y\tb=x\\"y\tc=x\\|y\td=x\\ty\te=x\\ny', { a: 'x=y', b: 'x"y', c: 'x\\|y', d: 'x\\ty', e: 'x\\ny' }],
+    ['a=x\\\\\tb=2', { a: 'x\\', b: '2' }],
+    ['a\\\\b=1\tc=2', { 'a\\\\b': '1', c: '2' }],
+    ['a=\\\\\tb=\\\\\\\\', { a: '\\', b: '\\\\' }],
+    ['a=x\\\\\\\\\\\\y', { a: 'x\\\\\\y' }],
+    ['a=x\\\\\\=y\tb=x\\\\"y', { a: 'x\\=y', b: 'x\\"y' }],
+    ['^|a=x\\\\^b=2^c=x\\^d=3', { 5: '^', a: 'x\\', b: '2', c: 'x\\', d: '3' }],
+    ['^|a=x\\\\=y^b=2', { 5: '^', a: 'x\\=y', b: '2' }],
+    ['\\\\|a=1\\b=2', { 5: '\\\\', a: '1', b: '2' }],
+    ['^|a=1^b\\=c^d=2', { 5: '^', a: '1^b=c', d: '2' }],
+    ['^|a=1^b\\\\=c^d=2', { 5: '^', a: '1', 'b\\\\': 'c', d: '2' }],
+    ['^|a=1^b\\\\\\=c^d=2', { 5: '^', a: '1^b\\=c', d: '2' }],
+    ['^|a\\=1^b=2', { 5: '^', b: '2' }],
+    ['^|a=1^\\=c^d=2', { 5: '^', a: '1^=c', d: '2' }],
+    ['a=1\tb\\=c\td=2', { a: '1\tb=c', d: '2' }],
+    ['a=x\\\\y\tb=2', { a: 'x\\y\tb=2' }, '|'],
+    ['a=x\\=y\tb=x\\"y\tc=x\\|y\td=x\\ty\te=x\\ny', { a: 'x=y\tb=x"y\tc=x\\', 'y\td': 'x\\ty\te=x\\ny' }, '|'],
+    ['^|a=x\\\\y|b=x\\|y|c=3', { 5: '^', a: 'x\\y', b: 'x\\|y', c: '3' }, '|'],
+  ]) assert.deepEqual(pairs(text, delim), want, text);
+  assert.equal(get('x = LEEF(l)\ny = x[1]', 'y', { l: 'LEEF:1.0|V\\\\W|P|1|E|a=1' }), 'V\\\\W');
+});
+
+test('LEEF() fails on a header shorter than 6 parts, with or without a delimiter', () => {
+  // The engine failed 3 to 5 parts as too short and fewer as not LEEF, counting an escaped | as
+  // text. Six parts, the last one empty, are read (checked in a lab tenant).
+  for (const d of ['', ', "^"']) {
+    for (const l of ['LEEF:1.0|ZZ|PS4|1.0|100', 'LEEF:1.0|ZZ|PS4|1.0', 'LEEF:1.0|ZZ|PS4', 'LEEF:1.0||', 'zzps5 LEEF:1.0|V|', 'LEEF:1.0|ZZ|P\\|S4|1.0|100']) {
+      assert.throws(() => run(`x = LEEF(l${d})`, { l }), /message isn't in CEF\/LEEF format \(header too short\)/, l);
+    }
+    for (const l of ['LEEF:1.0|ZZ', 'LEEF:1.0', 'zzps5 LEEF:']) assert.throws(() => run(`x = LEEF(l${d})`, { l }), /message is not in LEEF format/, l);
+    assert.equal(get(`x = STRING(LEEF(l${d}))`, 'x', { l: 'LEEF:1.0|ZZ|PS4|1.0|100|' }), '{"0":"LEEF:1.0","1":"ZZ","2":"PS4","3":"1.0","4":"100"}');
+    assert.equal(get(`x = STRING(LEEF(l${d}))`, 'x', { l: 'LEEF:1.0|||||' }), '{"0":"LEEF:1.0","1":"","2":"","3":"","4":""}');
+  }
+});
+
 test('DATETIME() with TRUE drops the fractional seconds, whatever the layout', () => {
   // What the engine returned in a lab tenant, in microseconds. TRUE also picks the year.
   const usec = (expr) => toPlain(execute(`t = ${expr}\nx = STRING(t + 0)`, {}, { now: '2026-10-14T20:00:00Z' }).vars.get('x'));

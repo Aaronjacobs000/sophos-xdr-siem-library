@@ -175,10 +175,14 @@ export function analyseLine(line) {
     }
     return out;
   }
-  if (/LEEF:\d(\.\d)?\|/.test(line)) {
-    // A line with | between its pairs is read with | as the delimiter, as the parser reads it.
-    if (new RegExp(LEEF_PIPES).test(line)) out.leefPipes = true;
-    const obj = parseLeef(line, out.leefPipes ? '|' : null);
+  // LEEF() fails on a header shorter than 6 parts, so such a line isn't read as LEEF. A line with |
+  // between its pairs is read with | as the delimiter, as the parser reads it.
+  let leef = null;
+  const leefPipes = new RegExp(LEEF_PIPES).test(line);
+  if (/LEEF:\d(\.\d)?\|/.test(line)) { try { leef = parseLeef(line, leefPipes ? '|' : null); } catch { leef = null; } }
+  if (leef) {
+    const obj = leef;
+    if (leefPipes) out.leefPipes = true;
     out.format = 'leef';
     obj.header.forEach((v, i) => { if (i > 0 && i < 5) out.fields.push({ key: LEEF_HEADER[i], index: i, value: v, header: true }); });
     for (const [k, v] of obj.map) out.fields.push({ key: k, value: v });
