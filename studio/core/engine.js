@@ -263,7 +263,7 @@ export function evaluate(ctx, e) {
       const f = FUNCTIONS[e.name];
       if (!f) throw new RuntimeError(`${e.name}() is not a documented function`, 'unknown-function');
       const [min, max, fn] = f;
-      if (e.args.length < min || e.args.length > max) throw new RuntimeError(`${e.name}() takes ${min === max ? min : `${min} to ${max}`} arguments, got ${e.args.length}`);
+      if (e.args.length < min || e.args.length > max) throw new RuntimeError(`${e.name}() takes ${min === max ? min : max === Infinity ? `at least ${min}` : `${min} to ${max}`} arguments, got ${e.args.length}`);
       return fn(ctx, e.args.map((a) => evaluate(ctx, a)));
     }
     case 'bin': {

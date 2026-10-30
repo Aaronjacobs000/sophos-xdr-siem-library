@@ -50,7 +50,12 @@ export function extraction(plan) {
     case 'json':
       return {
         lines: x.jsonAtEnd
-          ? ['# Cut the JSON object off the end of the line, then parse it.', 'jsonMatch = originalData$|(\\{.*})$', 'json = JSON(jsonMatch[1])']
+          ? [
+            '# Cut the JSON object off the end of the line, then parse it. JSON() of a capture that',
+            '# didn\'t match fails the event, so a line with no JSON object at its end gets no fields.',
+            'jsonMatch = originalData$|(\\{.*})$',
+            'json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL',
+          ]
           : ['json = JSON(originalData$)'],
         read: (m) => `json[${q(m.path || `$.${m.key}`)}]`,
       };
@@ -148,7 +153,16 @@ export function mappingLines(m, read, sampleValues = []) {
       const layout = t.layout || '2006-01-02T15:04:05Z07:00';
       const value = t.join ? `${src} + " " + ${read({ key: t.join, path: `$.${t.join}` })}` : src;
       const twoDigit = hasYear(layout) ? '' : ', TRUE';
-      return [`${field} = DATETIME(${value}, ${q(layout)}${twoDigit})`];
+      // A time before 1970, such as the zero date 0001-01-01T00:00:00Z some sources send for "not
+      // set", wraps the unsigned field to a huge number, so it gives NULL and the event keeps the
+      // ingest time. A DATETIME value compares with a number as its microseconds, and NULL > 0 is
+      // false (checked in a lab tenant).
+      const v = `${field.replace(/\$/g, '').replace(/[^A-Za-z0-9_]/g, '_')}Time`;
+      return [
+        `# A time before 1970, such as the zero date 0001-01-01T00:00:00Z, would wrap ${field}, so it gives NULL.`,
+        `${v} = DATETIME(${value}, ${q(layout)}${twoDigit})`,
+        `${field} = IF ${v} > 0 THEN ${v} ELSE NULL`,
+      ];
     }
     case 'dns-type': return [
       '# query_type takes the DNS type number; the log sends the name.',

@@ -4,11 +4,11 @@
 
 import { RuntimeError, hasOwn } from './values.js';
 
-// A - in a name after a dot fails the event: $.detail-type gives "parse error at 9", while
-// $['detail-type'] works (checked in a lab tenant).
+// A - or a , in a name after a dot fails the event: $.detail-type gives "parse error at 9" and
+// $.a,$.b "parse error at 4", while $['detail-type'] and $['a,b'] work (checked in a lab tenant).
 function dotName(path, i, name) {
-  const dash = name.indexOf('-');
-  if (dash !== -1) throw new RuntimeError(`parse error at ${i + dash + 1} in ${path}: a name after a dot can't have a -. Put it in brackets, as in $['${name}']`, 'jsonpath');
+  const dash = name.search(/[-,]/);
+  if (dash !== -1) throw new RuntimeError(`parse error at ${i + dash + 1} in ${path}: a name after a dot can't have a ${name[dash]}. Put it in brackets, as in $['${name}']`, 'jsonpath');
   return name;
 }
 
@@ -136,7 +136,23 @@ function filterValue(node, expr) {
 export function query(root, rawPath) {
   const preserve = rawPath.endsWith('|preserve_structure');
   const path = preserve ? rawPath.slice(0, -'|preserve_structure'.length) : rawPath;
-  const steps = parsePath(path.trim());
+  const { nodes, multi } = select(root, parsePath(path.trim()), preserve);
+  if (preserve) {
+    const vals = nodes.map((x) => (x === MISSING ? null : x));
+    if (!multi) return vals.length ? vals[0] : null;
+    return vals.length ? vals : null;
+  }
+  if (!nodes.length) return null;
+  return multi ? nodes : nodes[0];
+}
+
+// True when the path selects at least one node; a null value counts, where query() can't tell it
+// from a path that selects nothing. A path it can't read throws, as in query().
+export function exists(root, path) {
+  return select(root, parsePath(path.trim()), false).nodes.length > 0;
+}
+
+function select(root, steps, preserve) {
   let nodes = [root];
   let multi = false;
   for (const step of steps) {
@@ -189,13 +205,7 @@ export function query(root, rawPath) {
     }
     nodes = next;
   }
-  if (preserve) {
-    const vals = nodes.map((x) => (x === MISSING ? null : x));
-    if (!multi) return vals.length ? vals[0] : null;
-    return vals.length ? vals : null;
-  }
-  if (!nodes.length) return null;
-  return multi ? nodes : nodes[0];
+  return { nodes, multi };
 }
 
 // True when the path can select more than one node, so the result is a list.

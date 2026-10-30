@@ -155,7 +155,7 @@ export function lintParsers(parsers, opts = {}) {
           if (!FUNCTION_NAMES.has(n.name)) add('error', 'unknown-function', `${n.name}() is not a documented function`, p.name, st.line);
           else {
             const [min, max] = ARITY[n.name];
-            if (n.args.length < min || n.args.length > max) add('error', 'arity', `${n.name}() takes ${min === max ? min : `${min} to ${max}`} arguments, not ${n.args.length}`, p.name, st.line);
+            if (n.args.length < min || n.args.length > max) add('error', 'arity', `${n.name}() takes ${min === max ? min : max === Infinity ? `at least ${min}` : `${min} to ${max}`} arguments, not ${n.args.length}`, p.name, st.line);
             if (DEPRECATED[n.name]) add('warning', 'deprecated', DEPRECATED[n.name], p.name, st.line);
           }
           if (n.name === 'DATETIME') checkDatetime(n, p, st, add);

@@ -32,7 +32,7 @@ export function shapeOf(key, value) {
   if (typeof value === 'boolean') return 'bool';
   if (typeof value === 'number') {
     if (/port/i.test(key) && Number.isInteger(value) && value >= 0 && value <= 65535) return 'port';
-    if (/time|date|_ts$|^ts$|epoch|created|start|end/i.test(key) && Number.isInteger(value)) {
+    if (/time|date|_ts$|^ts$|^rt$|epoch|created|start|end/i.test(key) && Number.isInteger(value)) {
       const s = String(value);
       if (s.length === 10) return 'epoch-s';
       if (s.length === 13) return 'epoch-ms';
@@ -51,7 +51,8 @@ export function shapeOf(key, value) {
   if (/^(true|false)$/i.test(v)) return 'bool-string';
   if (/^\d+$/.test(v)) {
     if (/port/i.test(key) && Number(v) <= 65535) return 'port';
-    if (/time|date|_ts$|^ts$|epoch/i.test(key) && (v.length === 10 || v.length === 13)) return v.length === 10 ? 'epoch-s' : 'epoch-ms';
+    // CEF's rt (receipt time) is either a date or epoch milliseconds.
+    if (/time|date|_ts$|^ts$|^rt$|epoch/i.test(key) && (v.length === 10 || v.length === 13)) return v.length === 10 ? 'epoch-s' : 'epoch-ms';
     return 'int-string';
   }
   if (/^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(v)) return /^file:/i.test(v) ? 'file-uri' : 'url';
@@ -124,15 +125,13 @@ function keyName(raw) {
   return name.replace(/^[^A-Za-z_@]+/, '');
 }
 
-// Where the pairs start: at the key name of the first item, split as SPLIT_NAME_VALUES() splits,
-// that has the separator after a key name. The parser cuts the line there too, so text in front
-// of it doesn't join the first key.
+// Where the pairs start: at the key name of the first item, split as SPLIT_NAME_VALUES() splits
+// (on every delimiter, quotes or not), that has the separator after a key name. The parser cuts
+// the line there too, so text in front of it doesn't join the first key.
 function firstPairAt(text, delim, sep) {
   let start = 0;
-  let quoted = false;
   for (let i = 0; i <= text.length; i++) {
-    if (text[i] === '"') { quoted = !quoted; continue; }
-    if (i < text.length && (quoted || !text.startsWith(delim, i))) continue;
+    if (i < text.length && !text.startsWith(delim, i)) continue;
     const item = text.slice(start, i);
     const at = item.indexOf(sep);
     if (at !== -1) {
@@ -162,8 +161,18 @@ export function analyseLine(line) {
     const obj = cef;
     out.format = 'cef';
     obj.header.forEach((v, i) => { if (i > 0) out.fields.push({ key: CEF_HEADER[i], index: i, value: v, header: true }); });
-    for (const [k, v] of obj.map) if (!/Label$/.test(k) && !obj.map.has(`${k}Label`)) out.fields.push({ key: k, value: v });
-    for (const [k, v] of obj.map) if (obj.map.has(`${k}Label`)) out.fields.push({ key: obj.map.get(`${k}Label`), value: v, label: k });
+    // A label CEF() resolves is a key of its own, so it's listed once, as that key. A label with a
+    // header field's name is listed by the key it labels, as is one CEF() didn't resolve because
+    // another key has its name: the parser reads a header field by number under its name, and
+    // values["<label>"] gives the other key's value.
+    const header = (name) => CEF_HEADER.indexOf(name) > 0;
+    for (const [k, v] of obj.map) if (!/Label$/.test(k) && !obj.map.has(`${k}Label`) && !(obj.labels.has(k) && header(k))) out.fields.push({ key: k, value: v });
+    for (const [k, v] of obj.map) {
+      if (!obj.map.has(`${k}Label`)) continue;
+      const name = obj.map.get(`${k}Label`);
+      if (obj.labels.get(name) === k && !header(name)) continue;
+      out.fields.push(header(name) || obj.map.has(name) ? { key: k, value: v } : { key: name, value: v, label: k });
+    }
     return out;
   }
   if (/LEEF:\d(\.\d)?\|/.test(line)) {
@@ -212,7 +221,7 @@ function readPairs(out, afterTag, delim, sep) {
   // A later pair whose key has text from the previous value glued to it, as in "(SyslogId" or
   // "<hash>; Reason", has that text in its name for SPLIT_NAME_VALUES() too, so the parser can't
   // read it by its key name. It isn't listed.
-  for (const [k, v] of obj.map) if (keyName(k) === k) out.fields.push({ key: k, value: v });
+  for (const [k, v] of obj.map) if (k && keyName(k) === k) out.fields.push({ key: k, value: v });
 }
 
 // Reads a line as delimited columns when it splits into at least min of them. It splits the way
@@ -442,7 +451,8 @@ function suggestConfirm(events, { format, tagName, tagPid, vendor, product, keys
   if (format === 'json' && !tagName) {
     const common = [...keys.values()].filter((k) => k.lines === events.length && !k.path.includes('[') && k.path.split('.').length === 2);
     const pick = common.sort((a, b) => b.key.length - a.key.length).slice(0, 3);
-    if (pick.length >= 2) return { kind: 'EXPRESSION', text: `VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "${pick.map((k) => k.path).join(',')}")`, why: `every line has ${pick.map((k) => k.key).join(', ')}` };
+    // Each path is its own argument, and the engine reads the JSON from originalData$ itself.
+    if (pick.length >= 2) return { kind: 'EXPRESSION', text: `VALIDATE_ALL_JSONPATHS_EXIST(${pick.map((k) => `"${k.path}"`).join(', ')})`, why: `every line has ${pick.map((k) => k.key).join(', ')}` };
   }
   const bodies = events.map((e) => e.body);
   const prefix = commonPrefix(bodies).replace(/[\s\S]*?(\S[\s\S]*)$/, '$1');
