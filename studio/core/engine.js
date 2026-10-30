@@ -365,14 +365,18 @@ function runStatementsInner(p, ctx, byName, depth) {
   }
 }
 
-// The engine keeps every match of a capture pattern (checked in a lab tenant).
+// The engine keeps every match of a capture pattern (checked in a lab tenant), as Go's FindAll
+// does: an empty match right where the previous match ended is dropped, so (.*)$ gives one match,
+// not the line and then "" (checked in a lab tenant).
 function capture(pattern, text) {
   const re = compileGo(pattern, 'g');
   re.lastIndex = 0;
   const all = [];
   let m;
+  let prevEnd = -1;
   while ((m = re.exec(text))) {
-    all.push(m);
+    if (!(m[0] === '' && m.index === prevEnd)) all.push(m);
+    prevEnd = m.index + m[0].length;
     if (m[0] === '') re.lastIndex++;
     if (all.length > 10000) break;
   }
