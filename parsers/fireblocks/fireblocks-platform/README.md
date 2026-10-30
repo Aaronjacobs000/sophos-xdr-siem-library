@@ -35,13 +35,14 @@ In Sophos Fusion, go to Security Operations > Integrations > Custom Parsers. Add
 
 - Auth: the user as the target user, LOGON, FAILURE or ACCOUNT with the auth category, the event as the status and the subject as the sub-status, and the category, user ID and workspace ID as metadata.
 - Thirdparty: a title such as "Fireblocks: transaction blocked by the Transaction Authorization Policy", high severity for an AML rejection and medium otherwise, blocked for a policy block or an AML rejection, and the user who started it.
+- Custom alerts: a TAP block or an AML rejection sets `is_custom_alert` to true. Both come from policies the customer writes, so Sophos treats them as the customer's own detections: they go to the customer's automations and cases and stay out of the Sophos MDR queue. To leave them unflagged, like the other Fireblocks alerts, delete the `isCustomAlert$` line from `FIREBLOCKS_JSON_CHILD_THIRDPARTYALERT` before you add it.
 - CloudAudit, audit log: "<subject>: <event>" as the event name (such as "Whitelisted address: Added" or "Policy states: Published policy"), the category as the event type, the user and user ID, and the workspace as the recipient account. Events outside Transactions, Compliance and Orders are management events.
 - CloudAudit, webhooks: the eventType as the event name (such as `transaction.status.updated`), the part before the first dot as the event type, the initiator's user ID, the status, the sub-status as the error code when a transaction is blocked, rejected, failed or cancelled, the transaction, source, destination, wallet or vault as resources, and the operation, asset, amount, USD amount, source, destination, destination address, note and external ID as request parameters. The transaction hash, signers, fee and confirmations go in additional event data.
 - The event time is the audit event's `timestamp` (epoch milliseconds or ISO 8601) or the notification's `createdAt`.
 
 ## Testing
 
-On 30 October 2026 the parsers passed Run Test in a Sophos Fusion test tenant on the synthetic samples. With the children combined into the parent as one parser, 240 of 240 fields matched the emulator in each of 3 runs. With each child added as a separate parser under its parent, 240 of 240 matched again. In 3 Parse Message runs, no built-in parser claimed any of the records.
+On 30 October 2026 the parsers passed Run Test in a Sophos Fusion test tenant on the synthetic samples. With the children combined into the parent as one parser, 240 of 240 fields matched the emulator in each of 3 runs. With each child added as a separate parser under its parent, 240 of 240 matched again. In 3 Parse Message runs, no built-in parser claimed any of the records. After the custom alert flag was added, the Thirdparty child, run with its parent as one parser on the three alert samples and an AML flag record, matched the emulator on every field in 3 runs, with `is_custom_alert` true on the TAP block and the AML rejection only.
 
 ## Limits
 
