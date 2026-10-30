@@ -1565,6 +1565,21 @@ test('JSON() of a capture that didn\'t match fails the event, as JSON(NULL), a n
   assert.equal(v.get('x'), '');
 });
 
+test('JSON() takes text only: a JSON value or a part of one, a list, an object or a time fails the event', () => {
+  // The engine failed each with "data type for JSON must be string", and read a part that holds
+  // text, JSON or a number (checked in a lab tenant).
+  const vars = { originalData$: '{"o":{"x":"1"},"arr":[{"x":"2"}],"s":"{\\"x\\":\\"3\\"}","num":5,"nul":null,"t":true,"emptyo":{},"arrs":["a","b"]}' };
+  const pre = 'j = JSON(originalData$)\nm = originalData$|"o":(?P<o>\\{[^}]*})\n';
+  for (const expr of ['JSON(j["$.o"])', 'JSON(j["$.arr"])', 'JSON(j)', 'JSON(j["$.num"])', 'JSON(j["$.nul"])', 'JSON(j["$.t"])', 'JSON(j["$.emptyo"])', 'JSON(j["$.arrs"])',
+    'JSON(SPLIT("a,b", ","))', 'JSON(SPLIT_NAME_VALUES("a=1 b=2", " ", "=", "\\""))', 'JSON(DATETIME("2026-10-30T00:00:00Z", "2006-01-02T15:04:05Z07:00"))', 'JSON(m)', 'JSON(CEF("CEF:0|a|b|1|2|n|3|src=192.0.2.4"))']) {
+    assert.throws(() => run(`${pre}x = ${expr}`, vars), /data type for JSON must be string/, expr);
+  }
+  assert.equal(get(`${pre}x = JSON(j["$.s"])\ny = STRING(x["$.x"])`, 'y', vars), '3');
+  assert.equal(get(`${pre}x = JSON(STRING(j["$.o"]))\ny = STRING(x["$.x"])`, 'y', vars), '1');
+  assert.equal(get(`${pre}x = JSON(m["o"])\ny = STRING(x["$.x"])`, 'y', vars), '1');
+  assert.doesNotThrow(() => run(`${pre}x = JSON(j["$.o.x"])`, vars));
+});
+
 test('LEEF(NULL) fails the event, with or without a delimiter', () => {
   // The engine failed each with "message is not in LEEF format" (checked in a lab tenant).
   assert.throws(() => run('x = LEEF(NULL)'), /message is not in LEEF format/);

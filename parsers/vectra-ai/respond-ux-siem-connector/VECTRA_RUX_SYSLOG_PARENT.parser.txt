@@ -17,7 +17,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
 
 m = originalData$|VECTRA-SYSLOG-CONNECTOR:\s*(?P<json>\{.*\})\s*$
-json = JSON(m["json"])
+json = IF m["json"] != "" THEN JSON(m["json"]) ELSE NULL
 
 # Variables and $ fields set here are visible to both children.
 sensorType$ = "Vectra AI Respond UX"

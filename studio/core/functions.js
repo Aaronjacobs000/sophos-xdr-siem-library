@@ -214,13 +214,13 @@ export const FUNCTIONS = {
   // The quote character is required: the engine rejects a parser that calls SPLIT_NAME_VALUES
   // with 3 arguments ("requires 4 parameters", checked in a lab tenant).
   SPLIT_NAME_VALUES: [4, 4, (c, [s, d, sep, q]) => splitNameValues(str(s), str(d), str(sep), str(q))],
-  // JSON(NULL), as from a capture that didn't match, fails the event with "data type for JSON must
-  // be string", and so does a number, TRUE or FALSE; "" fails with "unexpected end of JSON input"
-  // (checked in a lab tenant).
+  // JSON() takes text only. NULL, as from a capture that didn't match, fails the event with "data
+  // type for JSON must be string", and so does a number, TRUE or FALSE, a list, an object (a JSON
+  // value or a part of one included) and a DATETIME value; "" fails with "unexpected end of JSON
+  // input" (checked in a lab tenant).
   JSON: [1, 1, (c, [s]) => {
-    if (s === null || s === undefined || typeof s === 'number' || typeof s === 'boolean') throw new RuntimeError(`data type for JSON must be string: JSON() got ${engineType(s)}. A capture that didn't match gives NULL, so check it matched first, as in IF m[1] != "" THEN JSON(m[1]) ELSE NULL.`, 'json-type');
-    if (s instanceof JsonValue) return s;
-    try { return new JsonValue(JSON.parse(toStr(s)), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
+    if (typeof s !== 'string') throw new RuntimeError(`data type for JSON must be string: JSON() got ${engineType(s)}. ${s === null || s === undefined ? 'A capture that didn\'t match gives NULL, so check it matched first, as in IF m[1] != "" THEN JSON(m[1]) ELSE NULL.' : 'Read a part of a JSON value with its path, as in json["$.a.b"], or use STRING() on the value first.'}`, 'json-type');
+    try { return new JsonValue(JSON.parse(s), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
   }],
   // CEF(NULL) fails the event the way CEF("") does (checked in a lab tenant).
   CEF: [1, 1, (c, [s]) => {

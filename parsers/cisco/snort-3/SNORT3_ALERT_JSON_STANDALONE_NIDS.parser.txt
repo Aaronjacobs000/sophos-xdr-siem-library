@@ -16,7 +16,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from the JSON.
 
 jsonMatch = originalData$|(\{ ".*})\s*$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 
 sensorType$ = "Snort"
 

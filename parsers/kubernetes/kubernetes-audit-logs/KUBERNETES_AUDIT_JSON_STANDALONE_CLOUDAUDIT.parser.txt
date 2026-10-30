@@ -19,11 +19,11 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces and quotes from JSON values.
 
 jsonMatch = originalData$|(\{.*\})\s*$
-outer = JSON(jsonMatch[1])
+outer = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 # An AKS diagnostic record carries the audit event as text; anything else is the event itself.
 aksLog = outer["$.properties.log"]
 eventText = IF aksLog THEN aksLog ELSE jsonMatch[1]
-ev = JSON(eventText)
+ev = IF eventText != "" THEN JSON(eventText) ELSE NULL
 
 aks = aksLog != NULL
 sensorType$ = IF aks THEN "Azure Kubernetes Service" ELSE "Kubernetes"

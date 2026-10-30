@@ -13,7 +13,7 @@
 # !TRIMALLOFF stops TRIM_ALL() stripping braces from JSON values.
 
 jsonMatch = originalData$|ossec:\s*(\{.*})\s*$
-json = JSON(jsonMatch[1])
+json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL
 
 # Variables and $ fields set here are visible to both children.
 sensorType$ = "Wazuh"
