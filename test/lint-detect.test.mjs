@@ -688,3 +688,24 @@ test('detect: a CEF extension key with a header field\'s name is listed as that 
   // Without such a key, the header field keeps its name.
   assert.ok(analyseSample(lines.slice(1)).keys.some((k) => k.key === 'name' && k.header));
 });
+
+test('detect: a LEEF line with | between its pairs is read with | as the delimiter', () => {
+  // IBM Guardium's LEEF template puts | between the pairs. LEEF() reads the first pair of such a
+  // line as the delimiter field and splits the rest on its first character, so the parser reads
+  // these lines with LEEF(originalData$, "|"), and the first pair stays values[5] (checked in a lab
+  // tenant). A line with tabs between its pairs is read as before.
+  const lines = [
+    '<30>Oct 14 10:21:07 gcoll01.example.com guard_sender[4486]: LEEF:1.0|IBM|Guardium|12.0|Login failures|ruleID=20026|ruleDesc=Login failures|severity=INFO|devTime=2026-10-14 21:21:05|dbUser=jsmith|src=192.0.2.31',
+    '<25>Oct 14 10:31:19 gcoll02.example.com GuardiumSniffer[4829]:  subject "SQLGUARD ALERT", "LEEF:1.0|IBM|Guardium|12.0|DDL - Alert|ruleID=20311|ruleDesc=DDL - Alert|severity=HIGH|devTime=2026-10-14 21:23:42|dbUser=APPADMIN|src=192.0.2.57"',
+    '<29>Oct 14 10:44:51 gcoll02.example.com guard_sender[4512]: LEEF:1.0|IBM|Guardium|12.0|Failed logins|ruleID=20530\truleDesc=Failed logins\tseverity=LOW\tdevTime=2026-10-14 21:44:49\tdbUser=root\tsrc=203.0.113.77',
+  ];
+  const a = analyseSample(lines);
+  const key = (k) => a.keys.find((x) => x.key === k);
+  assert.deepEqual(key('devTime').values, ['2026-10-14 21:21:05', '2026-10-14 21:23:42', '2026-10-14 21:44:49']);
+  assert.deepEqual(key('src').values, ['192.0.2.31', '192.0.2.57"', '203.0.113.77']);
+  assert.deepEqual(key('ruleID').values, ['20530']);
+  const plan = buildPlan(a, { vendor: 'IBM', product: 'Guardium', shipMethod: 'syslog' });
+  readsEveryKey(plan, a);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-15T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [1792012865000000, 1792013022000000, 1792014289000000]);
+});

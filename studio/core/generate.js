@@ -5,6 +5,7 @@
 import { TOOL_NAME, TOOL_VERSION, REPO } from './version.js';
 import { schemaInfo, fieldsByParser, hasEventMetadata, GENERIC } from './schemas.js';
 import { hasYear } from './gotime.js';
+import { LEEF_PIPES } from './formats.js';
 
 export function upperSlug(s) {
   return String(s || '').toUpperCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -71,8 +72,19 @@ export function extraction(plan) {
       };
       return { lines: ['values = CEF(originalData$)'], read };
     }
-    case 'leef':
-      return { lines: ['values = LEEF(originalData$)'], read: (m) => (m.index !== undefined && m.index !== null ? `values[${m.index}]` : `values[${q(m.key)}]`) };
+    case 'leef': {
+      const read = (m) => (m.index !== undefined && m.index !== null ? `values[${m.index}]` : `values[${q(m.key)}]`);
+      if (!x.leefPipes) return { lines: ['values = LEEF(originalData$)'], read };
+      return {
+        lines: [
+          '# Some lines put | between their pairs. LEEF() reads the first pair of such a line as its',
+          '# delimiter field, so those lines are read with | as the delimiter. Their first pair stays values[5].',
+          `leefPipes = originalData$|${LEEF_PIPES}`,
+          'values = IF leefPipes[0] != "" THEN LEEF(originalData$, "|") ELSE LEEF(originalData$)',
+        ],
+        read,
+      };
+    }
     case 'kv': {
       const delim = x.delim ?? ' ';
       const sep = x.sep ?? '=';
