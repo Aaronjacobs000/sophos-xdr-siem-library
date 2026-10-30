@@ -13,8 +13,10 @@
 #   FSPM / Finding created           a new Fireblocks Security Posture Management finding
 #   FSPM / Finding reopened          a finding that was resolved or accepted came back
 # Child of FIREBLOCKS_JSON_PARENT: each one to Thirdparty. An AML rejection is high severity and
-# the rest medium. A policy block or an AML rejection counts as blocked. The audit event names no
-# transaction or finding; the webhook child carries a transaction's detail.
+# the rest medium. A policy block or an AML rejection counts as blocked. Both come from rules the
+# customer sets, so they are custom alerts: they go to the customer's own automations and cases,
+# not the MDR queue. The audit event names no transaction or finding; the webhook child carries a
+# transaction's detail.
 # json, subject, event, tapBlock, amlReject, amlFlag, fspm, eventType$, sensorType$ and
 # eventTimeUsec$ come from the parent.
 
@@ -31,6 +33,7 @@ title$ = IF amlFlag THEN "Fireblocks: transaction flagged by AML screening" ELSE
 title$ = IF fspm THEN "Fireblocks: security posture " + LOWERCASE(event) ELSE title$
 severity$ = IF amlReject THEN "HIGH" ELSE "MEDIUM"
 action$ = IF tapBlock OR amlReject THEN "BLOCKED" ELSE NULL
+isCustomAlert$ = IF tapBlock OR amlReject THEN "TRUE" ELSE NULL
 
 user = STRING(json["$.user"])
 sourceUserName$ = IF user != "" THEN user ELSE NULL
