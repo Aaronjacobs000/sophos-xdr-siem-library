@@ -3,8 +3,10 @@
 Deliveries are signed the way each vendor documents it: Svix for Huntress (HMAC-SHA256 over
 "<id>.<timestamp>.<body>", base64, "v1," prefix), X-Hook-Signature for Autotask (HMAC-SHA1 over
 the body, base64, "sha1=" prefix), X-Mist-Signature-v2 for Juniper Mist (HMAC-SHA256 over the
-body, hex), and a secret in the path for Hudu, ScreenConnect and FortiCNAPP. The bodies are lines
-from the library entries' samples.log, Mist batches in the shape of Mist's webhook samples, and a
+body, hex), a secret in the path for Hudu, ScreenConnect and FortiCNAPP, and for Fireblocks an
+RS512 detached JWS in Fireblocks-Webhook-Signature with the key named by its kid served from a
+local mock of Fireblocks' JWKS endpoint, with RSA keys the tests make. The bodies are lines from
+the library entries' samples.log, Mist batches in the shape of Mist's webhook samples, and a
 FortiCNAPP alert indented as in Fortinet's example. No real service is called.
 
   python3 -m unittest discover -s bridges/webhook-relay -p 'test_*.py' -v
@@ -19,6 +21,7 @@ import io
 import json
 import logging
 import os
+import random
 import socket
 import sys
 import threading
@@ -88,6 +91,104 @@ def mist_headers(body, key=MIST_SECRET):
 
 def autotask_headers(body, key=AUTOTASK_KEY):
     return {"X-Hook-Signature": "sha1=" + base64.b64encode(hmac.new(key.encode(), body, hashlib.sha1).digest()).decode()}
+
+
+# Fireblocks: RSA keys made here, a JWKS endpoint, and deliveries signed the way Fireblocks documents.
+
+def _probable_prime(n, rounds=24):
+    if n < 4:
+        return n in (2, 3)
+    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        if n % p == 0:
+            return n == p
+    d, s = n - 1, 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    rng = random.Random(n)
+    for _ in range(rounds):
+        x = pow(rng.randrange(2, n - 1), d, n)
+        if x in (1, n - 1):
+            continue
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+
+def rsa_key(seed, bits=2048):
+    rng, e = random.Random(seed), 65537
+    while True:
+        p, q = (next(n for n in iter(lambda: rng.getrandbits(bits // 2) | (3 << (bits // 2 - 2)) | 1, None)
+                     if (n - 1) % e and _probable_prime(n)) for _ in range(2))
+        if p != q and (p * q).bit_length() == bits:
+            return {"n": p * q, "e": e, "d": pow(e, -1, (p - 1) * (q - 1))}
+
+
+def _b64url(data):
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def jwk(key, kid, **extra):
+    n, e = key["n"], key["e"]
+    return {"kty": "RSA", "kid": kid, "use": "sig", "alg": "RS512",
+            "n": _b64url(n.to_bytes((n.bit_length() + 7) // 8, "big")), "e": _b64url(e.to_bytes(3, "big")), **extra}
+
+
+FIREBLOCKS_KEY = rsa_key(1)
+FIREBLOCKS_OTHER_KEY = rsa_key(2)
+FIREBLOCKS_BODY = (b'{"id":"f4cc89bb-39d5-422f-b74f-9fc8f997dfbe","resourceId":"c096b023-d29d-4814-af0a-85ad2841c2f6",'
+                   b'"webhookId":"36964baa-d50d-41e2-9c2f-a042645a1a06","workspaceId":"52020d9c-c625-45e1-91e5-b4faa015b982",'
+                   b'"eventType":"transaction.created","createdAt":1793239804381,"data":{"id":"c096b023-d29d-4814-af0a-85ad2841c2f6",'
+                   b'"status":"SUBMITTED","operation":"TRANSFER","assetId":"USDC","note":"Q4 treasury rebalance",'
+                   b'"destinationAddress":"0xe755d6e831e1b02e10d9d8d13820d647ea3e1241","amountInfo":{"amount":"250000"}}}')
+
+
+def fireblocks_signature(body, key=FIREBLOCKS_KEY, kid="webhook-key-2026-10", header=None):
+    """Fireblocks-Webhook-Signature: "<header>..<signature>", RS512 over "<header>.<body in base64url>"."""
+    head = _b64url(json.dumps(header if header is not None else {"alg": "RS512", "kid": kid}).encode())
+    k = (key["n"].bit_length() + 7) // 8
+    t = bytes.fromhex("3051300d060960864801650304020305000440") + hashlib.sha512(f"{head}.{_b64url(body)}".encode()).digest()
+    m = int.from_bytes(b"\x00\x01" + b"\xff" * (k - len(t) - 3) + b"\x00" + t, "big")
+    return f"{head}..{_b64url(pow(m, key['d'], key['n']).to_bytes(k, 'big'))}"
+
+
+class Jwks:
+    """A mock of Fireblocks' JWKS endpoint: serves the keys it holds, counts requests, and can be
+    set to answer with another status or a redirect, and records any request that follows one."""
+
+    def __init__(self, keys):
+        self.keys, self.code, self.fetches, self.followed = list(keys), 200, 0, []
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                if self.path == "/elsewhere":
+                    outer.followed.append(self.path)
+                outer.fetches += 1
+                body = json.dumps({"keys": outer.keys}).encode() if outer.code == 200 else b"{}"
+                self.send_response(outer.code)
+                if outer.code in (301, 302, 303, 307, 308):
+                    self.send_header("Location", f"{outer.url[:-len('/.well-known/jwks.json')]}/elsewhere")
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Cache-Control", "public, max-age=3600, s-maxage=3600")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.url = f"http://127.0.0.1:{self.server.server_address[1]}/.well-known/jwks.json"
+        threading.Thread(target=self.server.serve_forever, args=(0.05,), daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
 
 
 class Ingest:
@@ -741,6 +842,166 @@ class RelayTest(unittest.TestCase):
         with self.assertRaises(r.RelayError):
             r.Relay(cfg, dry_run=False)
         r.Relay(cfg, dry_run=True)
+
+    # -------------------------------------------------------------- Fireblocks (JWKS)
+
+    def start_fireblocks(self, keys=None, **extra):
+        jwks = Jwks(keys if keys is not None else [jwk(FIREBLOCKS_KEY, "webhook-key-2026-10")])
+        self.addCleanup(jwks.close)
+        self.start(FIREBLOCKS_JWKS_URL=jwks.url, **extra)
+        return jwks
+
+    def fireblocks_keys(self):
+        return self.relay.RequestHandlerClass.relay.fireblocks_keys
+
+    def fireblocks_post(self, body=FIREBLOCKS_BODY, signature=None, **kwargs):
+        sig = fireblocks_signature(body, **kwargs) if signature is None else signature
+        return self.post("/fireblocks", body, {"Content-Type": "application/json", "Fireblocks-Webhook-Signature": sig})
+
+    def test_fireblocks_valid_signature_forwards_body_unchanged_with_bearer(self):
+        jwks = self.start_fireblocks()
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        self.assertEqual(self.bodies(), [FIREBLOCKS_BODY])
+        sent = self.ingest.received[0]["headers"]
+        self.assertEqual((sent["Authorization"], sent["Content-Type"]), (f"Bearer {INGEST_KEY}", "application/json"))
+        self.assertNotIn("Fireblocks-Webhook-Signature", sent)
+        # The key set is fetched once and kept for the next delivery.
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        self.assertEqual(jwks.fetches, 1)
+
+    def test_fireblocks_rejects_unverified_deliveries(self):
+        self.start_fireblocks()
+        good = fireblocks_signature(FIREBLOCKS_BODY)
+        head, _, sig = good.split(".")
+        cases = {
+            "wrong key": fireblocks_signature(FIREBLOCKS_BODY, key=FIREBLOCKS_OTHER_KEY),
+            "tampered body": fireblocks_signature(FIREBLOCKS_BODY.replace(b"250000", b"25")),
+            "payload not detached": f"{head}.{_b64url(FIREBLOCKS_BODY)}.{sig}",
+            "RS256 header": fireblocks_signature(FIREBLOCKS_BODY, header={"alg": "RS256", "kid": "webhook-key-2026-10"}),
+            "no alg": fireblocks_signature(FIREBLOCKS_BODY, header={"kid": "webhook-key-2026-10"}),
+            "no kid": fireblocks_signature(FIREBLOCKS_BODY, header={"alg": "RS512"}),
+            "unencoded payload option": fireblocks_signature(FIREBLOCKS_BODY, header={"alg": "RS512", "kid": "webhook-key-2026-10",
+                                                                                     "b64": False, "crit": ["b64"]}),
+            "not base64url": f"{head}..{sig[:-4]}+/==",
+            "cut short": f"{head}..{sig[:-8]}",
+            "two parts": f"{head}.{sig}",
+            "empty": "",
+        }
+        for name, signature in cases.items():
+            with self.subTest(name):
+                self.assertEqual(self.fireblocks_post(signature=signature)[0], 401)
+        self.assertEqual(self.post("/fireblocks", FIREBLOCKS_BODY, {"Fireblocks-Signature": "bm90LXRoZS1zaWduYXR1cmU="})[0], 401)
+        self.assertEqual(self.bodies(), [])
+        self.assertIn("missing Fireblocks-Webhook-Signature", self.log.getvalue())
+        # A key ID the freshly fetched set doesn't have is refused outright.
+        self.fireblocks_keys().tried = None
+        self.assertEqual(self.fireblocks_post(kid="not-a-fireblocks-key")[0], 401)
+        self.assertIn("isn't one of Fireblocks' signing keys", self.log.getvalue())
+
+    def test_fireblocks_new_key_fetches_the_set_again_at_most_once_a_minute(self):
+        jwks = self.start_fireblocks()
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        # Fireblocks rotates to a new key: the relay fetches the set again when it sees the new kid.
+        jwks.keys.append(jwk(FIREBLOCKS_OTHER_KEY, "webhook-key-2026-11"))
+        self.fireblocks_keys().tried -= r.JWKS_RETRY_SECONDS
+        self.assertEqual(self.fireblocks_post(key=FIREBLOCKS_OTHER_KEY, kid="webhook-key-2026-11")[0], 200)
+        self.assertEqual(jwks.fetches, 2)
+        # Another unknown kid within the minute isn't fetched for; it gets 503, so Fireblocks sends it again.
+        self.assertEqual(self.fireblocks_post(kid="webhook-key-2026-12"), (503, "can't check the signature yet, retry later\n"))
+        self.assertEqual(jwks.fetches, 2)
+        self.assertEqual(self.bodies(), [FIREBLOCKS_BODY, FIREBLOCKS_BODY])
+
+    def test_fireblocks_keys_are_fetched_again_after_an_hour(self):
+        jwks = self.start_fireblocks()
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        keys = self.fireblocks_keys()
+        keys.fetched -= r.JWKS_MAX_AGE
+        keys.tried -= r.JWKS_MAX_AGE
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        self.assertEqual(jwks.fetches, 2)
+
+    def test_fireblocks_jwks_down_answers_503_and_keeps_a_recent_key_set(self):
+        jwks = self.start_fireblocks()
+        jwks.code = 500
+        # No key set yet: 503, so Fireblocks retries the delivery, which it does for 5xx only.
+        self.assertEqual(self.fireblocks_post()[0], 503)
+        self.assertIn("couldn't fetch the signing keys from 127.0.0.1", self.log.getvalue())
+        self.assertIn("(HTTP 500)", self.log.getvalue())
+        jwks.code = 200
+        self.fireblocks_keys().tried -= r.JWKS_RETRY_SECONDS
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        # The set is over an hour old and the endpoint is down: the last good set still works for a day.
+        keys = self.fireblocks_keys()
+        jwks.code = 503
+        keys.fetched -= r.JWKS_MAX_AGE
+        keys.tried -= r.JWKS_MAX_AGE
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        keys.fetched -= r.JWKS_STALE_SECONDS
+        keys.tried -= r.JWKS_STALE_SECONDS
+        self.assertEqual(self.fireblocks_post()[0], 503)
+        self.assertEqual(len(self.bodies()), 2)
+
+    def test_fireblocks_jwks_redirect_is_not_followed(self):
+        jwks = self.start_fireblocks()
+        for code in (301, 302, 307, 308):
+            with self.subTest(code=code):
+                jwks.code = code
+                keys = self.fireblocks_keys()
+                keys.tried = None
+                self.assertEqual(self.fireblocks_post()[0], 503)
+                self.assertIn(f"(HTTP {code})", self.log.getvalue())
+        self.assertEqual(jwks.followed, [])
+        self.assertEqual(self.bodies(), [])
+
+    def test_fireblocks_jwks_without_usable_keys_is_refused(self):
+        weak = rsa_key(3, bits=1024)
+        cases = {
+            "short key": [jwk(weak, "webhook-key-2026-10")],
+            "other algorithm": [jwk(FIREBLOCKS_KEY, "webhook-key-2026-10", alg="RS256")],
+            "encryption key": [jwk(FIREBLOCKS_KEY, "webhook-key-2026-10", use="enc")],
+            "bad modulus": [{**jwk(FIREBLOCKS_KEY, "webhook-key-2026-10"), "n": "not base64url!"}],
+        }
+        for name, keys in cases.items():
+            with self.subTest(name):
+                if self.relay:
+                    self.relay.shutdown()
+                    self.relay.server_close()
+                self.start_fireblocks(keys)
+                self.assertEqual(self.fireblocks_post(key=weak if name == "short key" else FIREBLOCKS_KEY)[0], 503)
+        self.assertIn("(no RS512 signing keys)", self.log.getvalue())
+        self.assertEqual(self.bodies(), [])
+
+    def test_fireblocks_dry_run_prints_the_body(self):
+        out = io.StringIO()
+        self.start_fireblocks(dry_run=True, out=out, NGSIEM_INGEST_URL=None, NGSIEM_INGEST_KEY=None)
+        self.assertEqual(self.fireblocks_post()[0], 200)
+        self.assertEqual(out.getvalue(), FIREBLOCKS_BODY.decode() + "\n")
+
+    def test_fireblocks_signatures_and_payloads_never_logged(self):
+        self.start_fireblocks()
+        marker = b"payload-marker-should-not-be-logged"
+        body = FIREBLOCKS_BODY.replace(b"Q4 treasury rebalance", marker)
+        good = fireblocks_signature(body)
+        self.ingest.codes = [503]
+        self.fireblocks_post(body)
+        self.fireblocks_post(body, signature=good[:-6] + "AAAAAA")
+        self.fireblocks_post(body)
+        logged = self.log.getvalue()
+        self.assertIn("fireblocks: forwarded", logged)
+        for secret in (marker.decode(), good, good.split(".")[2][:40], INGEST_KEY, INGEST_PATH, "0xe755d6e831e1b02e10d9d8d13820d647ea3e1241"):
+            self.assertNotIn(secret, logged)
+
+    def test_fireblocks_config(self):
+        only = {"NGSIEM_INGEST_URL": self.ingest_url, "NGSIEM_INGEST_KEY": INGEST_KEY,
+                "FIREBLOCKS_JWKS_URL": "https://keys.fireblocks.io/.well-known/jwks.json"}
+        self.assertEqual(sorted(r.load_config(only)["vendors"]), ["fireblocks"])
+        for bad in ("http://keys.fireblocks.io/.well-known/jwks.json", "https://user:secret@keys.fireblocks.io/.well-known/jwks.json"):
+            with self.subTest(bad), self.assertRaises(r.RelayError) as caught:
+                r.load_config({**only, "FIREBLOCKS_JWKS_URL": bad})
+            self.assertNotIn("secret", str(caught.exception))
+        # Without it, /fireblocks is like any route that isn't set up.
+        self.start()
+        self.assertEqual(self.fireblocks_post()[0], 404)
 
 
 class LegacyNameTest(unittest.TestCase):
