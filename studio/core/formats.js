@@ -210,13 +210,15 @@ export function parseCef(line) {
     if (k.quoted && k.closed && endsWithQuote(v)) v = v.slice(1, -1);
     map.set(k.key, unescapeCefValue(v));
   });
+  // labels: each label the engine resolved, to the key it labels.
+  const labels = new Map();
   for (const [k, v] of [...map]) {
     if (k.endsWith('Label')) {
       const base = k.slice(0, -5);
-      if (LABELLED.test(base) && map.has(base) && !map.has(v)) map.set(v, map.get(base));
+      if (LABELLED.test(base) && map.has(base) && !map.has(v)) { map.set(v, map.get(base)); labels.set(v, base); }
     }
   }
-  return new ObjValue(map, header);
+  return Object.assign(new ObjValue(map, header), { labels });
 }
 
 // ---------------------------------------------------------------- LEEF
@@ -253,43 +255,37 @@ export function parseLeef(line, delimiterOverride = null) {
 
 // ---------------------------------------------------------------- name/value pairs
 
-// SPLIT_NAME_VALUES(data, delimiter, separator, quoteChar). Keys are trimmed, values are not:
-// "a: 1;b: 2" with delimiter ";" and separator ":" gives " 1" and " 2", and so does the docs
-// example "User: Unknown, InitiatorPackets: 2" (" Unknown"). A backslash quote character, as in
-// the docs examples, means values are not quoted. The engine splits on the delimiter before it
-// reads quotes, so each delimiter inside quotes comes back as a space: msg="x, y" with delimiter
-// "," gives "x  y". A quote anywhere in a value protects a delimiter, but only a value that starts
-// and ends with the quote character loses its quotes: a= "x;y" gives ' "x y"' and a=x"y;z"w gives
-// 'x"y z"w' (checked in a lab tenant).
+// SPLIT_NAME_VALUES(data, delimiter, separator, quoteChar). The engine splits the text on every
+// delimiter, inside quotes too. An item with the separator after its first character starts a
+// pair; any other item, an empty one or one that starts with the separator included, joins the
+// value before it after a space, and items before the first pair are dropped. So with delimiter
+// " ", a=1 foo b=2 gives a "1 foo", a=1  b=2 gives a "1 " and a=1 =x gives a "1 =x". Keys are
+// trimmed, so " =x" with delimiter "," gives the key "" the value x, and values are not: "a: 1;b: 2"
+// with delimiter ";" and separator ":" gives " 1" and " 2", and so does the docs example
+// "User: Unknown, InitiatorPackets: 2" (" Unknown"). A later pair with the same key replaces the
+// value. Quotes don't keep a pair together: msg="x, y" with delimiter "," joins ' y"' to '"x', but
+// a="x y=z" b=1 with delimiter " " gives a '"x' and y 'z"'. Last, a value that starts and ends with
+// the quote character, two characters or more, loses both: a="x" "y" gives 'x" "y', while a="
+// keeps '"', a= "x;y" keeps ' "x y"' and a=x"y;z"w keeps 'x"y z"w'. A backslash quote character,
+// as in the docs examples, leaves the quotes on (checked in a lab tenant).
 export function splitNameValues(data, delimiter, separator, quoteChar) {
   if (data === null || data === undefined) return null;
   const s = String(data);
   const d = delimiter || ' ';
   const sep = separator || '=';
   const q = quoteChar && quoteChar !== '\\' ? quoteChar : null;
-  const items = [];
-  let item = '';
-  let quoted = false;
-  for (let i = 0; i < s.length;) {
-    if (q && s.startsWith(q, i)) { quoted = !quoted; item += q; i += q.length; continue; }
-    if (s.startsWith(d, i)) {
-      if (quoted) item += ' ';
-      else { items.push(item); item = ''; }
-      i += d.length;
-      continue;
-    }
-    item += s[i++];
-  }
-  items.push(item);
   const map = new Map();
-  for (const it of items) {
-    const at = it.indexOf(sep);
-    if (at === -1) continue;
-    const key = it.slice(0, at).trim();
-    let value = it.slice(at + sep.length);
-    if (q && value.length >= 2 * q.length && value.startsWith(q) && value.endsWith(q)) value = value.slice(q.length, -q.length);
-    if (key) map.set(key, value);
+  let key = null;
+  for (const item of s.split(d)) {
+    const at = item.indexOf(sep);
+    if (at > 0) {
+      key = item.slice(0, at).trim();
+      map.set(key, item.slice(at + sep.length));
+    } else if (key !== null) {
+      map.set(key, `${map.get(key)} ${item}`);
+    }
   }
+  if (q) for (const [k, v] of map) if (v.length >= 2 * q.length && v.startsWith(q) && v.endsWith(q)) map.set(k, v.slice(q.length, -q.length));
   return new ObjValue(map);
 }
 

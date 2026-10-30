@@ -512,3 +512,106 @@ test('a text template matches once in the line, since the engine keeps every mat
   // Each group reads one value, the one the page shows, not a list of every match.
   readsEveryField(buildPlan(a, { vendor: 'Cisco', product: 'ACI' }), a);
 });
+
+test('detect: a JSON sample with no program tag is confirmed with each path as its own argument', () => {
+  // The engine reads every argument of VALIDATE_ALL_JSONPATHS_EXIST() as a path and checks
+  // originalData$ itself, so originalData$, "$.a,$.b" as the arguments never matched a line
+  // (checked in a lab tenant).
+  const lines = [
+    '{"eventType":"login","userName":"jdoe","clientIp":"192.0.2.4"}',
+    '{"eventType":"logout","userName":"asmith","clientIp":"192.0.2.5"}',
+  ];
+  const a = analyseSample(lines);
+  assert.deepEqual(a.confirm, { kind: 'EXPRESSION', text: 'VALIDATE_ALL_JSONPATHS_EXIST("$.eventType", "$.userName", "$.clientIp")', why: 'every line has eventType, userName, clientIp' });
+  const ps = writeParsers(buildPlan(a, { vendor: 'Acme', product: 'App', shipMethod: 'http-ingest' }), lines);
+  const results = runParsers(ps, lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => [Boolean(r.extractor_path), r.error ?? null]), [[true, null], [true, null]]);
+});
+
+test('generated JSON-at-the-end parsers give a line with no JSON object no fields, not a failed event', () => {
+  // JSON() of a capture that didn't match fails the event in the engine ("data type for JSON must
+  // be string"), as on osquery's status lines; checked first, it gives NULL (checked in a lab tenant).
+  const lines = [
+    '<158>Oct 15 01:02:30 web01.example.com osqueryd[2214]: {"name":"processes","hostIdentifier":"web01.example.com","action":"added"}',
+    '<158>Oct 15 01:05:00 web01.example.com osqueryd[2214]: {"name":"listening_ports","hostIdentifier":"web01.example.com","action":"removed"}',
+    '<156>Oct 15 01:22:30 web01.example.com osqueryd[2214]: severity=1 location=scheduler.cpp:112 message=Scheduled query may have failed',
+  ];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'osquery', product: 'osquery', shipMethod: 'syslog' });
+  assert.deepEqual(extraction(plan).lines.filter((l) => !l.startsWith('#')), ['jsonMatch = originalData$|(\\{.*})$', 'json = IF jsonMatch[1] != "" THEN JSON(jsonMatch[1]) ELSE NULL']);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.error ?? null), [null, null, null]);
+  assert.ok(results[2].extractor_path);
+});
+
+test('detect: CEF rt in epoch milliseconds maps to the event time as epoch milliseconds', () => {
+  // CEF's rt is either a date or epoch milliseconds, as TippingPoint sends it.
+  const lines = [
+    'Oct 13 22:30:02 sms01 CEF:0|TippingPoint|UnityOne|6.1.0.7020|7202|7202: TCP: SYN Flood|4|act=Block src=192.0.2.4 dst=198.51.100.2 rt=1791930601204',
+    'Oct 13 22:31:13 sms01 CEF:0|TippingPoint|UnityOne|6.1.0.7020|38120|38120: HTTP: Struts|4|act=Block src=192.0.2.5 dst=198.51.100.3 rt=1791930672880',
+  ];
+  const a = analyseSample(lines);
+  assert.equal(a.keys.find((k) => k.key === 'rt').shape, 'epoch-ms');
+  const plan = buildPlan(a, { vendor: 'Trend Micro', product: 'TippingPoint', shipMethod: 'syslog' });
+  const m = plan.units.flatMap((u) => u.mappings).find((x) => x.key === 'rt');
+  assert.deepEqual([m.field, m.transform.kind], ['eventTimeUsec$', 'epoch-ms']);
+  const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-30T00:00:00Z' });
+  assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [1791930601204000, 1791930672880000]);
+  assert.equal(analyseLine('{"rt":1791930601204}').fields[0].key, 'rt');
+  assert.equal(analyseSample(['{"rt":1791930601204,"a":"x"}', '{"rt":1791930672880,"a":"y"}']).keys.find((k) => k.key === 'rt').shape, 'epoch-ms');
+});
+
+test('generated DATETIME mappings give NULL for a time before 1970, so a zero date doesn\'t wrap the event time', () => {
+  // 0001-01-01T00:00:00Z, which Tailscale sends for deferredAt, is a negative time, and the unsigned
+  // event time field stores it as a huge number. A DATETIME value compares with a number as its
+  // microseconds, and NULL > 0 is false (checked in a lab tenant).
+  const lines = [
+    '{"app":"zzacme","src":"192.0.2.4","when":"0001-01-01T00:00:00Z"}',
+    '{"app":"zzacme","src":"192.0.2.5","when":"2026-10-20T00:31:09Z"}',
+    '{"app":"zzacme","src":"192.0.2.6","when":"not a time"}',
+  ];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Flow', shipMethod: 'syslog' });
+  const unit = plan.units[0];
+  setUnitSchema(plan, a, unit, 'scwx.netflow');
+  unit.mappings = [['src', 'sourceAddress$', { kind: 'none' }], ['when', 'eventTimeUsec$', { kind: 'datetime', layout: '2006-01-02T15:04:05Z07:00' }]].map(([k, f, t]) => ({ ...remap(unit, k, f), transform: t }));
+  const ps = writeParsers(plan, lines);
+  assert.match(ps[0].text, /^eventTimeUsecTime = DATETIME\(json\["\$\.when"\], "2006-01-02T15:04:05Z07:00"\)\neventTimeUsec\$ = IF eventTimeUsecTime > 0 THEN eventTimeUsecTime ELSE NULL$/m);
+  const now = '2026-10-30T00:00:00Z';
+  const results = runParsers(ps, lines, { now });
+  assert.deepEqual(results.map((r) => r.error ?? null), [null, null, null]);
+  assert.deepEqual(results.map((r) => r.normalized.event_time_usec), [Date.parse(now) * 1000, Date.parse('2026-10-20T00:31:09Z') * 1000, Date.parse(now) * 1000]);
+  assert.deepEqual(lintParsers(ps, { samples: lines, now }).problems.filter((p) => p.level === 'error'), []);
+});
+
+// The value each line shows for a key, read with the key the generated parsers read it by.
+function readsEveryKey(plan, a) {
+  for (const e of a.events) {
+    for (const f of e.fields) {
+      const got = readWithParser(plan, a.keys.find((k) => k.key === f.key), e.line);
+      if (!(f.value === '' && got === null)) assert.deepEqual(got, f.value, `${f.key} in ${e.line.slice(0, 60)}`);
+    }
+  }
+}
+
+test('detect: a CEF label is listed once per line, and one with a header field\'s name by the key it labels', () => {
+  // CEF() resolves cs1Label=Customer to its own key, so Customer is one key, read as values["Customer"].
+  // Trellix NX sends cs1Label=name, and the parser reads the header's name by number, so the label's
+  // value is listed as cs1 and read as values["cs1"].
+  const lines = [
+    'CEF:0|Trellix|MPS|10.0.1|WA|smartvision-event|5|act=notified cs1=Suspicious Remote Scheduled Task Activity cs1Label=name cs2=Acme cs2Label=Customer cn2Label=signatureId cn2=91500000',
+    'CEF:0|Trellix|MPS|10.0.1|WA|malware-object|5|act=notified cs2=Globex cs2Label=Customer cn2Label=signatureId cn2=91500001',
+    'CEF:0|Trellix|MPS|10.0.1|WA|web-infection|5|act=notified cs2=Initech cs2Label=src src=192.0.2.4',
+  ];
+  const a = analyseSample(lines);
+  const key = (k) => a.keys.find((x) => x.key === k);
+  assert.deepEqual([key('Customer').lines, key('signatureId').lines, key('name').lines], [2, 2, 3]);
+  assert.deepEqual(key('name').values, ['smartvision-event', 'malware-object', 'web-infection']);
+  assert.deepEqual(key('cs1').values, ['Suspicious Remote Scheduled Task Activity']);
+  // A label with another key's name: values["src"] is that key's value, so the label's is listed as cs2.
+  assert.deepEqual([key('src').values, key('cs2').values], [['192.0.2.4'], ['Initech']]);
+  assert.ok(a.keys.every((k) => k.lines <= lines.length), 'no key is listed twice on a line');
+  const plan = buildPlan(a, { vendor: 'Trellix', product: 'NX', shipMethod: 'syslog' });
+  assert.deepEqual(['name', 'cs1', 'Customer'].map((k) => extraction(plan).read(key(k))), ['values[5]', 'values["cs1"]', 'values["Customer"]']);
+  readsEveryKey(plan, a);
+});

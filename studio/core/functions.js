@@ -6,7 +6,7 @@ import {
   JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, ParseErrorSignal,
   toStr, toPlain, wrapJson, isList, typeName, truthy,
 } from './values.js';
-import { query } from './jsonpath.js';
+import { exists } from './jsonpath.js';
 import { goParse, goParseAuto } from './gotime.js';
 import { goReplaceAll } from './goregex.js';
 import { parseCef, parseLeef, splitCsv, splitNameValues, urlParse, idxOfTld, isValidIp, isRfc1918 } from './formats.js';
@@ -214,8 +214,11 @@ export const FUNCTIONS = {
   // The quote character is required: the engine rejects a parser that calls SPLIT_NAME_VALUES
   // with 3 arguments ("requires 4 parameters", checked in a lab tenant).
   SPLIT_NAME_VALUES: [4, 4, (c, [s, d, sep, q]) => splitNameValues(str(s), str(d), str(sep), str(q))],
+  // JSON(NULL), as from a capture that didn't match, fails the event with "data type for JSON must
+  // be string", and so does a number, TRUE or FALSE; "" fails with "unexpected end of JSON input"
+  // (checked in a lab tenant).
   JSON: [1, 1, (c, [s]) => {
-    if (s === null) return null;
+    if (s === null || s === undefined || typeof s === 'number' || typeof s === 'boolean') throw new RuntimeError(`data type for JSON must be string: JSON() got ${engineType(s)}. A capture that didn't match gives NULL, so check it matched first, as in IF m[1] != "" THEN JSON(m[1]) ELSE NULL.`, 'json-type');
     if (s instanceof JsonValue) return s;
     try { return new JsonValue(JSON.parse(toStr(s)), true); } catch (e) { throw new RuntimeError(`JSON could not read the data: ${e.message}`, 'json'); }
   }],
@@ -289,16 +292,24 @@ export const FUNCTIONS = {
     return e.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, x]) => (x !== null && typeof x === 'object' ? toStr(wrapJson(toPlain(x))) : x));
   }],
   FLATTEN: [1, 3, (c, [v, k, val]) => flatten(v, k === undefined ? null : toStr(k), val === undefined ? null : toStr(val))],
-  VALIDATE_ALL_JSONPATHS_EXIST: [2, 2, (c, [s, paths]) => {
-    try {
-      const text = toStr(s) ?? '';
-      const at = text.lastIndexOf('}') === text.trimEnd().length - 1 ? findJsonStart(text) : -1;
-      if (at === -1) return false;
-      const obj = JSON.parse(text.slice(at));
-      return toStr(paths).split(',').every((p) => query(obj, p.trim()) !== null);
-    } catch {
-      return false;
+  // Every argument is a path, and the JSON it checks is always originalData$'s, from its first {
+  // to the end of the line. Text that doesn't read as a JSON object there gives false, and so does
+  // a path that selects nothing (a null value counts as there), a NULL, "" or a number. Paths are
+  // checked in order up to the first false; one the engine can't read fails the event, "$.a,$.b"
+  // included, so each path goes in its own argument. A path can leave out the $, as in "a.b"
+  // (checked in a lab tenant).
+  VALIDATE_ALL_JSONPATHS_EXIST: [1, Infinity, (c, paths) => {
+    const text = toStr(c.vars.get('originalData$')) ?? '';
+    const at = text.indexOf('{');
+    let obj = null;
+    try { obj = at === -1 ? null : JSON.parse(text.slice(at)); } catch { obj = null; }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+    for (const p of paths) {
+      if (typeof p !== 'string' || p === '') return false;
+      const path = p.startsWith('$') ? p : p.startsWith('[') ? `$${p}` : `$.${p}`;
+      if (!exists(obj, path)) return false;
     }
+    return true;
   }],
 };
 FUNCTIONS.OBJVALS = FUNCTIONS.OBJVALUES;
@@ -313,23 +324,6 @@ export const LAZY = {
     return evalArg(rawArgs[2]);
   }],
 };
-
-// Index of the "{" that opens the JSON object at the end of the text, or -1.
-function findJsonStart(text) {
-  const end = text.trimEnd().length - 1;
-  let depth = 0, inStr = false;
-  for (let i = end; i >= 0; i--) {
-    const ch = text[i];
-    if (inStr) {
-      if (ch === '"' && text[i - 1] !== '\\') inStr = false;
-      continue;
-    }
-    if (ch === '"') inStr = true;
-    else if (ch === '}') depth++;
-    else if (ch === '{') { depth--; if (depth === 0) return i; }
-  }
-  return -1;
-}
 
 export const FUNCTION_NAMES = new Set([...Object.keys(FUNCTIONS), ...Object.keys(LAZY)]);
 export const DEPRECATED = { STRLEN: 'STRLEN() is deprecated; use LENGTH(value) or LENGTH(value, "bytes")' };

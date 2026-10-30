@@ -28,6 +28,48 @@ test('SPLIT_NAME_VALUES', () => {
   assert.throws(() => run('d = SPLIT_NAME_VALUES("a=1", " ", "=")'), /takes 4 arguments, got 3/);
 });
 
+// What the engine gave for SPLIT_NAME_VALUES(text, delimiter, "=", "\"") in a lab tenant: an item
+// with no = after its first character joins the value before it after a space, and quotes keep
+// nothing together.
+test('SPLIT_NAME_VALUES joins an item with no = to the value before it, quotes or not', () => {
+  const rows = [
+    [' ', 'a=1 foo b=2', { a: '1 foo', b: '2' }],
+    [' ', 'a=1  b=2', { a: '1 ', b: '2' }],
+    [' ', 'a="x y=z" b=1', { a: '"x', y: 'z"', b: '1' }],
+    [' ', 'a=x /p?q=1 b=2', { a: 'x', '/p?q': '1', b: '2' }],
+    [' ', 'foo bar a=1', { a: '1' }],
+    [' ', 'a=1 =x b=2', { a: '1 =x', b: '2' }],
+    [' ', 'a="x" y b=2', { a: '"x" y', b: '2' }],
+    [' ', 'a="x y" z', { a: '"x y" z' }],
+    [' ', 'a=1 b=2 a=3', { a: '3', b: '2' }],
+    [' ', 'a=x "q=1" b=2', { a: 'x', '"q': '1"', b: '2' }],
+    [' ', 'a= b=2', { a: '', b: '2' }],
+    [' ', 'a=x  ', { a: 'x  ' }],
+    [' ', 'a=1 b', { a: '1 b' }],
+    [' ', '  a=1  ', { a: '1  ' }],
+    [' ', 'a="x" "y" b="z', { a: 'x" "y', b: '"z' }],
+    [' ', 'a==1 b=x=y', { a: '=1', b: 'x=y' }],
+    [' ', 'a=" b=2', { a: '"', b: '2' }],
+    [' ', 'a="" b=2', { a: '', b: '2' }],
+    [' ', 'x a="p q" b', { a: '"p q" b' }],
+    [' ', 'a="x,y",b="p=q,r"', { a: 'x,y",b="p=q,r' }],
+    [',', 'a=1,foo,b=2', { a: '1 foo', b: '2' }],
+    [',', 'a=1, b=2, c=x y, d=3', { a: '1', b: '2', c: 'x y', d: '3' }],
+    [',', 'a=x y=z,b=2', { a: 'x y=z', b: '2' }],
+    [',', 'a="x,y",b="p=q,r"', { a: 'x y', b: 'p=q r' }],
+    [',', 'foo bar a=1', { 'foo bar a': '1' }],
+    [',', 'a=1, =x,b=2', { a: '1', '': 'x', b: '2' }],
+    [',', 'a=1,  ,b=2', { a: '1   ', b: '2' }],
+    // The library lines the lab found the old reading wrong on (Huawei USG and VRP, F5 ASM).
+    [',', 'SourceZone=untrust, DestinationZone=trust, default filter', { SourceZone: 'untrust', DestinationZone: 'trust  default filter' }],
+    [',', 'Category="Shopping", Page="/search?q=router,sort=price", Host="shop.example.net"', { Category: 'Shopping', Page: '"/search?q=router', sort: 'price"', Host: 'shop.example.net' }],
+    [',', 'User=jsmith, Command="description Uplink to core, vlan=20", LocalIp=192.0.2.1', { User: 'jsmith', Command: '"description Uplink to core', vlan: '20"', LocalIp: '192.0.2.1' }],
+  ];
+  for (const [d, s, want] of rows) assert.deepEqual(toPlain(run(`v = SPLIT_NAME_VALUES(s, "${d}", "=", "\\"")`, { s }).get('v')), want, `${JSON.stringify(d)} ${s}`);
+  // A backslash as the quote character leaves the quotes on.
+  assert.deepEqual(toPlain(run('v = SPLIT_NAME_VALUES(s, " ", "=", "\\\\")', { s: 'a="x" "y" b="z' }).get('v')), { a: '"x" "y"', b: '"z' });
+});
+
 test('JSON and JSONPath', () => {
   const store = JSON.stringify({ store: { book: [
     { category: 'reference', author: 'Nigel Rees', title: 'Sayings of the Century', price: 8.95 },
@@ -268,12 +310,41 @@ listrn = STRING([rn])`, { d });
   for (const [k, w] of Object.entries(want)) assert.equal(v.get(k), w, k);
 });
 
+// Every argument is a path checked against originalData$, read from its first { to the end
+// (checked in a lab tenant).
 test('VALIDATE_ALL_JSONPATHS_EXIST', () => {
-  const line = 'May 17 12:00:00 host alert {"event_id":"123","actor":{"id":"u1"},"action":"login"}';
-  const v = run('ok = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.actor.id,$.action")\nno = VALIDATE_ALL_JSONPATHS_EXIST(originalData$, "$.event_id,$.session.id")\nbad = VALIDATE_ALL_JSONPATHS_EXIST("no json here", "$.a")', { originalData$: line });
-  assert.equal(v.get('ok'), true);
-  assert.equal(v.get('no'), false);
-  assert.equal(v.get('bad'), false);
+  const full = '{"zz":"z","a":"1","b":{"c":"2"},"n":null,"e":"","q-x":5,"arr":[{"k":1}],"f":false,"z0":0}';
+  const rows = [
+    ['"$.zz"', true], ['"$.zz", "$.a"', true], ['"$.zz", "$.a", "$.b.c"', true], ['"$.n"', true], ['"$.e"', true],
+    ['"$[\'q-x\']"', true], ['"$.arr[0].k"', true], ['"$.arr[1].k"', false], ['"$.b"', true], ['"$.missing"', false],
+    ['"$.f"', true], ['"$.z0"', true], ['"a"', true], ['"b.c"', true], ['"[0]"', false], ['"$"', true], ['"$..a"', true],
+    ['""', false], ['NULL', false], ['5', false], ['TRUE', false],
+    // Checking stops at the first false, so a path it never reaches can't fail the event.
+    ['"$.missing", "$.a,$.b"', false], ['NULL, "$.a,$.b"', false],
+  ];
+  for (const [args, want] of rows) assert.equal(get(`x = VALIDATE_ALL_JSONPATHS_EXIST(${args})`, 'x', { originalData$: full }), want, args);
+  // A path the engine can't read fails the event, a list of paths in one argument included.
+  for (const args of ['"$.a,$.b"', '"$.a,$.b", "$.missing"', '"$.detail-type"', 'originalData$, "$.zz,$.a"']) {
+    assert.throws(() => run(`x = VALIDATE_ALL_JSONPATHS_EXIST(${args})`, { originalData$: full }), undefined, args);
+  }
+  const lines = [
+    ['<14>Oct 30 10:00:00 host app: {"a":"1","b":{"c":"2"}}', true],
+    ['Oct 30 10:00:00 host {"a":"1","b":{"c":"2"}}', true],
+    [' {"a":"1","b":{"c":"2"}}', true],
+    ['x a=1 {"a":"x}","b":{"c":"2"}} ', true],
+    ['Oct 30 10:00:00 h{ost {"a":"1","b":{"c":"2"}}', false],
+    ['x {"a":1} trailing text', false],
+    ['{"a":1} trailing', false],
+    ['x {"a":1} {"b":{"c":"2"}}', false],
+    ['x [{"a":1}]', false],
+    ['x {"a":1', false],
+    ['not json at all', false],
+  ];
+  for (const [line, want] of lines) assert.equal(get('x = VALIDATE_ALL_JSONPATHS_EXIST("$.a", "$.b")', 'x', { originalData$: line }), want, line);
+  // Not a non-JSON line with a path it can't read: the line is read first.
+  assert.equal(get('x = VALIDATE_ALL_JSONPATHS_EXIST("$.a,$.b")', 'x', { originalData$: 'not json' }), false);
+  // With no arguments the engine rejects the parser ("requires 1-2147483647 parameters").
+  assert.throws(() => run('x = VALIDATE_ALL_JSONPATHS_EXIST()', { originalData$: full }), /takes at least 1 arguments, got 0/);
 });
 
 test('capture statements, numbered and named groups', () => {
@@ -1237,6 +1308,11 @@ test('a - in a name after a dot fails the event; the bracket form works', () => 
   assert.throws(() => run('j = JSON(d)\nx = j["$..detail-type"]', d), /parse error at 10/);
   assert.equal(get('j = JSON(d)\nx = j["$[\'detail-type\']"]', 'x', d), 'x');
   assert.equal(get('j = JSON(d)\nx = j["$.a[\'detail-type\']"]', 'x', d), 'y');
+  // So does a , (checked in a lab tenant).
+  const c = { d: '{"a":1,"a,b":2,"b":3}' };
+  assert.throws(() => run('j = JSON(d)\nx = j["$.a,b"]', c), /parse error at 4 in \$\.a,b/);
+  assert.throws(() => run('j = JSON(d)\nx = j["$.a,$.b"]', c), /parse error at 4 in \$\.a,\$\.b/);
+  assert.equal(get('j = JSON(d)\nx = j["$[\'a,b\']"]', 'x', c), 2);
 });
 
 test('a field set on a variable holding a capture result fails the event', () => {
@@ -1473,6 +1549,20 @@ test('CEF(NULL) fails the event, as CEF("") does', () => {
   assert.throws(() => run('x = CEF(NULL)'), /message is not in LEEF format/);
   assert.throws(() => run('n = NULL\nx = CEF(n)'), /message is not in LEEF format/);
   assert.throws(() => run('j = JSON("{\\"a\\":1}")\nx = CEF(j["$.missing"])'), /message is not in LEEF format/);
+});
+
+test('JSON() of a capture that didn\'t match fails the event, as JSON(NULL), a number and TRUE do', () => {
+  // The engine failed each with "data type for JSON must be string", and "" with "unexpected end of
+  // JSON input". A capture checked first, as the studio writes it, gave NULL instead (checked in a
+  // lab tenant).
+  const vars = { originalData$: 'zzacme status line' };
+  for (const expr of ['JSON(m[1])', 'JSON(NULL)', 'JSON(5)', 'JSON(TRUE)']) {
+    assert.throws(() => run(`m = originalData$|NOPE(\\{.*})$\nx = ${expr}`, vars), /data type for JSON must be string/, expr);
+  }
+  for (const expr of ['JSON("")', 'JSON(STRING(m[1]))']) assert.throws(() => run(`m = originalData$|NOPE(\\{.*})$\nx = ${expr}`, vars), /JSON could not read the data/, expr);
+  const v = run('m = originalData$|NOPE(\\{.*})$\nj = IF m[1] != "" THEN JSON(m[1]) ELSE NULL\nx = STRING(j["$.a"])', vars);
+  assert.equal(v.get('j'), null);
+  assert.equal(v.get('x'), '');
 });
 
 test('LEEF(NULL) fails the event, with or without a delimiter', () => {
