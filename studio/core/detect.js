@@ -154,9 +154,11 @@ export function analyseLine(line) {
   if (t && !/^(CEF|LEEF)$/.test(t[1])) { tag = { name: t[1], pid: Boolean(t[2]), text: t[0].trimEnd() }; }
   const afterTag = tag ? body.slice(tag.text.length).trimStart() : body;
   const out = { line, header, tag, body, format: 'text', fields: [] };
-  // CEF() fails on a header shorter than 6 fields, so such a line isn't read as CEF.
+  // CEF() fails on a header shorter than 6 fields, so such a line isn't read as CEF. CEF() reads a
+  // line whose LEEF: comes first as LEEF, so such a line is read as LEEF below.
   let cef = null;
   if (/CEF:\d+\|/.test(line)) { try { cef = parseCef(line); } catch { cef = null; } }
+  if (cef && !cef.header[0].startsWith('CEF:')) cef = null;
   if (cef) {
     const obj = cef;
     out.format = 'cef';
@@ -185,7 +187,8 @@ export function analyseLine(line) {
     if (leefPipes) out.leefPipes = true;
     out.format = 'leef';
     obj.header.forEach((v, i) => { if (i > 0 && i < 5) out.fields.push({ key: LEEF_HEADER[i], index: i, value: v, header: true }); });
-    for (const [k, v] of obj.map) out.fields.push({ key: k, value: v });
+    // A label LEEF() resolves isn't listed: the key it labels and its <key>Label are.
+    for (const [k, v] of obj.map) if (!obj.labels.has(k)) out.fields.push({ key: k, value: v });
     return out;
   }
   const j = findJson(afterTag) || findJson(body);
