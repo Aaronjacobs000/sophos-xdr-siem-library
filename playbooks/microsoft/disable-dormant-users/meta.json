@@ -11,7 +11,7 @@
   "requires": "Sophos ITDR with Microsoft Entra ID or on-premises Active Directory connected, Sophos Fusion playbooks under Security Operations > Automations, and for on-premises accounts a Sophos data collector that reaches a domain controller over LDAPS",
   "license": "MIT",
   "risk_tier": "reversible action",
-  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It disables accounts, and one can belong to a user MDR is investigating, so tell your MDR contact before you turn it on.",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does.",
   "rollback": "Enable User: enable the account again in Active Directory, or in Entra ID for a cloud-only user, and add it to Excluded users so a later finding doesn't disable it again.",
   "tested": {
     "validated": "2026-11-02",
