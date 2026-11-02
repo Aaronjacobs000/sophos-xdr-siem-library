@@ -1,0 +1,39 @@
+{
+  "title": "Malicious URL click response",
+  "vendor": "Microsoft",
+  "product": "Microsoft Defender for Office 365 and Entra ID",
+  "use_case": "When a user clicks a URL that Microsoft Defender for Office 365 judges malicious, disable the user in Entra ID, revoke their sign-in sessions and record what was done on the case.",
+  "trigger": "Platform Events, source Case, event Create, with When does this playbook run? set to Only When: caseManagedBy(inputs) == 'CUSTOMER' && caseTitle(inputs).startsWith('Malicious URL click'). Match the title your case template sets. SETUP.md also covers a faster detection trigger.",
+  "connections": [
+    "Taegis.MicrosoftGraphAPI 2.12.2, the Microsoft Graph API connector Sophos manages, to look users up, disable them and revoke their sessions",
+    "Taegis.Case 1.0.5 and Taegis.Alert 1.3.6, the case and detection connectors Sophos manages, to read the case's detections and add the comment"
+  ],
+  "requires": "The Microsoft Graph security API alerts v2 integration, Microsoft Defender for Office 365 Plan 2 or Microsoft 365 E5 for the alert, an automatic case rule that makes the case, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. It acts only on self-managed cases unless you turn on Include Sophos-managed cases.",
+  "rollback": "Enable the user again in Entra ID, and in Active Directory for a synced user. Revoked sessions stay revoked, so the user signs in again.",
+  "tested": {
+    "validated": "2026-11-03",
+    "tenant": {
+      "date": "2026-11-03",
+      "region": "us01"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/AutomaticCases/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/Templates/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/MDR/MDRInvestigations/MDRCases/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft365/GraphSecurityAPI/Setup/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft365/ResponseActions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/ITDR/ITDRResponseActions/",
+    "https://learn.microsoft.com/en-us/defender-xdr/alert-policies",
+    "https://learn.microsoft.com/en-us/entra/identity/users/users-revoke-access",
+    "https://learn.microsoft.com/en-us/graph/api/user-revokesigninsessions?view=graph-rest-1.0"
+  ],
+  "summary": "This playbook disables a user who clicked a URL that Microsoft Defender for Office 365 judged malicious, revokes their Entra ID sign-in sessions and comments on the case. It runs when an automatic case rule creates the case, reads the case's malicious URL click detections and calls the Microsoft Graph API connector. Dry run is on, and only the domains you list are in scope.",
+  "notes": "Setup:\n- The playbook doesn't create the case. An automatic case rule with a case template does, and on a Sophos MDR tenant a case from your own rule is self-managed. SETUP.md has the rule and template settings.\n- Fusion won't save a playbook without a connection for every connector the template lists, so this one has no LDAP step.\n- There's no approval step. Dry run, Domains, Excluded users and Max users per run are the controls.\n\nHow it works:\n- On a case Create event it waits for the case's detections, then reads them. It acts on detections whose title is on Detection titles and takes each user principal name from the userName entities, or from targetUserName when a detection has no userName with an @.\n- It disables the user in Entra ID, then revokes their sign-in sessions. A user already disabled is skipped without a comment.\n- For a user synced from on-premises Active Directory, the comment says to disable the account there too, because the next sync can enable it again.\n- On the detection trigger it acts at once, waits up to Seconds to wait for the case, then comments on the case the detection went into. With no case yet, the outcome is only in the execution.\n\nTesting:\n- On 2026-11-03 the dsl passed playbookValidateDSLV2 with no errors or warnings in two Sophos Fusion test tenants, eu02 and us01.\n- In the us01 tenant it ran by hand 17 times against a test Microsoft 365 tenant, with made-up detections and an existing test case. It disabled a test user and revoked its sessions (both read back in Entra ID), skipped it once disabled, commented on the case, and handled the per-run limit, Excluded users, other domains, unknown users, other titles, no domains and the wait for a case.\n- The case-trigger runs read a real test case through the Sophos sub-playbooks. That case held no detections.\n\nKnown gaps:\n- No real malicious URL click detection was available. The user entities come from other Microsoft alerts in Fusion, which carry the user principal name in userName.\n- A case made by an automatic case rule wasn't tested, because the test tenants had no matching detection. The Create event for such a case is unproven.\n- The detection's severity in Fusion is unconfirmed. Automatic case rules only act on medium and higher, and detection triggers only on high and critical."
+}

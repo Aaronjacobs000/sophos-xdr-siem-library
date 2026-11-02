@@ -1,0 +1,337 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_MaliciousUrlClick_Response
+version: 1.0.0
+title: Malicious URL click response (unofficial)
+description: When a case or detection holds a Microsoft Defender for Office 365 malicious URL click alert, disables the user who clicked in Entra ID, revokes their sign-in sessions and records the outcome on the case. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs when a case is created, or when a detection is created. It reads the detections whose title is on Detection titles, takes the user principal name from each, and disables that user in Entra ID. It then revokes the user's sign-in sessions and adds a comment to the case saying what it did. When the user is synced from on-premises Active Directory, the comment says to disable the account there too, because the next sync can enable it again. Sophos doesn't make, maintain or support this playbook.
+
+    The playbook doesn't create the case. Make the case with an automatic case rule and a case template, as SETUP.md in the library explains.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook looks the user up and records what it would disable, and disables nothing.
+    - It only disables users whose user principal name is in a domain you list. With no domains set, it disables nothing.
+    - It never disables a user on Excluded users. Microsoft Graph also refuses to disable admin role holders unless you give the connection's app an admin role.
+    - A run that finds more users in scope than Max users per run disables none of them.
+    - By default it acts only on self-managed cases, never on cases Sophos MDR manages.
+    - Rollback: enable the account again in Entra ID.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only record what the playbook would do | On |
+    | Domains | User principal name domains in scope | None |
+    | Excluded users | User principal names never to disable | None |
+    | Detection titles | Titles of the detections it acts on | A potentially malicious URL click was detected, and A user clicked through to a potentially malicious URL |
+    | Revoke sign-in sessions | Revoke the user's sessions after the disable | On |
+    | Max users per run | A run with more users in scope disables none | 3 |
+    | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
+    | Seconds to wait for the case | Detection trigger only: how long to wait before looking for the detection's case | 60 |
+changeNotes: First version
+tags:
+    - Category:IAM
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.MicrosoftGraphAPI:2.12.2
+    - Taegis.Case:1.0.5
+    - Taegis.Alert:1.3.6
+playbooks:
+    - Taegis.Wait_For_Case_Processing:1.0.0
+    - Taegis.GetCaseDetections:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+        source: case
+        filter: "caseManagedBy(inputs) == 'CUSTOMER'"
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - create
+        source: alert2
+        filter: "detectionTitle(inputs) in ['A potentially malicious URL click was detected', 'A user clicked through to a potentially malicious URL']"
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Disable URL click users (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                case_wait_seconds:
+                    default: 60
+                    description: Detection trigger only. Seconds to wait before looking for the case the detection went into, so the outcome can be recorded there. 0 to 300.
+                    title: Seconds to wait for the case
+                    type: integer
+                detection_titles:
+                    default:
+                        - A potentially malicious URL click was detected
+                        - A user clicked through to a potentially malicious URL
+                    description: Titles of the detections this playbook acts on, as they show on the Detections page. Matches ignore case.
+                    items:
+                        type: string
+                    title: Detection titles
+                    type: array
+                domains:
+                    description: User principal name domains in scope, such as example.com. A user in any other domain is left alone. With none, the playbook disables nothing.
+                    items:
+                        type: string
+                    title: Domains
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would disable. Turn it off after you've read a test run.
+                    title: Dry run
+                    type: boolean
+                excluded_users:
+                    description: User principal names the playbook never disables, such as break-glass and service accounts
+                    items:
+                        type: string
+                    title: Excluded users
+                    type: array
+                include_sophos_managed:
+                    default: false
+                    description: When on, the playbook also acts on cases Sophos MDR manages. Leave it off unless you've agreed it with the Sophos MDR team.
+                    title: Include Sophos-managed cases
+                    type: boolean
+                max_users:
+                    default: 3
+                    description: If a run finds more users in scope than this, it disables none of them and says so on the case.
+                    title: Max users per run
+                    type: integer
+                revoke_sessions:
+                    default: true
+                    description: Revoke the user's Entra ID sign-in sessions after the disable, so apps that already have a token must sign in again
+                    title: Revoke sign-in sessions
+                    type: boolean
+            required:
+                - domains
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        case_id:
+            description: The case the outcome was recorded on, or empty
+            type: string
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        users:
+            description: Each user the playbook looked at, with the result (disabled, would disable, already disabled or failed) and what happened
+            type: array
+    type: object
+dsl:
+    name: Unofficial_MaliciousUrlClick_Response
+    description: Disables the users in malicious URL click detections in Entra ID, within the domains you list, revokes their sessions and comments on the case, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        case_id: target.variables.case_id
+        status: finish.variables.status
+        users: report.variables.results
+    tasks:
+        # The settings, and whether a case or a detection started the run.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
+            excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
+            titles: "inputs.?configuration.detection_titles.orValue(['A potentially malicious URL click was detected', 'A user clicked through to a potentially malicious URL']).map(t, string(t).trim().toLower()).filter(t, t != '')"
+            revoke: "inputs.?configuration.revoke_sessions.orValue(true)"
+            max_users: "int(inputs.?configuration.max_users.orValue(3)) < 1 ? 1 : int(inputs.?configuration.max_users.orValue(3))"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            wait: "int(inputs.?configuration.case_wait_seconds.orValue(60)) < 0 ? 0 : int(inputs.?configuration.case_wait_seconds.orValue(60)) > 300 ? 300 : int(inputs.?configuration.case_wait_seconds.orValue(60))"
+            source: "caseId(inputs) != '' ? 'case' : has(inputs, 'alert2') ? 'detection' : ''"
+            case_id: "caseId(inputs)"
+            tenant_id: "caseTenantId(inputs) != '' ? caseTenantId(inputs) : detectionTenantId(inputs)"
+            detection: "has(inputs, 'alert2') ? inputs.alert2 : {}"
+        - name: fetch_case
+          condition: "setup.variables.source == 'case'"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Stop before any other call when there's nothing in scope.
+        - name: check
+          let:
+            stop: >-
+                setup.variables.source == '' ? 'The playbook ran without a case or a detection, so it did nothing.' :
+                size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
+                size(setup.variables.titles) == 0 ? 'No detection titles are set, so no detection is in scope.' :
+                setup.variables.source == 'case' && !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was done.' :
+                setup.variables.source == 'case' && has(fetch_case, 'outputs.case.primaryStatus.isClosed') && fetch_case.outputs.case.primaryStatus.isClosed == true ? 'The case is closed, so nothing was done.' :
+                setup.variables.source == 'case' && !setup.variables.sophos_managed && (has(fetch_case, 'outputs.case.managedBy') ? string(fetch_case.outputs.case.managedBy) : '') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was done. Include Sophos-managed cases is off.' : ''
+        # Case trigger: wait until the case's detections are attached, then read them.
+        - name: wait_case
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.Wait_For_Case_Processing
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            sleep_time: '10s'
+            states:
+                - 'detections'
+        - name: case_detections
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id metadata { title severity } entities { entities }'
+            limit: 200
+        - name: matched
+          let:
+            list: >-
+                check.variables.stop != '' ? [] :
+                (setup.variables.source == 'case' ? (has(case_detections, 'outputs.detections') ? case_detections.outputs.detections : []) : [setup.variables.detection])
+                .filter(d, detectionTitle(d).trim().toLower() in setup.variables.titles)
+        # The user principal names: each detection's userName entities, or its targetUserName entities when it has no userName with an @.
+        - name: names
+          let:
+            list: >-
+                unique(flatten(matched.variables.list.map(d,
+                detectionEntities(d).exists(e, e.lowerAscii().startsWith('username:') && e.contains('@')) ?
+                detectionEntities(d).filter(e, e.lowerAscii().startsWith('username:') && e.contains('@')).map(e, e.substring(9).trim().lowerAscii()) :
+                detectionEntities(d).filter(e, e.lowerAscii().startsWith('targetusername:') && e.contains('@')).map(e, e.substring(15).trim().lowerAscii()))))
+        - name: scope
+          let:
+            in_scope: "names.variables.list.filter(n, setup.variables.domains.exists(d, n.endsWith('@' + d)) && !(n in setup.variables.excluded))"
+            excluded: "names.variables.list.filter(n, n in setup.variables.excluded)"
+            outside: "names.variables.list.filter(n, !setup.variables.domains.exists(d, n.endsWith('@' + d)) && !(n in setup.variables.excluded))"
+        - name: gate
+          let:
+            problem: >-
+                check.variables.stop != '' || size(matched.variables.list) == 0 ? '' :
+                size(names.variables.list) == 0 ? 'The matching detection has no user principal name in its userName or targetUserName entities, so nothing was disabled. Disable the user by hand.' :
+                size(scope.variables.in_scope) > setup.variables.max_users ? 'Found ' + string(size(scope.variables.in_scope)) + ' users in scope, more than Max users per run (' + string(setup.variables.max_users) + '), so nothing was disabled: ' + scope.variables.in_scope.join(', ') + '. Check them and disable them by hand.' : ''
+            go: "check.variables.stop == '' && size(scope.variables.in_scope) > 0 && size(scope.variables.in_scope) <= setup.variables.max_users"
+        # One pass per user in scope.
+        - name: users
+          condition: "gate.variables.go"
+          range: scope.variables.in_scope
+          variables:
+            results: []
+          for:
+            - name: entra_lookup
+              action: Taegis.MicrosoftGraphAPI.lookUpUser
+              optional: true
+              retry: 1
+              inputs:
+                id: users.value
+                select: 'id,userPrincipalName,accountEnabled,onPremisesSyncEnabled'
+            - name: entra
+              let:
+                found: "has(entra_lookup, 'outputs.id') && has(entra_lookup, 'outputs.userPrincipalName')"
+                id: "has(entra_lookup, 'outputs.id') ? string(entra_lookup.outputs.id) : ''"
+                enabled: "!has(entra_lookup, 'outputs.accountEnabled') || entra_lookup.outputs.accountEnabled != false"
+                synced: "has(entra_lookup, 'outputs.onPremisesSyncEnabled') && entra_lookup.outputs.onPremisesSyncEnabled == true"
+                error: "has(entra_lookup, 'status.error') ? (type(entra_lookup.status.error) == type('') ? entra_lookup.status.error : toString(entra_lookup.status.error)) : has(entra_lookup, 'outputs.error.message') ? string(entra_lookup.outputs.error.message) : ''"
+            - name: decide
+              let:
+                skip: "entra.variables.found && !entra.variables.enabled ? 'already disabled' : ''"
+                act: "entra.variables.found && entra.variables.enabled"
+            # The only tasks that change anything, and only with dry run off.
+            - name: disable_entra
+              condition: "!setup.variables.dry_run && decide.variables.act"
+              action: Taegis.MicrosoftGraphAPI.disableUser
+              optional: true
+              retry: 2
+              inputs:
+                id: entra.variables.id
+            - name: done
+              let:
+                ok: "has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success'"
+                error: "has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : 'no success reply from Microsoft Graph'"
+            - name: revoke
+              condition: "!setup.variables.dry_run && setup.variables.revoke && done.variables.ok"
+              action: Taegis.MicrosoftGraphAPI.revokeSignInSessions
+              optional: true
+              retry: 2
+              inputs:
+                id: entra.variables.id
+            - name: line
+              let:
+                result: >-
+                    !entra.variables.found ? 'failed' :
+                    decide.variables.skip == 'already disabled' ? 'already disabled' :
+                    setup.variables.dry_run ? 'would disable' :
+                    done.variables.ok ? 'disabled' : 'failed'
+                text: >-
+                    !entra.variables.found ? users.value + ' was not found in Entra ID, so nothing was disabled.' + (entra.variables.error != '' ? ' ' + entra.variables.error : '') :
+                    decide.variables.skip == 'already disabled' ? users.value + ' is already disabled in Entra ID.' :
+                    setup.variables.dry_run ? 'Dry run: would disable ' + users.value + ' in Entra ID' + (setup.variables.revoke ? ' and revoke its sign-in sessions' : '') + '.' :
+                    !done.variables.ok ? 'Disabling ' + users.value + ' in Entra ID failed: ' + done.variables.error :
+                    'Disabled ' + users.value + ' in Entra ID' + (has(revoke, 'outputs.outcome') && revoke.outputs.outcome == 'success' ? ' and revoked its sign-in sessions.' : setup.variables.revoke ? '. Revoking its sign-in sessions failed.' : '.')
+                hybrid: "decide.variables.act && entra.variables.synced ? ' The account is synced from on-premises Active Directory: disable it there too, or the next sync can enable it again.' : ''"
+            - name: record
+              let:
+                results: "append(users.variables.results, {'user': users.value, 'result': line.variables.result, 'text': line.variables.text + line.variables.hybrid})"
+        - name: report
+          let:
+            results: "has(users, 'variables.results') ? users.variables.results : []"
+        - name: text
+          let:
+            lines: >-
+                gate.variables.problem != '' ? ['- ' + gate.variables.problem] :
+                report.variables.results.filter(r, r.result != 'already disabled').map(r, '- ' + r.text) +
+                (check.variables.stop == '' && size(scope.variables.excluded) > 0 ? ['- Not disabled, on Excluded users: ' + scope.variables.excluded.join(', ') + '.'] : []) +
+                (check.variables.stop == '' && size(scope.variables.outside) > 0 ? ['- Not disabled, not in a domain on Domains: ' + scope.variables.outside.join(', ') + '.'] : [])
+        - name: comment_text
+          let:
+            body: >-
+                size(text.variables.lines) == 0 ? '' :
+                '**Malicious URL click response (automated)**\n' + text.variables.lines.join('\n') +
+                (setup.variables.dry_run ? '\n\nDry run is on, so nothing was changed.' : report.variables.results.exists(r, r.result == 'disabled') ? '\n\nEnable the account again after your investigation.' : '')
+        # Detection trigger: find the case the detection went into, if it's in one.
+        - name: wait_for_case
+          condition: "setup.variables.source == 'detection' && comment_text.variables.body != '' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && setup.variables.wait > 0"
+          sleep: "string(setup.variables.wait) + 's'"
+        - name: reread
+          condition: "setup.variables.source == 'detection' && comment_text.variables.body != '' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && detectionId(inputs) != ''"
+          action: Taegis.Alert.query
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            cql_query: "'from detection where id in (\\'' + detectionId(inputs) + '\\')'"
+            limit: 1
+            offset: 0
+        - name: target
+          let:
+            case_id: >-
+                setup.variables.source == 'case' ? setup.variables.case_id :
+                (size(setup.variables.detection.?investigation_ids.orValue([])) > 0 ? setup.variables.detection.investigation_ids :
+                has(reread, 'outputs') && type(reread.outputs) == type([]) && size(reread.outputs) > 0 && has(reread.outputs[0], 'investigation_ids') && type(reread.outputs[0].investigation_ids) == type([]) ? reread.outputs[0].investigation_ids : [])
+                .map(i, type(i) == type('') ? i : has(i, 'id') ? string(i.id) : '').filter(i, i != '')[?0].orValue('')
+        - name: comment
+          condition: "target.variables.case_id != '' && comment_text.variables.body != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: target.variables.case_id
+            comment: comment_text.variables.body
+        - name: finish
+          let:
+            status: "gate.variables.problem != '' || report.variables.results.exists(r, r.result == 'failed') || (comment_text.variables.body != '' && target.variables.case_id != '' && !has(comment, 'outputs.comment.id')) ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
+                size(matched.variables.list) == 0 ? 'No detection matches Detection titles, so nothing was done.' :
+                (size(text.variables.lines) == 0 ? 'Every user in the matching detections is already disabled, so nothing was done.' : text.variables.lines.map(l, l.substring(2)).join(' ')) +
+                (comment_text.variables.body == '' ? '' : target.variables.case_id == '' ? ' No case holds the detection yet, so the outcome is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')
