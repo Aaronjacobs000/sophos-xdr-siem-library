@@ -1,0 +1,317 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_Entra_InactiveUser_DisableHybrid
+version: 1.0.0
+title: Disable inactive users in Entra ID and Active Directory (unofficial)
+description: For tenants with Entra ID and on-premises Active Directory. On a schedule, finds users with no successful Entra ID sign-in for the number of days you set, and disables them in on-premises Active Directory for synced users, or in Entra ID for cloud-only users, when their domain is one you list. It needs both the Microsoft Graph API and LDAP connections. For a cloud-only tenant, use Disable inactive users. It doesn't need Sophos ITDR. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs on a schedule. It asks Microsoft Graph for users whose last successful sign-in is older than the number of days you set, then disables each one where it's managed: in Active Directory for synced users, once Active Directory's last logon agrees, and in Entra ID for cloud-only users. It needs a Microsoft Graph API connection and an LDAP connection through the On-Premise Automation Connector. For a tenant without on-premises Active Directory, use Disable inactive users, in the same library, which needs only the Microsoft Graph API connection. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook looks users up and records what it would disable, and disables nothing.
+    - It only disables users whose user principal name is in a domain you list. With no domains set, it disables nothing.
+    - It never disables a user on Excluded users, a user with an Entra ID directory role or in a role-assignable group, or an Active Directory account with adminCount set.
+    - It skips a synced user whose Active Directory lastLogonTimestamp is newer than the days you set plus 14, because Active Directory updates it only every 9 to 14 days.
+    - It disables at most Max users per run each run.
+    - Rollback: enable the account again where the playbook disabled it, and add it to Excluded users.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only record what the playbook would do | On |
+    | Domains | User principal name domains in scope | None |
+    | Excluded users | User principal names, sAMAccountNames or email addresses never to disable | None |
+    | Days without a sign-in | Days since the last successful sign-in, 14 or more | 30 |
+    | Look-back days | Only users whose last sign-in is at most this many days before the cut-off. 0 for no limit | 7 |
+    | Include users with no sign-in on record | Also users Entra ID has no successful sign-in for, created before the cut-off | Off |
+    | Max users per run | Most users one run disables | 10 |
+changeNotes: First version. The steps of Disable inactive users 1.0.0, for tenants with both directories.
+tags:
+    - Category:IAM
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.LDAP:1.0.13
+    - Taegis.MicrosoftGraphAPI:2.12.2
+triggerHints:
+    - isProactiveResponse: false
+      type: generic
+      config:
+        usage: schedule
+inputs:
+    properties:
+        configuration:
+            properties:
+                days:
+                    default: 30
+                    description: Days since a user's last successful sign-in, interactive or not, before the playbook disables them. 14 or more.
+                    minimum: 14
+                    title: Days without a sign-in
+                    type: integer
+                domains:
+                    description: User principal name domains in scope, such as example.com. A user in any other domain is left alone. With none, the playbook disables nothing.
+                    items:
+                        type: string
+                    title: Domains
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would disable. Turn it off after you've read a week of runs.
+                    title: Dry run
+                    type: boolean
+                excluded_users:
+                    description: User principal names, sAMAccountNames or email addresses the playbook never disables, such as break-glass and service accounts
+                    items:
+                        type: string
+                    title: Excluded users
+                    type: array
+                include_never_signed_in:
+                    default: false
+                    description: Also disable users Entra ID has no successful sign-in on record for, which means none since December 2023 or never, when the account is older than Days without a sign-in
+                    title: Include users with no sign-in on record
+                    type: boolean
+                lookback_days:
+                    default: 7
+                    description: Only users whose last successful sign-in is at most this many days before the cut-off, so accounts the playbook already handled drop out. Set it to at least the days between runs. 0 means no limit.
+                    minimum: 0
+                    title: Look-back days
+                    type: integer
+                max_users:
+                    default: 10
+                    description: The most users one run disables. The rest wait for a later run.
+                    minimum: 1
+                    title: Max users per run
+                    type: integer
+            required:
+                - domains
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        disabled:
+            description: The users the playbook disabled, and where
+            items:
+                type: string
+            type: array
+        failed:
+            description: The users the playbook couldn't check or disable, and why
+            items:
+                type: string
+            type: array
+        skipped:
+            description: The users in scope the playbook left alone, and why
+            items:
+                type: string
+            type: array
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        would_disable:
+            description: In dry run, the users the playbook would disable, and where
+            items:
+                type: string
+            type: array
+    type: object
+dsl:
+    name: Unofficial_Entra_InactiveUser_DisableHybrid
+    description: Disables users with no successful Entra ID sign-in for the days you set, in Active Directory for synced users and Entra ID for cloud-only users, within the domains you list, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        disabled: tally.variables.disabled
+        failed: tally.variables.failed
+        skipped: tally.variables.skipped
+        status: finish.variables.status
+        would_disable: tally.variables.would_disable
+    tasks:
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
+            excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
+            days: "int(inputs.?configuration.days.orValue(30))"
+            lookback: "int(inputs.?configuration.lookback_days.orValue(7))"
+            include_never: "inputs.?configuration.include_never_signed_in.orValue(false)"
+            max_users: "int(inputs.?configuration.max_users.orValue(10))"
+        # The cut-offs, at midnight UTC. Active Directory updates lastLogonTimestamp only every 9 to 14 days, so its cut-off is 14 days earlier, as a Windows file time.
+        - name: dates
+          let:
+            cutoff: "string(now() - duration(string(setup.variables.days * 24) + 'h')).substring(0, 10) + 'T00:00:00Z'"
+            lower: "string(now() - duration(string((setup.variables.days + setup.variables.lookback) * 24) + 'h')).substring(0, 10) + 'T00:00:00Z'"
+            ad_cutoff: "(int(now() - duration(string((setup.variables.days + 14) * 24) + 'h')) + 11644473600) * 10000000"
+        # Stop before any call when nothing is in scope.
+        - name: check
+          let:
+            stop: >-
+                size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
+                setup.variables.days < 14 ? 'Days without a sign-in is ' + string(setup.variables.days) + '. Set it to 14 or more.' :
+                setup.variables.lookback < 0 ? 'Look-back days is ' + string(setup.variables.lookback) + '. Set it to 0 or more.' :
+                setup.variables.max_users < 1 ? 'Max users per run is ' + string(setup.variables.max_users) + '. Set it to 1 or more.' : ''
+        # Microsoft Graph allows no other filter with signInActivity, and searchUser returns one page, so the playbook filters the rest itself.
+        - name: search_inactive
+          condition: "check.variables.stop == ''"
+          action: Taegis.MicrosoftGraphAPI.searchUser
+          optional: true
+          retry: 1
+          inputs:
+            filter: "'signInActivity/lastSuccessfulSignInDateTime le ' + dates.variables.cutoff + (setup.variables.lookback > 0 ? ' and signInActivity/lastSuccessfulSignInDateTime ge ' + dates.variables.lower : '')"
+            select: 'id,userPrincipalName,mail,accountEnabled,userType,createdDateTime,onPremisesSyncEnabled,onPremisesUserPrincipalName,onPremisesSamAccountName,signInActivity'
+        - name: search_never
+          condition: "check.variables.stop == '' && setup.variables.include_never"
+          action: Taegis.MicrosoftGraphAPI.searchUser
+          optional: true
+          retry: 1
+          inputs:
+            filter: 'signInActivity/lastSuccessfulSignInDateTime eq null'
+            select: 'id,userPrincipalName,mail,accountEnabled,userType,createdDateTime,onPremisesSyncEnabled,onPremisesUserPrincipalName,onPremisesSamAccountName,signInActivity'
+        # Each user Graph returned, with the fields the playbook reads. A field Graph sends as null reads as empty.
+        - name: people
+          let:
+            all: >-
+                ((has(search_inactive, 'outputs.value') ? search_inactive.outputs.value.map(u, {'u': u, 'never': false}) : []) +
+                (has(search_never, 'outputs.value') ? search_never.outputs.value.map(u, {'u': u, 'never': true}) : [])).map(r, {
+                'id': has(r.u, 'id') ? string(r.u.id) : '',
+                'upn': has(r.u, 'userPrincipalName') ? string(r.u.userPrincipalName).toLower() : '',
+                'mail': has(r.u, 'mail') ? string(r.u.mail).toLower() : '',
+                'enabled': !has(r.u, 'accountEnabled') || r.u.accountEnabled != false,
+                'member': !has(r.u, 'userType') || string(r.u.userType) == 'Member',
+                'synced': has(r.u, 'onPremisesSyncEnabled') && r.u.onPremisesSyncEnabled == true,
+                'ad_upn': has(r.u, 'onPremisesUserPrincipalName') ? string(r.u.onPremisesUserPrincipalName).toLower() : '',
+                'ad_sam': has(r.u, 'onPremisesSamAccountName') ? string(r.u.onPremisesSamAccountName).toLower() : '',
+                'created': has(r.u, 'createdDateTime') ? string(r.u.createdDateTime) : '',
+                'last': has(r.u, 'signInActivity.lastSuccessfulSignInDateTime') ? string(r.u.signInActivity.lastSuccessfulSignInDateTime).substring(0, 10) : '',
+                'never': r.never})
+            returned: "(has(search_inactive, 'outputs.value') ? size(search_inactive.outputs.value) : 0) + (has(search_never, 'outputs.value') ? size(search_never.outputs.value) : 0)"
+            matched: "(has(search_inactive, 'outputs,@odata.count', ',') ? int(search_inactive.outputs['@odata.count']) : has(search_inactive, 'outputs.value') ? size(search_inactive.outputs.value) : 0) + (has(search_never, 'outputs,@odata.count', ',') ? int(search_never.outputs['@odata.count']) : has(search_never, 'outputs.value') ? size(search_never.outputs.value) : 0)"
+            error: >-
+                [has(search_inactive, 'status.error') ? 'Microsoft Graph search failed: ' + (type(search_inactive.status.error) == type('') ? search_inactive.status.error : toString(search_inactive.status.error)) : '',
+                has(search_never, 'status.error') ? 'Microsoft Graph search for users with no sign-in on record failed: ' + (type(search_never.status.error) == type('') ? search_never.status.error : toString(search_never.status.error)) : ''].filter(e, e != '').join(' ')
+        # Enabled members in a domain you listed.
+        - name: scope
+          let:
+            users: "people.variables.all.filter(p, p.enabled && p.member && p.id != '' && setup.variables.domains.exists(d, p.upn.endsWith('@' + d)))"
+        - name: triage
+          let:
+            checked: >-
+                scope.variables.users.map(p, merge(p, {'reason':
+                [p.upn, p.mail, p.ad_upn, p.ad_sam].exists(n, n != '' && n in setup.variables.excluded) ? 'on Excluded users' :
+                p.never && p.created != '' && timestamp(p.created) > timestamp(dates.variables.cutoff) ? 'created on ' + p.created.substring(0, 10) + ' and not signed in yet' :
+                p.synced && p.ad_upn == '' && p.ad_sam == '' ? 'synced from Active Directory, but Entra ID has no on-premises name for it' : ''}))
+        - name: plan
+          let:
+            ready: "triage.variables.checked.filter(p, p.reason == '')"
+            skipped: "triage.variables.checked.filter(p, p.reason != '').map(p, p.upn + ': ' + p.reason)"
+        # At most Max users per run go on.
+        - name: batch
+          let:
+            users: "size(plan.variables.ready) > setup.variables.max_users ? plan.variables.ready.slice(0, setup.variables.max_users) : plan.variables.ready"
+            waiting: "size(plan.variables.ready) > setup.variables.max_users ? size(plan.variables.ready) - setup.variables.max_users : 0"
+        - name: each
+          range: batch.variables.users
+          variables:
+            results: []
+          for:
+            # Directory roles and role-assignable groups the user is a direct member of.
+            - name: groups
+              action: Taegis.MicrosoftGraphAPI.lookUpUserGroups
+              optional: true
+              retry: 1
+              inputs:
+                id: each.value.id
+            - name: roles
+              let:
+                read: "!has(groups, 'status.error') && has(groups, 'outputs') && type(groups.outputs) == type([])"
+                admin: "has(groups, 'outputs') && type(groups.outputs) == type([]) && groups.outputs.exists(g, (has(g, '@odata.type', ',') && g['@odata.type'] == '#microsoft.graph.directoryRole') || (has(g, 'isAssignableToRole') && g.isAssignableToRole == true))"
+                error: "has(groups, 'status.error') ? (type(groups.status.error) == type('') ? groups.status.error : toString(groups.status.error)) : ''"
+            # A synced user in Active Directory, by its on-premises name.
+            - name: ad_lookup
+              condition: "each.value.synced"
+              action: Taegis.LDAP.identify_user
+              optional: true
+              retry: 1
+              inputs:
+                user: "each.value.ad_upn != '' ? each.value.ad_upn : each.value.ad_sam"
+                onlyDN: false
+            - name: ad
+              let:
+                name: "each.value.ad_upn != '' ? each.value.ad_upn : each.value.ad_sam"
+                upn: "has(ad_lookup, 'outputs.data.userPrincipalName[0]') ? string(ad_lookup.outputs.data.userPrincipalName[0]).toLower() : ''"
+                sam: "has(ad_lookup, 'outputs.data.sAMAccountName[0]') ? string(ad_lookup.outputs.data.sAMAccountName[0]).toLower() : ''"
+                mail: "has(ad_lookup, 'outputs.data.mail[0]') ? string(ad_lookup.outputs.data.mail[0]).toLower() : ''"
+                dn: "has(ad_lookup, 'outputs.data.distinguishedName[0]') ? string(ad_lookup.outputs.data.distinguishedName[0]) : ''"
+                disabled: "has(ad_lookup, 'outputs.data.userAccountControl[0]') && int(string(ad_lookup.outputs.data.userAccountControl[0])) % 4 >= 2"
+                protected: "has(ad_lookup, 'outputs.data.adminCount[0]') && string(ad_lookup.outputs.data.adminCount[0]) != '0'"
+                logon: "has(ad_lookup, 'outputs.data.lastLogonTimestamp[0]') ? int(string(ad_lookup.outputs.data.lastLogonTimestamp[0])) : -1"
+            # Accept the Active Directory account only when its user principal name, sAMAccountName or mail is exactly the name looked up.
+            - name: ad_match
+              let:
+                found: "each.value.synced && ad.variables.dn != '' && ad.variables.name != '' && ad.variables.name in [ad.variables.upn, ad.variables.sam, ad.variables.mail]"
+            - name: one
+              let:
+                directory: "!each.value.synced ? 'Entra ID' : ad_match.variables.found ? 'Active Directory' : ''"
+                problem: >-
+                    !roles.variables.read ? 'the playbook couldn\'t read its Entra ID roles, so it wasn\'t disabled' + (roles.variables.error != '' ? ': ' + roles.variables.error : '') :
+                    each.value.synced && !ad_match.variables.found ? 'synced from Active Directory, but the LDAP connection didn\'t find ' + ad.variables.name + '. Check the connection and its BaseDN' + (has(ad_lookup, 'outputs.details') && (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details != '' : true) ? ': ' + (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details : toString(ad_lookup.outputs.details)) : '') : ''
+                skip: >-
+                    roles.variables.admin ? 'it has an Entra ID directory role or is in a role-assignable group' :
+                    each.value.synced && [ad.variables.upn, ad.variables.sam, ad.variables.mail].exists(n, n != '' && n in setup.variables.excluded) ? 'on Excluded users' :
+                    each.value.synced && ad.variables.protected ? 'adminCount is set in Active Directory' :
+                    each.value.synced && ad.variables.disabled ? 'already disabled in Active Directory. Entra ID follows at the next sync' :
+                    each.value.synced && ad.variables.logon < 0 ? 'Active Directory returned no lastLogonTimestamp, so the playbook can\'t tell when it last signed in on-premises' :
+                    each.value.synced && ad.variables.logon >= dates.variables.ad_cutoff ? 'Active Directory shows a logon on ' + string(timestamp(ad.variables.logon / 10000000 - 11644473600)).substring(0, 10) + ', within the days you set plus 14' : ''
+            # The only tasks that act, and only with dry run off.
+            - name: disable_ad
+              condition: "!setup.variables.dry_run && one.variables.problem == '' && one.variables.skip == '' && one.variables.directory == 'Active Directory'"
+              action: Taegis.LDAP.disable_user
+              optional: true
+              retry: 2
+              inputs:
+                dn: ad.variables.dn
+            - name: disable_entra
+              condition: "!setup.variables.dry_run && one.variables.problem == '' && one.variables.skip == '' && one.variables.directory == 'Entra ID'"
+              action: Taegis.MicrosoftGraphAPI.disableUser
+              optional: true
+              retry: 2
+              inputs:
+                id: each.value.id
+            - name: record
+              let:
+                results: >-
+                    append(each.variables.results, {
+                    'result': one.variables.problem != '' ? 'failed' :
+                    one.variables.skip != '' ? 'skipped' :
+                    setup.variables.dry_run ? 'would disable' :
+                    (one.variables.directory == 'Active Directory' ? has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true : has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success') ? 'disabled' : 'failed',
+                    'text': one.variables.problem != '' ? each.value.upn + ': ' + one.variables.problem :
+                    one.variables.skip != '' ? each.value.upn + ': ' + one.variables.skip :
+                    each.value.upn + ' in ' + (one.variables.directory == 'Active Directory' ? 'Active Directory (' + ad.variables.dn + ')' : 'Entra ID (cloud-only)') +
+                    (each.value.last != '' ? ', last sign-in ' + each.value.last : ', no sign-in on record') +
+                    (setup.variables.dry_run ? '' :
+                    one.variables.directory == 'Active Directory' && !(has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true) ? '. ' + (has(disable_ad, 'status.error') ? (type(disable_ad.status.error) == type('') ? disable_ad.status.error : toString(disable_ad.status.error)) : has(disable_ad, 'outputs.details') ? (type(disable_ad.outputs.details) == type('') ? disable_ad.outputs.details : toString(disable_ad.outputs.details)) : 'No result from the LDAP connection.') :
+                    one.variables.directory == 'Entra ID' && !(has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success') ? '. ' + (has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : 'No result from the Microsoft Graph API connection.') : '')})
+        - name: tally
+          let:
+            disabled: "(has(each, 'variables.results') ? each.variables.results : []).filter(r, r.result == 'disabled').map(r, r.text)"
+            would_disable: "(has(each, 'variables.results') ? each.variables.results : []).filter(r, r.result == 'would disable').map(r, r.text)"
+            failed: "(has(each, 'variables.results') ? each.variables.results : []).filter(r, r.result == 'failed').map(r, r.text)"
+            skipped: "plan.variables.skipped + (has(each, 'variables.results') ? each.variables.results : []).filter(r, r.result == 'skipped').map(r, r.text)"
+        - name: finish
+          let:
+            status: "people.variables.error != '' || size(tally.variables.failed) > 0 ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                check.variables.stop != '' ? 'Nothing was disabled. ' + check.variables.stop :
+                (setup.variables.dry_run ? 'Dry run, nothing was disabled. ' : '') +
+                (setup.variables.lookback > 0 ? 'Users whose last successful sign-in was between ' + dates.variables.lower.substring(0, 10) + ' and ' + dates.variables.cutoff.substring(0, 10) : 'Users with no successful sign-in since ' + dates.variables.cutoff.substring(0, 10)) +
+                (setup.variables.include_never ? ', and users with none on record' : '') + '.' +
+                (people.variables.error != '' ? ' ' + people.variables.error : '') +
+                (size(tally.variables.would_disable) > 0 ? ' Would disable ' + string(size(tally.variables.would_disable)) + ': ' + tally.variables.would_disable.join('; ') + '.' : '') +
+                (size(tally.variables.disabled) > 0 ? ' Disabled ' + string(size(tally.variables.disabled)) + ': ' + tally.variables.disabled.join('; ') + '.' : '') +
+                (size(tally.variables.failed) > 0 ? ' Failed ' + string(size(tally.variables.failed)) + ': ' + tally.variables.failed.join('; ') + (tally.variables.failed.join('; ').endsWith('.') ? '' : '.') : '') +
+                (size(tally.variables.skipped) > 0 ? ' Skipped ' + string(size(tally.variables.skipped)) + ': ' + (size(tally.variables.skipped) > 20 ? tally.variables.skipped.slice(0, 20).join('; ') + '; and ' + string(size(tally.variables.skipped) - 20) + ' more' : tally.variables.skipped.join('; ')) + '.' : '') +
+                (batch.variables.waiting > 0 ? ' ' + string(batch.variables.waiting) + ' more wait for a later run, because Max users per run is ' + string(setup.variables.max_users) + '.' : '') +
+                (people.variables.matched > people.variables.returned ? ' Microsoft Graph returned the first ' + string(people.variables.returned) + ' of ' + string(people.variables.matched) + ' matches. Set Look-back days, or lower it, so fewer match each run.' : '') +
+                (size(people.variables.all) > size(scope.variables.users) ? ' ' + string(size(people.variables.all) - size(scope.variables.users)) + ' more matched but are disabled already, guests, or outside your domains.' : '') +
+                (size(people.variables.all) == 0 && people.variables.error == '' ? ' No user matched.' : '')
