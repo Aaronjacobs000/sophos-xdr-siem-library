@@ -6,7 +6,7 @@ A template carries no trigger, connections or settings, so you set them up once 
 
 You need one connection, to the **Microsoft Graph API (Taegis.MicrosoftGraphAPI)** connector Sophos manages, under Security Operations > Automations > Connectors. Its app needs the User.Read.All, AuditLog.Read.All, Directory.Read.All and User.EnableDisableAccount.All application permissions, with admin consent. Sign-in activity needs Microsoft Entra ID P1 or P2. Use Test on the connection.
 
-The playbook disables cloud-only users. It lists users synced from Active Directory as skipped, for you to disable in Active Directory, because Entra Connect Sync would undo a disable in Entra ID.
+The playbook disables cloud-only users. It lists users synced from Active Directory as skipped, for you to disable in Active Directory, because Entra Connect Sync would undo a disable in Entra ID. With on-premises Active Directory as well, use [Disable inactive users in Entra ID and Active Directory](../../../playbooks/microsoft/disable-inactive-users-in-entra-id-and-active-directory/) instead, which also disables synced users there and needs the LDAP connection too.
 
 ## 2. Import the template
 
