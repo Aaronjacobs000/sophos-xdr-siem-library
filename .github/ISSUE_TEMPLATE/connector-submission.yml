@@ -1,0 +1,126 @@
+name: Connector submission
+description: Add a custom Sophos Fusion connector to the library without git. The owner reviews every connector.
+title: "Connector: "
+labels: ["connector-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Export the connector from the Connector Library in Sophos Fusion and delete its `tenantId` and `icon` lines. Each box below becomes a field of the entry's `meta.json` or one of its files. [CONTRIBUTING.md](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/blob/main/CONTRIBUTING.md#add-a-playbook-or-connector) says what each one needs.
+        A workflow checks the submission and comments the result here. When the checks pass, it opens a pull request and the owner reviews it. To fix a problem, edit this issue and the checks run again.
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      placeholder: FortiGate (unofficial)
+    validations:
+      required: true
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      description: The folder name comes from the vendor and the product.
+      placeholder: Fortinet
+    validations:
+      required: true
+  - type: input
+    id: product
+    attributes:
+      label: Product
+      placeholder: FortiGate
+    validations:
+      required: true
+  - type: input
+    id: auth
+    attributes:
+      label: Sign-in
+      description: How the connection signs in. Up to 200 characters.
+      placeholder: An API key in the Authorization header, and the host as a connection setting
+    validations:
+      required: true
+  - type: textarea
+    id: functions
+    attributes:
+      label: Functions
+      description: One line per function in connector.yaml, with its name, a colon and its risk tier (lookup, notify, reversible action or destructive).
+      placeholder: |
+        getDevice: lookup
+        lock: reversible action
+    validations:
+      required: true
+  - type: input
+    id: validated
+    attributes:
+      label: Imported on
+      description: Optional. The date (YYYY-MM-DD) the connector imported into your tenant.
+  - type: input
+    id: tenant
+    attributes:
+      label: Ran in a tenant on
+      description: Optional. The date and data region of a real run.
+      placeholder: 2026-11-04 us01
+  - type: textarea
+    id: docs
+    attributes:
+      label: Docs
+      description: One https link per line to the vendor's public API docs.
+    validations:
+      required: true
+  - type: dropdown
+    id: license
+    attributes:
+      label: License
+      options:
+        - MIT
+        - Apache-2.0
+        - BSD-3-Clause
+        - CC0-1.0
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Two or three sentences, up to 500 characters. Say what it calls and can do, how its connection signs in, and what it needs.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional. Sections such as Setup, How it works, Testing and Known gaps. Put each label on its own line ending in a colon, with bullets starting "- " under it.
+  - type: textarea
+    id: hosts
+    attributes:
+      label: New hosts
+      description: Optional. Each host the connector calls that isn't in connectors/allowed-hosts.json yet, with the vendor page that documents it. The checks fail until the owner adds them.
+  - type: textarea
+    id: yaml
+    attributes:
+      label: connector.yaml
+      description: The exported connector without its tenantId and icon lines, pasted as is.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: readme
+    attributes:
+      label: README.md
+      description: What to set up before someone adds a connection, such as the account, API credential and permissions it needs.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before you submit
+      options:
+        - label: The files hold no tenant IDs, credentials, webhook URLs, customer data or internal Sophos material.
+          required: true
+        - label: I agree to publish these files under the license above, in this public repo.
+          required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: Optional. Notes for the maintainer.

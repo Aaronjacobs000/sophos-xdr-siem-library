@@ -1,0 +1,171 @@
+name: Playbook submission
+description: Add a Sophos Fusion playbook template to the library without git. The owner reviews every playbook.
+title: "Playbook: "
+labels: ["playbook-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Export the template in Sophos Fusion (More Actions > Export on the template) and delete its `tenantId` and `icon` lines. Each box below becomes a field of the entry's `meta.json` or one of its files. [CONTRIBUTING.md](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/blob/main/CONTRIBUTING.md#add-a-playbook-or-connector) says what each one needs.
+        A workflow checks the submission and comments the result here. When the checks pass, it opens a pull request and the owner reviews it. To fix a problem, edit this issue and the checks run again.
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      description: What the playbook does, in a few words. The folder name comes from the vendor and the title.
+      placeholder: FortiGate block URL
+    validations:
+      required: true
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      description: The vendor of the product the playbook works with.
+      placeholder: Fortinet
+    validations:
+      required: true
+  - type: input
+    id: product
+    attributes:
+      label: Product
+      placeholder: FortiGate
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What it does and when, in a sentence or two. Up to 600 characters.
+    validations:
+      required: true
+  - type: textarea
+    id: trigger
+    attributes:
+      label: Trigger
+      description: The trigger to set, and what to pick for When does this playbook run? Up to 400 characters.
+    validations:
+      required: true
+  - type: textarea
+    id: connections
+    attributes:
+      label: Connections
+      description: One line per connection it needs, with the connector name and version.
+      placeholder: Taegis.Case 1.0.5, the case connector Sophos manages, to comment on the case
+    validations:
+      required: true
+  - type: input
+    id: requires
+    attributes:
+      label: Requires
+      description: The products and licenses it needs. Up to 300 characters.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk_tier
+    attributes:
+      label: Risk tier
+      description: The most it can do. CONTRIBUTING.md explains the tiers.
+      options:
+        - lookup
+        - notify
+        - reversible action
+        - destructive
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback
+      description: What undoes it, or a statement that nothing does.
+    validations:
+      required: true
+  - type: textarea
+    id: mdr_note
+    attributes:
+      label: MDR note
+      description: Edit it if your playbook needs more. Up to 800 characters.
+      value: Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It can act on a host or device MDR is investigating, so tell your MDR contact before you turn it on.
+    validations:
+      required: true
+  - type: input
+    id: connector
+    attributes:
+      label: Library connector
+      description: Optional. The library connector it needs. Leave it empty when it uses only connectors Sophos manages.
+      placeholder: connectors/sophos/sophos-mobile
+  - type: input
+    id: validated
+    attributes:
+      label: Validated on
+      description: Optional. The date (YYYY-MM-DD) the template passed playbookValidateDSLV2 in your tenant.
+  - type: input
+    id: tenant
+    attributes:
+      label: Ran in a tenant on
+      description: Optional, but a destructive playbook needs it. The date and data region of a real run.
+      placeholder: 2026-11-04 us01
+  - type: textarea
+    id: docs
+    attributes:
+      label: Docs
+      description: One https link per line to the public docs the playbook follows.
+    validations:
+      required: true
+  - type: dropdown
+    id: license
+    attributes:
+      label: License
+      options:
+        - MIT
+        - Apache-2.0
+        - BSD-3-Clause
+        - CC0-1.0
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Two or three sentences, up to 500 characters. Say what it does, what starts it, which connectors it calls, and what it needs.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional. Sections such as Setup, How it works, Testing and Known gaps. Put each label on its own line ending in a colon, with bullets starting "- " under it.
+  - type: textarea
+    id: yaml
+    attributes:
+      label: template.yaml
+      description: The exported template without its tenantId and icon lines, pasted as is.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: SETUP.md
+      description: What the template can't carry, such as the trigger, run condition, inputs, connections and response mode. Tell people to pin the template version and to leave the playbook off until a test run.
+    validations:
+      required: true
+  - type: textarea
+    id: readme
+    attributes:
+      label: README.md
+      description: Optional. Anything else a reader needs.
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before you submit
+      options:
+        - label: The files hold no tenant IDs, credentials, webhook URLs, customer data or internal Sophos material.
+          required: true
+        - label: I agree to publish these files under the license above, in this public repo.
+          required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: Optional. Notes for the maintainer.

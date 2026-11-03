@@ -325,7 +325,7 @@ if (cmd === 'changed') {
   const num = opt('--issue');
   await ensureLabels();
   let md = opt('--markdown') ? await readFile(opt('--markdown'), 'utf8') : '';
-  if (opt('--failed')) md = `${MARKER}\n### Parser library checks: failed\n\n${opt('--failed')}\n\nEdit the issue to try again.\n`;
+  if (opt('--failed')) md = `${MARKER}\n### Library checks: failed\n\n${opt('--failed')}\n\nEdit the issue to try again.\n`;
   if (opt('--note')) md += `\n${opt('--note')}\n`;
   await comment(num, md);
   const passed = /checks: passed/.test(md);

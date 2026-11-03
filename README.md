@@ -108,7 +108,7 @@ Sophos Fusion playbooks can post a case to Teams or Slack, but can't take a repl
 
 ## Contributing
 
-Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Playbooks and connectors: open a pull request from a git clone; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
+Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Playbooks and connectors: fill in the playbook or connector issue form, or open a pull request; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
 ## Run it locally
 

@@ -1,0 +1,157 @@
+# The no-git route for playbooks and connectors: someone fills in the playbook or connector issue
+# form. This reads the issue body as data, writes the entry, runs the library checks, and when they
+# pass opens a pull request for it, labeled "needs review". It never merges: the owner reviews every
+# playbook and connector. The issue author is recorded as the entry's author.
+#
+# As in the parser issue workflow, the issue body is read in the check job, which has a read-only
+# token and keeps no credentials in its checkout. The publish job, which can write, takes only the
+# entry's files and the report from it, and runs no code on the submission. The pull request it
+# opens with GITHUB_TOKEN starts no workflows, so its body carries the check report; CI runs on main
+# when the owner merges it.
+name: Playbook and connector submission
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automation-submission-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    if: (contains(github.event.issue.labels.*.name, 'playbook-submission') || contains(github.event.issue.labels.*.name, 'connector-submission')) && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      ok: ${{ steps.entry.outputs.ok }}
+      id: ${{ steps.entry.outputs.id }}
+      passed: ${{ steps.checks.outputs.passed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Write the entry from the issue
+        id: entry
+        env:
+          BODY: ${{ github.event.issue.body }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          KIND: ${{ contains(github.event.issue.labels.*.name, 'playbook-submission') && 'playbook' || 'connector' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/sub"
+          printf '%s' "$BODY" > "$RUNNER_TEMP/sub/body.txt"
+          cp -r . "$RUNNER_TEMP/base"
+          if node tools/automation-submission.mjs --kind "$KIND" --body "$RUNNER_TEMP/sub/body.txt" --author "$AUTHOR" --changed "$RUNNER_TEMP/sub/changed.txt" > "$RUNNER_TEMP/sub/out.txt" 2> "$RUNNER_TEMP/sub/err.txt"; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            grep '^ENTRY_ID=' "$RUNNER_TEMP/sub/out.txt" | sed 's/^ENTRY_ID=/id=/' >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run the library checks
+        id: checks
+        if: steps.entry.outputs.ok == 'true'
+        env:
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          if node "$RUNNER_TEMP/base/tools/validate-library.mjs" --root . --base "$RUNNER_TEMP/base" --changed-files "$RUNNER_TEMP/sub/changed.txt" --author "$AUTHOR" --report "$RUNNER_TEMP/sub/report.json" --markdown "$RUNNER_TEMP/sub/report.md"; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Hand the entry and the report to the publish job
+        env:
+          ENTRY: ${{ steps.entry.outputs.id }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/out/entry"
+          if [ -n "$ENTRY" ]; then cp "$ENTRY/"* "$RUNNER_TEMP/out/entry/"; fi
+          for f in err.txt report.md; do
+            if [ -f "$RUNNER_TEMP/sub/$f" ]; then cp "$RUNNER_TEMP/sub/$f" "$RUNNER_TEMP/out/"; fi
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: submission
+          path: ${{ runner.temp }}/out
+          retention-days: 1
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: submission
+          path: ${{ runner.temp }}/sub
+      - name: Report a submission that can't be read
+        if: needs.check.outputs.ok == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: node tools/github-gate.mjs issue --issue "$ISSUE" --failed "$(head -c 1000 "$RUNNER_TEMP/sub/err.txt")"
+      - name: Open or update the pull request
+        id: pr
+        if: needs.check.outputs.passed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          ENTRY: ${{ needs.check.outputs.id }}
+        run: |
+          # Only a playbook or connector folder path and the library's own file names come across from the check job.
+          ENTRY_RE='^(playbooks|connectors)/[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$'
+          FILE_RE='^(meta\.json|template\.yaml|connector\.yaml|SETUP\.md|README\.md)$'
+          if ! [[ $ENTRY =~ $ENTRY_RE ]]; then echo "The entry path from the check job is not a library path."; exit 1; fi
+          rm -rf "$ENTRY"
+          mkdir -p "$ENTRY"
+          for f in "$RUNNER_TEMP/sub/entry"/*; do
+            name=$(basename "$f")
+            if [ -L "$f" ] || [ ! -f "$f" ] || ! [[ $name =~ $FILE_RE ]]; then echo "The submission holds a file a library entry can't have."; exit 1; fi
+            cp "$f" "$ENTRY/$name"
+          done
+          FOLDER="${ENTRY%%/*}"
+          BRANCH="submission/issue-$ISSUE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898231+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A -- "$ENTRY"
+          git commit -q -m "feat($FOLDER): add $ENTRY from issue #$ISSUE" -m "Submitted by @$AUTHOR through the issue form."
+          git push -q -f origin "$BRANCH"
+          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -z "$PR" ]; then
+            if ! gh pr create --head "$BRANCH" --base main --title "Add $ENTRY (issue #$ISSUE)" --body-file "$RUNNER_TEMP/sub/report.md" > "$RUNNER_TEMP/sub/pr.txt" 2>&1; then
+              echo "created=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          fi
+          gh pr edit "$PR" --add-label "library checks passed" --add-label "needs review" --add-label "${FOLDER%s}-submission" > /dev/null || true
+          { echo "created=true"; echo "number=$PR"; } >> "$GITHUB_OUTPUT"
+      - name: Report on the issue
+        if: needs.check.outputs.ok == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          PASSED: ${{ needs.check.outputs.passed }}
+          CREATED: ${{ steps.pr.outputs.created }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          NOTE=""
+          if [ "$PASSED" = "true" ] && [ "$CREATED" = "true" ]; then NOTE="Pull request: #$PR. The owner reviews every playbook and connector before it merges."; fi
+          if [ "$PASSED" = "true" ] && [ "$CREATED" != "true" ]; then NOTE="The checks passed, but this workflow couldn't open the pull request. A maintainer will open it."; fi
+          node tools/github-gate.mjs issue --issue "$ISSUE" --markdown "$RUNNER_TEMP/sub/report.md" --note "$NOTE"

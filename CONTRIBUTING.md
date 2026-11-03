@@ -4,9 +4,20 @@ Library contributions are open to anyone with a GitHub account. You don't need g
 
 To report a security problem, follow [SECURITY.md](SECURITY.md) instead of opening an issue.
 
+## What you can add
+
+| You have | Send it with | Then |
+| --- | --- | --- |
+| [Parsers](#add-parsers-to-the-library) | **Share to the library** in [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample), then a pull request in the browser or the parser issue form | The checks run. A new entry, or one that's already yours, merges on its own when they pass. |
+| [A playbook](#add-a-playbook-or-connector) | The [playbook form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=playbook-submission.yml), or a pull request | The checks run, then the owner reviews it. |
+| [A connector](#add-a-playbook-or-connector) | The [connector form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=connector-submission.yml), or a pull request | The checks run, then the owner reviews it. |
+| [A bridge](#bridges) | A pull request | CI runs its tests, then the maintainer reviews it. |
+
 ## Add parsers to the library
 
 Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample), then choose **Share to the library** on the Test step. Fill in the details and run the library checks; they are the same checks the repo runs. When they pass, pick a route.
+
+If the parser already works in your tenant, paste its sample lines into Parser Studio, go on to the Test step, and paste your script over the one it wrote before you share. For a parent with children, the git clone route below is easier.
 
 ### Route 1: pull request in the browser
 
@@ -43,7 +54,7 @@ Both are plain text. The page shows sections, bullets and paragraphs, and shows 
 
 ## What the checks look at
 
-Every pull request that touches `parsers/` and every issue-form submission is checked with the code on the main branch:
+Every pull request that touches `parsers/` and every parser issue form is checked with the code on the main branch:
 
 - `meta.json` has the required fields, the folder holds only the allowed files, and its path is `parsers/<vendor>/<product>/` from the vendor and product in `meta.json`.
 - The About text has a `summary`, and `notes` in sections (see [Write the About text](#write-the-about-text)).
@@ -89,11 +100,23 @@ Follow [bridges/ai-compliance-logs](bridges/ai-compliance-logs/):
 
 To show a bridge on an entry's page, set `"bridge": "bridges/<name>"` in the entry's `meta.json`. The bridge has to be on the main branch first, so it merges before the entry that points at it.
 
-Bridges are code that people download and run, so the maintainer reviews every bridge before it merges. You can propose one in a pull request, but it won't merge automatically.
+Bridges are code that people download and run, so the maintainer reviews every bridge before it merges. Send one as a pull request from a git clone, or upload its files to `bridges/<name>` in the browser as [With a pull request](#with-a-pull-request) shows. CI runs its tests, and the pull request waits for that review.
 
 ## Add a playbook or connector
 
-Playbooks act on tenants: they lock devices, isolate hosts and send data out. So the owner reviews every playbook and connector, and nothing under `playbooks/` or `connectors/` merges on its own. The checks label the pull request "needs review" and leave it open. Work from a git clone and open a pull request.
+Playbooks act on tenants: they lock devices, isolate hosts and send data out. So the owner reviews every playbook and connector, and nothing under `playbooks/` or `connectors/` merges on its own. The checks label the pull request "needs review" and leave it open.
+
+### With the issue form
+
+1. In Sophos Fusion, export the template (More Actions > Export on the template) or the connector (Connector Library), and delete its `tenantId` and `icon` lines.
+2. Open the [playbook form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=playbook-submission.yml) or the [connector form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=connector-submission.yml), fill in each box, paste the files, and submit. The boxes become the `meta.json` described in [What an entry holds](#what-an-entry-holds).
+3. A workflow checks the submission and comments the result on the issue. When the checks pass, it opens a pull request for the owner to review, with you as the author. To fix a problem, edit the issue and the checks run again.
+
+A connector that calls a host missing from `connectors/allowed-hosts.json` fails the checks until the owner adds that host. List it in the form's **New hosts** box with the vendor page that documents it.
+
+### With a pull request
+
+Copy an existing entry's files, change them, and open a pull request from a git clone. Without git, open `https://github.com/Aaronjacobs000/sophos-xdr-siem-library/upload/main/playbooks/<vendor>/<name>` (or `connectors/<vendor>/<product>`), drag in the files, then choose **Propose changes** and **Create pull request**. GitHub makes a fork for you.
 
 ### What an entry holds
 
@@ -170,6 +193,7 @@ Open an issue first for anything large. Keep the page free of runtime dependenci
 ## Notes for maintainers
 
 - **Playbook and connector pull requests.** The gate labels them "needs review" and never merges them. Review them as the section above says, then squash-merge as owner.
+- **Playbook and connector issue forms.** The Playbook and connector submission workflow opens the pull request with GITHUB_TOKEN, so no checks run on it. Its body is the library check report, and CI runs on main when you merge. The forms only start the workflow while the `playbook-submission` and `connector-submission` labels exist, so keep them.
 - **"needs review" after you merge.** When you merge a pull request the gate labeled "needs review", the Review label workflow takes that label off. It leaves every other label, and a "needs review" that someone other than the gate added.
 
 - **CI that takes over 10 minutes.** The gate stops waiting, and its report on the pull request says it is waiting for CI. When CI finishes, the gate runs again for that commit, with every check, and merges it if CI passed or labels it "needs review" if not.
