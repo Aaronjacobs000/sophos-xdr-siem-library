@@ -27,7 +27,7 @@ On the template, choose Use this Template, then set:
 - **Minimum severity** and **Managed by:** which cases reach the channel.
 - **Bridge comment prefix:** leave it at `[chat-sync]`, the prefix the chat bridge writes.
 - **Ignore comments by:** optionally, the subject ID of the chat bridge's API credential, as a second guard.
-- **Bridge name:** the name of your outgoing webhook (step 5), or empty if you don't run the bridge.
+- **Bridge name:** leave it empty unless you run the chat bridge (step 5), then use your outgoing webhook's name; with it empty, the card has no reply line.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
 
 Save it and leave it off.

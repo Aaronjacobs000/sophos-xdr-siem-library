@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Teams_CaseChatSync
-version: 1.0.0
+version: 1.0.1
 title: Teams case chat sync (unofficial)
 description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. Each card names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -24,8 +24,8 @@ documentation: |
     | Post comments | Post new comments to the channel | On |
     | Bridge comment prefix | Comments that start with it aren't posted | `[chat-sync]` |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
-    | Bridge name | The @mention name of your chat bridge's outgoing webhook; leave empty to leave out the reply line | Fusion |
-changeNotes: First version
+    | Bridge name | The @mention name of your chat bridge's outgoing webhook; leave empty to leave out the reply line | None |
+changeNotes: The reply line now appears only when Bridge name is set.
 tags:
     - Type:Notification
 connectorCategories:
@@ -53,7 +53,7 @@ inputs:
         settings:
             properties:
                 bridge_name:
-                    default: Fusion
+                    default: ""
                     description: The @mention name of the chat bridge's outgoing webhook in Teams. Leave it empty to leave the reply line out of the card.
                     title: Bridge name
                     type: string
@@ -121,7 +121,7 @@ dsl:
             post_comments: "inputs.?settings.post_comments.orValue(true)"
             prefix: "inputs.?settings.comment_prefix.orValue('[chat-sync]')"
             ignore_authors: "inputs.?settings.ignore_authors.orValue('').split(',').map(a, a.trim()).filter(a, a != '')"
-            bridge_name: "inputs.?settings.bridge_name.orValue('Fusion').trim()"
+            bridge_name: "inputs.?settings.bridge_name.orValue('').trim()"
         - name: fetch_case
           action: Taegis.Case.queryCustom
           optional: true
