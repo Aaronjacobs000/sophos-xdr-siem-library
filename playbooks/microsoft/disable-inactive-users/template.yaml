@@ -1,20 +1,19 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Entra_InactiveUser_Disable
-version: 1.0.0
+version: 2.0.0
 title: Disable inactive users (unofficial)
-description: On a schedule, finds users with no successful Entra ID sign-in for the number of days you set, and disables them in on-premises Active Directory for synced users, or in Entra ID for cloud-only users, when their domain is one you list. It doesn't need Sophos ITDR. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: On a schedule, finds users with no successful Entra ID sign-in for the number of days you set, and disables cloud-only users in Entra ID when their domain is one you list. Users synced from Active Directory are listed, not disabled. It needs only the Microsoft Graph API connection, and not Sophos ITDR. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
-    Runs on a schedule. It asks Microsoft Graph for users whose last successful sign-in is older than the number of days you set, then disables each one where it's managed: in Active Directory for synced users, once Active Directory's last logon agrees, and in Entra ID for cloud-only users. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
+    Runs on a schedule. It asks Microsoft Graph for users whose last successful sign-in is older than the number of days you set, then disables each cloud-only user in Entra ID. It lists a user synced from on-premises Active Directory as skipped, because the next sync would undo a disable in Entra ID, so you disable that one in Active Directory. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
 
     # Safety
     - Dry run is on until you turn it off. In dry run the playbook looks users up and records what it would disable, and disables nothing.
     - It only disables users whose user principal name is in a domain you list. With no domains set, it disables nothing.
-    - It never disables a user on Excluded users, a user with an Entra ID directory role or in a role-assignable group, or an Active Directory account with adminCount set.
-    - It skips a synced user whose Active Directory lastLogonTimestamp is newer than the days you set plus 14, because Active Directory updates it only every 9 to 14 days.
+    - It never disables a user on Excluded users, a user with an Entra ID directory role or in a role-assignable group, or a user synced from Active Directory.
     - It disables at most Max users per run each run.
-    - Rollback: enable the account again where the playbook disabled it, and add it to Excluded users.
+    - Rollback: enable the account again in Entra ID, and add it to Excluded users.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -26,16 +25,13 @@ documentation: |
     | Look-back days | Only users whose last sign-in is at most this many days before the cut-off. 0 for no limit | 7 |
     | Include users with no sign-in on record | Also users Entra ID has no successful sign-in for, created before the cut-off | Off |
     | Max users per run | Most users one run disables | 10 |
-    | Disable in Active Directory | Disable synced users through the LDAP connection | On |
-    | Disable in Entra ID | Disable cloud-only users through the Microsoft Graph API connection | On |
-changeNotes: First version
+changeNotes: Entra ID only, so it needs just the Microsoft Graph API connection. Users synced from Active Directory are listed as skipped, not disabled there.
 tags:
     - Category:IAM
     - Type:Response
 connectorCategories:
     - Generic
 connectors:
-    - Taegis.LDAP:1.0.13
     - Taegis.MicrosoftGraphAPI:2.12.2
 triggerHints:
     - isProactiveResponse: false
@@ -86,16 +82,6 @@ inputs:
                     minimum: 1
                     title: Max users per run
                     type: integer
-                use_active_directory:
-                    default: true
-                    description: Check synced users in Active Directory through the LDAP connection, and disable them there
-                    title: Disable in Active Directory
-                    type: boolean
-                use_entra_id:
-                    default: true
-                    description: Disable cloud-only users in Entra ID through the Microsoft Graph API connection
-                    title: Disable in Entra ID
-                    type: boolean
             required:
                 - domains
             title: Playbook settings
@@ -129,7 +115,7 @@ outputs:
     type: object
 dsl:
     name: Unofficial_Entra_InactiveUser_Disable
-    description: Disables users with no successful Entra ID sign-in for the days you set, in Active Directory or Entra ID, within the domains you list, or records what it would do.
+    description: Disables cloud-only users with no successful Entra ID sign-in for the days you set, in Entra ID, within the domains you list, or records what it would do.
     outcomeStatus: finish.variables.status
     outcomeMessage: finish.variables.message
     outputs:
@@ -148,14 +134,11 @@ dsl:
             lookback: "int(inputs.?configuration.lookback_days.orValue(7))"
             include_never: "inputs.?configuration.include_never_signed_in.orValue(false)"
             max_users: "int(inputs.?configuration.max_users.orValue(10))"
-            use_ad: "inputs.?configuration.use_active_directory.orValue(true)"
-            use_entra: "inputs.?configuration.use_entra_id.orValue(true)"
-        # The cut-offs, at midnight UTC. Active Directory updates lastLogonTimestamp only every 9 to 14 days, so its cut-off is 14 days earlier, as a Windows file time.
+        # The cut-offs, at midnight UTC.
         - name: dates
           let:
             cutoff: "string(now() - duration(string(setup.variables.days * 24) + 'h')).substring(0, 10) + 'T00:00:00Z'"
             lower: "string(now() - duration(string((setup.variables.days + setup.variables.lookback) * 24) + 'h')).substring(0, 10) + 'T00:00:00Z'"
-            ad_cutoff: "(int(now() - duration(string((setup.variables.days + 14) * 24) + 'h')) + 11644473600) * 10000000"
         # Stop before any call when nothing is in scope.
         - name: check
           let:
@@ -163,8 +146,7 @@ dsl:
                 size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
                 setup.variables.days < 14 ? 'Days without a sign-in is ' + string(setup.variables.days) + '. Set it to 14 or more.' :
                 setup.variables.lookback < 0 ? 'Look-back days is ' + string(setup.variables.lookback) + '. Set it to 0 or more.' :
-                setup.variables.max_users < 1 ? 'Max users per run is ' + string(setup.variables.max_users) + '. Set it to 1 or more.' :
-                !setup.variables.use_ad && !setup.variables.use_entra ? 'Disable in Active Directory and Disable in Entra ID are both off.' : ''
+                setup.variables.max_users < 1 ? 'Max users per run is ' + string(setup.variables.max_users) + '. Set it to 1 or more.' : ''
         # Microsoft Graph allows no other filter with signInActivity, and searchUser returns one page, so the playbook filters the rest itself.
         - name: search_inactive
           condition: "check.variables.stop == ''"
@@ -214,9 +196,7 @@ dsl:
                 scope.variables.users.map(p, merge(p, {'reason':
                 [p.upn, p.mail, p.ad_upn, p.ad_sam].exists(n, n != '' && n in setup.variables.excluded) ? 'on Excluded users' :
                 p.never && p.created != '' && timestamp(p.created) > timestamp(dates.variables.cutoff) ? 'created on ' + p.created.substring(0, 10) + ' and not signed in yet' :
-                p.synced && !setup.variables.use_ad ? 'synced from Active Directory, and Disable in Active Directory is off. A disable in Entra ID alone would be undone at the next sync' :
-                p.synced && p.ad_upn == '' && p.ad_sam == '' ? 'synced from Active Directory, but Entra ID has no on-premises name for it' :
-                !p.synced && !setup.variables.use_entra ? 'cloud-only, and Disable in Entra ID is off' : ''}))
+                p.synced ? 'synced from Active Directory, so disable it there. A disable in Entra ID alone would be undone at the next sync' : ''}))
         - name: plan
           let:
             ready: "triage.variables.checked.filter(p, p.reason == '')"
@@ -243,52 +223,14 @@ dsl:
                 read: "!has(groups, 'status.error') && has(groups, 'outputs') && type(groups.outputs) == type([])"
                 admin: "has(groups, 'outputs') && type(groups.outputs) == type([]) && groups.outputs.exists(g, (has(g, '@odata.type', ',') && g['@odata.type'] == '#microsoft.graph.directoryRole') || (has(g, 'isAssignableToRole') && g.isAssignableToRole == true))"
                 error: "has(groups, 'status.error') ? (type(groups.status.error) == type('') ? groups.status.error : toString(groups.status.error)) : ''"
-            # A synced user in Active Directory, by its on-premises name.
-            - name: ad_lookup
-              condition: "each.value.synced"
-              action: Taegis.LDAP.identify_user
-              optional: true
-              retry: 1
-              inputs:
-                user: "each.value.ad_upn != '' ? each.value.ad_upn : each.value.ad_sam"
-                onlyDN: false
-            - name: ad
-              let:
-                name: "each.value.ad_upn != '' ? each.value.ad_upn : each.value.ad_sam"
-                upn: "has(ad_lookup, 'outputs.data.userPrincipalName[0]') ? string(ad_lookup.outputs.data.userPrincipalName[0]).toLower() : ''"
-                sam: "has(ad_lookup, 'outputs.data.sAMAccountName[0]') ? string(ad_lookup.outputs.data.sAMAccountName[0]).toLower() : ''"
-                mail: "has(ad_lookup, 'outputs.data.mail[0]') ? string(ad_lookup.outputs.data.mail[0]).toLower() : ''"
-                dn: "has(ad_lookup, 'outputs.data.distinguishedName[0]') ? string(ad_lookup.outputs.data.distinguishedName[0]) : ''"
-                disabled: "has(ad_lookup, 'outputs.data.userAccountControl[0]') && int(string(ad_lookup.outputs.data.userAccountControl[0])) % 4 >= 2"
-                protected: "has(ad_lookup, 'outputs.data.adminCount[0]') && string(ad_lookup.outputs.data.adminCount[0]) != '0'"
-                logon: "has(ad_lookup, 'outputs.data.lastLogonTimestamp[0]') ? int(string(ad_lookup.outputs.data.lastLogonTimestamp[0])) : -1"
-            # Accept the Active Directory account only when its user principal name, sAMAccountName or mail is exactly the name looked up.
-            - name: ad_match
-              let:
-                found: "each.value.synced && ad.variables.dn != '' && ad.variables.name != '' && ad.variables.name in [ad.variables.upn, ad.variables.sam, ad.variables.mail]"
             - name: one
               let:
-                directory: "!each.value.synced ? 'Entra ID' : ad_match.variables.found ? 'Active Directory' : ''"
                 problem: >-
-                    !roles.variables.read ? 'the playbook couldn\'t read its Entra ID roles, so it wasn\'t disabled' + (roles.variables.error != '' ? ': ' + roles.variables.error : '') :
-                    each.value.synced && !ad_match.variables.found ? 'synced from Active Directory, but the LDAP connection didn\'t find ' + ad.variables.name + '. Check the connection and its BaseDN' + (has(ad_lookup, 'outputs.details') && (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details != '' : true) ? ': ' + (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details : toString(ad_lookup.outputs.details)) : '') : ''
-                skip: >-
-                    roles.variables.admin ? 'it has an Entra ID directory role or is in a role-assignable group' :
-                    each.value.synced && [ad.variables.upn, ad.variables.sam, ad.variables.mail].exists(n, n != '' && n in setup.variables.excluded) ? 'on Excluded users' :
-                    each.value.synced && ad.variables.protected ? 'adminCount is set in Active Directory' :
-                    each.value.synced && ad.variables.disabled ? 'already disabled in Active Directory. Entra ID follows at the next sync' :
-                    each.value.synced && ad.variables.logon < 0 ? 'Active Directory returned no lastLogonTimestamp, so the playbook can\'t tell when it last signed in on-premises' :
-                    each.value.synced && ad.variables.logon >= dates.variables.ad_cutoff ? 'Active Directory shows a logon on ' + string(timestamp(ad.variables.logon / 10000000 - 11644473600)).substring(0, 10) + ', within the days you set plus 14' : ''
-            # The only tasks that act, and only with dry run off.
-            - name: disable_ad
-              condition: "!setup.variables.dry_run && one.variables.problem == '' && one.variables.skip == '' && one.variables.directory == 'Active Directory'"
-              action: Taegis.LDAP.disable_user
-              optional: true
-              retry: 2
-              inputs:
-                dn: ad.variables.dn
+                    !roles.variables.read ? 'the playbook couldn\'t read its Entra ID roles, so it wasn\'t disabled' + (roles.variables.error != '' ? ': ' + roles.variables.error : '') : ''
+                skip: "roles.variables.admin ? 'it has an Entra ID directory role or is in a role-assignable group' : ''"
+            # The only task that acts, and only with dry run off.
             - name: disable_entra
-              condition: "!setup.variables.dry_run && one.variables.problem == '' && one.variables.skip == '' && one.variables.directory == 'Entra ID'"
+              condition: "!setup.variables.dry_run && one.variables.problem == '' && one.variables.skip == ''"
               action: Taegis.MicrosoftGraphAPI.disableUser
               optional: true
               retry: 2
@@ -301,14 +243,13 @@ dsl:
                     'result': one.variables.problem != '' ? 'failed' :
                     one.variables.skip != '' ? 'skipped' :
                     setup.variables.dry_run ? 'would disable' :
-                    (one.variables.directory == 'Active Directory' ? has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true : has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success') ? 'disabled' : 'failed',
+                    has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success' ? 'disabled' : 'failed',
                     'text': one.variables.problem != '' ? each.value.upn + ': ' + one.variables.problem :
                     one.variables.skip != '' ? each.value.upn + ': ' + one.variables.skip :
-                    each.value.upn + ' in ' + (one.variables.directory == 'Active Directory' ? 'Active Directory (' + ad.variables.dn + ')' : 'Entra ID (cloud-only)') +
+                    each.value.upn + ' in Entra ID (cloud-only)' +
                     (each.value.last != '' ? ', last sign-in ' + each.value.last : ', no sign-in on record') +
-                    (setup.variables.dry_run ? '' :
-                    one.variables.directory == 'Active Directory' && !(has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true) ? '. ' + (has(disable_ad, 'status.error') ? (type(disable_ad.status.error) == type('') ? disable_ad.status.error : toString(disable_ad.status.error)) : has(disable_ad, 'outputs.details') ? (type(disable_ad.outputs.details) == type('') ? disable_ad.outputs.details : toString(disable_ad.outputs.details)) : 'No result from the LDAP connection.') :
-                    one.variables.directory == 'Entra ID' && !(has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success') ? '. ' + (has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : 'No result from the Microsoft Graph API connection.') : '')})
+                    (setup.variables.dry_run || (has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success') ? '' :
+                    '. ' + (has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : 'No result from the Microsoft Graph API connection.'))})
         - name: tally
           let:
             disabled: "(has(each, 'variables.results') ? each.variables.results : []).filter(r, r.result == 'disabled').map(r, r.text)"

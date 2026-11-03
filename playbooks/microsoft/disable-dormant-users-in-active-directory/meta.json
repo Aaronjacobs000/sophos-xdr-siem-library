@@ -1,0 +1,31 @@
+{
+  "title": "Disable dormant users in Active Directory",
+  "vendor": "Microsoft",
+  "product": "Active Directory",
+  "use_case": "When Sophos ITDR flags a user as dormant, disable the account in on-premises Active Directory, for on-premises and synced users. It needs only the LDAP connection. For cloud-only users, use Disable dormant users.",
+  "trigger": "Platform Events, source Identity Findings, event Created only. Set When does this playbook run? to Only When, with inputs.identityFindings.new.check.category.toLower() == 'dormant_resource' && inputs.identityFindings.new.primaryReference.derivedType == 'USER'",
+  "connections": [
+    "Taegis.LDAP 1.0.13, the Microsoft Active Directory/LDAP connector Sophos manages, through the On-Premise Automation Connector on a data collector, to look users up and disable them"
+  ],
+  "requires": "Sophos ITDR with on-premises Active Directory or Microsoft Entra ID connected, a Sophos data collector that reaches a domain controller over LDAPS, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does.",
+  "rollback": "Enable User: enable the account again in Active Directory, and add it to Excluded users so a later finding doesn't disable it again.",
+  "tested": {
+    "validated": "2026-11-03",
+    "tenant": null
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/ITDR/ITDRResponseActions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/ITDR/ITDRFAQ/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Connectors/OnPremConnector/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/CEL/CELMacros/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "summary": "This playbook disables a user in on-premises Active Directory when Sophos ITDR flags the user as dormant. A new dormant identity finding starts it, and it calls only the LDAP connector Sophos manages, with dry run on and only the domains you list in scope. It needs Sophos ITDR and a Sophos data collector that reaches a domain controller.",
+  "notes": "Setup:\n- It needs only the LDAP connection. For cloud-only users, add Disable dormant users, which needs only the Microsoft Graph API connection. With both directories, use both.\n- ITDR's dormant threshold is fixed: 90 days without a sign-in for Dormant Accounts, and 180 days for the Active Directory check. Posture Check Preferences only turns checks on or off.\n- The trigger is Created only, so findings that exist before you turn it on don't start a run. Find those with the Directory's Is Dormant filter.\n- There's no approval step. Dry run, Domains and Excluded users are the controls.\n\nHow it works:\n- It looks the user up in Active Directory by the finding's user principal name, or by its first other user name, such as a sAMAccountName, and disables the account there. For a synced account, Entra ID follows at the next sync.\n- An Active Directory account counts as a match only when its user principal name, sAMAccountName or mail is exactly the name looked up.\n- Domains are checked against the account's Active Directory user principal name.\n- It never disables a user ITDR flags as an admin, or an account with adminCount set.\n- Identity findings take no comments, so the result is the execution's outcome under Playbooks > Executions.\n\nTesting:\n- Not run in a tenant yet.\n- On 2026-11-03 the dsl passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion test tenant. It wasn't imported. Its steps are the Active Directory steps of Disable dormant users 1.0.0.\n- Every step ran in Sophos Fusion's CEL engine, through its evaluateExpr API, against 22 made-up findings and connector replies: found by user principal name, sAMAccountName or mail, excluded, admin, adminCount, out of scope, already disabled, refused, not found, a connection error and findings it doesn't act on.\n\nKnown gaps:\n- A real dormant finding is untested. The playbook reads it through the documented finding macros, which return an empty list for a field the event lacks. A finding with no user name ends in FAIL.\n- Whether Dormant Accounts covers on-premises Active Directory users is undocumented. The Active Directory check covers them.\n- If the name in the finding isn't the account's user principal name, sAMAccountName or mail in Active Directory, such as an Entra ID name that differs from the on-premises one, the user isn't found and the run ends in FAIL.\n- With both playbooks on, a run on a cloud-only user ends in FAIL here, because Active Directory doesn't have the user.\n- Whether the LDAP connector returns userAccountControl and adminCount is untested. Without them, the already-disabled and adminCount checks don't apply.\n- Saving it with only the LDAP connection is untested. Sophos Fusion asks for a connection to each connector a template lists, and this one lists only that one.\n- There's no daily cap. A newly connected directory can create many dormant findings at once, and each run disables one user."
+}

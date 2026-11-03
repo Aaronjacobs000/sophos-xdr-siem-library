@@ -2,14 +2,11 @@
 
 A template carries no trigger, connections or settings, so you set them up once in your tenant. The playbook ships with dry run on.
 
-## 1. The connections
+## 1. The connection
 
-You need a connection to each of two connectors Sophos manages, under Security Operations > Automations > Connectors:
+You need one connection, to the **Microsoft Graph API (Taegis.MicrosoftGraphAPI)** connector Sophos manages, under Security Operations > Automations > Connectors. Its app needs the User.Read.All, AuditLog.Read.All, Directory.Read.All and User.EnableDisableAccount.All application permissions, with admin consent. Sign-in activity needs Microsoft Entra ID P1 or P2. Use Test on the connection.
 
-- **Microsoft Graph API (Taegis.MicrosoftGraphAPI)** to find inactive users and disable cloud-only accounts. Its app needs the User.Read.All, AuditLog.Read.All, Directory.Read.All and User.EnableDisableAccount.All application permissions, with admin consent. Sign-in activity needs Microsoft Entra ID P1 or P2.
-- **LDAP (Taegis.LDAP), the Microsoft Active Directory/LDAP connector,** for synced accounts. Deploy a Sophos data collector on your network, add the On-Premise Automation Connector application to it, and add the connection for on-premises use, as [Identity response actions](https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/ITDR/ITDRResponseActions/) says. It signs in over LDAPS with an account that can disable users. Set BaseDN to the domain root, such as `DC=corp,DC=example,DC=com`, because the connector doesn't find users outside it.
-
-Use Test on each connection.
+The playbook disables cloud-only users. It lists users synced from Active Directory as skipped, for you to disable in Active Directory, because Entra Connect Sync would undo a disable in Entra ID.
 
 ## 2. Import the template
 
@@ -20,14 +17,13 @@ Under Security Operations > Automations > Playbooks > Templates, choose Import a
 On the template, choose Use this Template, then set:
 
 - **Trigger:** Generic Trigger, Playbook Usage Playbook Schedule.
-- **Connections:** the Microsoft Graph API connection and the LDAP connection.
+- **Connections:** the Microsoft Graph API connection.
 - **Domains:** the user principal name domains in scope, as Entra ID shows them, such as `example.com`. With none, the playbook disables nothing.
 - **Excluded users:** break-glass and emergency access accounts, service accounts, accounts that only run on-premises services, and anyone on long leave. Give a user principal name, sAMAccountName or email address. Matches ignore case.
 - **Days without a sign-in:** 30 by default, and 14 or more.
 - **Look-back days:** 7 by default. Set it to at least the days between runs.
 - **Include users with no sign-in on record:** off by default. Turn it on to also disable accounts that have never signed in, or not since December 2023, when they're older than Days without a sign-in.
 - **Max users per run:** 10 by default.
-- **Disable in Active Directory** and **Disable in Entra ID:** turn off a directory you don't have. With Active Directory off, synced users are reported, not disabled, because Entra Connect Sync would undo an Entra ID disable.
 - **Dry run:** leave it on.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
 
@@ -43,12 +39,12 @@ Save it, then turn it on with dry run still on. A playbook has to be on before y
 ## 5. Test it
 
 1. Leave dry run on for a week of runs.
-2. Read each run under Playbooks > Executions. The outcome names each user it would disable and where, each user it skipped and why, and how many more matched.
+2. Read each run under Playbooks > Executions. The outcome names each user it would disable, each user it skipped and why, and how many more matched. Disable the synced users it lists in Active Directory yourself.
 3. Add anyone who must stay enabled to Excluded users.
 4. Only then turn off dry run.
 
 ## Rollback
 
-Enable the account again where the playbook disabled it: in Active Directory with `Enable-ADAccount` or the Enable User Microsoft LDAP template, or in Entra ID with the Microsoft Entra ID Enable User template or the Entra admin center. Then add the user to Excluded users so a later run doesn't disable them again.
+Enable the account again in Entra ID, with the Microsoft Entra ID Enable User template or the Entra admin center. Then add the user to Excluded users so a later run doesn't disable them again.
 
 To stop the playbook, pause or delete its schedule on the Schedules tab, or turn the playbook off.
