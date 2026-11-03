@@ -1,0 +1,199 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_ITDR_DormantUser_DisableAD
+version: 1.0.0
+title: Disable dormant users in Active Directory (unofficial)
+description: When Sophos ITDR flags a user as dormant, disables the account in on-premises Active Directory when its domain is one you list. It needs only the LDAP connection, through the On-Premise Automation Connector. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs on a new Sophos ITDR dormant finding for a user. It looks the user up in on-premises Active Directory through the LDAP connection and disables the account there. For a user synced to Entra ID, Entra ID follows at the next sync. Disable dormant users, in the same library, disables cloud-only users in Entra ID. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook looks the user up and records what it would disable, and disables nothing.
+    - It only disables users whose Active Directory user principal name is in a domain you list. With no domains set, it disables nothing.
+    - It never disables a user on Excluded users, a user Sophos ITDR flags as an admin, or an account with adminCount set.
+    - It acts only on findings from the ITDR checks you list, and on one user per run.
+    - Rollback: enable the account again in Active Directory, and add it to Excluded users.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only record what the playbook would do | On |
+    | Domains | User principal name domains in scope | None |
+    | Excluded users | User principal names, sAMAccountNames or email addresses never to disable | None |
+    | ITDR checks | Titles of the ITDR checks whose findings it acts on | Dormant Accounts, and AD enabled user accounts shall not be dormant without hybrid activity |
+changeNotes: First version
+tags:
+    - Category:IAM
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.LDAP:1.0.13
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - created
+        source: identityFindings
+        filter: "inputs.identityFindings.new.check.category.toLower() == 'dormant_resource' && inputs.identityFindings.new.primaryReference.derivedType == 'USER'"
+inputs:
+    properties:
+        configuration:
+            properties:
+                checks:
+                    default:
+                        - Dormant Accounts
+                        - AD enabled user accounts shall not be dormant without hybrid activity
+                    description: Titles of the Sophos ITDR checks whose findings this playbook acts on, as Identity Settings > Posture Check Preferences shows them
+                    items:
+                        type: string
+                    title: ITDR checks
+                    type: array
+                domains:
+                    description: User principal name domains in scope, such as example.com. A user in any other domain is left alone. With none, the playbook disables nothing.
+                    items:
+                        type: string
+                    title: Domains
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would disable. Turn it off after you've read a day of runs.
+                    title: Dry run
+                    type: boolean
+                excluded_users:
+                    description: User principal names, sAMAccountNames or email addresses the playbook never disables, such as break-glass and service accounts
+                    items:
+                        type: string
+                    title: Excluded users
+                    type: array
+            required:
+                - domains
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        directory:
+            description: Active Directory, or empty when the playbook found nowhere to act
+            type: string
+        result:
+            description: disabled, would disable, skipped or failed
+            type: string
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        user:
+            description: The user principal name the playbook acted on, or the name it looked up
+            type: string
+    type: object
+dsl:
+    name: Unofficial_ITDR_DormantUser_DisableAD
+    description: Disables the user in a Sophos ITDR dormant finding in Active Directory, within the domains you list, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        directory: plan.variables.directory
+        result: finish.variables.result
+        status: finish.variables.status
+        user: finish.variables.user
+    tasks:
+        # The settings, and the finding and identity from the trigger. The finding macros return an empty list for a field the event doesn't have, so each value's type is checked.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
+            excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
+            checks: "inputs.?configuration.checks.orValue(['Dormant Accounts', 'AD enabled user accounts shall not be dormant without hybrid activity']).map(c, string(c).trim().toLower())"
+            category: "type(findingCheck(inputs, 'category')) == type('') ? findingCheck(inputs, 'category').toLower() : ''"
+            title: "type(findingCheck(inputs, 'title')) == type('') ? findingCheck(inputs, 'title') : ''"
+            reference: "type(findingPrimaryReference(inputs, 'derivedType')) == type('') ? findingPrimaryReference(inputs, 'derivedType') : ''"
+            identity_status: "type(findingIdentityStatus(inputs)) == type('') ? findingIdentityStatus(inputs) : ''"
+            is_admin: "type(findingIdentityIsAdmin(inputs)) == type(true) && findingIdentityIsAdmin(inputs)"
+            names: "((type(findingIdentityUsernames(inputs)) == type([]) ? findingIdentityUsernames(inputs) : []) + (type(findingIdentityEmails(inputs)) == type([]) ? findingIdentityEmails(inputs) : []) + [findingIdentityPrimaryUsername(inputs)]).filter(n, type(n) == type('')).map(n, n.trim().toLower()).map(n, n.contains('\\\\') ? n.split('\\\\')[1] : n).filter(n, n != '')"
+        # The name to find in Active Directory: the finding's user principal name, or its first other user name, such as a sAMAccountName.
+        - name: who
+          let:
+            name: "size(setup.variables.names.filter(n, n.contains('@'))) > 0 ? setup.variables.names.filter(n, n.contains('@'))[0] : size(setup.variables.names) > 0 ? setup.variables.names[0] : ''"
+            label: "size(setup.variables.names.filter(n, n.contains('@'))) > 0 ? setup.variables.names.filter(n, n.contains('@'))[0] : size(setup.variables.names) > 0 ? setup.variables.names[0] : 'the user'"
+        # Stop before any call when the finding isn't one to act on, or nothing is in scope.
+        - name: check
+          let:
+            stop: >-
+                setup.variables.category != 'dormant_resource' || !(setup.variables.title.toLower() in setup.variables.checks) ? 'The finding is from the ITDR check ' + (setup.variables.title != '' ? setup.variables.title : 'with no title') + ' in category ' + setup.variables.category + ', which this playbook doesn\'t act on.' :
+                setup.variables.reference != 'USER' ? 'The finding is about an object of type ' + setup.variables.reference + ', not a user.' :
+                size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
+                setup.variables.is_admin ? 'Sophos ITDR flags ' + who.variables.label + ' as an admin. The playbook never disables admins.' :
+                setup.variables.names.exists(n, n in setup.variables.excluded) ? who.variables.label + ' is on Excluded users.' :
+                setup.variables.identity_status == 'DISABLED' || setup.variables.identity_status == 'DELETED' ? 'Sophos ITDR shows ' + who.variables.label + ' as ' + setup.variables.identity_status.toLower() + ' already.' : ''
+        - name: ad_lookup
+          condition: "check.variables.stop == '' && who.variables.name != ''"
+          action: Taegis.LDAP.identify_user
+          optional: true
+          retry: 1
+          inputs:
+            user: who.variables.name
+            onlyDN: false
+        # Accept the Active Directory account only when its user principal name, sAMAccountName or mail is exactly the name looked up.
+        - name: ad
+          let:
+            upn: "has(ad_lookup, 'outputs.data.userPrincipalName[0]') ? string(ad_lookup.outputs.data.userPrincipalName[0]).toLower() : ''"
+            sam: "has(ad_lookup, 'outputs.data.sAMAccountName[0]') ? string(ad_lookup.outputs.data.sAMAccountName[0]).toLower() : ''"
+            mail: "has(ad_lookup, 'outputs.data.mail[0]') ? string(ad_lookup.outputs.data.mail[0]).toLower() : ''"
+            dn: "has(ad_lookup, 'outputs.data.distinguishedName[0]') ? string(ad_lookup.outputs.data.distinguishedName[0]) : ''"
+            disabled: "has(ad_lookup, 'outputs.data.userAccountControl[0]') && int(string(ad_lookup.outputs.data.userAccountControl[0])) % 4 >= 2"
+            protected: "has(ad_lookup, 'outputs.data.adminCount[0]') && string(ad_lookup.outputs.data.adminCount[0]) != '0'"
+        - name: ad_match
+          let:
+            found: "ad.variables.dn != '' && who.variables.name != '' && who.variables.name in [ad.variables.upn, ad.variables.sam, ad.variables.mail]"
+        # Where to act, or why not. One user, in Active Directory.
+        - name: plan
+          let:
+            names: "setup.variables.names + [ad.variables.upn, ad.variables.sam, ad.variables.mail]"
+            user: "ad_match.variables.found && ad.variables.upn != '' ? ad.variables.upn : who.variables.name"
+            directory: "check.variables.stop == '' && ad_match.variables.found ? 'Active Directory' : ''"
+        - name: decide
+          let:
+            skip: >-
+                check.variables.stop != '' ? check.variables.stop :
+                plan.variables.names.exists(n, n != '' && n in setup.variables.excluded) ? plan.variables.user + ' is on Excluded users.' :
+                plan.variables.directory == 'Active Directory' && ad.variables.protected ? plan.variables.user + ' has adminCount set in Active Directory. The playbook never disables protected admin accounts.' :
+                plan.variables.directory == 'Active Directory' && !setup.variables.domains.exists(d, ad.variables.upn.endsWith('@' + d)) ? plan.variables.user + ' isn\'t in a domain you listed.' :
+                plan.variables.directory == 'Active Directory' && ad.variables.disabled ? plan.variables.user + ' is already disabled in Active Directory.' : ''
+            problem: >-
+                check.variables.stop != '' || plan.variables.directory != '' ? '' :
+                who.variables.name == '' ? 'The finding has no user name to look the user up by, so nothing was disabled.' :
+                plan.variables.user + ' wasn\'t found in Active Directory, so nothing was disabled. Check the connection and its BaseDN. For a cloud-only user, set up Disable dormant users.' + (has(ad_lookup, 'status.error') ? ' Active Directory lookup: ' + (type(ad_lookup.status.error) == type('') ? ad_lookup.status.error : toString(ad_lookup.status.error)) : has(ad_lookup, 'outputs.details') && (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details != '' : true) ? ' Active Directory lookup: ' + (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details : toString(ad_lookup.outputs.details)) : '')
+        # The only task that acts, and only with dry run off.
+        - name: disable_ad
+          condition: "!setup.variables.dry_run && decide.variables.skip == '' && decide.variables.problem == '' && plan.variables.directory == 'Active Directory'"
+          action: Taegis.LDAP.disable_user
+          optional: true
+          retry: 2
+          inputs:
+            dn: ad.variables.dn
+        - name: outcome
+          let:
+            disabled: "has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true"
+            error: >-
+                has(disable_ad, 'status.error') ? (type(disable_ad.status.error) == type('') ? disable_ad.status.error : toString(disable_ad.status.error)) :
+                has(disable_ad, 'outputs.details') ? (type(disable_ad.outputs.details) == type('') ? disable_ad.outputs.details : toString(disable_ad.outputs.details)) : ''
+        - name: verdict
+          let:
+            result: >-
+                decide.variables.skip != '' ? 'skipped' :
+                decide.variables.problem != '' ? 'failed' :
+                setup.variables.dry_run ? 'would disable' :
+                outcome.variables.disabled ? 'disabled' : 'failed'
+        - name: finish
+          let:
+            user: plan.variables.user
+            result: verdict.variables.result
+            status: "verdict.variables.result == 'failed' ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                decide.variables.skip != '' ? 'Skipped: ' + decide.variables.skip :
+                decide.variables.problem != '' ? decide.variables.problem :
+                setup.variables.dry_run ? 'Dry run: the playbook would disable ' + plan.variables.user + ' in Active Directory (' + ad.variables.dn + '), from the ITDR finding ' + setup.variables.title + '. Nothing was disabled. Turn off dry run to disable.' :
+                outcome.variables.disabled ? 'Disabled ' + plan.variables.user + ' in Active Directory (' + ad.variables.dn + '), from the ITDR finding ' + setup.variables.title + '. If the account is synced, Entra ID follows at the next sync.' :
+                'Disabling ' + plan.variables.user + ' in Active Directory failed. ' + outcome.variables.error

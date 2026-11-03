@@ -1,19 +1,19 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_ITDR_DormantUser_Disable
-version: 1.0.0
+version: 2.0.0
 title: Disable dormant users (unofficial)
-description: When Sophos ITDR flags a user as dormant, disables the account in on-premises Active Directory, or in Entra ID for a cloud-only user, when its domain is one you list. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: When Sophos ITDR flags a user as dormant, disables a cloud-only account in Entra ID when its domain is one you list. It needs only the Microsoft Graph API connection, and leaves users synced from Active Directory to Disable dormant users in Active Directory. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
-    Runs on a new Sophos ITDR dormant finding for a user. It looks the user up in Entra ID and on-premises Active Directory, then disables the account where it's managed: in Active Directory for on-premises and synced accounts, and in Entra ID for cloud-only accounts. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
+    Runs on a new Sophos ITDR dormant finding for a user. It looks the user up in Entra ID through the Microsoft Graph API connection and disables a cloud-only account there. It skips a user synced from on-premises Active Directory, because the next sync would undo the disable. Disable dormant users in Active Directory, in the same library, disables those through the LDAP connection. The execution records what happened. Sophos doesn't make, maintain or support this playbook.
 
     # Safety
     - Dry run is on until you turn it off. In dry run the playbook looks the user up and records what it would disable, and disables nothing.
     - It only disables users whose user principal name is in a domain you list. With no domains set, it disables nothing.
-    - It never disables a user on Excluded users, a user Sophos ITDR flags as an admin, or an Active Directory account with adminCount set.
+    - It never disables a user on Excluded users, a user Sophos ITDR flags as an admin, or a user synced from Active Directory.
     - It acts only on findings from the ITDR checks you list, and on one user per run.
-    - Rollback: enable the account again where the playbook disabled it, and add it to Excluded users.
+    - Rollback: enable the account again in Entra ID, and add it to Excluded users.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -21,17 +21,14 @@ documentation: |
     | Dry run | Only record what the playbook would do | On |
     | Domains | User principal name domains in scope | None |
     | Excluded users | User principal names, sAMAccountNames or email addresses never to disable | None |
-    | ITDR checks | Titles of the ITDR checks whose findings it acts on | Dormant Accounts, and AD enabled user accounts shall not be dormant without hybrid activity |
-    | Disable in Active Directory | Disable on-premises and synced accounts through the LDAP connection | On |
-    | Disable in Entra ID | Look users up in Entra ID and disable cloud-only accounts there | On |
-changeNotes: First version
+    | ITDR checks | Titles of the ITDR checks whose findings it acts on | Dormant Accounts |
+changeNotes: Entra ID only, so it needs just the Microsoft Graph API connection. Users synced from Active Directory are skipped. Disable dormant users in Active Directory disables them through the LDAP connection.
 tags:
     - Category:IAM
     - Type:Response
 connectorCategories:
     - Generic
 connectors:
-    - Taegis.LDAP:1.0.13
     - Taegis.MicrosoftGraphAPI:2.12.2
 triggerHints:
     - isProactiveResponse: false
@@ -48,7 +45,6 @@ inputs:
                 checks:
                     default:
                         - Dormant Accounts
-                        - AD enabled user accounts shall not be dormant without hybrid activity
                     description: Titles of the Sophos ITDR checks whose findings this playbook acts on, as Identity Settings > Posture Check Preferences shows them
                     items:
                         type: string
@@ -71,16 +67,6 @@ inputs:
                         type: string
                     title: Excluded users
                     type: array
-                use_active_directory:
-                    default: true
-                    description: Look users up in Active Directory through the LDAP connection, and disable on-premises and synced accounts there
-                    title: Disable in Active Directory
-                    type: boolean
-                use_entra_id:
-                    default: true
-                    description: Look users up in Entra ID through the Microsoft Graph API connection, and disable cloud-only accounts there
-                    title: Disable in Entra ID
-                    type: boolean
             required:
                 - domains
             title: Playbook settings
@@ -89,7 +75,7 @@ inputs:
 outputs:
     properties:
         directory:
-            description: Active Directory, Entra ID, or empty when the playbook found nowhere to act
+            description: Entra ID, or empty when the playbook found nowhere to act
             type: string
         result:
             description: disabled, would disable, skipped or failed
@@ -103,7 +89,7 @@ outputs:
     type: object
 dsl:
     name: Unofficial_ITDR_DormantUser_Disable
-    description: Disables the user in a Sophos ITDR dormant finding in Active Directory or Entra ID, within the domains you list, or records what it would do.
+    description: Disables the cloud-only user in a Sophos ITDR dormant finding in Entra ID, within the domains you list, or records what it would do.
     outcomeStatus: finish.variables.status
     outcomeMessage: finish.variables.message
     outputs:
@@ -118,9 +104,7 @@ dsl:
             dry_run: "inputs.?configuration.dry_run.orValue(true)"
             domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
             excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
-            checks: "inputs.?configuration.checks.orValue(['Dormant Accounts', 'AD enabled user accounts shall not be dormant without hybrid activity']).map(c, string(c).trim().toLower())"
-            use_ad: "inputs.?configuration.use_active_directory.orValue(true)"
-            use_entra: "inputs.?configuration.use_entra_id.orValue(true)"
+            checks: "inputs.?configuration.checks.orValue(['Dormant Accounts']).map(c, string(c).trim().toLower())"
             category: "type(findingCheck(inputs, 'category')) == type('') ? findingCheck(inputs, 'category').toLower() : ''"
             title: "type(findingCheck(inputs, 'title')) == type('') ? findingCheck(inputs, 'title') : ''"
             reference: "type(findingPrimaryReference(inputs, 'derivedType')) == type('') ? findingPrimaryReference(inputs, 'derivedType') : ''"
@@ -140,13 +124,12 @@ dsl:
                 setup.variables.category != 'dormant_resource' || !(setup.variables.title.toLower() in setup.variables.checks) ? 'The finding is from the ITDR check ' + (setup.variables.title != '' ? setup.variables.title : 'with no title') + ' in category ' + setup.variables.category + ', which this playbook doesn\'t act on.' :
                 setup.variables.reference != 'USER' ? 'The finding is about an object of type ' + setup.variables.reference + ', not a user.' :
                 size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
-                !setup.variables.use_ad && !setup.variables.use_entra ? 'Disable in Active Directory and Disable in Entra ID are both off.' :
                 setup.variables.is_admin ? 'Sophos ITDR flags ' + who.variables.label + ' as an admin. The playbook never disables admins.' :
                 setup.variables.names.exists(n, n in setup.variables.excluded) ? who.variables.label + ' is on Excluded users.' :
                 setup.variables.identity_status == 'DISABLED' || setup.variables.identity_status == 'DELETED' ? 'Sophos ITDR shows ' + who.variables.label + ' as ' + setup.variables.identity_status.toLower() + ' already.' : ''
         # Entra ID: the user by object ID, or by user principal name, and whether it's synced from Active Directory.
         - name: entra_lookup
-          condition: "check.variables.stop == '' && who.variables.has_id && setup.variables.use_entra"
+          condition: "check.variables.stop == '' && who.variables.has_id"
           action: Taegis.MicrosoftGraphAPI.lookUpUser
           optional: true
           retry: 1
@@ -163,69 +146,30 @@ dsl:
             enabled: "!has(entra_lookup, 'outputs.accountEnabled') || entra_lookup.outputs.accountEnabled != false"
             ad_upn: "has(entra_lookup, 'outputs.onPremisesUserPrincipalName') ? string(entra_lookup.outputs.onPremisesUserPrincipalName).toLower() : ''"
             ad_sam: "has(entra_lookup, 'outputs.onPremisesSamAccountName') ? string(entra_lookup.outputs.onPremisesSamAccountName).toLower() : ''"
-        # The name to find in Active Directory: the on-premises name of a synced user, or the finding's name when Entra ID doesn't have the user.
-        - name: ad_name
-          let:
-            value: >-
-                entra.variables.found && !entra.variables.synced ? '' :
-                entra.variables.found ? (entra.variables.ad_upn != '' ? entra.variables.ad_upn : entra.variables.ad_sam) :
-                who.variables.upn
-        - name: ad_lookup
-          condition: "check.variables.stop == '' && setup.variables.use_ad && ad_name.variables.value != ''"
-          action: Taegis.LDAP.identify_user
-          optional: true
-          retry: 1
-          inputs:
-            user: ad_name.variables.value
-            onlyDN: false
-        # Accept the Active Directory account only when its user principal name, sAMAccountName or mail is exactly the name looked up.
-        - name: ad
-          let:
-            upn: "has(ad_lookup, 'outputs.data.userPrincipalName[0]') ? string(ad_lookup.outputs.data.userPrincipalName[0]).toLower() : ''"
-            sam: "has(ad_lookup, 'outputs.data.sAMAccountName[0]') ? string(ad_lookup.outputs.data.sAMAccountName[0]).toLower() : ''"
-            mail: "has(ad_lookup, 'outputs.data.mail[0]') ? string(ad_lookup.outputs.data.mail[0]).toLower() : ''"
-            dn: "has(ad_lookup, 'outputs.data.distinguishedName[0]') ? string(ad_lookup.outputs.data.distinguishedName[0]) : ''"
-            disabled: "has(ad_lookup, 'outputs.data.userAccountControl[0]') && int(string(ad_lookup.outputs.data.userAccountControl[0])) % 4 >= 2"
-            protected: "has(ad_lookup, 'outputs.data.adminCount[0]') && string(ad_lookup.outputs.data.adminCount[0]) != '0'"
-        - name: ad_match
-          let:
-            found: "ad.variables.dn != '' && ad_name.variables.value != '' && ad_name.variables.value in [ad.variables.upn, ad.variables.sam, ad.variables.mail]"
-        # Where to act, or why not. One user, in one directory.
+        # Where to act, or why not. One cloud-only user, in Entra ID.
         - name: plan
           let:
-            names: "setup.variables.names + [entra.variables.upn, entra.variables.mail, entra.variables.ad_upn, entra.variables.ad_sam, ad.variables.upn, ad.variables.sam, ad.variables.mail]"
+            names: "setup.variables.names + [entra.variables.upn, entra.variables.mail, entra.variables.ad_upn, entra.variables.ad_sam]"
             user: >-
-                ad_match.variables.found && ad.variables.upn != '' ? ad.variables.upn :
                 entra.variables.found ? entra.variables.upn :
                 who.variables.upn != '' ? who.variables.upn : setup.variables.external_id
             directory: >-
                 check.variables.stop != '' ? '' :
-                ad_match.variables.found ? 'Active Directory' :
                 entra.variables.found && !entra.variables.synced ? 'Entra ID' : ''
+        # A synced user is left to Active Directory: Entra Connect Sync would undo a disable in Entra ID.
         - name: decide
           let:
             skip: >-
                 check.variables.stop != '' ? check.variables.stop :
                 plan.variables.names.exists(n, n != '' && n in setup.variables.excluded) ? plan.variables.user + ' is on Excluded users.' :
-                plan.variables.directory == 'Active Directory' && ad.variables.protected ? plan.variables.user + ' has adminCount set in Active Directory. The playbook never disables protected admin accounts.' :
-                plan.variables.directory == 'Active Directory' && !setup.variables.domains.exists(d, ad.variables.upn.endsWith('@' + d)) ? plan.variables.user + ' isn\'t in a domain you listed.' :
-                plan.variables.directory == 'Active Directory' && ad.variables.disabled ? plan.variables.user + ' is already disabled in Active Directory.' :
-                plan.variables.directory == 'Entra ID' && !setup.variables.domains.exists(d, entra.variables.upn.endsWith('@' + d)) ? plan.variables.user + ' isn\'t in a domain you listed.' :
-                plan.variables.directory == 'Entra ID' && !entra.variables.enabled ? plan.variables.user + ' is already disabled in Entra ID.' : ''
+                entra.variables.found && !setup.variables.domains.exists(d, entra.variables.upn.endsWith('@' + d)) ? plan.variables.user + ' isn\'t in a domain you listed.' :
+                entra.variables.found && !entra.variables.enabled ? plan.variables.user + ' is already disabled in Entra ID.' :
+                entra.variables.found && entra.variables.synced ? plan.variables.user + ' is synced from Active Directory, so it\'s left to Active Directory. Disabling it in Entra ID alone would be undone at the next sync. Disable it in Active Directory, or set up Disable dormant users in Active Directory.' : ''
             problem: >-
-                check.variables.stop != '' || plan.variables.directory != '' ? '' :
+                check.variables.stop != '' || entra.variables.found ? '' :
                 !who.variables.has_id ? 'The finding has no user principal name or object ID to look the user up by, so nothing was disabled.' :
-                entra.variables.found && entra.variables.synced && !setup.variables.use_ad ? plan.variables.user + ' is synced from Active Directory and Disable in Active Directory is off. Disabling it in Entra ID alone would be undone at the next sync, so nothing was disabled.' :
-                entra.variables.found && entra.variables.synced ? plan.variables.user + ' is synced from Active Directory, but the LDAP connection didn\'t find ' + ad_name.variables.value + '. Check the connection and its BaseDN. Nothing was disabled.' :
-                plan.variables.user + ' wasn\'t found in ' + (setup.variables.use_entra && setup.variables.use_ad ? 'Entra ID or Active Directory' : setup.variables.use_entra ? 'Entra ID' : 'Active Directory') + ', so nothing was disabled.' + (has(entra_lookup, 'status.error') ? ' Entra ID lookup: ' + (type(entra_lookup.status.error) == type('') ? entra_lookup.status.error : toString(entra_lookup.status.error)) : '') + (has(ad_lookup, 'outputs.details') && !ad_match.variables.found ? ' Active Directory lookup: ' + (type(ad_lookup.outputs.details) == type('') ? ad_lookup.outputs.details : toString(ad_lookup.outputs.details)) : '')
-        # The only tasks that act, and only with dry run off.
-        - name: disable_ad
-          condition: "!setup.variables.dry_run && decide.variables.skip == '' && decide.variables.problem == '' && plan.variables.directory == 'Active Directory'"
-          action: Taegis.LDAP.disable_user
-          optional: true
-          retry: 2
-          inputs:
-            dn: ad.variables.dn
+                plan.variables.user + ' wasn\'t found in Entra ID, so nothing was disabled. For an on-premises account, set up Disable dormant users in Active Directory.' + (has(entra_lookup, 'status.error') ? ' Entra ID lookup: ' + (type(entra_lookup.status.error) == type('') ? entra_lookup.status.error : toString(entra_lookup.status.error)) : '')
+        # The only task that acts, and only with dry run off.
         - name: disable_entra
           condition: "!setup.variables.dry_run && decide.variables.skip == '' && decide.variables.problem == '' && plan.variables.directory == 'Entra ID'"
           action: Taegis.MicrosoftGraphAPI.disableUser
@@ -235,11 +179,8 @@ dsl:
             id: entra.variables.id
         - name: outcome
           let:
-            disabled: "(has(disable_ad, 'outputs.success') && disable_ad.outputs.success == true) || (has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success')"
-            error: >-
-                has(disable_ad, 'status.error') ? (type(disable_ad.status.error) == type('') ? disable_ad.status.error : toString(disable_ad.status.error)) :
-                has(disable_ad, 'outputs.details') ? (type(disable_ad.outputs.details) == type('') ? disable_ad.outputs.details : toString(disable_ad.outputs.details)) :
-                has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : ''
+            disabled: "has(disable_entra, 'outputs.outcome') && disable_entra.outputs.outcome == 'success'"
+            error: "has(disable_entra, 'status.error') ? (type(disable_entra.status.error) == type('') ? disable_entra.status.error : toString(disable_entra.status.error)) : ''"
         - name: verdict
           let:
             result: >-
@@ -255,7 +196,6 @@ dsl:
             message: >-
                 decide.variables.skip != '' ? 'Skipped: ' + decide.variables.skip :
                 decide.variables.problem != '' ? decide.variables.problem :
-                setup.variables.dry_run ? 'Dry run: the playbook would disable ' + plan.variables.user + ' in ' + plan.variables.directory + (plan.variables.directory == 'Active Directory' ? ' (' + ad.variables.dn + ')' : ' (cloud-only)') + ', from the ITDR finding ' + setup.variables.title + '. Nothing was disabled. Turn off dry run to disable.' :
-                outcome.variables.disabled && plan.variables.directory == 'Active Directory' ? 'Disabled ' + plan.variables.user + ' in Active Directory (' + ad.variables.dn + '), from the ITDR finding ' + setup.variables.title + '. If the account is synced, Entra ID follows at the next sync.' :
+                setup.variables.dry_run ? 'Dry run: the playbook would disable ' + plan.variables.user + ' in Entra ID (cloud-only), from the ITDR finding ' + setup.variables.title + '. Nothing was disabled. Turn off dry run to disable.' :
                 outcome.variables.disabled ? 'Disabled ' + plan.variables.user + ' in Entra ID (cloud-only), from the ITDR finding ' + setup.variables.title + '.' :
-                'Disabling ' + plan.variables.user + ' in ' + plan.variables.directory + ' failed. ' + outcome.variables.error
+                'Disabling ' + plan.variables.user + ' in Entra ID failed. ' + outcome.variables.error
