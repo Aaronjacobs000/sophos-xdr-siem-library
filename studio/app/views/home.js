@@ -10,7 +10,7 @@ export function renderHome(root) {
   const parsers = L.entries.reduce((k, e) => k + ((e.meta && Array.isArray(e.meta.parsers)) ? e.meta.parsers.length : 0), 0);
   root.append(h('div', { class: 'libhead' },
     h('div', {}, h('h1', { text: SITE_NAME }), h('p', { class: 'sub', text: 'Parsers, playbooks and connectors for Sophos Fusion that people share, and Parser Studio to write and test your own parsers in the browser. A personal project, not from Sophos.' })),
-    h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl(), target: '_blank', rel: 'noopener noreferrer', text: 'The repo on GitHub' }))));
+    h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl(), target: '_blank', rel: 'noopener noreferrer', text: 'The repo on GitHub' }), h('a', { class: 'btn primary', href: githubUrl('/blob/main/CONTRIBUTING.md'), target: '_blank', rel: 'noopener noreferrer', text: 'How to contribute' }))));
   const cards = h('div', { class: 'cards' });
   cards.append(
     section('#/parsers', 'Library', 'Parsers', 'Custom parsers for Sophos NG-SIEM, each with synthetic samples and the emulator\'s expected output. Open one to read it, test it against your own lines, or fork it.',
