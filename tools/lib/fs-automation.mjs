@@ -2,7 +2,7 @@
 
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { connectorInfo } from './automation.mjs';
+import { connectorInfo, EXAMPLE_IMAGE } from './automation.mjs';
 
 export const KINDS = { playbooks: 'playbook', connectors: 'connector' };
 export const ALLOWED_HOSTS = 'connectors/allowed-hosts.json';
@@ -12,7 +12,7 @@ async function exists(p) {
 }
 
 // Reads <playbooks|connectors>/<vendor>/<name>. Only regular files are read; anything else is
-// reported, and bad meta.json JSON is reported rather than thrown.
+// reported, and bad meta.json JSON is reported rather than thrown. example.png is read as bytes.
 export async function loadAutomationEntry(dir, root, folder) {
   const abs = path.resolve(dir);
   const files = [];
@@ -22,7 +22,8 @@ export async function loadAutomationEntry(dir, root, folder) {
       loadProblems.push({ level: 'error', code: 'files', message: `${d.name} is not a regular file. Entries hold plain files only.`, file: d.name });
       continue;
     }
-    files.push({ path: d.name, content: await readFile(path.join(abs, d.name), 'utf8') });
+    if (d.name === EXAMPLE_IMAGE) files.push({ path: d.name, content: '', bytes: await readFile(path.join(abs, d.name)) });
+    else files.push({ path: d.name, content: await readFile(path.join(abs, d.name), 'utf8') });
   }
   let meta = null;
   const m = files.find((f) => f.path === 'meta.json');

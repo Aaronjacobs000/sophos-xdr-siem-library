@@ -3,7 +3,7 @@
 
 import { h, clear, pill, ext, copyText, toast, download } from '../dom.js';
 import { state } from '../store.js';
-import { loadAutomationEntry, githubUrl } from '../library-client.js';
+import { loadAutomationEntry, githubUrl, siteUrl } from '../library-client.js';
 import { renderMarkdown } from '../markdown.js';
 import { notesView } from './common.js';
 
@@ -134,6 +134,12 @@ function steps(items) {
   return ol;
 }
 
+// The picture an entry can carry of what it sends, such as the card a chat playbook posts.
+function examplePanel(folder, e) {
+  return h('section', { class: 'panel examplepanel' }, h('h2', { text: 'Example output' }),
+    h('img', { src: siteUrl(`${folder}/${e.id}/example.png`), alt: `Example output of ${e.meta.title}`, loading: 'lazy' }));
+}
+
 function drawPlaybook(root, e) {
   const m = e.meta;
   root.append(h('div', { class: 'libhead' }, h('div', {}, h('span', { class: 'sub', text: `${m.vendor} · ${m.product}` }), h('h1', { text: m.title })),
@@ -167,6 +173,7 @@ function drawPlaybook(root, e) {
       : 'It has no dry run, so run it once against a test case, read what it sent, then turn it on.',
   ]));
   grid.append(left, right);
+  if (e.files.includes('example.png')) root.append(examplePanel('playbooks', e));
   if (e.texts['SETUP.md']) root.append(mdPanel('Setup', e.texts['SETUP.md'], githubUrl(`/blob/main/playbooks/${e.id}/`)));
   root.append(yamlPanel('playbooks', e, 'template.yaml'));
   if (e.texts['README.md']) root.append(mdPanel('README', e.texts['README.md'], githubUrl(`/blob/main/playbooks/${e.id}/`)));

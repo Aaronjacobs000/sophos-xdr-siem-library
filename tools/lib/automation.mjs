@@ -20,7 +20,12 @@ import { aboutProblems } from '../../studio/core/notes.js';
 
 export const TIERS = ['lookup', 'notify', 'reversible action', 'destructive'];
 const rank = (t) => TIERS.indexOf(t);
-export const PLAYBOOK_FILES = ['template.yaml', 'meta.json', 'SETUP.md', 'README.md'];
+export const PLAYBOOK_FILES = ['template.yaml', 'meta.json', 'SETUP.md', 'README.md', 'example.png'];
+// A playbook entry can carry a picture of what it sends, such as the card a chat playbook posts.
+// The entry page shows it as Example output.
+export const EXAMPLE_IMAGE = 'example.png';
+export const EXAMPLE_MAX_BYTES = 1024 * 1024;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 export const CONNECTOR_FILES = ['connector.yaml', 'meta.json', 'README.md'];
 const REQUIRED = { playbook: ['template.yaml', 'meta.json', 'SETUP.md'], connector: ['connector.yaml', 'meta.json', 'README.md'] };
 export const CONNECTOR_PATH = /^connectors\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -569,6 +574,13 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
 
 // ---------------------------------------------------------------- entries
 
+// example.png arrives as bytes: it must be a PNG of at most EXAMPLE_MAX_BYTES.
+function checkExampleImage(r, f) {
+  const b = f.bytes;
+  if (!b || b.length < PNG_SIGNATURE.length || PNG_SIGNATURE.some((x, i) => b[i] !== x)) r.error('image', `${EXAMPLE_IMAGE} is not a PNG file`, null, f.path);
+  else if (b.length > EXAMPLE_MAX_BYTES) r.error('image', `${EXAMPLE_IMAGE} is ${b.length} bytes; keep it to ${EXAMPLE_MAX_BYTES} bytes (1 MB) or less`, null, f.path);
+}
+
 // entry: {kind: 'playbook'|'connector', id: 'vendor/name', files: [{path, content}], meta, loadProblems}
 // opts: {allowedHosts, connectors: Map of id -> parsed connector entry, allowNames}
 export function validateAutomation(entry, opts = {}) {
@@ -589,7 +601,10 @@ export function validateAutomation(entry, opts = {}) {
   }
   const allowed = hostsFor(opts.allowedHosts, vendorSlug);
   const okHosts = new Set([...allDocHosts(opts.allowedHosts), ...allowed.docs]);
-  for (const f of entry.files || []) scanFile(r, `${base}/${entry.id}/${f.path}`, f.path, f.content, { allowNames: opts.allowNames, okHosts });
+  for (const f of entry.files || []) {
+    if (f.path === EXAMPLE_IMAGE) { checkExampleImage(r, f); continue; }
+    scanFile(r, `${base}/${entry.id}/${f.path}`, f.path, f.content, { allowNames: opts.allowNames, okHosts });
+  }
   const yamlName = kind === 'playbook' ? 'template.yaml' : 'connector.yaml';
   const yamlFile = (entry.files || []).find((f) => f.path === yamlName);
   let parsed = null;

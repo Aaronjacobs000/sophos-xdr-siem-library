@@ -255,6 +255,8 @@ table.fntable td:first-child { width: 45%; }
 .libhead .actions .pill { align-self: center; }
 .mdpanel { margin-top: 14px; }
 .mdpanel .mdview { max-height: none; }
+.examplepanel { margin-top: 14px; }
+.examplepanel img { display: block; max-width: 100%; height: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; }
 
 /* bridge on an entry page */
 .bridge { margin-top: 12px; }

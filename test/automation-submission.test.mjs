@@ -177,7 +177,8 @@ test('automation submission tool: every playbook and connector in the library co
       const r = await submit(e.kind, body, e.meta.author);
       assert.equal(r.status, 0, `${e.folder}/${e.id}: ${r.out}`);
       assert.equal(r.id, `${e.folder}/${e.id}`);
-      const want = Object.fromEntries(e.files.map((f) => [f.path, f.content]));
+      // example.png can't come through an issue form; a pull request adds it.
+      const want = Object.fromEntries(e.files.filter((f) => f.path !== 'example.png').map((f) => [f.path, f.content]));
       assert.deepEqual(Object.keys(r.files).sort(), Object.keys(want).sort(), `${e.id} files`);
       for (const [name, content] of Object.entries(want)) assert.equal(r.files[name], content, `${e.folder}/${e.id}/${name}`);
       assert.deepEqual(r.changed.sort(), Object.keys(want).map((f) => `${e.folder}/${e.id}/${f}`).sort());

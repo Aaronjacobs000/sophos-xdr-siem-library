@@ -375,6 +375,22 @@ test('checks: meta.json fields, the folder name and the allowed files', () => {
   assert.ok(has(check(missing), 'files', /SETUP\.md is missing/));
 });
 
+test('checks: a playbook may carry example.png, a PNG of at most 1 MB, and a connector may not', () => {
+  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  const image = (bytes) => ({ path: 'example.png', content: '', bytes: Uint8Array.from(bytes) });
+  const withImage = (entry, img) => { entry.files.push(img); return entry; };
+  assert.deepEqual(codes(check(withImage(playbookEntry(), image([...PNG, 0, 0, 0, 0])))), []);
+  assert.ok(has(check(withImage(playbookEntry(), image([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0, 0]))), 'image', /not a PNG/));
+  assert.ok(has(check(withImage(playbookEntry(), { path: 'example.png', content: 'not bytes' })), 'image', /not a PNG/));
+  const big = new Uint8Array(1024 * 1024 + 1);
+  big.set(PNG);
+  assert.ok(has(check(withImage(playbookEntry(), { path: 'example.png', content: '', bytes: big })), 'image', /1 MB/));
+  assert.ok(has(check(withImage(connectorEntry(), image([...PNG, 0]))), 'files', /example\.png is not allowed in a connector entry/));
+  const other = playbookEntry();
+  other.files.push(file('example.jpg', 'x'));
+  assert.ok(has(check(other), 'files', /example\.jpg/));
+});
+
 test('checks: playbooks and connectors need a summary, and notes in labelled sections', () => {
   const about = (r) => r.problems.filter((p) => p.code === 'about').map((p) => `${p.level}: ${p.message}`).join('\n');
   for (const [entry, kind] of [[playbookEntry, 'playbook'], [connectorEntry, 'connector']]) {

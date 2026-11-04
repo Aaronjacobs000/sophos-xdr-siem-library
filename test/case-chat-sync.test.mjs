@@ -31,15 +31,16 @@ const FNS = {
   caseTitle: (inputs) => inputs.case.title ?? '',
   caseTenantId: (inputs) => inputs.case.tenantId ?? '',
   resolveSubjectName: (id) => (id === 'aj-test-user' ? 'AJ Test User' : id),
-  createShareLink: () => '',
+  createShareLink: (inputs) => `https://central.example.com/aj-test/secops/cases/${inputs.case.id}/summary`,
 };
 
 // Runs the template's tasks in order up to finish. Action tasks are stood in for: the case read
 // returns `kase`, the comment read returns `comments`, and a post is recorded, not sent.
-function run(template, { event = 'manual', kase, comments = [], settings = SETTINGS, comment } = {}) {
-  const inputs = { event, settings, case: { id: kase.id, title: kase.title, tenantId: '1', ...(comment ? { delta: { comment, updatedFields: ['comment'] } } : {}) } };
+function run(template, { event = 'manual', kase, comments = [], settings = SETTINGS, comment, tenant } = {}) {
+  const inputs = { event, settings, case: { id: kase.id, title: kase.title, tenantId: '1', ...(comment ? { delta: { comment, updatedFields: ['comment'] } } : {}) }, ...(tenant ? { tenant } : {}) };
   const vars = { inputs };
   const posts = [];
+  const reads = [];
   for (const task of template.dsl.tasks) {
     if (task.name === 'finish') break;
     if (task.condition && !evalCel(task.condition, vars, FNS)) { vars[task.name] = {}; continue; }
@@ -47,6 +48,7 @@ function run(template, { event = 'manual', kase, comments = [], settings = SETTI
       vars[task.name] = { variables: {} };
       for (const [k, expr] of Object.entries(task.let)) vars[task.name].variables[k] = evalCel(String(expr), vars, FNS);
     } else if (task.action === 'Taegis.Case.queryCustom') {
+      reads.push(task.name);
       vars[task.name] = { outputs: { case: kase } };
     } else if (task.action === 'Taegis.Case.getComments') {
       vars[task.name] = { outputs: { comments } };
@@ -56,12 +58,12 @@ function run(template, { event = 'manual', kase, comments = [], settings = SETTI
     }
   }
   const v = (t, k) => vars[t]?.variables?.[k];
-  return { vars, posts, skip: v('decide', 'skip'), findings: v('card', 'findings'), recommendations: v('card', 'recommendations'), body: v('build', 'body') };
+  return { vars, posts, reads, skip: v('decide', 'skip'), findings: v('card', 'findings'), recommendations: v('card', 'recommendations'), body: v('build', 'body') };
 }
 
 const caseWith = (content, extra = {}) => ({
   id: 'case-1', shortId: 'CSE00001', title: 'AJ Test Case', severity: 6, managedBy: 'PROVIDER',
-  primaryStatus: { name: 'open', title: 'Open', isClosed: false }, type: { title: 'ITDR Finding' },
+  primaryStatus: { name: 'open', title: 'Open', isClosed: false }, type: { title: 'ITDR Finding' }, tenant: { name: 'AJ Test Tenant' },
   detectionsCount: 1, assetsCount: 0, eventsCount: 1, tags: [],
   keyFindings: { documentType: 'MARKDOWN', content }, ...extra,
 });
@@ -195,3 +197,25 @@ for (const [name, template, action] of [['Teams', TEAMS, 'Taegis.MicrosoftTeams.
     assert.equal(run(template, { event: 'Update', kase, comment: internal }).vars.read.variables.internal_comment, false);
   });
 }
+
+test('Teams: the card names the tenant and links the case, and each can be turned off', () => {
+  const facts = (r) => r.body.find((b) => b.type === 'FactSet').facts;
+  const actions = (r) => r.vars.build.variables.actions;
+  // A case event names the tenant, so it isn't read again.
+  const shared = run(TEAMS, { kase: caseWith(MDR), tenant: { name: 'AJ Test Event Tenant' } });
+  assert.deepEqual(facts(shared)[0], { title: 'Tenant', value: 'AJ Test Event Tenant' });
+  assert.deepEqual(shared.reads, ['fetch_case']);
+  assert.deepEqual(actions(shared), [{ type: 'Action.OpenUrl', title: 'Open in Sophos Fusion', url: 'https://central.example.com/aj-test/secops/cases/case-1/summary' }]);
+  // A run by hand or from a case carries no tenant, so the playbook reads it.
+  const manual = run(TEAMS, { kase: caseWith(MDR) });
+  assert.deepEqual(manual.reads, ['fetch_case', 'fetch_tenant']);
+  assert.deepEqual(facts(manual)[0], { title: 'Tenant', value: 'AJ Test Tenant' });
+  // Turned off: no Tenant row, no read for it, and no button.
+  const off = run(TEAMS, { kase: caseWith(MDR), settings: { ...SETTINGS, show_tenant: false, show_case_link: false } });
+  assert.equal(facts(off)[0].title, 'Severity');
+  assert.deepEqual(off.reads, ['fetch_case']);
+  assert.deepEqual(actions(off), []);
+  // No name anywhere leaves the row out.
+  const none = run(TEAMS, { kase: caseWith(MDR, { tenant: null }) });
+  assert.equal(facts(none)[0].title, 'Severity');
+});

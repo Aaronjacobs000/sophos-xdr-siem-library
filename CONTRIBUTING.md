@@ -121,7 +121,7 @@ Copy an existing entry's files, change them, and open a pull request from a git 
 ### What an entry holds
 
 ```
-playbooks/<vendor>/<name>/      template.yaml, meta.json, SETUP.md, and an optional README.md
+playbooks/<vendor>/<name>/      template.yaml, meta.json, SETUP.md, and an optional README.md and example.png
 connectors/<vendor>/<name>/     connector.yaml, meta.json, README.md
 ```
 
@@ -132,6 +132,7 @@ The folder comes from `meta.json`: the vendor and the title for a playbook, the 
 - A connector's `meta.json` has `title`, `vendor`, `product`, `auth` (how the connection signs in), `functions` (each function's risk tier), `license`, `tested`, `author`, `docs`, `summary` and optional `notes`.
 - `summary` and `notes` are the About text, in the same format as a parser entry's (see [Write the About text](#write-the-about-text)). A playbook's summary says what it does, what starts it and which connectors it calls, and what it needs. A connector's says what it calls and can do, how its connection signs in, and what it needs. The usual notes sections, in this order, are `Setup:`, `How it works:`, `Testing:` and `Known gaps:`.
 - `tested` is `{"validated": "YYYY-MM-DD", "tenant": null}`: the date the template passed `playbookValidateDSLV2` (or the connector imported) in a tenant, and `{"date": "YYYY-MM-DD", "region": "us01"}` once it really ran in a tenant. Only record what happened.
+- `example.png`, optional, is a picture of what the playbook sends, such as the card it posts: a PNG of at most 1 MB, with nothing in it you wouldn't publish. The entry page shows it as Example output.
 - `SETUP.md` lists what a template can't carry: the trigger, the run condition, the inputs, the connections, and the response mode where it applies. It says to pin the template version, because a configured playbook picks up minor and patch versions on its own, and to leave the playbook off until a test run.
 
 ### Risk tiers
