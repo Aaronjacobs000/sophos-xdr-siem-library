@@ -94,6 +94,9 @@ test('CEL: Sophos Fusion expressions parse, and the names they read are found', 
   assert.deepEqual(names("send.?outputs.orValue([]).collect('outputs.success').exists(s, toString(s) == 'true') ? 'success' : 'failure'"), ['send']);
   assert.deepEqual(names("inputs.recipients.split(',').map(r, r.trim()).filter(r, r != '').map(r, {'email': r})"), ['inputs']);
   assert.deepEqual(names('cel.bind(x, inputs.a, x + other)'), ['inputs', 'other']);
+  assert.deepEqual(names('lists.range(size(inputs.a)).map(i, inputs.a[i] + math.greatest(i, other))'), ['inputs', 'other']);
+  assert.deepEqual(names('cel.bind(lists, inputs.a, lists.size())'), ['inputs']);
+  assert.deepEqual(names('lists'), ['lists']);
   assert.deepEqual(names("[1, 2.5, .6, 0x1F, 3u, -1, r'raw\\d', b'bytes', '''tri\nple''', null, true][?0]"), []);
   assert.deepEqual(names('started'), ['started']);
   for (const bad of ['a ? b :', "'x' +", 'a.(b)', '(a', "'open", 'a $ b', '']) {

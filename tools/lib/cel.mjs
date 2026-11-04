@@ -257,6 +257,8 @@ export function parseCel(text) {
 // forms such as map.all(k, v, ...).
 const MACROS = new Set(['all', 'exists', 'exists_one', 'existsOne', 'map', 'filter', 'transformList', 'transformMap', 'transformMapEntry', 'sortBy']);
 const TWO_VAR = new Set(['all', 'exists', 'existsOne', 'exists_one', 'transformList', 'transformMap', 'transformMapEntry']);
+// The namespaces of CEL's extension functions, such as lists.range(3): a function name, not a name to read.
+const NAMESPACES = new Set(['base64', 'lists', 'math', 'sets', 'strings']);
 
 export function freeNames(ast) {
   const out = new Set();
@@ -278,6 +280,10 @@ export function freeNames(ast) {
         if (n.fn === 'bind' && n.target && n.target.t === 'id' && n.target.name === 'cel' && n.args.length === 3 && n.args[0].t === 'id') {
           walk(n.args[1], bound);
           walk(n.args[2], new Set([...bound, n.args[0].name]));
+          return;
+        }
+        if (n.target && n.target.t === 'id' && NAMESPACES.has(n.target.name) && !bound.has(n.target.name)) {
+          for (const a of n.args) walk(a, bound);
           return;
         }
         if (n.target) walk(n.target, bound);

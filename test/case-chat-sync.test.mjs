@@ -1,7 +1,7 @@
 // The case chat sync playbooks, run task by task on sample cases with the test CEL evaluator: what the
 // Teams card says for key findings and recommendations, and that an internal comment posts nothing.
 // The samples are made up; the ITDR one copies the shape of ITDR finding cases, with whole paragraphs
-// on heading lines and <br> for line breaks.
+// on heading lines and <br> for line breaks, and the HTML one the tables MDR investigations write.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -173,6 +173,127 @@ test('Teams: key findings that are empty, missing or rich text add no section', 
     assert.equal(r.findings, '');
     assert.equal(r.recommendations, '');
   }
+});
+
+// Simple HTML, an HTML table as pandas writes it in MDR investigation findings, and a Markdown table.
+const HTML = [
+  '## Sign-in Summary',
+  '',
+  'AJ test finding: the account <b>aj.test@example.com</b> signed in from a <i>new</i> address &amp; changed its MFA method.<br><br>',
+  '',
+  '<div>',
+  '<style scoped>',
+  '    .dataframe tbody tr th {',
+  '        vertical-align: top;',
+  '    }',
+  '</style>',
+  '<table border="1" class="dataframe">',
+  '  <thead>',
+  '    <tr style="text-align: right;">',
+  '      <th></th>',
+  '      <th>EventTime</th>',
+  '      <th>SourceAddress</th>',
+  '      <th>Country</th>',
+  '    </tr>',
+  '  </thead>',
+  '  <tbody>',
+  '    <tr>',
+  '      <th>0</th>',
+  '      <td>2026-01-02 03:04:05</td>',
+  '      <td>192.0.2.10</td>',
+  '      <td>AJ Testland</td>',
+  '    </tr>',
+  '    <tr>',
+  '      <th>1</th>',
+  '      <td>2026-01-02 03:09:00</td>',
+  '      <td>198.51.100.7</td>',
+  '      <td></td>',
+  '    </tr>',
+  '  </tbody>',
+  '</table>',
+  '</div>',
+  '',
+  '<small>Source: AJ test lookup</small> <span class="note">checked</span>',
+  '',
+  '## Recommended Next Steps',
+  '',
+  '1. Reset the password for <strong>aj.test@example.com</strong>.',
+  '2. Review the <em>MFA</em> methods.',
+].join('\n');
+
+const TABLE = [
+  '## Activity Timeline',
+  '',
+  '| Time (UTC) | Detection | Threat Score |',
+  '| --- | :---: | ---: |',
+  '| 2026-01-02 03:04:05 | [AJ Test Detection](/secops/detections/aj-test/summary) | 7.5 |',
+  '| 2026-01-02 03:05:00 | AJ Test **Blocked** | |',
+  '',
+  'Text after the table, with a pipe | in it, and a<b and c>d left alone.',
+  '',
+  '## Recommended Next Steps',
+  '',
+  '- Isolate AJ-TEST-LAPTOP.',
+].join('\n');
+
+const RAW = /<\/?(b|i|strong|em|small|span|div|style|table|thead|tbody|tr|th|td|br)\b|&amp;|^\s*\|.*\|\s*$/im;
+
+test('Teams: simple HTML shows as bold, italic or plain text, and an HTML table as one line per row', () => {
+  const r = run(TEAMS, { kase: caseWith(HTML), settings: { ...SETTINGS, section_length: 2000 } });
+  assert.equal(r.findings, [
+    '**Sign-in Summary**',
+    '',
+    'AJ test finding: the account **aj.test@example.com** signed in from a *new* address & changed its MFA method.',
+    '',
+    '- 0 · EventTime: 2026-01-02 03:04:05 · SourceAddress: 192.0.2.10 · Country: AJ Testland',
+    '- 1 · EventTime: 2026-01-02 03:09:00 · SourceAddress: 198.51.100.7',
+    '',
+    'Source: AJ test lookup checked',
+  ].join('\n'));
+  assert.equal(r.recommendations, '1. Reset the password for **aj.test@example.com**.\n2. Review the *MFA* methods.');
+  assert.doesNotMatch(JSON.stringify(r.body), /<\/?(b|i|strong|em|small|span|div|style|table|tr|th|td)\b|vertical-align|&amp;/);
+});
+
+test('Teams: a Markdown table shows as one line per row, and text that only looks like a tag stays', () => {
+  const r = run(TEAMS, { kase: caseWith(TABLE) });
+  assert.equal(r.findings, [
+    '**Activity Timeline**',
+    '',
+    '- Time (UTC): 2026-01-02 03:04:05 · Detection: AJ Test Detection · Threat Score: 7.5',
+    '- Time (UTC): 2026-01-02 03:05:00 · Detection: AJ Test **Blocked**',
+    '',
+    'Text after the table, with a pipe | in it, and a<b and c>d left alone.',
+  ].join('\n'));
+  assert.equal(r.recommendations, '- Isolate AJ-TEST-LAPTOP.');
+  // A table with no blank line before it, right under a heading, with a bold tag in a cell. Spaces inside
+  // the tag move outside the marks, since Markdown doesn't bold ** text **.
+  const tight = run(TEAMS, { kase: caseWith('### Entities\n|Type|Name|\n|-|-|\n|Host|<b> AJ-TEST-LAPTOP </b>|\n|User|aj.test@example.com|') });
+  assert.equal(tight.findings, '**Entities**\n- Type: Host · Name:  **AJ-TEST-LAPTOP** \n- Type: User · Name: aj.test@example.com');
+});
+
+test('Teams: comments show simple HTML and tables the same way', () => {
+  const html = 'AJ test comment with <b>bold</b> and a table:\n\n| Host | Action |\n| --- | --- |\n| AJ-TEST-LAPTOP | Isolated |\n\nNo <u>raw</u> tags &amp; no @aj-test-user change.';
+  const want = 'AJ test comment with **bold** and a table:\n\n- Host: AJ-TEST-LAPTOP · Action: Isolated\n\nNo raw tags & no @aj-test-user change.';
+  const comments = [
+    { id: 'c-9', authorId: 'aj-test-user', createdAt: '2026-01-02T03:04:05.000Z', comment: html },
+    { id: 'c-8', authorId: 'aj-test-user', createdAt: '2026-01-02T03:00:00.000Z', comment: 'AJ test plain comment' },
+  ];
+  const shared = run(TEAMS, { kase: caseWith(MDR), comments });
+  assert.deepEqual(shared.vars.sections.variables.recent.map((c) => c.text), [want, 'AJ test plain comment']);
+  const one = run(TEAMS, { kase: caseWith(MDR), comments, settings: { ...SETTINGS, recent_comments: 1 } });
+  assert.deepEqual(one.vars.sections.variables.recent.map((c) => c.text), [want]);
+  const card = run(TEAMS, { event: 'Comment Added', kase: caseWith(MDR), comment: { id: 'c-10', authorId: 'aj-test-user', comment: html } });
+  assert.equal(card.vars.card.variables.comment_text, want);
+  assert.doesNotMatch(JSON.stringify(card.body), RAW);
+});
+
+test('Slack: a comment shows simple HTML as plain text and a table as one line per row', () => {
+  const html = '<p>AJ test comment with <b>bold</b> and <i>italic</i> text.</p>\n\n| Host | Action |\n| --- | --- |\n| AJ-TEST-LAPTOP | Isolated |';
+  const r = run(SLACK, { event: 'Comment Added', kase: caseWith(MDR), comment: { id: 'c-11', authorId: 'aj-test-user', comment: html } });
+  assert.equal(r.skip, '');
+  assert.equal(r.vars.card.variables.comment_text, 'AJ test comment with bold and italic text.\n\n- Host: AJ-TEST-LAPTOP · Action: Isolated');
+  const plain = run(SLACK, { event: 'Comment Added', kase: caseWith(MDR), comment: { id: 'c-12', authorId: 'aj-test-user', comment: 'AJ test: score < 5 and > 3, @aj-test-user' } });
+  assert.equal(plain.vars.card.variables.comment_text, 'AJ test: score < 5 and > 3, @aj-test-user');
 });
 
 const normal = { id: 'c-1', authorId: 'aj-test-user', comment: 'AJ test comment: the user confirmed the sign-in.' };

@@ -1,12 +1,14 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Slack_CaseChatSync
-version: 1.0.1
+version: 1.0.2
 title: Slack case chat sync (unofficial)
 description: Posts a message to a Slack channel when a case is created or its status, severity, assignee or title changes, or someone comments. With the library's chat bridge, its buttons set the case status or add a comment from Slack. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Posts a Block Kit message to a Slack channel through the incoming webhook of a Slack app when a case is created, when its status, severity, assignee or title changes, and when someone comments on it. The message shows the case's short ID, title, severity, status, assignee and who manages it, with a button that opens the case in Sophos Fusion. Sophos doesn't make, maintain or support this playbook.
+
+    A comment shows as plain text: simple HTML such as `<b>` shows without its tags, and each row of a table, Markdown or HTML, shows as one line of Header: value pairs.
 
     For notifications only, Sophos Fusion's own Send Notification Message template already posts case events to Slack. Use this one when you also run the library's chat bridge: turn on Two-way buttons and the message gets buttons that set the status, close the case or add a comment, which the bridge carries back to the case.
 
@@ -27,7 +29,7 @@ documentation: |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Two-way buttons | Add the status, close and comment buttons; needs the chat bridge as the Slack app's interactivity URL | Off |
     | Status buttons | Comma-separated case status names to offer as buttons | active,awaiting_action |
-changeNotes: An internal comment is no longer posted to the channel.
+changeNotes: Simple HTML such as <b> in a comment shows as plain text instead of raw tags, and each table row, Markdown or HTML, shows as one line of header and value pairs.
 tags:
     - Type:Notification
 connectorCategories:
@@ -176,7 +178,30 @@ dsl:
                 setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
                 setup.variables.event == 'comment added' ? 'New comment from ' + resolveSubjectName(read.variables.author) :
                 'Case shared from Sophos Fusion'
-            comment_text: "size(read.variables.comment) > 2500 ? read.variables.comment.substring(0, 2500) + '...' : read.variables.comment"
+            comment_text: |-
+                cel.bind(t, cel.bind(s0, read.variables.comment,
+                  cel.bind(s1, cel.bind(a, s0.replace('\r', '').split('<style'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</style>') >= 0 ? x.substring(x.indexOf('</style>') + 8) : '<style' + x).join('')),
+                  cel.bind(s2, cel.bind(a, s1.split('<table'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</table>') < 0 ? '<table' + x :
+                    cel.bind(t, x.substring(0, x.indexOf('</table>')).split('<tr'), cel.bind(rows, t.slice(1, size(t)).map(r, cel.bind(q, r.replace('<th', '<td').split('<td'),
+                      q.slice(1, size(q)).map(c, cel.bind(v, c.substring(c.indexOf('>') + 1), (v.indexOf('</t') >= 0 ? v.substring(0, v.indexOf('</t')) : v).replace('\n', ' ').trim())))),
+                      '\n' + (size(rows) < 2 ? rows.map(r, r.filter(c, c != '').join(' · ')) : rows.slice(1, size(rows)).map(r, cel.bind(h, rows[0],
+                        cel.bind(u, lists.range(size(r)).filter(i, r[i] != '').map(i, i < size(h) && h[i] != '' ? h[i] + ': ' + r[i] : r[i]).join(' · '), u == '' ? '' : '- ' + u)))).filter(l, l != '').join('\n') + '\n' + x.substring(x.indexOf('</table>') + 8)))).join('')),
+                  cel.bind(s3, s2.split('\n\n').map(b, cel.bind(ls, b.split('\n'),
+                    cel.bind(ds, lists.range(size(ls)).filter(i, i > 0 && (ls[i].contains('-') && ls[i].contains('|') && ls[i].replace('|', '').replace(':', '').replace('-', '').trim() == '') && ls[i - 1].contains('|')), size(ds) == 0 ? b :
+                      cel.bind(h, cel.bind(t, ls[ds[0] - 1].trim(), cel.bind(u, t.startsWith('|') ? t.substring(1) : t, (u.endsWith('|') ? u.substring(0, size(u) - 1) : u).split('|').map(c, c.trim()))),
+                        (ls.slice(0, ds[0] - 1) + ls.slice(ds[0] + 1, size(ls)).filter(l, !(l.contains('-') && l.contains('|') && l.replace('|', '').replace(':', '').replace('-', '').trim() == '')).map(l, !l.contains('|') ? l :
+                          cel.bind(r, cel.bind(t, l.trim(), cel.bind(u, t.startsWith('|') ? t.substring(1) : t, (u.endsWith('|') ? u.substring(0, size(u) - 1) : u).split('|').map(c, c.trim()))),
+                            cel.bind(u, lists.range(size(r)).filter(i, r[i] != '').map(i, i < size(h) && h[i] != '' ? h[i] + ': ' + r[i] : r[i]).join(' · '), u == '' ? '' : '- ' + u)))).join('\n'))))).join('\n\n'),
+                  cel.bind(m, {'b': ['', ''], 'strong': ['', ''], 'i': ['', ''], 'em': ['', ''], 'h1': ['\n', '\n'], 'h2': ['\n', '\n'], 'h3': ['\n', '\n'], 'h4': ['\n', '\n'], 'h5': ['\n', '\n'], 'h6': ['\n', '\n'],
+                    'br': ['\n', '\n'], 'hr': ['\n', '\n'], 'p': ['\n', '\n'], 'div': ['\n', '\n'], 'pre': ['\n', '\n'], 'blockquote': ['\n', '\n'], 'ul': ['\n', '\n'], 'ol': ['\n', '\n'], 'table': ['\n', '\n'], 'caption': ['\n', '\n'], 'li': ['\n- ', ''], 'tr': ['\n', ''], 'th': [' ', ' '], 'td': [' ', ' '],
+                    'thead': ['', ''], 'tbody': ['', ''], 'tfoot': ['', ''], 'col': ['', ''], 'colgroup': ['', ''], 'span': ['', ''], 'font': ['', ''], 'small': ['', ''], 'big': ['', ''], 'u': ['', ''], 's': ['', ''], 'del': ['', ''], 'ins': ['', ''], 'mark': ['', ''], 'sup': ['', ''], 'sub': ['', ''], 'code': ['', ''], 'kbd': ['', ''], 'tt': ['', ''], 'abbr': ['', ''], 'a': ['', ''], 'img': ['', '']},
+                  cel.bind(a, s3.replace('<br />', '<br>').replace('<br/>', '<br>').replace('<BR>', '<br>').replace('<br> ', '\n').replace('<br>', '\n').split('<'),
+                    cel.bind(ls, (a[0] + a.slice(1, size(a)).map(x, cel.bind(i, x.indexOf('>'),
+                      cel.bind(n, i <= 0 ? '' : cel.bind(t, x.substring(x.startsWith('/') ? 1 : 0, i), !t.contains(' ') || t.contains('=') || t.endsWith('/') ? t.split(' ')[0].split('/')[0].lowerAscii() : ''),
+                        n in m ? m[n][x.startsWith('/') ? 1 : 0] + x.substring(i + 1) : '<' + x))).join(''))
+                      .replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#39;', "'").replace('&amp;', '&').split('\n'),
+                      lists.range(size(ls)).filter(i, ls[i].trim() != '' || (i > 0 && ls[i - 1].trim() != '')).map(i, ls[i]).join('\n').trim()))))))),
+                  size(t) > 2500 ? t.substring(0, 2500) + '...' : t)
             link: createShareLink(inputs)
             value: "read.variables.case.?id.orValue('') + '|' + read.variables.case.?shortId.orValue('')"
         - name: build

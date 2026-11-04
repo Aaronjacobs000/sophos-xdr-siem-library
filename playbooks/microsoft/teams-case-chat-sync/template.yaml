@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Teams_CaseChatSync
-version: 1.2.0
+version: 1.2.1
 title: Teams case chat sync (unofficial)
 description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. The card carries the case's key findings, recommended next steps and latest comments, and names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -18,7 +18,7 @@ documentation: |
     - Recommendations: the steps under the key findings heading that mentions recommendations, such as Recommended Next Steps, cut to Section length.
     - Recent comments: the latest comments, newest first, each with its author and time. Internal comments, comments that start with the bridge prefix and comments by the ignored subject IDs are left out, and so is the comment a comment card is already about.
 
-    Each section is left out when it's empty or turned off. Links in the key findings point inside Sophos Fusion, so the card shows their text only. Line breaks written as `<br>` show as new lines, and a heading line that holds a whole paragraph, as ITDR finding cases have, shows as text instead of one long bold line. Key findings saved as rich text, not Markdown, are left out. Times show in each reader's own time zone. Authors are named as Sophos Fusion names them, so a comment written through an API credential shows as Sophos.
+    Each section is left out when it's empty or turned off. Links in the key findings point inside Sophos Fusion, so the card shows their text only. Line breaks written as `<br>` show as new lines, and a heading line that holds a whole paragraph, as ITDR finding cases have, shows as text instead of one long bold line. Simple HTML in the key findings and comments, such as `<b>` and `<i>`, shows as bold and italic or as plain text, and each row of a table, Markdown or HTML, shows as one line of Header: value pairs. Key findings saved as rich text, not Markdown, are left out. Times show in each reader's own time zone. Authors are named as Sophos Fusion names them, so a comment written through an API credential shows as Sophos.
 
     # Filters
     - Minimum severity: cases below it aren't posted. Medium unless you change it.
@@ -43,7 +43,7 @@ documentation: |
     | Show recommendations | The recommended next steps from the key findings | On |
     | Recent comments | How many of the latest comments to show; 0 leaves them out | 3 |
     | Section length | Most characters shown for key findings and for recommendations | 600 |
-changeNotes: The card shows the tenant name. Show tenant name and Show case link turn the tenant and the Open in Sophos Fusion button off.
+changeNotes: Simple HTML such as <b> and <i> in key findings and comments shows as bold and italic or plain text instead of raw tags, and each table row, Markdown or HTML, shows as one line of header and value pairs instead of raw pipes or tags.
 tags:
     - Type:Notification
 connectorCategories:
@@ -248,47 +248,78 @@ dsl:
         - name: notes
           condition: "decide.variables.skip == ''"
           let:
-            key_findings: |-
+            source: |-
                 cel.bind(p, (read.variables.case.?keyFindings.documentType.orValue('MARKDOWN') == 'MARKDOWN' && read.variables.case.?keyFindings.content.orValue('') != null ? read.variables.case.?keyFindings.content.orValue('') : '').replace('\r', '').replace('`', '').split(']('),
                   cel.bind(parts, [p[0]] + p.slice(1, size(p)).map(x, x.indexOf(')') >= 0 ? x.substring(x.indexOf(')') + 1) : x),
-                    (parts.slice(0, size(parts) - 1).map(x, x.lastIndexOf('[') >= 0 ? x.substring(0, x.lastIndexOf('[')) + x.substring(x.lastIndexOf('[') + 1) : x) + [parts[size(parts) - 1]]).join('')
-                      .replace('<br />', '<br>').replace('<br/>', '<br>').replace('<BR>', '<br>').replace('<br> ', '\n').replace('<br>', '\n')
-                      .split('\n').map(l,
-                        cel.bind(t, l.trim().startsWith('---') ? l.trim().substring(3).trim() : l.trim(),
-                          !t.startsWith('#') ? (t == '' ? '' : l) :
-                          cel.bind(h, t.substring([6, 5, 4, 3, 2, 1].filter(n, t.startsWith('######'.substring(0, n)))[0]).trim(),
-                            h == '' ? '' :
-                            size(h) <= 80 && !h.endsWith('.') ? '# ' + h.replace('**', '') :
-                            cel.bind(c, h.indexOf(':'),
-                              c > 0 && c <= 40 && h.substring(0, c).replace('*', '').trim() != '' && h.substring(c + 1).trim() != '' ?
-                                '# ' + h.substring(0, c).replace('*', '').trim() + '\n' +
-                                  cel.bind(r, h.substring(c + 1).trim(), h.substring(0, c).contains('**') && r.startsWith('**') ? r.substring(2).trim() : r) :
-                                h)))).join('\n')
-                      .split('\n\n').map(x, x.trim()).filter(x, x != '').join('\n\n')))
+                    (parts.slice(0, size(parts) - 1).map(x, x.lastIndexOf('[') >= 0 ? x.substring(0, x.lastIndexOf('[')) + x.substring(x.lastIndexOf('[') + 1) : x) + [parts[size(parts) - 1]]).join('')))
             comments: |-
                 cel.bind(l, fetch_comments.?outputs.comments.orValue([]), l == null ? [] : l).filter(c,
                   c.?comment.orValue('') != null && c.?comment.orValue('').trim() != '' &&
                   !(setup.variables.prefix != '' && c.comment.startsWith(setup.variables.prefix)) &&
                   !(c.?authorId.orValue('') in setup.variables.ignore_authors) &&
                   !(setup.variables.event == 'comment added' && c.comment == read.variables.comment))
+        - name: markup
+          condition: "decide.variables.skip == ''"
+          let:
+            texts: |-
+                ([notes.variables.source, read.variables.comment] +
+                  cel.bind(l, notes.variables.comments, size(l) > setup.variables.recent_comments ? l.slice(0, setup.variables.recent_comments) : l).map(c, c.comment)).map(s0,
+                  cel.bind(s1, cel.bind(a, s0.replace('\r', '').split('<style'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</style>') >= 0 ? x.substring(x.indexOf('</style>') + 8) : '<style' + x).join('')),
+                  cel.bind(s2, cel.bind(a, s1.split('<table'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</table>') < 0 ? '<table' + x :
+                    cel.bind(t, x.substring(0, x.indexOf('</table>')).split('<tr'), cel.bind(rows, t.slice(1, size(t)).map(r, cel.bind(q, r.replace('<th', '<td').split('<td'),
+                      q.slice(1, size(q)).map(c, cel.bind(v, c.substring(c.indexOf('>') + 1), (v.indexOf('</t') >= 0 ? v.substring(0, v.indexOf('</t')) : v).replace('\n', ' ').trim())))),
+                      '\n' + (size(rows) < 2 ? rows.map(r, r.filter(c, c != '').join(' · ')) : rows.slice(1, size(rows)).map(r, cel.bind(h, rows[0],
+                        cel.bind(u, lists.range(size(r)).filter(i, r[i] != '').map(i, i < size(h) && h[i] != '' ? h[i] + ': ' + r[i] : r[i]).join(' · '), u == '' ? '' : '- ' + u)))).filter(l, l != '').join('\n') + '\n' + x.substring(x.indexOf('</table>') + 8)))).join('')),
+                  cel.bind(s3, s2.split('\n\n').map(b, cel.bind(ls, b.split('\n'),
+                    cel.bind(ds, lists.range(size(ls)).filter(i, i > 0 && (ls[i].contains('-') && ls[i].contains('|') && ls[i].replace('|', '').replace(':', '').replace('-', '').trim() == '') && ls[i - 1].contains('|')), size(ds) == 0 ? b :
+                      cel.bind(h, cel.bind(t, ls[ds[0] - 1].trim(), cel.bind(u, t.startsWith('|') ? t.substring(1) : t, (u.endsWith('|') ? u.substring(0, size(u) - 1) : u).split('|').map(c, c.trim()))),
+                        (ls.slice(0, ds[0] - 1) + ls.slice(ds[0] + 1, size(ls)).filter(l, !(l.contains('-') && l.contains('|') && l.replace('|', '').replace(':', '').replace('-', '').trim() == '')).map(l, !l.contains('|') ? l :
+                          cel.bind(r, cel.bind(t, l.trim(), cel.bind(u, t.startsWith('|') ? t.substring(1) : t, (u.endsWith('|') ? u.substring(0, size(u) - 1) : u).split('|').map(c, c.trim()))),
+                            cel.bind(u, lists.range(size(r)).filter(i, r[i] != '').map(i, i < size(h) && h[i] != '' ? h[i] + ': ' + r[i] : r[i]).join(' · '), u == '' ? '' : '- ' + u)))).join('\n'))))).join('\n\n'),
+                  cel.bind(m, {'b': ['**', '**'], 'strong': ['**', '**'], 'i': ['*', '*'], 'em': ['*', '*'], 'h1': ['\n**', '**\n'], 'h2': ['\n**', '**\n'], 'h3': ['\n**', '**\n'], 'h4': ['\n**', '**\n'], 'h5': ['\n**', '**\n'], 'h6': ['\n**', '**\n'],
+                    'br': ['\n', '\n'], 'hr': ['\n', '\n'], 'p': ['\n', '\n'], 'div': ['\n', '\n'], 'pre': ['\n', '\n'], 'blockquote': ['\n', '\n'], 'ul': ['\n', '\n'], 'ol': ['\n', '\n'], 'table': ['\n', '\n'], 'caption': ['\n', '\n'], 'li': ['\n- ', ''], 'tr': ['\n', ''], 'th': [' ', ' '], 'td': [' ', ' '],
+                    'thead': ['', ''], 'tbody': ['', ''], 'tfoot': ['', ''], 'col': ['', ''], 'colgroup': ['', ''], 'span': ['', ''], 'font': ['', ''], 'small': ['', ''], 'big': ['', ''], 'u': ['', ''], 's': ['', ''], 'del': ['', ''], 'ins': ['', ''], 'mark': ['', ''], 'sup': ['', ''], 'sub': ['', ''], 'code': ['', ''], 'kbd': ['', ''], 'tt': ['', ''], 'abbr': ['', ''], 'a': ['', ''], 'img': ['', '']},
+                  cel.bind(a, s3.replace('<br />', '<br>').replace('<br/>', '<br>').replace('<BR>', '<br>').replace('<br> ', '\n').replace('<br>', '\n').replace('<b> ', ' <b>').replace(' </b>', '</b> ').replace('<strong> ', ' <strong>').replace(' </strong>', '</strong> ').replace('<i> ', ' <i>').replace(' </i>', '</i> ').replace('<em> ', ' <em>').replace(' </em>', '</em> ').split('<'),
+                    cel.bind(ls, (a[0] + a.slice(1, size(a)).map(x, cel.bind(i, x.indexOf('>'),
+                      cel.bind(n, i <= 0 ? '' : cel.bind(t, x.substring(x.startsWith('/') ? 1 : 0, i), !t.contains(' ') || t.contains('=') || t.endsWith('/') ? t.split(' ')[0].split('/')[0].lowerAscii() : ''),
+                        n in m ? m[n][x.startsWith('/') ? 1 : 0] + x.substring(i + 1) : '<' + x))).join(''))
+                      .replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#39;', "'").replace('&amp;', '&').split('\n'),
+                      lists.range(size(ls)).filter(i, ls[i].trim() != '' || (i > 0 && ls[i - 1].trim() != '')).map(i, ls[i]).join('\n').trim())))))))
+        - name: layout
+          condition: "decide.variables.skip == ''"
+          let:
+            key_findings: |-
+                markup.variables.texts[0]
+                  .split('\n').map(l,
+                    cel.bind(t, l.trim().startsWith('---') ? l.trim().substring(3).trim() : l.trim(),
+                      !t.startsWith('#') ? (t == '' ? '' : l) :
+                      cel.bind(h, t.substring([6, 5, 4, 3, 2, 1].filter(n, t.startsWith('######'.substring(0, n)))[0]).trim(),
+                        h == '' ? '' :
+                        size(h) <= 80 && !h.endsWith('.') ? '# ' + h.replace('**', '') :
+                        cel.bind(c, h.indexOf(':'),
+                          c > 0 && c <= 40 && h.substring(0, c).replace('*', '').trim() != '' && h.substring(c + 1).trim() != '' ?
+                            '# ' + h.substring(0, c).replace('*', '').trim() + '\n' +
+                              cel.bind(r, h.substring(c + 1).trim(), h.substring(0, c).contains('**') && r.startsWith('**') ? r.substring(2).trim() : r) :
+                            h)))).join('\n')
+                  .split('\n\n').map(x, x.trim()).filter(x, x != '').join('\n\n')
         - name: sections
           condition: "decide.variables.skip == ''"
           let:
             findings: |-
-                ('\n' + notes.variables.key_findings).split('\n#').filter(s, !s.split('\n')[0].lowerAscii().contains('recommend')).join('\n#')
+                ('\n' + layout.variables.key_findings).split('\n#').filter(s, !s.split('\n')[0].lowerAscii().contains('recommend')).join('\n#')
                   .split('\n').map(l, l.startsWith('#') ? '**' + l.substring(1).trim() + '**' : l).join('\n').trim()
             recommendations: |-
-                ('\n' + notes.variables.key_findings).split('\n#').filter(s, s.split('\n')[0].lowerAscii().contains('recommend'))
+                ('\n' + layout.variables.key_findings).split('\n#').filter(s, s.split('\n')[0].lowerAscii().contains('recommend'))
                   .map(s, s.indexOf('\n') >= 0 ? s.substring(s.indexOf('\n') + 1) : '').join('\n')
                   .split('\n').map(l, l.startsWith('#') ? '**' + l.substring(1).trim() + '**' : l).join('\n').trim()
             recent: |-
-                (size(notes.variables.comments) > setup.variables.recent_comments ? notes.variables.comments.slice(0, setup.variables.recent_comments) : notes.variables.comments).map(c,
+                cel.bind(l, notes.variables.comments, lists.range(size(l) > setup.variables.recent_comments ? setup.variables.recent_comments : size(l)).map(k, cel.bind(c, l[k],
                   cel.bind(who, c.?authorId.orValue('') != '' ? resolveSubjectName(c.authorId) : '',
-                    cel.bind(at, c.?createdAt.orValue(''), {
+                    cel.bind(at, c.?createdAt.orValue(''), cel.bind(t, markup.variables.texts[k + 2], {
                       'header': (who != '' && who != c.?authorId.orValue('') ? who + ', ' : '') +
                         (size(at) >= 19 ? '{{DATE(' + at.substring(0, 19) + 'Z, SHORT)}} {{TIME(' + at.substring(0, 19) + 'Z)}}' : ''),
-                      'text': size(c.comment) > 400 ? c.comment.substring(0, 400) + ' ...' : c.comment
-                    })))
+                      'text': size(t) > 400 ? t.substring(0, 400) + ' ...' : t
+                    }))))))
         - name: card
           condition: "decide.variables.skip == ''"
           let:
@@ -302,7 +333,7 @@ dsl:
                 setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
                 setup.variables.event == 'comment added' ? cel.bind(who, read.variables.author != '' ? resolveSubjectName(read.variables.author) : '', who != '' && who != read.variables.author ? 'New comment from ' + who : 'New comment') :
                 'Case shared from Sophos Fusion'
-            comment_text: "size(read.variables.comment) > 1500 ? read.variables.comment.substring(0, 1500) + '...' : read.variables.comment"
+            comment_text: "cel.bind(t, markup.variables.texts[1], size(t) > 1500 ? t.substring(0, 1500) + '...' : t)"
             details: |-
                 !setup.variables.show_details ? [] :
                 cel.bind(t, read.variables.case.?type.title.orValue(''), t != null && t != '' ? [{'title': 'Type', 'value': t}] : []) +

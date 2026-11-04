@@ -166,6 +166,12 @@ function evaluate(n, scope, fns) {
       if (n.fn === 'bind' && n.target && n.target.t === 'id' && n.target.name === 'cel') {
         return ev(n.args[2], { ...scope, [n.args[0].name]: ev(n.args[1]) });
       }
+      // lists.range(n): [0, 1, ..., n - 1], from CEL's lists extension, which Sophos Fusion has.
+      if (n.fn === 'range' && n.target && n.target.t === 'id' && n.target.name === 'lists' && !('lists' in scope)) {
+        const len = ev(n.args[0]);
+        if (!Number.isInteger(len) || len < 0) fail(`lists.range of ${JSON.stringify(len)}`);
+        return Array.from({ length: len }, (_, i) => i);
+      }
       if (!n.target) {
         const args = n.args.map((a) => ev(a));
         if (n.fn in fns) return fns[n.fn](...args);
