@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_AutotaskPSA_CaseSync
-version: 1.0.0
+version: 1.0.1
 title: Autotask PSA case sync (unofficial)
 description: Opens an Autotask PSA ticket when a case is created, adds case changes and comments to it as notes, links it on the case, and completes it when the case closes. It starts in dry run, which only reports what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -19,6 +19,7 @@ documentation: |
     # Safety
     - Dry run is on until you turn it off. In dry run the playbook reads the case and the linked ticket and says what it would do in the run's outcome. It writes nothing to Autotask or the case.
     - Only cases at or above the minimum severity, and managed by whoever you choose, get a new ticket.
+    - Internal comments aren't synced: a Comment Added event for an internal comment changes nothing.
     - Each run handles one case, so it opens at most one ticket.
     - Rollback: complete or delete the ticket in Autotask, and delete the link on the case.
 
@@ -35,7 +36,7 @@ documentation: |
     | Priority by severity | JSON of case severity to priority picklist value | Standard picklist |
     | Due in hours | Sets the due date this many hours after the ticket opens | 24 |
     | Note type and publish | Picklist values for the notes | 1, 1 |
-changeNotes: First version
+changeNotes: A Comment Added event for an internal comment no longer syncs anything, so an internal comment never reaches the ticket.
 tags:
     - Type:Ticketing
 connectorCategories:
@@ -188,11 +189,13 @@ dsl:
             ticket_id: "caseLinkReference(caseLinks(fetch_case.?outputs.orValue({})).filter(l, caseLinkType(l) == 'AutotaskPSA')[?0].orValue({}))"
             company: "int(decodeJSON(inputs.ticket.?company_by_tenant.orValue('{}'))[?caseTenantId(inputs)].orValue(inputs.ticket.company_id))"
             closing: "inputs.?event.orValue('').lowerAscii() == 'delete' || fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false)"
+            internal_comment: "inputs.?event.orValue('').lowerAscii() == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
             closed_status: "int(inputs.ticket.?closed_status.orValue(5))"
         - name: scope
           let:
             stop: |-
                 !setup.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was synced.' :
+                setup.variables.internal_comment ? 'The comment is internal, so nothing was synced.' :
                 setup.variables.ticket_id != '' ? '' :
                 int(setup.variables.case.?severity.orValue(0)) < int(inputs.?settings.min_severity.orValue(4)) ? 'The case is below the minimum severity, so it gets no ticket.' :
                 inputs.?settings.managed_by.orValue('self') == 'self' && setup.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so it gets no ticket.' :

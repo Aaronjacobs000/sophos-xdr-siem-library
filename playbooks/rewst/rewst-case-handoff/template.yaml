@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Rewst_CaseHandoff
-version: 1.0.0
+version: 1.0.1
 title: Rewst case handoff (unofficial)
 description: Sends a short, fixed set of case fields to a Rewst webhook trigger when a case is created or changes, so a Rewst workflow can ticket, document or notify across an MSP's tools. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -14,6 +14,7 @@ documentation: |
     # Filters
     - Minimum severity and Managed by limit which cases go to Rewst.
     - Comments that start with the Rewst comment prefix, `[rewst]` unless you change it, aren't sent, so a comment your Rewst workflow writes back to the case doesn't start the workflow again.
+    - Internal comments aren't sent.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -22,7 +23,7 @@ documentation: |
     | Managed by | any, self or sophos | any |
     | Send comments | Send new comments, with their text | Off |
     | Rewst comment prefix | Comments that start with it aren't sent | `[rewst]` |
-changeNotes: First version
+changeNotes: An internal comment is no longer sent to Rewst.
 tags:
     - Type:Notification
 connectorCategories:
@@ -118,6 +119,7 @@ dsl:
             case: "fetch_case.?outputs.case.orValue({})"
             comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
             author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
+            internal_comment: "setup.variables.event == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
             changed: "setup.variables.event == 'update' ? [['status', caseFieldChanged(inputs, 'primaryStatus')], ['severity', caseFieldChanged(inputs, 'severity')], ['assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
         - name: decide
           let:
@@ -129,6 +131,7 @@ dsl:
                 !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook sends creates, updates and comments only.' :
                 setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was sent.' :
                 setup.variables.event == 'comment added' && !setup.variables.send_comments ? 'Comments are not sent.' :
+                setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not sent.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was sent.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from Rewst, so it was not sent back.' : ''
         - name: send

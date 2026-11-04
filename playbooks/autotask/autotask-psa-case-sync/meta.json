@@ -14,7 +14,7 @@
   "mdr_note": "Sophos MDR doesn't run or watch this playbook. With Managed by set to self it leaves Sophos MDR cases alone. If you sync MDR cases, check first that a playbook can save the ticket link on a Sophos-managed case, or every event opens another ticket, and that the notes it copies are ones your customer may see.",
   "rollback": "Complete or delete the ticket in Autotask and delete the AutotaskPSA link on the case. Turning the playbook off stops further syncing.",
   "tested": {
-    "validated": "2026-10-21",
+    "validated": "2026-11-04",
     "tenant": null
   },
   "connector": "connectors/autotask/autotask-psa",
@@ -26,5 +26,5 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
   "summary": "This playbook opens an Autotask PSA ticket for each new case, adds case changes and comments to it as notes, links it on the case and completes it when the case closes. It runs on case Create, Update and Comment Added events and calls Autotask through the library's Autotask PSA connector. It needs an Autotask API-only user that can create and edit tickets and ticket notes, and it ships with dry run on.",
-  "notes": "Setup:\n- Status, priority, queue and note values are picklist numbers that vary by Autotask account.\n\nTesting:\n- Not run against Autotask: there was no instance to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted.\n\nKnown gaps:\n- A case-triggered run is untested: the Cases API refused to create a test case on 2026-10-21."
+  "notes": "Setup:\n- Status, priority, queue and note values are picklist numbers that vary by Autotask account.\n\nTesting:\n- Not run against Autotask: there was no instance to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted.\n- On 2026-11-04 version 1.0.1, with a renamed copy of its connector imported for the check, passed playbookValidateDSLV2 with no errors or warnings. On a Comment Added event marked internal it syncs nothing, which the repo's tests check.\n\nKnown gaps:\n- A case-triggered run is untested: the Cases API refused to create a test case on 2026-10-21."
 }
