@@ -71,7 +71,8 @@ jobs:
           ENTRY: ${{ steps.entry.outputs.id }}
         run: |
           mkdir -p "$RUNNER_TEMP/out/entry"
-          if [ -n "$ENTRY" ]; then cp "$ENTRY/"* "$RUNNER_TEMP/out/entry/"; fi
+          # Only the files the form wrote. The entry's other files, such as example.png, stay as main has them.
+          if [ -n "$ENTRY" ]; then while IFS= read -r f; do cp "$f" "$RUNNER_TEMP/out/entry/"; done < "$RUNNER_TEMP/sub/changed.txt"; fi
           for f in err.txt report.md; do
             if [ -f "$RUNNER_TEMP/sub/$f" ]; then cp "$RUNNER_TEMP/sub/$f" "$RUNNER_TEMP/out/"; fi
           done
@@ -118,8 +119,10 @@ jobs:
           ENTRY_RE='^(playbooks|connectors)/[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$'
           FILE_RE='^(meta\.json|template\.yaml|connector\.yaml|SETUP\.md|README\.md)$'
           if ! [[ $ENTRY =~ $ENTRY_RE ]]; then echo "The entry path from the check job is not a library path."; exit 1; fi
-          rm -rf "$ENTRY"
+          # The submission replaces the entry's files, except example.png, which an issue form can't carry: a
+          # resubmission keeps the one main has. Anything else in the folder goes.
           mkdir -p "$ENTRY"
+          find "$ENTRY" -mindepth 1 -maxdepth 1 ! \( -name example.png -type f \) -exec rm -rf {} +
           for f in "$RUNNER_TEMP/sub/entry"/*; do
             name=$(basename "$f")
             if [ -L "$f" ] || [ ! -f "$f" ] || ! [[ $name =~ $FILE_RE ]]; then echo "The submission holds a file a library entry can't have."; exit 1; fi

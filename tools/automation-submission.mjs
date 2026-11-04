@@ -2,15 +2,17 @@
 // Turns a playbook or connector issue-form submission into library files, for the
 // automation-submission workflow. The issue body is untrusted text: it is only split into the
 // form's fields, by the labels in this checkout's .github/ISSUE_TEMPLATE/<kind>-submission.yml.
-// The folder is made of slugs, and only meta.json and the form's file fields are written.
+// The folder is made of slugs, and only meta.json and the form's file fields are written. On a
+// resubmission the entry's other files that the form can't carry, such as example.png, stay.
 //
 //   node tools/automation-submission.mjs --kind playbook|connector --body body.txt --author <login> --changed changed.txt [--root .]
 
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseYaml, toJS } from './lib/yaml.mjs';
 import { slug } from '../studio/core/library.js';
+import { PLAYBOOK_FILES, CONNECTOR_FILES } from './lib/automation.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -26,12 +28,14 @@ const KINDS = {
     name: (v) => v.title,
     meta: ['title', 'vendor', 'product', 'use_case', 'trigger', 'connections', 'requires', 'license', 'risk_tier', 'mdr_note', 'rollback', 'tested', 'connector', 'author', 'docs', 'summary', 'notes'],
     files: { yaml: 'template.yaml', setup: 'SETUP.md', readme: 'README.md' },
+    allowed: PLAYBOOK_FILES,
   },
   connector: {
     folder: 'connectors',
     name: (v) => v.product,
     meta: ['title', 'vendor', 'product', 'auth', 'functions', 'license', 'tested', 'author', 'docs', 'summary', 'notes'],
     files: { yaml: 'connector.yaml', readme: 'README.md' },
+    allowed: CONNECTOR_FILES,
   },
 };
 
@@ -134,8 +138,14 @@ const files = [{ path: 'meta.json', content: `${JSON.stringify(meta, null, 2)}\n
 for (const [field, file] of Object.entries(spec.files)) {
   if (values[field]) files.push({ path: file, content: `${values[field]}\n` });
 }
-await rm(dir, { recursive: true, force: true });
+// The form replaces meta.json and its file fields, and a field left empty removes its file. A file
+// the entry may hold that the form can't carry, such as example.png, is kept; anything else goes.
+const formFiles = new Set(['meta.json', ...Object.values(spec.files)]);
+const keep = new Set(spec.allowed.filter((f) => !formFiles.has(f)));
 await mkdir(dir, { recursive: true });
+for (const d of await readdir(dir, { withFileTypes: true })) {
+  if (!(d.isFile() && keep.has(d.name))) await rm(path.join(dir, d.name), { recursive: true, force: true });
+}
 const written = [];
 for (const f of files) {
   await writeFile(path.join(dir, f.path), f.content);

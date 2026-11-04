@@ -68,9 +68,9 @@ test('automation submission workflow: it never merges', () => {
   assert.match(WORKFLOW, /--add-label "needs review"/);
 });
 
-// The publish job's guard: the part of "Open or update the pull request" before the branch is made.
-function publishGuard() {
-  const at = LINES.findIndex((l) => l.trim() === '- name: Open or update the pull request');
+// The run script of a workflow step, by the step's name.
+function stepScript(name) {
+  const at = LINES.findIndex((l) => l.trim() === `- name: ${name}`);
   const run = LINES.findIndex((l, i) => i > at && l.trim() === 'run: |');
   const indent = LINES[run].indexOf('run:') + 2;
   const body = [];
@@ -78,23 +78,32 @@ function publishGuard() {
     if (l.trim() && !l.startsWith(' '.repeat(indent))) break;
     body.push(l.slice(indent));
   }
-  return body.join('\n').split('FOLDER="')[0];
+  return body.join('\n');
 }
 
-async function guard(entry, extra, names = ['meta.json', 'template.yaml', 'SETUP.md']) {
+// The publish job's guard: the part of "Open or update the pull request" before the branch is made.
+const publishGuard = () => stepScript('Open or update the pull request').split('FOLDER="')[0];
+
+// seed(ws) writes what main already holds; inspect(entryDir) looks at the result before cleanup.
+async function guard(entry, extra, names = ['meta.json', 'template.yaml', 'SETUP.md'], { seed, inspect } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-auto-'));
   const files = path.join(dir, 'sub', 'entry');
   await mkdir(files, { recursive: true });
   await mkdir(path.join(dir, 'ws'), { recursive: true });
   for (const f of names) await writeFile(path.join(files, f), 'x\n');
   if (extra) await extra(files);
+  if (seed) await seed(path.join(dir, 'ws'));
   const r = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', '-c', publishGuard()], {
     cwd: path.join(dir, 'ws'), encoding: 'utf8', env: { ...process.env, RUNNER_TEMP: dir, ENTRY: entry },
   });
-  const written = r.status === 0 ? (await readdir(path.join(dir, 'ws', ...entry.split('/')))).sort() : null;
+  const entryDir = path.join(dir, 'ws', ...entry.split('/'));
+  const written = r.status === 0 ? (await readdir(entryDir)).sort() : null;
+  if (r.status === 0 && inspect) await inspect(entryDir);
   await rm(dir, { recursive: true, force: true });
   return { status: r.status, out: r.stdout + r.stderr, written };
 }
+
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
 
 test('automation submission workflow: the publish job takes only a playbook or connector path and their file names', { skip: process.platform === 'win32' }, async () => {
   const ok = await guard('playbooks/acme/block-url');
@@ -117,6 +126,53 @@ test('automation submission workflow: the publish job takes only a playbook or c
     assert.notEqual(r.status, 0, what);
     assert.match(r.out, /a file a library entry can't have/, what);
   }
+});
+
+test('automation submission workflow: a resubmission keeps the example.png main has and replaces the rest', { skip: process.platform === 'win32' }, async () => {
+  const seed = async (ws) => {
+    const d = path.join(ws, 'playbooks', 'acme', 'block-url');
+    await mkdir(path.join(d, 'nested'), { recursive: true });
+    for (const f of ['meta.json', 'template.yaml', 'SETUP.md', 'README.md', 'stale.txt']) await writeFile(path.join(d, f), 'old\n');
+    await writeFile(path.join(d, 'example.png'), PNG);
+  };
+  let png = null;
+  let meta = null;
+  const r = await guard('playbooks/acme/block-url', null, undefined, { seed, inspect: async (d) => { png = await readFile(path.join(d, 'example.png')); meta = await readFile(path.join(d, 'meta.json'), 'utf8'); } });
+  assert.equal(r.status, 0, r.out);
+  // README.md, left out of this submission, goes; so do files and folders an entry can't have.
+  assert.deepEqual(r.written, ['SETUP.md', 'example.png', 'meta.json', 'template.yaml']);
+  assert.deepEqual(png, PNG);
+  assert.equal(meta, 'x\n');
+  // A symlink named example.png isn't kept, and the submission still can't bring its own.
+  const link = await guard('playbooks/acme/block-url', null, undefined, { seed: async (ws) => {
+    const d = path.join(ws, 'playbooks', 'acme', 'block-url');
+    await mkdir(d, { recursive: true });
+    await symlink('/etc/hosts', path.join(d, 'example.png'));
+  } });
+  assert.equal(link.status, 0, link.out);
+  assert.deepEqual(link.written, ['SETUP.md', 'meta.json', 'template.yaml']);
+  const own = await guard('playbooks/acme/block-url', (d) => writeFile(path.join(d, 'example.png'), PNG));
+  assert.notEqual(own.status, 0);
+  assert.match(own.out, /a file a library entry can't have/);
+});
+
+test('automation submission workflow: the check job hands over only the files the form wrote', { skip: process.platform === 'win32' }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ps-auto-hand-'));
+  const entry = 'playbooks/acme/block-url';
+  const d = path.join(dir, 'ws', ...entry.split('/'));
+  await mkdir(d, { recursive: true });
+  await mkdir(path.join(dir, 'sub'), { recursive: true });
+  for (const f of ['meta.json', 'template.yaml', 'SETUP.md']) await writeFile(path.join(d, f), 'x\n');
+  await writeFile(path.join(d, 'example.png'), PNG);
+  await writeFile(path.join(dir, 'sub', 'changed.txt'), ['meta.json', 'template.yaml', 'SETUP.md'].map((f) => `${entry}/${f}`).join('\n') + '\n');
+  await writeFile(path.join(dir, 'sub', 'report.md'), 'report\n');
+  const r = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', '-c', stepScript('Hand the entry and the report to the publish job')], {
+    cwd: path.join(dir, 'ws'), encoding: 'utf8', env: { ...process.env, RUNNER_TEMP: dir, ENTRY: entry },
+  });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual((await readdir(path.join(dir, 'out', 'entry'))).sort(), ['SETUP.md', 'meta.json', 'template.yaml']);
+  assert.deepEqual((await readdir(path.join(dir, 'out'))).sort(), ['entry', 'report.md']);
+  await rm(dir, { recursive: true, force: true });
 });
 
 // ---------------------------------------------------------------- the tool
@@ -153,14 +209,16 @@ function valuesOf(entry) {
   };
 }
 
-async function submit(kind, body, author = 'octocat') {
+// seed(root) writes what the checkout already holds before the tool runs.
+async function submit(kind, body, author = 'octocat', seed = null) {
   const dir = await mkdtemp(path.join(tmpdir(), 'ps-auto-tool-'));
   await writeFile(path.join(dir, 'body.txt'), body);
+  if (seed) await seed(path.join(dir, 'out'));
   const r = spawnSync(process.execPath, [TOOL, '--kind', kind, '--body', path.join(dir, 'body.txt'), '--author', author, '--changed', path.join(dir, 'changed.txt'), '--root', path.join(dir, 'out')], { encoding: 'utf8' });
   const out = { status: r.status, out: r.stdout + r.stderr, id: (/ENTRY_ID=(\S+)/.exec(r.stdout) || [])[1], files: {} };
   if (r.status === 0) {
     out.changed = (await readFile(path.join(dir, 'changed.txt'), 'utf8')).trim().split('\n');
-    for (const f of await readdir(path.join(dir, 'out', out.id))) out.files[f] = await readFile(path.join(dir, 'out', out.id, f), 'utf8');
+    for (const f of await readdir(path.join(dir, 'out', out.id))) out.files[f] = await readFile(path.join(dir, 'out', out.id, f), f === 'example.png' ? null : 'utf8');
   }
   await rm(dir, { recursive: true, force: true });
   return out;
@@ -224,4 +282,30 @@ test('automation submission tool: empty optional fields leave notes and README.m
   assert.equal(meta.connector, null);
   assert.deepEqual(meta.tested, { validated: null, tenant: null });
   assert.deepEqual(meta.docs, ['https://example.com/a', 'https://example.com/b']);
+});
+
+test('automation submission tool: a resubmission keeps the entry\'s example.png, and an emptied field removes its file', async () => {
+  const e = library.playbooks.find((x) => x.files.some((f) => f.path === 'README.md')) || library.playbooks[0];
+  const at = (root) => path.join(root, e.folder, ...e.id.split('/'));
+  const seed = async (root) => {
+    await mkdir(path.join(at(root), 'nested'), { recursive: true });
+    for (const f of ['meta.json', 'template.yaml', 'SETUP.md', 'README.md', 'stale.txt']) await writeFile(path.join(at(root), f), 'old\n');
+    await writeFile(path.join(at(root), 'example.png'), PNG);
+  };
+  const r = await submit('playbook', await issueBody('playbook', { ...valuesOf(e), readme: '' }), e.meta.author, seed);
+  assert.equal(r.status, 0, r.out);
+  assert.deepEqual(Object.keys(r.files).sort(), ['SETUP.md', 'example.png', 'meta.json', 'template.yaml']);
+  assert.deepEqual(r.files['example.png'], PNG);
+  assert.notEqual(r.files['template.yaml'], 'old\n');
+  // example.png wasn't written, so it isn't in the changed files the checks look at.
+  assert.deepEqual(r.changed.sort(), ['SETUP.md', 'meta.json', 'template.yaml'].map((f) => `${e.folder}/${e.id}/${f}`));
+  // A connector entry can't hold example.png, so a resubmission doesn't keep one.
+  const c = library.connectors[0];
+  const cr = await submit('connector', await issueBody('connector', valuesOf(c)), c.meta.author, async (root) => {
+    const d = path.join(root, c.folder, ...c.id.split('/'));
+    await mkdir(d, { recursive: true });
+    await writeFile(path.join(d, 'example.png'), PNG);
+  });
+  assert.equal(cr.status, 0, cr.out);
+  assert.equal(cr.files['example.png'], undefined);
 });
