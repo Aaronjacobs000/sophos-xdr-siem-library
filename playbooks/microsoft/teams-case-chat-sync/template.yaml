@@ -1,14 +1,22 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Teams_CaseChatSync
-version: 1.0.1
+version: 1.1.0
 title: Teams case chat sync (unofficial)
-description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. Each card names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. The card carries the case's key findings, recommended next steps and latest comments, and names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Posts an Adaptive Card to a Teams channel through a Teams Workflows webhook when a case is created, when its status, severity, assignee or title changes, and when someone comments on it. The card shows the case's short ID, title, severity, status, assignee and who manages it, with a button that opens the case in Sophos Fusion. Sophos doesn't make, maintain or support this playbook.
 
     For notifications only, Sophos Fusion's own Send Notification Message template already posts case events to Teams. Use this one when you also run the library's chat bridge, so people in the channel can set a case's status or comment on it from Teams. The card tells them how.
+
+    # The card
+    - Case details: the case type, how many detections, assets and events it holds, and its tags.
+    - Key findings: the start of the case's key findings, without the recommendations, cut to Section length.
+    - Recommendations: the steps under the key findings heading that mentions recommendations, such as Recommended Next Steps, cut to Section length.
+    - Recent comments: the latest comments, newest first, each with its author and time. Internal comments, comments that start with the bridge prefix and comments by the ignored subject IDs are left out, and so is the comment a comment card is already about.
+
+    Each section is left out when it's empty or turned off. Links in the key findings point inside Sophos Fusion, so the card shows their text only. Key findings saved as rich text, not Markdown, are left out. Times show in each reader's own time zone. Authors are named as Sophos Fusion names them, so a comment written through an API credential shows as Sophos.
 
     # Filters
     - Minimum severity: cases below it aren't posted. Medium unless you change it.
@@ -25,7 +33,12 @@ documentation: |
     | Bridge comment prefix | Comments that start with it aren't posted | `[chat-sync]` |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Bridge name | The @mention name of your chat bridge's outgoing webhook; leave empty to leave out the reply line | None |
-changeNotes: The reply line now appears only when Bridge name is set.
+    | Show case details | Case type, evidence counts and tags | On |
+    | Show key findings | The start of the key findings | On |
+    | Show recommendations | The recommended next steps from the key findings | On |
+    | Recent comments | How many of the latest comments to show; 0 leaves them out | 3 |
+    | Section length | Most characters shown for key findings and for recommendations | 600 |
+changeNotes: The card now shows case details, key findings, recommendations and the latest comments, each with a setting to turn it off. When an author's name can't be resolved, a comment card says New comment instead of showing a subject ID.
 tags:
     - Type:Notification
 connectorCategories:
@@ -92,6 +105,43 @@ inputs:
                     description: Post new comments to the channel
                     title: Post comments
                     type: boolean
+                recent_comments:
+                    default: 3
+                    description: How many of the case's latest comments the card shows, newest first. 0 leaves them out.
+                    enum:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                    title: Recent comments
+                    type: integer
+                section_length:
+                    default: 600
+                    description: The most characters the card shows for key findings, and for recommendations. Longer text is cut, and Open in Sophos Fusion has the rest.
+                    enum:
+                        - 300
+                        - 600
+                        - 1000
+                        - 2000
+                    title: Section length
+                    type: integer
+                show_case_details:
+                    default: true
+                    description: Show the case type, how many detections, assets and events it holds, and its tags
+                    title: Show case details
+                    type: boolean
+                show_key_findings:
+                    default: true
+                    description: Show the start of the case's key findings
+                    title: Show key findings
+                    type: boolean
+                show_recommendations:
+                    default: true
+                    description: Show the recommended next steps from the case's key findings
+                    title: Show recommendations
+                    type: boolean
             title: Playbook settings
             type: object
     type: object
@@ -122,6 +172,11 @@ dsl:
             prefix: "inputs.?settings.comment_prefix.orValue('[chat-sync]')"
             ignore_authors: "inputs.?settings.ignore_authors.orValue('').split(',').map(a, a.trim()).filter(a, a != '')"
             bridge_name: "inputs.?settings.bridge_name.orValue('').trim()"
+            show_details: "inputs.?settings.show_case_details.orValue(true)"
+            show_findings: "inputs.?settings.show_key_findings.orValue(true)"
+            show_recommendations: "inputs.?settings.show_recommendations.orValue(true)"
+            recent_comments: "int(inputs.?settings.recent_comments.orValue(3))"
+            section_length: "int(inputs.?settings.section_length.orValue(600))"
         - name: fetch_case
           action: Taegis.Case.queryCustom
           optional: true
@@ -129,7 +184,7 @@ dsl:
           inputs:
             tenant_id: caseTenantId(inputs)
             id: caseId(inputs)
-            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } assigneeSubject { displayName }'
+            fields: 'id shortId title severity managedBy primaryStatus { name title isClosed } assigneeSubject { displayName } type { title } tags detectionsCount assetsCount eventsCount keyFindings { documentType content }'
         - name: read
           let:
             case: "fetch_case.?outputs.case.orValue({})"
@@ -151,6 +206,48 @@ dsl:
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
                 setup.variables.event == 'comment added' && read.variables.author in setup.variables.ignore_authors ? 'The comment author is on the ignore list, so it was not posted.' : ''
+        - name: fetch_comments
+          condition: "decide.variables.skip == '' && setup.variables.recent_comments > 0"
+          action: Taegis.Case.getComments
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: caseTenantId(inputs)
+            caseId: caseId(inputs)
+            orderBy: 'DESCENDING'
+            perPage: 25
+            visibility: 'NOT_INTERNAL'
+        - name: notes
+          condition: "decide.variables.skip == ''"
+          let:
+            key_findings: |-
+                cel.bind(p, (read.variables.case.?keyFindings.documentType.orValue('MARKDOWN') == 'MARKDOWN' && read.variables.case.?keyFindings.content.orValue('') != null ? read.variables.case.?keyFindings.content.orValue('') : '').replace('\r', '').replace('`', '').split(']('),
+                  cel.bind(parts, [p[0]] + p.slice(1, size(p)).map(x, x.indexOf(')') >= 0 ? x.substring(x.indexOf(')') + 1) : x),
+                    (parts.slice(0, size(parts) - 1).map(x, x.lastIndexOf('[') >= 0 ? x.substring(0, x.lastIndexOf('[')) + x.substring(x.lastIndexOf('[') + 1) : x) + [parts[size(parts) - 1]]).join('')))
+            comments: |-
+                cel.bind(l, fetch_comments.?outputs.comments.orValue([]), l == null ? [] : l).filter(c,
+                  c.?comment.orValue('') != null && c.?comment.orValue('').trim() != '' &&
+                  !(setup.variables.prefix != '' && c.comment.startsWith(setup.variables.prefix)) &&
+                  !(c.?authorId.orValue('') in setup.variables.ignore_authors) &&
+                  !(setup.variables.event == 'comment added' && c.comment == read.variables.comment))
+        - name: sections
+          condition: "decide.variables.skip == ''"
+          let:
+            findings: |-
+                ('\n' + notes.variables.key_findings).split('\n#').filter(s, !s.split('\n')[0].lowerAscii().contains('recommend')).join('\n#')
+                  .split('\n').map(l, l.startsWith('#') ? '**' + l.replace('#', '').trim() + '**' : l).join('\n').trim()
+            recommendations: |-
+                ('\n' + notes.variables.key_findings).split('\n#').filter(s, s.split('\n')[0].lowerAscii().contains('recommend'))
+                  .map(s, s.indexOf('\n') >= 0 ? s.substring(s.indexOf('\n') + 1) : '').join('\n')
+                  .split('\n').map(l, l.startsWith('#') ? '**' + l.replace('#', '').trim() + '**' : l).join('\n').trim()
+            recent: |-
+                (size(notes.variables.comments) > setup.variables.recent_comments ? notes.variables.comments.slice(0, setup.variables.recent_comments) : notes.variables.comments).map(c,
+                  cel.bind(who, c.?authorId.orValue('') != '' ? resolveSubjectName(c.authorId) : '',
+                    cel.bind(at, c.?createdAt.orValue(''), {
+                      'header': (who != '' && who != c.?authorId.orValue('') ? who + ', ' : '') +
+                        (size(at) >= 19 ? '{{DATE(' + at.substring(0, 19) + 'Z, SHORT)}} {{TIME(' + at.substring(0, 19) + 'Z)}}' : ''),
+                      'text': size(c.comment) > 400 ? c.comment.substring(0, 400) + ' ...' : c.comment
+                    })))
         - name: card
           condition: "decide.variables.skip == ''"
           let:
@@ -162,9 +259,30 @@ dsl:
             headline: |-
                 setup.variables.event == 'create' ? 'New case' :
                 setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
-                setup.variables.event == 'comment added' ? 'New comment from ' + resolveSubjectName(read.variables.author) :
+                setup.variables.event == 'comment added' ? cel.bind(who, read.variables.author != '' ? resolveSubjectName(read.variables.author) : '', who != '' && who != read.variables.author ? 'New comment from ' + who : 'New comment') :
                 'Case shared from Sophos Fusion'
             comment_text: "size(read.variables.comment) > 1500 ? read.variables.comment.substring(0, 1500) + '...' : read.variables.comment"
+            details: |-
+                !setup.variables.show_details ? [] :
+                cel.bind(t, read.variables.case.?type.title.orValue(''), t != null && t != '' ? [{'title': 'Type', 'value': t}] : []) +
+                [{'title': 'Evidence', 'value': cel.bind(d, int(read.variables.case.?detectionsCount.orValue(0)), string(d) + (d == 1 ? ' detection, ' : ' detections, ')) +
+                  cel.bind(a, int(read.variables.case.?assetsCount.orValue(0)), string(a) + (a == 1 ? ' asset, ' : ' assets, ')) +
+                  cel.bind(e, int(read.variables.case.?eventsCount.orValue(0)), string(e) + (e == 1 ? ' event' : ' events'))}] +
+                cel.bind(t, read.variables.case.?tags.orValue([]), t != null && size(t) > 0 ? [{'title': 'Tags', 'value': t.join(', ')}] : [])
+            findings: |-
+                !setup.variables.show_findings ? '' :
+                size(sections.variables.findings) <= setup.variables.section_length ? sections.variables.findings :
+                cel.bind(t, sections.variables.findings.substring(0, setup.variables.section_length),
+                  cel.bind(i, t.lastIndexOf('\n\n') > setup.variables.section_length / 2 ? t.lastIndexOf('\n\n') : t.lastIndexOf('\n'),
+                    cel.bind(u, (i > setup.variables.section_length / 2 ? t.substring(0, i) : t).trim(),
+                      cel.bind(j, u.lastIndexOf('\n'), j > 0 && u.substring(j + 1).startsWith('**') && u.endsWith('**') ? u.substring(0, j).trim() : u)) + ' ...'))
+            recommendations: |-
+                !setup.variables.show_recommendations ? '' :
+                size(sections.variables.recommendations) <= setup.variables.section_length ? sections.variables.recommendations :
+                cel.bind(t, sections.variables.recommendations.substring(0, setup.variables.section_length),
+                  cel.bind(i, t.lastIndexOf('\n\n') > setup.variables.section_length / 2 ? t.lastIndexOf('\n\n') : t.lastIndexOf('\n'),
+                    cel.bind(u, (i > setup.variables.section_length / 2 ? t.substring(0, i) : t).trim(),
+                      cel.bind(j, u.lastIndexOf('\n'), j > 0 && u.substring(j + 1).startsWith('**') && u.endsWith('**') ? u.substring(0, j).trim() : u)) + ' ...'))
             link: createShareLink(inputs)
         - name: build
           condition: "decide.variables.skip == ''"
@@ -178,9 +296,21 @@ dsl:
                     {'title': 'Status', 'value': card.variables.status_name},
                     {'title': 'Assignee', 'value': card.variables.assignee},
                     {'title': 'Managed by', 'value': card.variables.managed_name}
-                  ]}
+                  ] + card.variables.details}
                 ] +
                 (card.variables.comment_text != '' ? [{'type': 'TextBlock', 'text': card.variables.comment_text, 'wrap': true}] : []) +
+                (card.variables.findings != '' ? [
+                  {'type': 'TextBlock', 'text': 'Key findings', 'weight': 'Bolder', 'wrap': true, 'separator': true, 'spacing': 'Medium'},
+                  {'type': 'TextBlock', 'text': card.variables.findings, 'wrap': true, 'spacing': 'Small'}
+                ] : []) +
+                (card.variables.recommendations != '' ? [
+                  {'type': 'TextBlock', 'text': 'Recommendations', 'weight': 'Bolder', 'wrap': true, 'separator': true, 'spacing': 'Medium'},
+                  {'type': 'TextBlock', 'text': card.variables.recommendations, 'wrap': true, 'spacing': 'Small'}
+                ] : []) +
+                (size(sections.variables.recent) > 0 ? [{'type': 'TextBlock', 'text': 'Recent comments', 'weight': 'Bolder', 'wrap': true, 'separator': true, 'spacing': 'Medium'}] +
+                  sections.variables.recent.map(c, {'type': 'Container', 'spacing': 'Small', 'items':
+                    (c.header != '' ? [{'type': 'TextBlock', 'text': c.header, 'isSubtle': true, 'size': 'Small', 'wrap': true}] : []) +
+                    [{'type': 'TextBlock', 'text': c.text, 'wrap': true, 'spacing': 'None'}]}) : []) +
                 (setup.variables.bridge_name != '' ? [{'type': 'TextBlock', 'isSubtle': true, 'size': 'Small', 'wrap': true, 'text': 'Reply in this channel: @' + setup.variables.bridge_name + ' active ' + card.variables.ref + ' | @' + setup.variables.bridge_name + ' close ' + card.variables.ref + ' <verdict> <note> | @' + setup.variables.bridge_name + ' comment ' + card.variables.ref + ' <text>'}] : [])
             actions: "card.variables.link != '' ? [{'type': 'Action.OpenUrl', 'title': 'Open in Sophos Fusion', 'url': card.variables.link}] : []"
         - name: post

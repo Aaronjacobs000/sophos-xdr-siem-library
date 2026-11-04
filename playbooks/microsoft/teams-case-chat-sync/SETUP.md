@@ -28,6 +28,9 @@ On the template, choose Use this Template, then set:
 - **Bridge comment prefix:** leave it at `[chat-sync]`, the prefix the chat bridge writes.
 - **Ignore comments by:** optionally, the subject ID of the chat bridge's API credential, as a second guard.
 - **Bridge name:** leave it empty unless you run the chat bridge (step 5), then use your outgoing webhook's name; with it empty, the card has no reply line.
+- **Show case details, Show key findings, Show recommendations:** on by default. Turn off any section the channel shouldn't see.
+- **Recent comments:** how many of the latest comments the card shows, 3 by default; 0 leaves them out. Internal comments are never shown.
+- **Section length:** the most characters shown for key findings and for recommendations, 600 by default.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
 
 Save it and leave it off.
@@ -37,6 +40,7 @@ Save it and leave it off.
 1. Turn the playbook on and create a test case at or above the minimum severity.
 2. Check that a card with the case's short ID arrives in the channel, and that Open in Sophos Fusion opens the case.
 3. Change the case's status and add a comment, and check that each posts a card.
+4. On a case with key findings, check that the card shows them and the recommended next steps, and that Recent comments lists the latest comments with their times.
 
 ## 5. Two-way: act on cases from Teams
 
