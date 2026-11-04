@@ -2,12 +2,14 @@
 
 A template carries no trigger, connections or settings, so you set them up once in your tenant. Leave the playbook off until a test run.
 
+The chat bridge is optional. Steps 1 to 4 give you a message in Slack for every case update with no bridge at all. Step 5 adds two-way buttons, which is the only part that needs the bridge.
+
 ## 1. The Slack app and its connection
 
 Create a Slack app for your workspace at the Slack API site, from scratch:
 
 - Under Incoming Webhooks, turn them on and choose Add New Webhook to Workspace, then pick the channel. Copy the webhook URL.
-- For the two-way buttons (step 5), also add the bot scope `chat:write` under OAuth & Permissions so the app gets a bot token, and note the signing secret under Basic Information.
+- Only if you want the optional two-way buttons (step 5), also add the bot scope `chat:write` under OAuth & Permissions so the app gets a bot token, and note the signing secret under Basic Information.
 
 In Sophos Fusion, add a connection to the Slack connector Sophos manages (Taegis.SalesforceSlack) under Security Operations > Automations > Connectors, with the webhook URL. Use Test on the connection: a test message arrives in the channel. You also need a connection to the Case connector Sophos manages (Taegis.Case), which signs in with the platform.
 
@@ -37,7 +39,7 @@ Save it and leave it off.
 2. Check that a message with the case's short ID arrives in the channel, and that Open in Sophos Fusion opens the case.
 3. Change the case's status and add a comment, and check that each posts a message.
 
-## 5. Two-way: act on cases from Slack
+## 5. Optional: act on cases from Slack (two-way)
 
 1. Deploy the [chat bridge](../../../chat-bridge/) as its README says, with the app's signing secret and bot token.
 2. In the Slack app, turn on Interactivity and set the request URL to `https://<your bridge>/slack/interactivity`.

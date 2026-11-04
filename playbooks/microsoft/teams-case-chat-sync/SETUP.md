@@ -2,6 +2,8 @@
 
 A template carries no trigger, connections or settings, so you set them up once in your tenant. Leave the playbook off until a test run.
 
+The chat bridge is optional. Steps 1 to 4 give you a full card in Teams for every case update with no bridge at all. Step 5 adds two-way replies, which is the only part that needs the bridge.
+
 ## 1. The Teams webhook and its connection
 
 In Teams, open Apps, find the Workflows template Send webhook alerts to a channel, pick the team and channel, and choose Add workflow. Copy the webhook URL it gives you.
@@ -43,7 +45,7 @@ Save it and leave it off.
 3. Change the case's status and add a comment, and check that each posts a card.
 4. On a case with key findings, check that the card shows them and the recommended next steps, and that Recent comments lists the latest comments with their times.
 
-## 5. Two-way: act on cases from Teams
+## 5. Optional: act on cases from Teams (two-way)
 
 Teams cards from a Workflows webhook can't send button clicks back, so the two-way half uses a Teams outgoing webhook and the [chat bridge](../../../chat-bridge/) in this repo:
 

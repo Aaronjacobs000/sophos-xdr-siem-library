@@ -4,7 +4,7 @@
 
 Sophos Fusion playbooks can post a case to Teams or Slack, but nothing in a playbook can receive a reply. This bridge takes a Slack button or form, or a Teams outgoing webhook command, checks that the request came from Slack or Teams, and sets the case status or adds a case comment through the Sophos Fusion Cases API. Every write adds a case comment that names the person who acted.
 
-It pairs with two playbooks in this library, which post the cases it acts on:
+It's an optional add-on for two playbooks in this library, which post the cases it acts on and work fine without it:
 
 - [Teams case chat sync](../playbooks/microsoft/teams-case-chat-sync/): a card for each new or changed case, with the commands to reply with.
 - [Slack case chat sync](../playbooks/slack/slack-case-chat-sync/): a message for each new or changed case, with Set status, Close case and Add comment buttons.

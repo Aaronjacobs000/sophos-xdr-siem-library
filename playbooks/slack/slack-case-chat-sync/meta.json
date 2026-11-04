@@ -2,13 +2,13 @@
   "title": "Slack case chat sync",
   "vendor": "Slack",
   "product": "Slack",
-  "use_case": "Post a message to a Slack channel when a case is created, changes status, severity, assignee or title, or gets a comment, with a link to the case. With the library's chat bridge, its buttons set the status, close the case or add a comment from Slack.",
+  "use_case": "Post a message to a Slack channel when a case is created, changes status, severity, assignee or title, or gets a comment, with a link to the case. Optionally, with the library's chat bridge, its buttons set the status, close the case or add a comment from Slack.",
   "trigger": "Platform Events, source Case, events Create, Update and Comment Added. Leave When does this playbook run? at Always; the playbook's own settings do the scoping. It can also run by hand from a case.",
   "connections": [
     "Taegis.SalesforceSlack 2.1.1, the Slack connector Sophos manages, set to your Slack app's incoming webhook URL",
     "Taegis.Case 1.0.5, the case connector Sophos manages, to read the case"
   ],
-  "requires": "A Slack app with an incoming webhook, and Sophos Fusion playbooks under Security Operations > Automations. Two-way buttons also need the chat bridge in this repo as the app's interactivity request URL.",
+  "requires": "A Slack app with an incoming webhook, and Sophos Fusion playbooks under Security Operations > Automations. The chat bridge is optional: only the two-way buttons need it, as the app's interactivity request URL.",
   "license": "MIT",
   "risk_tier": "notify",
   "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. With Managed by at any, Sophos MDR cases are posted too, comments included, so check who is in the channel.",
@@ -28,6 +28,6 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
-  "summary": "This playbook posts a message to a Slack channel when a case is created, changes status, severity, assignee or title, or gets a comment, with a link to the case. It runs on case events and posts through the Slack connector Sophos manages, set to your Slack app's incoming webhook URL. With the library's chat bridge as the app's interactivity request URL, its buttons set the status, close the case or add a comment from Slack.",
+  "summary": "This playbook posts a message to a Slack channel when a case is created, changes status, severity, assignee or title, or gets a comment, with a link to the case. It runs on case events and posts through the Slack connector Sophos manages, set to your Slack app's incoming webhook URL. The chat bridge is optional: without it you still get every message, and with it as the app's interactivity request URL, its buttons set the status, close the case or add a comment from Slack.",
   "notes": "Testing:\n- On 2026-10-21 it passed playbookValidateDSLV2 with no errors or warnings.\n- The same day a renamed copy ran by hand in a Sophos Fusion tenant against a test case, with case and comment events given as inputs. The Slack connector posted the message, buttons included, to a test endpoint standing in for the incoming webhook.\n- A case post arrived; a comment starting with [chat-sync] and an event with no comment text sent nothing; another comment arrived with its text.\n- On 2026-11-04 version 1.0.1 passed playbookValidateDSLV2 with no errors or warnings. It skips a Comment Added event marked internal, which the repo's tests check; the same check in Teams case chat sync was also run in a test tenant.\n- On 2026-11-04 version 1.0.2 passed playbookValidateDSLV2 with no errors or warnings. For made-up comments with simple HTML and tables, Sophos Fusion's own CEL evaluator gave the same message text as the repo's tests.\n\nKnown gaps:\n- The message was not shown in Slack, as there was no Slack workspace to test with.\n- A case-triggered run is untested: the Cases API refused to create a test case on 2026-10-21."
 }
