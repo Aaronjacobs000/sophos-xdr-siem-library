@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Slack_CaseChatSync
-version: 1.0.0
+version: 1.0.1
 title: Slack case chat sync (unofficial)
 description: Posts a message to a Slack channel when a case is created or its status, severity, assignee or title changes, or someone comments. With the library's chat bridge, its buttons set the case status or add a comment from Slack. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -14,6 +14,7 @@ documentation: |
     - Minimum severity: cases below it aren't posted. Medium unless you change it.
     - Managed by: any, self (CUSTOMER) or Sophos MDR (PROVIDER).
     - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
+    - Internal comments aren't posted.
     - Updates are posted only when the status, severity, assignee or title changed.
 
     # Playbook Inputs
@@ -26,7 +27,7 @@ documentation: |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Two-way buttons | Add the status, close and comment buttons; needs the chat bridge as the Slack app's interactivity URL | Off |
     | Status buttons | Comma-separated case status names to offer as buttons | active,awaiting_action |
-changeNotes: First version
+changeNotes: An internal comment is no longer posted to the channel.
 tags:
     - Type:Notification
 connectorCategories:
@@ -142,6 +143,7 @@ dsl:
             case: "fetch_case.?outputs.case.orValue({})"
             comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
             author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
+            internal_comment: "setup.variables.event == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
             changed: "setup.variables.event == 'update' ? [['Status', caseFieldChanged(inputs, 'primaryStatus')], ['Severity', caseFieldChanged(inputs, 'severity')], ['Assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['Title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
         - name: decide
           let:
@@ -155,6 +157,7 @@ dsl:
                 !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook posts creates, updates and comments only.' :
                 setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was posted.' :
                 setup.variables.event == 'comment added' && !setup.variables.post_comments ? 'Comments are not posted.' :
+                setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not posted.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
                 setup.variables.event == 'comment added' && read.variables.author in setup.variables.ignore_authors ? 'The comment author is on the ignore list, so it was not posted.' : ''

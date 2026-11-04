@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Teams_CaseChatSync
-version: 1.1.0
+version: 1.1.1
 title: Teams case chat sync (unofficial)
 description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. The card carries the case's key findings, recommended next steps and latest comments, and names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -16,12 +16,13 @@ documentation: |
     - Recommendations: the steps under the key findings heading that mentions recommendations, such as Recommended Next Steps, cut to Section length.
     - Recent comments: the latest comments, newest first, each with its author and time. Internal comments, comments that start with the bridge prefix and comments by the ignored subject IDs are left out, and so is the comment a comment card is already about.
 
-    Each section is left out when it's empty or turned off. Links in the key findings point inside Sophos Fusion, so the card shows their text only. Key findings saved as rich text, not Markdown, are left out. Times show in each reader's own time zone. Authors are named as Sophos Fusion names them, so a comment written through an API credential shows as Sophos.
+    Each section is left out when it's empty or turned off. Links in the key findings point inside Sophos Fusion, so the card shows their text only. Line breaks written as `<br>` show as new lines, and a heading line that holds a whole paragraph, as ITDR finding cases have, shows as text instead of one long bold line. Key findings saved as rich text, not Markdown, are left out. Times show in each reader's own time zone. Authors are named as Sophos Fusion names them, so a comment written through an API credential shows as Sophos.
 
     # Filters
     - Minimum severity: cases below it aren't posted. Medium unless you change it.
     - Managed by: any, self (CUSTOMER) or Sophos MDR (PROVIDER).
     - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
+    - Internal comments aren't posted.
     - Updates are posted only when the status, severity, assignee or title changed.
 
     # Playbook Inputs
@@ -38,7 +39,7 @@ documentation: |
     | Show recommendations | The recommended next steps from the key findings | On |
     | Recent comments | How many of the latest comments to show; 0 leaves them out | 3 |
     | Section length | Most characters shown for key findings and for recommendations | 600 |
-changeNotes: The card now shows case details, key findings, recommendations and the latest comments, each with a setting to turn it off. When an author's name can't be resolved, a comment card says New comment instead of showing a subject ID.
+changeNotes: An internal comment no longer posts a card. Key findings and recommendations show <br> as a line break, and a heading line that holds a whole paragraph, as ITDR finding cases write them, no longer shows as one long bold line.
 tags:
     - Type:Notification
 connectorCategories:
@@ -190,6 +191,7 @@ dsl:
             case: "fetch_case.?outputs.case.orValue({})"
             comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
             author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
+            internal_comment: "setup.variables.event == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
             changed: "setup.variables.event == 'update' ? [['Status', caseFieldChanged(inputs, 'primaryStatus')], ['Severity', caseFieldChanged(inputs, 'severity')], ['Assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['Title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
         - name: decide
           let:
@@ -203,6 +205,7 @@ dsl:
                 !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook posts creates, updates and comments only.' :
                 setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was posted.' :
                 setup.variables.event == 'comment added' && !setup.variables.post_comments ? 'Comments are not posted.' :
+                setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not posted.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
                 setup.variables.event == 'comment added' && read.variables.author in setup.variables.ignore_authors ? 'The comment author is on the ignore list, so it was not posted.' : ''
@@ -223,7 +226,20 @@ dsl:
             key_findings: |-
                 cel.bind(p, (read.variables.case.?keyFindings.documentType.orValue('MARKDOWN') == 'MARKDOWN' && read.variables.case.?keyFindings.content.orValue('') != null ? read.variables.case.?keyFindings.content.orValue('') : '').replace('\r', '').replace('`', '').split(']('),
                   cel.bind(parts, [p[0]] + p.slice(1, size(p)).map(x, x.indexOf(')') >= 0 ? x.substring(x.indexOf(')') + 1) : x),
-                    (parts.slice(0, size(parts) - 1).map(x, x.lastIndexOf('[') >= 0 ? x.substring(0, x.lastIndexOf('[')) + x.substring(x.lastIndexOf('[') + 1) : x) + [parts[size(parts) - 1]]).join('')))
+                    (parts.slice(0, size(parts) - 1).map(x, x.lastIndexOf('[') >= 0 ? x.substring(0, x.lastIndexOf('[')) + x.substring(x.lastIndexOf('[') + 1) : x) + [parts[size(parts) - 1]]).join('')
+                      .replace('<br />', '<br>').replace('<br/>', '<br>').replace('<BR>', '<br>').replace('<br> ', '\n').replace('<br>', '\n')
+                      .split('\n').map(l,
+                        cel.bind(t, l.trim().startsWith('---') ? l.trim().substring(3).trim() : l.trim(),
+                          !t.startsWith('#') ? (t == '' ? '' : l) :
+                          cel.bind(h, t.substring([6, 5, 4, 3, 2, 1].filter(n, t.startsWith('######'.substring(0, n)))[0]).trim(),
+                            h == '' ? '' :
+                            size(h) <= 80 && !h.endsWith('.') ? '# ' + h.replace('**', '') :
+                            cel.bind(c, h.indexOf(':'),
+                              c > 0 && c <= 40 && h.substring(0, c).replace('*', '').trim() != '' && h.substring(c + 1).trim() != '' ?
+                                '# ' + h.substring(0, c).replace('*', '').trim() + '\n' +
+                                  cel.bind(r, h.substring(c + 1).trim(), h.substring(0, c).contains('**') && r.startsWith('**') ? r.substring(2).trim() : r) :
+                                h)))).join('\n')
+                      .split('\n\n').map(x, x.trim()).filter(x, x != '').join('\n\n')))
             comments: |-
                 cel.bind(l, fetch_comments.?outputs.comments.orValue([]), l == null ? [] : l).filter(c,
                   c.?comment.orValue('') != null && c.?comment.orValue('').trim() != '' &&
@@ -235,11 +251,11 @@ dsl:
           let:
             findings: |-
                 ('\n' + notes.variables.key_findings).split('\n#').filter(s, !s.split('\n')[0].lowerAscii().contains('recommend')).join('\n#')
-                  .split('\n').map(l, l.startsWith('#') ? '**' + l.replace('#', '').trim() + '**' : l).join('\n').trim()
+                  .split('\n').map(l, l.startsWith('#') ? '**' + l.substring(1).trim() + '**' : l).join('\n').trim()
             recommendations: |-
                 ('\n' + notes.variables.key_findings).split('\n#').filter(s, s.split('\n')[0].lowerAscii().contains('recommend'))
                   .map(s, s.indexOf('\n') >= 0 ? s.substring(s.indexOf('\n') + 1) : '').join('\n')
-                  .split('\n').map(l, l.startsWith('#') ? '**' + l.replace('#', '').trim() + '**' : l).join('\n').trim()
+                  .split('\n').map(l, l.startsWith('#') ? '**' + l.substring(1).trim() + '**' : l).join('\n').trim()
             recent: |-
                 (size(notes.variables.comments) > setup.variables.recent_comments ? notes.variables.comments.slice(0, setup.variables.recent_comments) : notes.variables.comments).map(c,
                   cel.bind(who, c.?authorId.orValue('') != '' ? resolveSubjectName(c.authorId) : '',
