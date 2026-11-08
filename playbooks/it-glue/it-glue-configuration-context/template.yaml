@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_ITGlue_ConfigurationContext
-version: 1.0.0
+version: 1.0.1
 title: IT Glue configuration context (unofficial)
 description: Looks up the host in IT Glue and comments on the case with its organization, configuration type and status, location, contact and a link to its IT Glue record. Read only, and never reads passwords. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -19,7 +19,7 @@ documentation: |
     | ----- | ------------ | ------- |
     | Most hosts per run | A run that names more hosts looks up none | 3 |
     | Organization ID | Only search this IT Glue organization; empty searches them all | None |
-changeNotes: First version
+changeNotes: A run that stops before the lookup, with no hostname or more hosts than the limit, now finishes with its message and an empty configurations list instead of failing at the outputs.
 tags:
     - Type:Enrichment
 connectorCategories:
@@ -68,7 +68,7 @@ dsl:
     outcomeStatus: finish.variables.status
     outcomeMessage: finish.variables.message
     outputs:
-        configurations: lookup.variables.found
+        configurations: "lookup.?variables.found.orValue([])"
         status: finish.variables.status
     tasks:
         - name: setup
