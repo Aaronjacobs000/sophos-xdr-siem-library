@@ -12,7 +12,7 @@
 // the DSL; these checks only catch what can be caught without one.
 
 import { parseYaml, get, YamlError } from './yaml.mjs';
-import { parseCel, freeNames, templateParts, CelError } from './cel.mjs';
+import { parseCel, freeNames, memberReads, templateParts, CelError } from './cel.mjs';
 import { scanText } from '../../studio/core/scan.js';
 import { gitleaksProblems } from '../../studio/core/gitleaks.js';
 import { slug, LICENSES } from '../../studio/core/library.js';
@@ -525,6 +525,71 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
   }
   for (const k of ['outcomeStatus', 'outcomeMessage', 'summary']) { const v = get(dsl, k); if (isStr(v)) check(v.value, v.line, `dsl ${k}`, false); }
   for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) checkValue(x);
+
+  // Two reads that playbookValidateDSLV2 passes and a run fails, as measured on a lab tenant: a value
+  // in a let that reads another value of the same let, and dsl outputs that read a task that didn't
+  // run. Each expression's reads, part by part for a template, with the tasks its has() calls check.
+  const partReads = (x) => {
+    let texts = [x.text];
+    if (x.template !== undefined) { try { texts = templateParts(x.template).map((p) => p.expr); } catch { texts = []; } }
+    const out = [];
+    for (const t of texts) {
+      try { out.push(memberReads(parseCel(t))); } catch (e) { if (!(e instanceof CelError)) throw e; }
+    }
+    return out;
+  };
+  const said = new Set();
+  const once = (level, msg, line) => { if (!said.has(msg)) { said.add(msg); r[level]('reference', msg, line, name); } };
+  // A let's values all read the scope from before the task, so one that reads another (or itself)
+  // finds no such key. A key the task also sets under variables reads that value instead.
+  for (const t of all) {
+    if (!isMap(t)) continue;
+    const n = str(get(t, 'name'));
+    const own = get(t, 'let');
+    if (!n || !isMap(own)) continue;
+    const sets = new Set(own.entries.map((e) => e.key));
+    const declared = isMap(get(t, 'variables')) ? new Set(get(t, 'variables').entries.map((e) => e.key)) : new Set();
+    for (const x of valueExprs(own, `${n} let`)) {
+      for (const part of partReads(x)) {
+        for (const rd of part.reads) {
+          const k = rd.name === n && rd.path.length > 1 && rd.path[0].field === 'variables' ? rd.path[1].field : null;
+          if (k && sets.has(k) && !declared.has(k)) once('error', `${x.where}: reads ${n}.variables.${k}, which the same let sets. The values in one let can't read each other, so the run fails with "no such key". Set ${k} in an earlier task and read it from there.`, x.line);
+        }
+      }
+    }
+  }
+  // A task skipped by its condition has no variables or outputs to read, and a task inside another
+  // task is out of the outputs' scope. A top-level task without a condition always runs.
+  const always = new Set(list.items.filter((t) => isMap(t) && !get(t, 'condition')).map((t) => str(get(t, 'name'))).filter(Boolean));
+  const skippable = new Map();
+  const mark = (l, inside) => {
+    if (!isSeq(l)) return;
+    for (const t of l.items) {
+      if (!isMap(t)) continue;
+      const n = str(get(t, 'name'));
+      if (n && !always.has(n) && !skippable.has(n)) skippable.set(n, inside ? { inside } : { condition: true });
+      const within = inside || n || 'another task';
+      for (const k of ['do', 'for', 'then', 'else', 'default']) mark(get(t, k), within);
+      const c = get(t, 'case');
+      if (isMap(c)) for (const e of c.entries) mark(e.value, within);
+    }
+  };
+  mark(list, null);
+  for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) {
+    for (const part of partReads(x)) {
+      for (const rd of part.reads) {
+        const why = skippable.get(rd.name);
+        if (!why) continue;
+        const path = rd.path.map((p) => p.field).join('.');
+        if (why.inside) {
+          once('error', `${x.where}: ${rd.name} runs inside ${why.inside}, and dsl outputs can't read a task inside another task: the run fails with "undeclared reference". Collect what you need in a variable of a top-level task and read that.`, x.line);
+        } else if (rd.path.length && !rd.path[0].opt && !part.has.has(rd.name)) {
+          // A warning: the read fails only on the runs where the task is skipped.
+          once('warn', `${x.where}: ${rd.name} has a condition, and when it doesn't run, reading ${rd.name}.${path} fails the run with "no such key". Guard the read with has(${rd.name}, '${path}'), or read it as ${rd.name}.?${path}.orValue(...).`, x.line);
+        }
+      }
+    }
+  }
   // Trigger hints: expressions over the trigger's inputs.
   for (const { node, path } of walk(get(root, 'triggerHints'))) {
     const key = path[path.length - 1];

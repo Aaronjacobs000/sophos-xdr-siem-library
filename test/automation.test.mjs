@@ -9,7 +9,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseYaml, toJS, YamlError } from '../tools/lib/yaml.mjs';
-import { parseCel, freeNames, templateParts, CelError } from '../tools/lib/cel.mjs';
+import { parseCel, freeNames, memberReads, templateParts, CelError } from '../tools/lib/cel.mjs';
 import { validateAutomation, checkAllowedHosts, connectorInfo, TIERS } from '../tools/lib/automation.mjs';
 import { loadAutomation, loadAllowedHosts, connectorMap } from '../tools/lib/fs-automation.mjs';
 import { vendorNames } from '../studio/core/library.js';
@@ -102,6 +102,19 @@ test('CEL: Sophos Fusion expressions parse, and the names they read are found', 
   for (const bad of ['a ? b :', "'x' +", 'a.(b)', '(a', "'open", 'a $ b', '']) {
     assert.throws(() => parseCel(bad), CelError, JSON.stringify(bad));
   }
+});
+
+test('CEL: the fields read off each name, and the names a two-argument has() checks', () => {
+  const reads = (s) => memberReads(parseCel(s));
+  assert.deepEqual(reads('setup.variables.ids').reads, [{ name: 'setup', path: [{ field: 'variables', opt: false }, { field: 'ids', opt: false }] }]);
+  assert.deepEqual(reads("lock.?outputs.orValue([])").reads, [{ name: 'lock', path: [{ field: 'outputs', opt: true }] }]);
+  assert.deepEqual(reads("setup['variables'][?'ids']").reads, [{ name: 'setup', path: [{ field: 'variables', opt: false }, { field: 'ids', opt: true }] }]);
+  assert.deepEqual(reads('setup.variables[inputs.k]').reads.map((r) => [r.name, r.path.map((x) => x.field)]), [['setup', ['variables']], ['inputs', ['k']]]);
+  assert.deepEqual([...reads("has(lock, 'outputs.id') ? lock.outputs.id : ''").has], ['lock']);
+  assert.deepEqual(reads("has(lock, 'outputs.id') ? lock.outputs.id : ''").reads.map((r) => r.name), ['lock', 'lock']);
+  // Names a macro or cel.bind binds are not outside reads.
+  assert.deepEqual(reads('inputs.items.map(setup, setup.variables.x)').reads.map((r) => r.name), ['inputs']);
+  assert.deepEqual(reads('cel.bind(lock, inputs.a, lock.outputs)').reads.map((r) => r.name), ['inputs']);
 });
 
 test('CEL: the ${...} parts of a connector template, with braces inside strings left alone', () => {
@@ -355,6 +368,45 @@ test('checks: expressions parse and read only tasks, inputs, TDR and tenant; a b
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace('Widget ${finish.variables.status}', 'Widget ${finish.variables.status') })), 'cel'));
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("expr: '''tag'' in assetTags(inputs)'", "expr: '''tag'' in assetTags(input)'") })), 'reference', /input is not inputs/));
   assert.ok(has(check(connectorEntry({ yaml: CONNECTOR.replace('outputs: ${body}', 'outputs: ${body.}') })), 'cel'));
+});
+
+const warned = (r, code, re) => r.problems.some((p) => p.level === 'warning' && p.code === code && (!re || re.test(p.message)));
+
+// Measured on a lab tenant (2026-11-09): a value in a let that reads another value of the same let
+// fails the run with "no such key", as does one that reads itself. A key the task also sets under
+// variables reads that value instead, and a let can read any earlier task's.
+test('checks: a let can\'t read what the same let sets', () => {
+  const sibling = check(playbookEntry({ yaml: TEMPLATE.replace("ids: \"entityValue(inputs, 'host_id')\"", "ids: \"entityValue(inputs, 'host_id')\"\n            count: \"size(setup.variables.ids)\"") }));
+  assert.ok(has(sibling, 'reference', /setup let count: reads setup\.variables\.ids, which the same let sets/), JSON.stringify(sibling.problems));
+  assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("state: 'started'", 'state: "setup.variables.state + 1"') })), 'reference', /setup let state: reads setup\.variables\.state/));
+  assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("state: 'started'", "state: \"setup.?variables.ids.orValue([])\"") })), 'reference', /reads setup\.variables\.ids/));
+  assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("state: 'started'", "state: \"setup['variables']['dry_run']\"") })), 'reference', /reads setup\.variables\.dry_run/));
+  assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("state: 'started'", "state: \"Started ${setup.variables.dry_run}\"") })), 'reference', /reads setup\.variables\.dry_run/));
+  // Not a sibling: an earlier task's let, a key the task also sets under variables, a name a macro binds.
+  for (const ok of [
+    TEMPLATE,
+    TEMPLATE.replace("        - name: setup\n          let:", "        - name: setup\n          variables:\n            state: 'new'\n          let:").replace("state: 'started'", 'state: "setup.variables.state"'),
+    TEMPLATE.replace("state: 'started'", 'state: "inputs.items.map(setup, setup.variables.x)"'),
+    TEMPLATE.replace("status: \"has(lock, 'outputs') ? 'SUCCESS' : 'FAIL'\"", "status: \"setup.variables.state\""),
+  ]) assert.deepEqual(check(playbookEntry({ yaml: ok })).problems.filter((p) => /the same let sets/.test(p.message)), []);
+});
+
+// Measured on a lab tenant (2026-11-09): dsl outputs that read a task skipped by its condition fail
+// the run with "no such key: variables" (or outputs), even when the task declares the variable.
+// has(task, 'path') and task.?field guard the read. A task inside another task's loop is out of
+// the outputs' scope altogether: "undeclared reference", which no guard helps.
+test('checks: dsl outputs that read a task that may not have run', () => {
+  const out = (line) => TEMPLATE.replace('        status: finish.variables.status\n', `        status: finish.variables.status\n        ${line}\n`);
+  const skipped = check(playbookEntry({ yaml: out('locked: lock.outputs') }));
+  assert.ok(warned(skipped, 'reference', /dsl outputs locked: lock has a condition, and when it doesn't run, reading lock\.outputs fails the run/), JSON.stringify(skipped.problems));
+  assert.equal(errors(skipped).length, 0);
+  assert.ok(warned(check(playbookEntry({ yaml: out("locked: \"Locked ${lock.outputs.id}\"") })), 'reference', /lock has a condition/));
+  assert.ok(warned(check(playbookEntry({ yaml: out('locked: "lock.outputs.?id.orValue(\'\')"') })), 'reference', /lock has a condition/));
+  for (const guarded of ["locked: \"has(lock, 'outputs') ? lock.outputs : []\"", "locked: \"lock.?outputs.orValue([])\"", "locked: \"lock[?'outputs'].orValue([])\"", 'ran: setup.variables.dry_run']) {
+    assert.deepEqual(check(playbookEntry({ yaml: out(guarded) })).problems.filter((p) => /dsl outputs/.test(p.message)), [], guarded);
+  }
+  const nested = check(playbookEntry({ yaml: out("one: \"has(get_one, 'outputs') ? get_one.outputs : []\"") }));
+  assert.ok(has(nested, 'reference', /dsl outputs one: get_one runs inside read, and dsl outputs can't read a task inside another task/), JSON.stringify(nested.problems));
 });
 
 test('checks: task names, retry, sleep and the YAML itself', () => {
