@@ -79,7 +79,7 @@ async function main() {
     console.log('No records from these parsers in that time range. Check the tenant ingests the source with these parser names, or widen --earliest (a search covers at most 31 days).');
     return;
   }
-  let differ = 0, noRecord = 0;
+  let differ = 0, noRecord = 0, compared = 0;
   for (const g of groups) {
     console.log('');
     const fields = compareFields(expectedRecords(entry.expected, g.schema, g.entryParser ? g.parser : null), g.rows, g.schema);
@@ -90,6 +90,7 @@ async function main() {
       for (const [, f] of values.fields) differ += f.differ + f.emulatorOnly + f.realOnly;
       if (g.entryParser) differ += values.pathDiffer;
       noRecord += values.noRecord;
+      compared += values.records - values.noRecord;
     }
   }
   const schemas = new Set(groups.map((g) => qlSchema(g.schema)));
@@ -97,6 +98,7 @@ async function main() {
   if (opts.emulator) {
     if (noRecord) console.log(`The emulator put ${noRecord} raw line${noRecord === 1 ? '' : 's'} in another schema than the real record, so ${noRecord === 1 ? 'it was' : 'they were'} not compared.`);
     if (differ) console.log(`The emulator and the real records differ in ${differ} field value${differ === 1 ? '' : 's'} or parser path${differ === 1 ? '' : 's'}; see above.`);
+    else if (!compared && !noRecord) console.log('No real record had a raw line the emulator could compare.');
     else if (!noRecord) console.log('The emulator matched every real record.');
   }
 }
