@@ -141,7 +141,12 @@
       "api-eu01.central.sophos.com",
       "api-eu02.central.sophos.com",
       "api-us01.central.sophos.com",
-      "api-us03.central.sophos.com"
+      "api-us03.central.sophos.com",
+      "api-ca01.central.sophos.com",
+      "api-au01.central.sophos.com",
+      "api-jp01.central.sophos.com",
+      "api-br01.central.sophos.com",
+      "api-in01.central.sophos.com"
     ],
     "docs": [
       "developer.sophos.com",
@@ -150,7 +155,8 @@
     "sources": [
       "https://developer.sophos.com/getting-started-tenant/",
       "https://developer.sophos.com/concepts/regions/",
-      "https://developer.sophos.com/reference/mobile-v1/"
+      "https://developer.sophos.com/reference/mobile-v1/",
+      "https://developer.sophos.com/reference/endpoint-v1/"
     ]
   }
 }
