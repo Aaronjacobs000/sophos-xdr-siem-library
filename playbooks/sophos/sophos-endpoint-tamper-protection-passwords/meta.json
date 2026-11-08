@@ -1,0 +1,33 @@
+{
+  "title": "Sophos Endpoint tamper protection passwords",
+  "vendor": "Sophos",
+  "product": "Sophos Endpoint",
+  "use_case": "After a Sophos Fusion admin account is compromised, give every device in the groups you list a new tamper protection password, turn tamper protection back on where it's off, and record what changed on the case.",
+  "trigger": "User Initiated: a Response Action on Case, which an analyst runs from the case about the compromise. Leave When does this playbook run? at Always.",
+  "connections": [
+    "Unofficial_SophosEndpoint 1.0.0, the Sophos Endpoint connector from this library: OAuth client credentials with a Sophos Fusion API credential",
+    "Taegis.Case 1.0.5, the case connector Sophos manages, to comment on the case"
+  ],
+  "requires": "Sophos Endpoint devices with tamper protection, a Sophos Fusion API credential for the connector, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. A new password stops anyone who knew the old one, Sophos MDR included, from using it; MDR reads the new one in Sophos Fusion as you do.",
+  "rollback": "Nothing brings back an old password. Read each new password in Sophos Fusion on the device page. Tamper protection the playbook turned on can be turned off there.",
+  "tested": {
+    "validated": "2026-11-08",
+    "tenant": {
+      "date": "2026-11-08",
+      "region": "eu02"
+    }
+  },
+  "connector": "connectors/sophos/sophos-endpoint",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/reference/endpoint-v1/tamper-protection/bulk-request-endpoint-tamper-protection/",
+    "https://developer.sophos.com/reference/endpoint-v1/tamper-protection/get-endpoint-tamper-protection-settings/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "summary": "This playbook gives every device in the groups you list a new tamper protection password and turns tamper protection back on where it's off, then reads them back and comments on the case. An analyst runs it from the case about a compromised Sophos Fusion admin, and it calls the library's Sophos Endpoint connector. Dry run is on, and only the device groups you list are in scope.",
+  "notes": "Setup:\n- Run it from the case about the compromise, after you have locked the compromised admin out. An admin who can still sign in can read the new passwords too.\n- List every group whose devices the admin could reach. Most devices per run has to cover them all, up to 1000.\n\nHow it works:\n- An admin who can sign in to Sophos Fusion can read every device's tamper protection password and turn tamper protection off.\n- It lists the devices in the groups, sends the new-password requests in batches of 200, and turns tamper protection on in a separate request, so a device that can't go on still gets its new password.\n- It reads up to 50 devices back and lists any whose password didn't change. No password appears in the comment or the execution.\n\nTesting:\n- On 2026-11-08 the dsl passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion test tenant in eu02. A renamed copy imported with its connector, exported again unchanged apart from the tenant's own fields, and was deleted.\n- It ran by hand on a test case, in dry run and live, against a group holding one offline Windows test device. Live, the device got a new password, confirmed by the playbook's read-back and separately through the API, and the turn-on was accepted. The execution log held no password.\n\nKnown gaps:\n- Tamper protection was off for the test tenant, so turning it on was accepted but changed nothing. A tenant with it on is untested.\n- More than one page of devices, and batches past the first 200, are untested."
+}
