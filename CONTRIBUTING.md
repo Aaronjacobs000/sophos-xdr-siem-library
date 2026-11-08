@@ -165,6 +165,7 @@ A playbook that acts only on the case that triggered it, such as a ticket sync, 
 - Names, versions (`1.0.0`), the `Taegis` prefix Sophos reserves, and the files and folder.
 - Dependencies: every `action`, `exec` and `call` is in the template's `connectors`, `playbooks` or `interfaces` list, the entry's own connector is listed at the version its `connector.yaml` has, and it has the functions the template calls.
 - Every CEL expression parses, and reads only tasks, `inputs`, `TDR` and `tenant`. A bare word that is none of them was probably meant as text, which needs single quotes.
+- Two reads that `playbookValidateDSLV2` passes and a run fails: a value in a `let` that reads another value of the same `let` (an error), and `dsl` outputs that read a task with a condition without `has(task, 'path')` or `task.?field` (a warning). Outputs can't read a task inside another task at all (an error).
 - The risk tier, wipe-type actions, and the tenant record for destructive entries.
 - Every URL a connector calls is https on a host in [connectors/allowed-hosts.json](connectors/allowed-hosts.json) for its vendor, including hosts that come from a connection setting with a fixed list of values. A host set at run time is refused. A template holds no URLs at all.
 - No tenant IDs, object IDs, icons, credentials, webhook URLs or personal data, and the same secret scan CI runs.

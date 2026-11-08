@@ -5,6 +5,7 @@
 //
 //   parseCel(text) -> ast, or throws CelError (with .offset)
 //   freeNames(ast) -> Set of the outside names the expression reads
+//   memberReads(ast) -> {reads: [{name, path}], has: Set} the fields read off each outside name
 //   templateParts(text) -> [{expr, offset}] for each ${...} in a connector's template text
 
 export class CelError extends Error {
@@ -303,6 +304,68 @@ export function freeNames(ast) {
   };
   walk(ast, new Set());
   return out;
+}
+
+// Each read of an outside name with the fields selected straight off it, in order:
+// lock.?outputs.id is {name: 'lock', path: [{field: 'outputs', opt: true}, {field: 'id', opt: false}]}.
+// A string index counts as a field; any other index ends the path. has lists the names a
+// two-argument has(name, 'path') checks, the Sophos Fusion form that is false for a task that
+// didn't run. Names a macro or cel.bind binds are left out, as in freeNames.
+export function memberReads(ast) {
+  const reads = [];
+  const has = new Set();
+  const walk = (n, bound) => {
+    if (!n) return;
+    switch (n.t) {
+      case 'id': if (!bound.has(n.name)) reads.push({ name: n.name, path: [] }); return;
+      case 'lit': return;
+      case 'sel':
+      case 'idx': {
+        const path = [];
+        let x = n;
+        while (x.t === 'sel' || (x.t === 'idx' && x.index.t === 'lit' && typeof x.index.v === 'string')) {
+          path.unshift({ field: x.t === 'sel' ? x.field : x.index.v, opt: Boolean(x.opt) });
+          x = x.target;
+        }
+        if (x.t === 'id') { if (!bound.has(x.name)) reads.push({ name: x.name, path }); return; }
+        if (x === n) { walk(n.target, bound); walk(n.index, bound); return; }
+        walk(x, bound);
+        return;
+      }
+      case 'un': walk(n.x, bound); return;
+      case 'bin': walk(n.l, bound); walk(n.r, bound); return;
+      case 'cond': walk(n.c, bound); walk(n.a, bound); walk(n.b, bound); return;
+      case 'list': for (const x of n.items) walk(x, bound); return;
+      case 'map': for (const e of n.entries) { walk(e.k, bound); walk(e.v, bound); } return;
+      case 'msg': for (const f of n.fields) walk(f.v, bound); return;
+      case 'call': {
+        if (n.fn === 'bind' && n.target && n.target.t === 'id' && n.target.name === 'cel' && n.args.length === 3 && n.args[0].t === 'id') {
+          walk(n.args[1], bound);
+          walk(n.args[2], new Set([...bound, n.args[0].name]));
+          return;
+        }
+        if (n.target && n.target.t === 'id' && NAMESPACES.has(n.target.name) && !bound.has(n.target.name)) {
+          for (const a of n.args) walk(a, bound);
+          return;
+        }
+        if (!n.target && n.fn === 'has' && n.args.length === 2 && n.args[0].t === 'id' && !bound.has(n.args[0].name)) has.add(n.args[0].name);
+        if (n.target) walk(n.target, bound);
+        if (n.target && MACROS.has(n.fn) && n.args.length >= 2 && n.args[0].t === 'id') {
+          const names = [n.args[0].name];
+          let from = 1;
+          if (TWO_VAR.has(n.fn) && n.args.length === 3 && n.args[1].t === 'id') { names.push(n.args[1].name); from = 2; }
+          const inner = new Set([...bound, ...names]);
+          for (const a of n.args.slice(from)) walk(a, inner);
+          return;
+        }
+        for (const a of n.args) walk(a, bound);
+        return;
+      }
+      default: return;
+    }
+  };
+  walk(ast, new Set());
+  return { reads, has };
 }
 
 // The ${...} parts of a connector's template text, such as https://${config.host}/x/${inputs.id}.
