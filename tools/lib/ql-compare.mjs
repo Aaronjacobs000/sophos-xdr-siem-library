@@ -43,8 +43,13 @@ export function parserNames(entry) {
 export function buildQuery(entry, { earliest = '-7d', latest = null, where = null } = {}) {
   const from = entrySchemas(entry).map(qlSchema).join(', ');
   const filter = where || parserNames(entry).map((n) => `normalizer_revision contains ${quote(n)}`).join(' or ');
+  return `from ${from} where ${filter}${qlTime({ earliest, latest })}`;
+}
+
+// The time bounds of a QL search, with a leading space: earliest=-7d latest='2026-10-31T00:00:00Z'.
+export function qlTime({ earliest = '-7d', latest = null } = {}) {
   const time = (k, v) => (v ? ` ${k}=${/^-\d+[smhdw]$/.test(v) || v === 'now' ? v : quote(v)}` : '');
-  return `from ${from} where ${filter}${time('earliest', earliest)}${time('latest', latest)}`;
+  return `${time('earliest', earliest)}${time('latest', latest)}`;
 }
 
 // The parser names in a real record's path, and the last one, which made the record.
