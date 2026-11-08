@@ -1,0 +1,302 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_SophosEndpoint_ResetHealthOnCaseClose
+version: 1.0.0
+title: Sophos Endpoint reset health on case close (unofficial)
+description: When a case closes, resets the health of the Sophos endpoints it names to green, which clears every alert on them with no undo, for devices in the groups you allow. It starts in dry run, which only comments with what it would reset. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs when a case changes. When the case has just closed, it finds the devices the case names, in its assets and in the host IDs of its detections, and resets the health of the Windows and Linux devices in your allowed groups. It reads them back and comments on the case with what it did. It needs the unofficial Sophos Endpoint connector from the same library. Sophos doesn't make, maintain or support this playbook.
+
+    # Warning
+    Reset health sets a device's health to green and clears every alert on it, including alerts that have nothing to do with the case, or that another open case is about. There is no undo. Detections and cases in Sophos Fusion are not changed.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the devices and comments on the case with what it would reset, and resets nothing.
+    - It only resets devices in the device groups you list. With none, it resets nothing.
+    - It acts once per close: only within Minutes after close of the case closing, and not again once it has commented on the case after that close.
+    - A run that finds more devices in scope than Most devices per run (3 unless you change it) resets none.
+    - By default it skips devices whose health is already good, and acts only on self-managed cases, never on cases Sophos MDR manages.
+    - Rollback: none. Cleared alerts can't be brought back.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only comment on the case with what the playbook would do | On |
+    | Device groups | IDs of the device groups whose devices the playbook may reset | None |
+    | Most devices per run | A run with more devices in scope resets none | 3 |
+    | Only devices that aren't healthy | Skip devices whose health is already good | On |
+    | Minutes after close | How long after the case closes the playbook still acts | 15 |
+    | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
+changeNotes: First version
+tags:
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_SophosEndpoint:1.0.0
+    - Taegis.Case:1.0.5
+    - Taegis.Asset:1.2.0
+playbooks:
+    - Taegis.GetCaseDetections:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Update
+        source: case
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Reset health of case devices (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                device_groups:
+                    description: IDs of the device groups whose devices this playbook may reset. A device in any other group is left alone. With none, it resets nothing.
+                    items:
+                        type: string
+                    title: Device groups
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only comments on the case with what it would reset. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                include_sophos_managed:
+                    default: false
+                    description: When on, the playbook also acts on cases Sophos MDR manages. Leave it off unless you've agreed it with the Sophos MDR team.
+                    title: Include Sophos-managed cases
+                    type: boolean
+                max_devices:
+                    default: 3
+                    description: A run that finds more devices in scope than this resets none of them
+                    maximum: 50
+                    minimum: 1
+                    title: Most devices per run
+                    type: integer
+                minutes_after_close:
+                    default: 15
+                    description: The playbook acts only this many minutes after the case closes, so a later change to a closed case doesn't reset the devices again. 1 to 1440.
+                    title: Minutes after close
+                    type: integer
+                only_unhealthy:
+                    default: true
+                    description: Skip devices whose health is already good
+                    title: Only devices that aren't healthy
+                    type: boolean
+            required:
+                - device_groups
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        devices:
+            description: Each device the playbook reset or would reset, with its health before and after
+            type: array
+        status:
+            description: SUCCESS, PARTIAL or FAIL, or SUCCESS with nothing done when the case isn't newly closed
+            type: string
+    type: object
+dsl:
+    name: Unofficial_SophosEndpoint_ResetHealthOnCaseClose
+    description: Resets the health of the Sophos endpoints a newly closed case names, within the allowed groups and the per-run limit, or comments on the case with what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        devices: report.variables.devices
+        status: finish.variables.status
+    tasks:
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            groups: "inputs.?configuration.device_groups.orValue([]).map(g, string(g).trim()).filter(g, g != '')"
+            cap: "int(inputs.?configuration.max_devices.orValue(3)) < 1 ? 1 : int(inputs.?configuration.max_devices.orValue(3)) > 50 ? 50 : int(inputs.?configuration.max_devices.orValue(3))"
+            only_unhealthy: "inputs.?configuration.only_unhealthy.orValue(true)"
+            minutes: "int(inputs.?configuration.minutes_after_close.orValue(15)) < 1 ? 1 : int(inputs.?configuration.minutes_after_close.orValue(15)) > 1440 ? 1440 : int(inputs.?configuration.minutes_after_close.orValue(15))"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            case_id: "caseId(inputs)"
+            tenant_id: "caseTenantId(inputs) != '' ? caseTenantId(inputs) : TDR.tenant"
+        - name: fetch_case
+          condition: "setup.variables.case_id != ''"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy closedAt primaryStatus { isClosed }'
+        # Most case changes are not a close: those end here without a comment.
+        - name: closing
+          let:
+            closed: "fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false) == true && fetch_case.?outputs.case.closedAt.orValue('') != ''"
+            recent: "fetch_case.?outputs.case.primaryStatus.isClosed.orValue(false) == true && fetch_case.?outputs.case.closedAt.orValue('') != '' && timestamp(fetch_case.outputs.case.closedAt) >= now() - duration(string(setup.variables.minutes) + 'm')"
+            # A case event says what changed: act only on the change that closed the case. A run by hand has no delta.
+            this_change: "inputs.?case.delta.hasValue() ? (inputs.?case.delta.changes.closedAt.after.orValue(null) != null && inputs.?case.delta.changes.closedAt.before.orValue(null) == null) : true"
+        - name: earlier
+          condition: "closing.variables.recent && closing.variables.this_change"
+          action: Taegis.Case.getComments
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            orderBy: 'DESCENDING'
+            perPage: 25
+            visibility: 'NOT_INTERNAL'
+        - name: skip
+          let:
+            reason: >-
+                setup.variables.case_id == '' ? 'The playbook ran without a case, so it did nothing.' :
+                !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was reset.' :
+                !closing.variables.closed ? 'The case is not closed, so nothing was reset.' :
+                !closing.variables.this_change ? 'This change to the case did not close it, so nothing was reset.' :
+                !closing.variables.recent ? 'The case closed more than ' + string(setup.variables.minutes) + ' minutes ago, so nothing was reset.' :
+                !has(earlier, 'outputs.comments') ? 'The case comments could not be read, so nothing was reset in case it already ran for this close.' :
+                earlier.outputs.comments.exists(c, string(c.?comment.orValue('')).startsWith('**Sophos Endpoint reset health (unofficial playbook)**') && timestamp(c.createdAt) >= timestamp(fetch_case.outputs.case.closedAt)) ? 'The playbook already ran for this close, so nothing was reset again.' :
+                !setup.variables.sophos_managed && fetch_case.outputs.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was reset. Include Sophos-managed cases is off.' : ''
+        # A newly closed case in scope, but no groups set: say so on the case.
+        - name: check
+          let:
+            stop: >-
+                skip.variables.reason != '' ? '' :
+                size(setup.variables.groups) == 0 ? 'No device groups are set, so the playbook may reset nothing.' : ''
+            go_on: "skip.variables.reason == '' && size(setup.variables.groups) > 0"
+        # The devices the case names: its host assets, and the host IDs in its detections.
+        - name: evidence
+          condition: "check.variables.go_on"
+          action: Taegis.Case.getEvidence
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+        - name: asset_ids
+          let:
+            list: "check.variables.go_on ? unique(evidence.?outputs.evidence.assetsEvidence.orValue([]).map(a, string(a.assetId))).filter(a, a != '') : []"
+        - name: assets
+          condition: "size(asset_ids.variables.list) > 0"
+          range: "asset_ids.variables.list.slice(0, size(asset_ids.variables.list) < 50 ? size(asset_ids.variables.list) : 50)"
+          variables:
+            hosts: []
+          for:
+            - name: resolve_asset
+              action: Taegis.Asset.resolve
+              optional: true
+              retry: 1
+              inputs:
+                tenant_id: setup.variables.tenant_id
+                id: assets.value
+            - name: add_asset_host
+              condition: "resolve_asset.?outputs.hostId.orValue('') != ''"
+              let:
+                hosts: "append(assets.variables.hosts, string(resolve_asset.outputs.hostId))"
+        - name: case_detections
+          condition: "check.variables.go_on"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id entities { entities }'
+            limit: 200
+        - name: hosts
+          let:
+            list: >-
+                !check.variables.go_on ? [] :
+                unique((has(assets, 'variables.hosts') ? assets.variables.hosts : []) +
+                flatten(case_detections.?outputs.detections.orValue([]).map(d, d.?entities.entities.orValue([]).map(e, string(e)).filter(e, e.startsWith('hostId:')).map(e, e.substring(7).trim())))).filter(h, h != '')
+        # Read the devices, up to 100, with their group, platform and health.
+        - name: read_devices
+          condition: "size(hosts.variables.list) > 0"
+          action: Unofficial_SophosEndpoint.getEndpoints
+          optional: true
+          retry: 2
+          inputs:
+            endpoint_ids: "hosts.variables.list.slice(0, size(hosts.variables.list) < 100 ? size(hosts.variables.list) : 100)"
+        - name: devices
+          let:
+            found: "read_devices.?outputs.items.orValue([]).map(d, {'id': string(d.id), 'name': d.?hostname.orValue(string(d.id)), 'group': d.?group.id.orValue(''), 'platform': d.?os.platform.orValue(''), 'health': d.?health.overall.orValue('unknown')})"
+            failed: "size(hosts.variables.list) > 0 && !has(read_devices, 'outputs.items')"
+        - name: scope
+          let:
+            in_group: "devices.variables.found.filter(d, d.group in setup.variables.groups)"
+            outside: "devices.variables.found.filter(d, !(d.group in setup.variables.groups)).map(d, d.name)"
+            missing: "hosts.variables.list.slice(0, size(hosts.variables.list) < 100 ? size(hosts.variables.list) : 100).filter(h, !devices.variables.found.exists(d, d.id == h))"
+        - name: targets
+          let:
+            list: "scope.variables.in_group.filter(d, d.platform in ['windows', 'linux'] && !(setup.variables.only_unhealthy && d.health == 'good'))"
+            platform: "scope.variables.in_group.filter(d, !(d.platform in ['windows', 'linux'])).map(d, d.name)"
+            healthy: "scope.variables.in_group.filter(d, d.platform in ['windows', 'linux'] && setup.variables.only_unhealthy && d.health == 'good').map(d, d.name)"
+        - name: gate
+          let:
+            problem: >-
+                !check.variables.go_on ? '' :
+                devices.variables.failed ? 'Sophos Endpoint could not read the devices, so nothing was reset.' :
+                size(targets.variables.list) > setup.variables.cap ? 'Found ' + string(size(targets.variables.list)) + ' devices in scope, more than Most devices per run (' + string(setup.variables.cap) + '), so nothing was reset: ' + targets.variables.list.map(d, d.name).join(', ') + '.' : ''
+        - name: decision
+          let:
+            go: "check.variables.go_on && gate.variables.problem == '' && size(targets.variables.list) > 0"
+        # The only task that acts, and only with dry run off. It clears every alert on each device.
+        - name: reset
+          condition: "decision.variables.go && !setup.variables.dry_run"
+          action: Unofficial_SophosEndpoint.resetHealth
+          optional: true
+          inputs:
+            endpoints: "targets.variables.list.map(d, d.id)"
+        - name: wait
+          condition: "has(reset, 'outputs.items') && size(reset.outputs.items) > 0"
+          sleep: '30s'
+        - name: reread
+          condition: "has(reset, 'outputs.items') && size(reset.outputs.items) > 0"
+          action: Unofficial_SophosEndpoint.getEndpoints
+          optional: true
+          retry: 2
+          inputs:
+            endpoint_ids: "reset.outputs.items.map(i, string(i.id))"
+        - name: report
+          let:
+            devices: >-
+                !decision.variables.go ? [] :
+                targets.variables.list.map(d, {'id': d.id, 'name': d.name, 'before': d.health,
+                'result': setup.variables.dry_run ? 'would reset' :
+                reset.?outputs.items.orValue([]).exists(i, string(i.id) == d.id) ? 'requested' :
+                reset.?outputs.errors.orValue([]).exists(e, string(e.id) == d.id) ? 'refused: ' + reset.outputs.errors.filter(e, string(e.id) == d.id)[0].?errorMessage.orValue('refused') : 'failed',
+                'after': reread.?outputs.items.orValue([]).filter(x, string(x.id) == d.id).map(x, x.?health.overall.orValue('unknown'))[?0].orValue('')})
+        - name: text
+          let:
+            lines: >-
+                check.variables.stop != '' ? [check.variables.stop] :
+                gate.variables.problem != '' ? [gate.variables.problem] :
+                (size(hosts.variables.list) == 0 ? ['The case names no devices, so nothing was reset.'] :
+                size(targets.variables.list) == 0 ? ['No device the case names is in scope, so nothing was reset.'] :
+                setup.variables.dry_run ? ['Dry run: would reset the health of ' + targets.variables.list.map(d, d.name + ' (' + d.health + ')').join(', ') + ' and clear every alert on ' + (size(targets.variables.list) == 1 ? 'it' : 'them') + '. Nothing was reset. Turn off dry run to reset.'] :
+                report.variables.devices.map(d, d.result == 'requested' ? 'Sophos accepted the health reset of ' + d.name + ', which clears its alerts' + (d.after == 'good' ? '. Health now reads good.' : d.after != '' ? '. Health still reads ' + d.after + '. Check it again later: in testing, an offline device kept its old health.' : '.') : 'Health reset of ' + d.name + ' ' + d.result + '.')) +
+                (size(scope.variables.outside) > 0 ? ['Not in an allowed group: ' + scope.variables.outside.join(', ') + '.'] : []) +
+                (size(targets.variables.platform) > 0 ? ['Not Windows or Linux, which reset health needs: ' + targets.variables.platform.join(', ') + '.'] : []) +
+                (size(targets.variables.healthy) > 0 ? ['Already healthy, left alone: ' + targets.variables.healthy.join(', ') + '.'] : []) +
+                (size(scope.variables.missing) > 0 ? ['Not found in Sophos Endpoint: ' + scope.variables.missing.join(', ') + '.'] : []) +
+                (size(hosts.variables.list) > 100 ? ['The case names ' + string(size(hosts.variables.list)) + ' devices; only the first 100 were read.'] : [])
+        - name: comment
+          condition: "skip.variables.reason == ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            comment: "'**Sophos Endpoint reset health (unofficial playbook)**\\n' + text.variables.lines.map(l, '- ' + l).join('\\n')"
+        - name: finish
+          let:
+            status: >-
+                skip.variables.reason != '' ? 'SUCCESS' :
+                check.variables.stop != '' || gate.variables.problem != '' ? 'FAIL' :
+                size(targets.variables.list) == 0 || setup.variables.dry_run ? 'SUCCESS' :
+                report.variables.devices.all(d, d.result == 'requested') ? 'SUCCESS' :
+                report.variables.devices.exists(d, d.result == 'requested') ? 'PARTIAL' : 'FAIL'
+            message: "skip.variables.reason != '' ? 'Skipped: ' + skip.variables.reason : text.variables.lines.join(' ')"

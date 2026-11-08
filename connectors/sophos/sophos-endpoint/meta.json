@@ -1,0 +1,36 @@
+{
+  "title": "Sophos Endpoint (unofficial)",
+  "vendor": "Sophos",
+  "product": "Sophos Endpoint",
+  "auth": "OAuth client credentials: a Sophos Fusion API credential, a token from id.sophos.com with the scope token, and the tenant ID and Sophos Endpoint API host as connection settings",
+  "functions": {
+    "validate": "lookup",
+    "getEndpoints": "lookup",
+    "listEndpoints": "lookup",
+    "getTamperProtection": "lookup",
+    "updateTamperProtection": "reversible action",
+    "resetHealth": "destructive"
+  },
+  "license": "MIT",
+  "tested": {
+    "validated": "2026-11-08",
+    "tenant": {
+      "date": "2026-11-08",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/reference/endpoint-v1/",
+    "https://developer.sophos.com/reference/endpoint-v1/tamper-protection/bulk-request-endpoint-tamper-protection/",
+    "https://developer.sophos.com/reference/endpoint-v1/tamper-protection/get-endpoint-tamper-protection-settings/",
+    "https://developer.sophos.com/reference/endpoint-v1/health-status/bulk-request-endpoint-reset-health/",
+    "https://developer.sophos.com/reference/endpoint-v1/endpoints/list-endpoints-by-tenant-id/",
+    "https://developer.sophos.com/whatsnew/oct-14-2026-bulk-action-apis/",
+    "https://developer.sophos.com/getting-started-tenant/",
+    "https://developer.sophos.com/concepts/regions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=API-credential-management"
+  ],
+  "summary": "This connector lets Sophos Fusion playbooks regenerate tamper protection passwords, turn tamper protection on, reset device health and read devices, through the Sophos Endpoint API. The connection signs in with OAuth client credentials: a Sophos Fusion API credential, a token from id.sophos.com with the scope token, and the tenant ID and Sophos Endpoint API host as connection settings. The API serves all nine data regions, au01 included.",
+  "notes": "How it works:\n- It can't turn tamper protection off, and it never returns a tamper protection password. getTamperProtection gives only whether it's on and when each password changed.\n- resetHealth sets health to green and clears every alert on each device. There is no undo.\n- Scans aren't here: the Sophos Endpoint connector Sophos manages already has initiateScan.\n\nTesting:\n- On 2026-11-08 a renamed copy imported into a Sophos Fusion test tenant in eu02, exported again unchanged apart from the tenant's own fields, and was deleted with its connection.\n- A connection with a tenant API credential signed in through Sophos Fusion's OAuth Client Credentials handler, and every function ran through it against one offline Windows test device and a made-up ID.\n- updateTamperProtection with regenerate gave the device a new password, read back with the API: the old one shows as replaced about a second before requestedAt. turn_on was accepted but changed nothing, because tamper protection was off for the whole account.\n- resetHealth was accepted. The device was offline and its health still read suspicious after a minute.\n- A made-up ID came back under errors as notFound in both write functions, and getTamperProtection answered 404 for it. No password reached the execution log.\n\nKnown gaps:\n- Not run against an online device, so health turning green after resetHealth is unconfirmed.\n- The least API credential role that can make these changes is untested."
+}

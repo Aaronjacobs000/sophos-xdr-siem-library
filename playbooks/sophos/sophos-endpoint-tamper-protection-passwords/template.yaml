@@ -1,0 +1,257 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_SophosEndpoint_TamperProtectionPasswords
+version: 1.0.0
+title: Sophos Endpoint tamper protection passwords (unofficial)
+description: Gives every device in the groups you list a new tamper protection password, and turns tamper protection back on where it's off, after an admin account is compromised. It starts in dry run, which only comments with what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    An admin who can sign in to Sophos Fusion can read the tamper protection password of every device and turn tamper protection off. After an admin account is compromised, an analyst runs this playbook from the case. It lists the devices in the groups you set, gives each one a new tamper protection password, turns tamper protection back on where it's off, reads the devices back, and comments on the case with what changed. It needs the unofficial Sophos Endpoint connector from the same library. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook lists the devices and comments on the case with what it would change, and changes nothing.
+    - It only acts on devices in the device groups you list. With none, it changes nothing.
+    - A run that finds more devices than Most devices per run (25 unless you change it) changes none.
+    - It never turns tamper protection off, and no password appears in the comment or the execution.
+    - Rollback: nothing brings back an old password. Read each device's new password in Sophos Fusion on the device page. Tamper protection that this playbook turned on can be turned off there.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only comment on the case with what the playbook would do | On |
+    | Device groups | IDs of the device groups whose devices get a new password, up to 50 | None |
+    | Turn tamper protection on | Also turn it on for devices where it's off | On |
+    | Most devices per run | A run that finds more devices changes none | 25 |
+changeNotes: First version
+tags:
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_SophosEndpoint:1.0.0
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Regenerate tamper protection passwords (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                device_groups:
+                    description: IDs of the device groups whose devices get a new tamper protection password, up to 50. A device in any other group is left alone. With none, the playbook changes nothing.
+                    items:
+                        type: string
+                    title: Device groups
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only comments on the case with what it would change. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                max_devices:
+                    default: 25
+                    description: A run that finds more devices than this changes none of them
+                    maximum: 1000
+                    minimum: 1
+                    title: Most devices per run
+                    type: integer
+                turn_on:
+                    default: true
+                    description: Also turn tamper protection on for devices in the groups where it's off. It can't go on while tamper protection is off for the whole account.
+                    title: Turn tamper protection on
+                    type: boolean
+            required:
+                - device_groups
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        changed:
+            description: The names of the devices whose new password was read back
+            type: array
+        refused:
+            description: The devices Sophos refused, with the reason
+            type: array
+        status:
+            description: SUCCESS, PARTIAL or FAIL
+            type: string
+    type: object
+dsl:
+    name: Unofficial_SophosEndpoint_TamperProtectionPasswords
+    description: Gives the devices in the allowed groups a new tamper protection password and turns tamper protection on where it's off, within the per-run limit, or comments on the case with what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        changed: names.variables.changed
+        refused: results.variables.refused
+        status: finish.variables.status
+    tasks:
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            groups: "unique(inputs.?configuration.device_groups.orValue([]).map(g, string(g).trim()).filter(g, g != ''))"
+            turn_on: "inputs.?configuration.turn_on.orValue(true)"
+            cap: "int(inputs.?configuration.max_devices.orValue(25)) < 1 ? 1 : int(inputs.?configuration.max_devices.orValue(25)) > 1000 ? 1000 : int(inputs.?configuration.max_devices.orValue(25))"
+            case_id: "caseId(inputs)"
+            tenant_id: "caseTenantId(inputs) != '' ? caseTenantId(inputs) : TDR.tenant"
+        - name: check
+          let:
+            stop: >-
+                size(setup.variables.groups) == 0 ? 'No device groups are set, so the playbook may change nothing.' :
+                size(setup.variables.groups) > 50 ? 'More than 50 device groups are set. Sophos lists the devices of at most 50 groups at a time, so nothing was changed.' : ''
+        # List the devices in the groups, 500 a page. Three pages are enough to tell a run is over the limit.
+        - name: pages
+          condition: "check.variables.stop == ''"
+          range: "[1, 2, 3]"
+          variables:
+            items: []
+            key: ''
+            done: false
+            failed: false
+          for:
+            - name: page
+              condition: "!pages.variables.done"
+              action: Unofficial_SophosEndpoint.listEndpoints
+              optional: true
+              retry: 2
+              inputs:
+                group_ids: setup.variables.groups
+                page_from_key: pages.variables.key
+            - name: keep_page
+              condition: "!pages.variables.done"
+              let:
+                items: "pages.variables.items + page.?outputs.items.orValue([])"
+                key: "page.?outputs.pages.nextKey.orValue('')"
+                done: "!has(page, 'outputs.items') || page.?outputs.pages.nextKey.orValue('') == ''"
+                failed: "!has(page, 'outputs.items')"
+        - name: devices
+          let:
+            all: "has(pages, 'variables.items') ? pages.variables.items : []"
+            failed: "has(pages, 'variables.failed') && pages.variables.failed"
+        - name: sort
+          let:
+            supported: "devices.variables.all.filter(d, d.?tamperProtectionSupported.orValue(true))"
+            unsupported: "devices.variables.all.filter(d, !d.?tamperProtectionSupported.orValue(true)).map(d, d.?hostname.orValue(d.id))"
+            off: "devices.variables.all.filter(d, d.?tamperProtectionSupported.orValue(true) && !d.?tamperProtectionEnabled.orValue(false))"
+        - name: gate
+          let:
+            problem: >-
+                check.variables.stop != '' ? check.variables.stop :
+                devices.variables.failed ? 'Sophos Endpoint could not list the devices in the groups, so nothing was changed.' :
+                size(sort.variables.supported) == 0 ? 'No device in the groups supports tamper protection, so nothing was changed.' :
+                size(devices.variables.all) > setup.variables.cap ? 'Found ' + string(size(devices.variables.all)) + (size(devices.variables.all) >= 1500 ? ' or more' : '') + ' devices in the groups, more than Most devices per run (' + string(setup.variables.cap) + '), so nothing was changed.' : ''
+        - name: decision
+          let:
+            go: "gate.variables.problem == ''"
+        - name: batches
+          let:
+            regen: "[0, 200, 400, 600, 800].filter(i, i < size(sort.variables.supported))"
+            turn_on: "[0, 200, 400, 600, 800].filter(i, i < size(sort.variables.off))"
+        # The tasks that act, and only with dry run off. A password request and a turn-on request are separate,
+        # so a device that can't go on still gets its new password.
+        - name: regen
+          condition: "decision.variables.go && !setup.variables.dry_run"
+          range: batches.variables.regen
+          variables:
+            accepted: []
+            refused: []
+          for:
+            - name: regen_call
+              action: Unofficial_SophosEndpoint.updateTamperProtection
+              optional: true
+              retry: 1
+              inputs:
+                endpoints: "sort.variables.supported.slice(regen.value, size(sort.variables.supported) < regen.value + 200 ? size(sort.variables.supported) : regen.value + 200).map(d, d.id)"
+                regenerate: true
+            - name: regen_note
+              let:
+                accepted: "regen.variables.accepted + regen_call.?outputs.items.orValue([])"
+                refused: >-
+                    regen.variables.refused +
+                    (has(regen_call, 'outputs.items') || has(regen_call, 'outputs.errors') ? regen_call.?outputs.errors.orValue([]).map(e, {'id': string(e.id), 'reason': 'new password: ' + e.?errorMessage.orValue(e.?errorCode.orValue('refused'))}) :
+                    sort.variables.supported.slice(regen.value, size(sort.variables.supported) < regen.value + 200 ? size(sort.variables.supported) : regen.value + 200).map(d, {'id': d.id, 'reason': 'new password: the request failed'}))
+        - name: turn_on
+          condition: "decision.variables.go && !setup.variables.dry_run && setup.variables.turn_on && size(sort.variables.off) > 0"
+          range: batches.variables.turn_on
+          variables:
+            accepted: []
+            refused: []
+          for:
+            - name: on_call
+              action: Unofficial_SophosEndpoint.updateTamperProtection
+              optional: true
+              retry: 1
+              inputs:
+                endpoints: "sort.variables.off.slice(turn_on.value, size(sort.variables.off) < turn_on.value + 200 ? size(sort.variables.off) : turn_on.value + 200).map(d, d.id)"
+                turn_on: true
+                regenerate: false
+            - name: on_note
+              let:
+                accepted: "turn_on.variables.accepted + on_call.?outputs.items.orValue([]).map(i, string(i.id))"
+                refused: >-
+                    turn_on.variables.refused +
+                    (has(on_call, 'outputs.items') || has(on_call, 'outputs.errors') ? on_call.?outputs.errors.orValue([]).map(e, {'id': string(e.id), 'reason': 'turn on: ' + e.?errorMessage.orValue(e.?errorCode.orValue('refused'))}) :
+                    sort.variables.off.slice(turn_on.value, size(sort.variables.off) < turn_on.value + 200 ? size(sort.variables.off) : turn_on.value + 200).map(d, {'id': d.id, 'reason': 'turn on: the request failed'}))
+        - name: results
+          let:
+            accepted: "has(regen, 'variables.accepted') ? regen.variables.accepted : []"
+            refused: "(has(regen, 'variables.refused') ? regen.variables.refused : []) + (has(turn_on, 'variables.refused') ? turn_on.variables.refused : [])"
+            turned_on: "has(turn_on, 'variables.accepted') ? turn_on.variables.accepted : []"
+        # Accepted means requested: read up to 50 devices back and check the password changed.
+        - name: readback
+          condition: "size(results.variables.accepted) > 0"
+          range: "results.variables.accepted.slice(0, size(results.variables.accepted) < 50 ? size(results.variables.accepted) : 50)"
+          variables:
+            changed: []
+            unchanged: []
+          for:
+            - name: read_tp
+              action: Unofficial_SophosEndpoint.getTamperProtection
+              optional: true
+              retry: 2
+              inputs:
+                endpoint_id: readback.value.id
+            - name: tp_note
+              let:
+                changed: "read_tp.?outputs.password_changed_at.orValue([]).exists(t, timestamp(t) >= timestamp(readback.value.requestedAt) - duration('60s')) ? append(readback.variables.changed, string(readback.value.id)) : readback.variables.changed"
+                unchanged: "read_tp.?outputs.password_changed_at.orValue([]).exists(t, timestamp(t) >= timestamp(readback.value.requestedAt) - duration('60s')) ? readback.variables.unchanged : append(readback.variables.unchanged, string(readback.value.id))"
+        - name: names
+          let:
+            changed: "(has(readback, 'variables.changed') ? readback.variables.changed : []).map(i, devices.variables.all.filter(d, d.id == i).map(d, d.?hostname.orValue(i))[?0].orValue(i))"
+            unchanged: "(has(readback, 'variables.unchanged') ? readback.variables.unchanged : []).map(i, devices.variables.all.filter(d, d.id == i).map(d, d.?hostname.orValue(i))[?0].orValue(i))"
+            refused: "results.variables.refused.map(r, devices.variables.all.filter(d, d.id == r.id).map(d, d.?hostname.orValue(r.id))[?0].orValue(r.id) + ' (' + r.reason + ')')"
+            turned_on: "results.variables.turned_on.map(i, devices.variables.all.filter(d, d.id == i).map(d, d.?hostname.orValue(i))[?0].orValue(i))"
+        - name: text
+          let:
+            lines: >-
+                gate.variables.problem != '' ? [gate.variables.problem] :
+                setup.variables.dry_run ? ['Dry run: would give ' + string(size(sort.variables.supported)) + (size(sort.variables.supported) == 1 ? ' device' : ' devices') + ' a new tamper protection password' + (setup.variables.turn_on && size(sort.variables.off) > 0 ? ' and turn tamper protection on for ' + string(size(sort.variables.off)) + ' of them' : '') + ': ' + sort.variables.supported.map(d, d.?hostname.orValue(d.id)).slice(0, size(sort.variables.supported) < 20 ? size(sort.variables.supported) : 20).join(', ') + (size(sort.variables.supported) > 20 ? ' and ' + string(size(sort.variables.supported) - 20) + ' more' : '') + '. Nothing was changed. Turn off dry run to change them.'] :
+                ['New tamper protection password on ' + string(size(results.variables.accepted)) + ' of ' + string(size(sort.variables.supported)) + (size(sort.variables.supported) == 1 ? ' device.' : ' devices.')] +
+                (size(names.variables.changed) > 0 ? ['Read back with a new password: ' + names.variables.changed.slice(0, size(names.variables.changed) < 20 ? size(names.variables.changed) : 20).join(', ') + (size(names.variables.changed) > 20 ? ' and ' + string(size(names.variables.changed) - 20) + ' more' : '') + (size(results.variables.accepted) > 50 ? '. Only the first 50 were read back.' : '.')] : []) +
+                (size(names.variables.unchanged) > 0 ? ['Accepted, but the password read back unchanged: ' + names.variables.unchanged.join(', ') + '. Check them in Sophos Fusion.'] : []) +
+                (size(names.variables.turned_on) > 0 ? ['Tamper protection turn-on requested: ' + names.variables.turned_on.slice(0, size(names.variables.turned_on) < 20 ? size(names.variables.turned_on) : 20).join(', ') + (size(names.variables.turned_on) > 20 ? ' and ' + string(size(names.variables.turned_on) - 20) + ' more' : '') + '. It only goes on while tamper protection is on for the account.'] : []) +
+                (size(names.variables.refused) > 0 ? ['Refused: ' + names.variables.refused.slice(0, size(names.variables.refused) < 20 ? size(names.variables.refused) : 20).join(', ') + (size(names.variables.refused) > 20 ? ' and ' + string(size(names.variables.refused) - 20) + ' more' : '') + '.'] : []) +
+                (size(sort.variables.unsupported) > 0 ? ['No tamper protection support: ' + sort.variables.unsupported.join(', ') + '.'] : []) +
+                ['Read each new password in Sophos Fusion on the device page.']
+        - name: comment
+          condition: "setup.variables.case_id != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            comment: "'**Sophos Endpoint tamper protection passwords (unofficial playbook)**\\n' + text.variables.lines.map(l, '- ' + l).join('\\n')"
+        - name: finish
+          let:
+            status: >-
+                gate.variables.problem != '' ? 'FAIL' :
+                setup.variables.dry_run ? 'SUCCESS' :
+                size(results.variables.accepted) == 0 ? 'FAIL' :
+                size(results.variables.refused) == 0 && size(names.variables.unchanged) == 0 ? 'SUCCESS' : 'PARTIAL'
+            message: "text.variables.lines.join(' ')"

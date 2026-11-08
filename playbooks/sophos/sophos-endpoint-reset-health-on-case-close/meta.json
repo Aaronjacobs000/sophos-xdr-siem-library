@@ -1,0 +1,33 @@
+{
+  "title": "Sophos Endpoint reset health on case close",
+  "vendor": "Sophos",
+  "product": "Sophos Endpoint",
+  "use_case": "When a case closes, reset the health of the Sophos endpoints it names to green, which clears every alert on them, for devices in the groups you allow, and record what happened on the case.",
+  "trigger": "Platform Events, source Case, event Update. Leave When does this playbook run? at Always: the playbook acts only on a case that closed in the last Minutes after close, once per close.",
+  "connections": [
+    "Unofficial_SophosEndpoint 1.0.0, the Sophos Endpoint connector from this library: OAuth client credentials with a Sophos Fusion API credential",
+    "Taegis.Case 1.0.5 and Taegis.Asset 1.2.0, the case and asset connectors Sophos manages, to read the case's devices and add the comment"
+  ],
+  "requires": "Sophos Endpoint Windows or Linux devices, a Sophos Fusion API credential for the connector, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "destructive",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. It acts only on self-managed cases unless you turn on Include Sophos-managed cases, and it clears alerts that Sophos MDR may also be looking at.",
+  "rollback": "None. Reset health clears every alert on the device, and they can't be brought back. Detections and cases in Sophos Fusion are not changed.",
+  "tested": {
+    "validated": "2026-11-08",
+    "tenant": {
+      "date": "2026-11-08",
+      "region": "eu02"
+    }
+  },
+  "connector": "connectors/sophos/sophos-endpoint",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/reference/endpoint-v1/health-status/bulk-request-endpoint-reset-health/",
+    "https://developer.sophos.com/whatsnew/oct-14-2026-bulk-action-apis/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "summary": "When a case closes, this playbook resets the health of the Sophos endpoints it names to green, which clears every alert on them with no undo, then reads them back and comments on the case. It runs on case updates, acts once per close and calls the library's Sophos Endpoint connector. Dry run is on, and only the device groups you list are in scope.",
+  "notes": "Warning:\n- Reset health clears every alert on the device, including alerts that have nothing to do with the case or that another open case is about. There is no undo. Detections and cases in Sophos Fusion are not changed.\n- It doesn't check whether another open case names the same device.\n\nHow it works:\n- A case Update event lists what changed. The playbook acts only on the change that closed the case, and only within Minutes after close. A run by hand has no such list, so only the time limit applies.\n- It doesn't act again once its own comment is on the case after that close, dry run comments included.\n- The devices are the case's host assets and the host IDs in its detections. Only Windows and Linux devices can be reset, and by default it skips devices whose health is already good.\n- After the reset it waits 30 seconds and reads each device's health back.\n\nTesting:\n- On 2026-11-08 the dsl passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion test tenant in eu02. A renamed copy imported with its connector, exported again unchanged apart from the tenant's own fields, and was deleted.\n- On a test case naming one offline Windows test device, with the Case Update trigger: reopening skipped, closing in dry run commented, a verdict change on the closed case skipped, closing live reset the device, and a run by hand after that skipped as already done.\n- Sophos accepted the reset, but the offline device's health still read suspicious 30 seconds later and after a minute.\n\nKnown gaps:\n- Not run against an online device, so health turning green is unconfirmed.\n- Two case updates within a second could both run before either comments."
+}

@@ -1,0 +1,32 @@
+{
+  "title": "Sophos Endpoint scan case devices",
+  "vendor": "Sophos",
+  "product": "Sophos Endpoint",
+  "use_case": "Ask every Sophos endpoint a case names to run a scan, for devices in the groups you allow, and record on the case which scans were requested.",
+  "trigger": "User Initiated: a Response Action on Case, which an analyst runs from the case. Leave When does this playbook run? at Always. Or Platform Events, source Case, event Create, with Only When: caseManagedBy(inputs) == 'CUSTOMER'.",
+  "connections": [
+    "Taegis.SophosEndpoint 1.3.4, the Sophos Endpoint connector Sophos manages, to read devices and start scans",
+    "Taegis.Case 1.0.5 and Taegis.Asset 1.2.0, the case and asset connectors Sophos manages, to read the case's devices and add the comment"
+  ],
+  "requires": "Sophos Endpoint devices in Sophos Fusion, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook. It acts only on self-managed cases unless you turn on Include Sophos-managed cases.",
+  "rollback": "A scan changes nothing on its own. What happens to anything it finds is set by the device's threat protection policy, as with any scan.",
+  "tested": {
+    "validated": "2026-11-08",
+    "tenant": {
+      "date": "2026-11-08",
+      "region": "eu02"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.sophos.com/reference/endpoint-v1/scans/request-endpoint-scan/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/PlaybookTemplates/index.html",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "summary": "This playbook asks every Sophos endpoint a case names to run a scan and comments on the case with what it requested. An analyst runs it from the case, or it runs when a case is created, and it uses the Sophos Endpoint, Case and Asset connectors Sophos manages, so it needs no API credential. Dry run is on, and only the device groups you list are in scope.",
+  "notes": "Setup:\n- It needs no API credential. The connectors it calls are ones Sophos manages and sign in as the platform.\n- Sophos Fusion's own Initiate Antivirus Scan response action scans one host at a time from the host. This playbook scans every device the case names in one run.\n\nHow it works:\n- The devices are the case's host assets and the host IDs in its detections, up to 50. A Sophos endpoint's host ID is its device ID.\n- It reads each device with lookupHostIdentifier and starts each scan with initiateScan, on the Sophos Endpoint connector Sophos manages.\n- It comments on the case only when the case names devices, so a Create trigger doesn't comment on every new case.\n\nTesting:\n- On 2026-11-08 the dsl passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion test tenant in eu02. A renamed copy imported, exported again unchanged apart from the tenant's own fields, and was deleted.\n- It ran by hand four times on a test case naming one offline Windows test device: dry run, a live scan, which Sophos answered as requested, a group the device isn't in, and no groups. Each comment and outcome matched.\n\nKnown gaps:\n- The scan itself couldn't be read back: the API has no scan status, and the test device was offline.\n- The Create trigger is untested. The playbook waits for the case's detections and assets to finish processing first."
+}

@@ -1,0 +1,291 @@
+apiVersion: v0.0.1
+kind: Connector
+name: Unofficial_SophosEndpoint
+tags: []
+categories:
+    - Generic
+title: Sophos Endpoint (unofficial)
+description: Regenerates tamper protection passwords, turns tamper protection on, resets device health, and reads devices, through the Sophos Endpoint API. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Calls the Sophos Endpoint API to regenerate tamper protection passwords or turn tamper protection on for up to 200 devices, reset the health of up to 500 devices, and read devices and their tamper protection state. It can't turn tamper protection off, and it never returns a password. API reference: https://developer.sophos.com/reference/endpoint-v1/
+
+    Reset health sets a device's health to green and clears every alert on it. There is no undo.
+
+    This connector comes from the Unofficial Sophos Fusion XDR and SIEM Library. Sophos doesn't make, maintain or support it.
+
+    # Connection
+    | Field | Value |
+    | ----- | ----- |
+    | Authentication | OAuth Client Credentials |
+    | Grant URL | `https://id.sophos.com/api/v2/oauth2/token` |
+    | Client ID and Client Secret | A Sophos Fusion API credential |
+    | Scopes | `token` |
+    | Sophos Endpoint API host | The host of the account's data region |
+    | Tenant ID | That account's tenant ID |
+
+    Get the tenant ID and data region once, with the credential's token: `GET https://api.central.sophos.com/whoami/v1` returns `id` and `apiHosts.dataRegion`.
+
+    # Functions
+    | Function | What it does |
+    | -------- | ------------ |
+    | validate | Reads one device, to test the connection |
+    | getEndpoints | Reads up to 100 devices by ID |
+    | listEndpoints | Lists the devices in up to 50 groups, a page at a time |
+    | getTamperProtection | Reads whether tamper protection is on for a device and when its password changed, without the password |
+    | updateTamperProtection | Regenerates the tamper protection password or turns tamper protection on for up to 200 devices |
+    | resetHealth | Resets the health of up to 500 Windows and Linux devices and clears every alert on them |
+method: http
+version: 1.0.0
+vendorName: Sophos
+vendorProduct: Endpoint
+parameters:
+    properties:
+        api_host:
+            enum:
+                - api-us01.central.sophos.com
+                - api-us03.central.sophos.com
+                - api-eu01.central.sophos.com
+                - api-eu02.central.sophos.com
+                - api-ca01.central.sophos.com
+                - api-au01.central.sophos.com
+                - api-jp01.central.sophos.com
+                - api-br01.central.sophos.com
+                - api-in01.central.sophos.com
+            required: true
+            title: Sophos Endpoint API host
+            type: string
+        tenant_id:
+            required: true
+            title: Tenant ID
+            type: string
+    type: object
+actions:
+    - name: validate
+      description: Test the connection by reading one device
+      outputs:
+        properties:
+            items:
+                description: Up to one device
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/endpoint/v1/endpoints?pageSize=1&view=basic
+    - name: getEndpoints
+      description: Read up to 100 devices by ID, with their group, platform, health and tamper protection state
+      inputs:
+        properties:
+            endpoint_ids:
+                description: Device IDs, up to 100. The host ID of a Sophos device in a case is its device ID.
+                items:
+                    type: string
+                maxItems: 100
+                title: Device IDs
+                type: array
+        required:
+            - endpoint_ids
+        type: object
+      outputs:
+        properties:
+            items:
+                description: Each device found, with id, hostname, type, os, group, health, online, lastSeenAt, tamperProtectionEnabled and tamperProtectionSupported. An ID Sophos doesn't know is left out.
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: https://${config.api_host}/endpoint/v1/endpoints?ids=${join(inputs.endpoint_ids.map(i, i.trim()), ',')}&fields=id,hostname,type,os,group,health,online,lastSeenAt,tamperProtectionEnabled,tamperProtectionSupported&pageSize=100
+    - name: listEndpoints
+      description: List the devices in up to 50 groups, up to 500 a page
+      inputs:
+        properties:
+            group_ids:
+                description: IDs of the device groups, up to 50
+                items:
+                    type: string
+                maxItems: 50
+                title: Group IDs
+                type: array
+            page_from_key:
+                description: The nextKey of the previous page. Leave it empty for the first page.
+                title: Page key
+                type: string
+        required:
+            - group_ids
+        type: object
+      outputs:
+        properties:
+            items:
+                description: The devices on this page, with id, hostname, type, os, group, online, tamperProtectionEnabled and tamperProtectionSupported
+                type: array
+            pages:
+                description: Paging, with nextKey when there is another page
+                type: object
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs: ${body}
+        url: 'https://${config.api_host}/endpoint/v1/endpoints?groupIds=${join(inputs.group_ids.map(i, i.trim()), '','')}&fields=id,hostname,type,os,group,online,tamperProtectionEnabled,tamperProtectionSupported&pageSize=500${inputs.?page_from_key.orValue('''') != '''' ? ''&pageFromKey='' + inputs.page_from_key : ''''}'
+    - name: getTamperProtection
+      description: Read whether tamper protection is on for a device and when its password changed, without the password
+      inputs:
+        properties:
+            endpoint_id:
+                description: The device ID
+                title: Device ID
+                type: string
+        required:
+            - endpoint_id
+        type: object
+      outputs:
+        properties:
+            enabled:
+                description: Whether tamper protection is set on for the device
+                type: boolean
+            password_changed_at:
+                description: When each earlier password was replaced. The passwords themselves are left out.
+                items:
+                    type: string
+                type: array
+        type: object
+      config:
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 200 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: GET
+        outputs:
+            enabled: ${body.?enabled.orValue(false)}
+            password_changed_at: ${body.?previousPasswords.orValue([]).map(p, p.?invalidatedAt.orValue('')).filter(t, t != '')}
+        url: https://${config.api_host}/endpoint/v1/endpoints/${inputs.endpoint_id.trim()}/tamper-protection
+    - name: updateTamperProtection
+      description: Regenerate the tamper protection password, or turn tamper protection on, for up to 200 devices
+      inputs:
+        properties:
+            endpoints:
+                description: Device IDs, up to 200
+                items:
+                    type: string
+                maxItems: 200
+                title: Devices
+                type: array
+            regenerate:
+                description: Give each device a new tamper protection password
+                title: Regenerate the password
+                type: boolean
+            turn_on:
+                description: Turn tamper protection on. This connector can't turn it off.
+                title: Turn on
+                type: boolean
+        required:
+            - endpoints
+        type: object
+      outputs:
+        properties:
+            errors:
+                description: The devices Sophos refused, each with errorCode and errorMessage
+                type: array
+            items:
+                description: One entry for each device Sophos accepted, with status requested and requestedAt
+                type: array
+        type: object
+      config:
+        body: '${inputs.?turn_on.orValue(false) ? {''ids'': inputs.endpoints, ''enabled'': true, ''regeneratePassword'': inputs.?regenerate.orValue(false)} : {''ids'': inputs.endpoints, ''regeneratePassword'': inputs.?regenerate.orValue(false)}}'
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 202 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: POST
+        outputs: ${body}
+        url: https://${config.api_host}/endpoint/v1/endpoints/tamper-protection
+    - name: resetHealth
+      description: Reset the health of up to 500 Windows and Linux devices to green and clear every alert on them, with no undo
+      inputs:
+        properties:
+            endpoints:
+                description: Device IDs, up to 500. Every alert on each device is cleared.
+                items:
+                    type: string
+                maxItems: 500
+                title: Devices
+                type: array
+        required:
+            - endpoints
+        type: object
+      outputs:
+        properties:
+            errors:
+                description: The devices Sophos refused, each with errorCode and errorMessage. Macs and mobile devices come back as notSupported.
+                type: array
+            items:
+                description: One entry for each device Sophos accepted, with status requested and requestedAt
+                type: array
+        type: object
+      config:
+        body:
+            ids: ${inputs.endpoints}
+        contentType: application/json
+        error: |-
+            ${
+              has(status.code) && status.code == 202 ? '' :
+                has(status.code) ? 'Sophos Endpoint API error (' + string(status.code) + '): ' + toString(body) :
+                'Could not reach the Sophos Endpoint API'
+            }
+        headers:
+            - name: X-Tenant-ID
+              value: ${config.tenant_id}
+        method: POST
+        outputs: ${body}
+        url: https://${config.api_host}/endpoint/v1/endpoints/reset-health
+authTypes:
+    - OAuthClientCreds
+authDefaults:
+    url: https://id.sophos.com/api/v2/oauth2/token
+    clientCredentialsAuth:
+        clientId: <Client-ID>
+        scopes:
+            - token

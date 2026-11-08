@@ -1,0 +1,269 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_SophosEndpoint_ScanCaseDevices
+version: 1.0.0
+title: Sophos Endpoint scan case devices (unofficial)
+description: Asks every Sophos endpoint a case names to run a scan, when the device is in a group you allow, and comments on the case. It starts in dry run, which only comments with what it would scan. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Finds the devices a case names, in its assets and in the host IDs of its detections, reads each one through the Sophos Endpoint connector Sophos manages, and asks the ones in your allowed groups to run a scan. It comments on the case with what it did. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook reads the devices and comments on the case with what it would scan, and scans nothing.
+    - It only scans devices in the device groups you list, unless you turn on All groups. With neither, it scans nothing.
+    - A run that finds more devices in scope than Most devices per run (5 unless you change it) scans none.
+    - By default it acts only on self-managed cases, never on cases Sophos MDR manages.
+    - Rollback: a scan changes nothing on its own. What happens to anything it finds is set by the device's threat protection policy, as with any scan.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only comment on the case with what the playbook would do | On |
+    | Device groups | IDs of the device groups whose devices the playbook may scan | None |
+    | All groups | Scan devices in any group, or in none | Off |
+    | Most devices per run | A run with more devices in scope scans none | 5 |
+    | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
+changeNotes: First version
+tags:
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.SophosEndpoint:1.3.4
+    - Taegis.Case:1.0.5
+    - Taegis.Asset:1.2.0
+playbooks:
+    - Taegis.Wait_For_Case_Processing:1.0.0
+    - Taegis.GetCaseDetections:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Scan case devices (unofficial)
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+        source: case
+        filter: "caseManagedBy(inputs) == 'CUSTOMER'"
+inputs:
+    properties:
+        configuration:
+            properties:
+                all_groups:
+                    default: false
+                    description: When on, the playbook may scan a device in any group, or in no group. Leave it off to scan only the groups in Device groups.
+                    title: All groups
+                    type: boolean
+                device_groups:
+                    description: IDs of the device groups whose devices this playbook may scan. A device in any other group is left alone. With none, and All groups off, it scans nothing.
+                    items:
+                        type: string
+                    title: Device groups
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only comments on the case with what it would scan. Turn it off after a test run.
+                    title: Dry run
+                    type: boolean
+                include_sophos_managed:
+                    default: false
+                    description: When on, the playbook also acts on cases Sophos MDR manages. Leave it off unless you've agreed it with the Sophos MDR team.
+                    title: Include Sophos-managed cases
+                    type: boolean
+                max_devices:
+                    default: 5
+                    description: A run that finds more devices in scope than this scans none of them
+                    maximum: 50
+                    minimum: 1
+                    title: Most devices per run
+                    type: integer
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        devices:
+            description: Each device the playbook scanned or would scan, with whether Sophos took the request
+            type: array
+        status:
+            description: SUCCESS, PARTIAL or FAIL
+            type: string
+    type: object
+dsl:
+    name: Unofficial_SophosEndpoint_ScanCaseDevices
+    description: Asks the Sophos endpoints a case names to run a scan, within the allowed groups and the per-run limit, or comments on the case with what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        devices: report.variables.devices
+        status: finish.variables.status
+    tasks:
+        # The settings and the case. A Sophos endpoint's host ID is its device ID.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            groups: "inputs.?configuration.device_groups.orValue([]).map(g, string(g).trim()).filter(g, g != '')"
+            all_groups: "inputs.?configuration.all_groups.orValue(false)"
+            cap: "int(inputs.?configuration.max_devices.orValue(5)) < 1 ? 1 : int(inputs.?configuration.max_devices.orValue(5))"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            case_id: "caseId(inputs)"
+            tenant_id: "caseTenantId(inputs) != '' ? caseTenantId(inputs) : TDR.tenant"
+        - name: fetch_case
+          condition: "setup.variables.case_id != ''"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Stop before any other call when there's nothing safe to do.
+        - name: check
+          let:
+            stop: >-
+                setup.variables.case_id == '' ? 'The playbook ran without a case, so it did nothing.' :
+                !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was scanned.' :
+                size(setup.variables.groups) == 0 && !setup.variables.all_groups ? 'No device groups are set and All groups is off, so the playbook may scan nothing.' :
+                !setup.variables.sophos_managed && fetch_case.outputs.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was scanned. Include Sophos-managed cases is off.' : ''
+        # A new case may still be attaching its detections and assets.
+        - name: wait_case
+          condition: "check.variables.stop == ''"
+          exec: Taegis.Wait_For_Case_Processing
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            sleep_time: '10s'
+            states:
+                - 'detections'
+                - 'assets'
+        # The devices the case names: its host assets, and the host IDs in its detections.
+        - name: evidence
+          condition: "check.variables.stop == ''"
+          action: Taegis.Case.getEvidence
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+        - name: asset_ids
+          let:
+            list: "check.variables.stop == '' ? unique(evidence.?outputs.evidence.assetsEvidence.orValue([]).map(a, string(a.assetId))).filter(a, a != '') : []"
+        - name: assets
+          condition: "size(asset_ids.variables.list) > 0"
+          range: "asset_ids.variables.list.slice(0, size(asset_ids.variables.list) < 50 ? size(asset_ids.variables.list) : 50)"
+          variables:
+            hosts: []
+          for:
+            - name: resolve_asset
+              action: Taegis.Asset.resolve
+              optional: true
+              retry: 1
+              inputs:
+                tenant_id: setup.variables.tenant_id
+                id: assets.value
+            - name: add_asset_host
+              condition: "resolve_asset.?outputs.hostId.orValue('') != ''"
+              let:
+                hosts: "append(assets.variables.hosts, string(resolve_asset.outputs.hostId))"
+        - name: case_detections
+          condition: "check.variables.stop == ''"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id entities { entities }'
+            limit: 200
+        - name: hosts
+          let:
+            list: >-
+                check.variables.stop != '' ? [] :
+                unique((has(assets, 'variables.hosts') ? assets.variables.hosts : []) +
+                flatten(case_detections.?outputs.detections.orValue([]).map(d, d.?entities.entities.orValue([]).map(e, string(e)).filter(e, e.startsWith('hostId:')).map(e, e.substring(7).trim())))).filter(h, h != '')
+        # Read each device, up to 50, through the Sophos Endpoint connector Sophos manages.
+        - name: lookup
+          condition: "size(hosts.variables.list) > 0"
+          range: "hosts.variables.list.slice(0, size(hosts.variables.list) < 50 ? size(hosts.variables.list) : 50)"
+          variables:
+            found: []
+            missing: []
+          for:
+            - name: read_device
+              action: Taegis.SophosEndpoint.lookupHostIdentifier
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: lookup.value
+            - name: note_device
+              let:
+                found: "has(read_device, 'outputs.id') ? append(lookup.variables.found, {'id': string(read_device.outputs.id), 'name': read_device.outputs.?hostname.orValue(lookup.value), 'group': read_device.outputs.?group.id.orValue('')}) : lookup.variables.found"
+                missing: "has(read_device, 'outputs.id') ? lookup.variables.missing : append(lookup.variables.missing, lookup.value)"
+        - name: devices
+          let:
+            found: "has(lookup, 'variables.found') ? lookup.variables.found : []"
+            missing: "has(lookup, 'variables.missing') ? lookup.variables.missing : []"
+        - name: scope
+          let:
+            in_scope: "devices.variables.found.filter(d, setup.variables.all_groups || d.group in setup.variables.groups)"
+            outside: "devices.variables.found.filter(d, !(setup.variables.all_groups || d.group in setup.variables.groups)).map(d, d.name)"
+        - name: gate
+          let:
+            problem: >-
+                check.variables.stop != '' ? '' :
+                size(scope.variables.in_scope) > setup.variables.cap ? 'Found ' + string(size(scope.variables.in_scope)) + ' devices in scope, more than Most devices per run (' + string(setup.variables.cap) + '), so nothing was scanned: ' + scope.variables.in_scope.map(d, d.name).join(', ') + '.' : ''
+            go: "check.variables.stop == '' && size(scope.variables.in_scope) > 0 && size(scope.variables.in_scope) <= setup.variables.cap"
+        # The only task that acts, and only with dry run off.
+        - name: scans
+          condition: "gate.variables.go && !setup.variables.dry_run"
+          range: scope.variables.in_scope
+          variables:
+            results: []
+          for:
+            - name: scan
+              action: Taegis.SophosEndpoint.initiateScan
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: scans.value.id
+            - name: record_scan
+              let:
+                results: "append(scans.variables.results, {'id': scans.value.id, 'name': scans.value.name, 'requested': scan.?outputs.status.orValue('') == 'requested', 'error': has(scan, 'status.error') ? (type(scan.status.error) == type('') ? scan.status.error : toString(scan.status.error)) : ''})"
+        - name: report
+          let:
+            devices: >-
+                !gate.variables.go ? [] :
+                setup.variables.dry_run ? scope.variables.in_scope.map(d, {'id': d.id, 'name': d.name, 'requested': false, 'error': ''}) :
+                has(scans, 'variables.results') ? scans.variables.results : []
+        - name: text
+          let:
+            lines: >-
+                check.variables.stop != '' ? [check.variables.stop] :
+                gate.variables.problem != '' ? [gate.variables.problem] :
+                (size(hosts.variables.list) == 0 ? ['The case names no devices, so nothing was scanned.'] :
+                size(scope.variables.in_scope) == 0 ? ['None of the devices the case names is in an allowed group, so nothing was scanned.'] :
+                setup.variables.dry_run ? ['Dry run: would scan ' + scope.variables.in_scope.map(d, d.name).join(', ') + '. Nothing was scanned. Turn off dry run to scan.'] :
+                report.variables.devices.map(d, d.requested ? 'Scan requested on ' + d.name + '.' : 'Scan request failed on ' + d.name + (d.error != '' ? ': ' + d.error : '.'))) +
+                (size(scope.variables.outside) > 0 ? ['Not in an allowed group: ' + scope.variables.outside.join(', ') + '.'] : []) +
+                (size(devices.variables.missing) > 0 ? ['Not found in Sophos Endpoint: ' + devices.variables.missing.join(', ') + '.'] : []) +
+                (size(hosts.variables.list) > 50 ? ['The case names ' + string(size(hosts.variables.list)) + ' devices; only the first 50 were read.'] : [])
+        - name: comment
+          condition: "check.variables.stop == '' && size(hosts.variables.list) > 0"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            comment: "'**Sophos Endpoint scan (unofficial playbook)**\\n' + text.variables.lines.map(l, '- ' + l).join('\\n')"
+        - name: finish
+          let:
+            status: >-
+                check.variables.stop != '' || gate.variables.problem != '' || size(scope.variables.in_scope) == 0 ? 'FAIL' :
+                setup.variables.dry_run || report.variables.devices.all(d, d.requested) ? 'SUCCESS' :
+                report.variables.devices.exists(d, d.requested) ? 'PARTIAL' : 'FAIL'
+            message: "text.variables.lines.join(' ')"
