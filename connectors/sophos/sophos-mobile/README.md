@@ -42,7 +42,7 @@ Actions are asynchronous. `lock` and `sendMessage` return one action for each de
 
 The connection gets an access token from `id.sophos.com` with the client credentials grant and the scope `token`, and sends it as `Authorization: Bearer` with `X-Tenant-ID` on every call. A token lasts an hour (`expires_in` 3600); the connection gets a new one with the same credential (inferred: how Sophos Fusion's OAuth handler renews tokens isn't documented). The API allows 100 calls a minute per credential.
 
-Open question: how the client secret is sent. Sophos's token endpoint takes `client_id` and `client_secret` in the form body. Whether Sophos Fusion's OAuth Client Credentials handler sends them in the body or in an HTTP Basic header, and whether `id.sophos.com` accepts Basic, isn't documented. If Test fails with a sign-in error and the credential is right, this is the likely cause. Nobody has tested this connector against a tenant with Sophos Mobile yet.
+Sophos Fusion's OAuth Client Credentials handler signs in to `id.sophos.com` with these settings. The [Sophos Endpoint connector](../sophos-endpoint/), which signs in the same way, got its tokens through it and ran every function in a lab tenant on 2026-11-08. Nobody has tested this connector against a tenant with Sophos Mobile yet.
 
 ## Sources
 
