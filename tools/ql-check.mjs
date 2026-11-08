@@ -5,6 +5,8 @@
 //   node tools/ql-check.mjs parsers/<vendor>/<product> [--env-file <path>] [--tenant <id>]
 //     [--earliest -7d] [--latest <time>] [--max 1000] [--where '<QL condition>'] [--reuse]
 //     [--show-values] [--no-emulator]
+//   node tools/ql-check.mjs --discover [--env-file <path>] [--tenant <id>] [--earliest -7d]
+//     [--latest <time>] [--sample 100] [--no-emulator] [--reuse]
 //
 // It runs one QL search through the Sophos Fusion Search GraphQL API for the records the entry's
 // parsers made (by parser path, normalizer_revision), compares their fields with expected.json, and
@@ -12,23 +14,34 @@
 // the values. It only searches: it sends createSearch or getOrCreateSearch, search and searchResults,
 // nothing else.
 //
+// --discover lists the library entries a tenant ingests, so the next tenant that sends a library
+// source can be checked without guessing. One search counts the tenant's records by parser path
+// across every library schema: a path that names a library parser is an entry the tenant runs. Then
+// it reads up to --sample records of each other parser path and runs every entry's parsers on their
+// raw lines in the emulator: an entry that claims lines is a source the tenant receives under another
+// parser. For each find it prints the ql-check run that checks it. It prints names and counts only.
+//
 // Credentials: SOPHOS_CLIENT_ID and SOPHOS_CLIENT_SECRET (and SOPHOS_TENANT_ID for a partner or
 // organization credential) from the environment, or from the env file --env-file names. Keep that
 // file outside the repo. The report prints field names and counts; --show-values adds the first
 // differing value of each field, which is tenant data, so don't paste that output anywhere public.
 
-import { pathToFileURL } from 'node:url';
-import { loadEntryFromDir } from './lib/fs-library.mjs';
+import path from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { loadEntryFromDir, loadLibrary } from './lib/fs-library.mjs';
 import { loadCredentials, SearchClient, searchRows, MAX_PAGE, ROW_CAP } from './lib/fusion-search.mjs';
 import { buildQuery, parserNames, groupRows, expectedRecords, compareFields, compareValues, formatFieldReport, formatValueReport, qlSchema } from './lib/ql-compare.mjs';
+import { discover, formatDiscovery, DEFAULT_SAMPLE } from './lib/ql-discover.mjs';
 
-const USAGE = 'usage: ql-check.mjs parsers/<vendor>/<product> [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--max 1000] [--where \'<QL condition>\'] [--reuse] [--show-values] [--no-emulator]';
+const USAGE = 'usage: ql-check.mjs parsers/<vendor>/<product> [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--max 1000] [--where \'<QL condition>\'] [--reuse] [--show-values] [--no-emulator]\n       ql-check.mjs --discover [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--sample 100] [--no-emulator] [--reuse]';
 
 export function parseArgs(argv) {
-  const o = { dir: null, envFile: null, tenant: null, earliest: '-7d', latest: null, max: MAX_PAGE, where: null, reuse: false, showValues: false, emulator: true };
+  const o = { dir: null, envFile: null, tenant: null, earliest: '-7d', latest: null, max: MAX_PAGE, where: null, reuse: false, showValues: false, emulator: true, discover: false, sample: DEFAULT_SAMPLE };
+  const given = new Set();
   const need = (i) => { if (i >= argv.length) throw new Error(`${argv[i - 1]} needs a value`); return argv[i]; };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
+    if (a.startsWith('--')) given.add(a);
     if (a === '--env-file') o.envFile = need(++i);
     else if (a === '--tenant') o.tenant = need(++i);
     else if (a === '--earliest') o.earliest = need(++i);
@@ -38,10 +51,19 @@ export function parseArgs(argv) {
     else if (a === '--reuse') o.reuse = true;
     else if (a === '--show-values') o.showValues = true;
     else if (a === '--no-emulator') o.emulator = false;
+    else if (a === '--discover') o.discover = true;
+    else if (a === '--sample') o.sample = Number(need(++i));
     else if (a.startsWith('--')) throw new Error(`unknown option ${a}`);
     else if (!o.dir) o.dir = a;
     else throw new Error(`one entry at a time: ${a}`);
   }
+  if (o.discover) {
+    if (o.dir) throw new Error('--discover looks at every library entry, so name no entry folder');
+    for (const flag of ['--where', '--max', '--show-values']) if (given.has(flag)) throw new Error(`${flag} doesn't apply to --discover`);
+    if (!Number.isInteger(o.sample) || o.sample < 0 || o.sample > MAX_PAGE) throw new Error(`--sample must be a whole number from 0 to ${MAX_PAGE}`);
+    return o;
+  }
+  if (given.has('--sample')) throw new Error('--sample only applies to --discover');
   if (!o.dir) throw new Error('name an entry folder');
   if (!Number.isInteger(o.max) || o.max < 1 || o.max > ROW_CAP) throw new Error(`--max must be a whole number from 1 to ${ROW_CAP}`);
   return o;
@@ -55,6 +77,7 @@ async function main() {
     console.error(`${e.message}\n${USAGE}`);
     process.exit(2);
   }
+  if (opts.discover) return discoverMain(opts);
   const entry = await loadEntryFromDir(opts.dir);
   if (!entry.meta.parsers || !entry.meta.parsers.length) {
     console.error(`${opts.dir} has no parsers in meta.json`);
@@ -101,6 +124,17 @@ async function main() {
     else if (!compared && !noRecord) console.log('No real record had a raw line the emulator could compare.');
     else if (!noRecord) console.log('The emulator matched every real record.');
   }
+}
+
+async function discoverMain(opts) {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const lib = await loadLibrary(root);
+  const log = (m) => console.error(`  ${m}`);
+  const creds = await loadCredentials({ envFile: opts.envFile });
+  if (opts.tenant) creds.tenantId = opts.tenant;
+  const client = new SearchClient(creds, { log });
+  const report = await discover(client, lib, { earliest: opts.earliest, latest: opts.latest, reuse: opts.reuse, sample: opts.sample, emulator: opts.emulator, log });
+  console.log(formatDiscovery(report));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

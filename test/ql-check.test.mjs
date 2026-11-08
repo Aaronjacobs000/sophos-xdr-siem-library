@@ -11,6 +11,7 @@ import {
   compareFields, expectedRecords, groupRows, compareValues, emulate, formatFieldReport, formatValueReport,
 } from '../tools/lib/ql-compare.mjs';
 import { parseArgs } from '../tools/ql-check.mjs';
+import { librarySchemas, parserOwners, aggregateQuery, sampleQuery, pathGroups, classify, claimLines, discover, formatDiscovery, DEFAULT_SAMPLE } from '../tools/lib/ql-discover.mjs';
 import { runParsers, expectedShape } from '../studio/core/engine.js';
 
 const SECRET = 'not-a-real-secret-0000';
@@ -398,7 +399,7 @@ test('GraphQL errors, sign-in failures and redirects fail clearly without the se
 });
 
 test('command line options', () => {
-  assert.deepEqual(parseArgs(['parsers/acme/gateway']), { dir: 'parsers/acme/gateway', envFile: null, tenant: null, earliest: '-7d', latest: null, max: 1000, where: null, reuse: false, showValues: false, emulator: true });
+  assert.deepEqual(parseArgs(['parsers/acme/gateway']), { dir: 'parsers/acme/gateway', envFile: null, tenant: null, earliest: '-7d', latest: null, max: 1000, where: null, reuse: false, showValues: false, emulator: true, discover: false, sample: DEFAULT_SAMPLE });
   const o = parseArgs(['parsers/acme/gateway', '--env-file', '/tmp/x.env', '--earliest', '-30d', '--max', '200', '--where', "sensor_type = 'Acme'", '--reuse', '--show-values', '--no-emulator']);
   assert.equal(o.envFile, '/tmp/x.env');
   assert.equal(o.max, 200);
@@ -407,4 +408,126 @@ test('command line options', () => {
   assert.throws(() => parseArgs(['a', '--max', '20000']), /--max must be/);
   assert.throws(() => parseArgs(['a', '--nope']), /unknown option --nope/);
   assert.throws(() => parseArgs(['a', '--earliest']), /--earliest needs a value/);
+});
+
+// ------------------------------------------------------------------ --discover
+
+// A second made-up entry, so the raw-line pass has two to tell apart.
+function otherEntry() {
+  const parsers = [{ name: 'OTHER_THING_PARENT', text: '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=^OTHER:\n!SCHEMA=scwx.generic\nsensorType$ = "Other"', role: 'parent' }];
+  return { id: 'other/thing', meta: { reference_time: '2026-10-15T00:00:00Z', parsers: [{ name: 'OTHER_THING_PARENT', schema: 'scwx.generic', role: 'parent' }] }, parsers, samples: ['OTHER: x'], expected: [] };
+}
+
+const AGG_ROWS = [
+  { normalizer_revision: 'Master -> ACME_GW_JSON_PARENT -> ACME_GW_JSON_CHILD_AUTH', row_count: 5, schema_type: 'auth' },
+  { normalizer_revision: 'Master -> ACME_GW_JSON_PARENT', row_count: 2, schema_type: 'generic' },
+  { normalizer_revision: 'Master -> Vendor_Builtin', row_count: 9, schema_type: 'antivirus' },
+  { normalizer_revision: 'Master', row_count: 3, schema_type: 'generic' },
+  { normalizer_revision: '', row_count: 1000, schema_type: 'process' },
+  { normalizer_revision: 'Master -> ACME_GW_JSON_PARENT_COPY', row_count: 1, schema_type: 'thirdparty' },
+];
+
+test('discover: one aggregate search over every library schema, and samples that read one parser path', () => {
+  assert.deepEqual(librarySchemas([makeEntry(), otherEntry()]), ['auth', 'generic']);
+  assert.equal(aggregateQuery(['auth', 'generic'], { earliest: '-7d' }), 'from auth, generic earliest=-7d | aggregate count by normalizer_revision');
+  assert.equal(aggregateQuery(['auth'], { earliest: '2026-10-01T00:00:00Z', latest: '2026-10-31T00:00:00Z' }), "from auth earliest='2026-10-01T00:00:00Z' latest='2026-10-31T00:00:00Z' | aggregate count by normalizer_revision");
+  assert.equal(sampleQuery('antivirus', 'Master -> Vendor_Builtin', 100, { earliest: '-30d' }), "from antivirus where normalizer_revision = 'Master -> Vendor_Builtin' earliest=-30d | head 100");
+  assert.equal(sampleQuery('generic', "Master -> It's", 5, { earliest: '-7d' }), "from generic where normalizer_revision = 'Master -> It\\'s' earliest=-7d | head 5");
+  assert.deepEqual([...parserOwners([makeEntry(), otherEntry()])], [['ACME_GW_JSON_PARENT', 'acme/gateway'], ['ACME_GW_JSON_CHILD_AUTH', 'acme/gateway'], ['OTHER_THING_PARENT', 'other/thing']]);
+});
+
+test('discover: parser paths sort into library parsers, other parsers and records with no parser', () => {
+  const groups = pathGroups(AGG_ROWS);
+  assert.equal(groups.length, 6);
+  const { library, other, unparsed } = classify(groups, parserOwners([makeEntry(), otherEntry()]));
+  assert.deepEqual(library.map((g) => [g.id, g.schema, g.count, g.parsers]), [['acme/gateway', 'auth', 5, ['ACME_GW_JSON_PARENT', 'ACME_GW_JSON_CHILD_AUTH']], ['acme/gateway', 'generic', 2, ['ACME_GW_JSON_PARENT']]]);
+  // A longer name that only contains a library parser's name is another parser.
+  assert.deepEqual(other.map((g) => g.path).sort(), ['Master', 'Master -> ACME_GW_JSON_PARENT_COPY', 'Master -> Vendor_Builtin']);
+  assert.deepEqual(unparsed.map((g) => [g.schema, g.count]), [['process', 1000]]);
+});
+
+test('discover: an entry is found by the raw lines its parsers claim', () => {
+  const c = claimLines([makeEntry(), otherEntry()], [LINES[0], LINES[2], 'OTHER: x', 'nothing at all']);
+  assert.deepEqual(c.map((x) => [x.id, x.claimed, x.of]), [['acme/gateway', 2, 4], ['other/thing', 1, 4]]);
+  assert.deepEqual(c[0].paths, [['ACME_GW_JSON_PARENT > ACME_GW_JSON_CHILD_AUTH', 1], ['ACME_GW_JSON_PARENT', 1]]);
+});
+
+// A fake Search API: the aggregate search and one sample search per parser path, told apart by the
+// query text. rowsFor(text) gives the rows, or throws to answer with a GraphQL error.
+function discoverApi(rowsFor) {
+  const texts = new Map();
+  let n = 0;
+  return fakeApi((op, vars) => {
+    if (op === 'createSearch' || op === 'getOrCreateSearch') {
+      const urn = `urn:search:example:${++n}`;
+      try { texts.set(urn, rowsFor(vars.input.text)); } catch (e) { return json({ errors: [{ message: e.message }], data: null }); }
+      return json({ data: { [op]: SEARCH({ urn, queryText: vars.input.text }) } });
+    }
+    if (op === 'searchResults') return json({ data: { searchResults: { values: texts.get(vars.urn), totals: { total: { value: texts.get(vars.urn).length } }, nextCursor: null } } });
+    throw new Error(op);
+  });
+}
+
+test('discover: end to end on a fake API, names and counts only, with the ql-check run for each find', async () => {
+  const queries = [];
+  const api = discoverApi((text) => {
+    queries.push(text);
+    if (text.includes('| aggregate')) return AGG_ROWS;
+    if (text.includes("'Master -> Vendor_Builtin'")) return [...LINES.map((l) => ({ original_data: l })), { original_data: '' }];
+    if (text.includes("= 'Master'")) return [{ original_data: 'OTHER: y' }, { original_data: 'unrelated' }];
+    return [];
+  });
+  const client = new SearchClient(CREDS, { fetchImpl: api.fetchImpl });
+  const report = await discover(client, [makeEntry(), otherEntry()], { earliest: '-7d', sample: 50, pollMs: 1 });
+  assert.equal(queries[0], 'from auth, generic earliest=-7d | aggregate count by normalizer_revision');
+  // One sample per parser path that isn't a library parser's, and none for records with no parser.
+  assert.equal(queries.length, 4);
+  assert.ok(queries.slice(1).every((q) => / \| head 50$/.test(q) && !q.includes("= ''")), queries.join('\n'));
+  assert.deepEqual(report.claimed.map((c) => [c.id, c.group.path, c.claimed, c.of]), [['acme/gateway', 'Master -> Vendor_Builtin', 3, 3], ['other/thing', 'Master', 1, 2]]);
+  const text = formatDiscovery(report);
+  assert.match(text, /Ingested with library parsers \(1 entry\)/);
+  assert.match(text, /parsers\/acme\/gateway: Master -> ACME_GW_JSON_PARENT -> ACME_GW_JSON_CHILD_AUTH in auth, 5 records/);
+  assert.match(text, /node tools\/ql-check\.mjs parsers\/acme\/gateway --earliest -7d/);
+  assert.match(text, /parsers\/acme\/gateway claims 3 of 3 sampled lines from Master -> Vendor_Builtin in antivirus \(9 records\)/);
+  assert.match(text, /node tools\/ql-check\.mjs parsers\/acme\/gateway --where "normalizer_revision = 'Master -> Vendor_Builtin'" --earliest -7d/);
+  assert.match(text, /1 other parser path was sampled and no entry claimed a line; it had no raw lines/);
+  assert.match(text, /1,000 records in 1 schema came with no parser path/);
+  // The raw lines stay out of the report.
+  assert.doesNotMatch(text, /pat@example\.com|OTHER: y/);
+
+  // Without the emulator, only the aggregate search runs.
+  queries.length = 0;
+  const quick = await discover(client, [makeEntry(), otherEntry()], { earliest: '-7d', emulator: false, pollMs: 1 });
+  assert.equal(queries.length, 1);
+  assert.match(formatDiscovery(quick), /Raw lines were not sampled/);
+});
+
+test('discover: when the search across every schema fails, each schema is searched on its own', async () => {
+  const api = discoverApi((text) => {
+    if (text.startsWith('from auth, generic')) throw new Error('query validation failed: cannot aggregate');
+    if (text.startsWith('from generic ')) throw new Error('query validation failed: cannot aggregate on generic');
+    if (text.startsWith('from auth ')) return AGG_ROWS.slice(0, 1);
+    return [];
+  });
+  const logs = [];
+  const client = new SearchClient(CREDS, { fetchImpl: api.fetchImpl });
+  const report = await discover(client, [makeEntry()], { earliest: '-7d', emulator: false, pollMs: 1, log: (m) => logs.push(m) });
+  assert.deepEqual(report.failed.map((f) => f.schema), ['generic']);
+  assert.equal(report.library.length, 1);
+  assert.match(logs.join('\n'), /searched on its own/);
+  assert.match(formatDiscovery(report), /The search failed for generic: .*cannot aggregate on generic/);
+  // A sign-in failure is not a reason to try each schema.
+  const denied = new SearchClient(CREDS, { fetchImpl: async (url) => (url === TOKEN_URL ? json({ message: 'Invalid client secret' }, 401) : json({})) });
+  await assert.rejects(discover(denied, [makeEntry()], { earliest: '-7d', emulator: false, pollMs: 1 }), /Sophos sign-in failed/);
+});
+
+test('discover: command line options', () => {
+  const o = parseArgs(['--discover', '--earliest', '-30d']);
+  assert.equal(o.discover && o.dir === null && o.sample === DEFAULT_SAMPLE && o.earliest === '-30d', true);
+  assert.equal(parseArgs(['--discover', '--sample', '0']).sample, 0);
+  assert.equal(parseArgs(['--discover', '--no-emulator']).emulator, false);
+  assert.throws(() => parseArgs(['--discover', 'parsers/acme/gateway']), /--discover looks at every library entry, so name no entry folder/);
+  for (const flag of [['--where', 'x'], ['--max', '5'], ['--show-values']]) assert.throws(() => parseArgs(['--discover', ...flag]), new RegExp(`${flag[0]} doesn't apply to --discover`));
+  assert.throws(() => parseArgs(['--discover', '--sample', '1001']), /--sample must be a whole number from 0 to 1000/);
+  assert.throws(() => parseArgs(['parsers/acme/gateway', '--sample', '5']), /--sample only applies to --discover/);
 });
