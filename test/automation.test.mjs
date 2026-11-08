@@ -409,6 +409,29 @@ test('checks: dsl outputs that read a task that may not have run', () => {
   assert.ok(has(nested, 'reference', /dsl outputs one: get_one runs inside read, and dsl outputs can't read a task inside another task/), JSON.stringify(nested.problems));
 });
 
+// Measured on a lab tenant (2026-11-09): outcomeStatus and outcomeMessage fail the same way. One that
+// reads a skipped task fails the run with "no such key: variables", one that reads a task inside a
+// loop fails with "undeclared reference" (which playbookValidateDSLV2 only warns about), and the
+// has() and .? guards work.
+test('checks: outcomeStatus and outcomeMessage that read a task that may not have run', () => {
+  const outcome = (status, message) => TEMPLATE.replace('    outcomeStatus: finish.variables.status\n', `    outcomeStatus: ${status}\n${message ? `    outcomeMessage: ${message}\n` : ''}`);
+  const status = check(playbookEntry({ yaml: outcome('lock.outputs.status') }));
+  assert.ok(warned(status, 'reference', /dsl outcomeStatus: lock has a condition, and when it doesn't run, reading lock\.outputs\.status fails the run/), JSON.stringify(status.problems));
+  assert.equal(errors(status).length, 0);
+  const message = check(playbookEntry({ yaml: outcome('finish.variables.status', 'lock.outputs.message') }));
+  assert.ok(warned(message, 'reference', /dsl outcomeMessage: lock has a condition, and when it doesn't run, reading lock\.outputs\.message fails the run/), JSON.stringify(message.problems));
+  assert.equal(errors(message).length, 0);
+  for (const [s, m] of [
+    ["\"lock.?outputs.status.orValue('FAIL')\"", "\"has(lock, 'outputs.message') ? lock.outputs.message : ''\""],
+    ['finish.variables.status', 'setup.variables.state'],
+  ]) {
+    assert.deepEqual(check(playbookEntry({ yaml: outcome(s, m) })).problems.filter((p) => /dsl outcome/.test(p.message)), [], `${s} ${m}`);
+  }
+  const nested = check(playbookEntry({ yaml: outcome("\"has(get_one, 'outputs') ? 'SUCCESS' : 'FAIL'\"", 'get_one.outputs.name') }));
+  assert.ok(has(nested, 'reference', /dsl outcomeStatus: get_one runs inside read, and dsl outcomeStatus can't read a task inside another task/), JSON.stringify(nested.problems));
+  assert.ok(has(nested, 'reference', /dsl outcomeMessage: get_one runs inside read, and dsl outcomeMessage can't read a task inside another task/), JSON.stringify(nested.problems));
+});
+
 test('checks: task names, retry, sleep and the YAML itself', () => {
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("        - name: finish\n          let:", "        - name: finish\n          retry: 2\n          let:") })), 'task', /retry only works/));
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("- name: wait\n          sleep: '15s'", "- name: wait\n          sleep: 'soon'") })), 'task', /sleep/));

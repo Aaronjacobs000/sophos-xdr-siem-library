@@ -527,8 +527,9 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
   for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) checkValue(x);
 
   // Two reads that playbookValidateDSLV2 passes and a run fails, as measured on a lab tenant: a value
-  // in a let that reads another value of the same let, and dsl outputs that read a task that didn't
-  // run. Each expression's reads, part by part for a template, with the tasks its has() calls check.
+  // in a let that reads another value of the same let, and dsl outputs, outcomeStatus or outcomeMessage
+  // that read a task that didn't run. Each expression's reads, part by part for a template, with the
+  // tasks its has() calls check.
   const partReads = (x) => {
     let texts = [x.text];
     if (x.template !== undefined) { try { texts = templateParts(x.template).map((p) => p.expr); } catch { texts = []; } }
@@ -559,7 +560,8 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
     }
   }
   // A task skipped by its condition has no variables or outputs to read, and a task inside another
-  // task is out of the outputs' scope. A top-level task without a condition always runs.
+  // task is out of scope for the outputs, outcomeStatus and outcomeMessage, which are all worked out
+  // after the tasks. A top-level task without a condition always runs.
   const always = new Set(list.items.filter((t) => isMap(t) && !get(t, 'condition')).map((t) => str(get(t, 'name'))).filter(Boolean));
   const skippable = new Map();
   const mark = (l, inside) => {
@@ -575,14 +577,17 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
     }
   };
   mark(list, null);
-  for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) {
+  const ends = [];
+  for (const k of ['outcomeStatus', 'outcomeMessage']) { const v = get(dsl, k); if (isStr(v)) ends.push({ text: v.value, line: v.line, where: `dsl ${k}`, field: `dsl ${k}` }); }
+  for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) ends.push({ ...x, field: 'dsl outputs' });
+  for (const x of ends) {
     for (const part of partReads(x)) {
       for (const rd of part.reads) {
         const why = skippable.get(rd.name);
         if (!why) continue;
         const path = rd.path.map((p) => p.field).join('.');
         if (why.inside) {
-          once('error', `${x.where}: ${rd.name} runs inside ${why.inside}, and dsl outputs can't read a task inside another task: the run fails with "undeclared reference". Collect what you need in a variable of a top-level task and read that.`, x.line);
+          once('error', `${x.where}: ${rd.name} runs inside ${why.inside}, and ${x.field} can't read a task inside another task: the run fails with "undeclared reference". Collect what you need in a variable of a top-level task and read that.`, x.line);
         } else if (rd.path.length && !rd.path[0].opt && !part.has.has(rd.name)) {
           // A warning: the read fails only on the runs where the task is skipped.
           once('warn', `${x.where}: ${rd.name} has a condition, and when it doesn't run, reading ${rd.name}.${path} fails the run with "no such key". Guard the read with has(${rd.name}, '${path}'), or read it as ${rd.name}.?${path}.orValue(...).`, x.line);

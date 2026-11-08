@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_NinjaOne_DeviceContext
-version: 1.0.0
+version: 1.0.1
 title: NinjaOne device context (unofficial)
 description: Looks up the host in NinjaOne and comments on the case with its organization, last contact, last logged-on user, operating system and a link to the device. Read only in NinjaOne. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -17,7 +17,7 @@ documentation: |
     | Input | What it does | Default |
     | ----- | ------------ | ------- |
     | Most hosts per run | A run that names more hosts looks up none | 3 |
-changeNotes: First version
+changeNotes: A run that stops before the lookup, with no hostname or more hosts than the limit, now finishes with its message and an empty devices list instead of failing at the outputs.
 tags:
     - Type:Enrichment
 connectorCategories:
@@ -61,7 +61,7 @@ dsl:
     outcomeStatus: finish.variables.status
     outcomeMessage: finish.variables.message
     outputs:
-        devices: lookup.variables.found
+        devices: "lookup.?variables.found.orValue([])"
         status: finish.variables.status
     tasks:
         - name: setup

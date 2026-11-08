@@ -14,7 +14,7 @@
   "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It only reads IT Glue and adds a comment to the case, which Sophos MDR analysts can see on a case they share with you.",
   "rollback": "Delete the comment on the case if you don't want it. Nothing in IT Glue changes.",
   "tested": {
-    "validated": "2026-10-21",
+    "validated": "2026-11-09",
     "tenant": null
   },
   "connector": "connectors/it-glue/it-glue",
@@ -25,5 +25,5 @@
     "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
   ],
   "summary": "This playbook finds the IT Glue configuration for a host in a case and comments on the case with its organization, type, status, location, contact, primary IP and a link to the record. An analyst runs it from the host as a response action, and it reads IT Glue through the library's IT Glue connector. It needs an IT Glue API key without password access.",
-  "notes": "Testing:\n- Not run against IT Glue: there was no account to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted."
+  "notes": "Testing:\n- Not run against IT Glue: there was no account to test with.\n- On 2026-10-21 a renamed copy passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant, imported with its connector, exported again unchanged apart from the tenant's own fields, and both were deleted.\n- On 2026-11-09 a renamed copy of version 1.0.1, imported with a renamed copy of its connector, passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion tenant. Run there from a case update that names no host, so the lookup is skipped, it finished with its message and an empty configurations list, where 1.0.0 commented on the case and then failed at the outputs with \"no such key: variables\". It never called IT Glue. Everything made for the test was deleted."
 }
