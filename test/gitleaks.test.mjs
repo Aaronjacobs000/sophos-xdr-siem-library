@@ -168,10 +168,10 @@ test('the port\'s copies of the .gitleaks.toml allowlists and gitleaks version m
   assert.deepEqual(REPO_ALLOWLISTS, ported);
   for (const a of REPO_ALLOWLISTS) for (const r of [...a.paths, ...a.regexes]) assert.doesNotThrow(() => goRegex(r), r);
   // Both CI jobs that install gitleaks, the unit tests' and the secret scan's, take the version the
-  // port came from, with one checksum.
+  // port came from, with one checksum, in the step that caches the release and the one that installs it.
   const ci = await readFile(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
   const versions = [...ci.matchAll(/GITLEAKS_VERSION: (\S+)/g)].map((m) => m[1]);
-  assert.equal(versions.length, 2, 'the tests and secrets jobs each install gitleaks');
+  assert.equal(versions.length, 4, 'the tests and secrets jobs each cache and install gitleaks');
   for (const v of versions) assert.equal(v, GITLEAKS_VERSION, `CI installs gitleaks ${v} and the port came from ${GITLEAKS_VERSION}: run node tools/port-gitleaks.mjs ${v}`);
   assert.equal(new Set([...ci.matchAll(/GITLEAKS_SHA256: (\S+)/g)].map((m) => m[1])).size, 1, 'the two jobs install gitleaks with different checksums');
 });
@@ -340,8 +340,8 @@ test('port tool: the module it writes holds what it read, and CI moves to the sa
   const ci = await readFile(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8');
   const sha = 'b'.repeat(64);
   const moved = setCiVersion(ci, '9.1.2', sha);
-  assert.deepEqual([...moved.matchAll(/GITLEAKS_VERSION: (\S+)/g)].map((x) => x[1]), ['9.1.2', '9.1.2']);
-  assert.deepEqual([...moved.matchAll(/GITLEAKS_SHA256: (\S+)/g)].map((x) => x[1]), [sha, sha]);
+  assert.deepEqual([...moved.matchAll(/GITLEAKS_VERSION: (\S+)/g)].map((x) => x[1]), ['9.1.2', '9.1.2', '9.1.2', '9.1.2']);
+  assert.deepEqual([...moved.matchAll(/GITLEAKS_SHA256: (\S+)/g)].map((x) => x[1]), [sha, sha, sha, sha]);
   assert.equal(moved.split('\n').length, ci.split('\n').length);
   assert.throws(() => setCiVersion('jobs:\n', '9.1.2', sha), /0 GITLEAKS_VERSION/);
   assert.equal(tarballSha256(`${'c'.repeat(64)}  gitleaks_9.1.2_darwin_arm64.tar.gz\n${sha}  gitleaks_9.1.2_linux_x64.tar.gz\n`, '9.1.2'), sha);

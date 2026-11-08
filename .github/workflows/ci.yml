@@ -21,16 +21,29 @@ jobs:
           node-version: 22
       # The same gitleaks the secrets job runs, so the unit tests check the library check's port of
       # its generic-api-key rule against it. tools/port-gitleaks.mjs sets both jobs' version and hash.
+      # GitHub release downloads can answer 5xx for a while, so the tarball comes from the cache
+      # when the cache holds one that matches the pinned hash, and the download retries.
+      - name: Cache the gitleaks release for the port tests
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        with:
+          path: ${{ runner.temp }}/gitleaks-release
+          key: gitleaks-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}
       - name: Install gitleaks for the port tests
         env:
           GITLEAKS_VERSION: 8.30.1
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
           cd "$RUNNER_TEMP"
-          curl -fsSL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          mkdir -p gitleaks-release
+          if ! echo "${GITLEAKS_SHA256}  gitleaks-release/gitleaks.tar.gz" | sha256sum -c - > /dev/null 2>&1; then
+            curl -fsSL --retry 8 --retry-max-time 300 -o gitleaks-release/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          fi
+          echo "${GITLEAKS_SHA256}  gitleaks-release/gitleaks.tar.gz" | sha256sum -c -
           mkdir gitleaks-bin
-          tar -xzf gitleaks.tar.gz -C gitleaks-bin gitleaks
+          tar -xzf gitleaks-release/gitleaks.tar.gz -C gitleaks-bin gitleaks
           gitleaks-bin/gitleaks version
           echo "$RUNNER_TEMP/gitleaks-bin" >> "$GITHUB_PATH"
       - name: Unit tests
@@ -53,7 +66,8 @@ jobs:
           exit $status
   # Scans the commits a pull request adds, or a push to main brings in, for secrets with gitleaks
   # and the repo's .gitleaks.toml. Only GitHub's own actions may run here, so the gitleaks release
-  # is downloaded in a step, pinned by version and checked against its SHA-256 before it runs.
+  # is downloaded in a step, pinned by version and checked against its SHA-256 before it runs. The
+  # cache only saves a download: a cached tarball is used only when it matches the pinned hash.
   # --redact keeps any secret it finds out of the public log.
   secrets:
     runs-on: ubuntu-latest
@@ -63,15 +77,26 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Cache the gitleaks release
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        with:
+          path: ${{ runner.temp }}/gitleaks-release
+          key: gitleaks-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}
       - name: Install gitleaks
         env:
           GITLEAKS_VERSION: 8.30.1
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
           cd "$RUNNER_TEMP"
-          curl -fsSL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
-          tar -xzf gitleaks.tar.gz gitleaks
+          mkdir -p gitleaks-release
+          if ! echo "${GITLEAKS_SHA256}  gitleaks-release/gitleaks.tar.gz" | sha256sum -c - > /dev/null 2>&1; then
+            curl -fsSL --retry 8 --retry-max-time 300 -o gitleaks-release/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          fi
+          echo "${GITLEAKS_SHA256}  gitleaks-release/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks-release/gitleaks.tar.gz gitleaks
           ./gitleaks version
       - name: Scan the new commits
         env:
