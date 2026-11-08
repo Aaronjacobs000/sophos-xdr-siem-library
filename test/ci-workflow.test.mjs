@@ -218,3 +218,95 @@ test('CI workflow: the tests job installs the secrets job\'s gitleaks before the
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// A step's own lines, found by its name, for a uses: step that has no run: block.
+function stepLines(name) {
+  const at = LINES.findIndex((l) => l.trim() === `- name: ${name}`);
+  assert.ok(at !== -1, `no step named ${name}`);
+  const indent = LINES[at].indexOf('-') + 2;
+  const own = [];
+  for (const l of LINES.slice(at + 1)) {
+    if (l.trim() && (l.length - l.trimStart().length < indent || l.trimStart().startsWith('- '))) break;
+    own.push(l);
+  }
+  const value = (key) => { const m = own.map((l) => new RegExp(`^\\s+${key}:\\s*(.*)$`).exec(l)).find(Boolean); return m ? m[1].trim() : null; };
+  const env = {};
+  const envAt = own.findIndex((l) => l.trim() === 'env:');
+  if (envAt !== -1) {
+    for (const l of own.slice(envAt + 1)) {
+      const m = /^\s+([A-Z0-9_]+):\s*(.*)$/.exec(l);
+      if (!m) break;
+      env[m[1]] = m[2];
+    }
+  }
+  return { lines: own, value, env };
+}
+
+// GitHub's release downloads answered 504 for about 40 minutes on 08/11/2026 and failed CI on three
+// pull requests and main. Each job now restores the release tarball from the Actions cache, keyed on
+// the pinned version and checksum, and only downloads it, with retries, when the cache has no copy
+// that matches the pinned hash.
+test('CI workflow: both gitleaks installs restore the release from a cache keyed on the pinned version and checksum', () => {
+  const all = jobs();
+  for (const [job, cache, install] of [['tests', 'Cache the gitleaks release for the port tests', 'Install gitleaks for the port tests'], ['secrets', 'Cache the gitleaks release', 'Install gitleaks']]) {
+    const names = all[job].map((l) => /^\s+- name: (.*)$/.exec(l)).filter(Boolean).map((m) => m[1]);
+    assert.ok(names.includes(cache) && names.indexOf(cache) < names.indexOf(install), `${job}: ${names.join(', ')}`);
+    const c = stepLines(cache);
+    assert.match(c.value('uses'), /^actions\/cache@[0-9a-f]{40} # v\d+\.\d+\.\d+$/, `${job}: GitHub's own cache action, pinned by SHA`);
+    assert.equal(c.value('path'), '${{ runner.temp }}/gitleaks-release');
+    assert.equal(c.value('key'), 'gitleaks-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}');
+    assert.deepEqual(c.env, step(install).env, `${job}: the cache key uses the version and checksum the install pins`);
+    assert.match(step(install).run, /gitleaks-release\/gitleaks\.tar\.gz/);
+  }
+});
+
+test('CI workflow: a cached gitleaks release is used only when it matches the pinned hash, and a download retries', { skip: process.platform === 'win32' }, async () => {
+  for (const name of ['Install gitleaks', 'Install gitleaks for the port tests']) {
+    const { env, run } = step(name);
+    const dir = await mkdtemp(path.join(tmpdir(), 'ps-gitleaks-cache-'));
+    try {
+      const temp = path.join(dir, 'runner');
+      const bin = path.join(dir, 'bin');
+      const pkg = path.join(dir, 'pkg');
+      for (const d of [temp, bin, pkg]) await mkdir(d);
+      await writeFile(path.join(pkg, 'gitleaks'), '#!/bin/sh\necho "fake gitleaks"\n');
+      await chmod(path.join(pkg, 'gitleaks'), 0o755);
+      const tarball = path.join(dir, 'release.tar.gz');
+      execFileSync('tar', ['-czf', tarball, '-C', pkg, 'gitleaks']);
+      const good = createHash('sha256').update(await readFile(tarball)).digest('hex');
+      // curl appends its arguments, one call per line, and writes the stand-in release.
+      const calls = path.join(dir, 'calls.txt');
+      await writeFile(path.join(bin, 'curl'), `#!/bin/sh\necho "$*" >> "${calls}"\nwhile [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; *) shift;; esac; done\ncp "${tarball}" "$out"\n`);
+      await chmod(path.join(bin, 'curl'), 0o755);
+      const ghPath = path.join(dir, 'github-path.txt');
+      const runIt = async () => {
+        await writeFile(ghPath, '');
+        await rm(path.join(temp, 'gitleaks'), { force: true });
+        await rm(path.join(temp, 'gitleaks-bin'), { recursive: true, force: true });
+        await writeFile(calls, '');
+        const r = bash(run, temp, { ...env, GITLEAKS_SHA256: good, RUNNER_TEMP: temp, PATH: `${bin}:${process.env.PATH}`, GITHUB_PATH: ghPath });
+        assert.equal(r.status, 0, `${name}: ${r.stdout}${r.stderr}`);
+        assert.match(r.stdout, /fake gitleaks/);
+        return (await readFile(calls, 'utf8')).split('\n').filter(Boolean);
+      };
+      const cached = path.join(temp, 'gitleaks-release', 'gitleaks.tar.gz');
+
+      // Nothing cached: one download, which retries.
+      const first = await runIt();
+      assert.equal(first.length, 1, name);
+      const retries = /(?:^| )--retry (\d+)(?: |$)/.exec(first[0]);
+      assert.ok(retries && Number(retries[1]) >= 3, `${name}: ${first[0]}`);
+      assert.match(first[0], /-f/);
+      assert.equal(createHash('sha256').update(await readFile(cached)).digest('hex'), good, 'the download lands where the cache saves from');
+
+      // A cached copy that matches the pinned hash: no download.
+      assert.deepEqual(await runIt(), [], name);
+
+      // A cached copy that doesn't match: downloaded again, and the good copy is used.
+      await writeFile(cached, 'not the release\n');
+      assert.equal((await runIt()).length, 1, name);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+});
