@@ -432,6 +432,49 @@ test('checks: outcomeStatus and outcomeMessage that read a task that may not hav
   assert.ok(has(nested, 'reference', /dsl outcomeMessage: get_one runs inside read, and dsl outcomeMessage can't read a task inside another task/), JSON.stringify(nested.problems));
 });
 
+// Measured on a lab tenant (2026-11-09): dsl summary is worked out after the tasks too, and fails the
+// same way. One that reads a skipped task fails the run with "no such key: variables", one that reads a
+// task inside a loop fails with "undeclared reference" (playbookValidateDSLV2 only warns), and a has()
+// or .? guard lets the run complete with the summary set.
+test('checks: dsl summary that reads a task that may not have run', () => {
+  const summary = (s) => TEMPLATE.replace('    outcomeStatus: finish.variables.status\n', `    outcomeStatus: finish.variables.status\n    summary: ${s}\n`);
+  const skipped = check(playbookEntry({ yaml: summary('lock.outputs.message') }));
+  assert.ok(warned(skipped, 'reference', /dsl summary: lock has a condition, and when it doesn't run, reading lock\.outputs\.message fails the run/), JSON.stringify(skipped.problems));
+  assert.equal(errors(skipped).length, 0);
+  for (const guarded of ["\"has(lock, 'outputs.message') ? lock.outputs.message : ''\"", "\"lock.?outputs.message.orValue('')\"", 'setup.variables.state']) {
+    assert.deepEqual(check(playbookEntry({ yaml: summary(guarded) })).problems.filter((p) => /dsl summary/.test(p.message)), [], guarded);
+  }
+  const nested = check(playbookEntry({ yaml: summary('get_one.outputs.name') }));
+  assert.ok(has(nested, 'reference', /dsl summary: get_one runs inside read, and dsl summary can't read a task inside another task/), JSON.stringify(nested.problems));
+});
+
+// Measured on a lab tenant (2026-11-09): outcomeStatus, outcomeMessage and summary follow the quoting rule
+// of the other values. playbookValidateDSLV2 wraps a plain or double-quoted value in ${...} and keeps one
+// that already has a ${...} in it as it is, so "Ran ${first.variables.x} task" ran as "Ran 1 task" and
+// "${first.variables.status}" as SUCCESS. A single-quoted value is text, ${...} and all: 'Done' ran as
+// Done, and 'Ran ${first.variables.x} task' came out unchanged. A bad read inside a ${...} still fails
+// the run: "no such key" for a skipped task, "undeclared reference" for a task inside a loop.
+test('checks: outcomeStatus, outcomeMessage and summary can be text with ${...} in it, or single-quoted text', () => {
+  const ends = (status, message, summary) => TEMPLATE.replace('    outcomeStatus: finish.variables.status\n',
+    `    outcomeStatus: ${status}\n${message ? `    outcomeMessage: ${message}\n` : ''}${summary ? `    summary: ${summary}\n` : ''}`);
+  const endProblems = (r) => r.problems.filter((p) => /dsl (outcome|summary)/.test(p.message));
+  for (const [s, m, sum] of [
+    ['"${finish.variables.status}"', 'Locked ${setup.variables.ids} with ${finish.variables.status}', 'Summary says ${finish.variables.status}'],
+    ["'SUCCESS'", "'Done'", "'Locked ${lock.outputs.id}'"],
+    ['finish.variables.status', "'Locked ${get_one.outputs.name}'", "\"Ran ${has(lock, 'outputs') ? 'lock' : 'nothing'}\""],
+  ]) {
+    assert.deepEqual(endProblems(check(playbookEntry({ yaml: ends(s, m, sum) }))), [], `${s} | ${m} | ${sum}`);
+  }
+  // A bad read inside the text is still found.
+  assert.ok(has(check(playbookEntry({ yaml: ends('finish.variables.status', 'Locked ${setupp.variables.ids}') })), 'reference', /dsl outcomeMessage: setupp is not a task/));
+  assert.ok(has(check(playbookEntry({ yaml: ends('finish.variables.status', 'Locked ${setup.variables.ids') })), 'cel', /dsl outcomeMessage/));
+  assert.ok(warned(check(playbookEntry({ yaml: ends('finish.variables.status', 'Found ${lock.outputs.id}') })), 'reference', /dsl outcomeMessage: lock has a condition/));
+  assert.ok(has(check(playbookEntry({ yaml: ends('finish.variables.status', null, 'Found ${get_one.outputs.name}') })), 'reference', /dsl summary: get_one runs inside read/));
+  assert.ok(has(check(playbookEntry({ yaml: ends('"Status ${lock.outputs.status"') })), 'cel', /dsl outcomeStatus/));
+  // A bare word without quotes is still an expression, and the hint says how to make it text.
+  assert.ok(has(check(playbookEntry({ yaml: ends('finish.variables.status', 'Done') })), 'reference', /dsl outcomeMessage: Done is not a task.*single-quote it: 'Done'/));
+});
+
 test('checks: task names, retry, sleep and the YAML itself', () => {
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("        - name: finish\n          let:", "        - name: finish\n          retry: 2\n          let:") })), 'task', /retry only works/));
   assert.ok(has(check(playbookEntry({ yaml: TEMPLATE.replace("- name: wait\n          sleep: '15s'", "- name: wait\n          sleep: 'soon'") })), 'task', /sleep/));
