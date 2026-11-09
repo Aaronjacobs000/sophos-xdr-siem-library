@@ -375,8 +375,9 @@ function* taskLists(list, top = true) {
   }
 }
 
-// A value in let, variables, inputs or outputs: single quotes make text, anything else in a string
-// is an expression. Returns the CEL checks to run, with the hint the quoting rule needs.
+// A value in let, variables, inputs or outputs, or the dsl outcomeStatus, outcomeMessage or summary:
+// single quotes make text, anything else in a string is an expression. Returns the CEL checks to run,
+// with the hint the quoting rule needs.
 function* valueExprs(node, where) {
   for (const { node: n, path } of walk(node)) {
     if (!isStr(n) || n.style === 'single' || n.value.trim() === '') continue;
@@ -523,13 +524,17 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
     if (isStr(sleep) && sleep.style !== 'single' && !/^\d+(ms|s|m|h)$/.test(sleep.value)) check(sleep.value, sleep.line, `${n} sleep`, false);
     for (const k of ['let', 'variables', 'inputs']) for (const x of valueExprs(get(t, k), `${n} ${k}`)) checkValue(x);
   }
-  for (const k of ['outcomeStatus', 'outcomeMessage', 'summary']) { const v = get(dsl, k); if (isStr(v)) check(v.value, v.line, `dsl ${k}`, false); }
+  // The dsl's end fields take the same quoting as any other value, as measured on a lab tenant: the
+  // platform wraps a plain or double-quoted one in ${...} unless it already has a ${...} in it, and a
+  // single-quoted one is text, ${...} and all.
+  const END_KEYS = ['outcomeStatus', 'outcomeMessage', 'summary'];
+  for (const k of END_KEYS) for (const x of valueExprs(get(dsl, k), `dsl ${k}`)) checkValue(x);
   for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) checkValue(x);
 
   // Two reads that playbookValidateDSLV2 passes and a run fails, as measured on a lab tenant: a value
-  // in a let that reads another value of the same let, and dsl outputs, outcomeStatus or outcomeMessage
-  // that read a task that didn't run. Each expression's reads, part by part for a template, with the
-  // tasks its has() calls check.
+  // in a let that reads another value of the same let, and dsl outputs, outcomeStatus, outcomeMessage
+  // or summary that read a task that didn't run. Each expression's reads, part by part for a template,
+  // with the tasks its has() calls check.
   const partReads = (x) => {
     let texts = [x.text];
     if (x.template !== undefined) { try { texts = templateParts(x.template).map((p) => p.expr); } catch { texts = []; } }
@@ -560,8 +565,8 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
     }
   }
   // A task skipped by its condition has no variables or outputs to read, and a task inside another
-  // task is out of scope for the outputs, outcomeStatus and outcomeMessage, which are all worked out
-  // after the tasks. A top-level task without a condition always runs.
+  // task is out of scope for the outputs, outcomeStatus, outcomeMessage and summary, which are all
+  // worked out after the tasks. A top-level task without a condition always runs.
   const always = new Set(list.items.filter((t) => isMap(t) && !get(t, 'condition')).map((t) => str(get(t, 'name'))).filter(Boolean));
   const skippable = new Map();
   const mark = (l, inside) => {
@@ -578,7 +583,7 @@ export function checkTemplateYaml(r, root, meta, opts = {}) {
   };
   mark(list, null);
   const ends = [];
-  for (const k of ['outcomeStatus', 'outcomeMessage']) { const v = get(dsl, k); if (isStr(v)) ends.push({ text: v.value, line: v.line, where: `dsl ${k}`, field: `dsl ${k}` }); }
+  for (const k of END_KEYS) for (const x of valueExprs(get(dsl, k), `dsl ${k}`)) ends.push({ ...x, field: `dsl ${k}` });
   for (const x of valueExprs(get(dsl, 'outputs'), 'dsl outputs')) ends.push({ ...x, field: 'dsl outputs' });
   for (const x of ends) {
     for (const part of partReads(x)) {
