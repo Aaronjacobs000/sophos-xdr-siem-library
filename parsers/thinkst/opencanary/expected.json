@@ -1,0 +1,1661 @@
+[
+  {
+    "line": 1,
+    "extractor_path": "OPENCANARY_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280484490843,
+      "host_id": "opencanary-1"
+    }
+  },
+  {
+    "line": 2,
+    "extractor_path": "OPENCANARY_JSON_PARENT",
+    "schema": "scwx.generic",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "sensor_id": "canary-01",
+      "event_time_usec": 1794280521498762,
+      "host_id": "opencanary-1"
+    }
+  },
+  {
+    "line": 3,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280558506681,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "2001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 40112,
+      "destination_port": 21,
+      "destination_service_name": "ftp",
+      "protocol": 6,
+      "title": "OpenCanary: FTP login started",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "FTP login started from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 4,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280595514600,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "2000",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 40112,
+      "destination_port": 21,
+      "destination_service_name": "ftp",
+      "protocol": 6,
+      "title": "OpenCanary: FTP login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "backup",
+      "summary": "FTP login attempt as backup from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 5,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "sensor_id": "canary-01",
+      "event_time_usec": 1794280632522519,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "3000",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 58231,
+      "destination_port": 80,
+      "destination_service_name": "http",
+      "protocol": 6,
+      "title": "OpenCanary: HTTP page request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "destination_url": "192.0.2.10/index.html",
+      "summary": "HTTP page request from 198.51.100.77 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "skin",
+            "value": "nasLogin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 6,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "sensor_id": "canary-01",
+      "event_time_usec": 1794280669530438,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "3001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 58232,
+      "destination_port": 80,
+      "destination_service_name": "http",
+      "protocol": 6,
+      "title": "OpenCanary: HTTP login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "admin",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "destination_url": "192.0.2.10/index.html",
+      "summary": "HTTP login attempt as admin from 198.51.100.77 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "skin",
+            "value": "nasLogin"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 7,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280706538357,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "3002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 58240,
+      "destination_port": 80,
+      "destination_service_name": "http",
+      "protocol": 6,
+      "title": "OpenCanary: HTTP request with an unsupported method",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "user_agent": "curl/8.7.1",
+      "destination_url": "192.0.2.10/cgi-bin/config.bin",
+      "summary": "HTTP request with an unsupported method from 198.51.100.77 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "skin",
+            "value": "nasLogin"
+          },
+          {
+            "key": "request_type",
+            "value": "PUT"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 8,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280743546276,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "3003",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 58244,
+      "destination_port": 443,
+      "destination_service_name": "http",
+      "protocol": 6,
+      "title": "OpenCanary: HTTP request redirected",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "destination_url": "192.0.2.10/",
+      "summary": "HTTP request redirected from 198.51.100.77 on opencanary-1"
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280780554195,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "4000",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51514,
+      "destination_port": 22,
+      "destination_service_name": "ssh",
+      "protocol": 6,
+      "title": "OpenCanary: SSH connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "session_id": "3",
+      "summary": "SSH connection from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280817562114,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "4001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51514,
+      "destination_port": 22,
+      "destination_service_name": "ssh",
+      "protocol": 6,
+      "title": "OpenCanary: SSH client version sent",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "SSH client version sent from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "local_version",
+            "value": "SSH-2.0-OpenSSH_5.1p1 Debian-4"
+          },
+          {
+            "key": "remote_version",
+            "value": "SSH-2.0-OpenSSH_9.6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280854570033,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "4002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51514,
+      "destination_port": 22,
+      "destination_service_name": "ssh",
+      "protocol": 6,
+      "title": "OpenCanary: SSH login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "root",
+      "summary": "SSH login attempt as root from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "local_version",
+            "value": "SSH-2.0-OpenSSH_5.1p1 Debian-4"
+          },
+          {
+            "key": "remote_version",
+            "value": "SSH-2.0-OpenSSH_9.6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280891577952,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "4002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51520,
+      "destination_port": 22,
+      "destination_service_name": "ssh",
+      "protocol": 6,
+      "title": "OpenCanary: SSH login attempt",
+      "alert_category": "Login attempt",
+      "severity": "HIGH",
+      "target_user_name": "svc-backup",
+      "summary": "SSH login attempt as svc-backup from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "honeycred",
+            "value": "true"
+          },
+          {
+            "key": "local_version",
+            "value": "SSH-2.0-OpenSSH_5.1p1 Debian-4"
+          },
+          {
+            "key": "remote_version",
+            "value": "SSH-2.0-libssh_0.10.6"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794280928585860,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "4002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 51533,
+      "destination_port": 22,
+      "destination_service_name": "ssh",
+      "protocol": 6,
+      "title": "OpenCanary: SSH login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "oracle",
+      "summary": "SSH login attempt as oracle from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "local_version",
+            "value": "SSH-2.0-OpenSSH_5.1p1 Debian-4"
+          },
+          {
+            "key": "remote_version",
+            "value": "SSH-2.0-PuTTY_Release_0.81"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "sensor_id": "canary-01",
+      "event_time_usec": 1794280965593790,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5000",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "destination_port": 445,
+      "destination_service_name": "smb",
+      "protocol": 6,
+      "title": "OpenCanary: SMB file opened",
+      "alert_category": "File access",
+      "severity": "MEDIUM",
+      "source_user_name": "jlee",
+      "source_host_name": "ws-fin-07",
+      "summary": "SMB file opened by jlee from 203.0.113.24 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "share_name",
+            "value": "finance"
+          },
+          {
+            "key": "file_name",
+            "value": "payroll/2026-bonus-plan.docx"
+          },
+          {
+            "key": "audit_action",
+            "value": "pread"
+          },
+          {
+            "key": "status",
+            "value": "ok"
+          },
+          {
+            "key": "smb_version",
+            "value": "SMB3_11"
+          },
+          {
+            "key": "smb_arch",
+            "value": "Windows 2008"
+          },
+          {
+            "key": "domain",
+            "value": "EXAMPLE"
+          },
+          {
+            "key": "local_name",
+            "value": "fs-archive"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281002601709,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "source_port": 44213,
+      "destination_port": 3389,
+      "protocol": 6,
+      "title": "OpenCanary: TCP SYN packet",
+      "alert_category": "Port scan",
+      "severity": "LOW",
+      "destination_mac": "00:00:5e:00:53:0a",
+      "source_mac": "00:00:5e:00:53:c4",
+      "summary": "TCP SYN packet from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "in_interface",
+            "value": "eth0"
+          },
+          {
+            "key": "packet_length",
+            "value": "44"
+          },
+          {
+            "key": "ttl",
+            "value": "52"
+          },
+          {
+            "key": "tcp_window",
+            "value": "1024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281039609628,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5002",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "source_port": 44220,
+      "destination_port": 22,
+      "protocol": 6,
+      "title": "OpenCanary: Nmap OS scan",
+      "alert_category": "Port scan",
+      "severity": "MEDIUM",
+      "destination_mac": "00:00:5e:00:53:0a",
+      "source_mac": "00:00:5e:00:53:c4",
+      "summary": "Nmap OS scan from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "in_interface",
+            "value": "eth0"
+          },
+          {
+            "key": "packet_length",
+            "value": "60"
+          },
+          {
+            "key": "ttl",
+            "value": "52"
+          },
+          {
+            "key": "tcp_window",
+            "value": "256"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281076617547,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5003",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "source_port": 44231,
+      "destination_port": 445,
+      "protocol": 6,
+      "title": "OpenCanary: Nmap NULL scan",
+      "alert_category": "Port scan",
+      "severity": "MEDIUM",
+      "destination_mac": "00:00:5e:00:53:0a",
+      "source_mac": "00:00:5e:00:53:c4",
+      "summary": "Nmap NULL scan from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "in_interface",
+            "value": "eth0"
+          },
+          {
+            "key": "packet_length",
+            "value": "40"
+          },
+          {
+            "key": "ttl",
+            "value": "52"
+          },
+          {
+            "key": "tcp_window",
+            "value": "1024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281113625466,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5004",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "source_port": 44232,
+      "destination_port": 80,
+      "protocol": 6,
+      "title": "OpenCanary: Nmap Xmas scan",
+      "alert_category": "Port scan",
+      "severity": "MEDIUM",
+      "destination_mac": "00:00:5e:00:53:0a",
+      "source_mac": "00:00:5e:00:53:c4",
+      "summary": "Nmap Xmas scan from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "in_interface",
+            "value": "eth0"
+          },
+          {
+            "key": "packet_length",
+            "value": "40"
+          },
+          {
+            "key": "ttl",
+            "value": "52"
+          },
+          {
+            "key": "tcp_window",
+            "value": "1024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281150633385,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "5005",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "destination_address": "192.0.2.10",
+      "source_port": 44233,
+      "destination_port": 21,
+      "protocol": 6,
+      "title": "OpenCanary: Nmap FIN scan",
+      "alert_category": "Port scan",
+      "severity": "MEDIUM",
+      "destination_mac": "00:00:5e:00:53:0a",
+      "source_mac": "00:00:5e:00:53:c4",
+      "summary": "Nmap FIN scan from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "in_interface",
+            "value": "eth0"
+          },
+          {
+            "key": "packet_length",
+            "value": "40"
+          },
+          {
+            "key": "ttl",
+            "value": "52"
+          },
+          {
+            "key": "tcp_window",
+            "value": "1024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281187641304,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "6002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 39004,
+      "destination_port": 23,
+      "destination_service_name": "telnet",
+      "protocol": 6,
+      "title": "OpenCanary: Telnet connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "Telnet connection from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281224649223,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "6001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 39004,
+      "destination_port": 23,
+      "destination_service_name": "telnet",
+      "protocol": 6,
+      "title": "OpenCanary: Telnet login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "admin",
+      "summary": "Telnet login attempt as admin from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "honeycred",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281261657142,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "6001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 39010,
+      "destination_port": 23,
+      "destination_service_name": "telnet",
+      "protocol": 6,
+      "title": "OpenCanary: Telnet protocol error",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "Telnet protocol error from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "error",
+            "value": "Telnet subnegotiation buffer limit reached"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 23,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281298665061,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "7001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.77",
+      "destination_address": "192.0.2.10",
+      "source_port": 60110,
+      "destination_port": 8080,
+      "destination_service_name": "httpproxy",
+      "protocol": 6,
+      "title": "OpenCanary: HTTP proxy login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "proxyuser",
+      "summary": "HTTP proxy login attempt as proxyuser from 198.51.100.77 on opencanary-1"
+    }
+  },
+  {
+    "line": 24,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281335672980,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "9003",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 47120,
+      "destination_port": 3306,
+      "destination_service_name": "mysql",
+      "protocol": 6,
+      "title": "OpenCanary: MySQL connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "MySQL connection from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 25,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281372680899,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "8001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 47120,
+      "destination_port": 3306,
+      "destination_service_name": "mysql",
+      "protocol": 6,
+      "title": "OpenCanary: MySQL login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "root",
+      "summary": "MySQL login attempt as root from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 26,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "sensor_id": "canary-01",
+      "event_time_usec": 1794281409688818,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "9001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "source_port": 49877,
+      "destination_port": 1433,
+      "destination_service_name": "mssql",
+      "protocol": 6,
+      "title": "OpenCanary: MSSQL login attempt (SQL authentication)",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "sa",
+      "source_host_name": "ws-fin-07",
+      "summary": "MSSQL login attempt (SQL authentication) as sa from 203.0.113.24 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "app_name",
+            "value": "sqlcmd"
+          },
+          {
+            "key": "server_name",
+            "value": "192.0.2.10"
+          },
+          {
+            "key": "database",
+            "value": "master"
+          },
+          {
+            "key": "client_interface",
+            "value": "ODBC"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 27,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281446696737,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "9002",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "source_port": 49880,
+      "destination_port": 1433,
+      "destination_service_name": "mssql",
+      "protocol": 6,
+      "title": "OpenCanary: MSSQL login attempt (Windows authentication)",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "summary": "MSSQL login attempt (Windows authentication) from 203.0.113.24 on opencanary-1"
+    }
+  },
+  {
+    "line": 28,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281483704656,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "10001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "source_port": 40811,
+      "destination_port": 69,
+      "destination_service_name": "tftp",
+      "protocol": 17,
+      "title": "OpenCanary: TFTP request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "TFTP request from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "file_name",
+            "value": "running-config"
+          },
+          {
+            "key": "opcode",
+            "value": "READ"
+          },
+          {
+            "key": "mode",
+            "value": "octet"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 29,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281520712575,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "11001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "source_port": 40822,
+      "destination_port": 123,
+      "destination_service_name": "ntp",
+      "protocol": 17,
+      "title": "OpenCanary: NTP monlist request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "NTP monlist request from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "ntp_command",
+            "value": "monlist"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 30,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281557720494,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "12001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 52033,
+      "destination_port": 5900,
+      "destination_service_name": "vnc",
+      "protocol": 6,
+      "title": "OpenCanary: VNC login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "summary": "VNC login attempt from 198.51.100.23 on opencanary-1"
+    }
+  },
+  {
+    "line": 31,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281594728413,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "13001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "source_port": 40833,
+      "destination_port": 161,
+      "destination_service_name": "snmp",
+      "protocol": 17,
+      "title": "OpenCanary: SNMP request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "SNMP request from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "requests",
+            "value": "[\"1.3.6.1.2.1.1.1.0\",\"1.3.6.1.2.1.1.5.0\"]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 32,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281631736332,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "14001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "source_port": 50990,
+      "destination_port": 3389,
+      "destination_service_name": "rdp",
+      "protocol": 6,
+      "title": "OpenCanary: RDP login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "helpdesk",
+      "summary": "RDP login attempt as helpdesk from 203.0.113.24 on opencanary-1"
+    }
+  },
+  {
+    "line": 33,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281668744251,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "14001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "source_port": 50991,
+      "destination_port": 3389,
+      "destination_service_name": "rdp",
+      "protocol": 6,
+      "title": "OpenCanary: RDP login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "summary": "RDP login attempt from 203.0.113.24 on opencanary-1"
+    }
+  },
+  {
+    "line": 34,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281705752170,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "15001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.99",
+      "source_port": 5066,
+      "destination_port": 5060,
+      "destination_service_name": "sip",
+      "protocol": 17,
+      "title": "OpenCanary: SIP request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "user_agent": "friendly-scanner",
+      "summary": "SIP request from 203.0.113.99 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "sip_from",
+            "value": "\"sipvicious\"<sip:100@192.0.2.10>;tag=3132333435"
+          },
+          {
+            "key": "sip_to",
+            "value": "\"sipvicious\"<sip:100@192.0.2.10>"
+          },
+          {
+            "key": "sip_cseq",
+            "value": "1 OPTIONS"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 35,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281742760089,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "16001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53310,
+      "destination_port": 9418,
+      "destination_service_name": "git",
+      "protocol": 6,
+      "title": "OpenCanary: Git clone request",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "Git clone request from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "repo",
+            "value": "infra/deploy-scripts.git"
+          },
+          {
+            "key": "git_host",
+            "value": "192.0.2.10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 36,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281779768008,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "17001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53400,
+      "destination_port": 6379,
+      "destination_service_name": "redis",
+      "protocol": 6,
+      "title": "OpenCanary: Redis command",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "Redis command from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "command",
+            "value": "CONFIG GET"
+          },
+          {
+            "key": "arguments",
+            "value": "dir"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 37,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281816775927,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "17001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53400,
+      "destination_port": 6379,
+      "destination_service_name": "redis",
+      "protocol": 6,
+      "title": "OpenCanary: Redis command",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "Redis command from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "command",
+            "value": "AUTH"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 38,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281853783846,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "17001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53401,
+      "destination_port": 6379,
+      "destination_service_name": "redis",
+      "protocol": 6,
+      "title": "OpenCanary: Redis command",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "Redis command from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "error",
+            "value": "invalid multibulk length"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 39,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281890791765,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "18001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53500,
+      "destination_port": 8001,
+      "destination_service_name": "tcpbanner",
+      "protocol": 6,
+      "title": "OpenCanary: TCP banner connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "TCP banner connection from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "function",
+            "value": "CONNECTION_MADE"
+          },
+          {
+            "key": "banner_id",
+            "value": "1"
+          },
+          {
+            "key": "data",
+            "value": "220 mail.example.com ESMTP"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 40,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281927799684,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "18005",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53500,
+      "destination_port": 8001,
+      "destination_service_name": "tcpbanner",
+      "protocol": 6,
+      "title": "OpenCanary: TCP banner data received",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "TCP banner data received from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "function",
+            "value": "DATA_RECEIVED"
+          },
+          {
+            "key": "banner_id",
+            "value": "1"
+          },
+          {
+            "key": "data",
+            "value": "EHLO scanner.example.net"
+          },
+          {
+            "key": "alert_string",
+            "value": "EHLO"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 41,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794281964807603,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "18002",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53510,
+      "destination_port": 8002,
+      "destination_service_name": "tcpbanner",
+      "protocol": 6,
+      "title": "OpenCanary: TCP banner keep-alive connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "TCP banner keep-alive connection from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "function",
+            "value": "CONNECTION_MADE"
+          },
+          {
+            "key": "banner_id",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 42,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282001815522,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "18004",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53510,
+      "destination_port": 8002,
+      "destination_service_name": "tcpbanner",
+      "protocol": 6,
+      "title": "OpenCanary: TCP banner keep-alive data received",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "TCP banner keep-alive data received from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "function",
+            "value": "DATA_RECEIVED"
+          },
+          {
+            "key": "banner_id",
+            "value": "2"
+          },
+          {
+            "key": "data",
+            "value": "status"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 43,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282038823441,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "18003",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53511,
+      "destination_port": 8002,
+      "destination_service_name": "tcpbanner",
+      "protocol": 6,
+      "title": "OpenCanary: TCP banner keep-alive secret received",
+      "alert_category": "Connection",
+      "severity": "INFO",
+      "summary": "TCP banner keep-alive secret received from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "function",
+            "value": "DATA_RECEIVED"
+          },
+          {
+            "key": "banner_id",
+            "value": "2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 44,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282075831360,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "19001",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.50",
+      "source_port": 5355,
+      "destination_port": 5355,
+      "destination_service_name": "llmnr",
+      "protocol": 17,
+      "title": "OpenCanary: LLMNR query answered",
+      "alert_category": "LLMNR response",
+      "severity": "MEDIUM",
+      "summary": "LLMNR query answered from 203.0.113.50 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "query_hostname",
+            "value": "DC03"
+          },
+          {
+            "key": "response",
+            "value": "DNS Ans \"203.0.113.50\" "
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 45,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282112839279,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "20001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53600,
+      "destination_port": 27017,
+      "destination_service_name": "mongodb",
+      "protocol": 6,
+      "title": "OpenCanary: MongoDB connection",
+      "alert_category": "Connection",
+      "severity": "LOW",
+      "summary": "MongoDB connection from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "mongodb.connection"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 46,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282149847198,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "20001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53600,
+      "destination_port": 27017,
+      "destination_service_name": "mongodb",
+      "protocol": 6,
+      "title": "OpenCanary: MongoDB login attempt",
+      "alert_category": "Login attempt",
+      "severity": "MEDIUM",
+      "target_user_name": "admin",
+      "summary": "MongoDB login attempt as admin from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "mongodb.auth_attempt"
+          },
+          {
+            "key": "mechanism",
+            "value": "SCRAM-SHA-256"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 47,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282186855117,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "20001",
+      "target_host_name": "opencanary-1",
+      "source_address": "198.51.100.23",
+      "destination_address": "192.0.2.10",
+      "source_port": 53600,
+      "destination_port": 27017,
+      "destination_service_name": "mongodb",
+      "protocol": 6,
+      "title": "OpenCanary: MongoDB command",
+      "alert_category": "Request",
+      "severity": "MEDIUM",
+      "summary": "MongoDB command from 198.51.100.23 on opencanary-1",
+      "additional_data": {
+        "record": [
+          {
+            "key": "action",
+            "value": "mongodb.command"
+          },
+          {
+            "key": "mongodb_command",
+            "value": "listDatabases"
+          },
+          {
+            "key": "query",
+            "value": "{'listDatabases': 1, '$db': 'admin'}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 48,
+    "extractor_path": "OPENCANARY_JSON_PARENT > OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "OpenCanary",
+      "event_time_usec": 1794282223863036,
+      "event_time_fidelity": "MICRO",
+      "host_id": "opencanary-1",
+      "vendor": "Thinkst",
+      "provider": "OpenCanary",
+      "log_type": "99000",
+      "target_host_name": "opencanary-1",
+      "source_address": "203.0.113.24",
+      "destination_address": "192.0.2.10",
+      "source_port": 41000,
+      "destination_port": 9000,
+      "title": "OpenCanary: User-defined event",
+      "alert_category": "User-defined",
+      "severity": "LOW",
+      "summary": "User-defined event from 203.0.113.24 on opencanary-1"
+    }
+  }
+]
