@@ -1,0 +1,41 @@
+!SAMPLE=<12>opencanaryd[1423 :140213441673024]: opencanary-1 WARNING {"dst_host": "192.0.2.10", "dst_port": 22, "local_time": "2026-11-10 03:20:54.570022", "local_time_adjusted": "2026-11-10 14:20:54.570041", "logdata": {"LOCALVERSION": "SSH-2.0-OpenSSH_5.1p1 Debian-4", "PASSWORD": "toor", "REMOTEVERSION": "SSH-2.0-OpenSSH_9.6", "USERNAME": "root"}, "logtype": 4002, "node_id": "opencanary-1", "src_host": "198.51.100.23", "src_port": 51514, "utc_time": "2026-11-10 03:20:54.570033"}
+!CONFIRMWITH=PATTERN
+!CONFIRMSTRING="logtype"\s*:\s*\d+\s*,.*"node_id"\s*:|"node_id"\s*:.*"logtype"\s*:\s*\d+
+!SCHEMA=scwx.generic
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: OpenCanary, the open source honeypot from Thinkst. Each event is one JSON object with
+# sorted keys (dst_host, dst_port, logdata, logtype, node_id, src_host, src_port and the times),
+# sent over syslog to the data collector. The object can sit behind any of these:
+#   <12>opencanaryd[1423 :140213441673024]: opencanary-1 WARNING {...}   SysLogHandler, syslog_rfc
+#   <12>{...}                                                           SysLogHandler, plain
+#   Nov 10 14:15:21 192.0.2.10 Nov 10 14:15:21 canary-01 {...}          a relay's header, then the sender's
+#   <12>1 2026-11-10T14:38:11.791647+11:00 canary-01 opencanaryd 1423 - - opencanary-1 WARNING {...}
+#   {...}                                                               json-tcp, or the log file as is
+# Parent: reads the object wherever it sits, sets the event time and the honeypot's node_id, and
+# hands every honeypot event (logtype 2000 and up) to the Thirdparty child. OpenCanary's own
+# messages (logtype under 2000, such as "Canary running!!!" at start-up) stay generic.
+# !TRIMALLOFF stops TRIM_ALL() stripping braces and brackets from JSON values.
+
+jm = originalData$|(?P<j>\{.*\})
+json = IF jm["j"] != "" THEN JSON(jm["j"]) ELSE NULL
+
+# Variables and $ fields set here are visible to the child.
+sensorType$ = "OpenCanary"
+node = STRING(json["$.node_id"])
+hostId$ = IF node != "" THEN node ELSE NULL
+
+# logtype is a number. Anything else counts as 0 and stays generic.
+lt = STRING(json["$.logtype"])
+ltm = lt|^(?P<n>\d{1,6})$
+code = IF ltm["n"] != "" THEN INT(ltm["n"], 10) ELSE 0
+eventType$ = IF code >= 2000 THEN "alert" ELSE "status"
+
+# utc_time is UTC, to the microsecond. Releases from before October 2020 call it UTC_time.
+# local_time_adjusted, and the time in a syslog header, are on the honeypot's own clock.
+utc = STRING(json["$.utc_time"])
+utc = IF utc == "" THEN STRING(json["$.UTC_time"]) ELSE utc
+tm = utc|^(?P<t>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6})$
+eventTimeUsec$ = IF tm["t"] != "" THEN DATETIME(tm["t"], "2006-01-02 15:04:05.000000") ELSE eventTimeUsec$

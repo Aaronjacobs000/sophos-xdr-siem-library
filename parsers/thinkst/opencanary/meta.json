@@ -1,0 +1,40 @@
+{
+  "vendor": "Thinkst",
+  "product": "OpenCanary",
+  "versions": [
+    "0.9"
+  ],
+  "format": "json",
+  "ship_method": "syslog",
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "sample_source": "synthetic",
+  "reference_time": "2026-11-11T00:00:00Z",
+  "tested": {
+    "emulator": "0.1.0",
+    "tenant": "2026-11-11"
+  },
+  "docs": [
+    "https://github.com/thinkst/opencanary",
+    "https://github.com/thinkst/opencanary/blob/master/opencanary/logger.py",
+    "https://github.com/thinkst/opencanary/tree/master/opencanary/modules",
+    "https://opencanary.readthedocs.io/en/latest/starting/configuration.html"
+  ],
+  "summary": "These parsers read the JSON events of OpenCanary, the open source honeypot from Thinkst, sent over syslog to the data collector. Every honeypot event (logins, connections, requests, SMB file opens and port scans) goes to Thirdparty with the logtype number as log_type, so one detection rule can cover the honeypot. OpenCanary's own start-up messages stay generic.",
+  "notes": "Setup:\n- Add a logging.handlers.SysLogHandler to the logger handlers in opencanary.conf, with the data collector's address and UDP port 514, then restart opencanaryd. The README has the lines.\n- The parsers find the JSON object anywhere on the line, so either formatter, a relay's extra syslog header and the json-tcp handler all parse.\n\nField mapping:\n- Events with logtype 2000 or higher go to Thirdparty. log_type is the logtype number as text, such as 4002 for an SSH login. The attacker is the source address and port, the honeypot is the destination, and node_id is the target host name and host ID.\n- The title names the event, such as \"OpenCanary: SSH login attempt\". The category is Login attempt, Connection, Request, File access, Port scan, LLMNR response or User-defined, and the service is the OpenCanary module, such as ssh or mssql.\n- The account an attacker tried is the target user. An SMB file open has the user and client machine as the source user and host, and a port scan has both MAC addresses.\n- OpenCanary sets no severity, so the parser does: high for a login with one of the honeypot's planted credentials (honeycred true), medium for logins, requests, commands, file opens and Nmap scans, low for bare connections, single SYN packets, user-defined events and unknown logtypes.\n- The rest of logdata goes to additional_data. Passwords, the SNMP community string, the VNC challenge and response, a Redis AUTH argument and the TCP banner keep-alive secret aren't copied and stay in original_data.\n- Logtypes under 2000, OpenCanary's own messages such as 1001 at start-up, stay generic.\n\nTime:\n- utc_time, to the microsecond (UTC_time in releases from before October 2020). The syslog header's time and local_time_adjusted are on the honeypot's clock and aren't used.\n\nSources and licenses:\n- OpenCanary's source (BSD-3-Clause): opencanary/logger.py for the logtype numbers and the line, each module for its logdata keys, and the configuration docs for the handler.\n\nMade up in the samples:\n- Every address, name, credential and time, and the logdata keys of the user module event (logtype 99000). A time and host in front of a line are what a syslog relay adds.\n\nTesting:\n- No built-in parser claimed these lines in 3 Parse Message runs.\n- The child, combined with the parent into one parser, passed Run Test in a lab tenant on 2026-11-11 (841 of 841 fields matched the emulator in each of 3 runs), and the parent's confirm string picked the same lines there.\n- The child also passed Run Test as a separate parser under its parent (841 of 841 fields, each of its lines taken in 5 of 5 runs).\n\nKnown gaps:\n- No line was captured from a running OpenCanary. The samples are built from its source.\n- The https module logs with the http logtypes, so only the destination port tells them apart.\n- Logtype 5001 is logged for every TCP SYN the honeypot sees, up to portscan.synrate a second (5 by default). Leave it out of a detection rule, or expect bursts during a scan.",
+  "parsers": [
+    {
+      "name": "OPENCANARY_JSON_PARENT",
+      "file": "OPENCANARY_JSON_PARENT.parser.txt",
+      "role": "parent",
+      "schema": "scwx.generic"
+    },
+    {
+      "name": "OPENCANARY_JSON_CHILD_THIRDPARTYALERT",
+      "file": "OPENCANARY_JSON_CHILD_THIRDPARTYALERT.parser.txt",
+      "role": "child",
+      "parent": "OPENCANARY_JSON_PARENT",
+      "schema": "scwx.thirdpartyalert"
+    }
+  ]
+}

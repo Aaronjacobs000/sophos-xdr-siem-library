@@ -1,0 +1,313 @@
+!SAMPLE=Nov 10 14:17:49 192.0.2.10 Nov 10 14:17:49 canary-01 {"dst_host": "192.0.2.10", "dst_port": 80, "local_time": "2026-11-10 03:17:49.530427", "local_time_adjusted": "2026-11-10 14:17:49.530446", "logdata": {"HOSTNAME": "192.0.2.10", "PASSWORD": "admin", "PATH": "/index.html", "SKIN": "nasLogin", "USERAGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36", "USERNAME": "admin"}, "logtype": 3001, "node_id": "opencanary-1", "src_host": "198.51.100.77", "src_port": 58232, "utc_time": "2026-11-10 03:17:49.530438"}
+!CONFIRMWITH=EXPRESSION
+!CONFIRMSTRING=eventType$=="alert"
+!SCHEMA=scwx.thirdpartyalert
+!TRIMALLOFF
+
+# Parser Studio 0.1.0: https://github.com/Aaronjacobs000/sophos-xdr-siem-library
+# Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
+# Source: every OpenCanary honeypot event, logtype 2000 and up: logins, connections, requests and
+# commands against the fake services (FTP, HTTP, SSH, Telnet, HTTP proxy, MySQL, MSSQL, TFTP, NTP,
+# VNC, SNMP, RDP, SIP, Git, Redis, TCP banner, LLMNR, MongoDB), SMB file opens, port scans and
+# user-defined modules (99000 to 99009).
+# Child of OPENCANARY_JSON_PARENT: each one to Thirdparty, with the logtype number as log_type, the
+# attacker as the source and the honeypot as the destination and target host.
+# Passwords and other secrets an attacker sent (PASSWORD, the SNMP community string, the VNC
+# challenge and response, a Redis AUTH argument) are not copied. They stay in original_data.
+# json, node, lt, code, eventType$, sensorType$, hostId$ and eventTimeUsec$ come from the parent.
+
+vendor$ = "Thinkst"
+provider$ = "OpenCanary"
+logType$ = lt
+targetHostName$ = IF node != "" THEN node ELSE NULL
+
+# The attacker and the honeypot. Ports are numbers, or text from the port scan and SMB log
+# watchers; -1 means none. A UDP service that listens on every address logs 0.0.0.0 as its own.
+src = STRING(json["$.src_host"])
+dst = STRING(json["$.dst_host"])
+sourceAddress$ = IF src != "" THEN src ELSE NULL
+destinationAddress$ = IF dst != "" AND dst != "0.0.0.0" THEN dst ELSE NULL
+spText = STRING(json["$.src_port"])
+dpText = STRING(json["$.dst_port"])
+spm = spText|^(?P<n>\d{1,5})$
+dpm = dpText|^(?P<n>\d{1,5})$
+sourcePort$ = IF spm["n"] != "" THEN INT(spm["n"], 10) ELSE NULL
+destinationPort$ = IF dpm["n"] != "" THEN INT(dpm["n"], 10) ELSE NULL
+
+# The service is the OpenCanary module's name. The https module logs as http.
+svc = ""
+svc = IF code == 2000 OR code == 2001 THEN "ftp" ELSE svc
+svc = IF code >= 3000 AND code <= 3003 THEN "http" ELSE svc
+svc = IF code >= 4000 AND code <= 4002 THEN "ssh" ELSE svc
+svc = IF code == 5000 THEN "smb" ELSE svc
+svc = IF code == 6001 OR code == 6002 THEN "telnet" ELSE svc
+svc = IF code == 7001 THEN "httpproxy" ELSE svc
+svc = IF code == 8001 OR code == 9003 THEN "mysql" ELSE svc
+svc = IF code == 9001 OR code == 9002 THEN "mssql" ELSE svc
+svc = IF code == 10001 THEN "tftp" ELSE svc
+svc = IF code == 11001 THEN "ntp" ELSE svc
+svc = IF code == 12001 THEN "vnc" ELSE svc
+svc = IF code == 13001 THEN "snmp" ELSE svc
+svc = IF code == 14001 THEN "rdp" ELSE svc
+svc = IF code == 15001 THEN "sip" ELSE svc
+svc = IF code == 16001 THEN "git" ELSE svc
+svc = IF code == 17001 THEN "redis" ELSE svc
+svc = IF code >= 18001 AND code <= 18005 THEN "tcpbanner" ELSE svc
+svc = IF code == 19001 THEN "llmnr" ELSE svc
+svc = IF code == 20001 THEN "mongodb" ELSE svc
+destinationServiceName$ = IF svc != "" THEN svc ELSE NULL
+# TFTP, NTP, SNMP, SIP and LLMNR are UDP (17). The other services and the port scan log are TCP (6).
+udp = code == 10001 OR code == 11001 OR code == 13001 OR code == 15001 OR code == 19001
+protocol$ = IF svc != "" OR (code >= 5001 AND code <= 5005) THEN 6 ELSE NULL
+protocol$ = IF udp THEN 17 ELSE protocol$
+
+# MongoDB uses one logtype and names the event in logdata.action. A Telnet line with ERROR and
+# no user is a protocol error, not a login.
+mongo = STRING(json["$.logdata.action"])
+err = STRING(json["$.logdata.ERROR"])
+err = IF err == "" THEN STRING(json["$.logdata.error"]) ELSE err
+oops = code == 6001 AND err != ""
+
+what = "logtype " + lt
+what = IF code == 2000 THEN "FTP login attempt" ELSE what
+what = IF code == 2001 THEN "FTP login started" ELSE what
+what = IF code == 3000 THEN "HTTP page request" ELSE what
+what = IF code == 3001 THEN "HTTP login attempt" ELSE what
+what = IF code == 3002 THEN "HTTP request with an unsupported method" ELSE what
+what = IF code == 3003 THEN "HTTP request redirected" ELSE what
+what = IF code == 4000 THEN "SSH connection" ELSE what
+what = IF code == 4001 THEN "SSH client version sent" ELSE what
+what = IF code == 4002 THEN "SSH login attempt" ELSE what
+what = IF code == 5000 THEN "SMB file opened" ELSE what
+what = IF code == 5001 THEN "TCP SYN packet" ELSE what
+what = IF code == 5002 THEN "Nmap OS scan" ELSE what
+what = IF code == 5003 THEN "Nmap NULL scan" ELSE what
+what = IF code == 5004 THEN "Nmap Xmas scan" ELSE what
+what = IF code == 5005 THEN "Nmap FIN scan" ELSE what
+what = IF code == 6001 THEN "Telnet login attempt" ELSE what
+what = IF code == 6002 THEN "Telnet connection" ELSE what
+what = IF code == 7001 THEN "HTTP proxy login attempt" ELSE what
+what = IF code == 8001 THEN "MySQL login attempt" ELSE what
+what = IF code == 9001 THEN "MSSQL login attempt (SQL authentication)" ELSE what
+what = IF code == 9002 THEN "MSSQL login attempt (Windows authentication)" ELSE what
+what = IF code == 9003 THEN "MySQL connection" ELSE what
+what = IF code == 10001 THEN "TFTP request" ELSE what
+what = IF code == 11001 THEN "NTP monlist request" ELSE what
+what = IF code == 12001 THEN "VNC login attempt" ELSE what
+what = IF code == 13001 THEN "SNMP request" ELSE what
+what = IF code == 14001 THEN "RDP login attempt" ELSE what
+what = IF code == 15001 THEN "SIP request" ELSE what
+what = IF code == 16001 THEN "Git clone request" ELSE what
+what = IF code == 17001 THEN "Redis command" ELSE what
+what = IF code == 18001 THEN "TCP banner connection" ELSE what
+what = IF code == 18002 THEN "TCP banner keep-alive connection" ELSE what
+what = IF code == 18003 THEN "TCP banner keep-alive secret received" ELSE what
+what = IF code == 18004 THEN "TCP banner keep-alive data received" ELSE what
+what = IF code == 18005 THEN "TCP banner data received" ELSE what
+what = IF code == 19001 THEN "LLMNR query answered" ELSE what
+what = IF code == 20001 THEN "MongoDB event" ELSE what
+what = IF mongo == "mongodb.connection" THEN "MongoDB connection" ELSE what
+what = IF mongo == "mongodb.auth_attempt" THEN "MongoDB login attempt" ELSE what
+what = IF mongo == "mongodb.command" THEN "MongoDB command" ELSE what
+what = IF mongo == "mongodb.error" THEN "MongoDB protocol error" ELSE what
+what = IF mongo == "mongodb.disconnect" THEN "MongoDB disconnection" ELSE what
+what = IF code >= 99000 AND code <= 99009 THEN "User-defined event" ELSE what
+what = IF oops THEN "Telnet protocol error" ELSE what
+title$ = "OpenCanary: " + what
+
+login = code == 2000 OR code == 3001 OR code == 4002 OR code == 6001 OR code == 7001 OR code == 8001
+login = login OR code == 9001 OR code == 9002 OR code == 12001 OR code == 14001 OR mongo == "mongodb.auth_attempt"
+login = login AND NOT oops
+connection = code == 2001 OR code == 4000 OR code == 4001 OR code == 6002 OR code == 9003 OR code == 18001 OR code == 18002
+connection = connection OR code == 18003 OR oops OR mongo == "mongodb.connection" OR mongo == "mongodb.error" OR mongo == "mongodb.disconnect"
+scan = code >= 5001 AND code <= 5005
+custom = code >= 99000 AND code <= 99009
+alertCategory$ = "Request"
+alertCategory$ = IF login THEN "Login attempt" ELSE alertCategory$
+alertCategory$ = IF connection THEN "Connection" ELSE alertCategory$
+alertCategory$ = IF scan THEN "Port scan" ELSE alertCategory$
+alertCategory$ = IF code == 5000 THEN "File access" ELSE alertCategory$
+alertCategory$ = IF code == 19001 THEN "LLMNR response" ELSE alertCategory$
+alertCategory$ = IF custom THEN "User-defined" ELSE alertCategory$
+alertCategory$ = IF svc == "" AND NOT scan AND NOT custom THEN NULL ELSE alertCategory$
+
+# OpenCanary has no severity of its own. A login that used one of the honeypot's planted
+# credentials (honeycred true) is high. Logins, requests, commands, file opens and Nmap scans are
+# medium. Bare connections, single SYN packets, user-defined events and unknown logtypes are low.
+honey = STRING(json["$.honeycred"])
+severity$ = "MEDIUM"
+severity$ = IF connection OR code == 5001 OR custom OR (svc == "" AND NOT scan) THEN "LOW" ELSE severity$
+severity$ = IF code == 18003 THEN "INFO" ELSE severity$
+severity$ = IF honey == "true" THEN "HIGH" ELSE severity$
+
+# The account an attacker tried is the target user. The user who opened a file on the SMB share,
+# and the client's machine name from SMB or MSSQL, belong to the source.
+user = STRING(json["$.logdata.USERNAME"])
+user = IF user == "" THEN STRING(json["$.logdata.UserName"]) ELSE user
+user = IF user == "" THEN STRING(json["$.logdata.username"]) ELSE user
+user = IF user == "<not supplied>" THEN "" ELSE user
+targetUserName$ = IF user != "" THEN user ELSE NULL
+smbUser = STRING(json["$.logdata.USER"])
+sourceUserName$ = IF smbUser != "" THEN smbUser ELSE NULL
+client = STRING(json["$.logdata.REMOTENAME"])
+client = IF client == "" THEN STRING(json["$.logdata.HostName"]) ELSE client
+sourceHostName$ = IF client != "" THEN client ELSE NULL
+
+ua = STRING(json["$.logdata.USERAGENT"])
+ua = IF ua == "" THEN STRING(json["$.logdata.HEADERS['user-agent'][0]"]) ELSE ua
+userAgent$ = IF ua != "" AND ua != "<not supplied>" THEN ua ELSE NULL
+httpHost = STRING(json["$.logdata.HOSTNAME"])
+httpPath = STRING(json["$.logdata.PATH"])
+destinationUrl$ = IF httpHost != "" AND httpPath != "" THEN httpHost + httpPath ELSE NULL
+session = STRING(json["$.logdata.SESSION"])
+sessionId$ = IF session != "" THEN session ELSE NULL
+
+# The port scan log's MAC field is the destination address, the source address and the EtherType.
+mac = STRING(json["$.logdata.MAC"])
+mm = mac|^(?P<d>(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}):(?P<s>(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}):
+destinationMac$ = IF mm["d"] != "" THEN mm["d"] ELSE NULL
+sourceMac$ = IF mm["s"] != "" THEN mm["s"] ELSE NULL
+
+summary$ = what
+summary$ = IF user != "" THEN summary$ + " as " + user ELSE summary$
+summary$ = IF smbUser != "" THEN summary$ + " by " + smbUser ELSE summary$
+summary$ = IF src != "" THEN summary$ + " from " + src ELSE summary$
+summary$ = IF node != "" THEN summary$ + " on " + node ELSE summary$
+
+# The rest of logdata, one pair for each key that is there. A Redis argument is left out when
+# the command or the argument mentions AUTH, and TCP banner data when it is the keep-alive secret.
+redisAuth = CONTAINS(UPPERCASE(STRING(json["$.logdata.CMD"]) + " " + STRING(json["$.logdata.ARGS"])), "AUTH")
+# Assign the list first: reading additionalData$.record$ before it is set fails the event.
+additionalData$.record$ = []
+a0.key$ = "honeycred"
+a0.value$ = honey
+additionalData$.record$ = IF honey != "" THEN additionalData$.record$ + [a0] ELSE additionalData$.record$
+a1.key$ = "skin"
+a1.value$ = STRING(json["$.logdata.SKIN"])
+additionalData$.record$ = IF a1.value$ != "" THEN additionalData$.record$ + [a1] ELSE additionalData$.record$
+a2.key$ = "request_type"
+a2.value$ = STRING(json["$.logdata.REQUEST_TYPE"])
+additionalData$.record$ = IF a2.value$ != "" THEN additionalData$.record$ + [a2] ELSE additionalData$.record$
+a3.key$ = "local_version"
+a3.value$ = STRING(json["$.logdata.LOCALVERSION"])
+additionalData$.record$ = IF a3.value$ != "" THEN additionalData$.record$ + [a3] ELSE additionalData$.record$
+a4.key$ = "remote_version"
+a4.value$ = STRING(json["$.logdata.REMOTEVERSION"])
+additionalData$.record$ = IF a4.value$ != "" THEN additionalData$.record$ + [a4] ELSE additionalData$.record$
+a5.key$ = "share_name"
+a5.value$ = STRING(json["$.logdata.SHARENAME"])
+additionalData$.record$ = IF a5.value$ != "" THEN additionalData$.record$ + [a5] ELSE additionalData$.record$
+a6.key$ = "file_name"
+a6.value$ = STRING(json["$.logdata.FILENAME"])
+additionalData$.record$ = IF a6.value$ != "" THEN additionalData$.record$ + [a6] ELSE additionalData$.record$
+a7.key$ = "audit_action"
+a7.value$ = STRING(json["$.logdata.AUDITACTION"])
+additionalData$.record$ = IF a7.value$ != "" THEN additionalData$.record$ + [a7] ELSE additionalData$.record$
+a8.key$ = "status"
+a8.value$ = STRING(json["$.logdata.STATUS"])
+additionalData$.record$ = IF a8.value$ != "" THEN additionalData$.record$ + [a8] ELSE additionalData$.record$
+a9.key$ = "smb_version"
+a9.value$ = STRING(json["$.logdata.SMBVER"])
+additionalData$.record$ = IF a9.value$ != "" THEN additionalData$.record$ + [a9] ELSE additionalData$.record$
+a10.key$ = "smb_arch"
+a10.value$ = STRING(json["$.logdata.SMBARCH"])
+additionalData$.record$ = IF a10.value$ != "" THEN additionalData$.record$ + [a10] ELSE additionalData$.record$
+a11.key$ = "domain"
+a11.value$ = STRING(json["$.logdata.DOMAIN"])
+additionalData$.record$ = IF a11.value$ != "" THEN additionalData$.record$ + [a11] ELSE additionalData$.record$
+a12.key$ = "local_name"
+a12.value$ = STRING(json["$.logdata.LOCALNAME"])
+additionalData$.record$ = IF a12.value$ != "" THEN additionalData$.record$ + [a12] ELSE additionalData$.record$
+a13.key$ = "in_interface"
+a13.value$ = STRING(json["$.logdata.IN"])
+additionalData$.record$ = IF a13.value$ != "" THEN additionalData$.record$ + [a13] ELSE additionalData$.record$
+a14.key$ = "packet_length"
+a14.value$ = STRING(json["$.logdata.LEN"])
+additionalData$.record$ = IF a14.value$ != "" THEN additionalData$.record$ + [a14] ELSE additionalData$.record$
+a15.key$ = "ttl"
+a15.value$ = STRING(json["$.logdata.TTL"])
+additionalData$.record$ = IF a15.value$ != "" THEN additionalData$.record$ + [a15] ELSE additionalData$.record$
+a16.key$ = "tcp_window"
+a16.value$ = STRING(json["$.logdata.WINDOW"])
+additionalData$.record$ = IF a16.value$ != "" THEN additionalData$.record$ + [a16] ELSE additionalData$.record$
+a17.key$ = "app_name"
+a17.value$ = STRING(json["$.logdata.AppName"])
+additionalData$.record$ = IF a17.value$ != "" THEN additionalData$.record$ + [a17] ELSE additionalData$.record$
+a18.key$ = "server_name"
+a18.value$ = STRING(json["$.logdata.ServerName"])
+additionalData$.record$ = IF a18.value$ != "" THEN additionalData$.record$ + [a18] ELSE additionalData$.record$
+a19.key$ = "database"
+a19.value$ = STRING(json["$.logdata.Database"])
+additionalData$.record$ = IF a19.value$ != "" THEN additionalData$.record$ + [a19] ELSE additionalData$.record$
+a20.key$ = "language"
+a20.value$ = STRING(json["$.logdata.Language"])
+additionalData$.record$ = IF a20.value$ != "" THEN additionalData$.record$ + [a20] ELSE additionalData$.record$
+a21.key$ = "client_interface"
+a21.value$ = STRING(json["$.logdata.CltIntName"])
+additionalData$.record$ = IF a21.value$ != "" THEN additionalData$.record$ + [a21] ELSE additionalData$.record$
+a22.key$ = "opcode"
+a22.value$ = STRING(json["$.logdata.OPCODE"])
+additionalData$.record$ = IF a22.value$ != "" THEN additionalData$.record$ + [a22] ELSE additionalData$.record$
+a23.key$ = "mode"
+a23.value$ = STRING(json["$.logdata.MODE"])
+additionalData$.record$ = IF a23.value$ != "" THEN additionalData$.record$ + [a23] ELSE additionalData$.record$
+a24.key$ = "ntp_command"
+a24.value$ = STRING(json["$.logdata['NTP CMD']"])
+additionalData$.record$ = IF a24.value$ != "" THEN additionalData$.record$ + [a24] ELSE additionalData$.record$
+a25.key$ = "requests"
+a25.value$ = STRING(json["$.logdata.REQUESTS"])
+additionalData$.record$ = IF a25.value$ != "" THEN additionalData$.record$ + [a25] ELSE additionalData$.record$
+a26.key$ = "sip_from"
+a26.value$ = STRING(json["$.logdata.HEADERS.from[0]"])
+additionalData$.record$ = IF a26.value$ != "" THEN additionalData$.record$ + [a26] ELSE additionalData$.record$
+a27.key$ = "sip_to"
+a27.value$ = STRING(json["$.logdata.HEADERS.to[0]"])
+additionalData$.record$ = IF a27.value$ != "" THEN additionalData$.record$ + [a27] ELSE additionalData$.record$
+a28.key$ = "sip_cseq"
+a28.value$ = STRING(json["$.logdata.HEADERS.cseq[0]"])
+additionalData$.record$ = IF a28.value$ != "" THEN additionalData$.record$ + [a28] ELSE additionalData$.record$
+a29.key$ = "repo"
+a29.value$ = STRING(json["$.logdata.REPO"])
+additionalData$.record$ = IF a29.value$ != "" THEN additionalData$.record$ + [a29] ELSE additionalData$.record$
+a30.key$ = "git_host"
+a30.value$ = STRING(json["$.logdata.HOST"])
+additionalData$.record$ = IF a30.value$ != "" THEN additionalData$.record$ + [a30] ELSE additionalData$.record$
+a31.key$ = "command"
+a31.value$ = STRING(json["$.logdata.CMD"])
+additionalData$.record$ = IF a31.value$ != "" THEN additionalData$.record$ + [a31] ELSE additionalData$.record$
+a32.key$ = "arguments"
+a32.value$ = STRING(json["$.logdata.ARGS"])
+additionalData$.record$ = IF a32.value$ != "" AND NOT redisAuth THEN additionalData$.record$ + [a32] ELSE additionalData$.record$
+a33.key$ = "function"
+a33.value$ = STRING(json["$.logdata.FUNCTION"])
+additionalData$.record$ = IF a33.value$ != "" THEN additionalData$.record$ + [a33] ELSE additionalData$.record$
+a34.key$ = "banner_id"
+a34.value$ = STRING(json["$.logdata.BANNER_ID"])
+additionalData$.record$ = IF a34.value$ != "" THEN additionalData$.record$ + [a34] ELSE additionalData$.record$
+a35.key$ = "data"
+a35.value$ = STRING(json["$.logdata.DATA"])
+additionalData$.record$ = IF a35.value$ != "" AND code != 18003 THEN additionalData$.record$ + [a35] ELSE additionalData$.record$
+a36.key$ = "alert_string"
+a36.value$ = STRING(json["$.logdata.ALERT_STRING"])
+additionalData$.record$ = IF a36.value$ != "" THEN additionalData$.record$ + [a36] ELSE additionalData$.record$
+a37.key$ = "query_hostname"
+a37.value$ = STRING(json["$.logdata.query_hostname"])
+additionalData$.record$ = IF a37.value$ != "" THEN additionalData$.record$ + [a37] ELSE additionalData$.record$
+a38.key$ = "response"
+a38.value$ = STRING(json["$.logdata.response"])
+additionalData$.record$ = IF a38.value$ != "" THEN additionalData$.record$ + [a38] ELSE additionalData$.record$
+a39.key$ = "action"
+a39.value$ = STRING(json["$.logdata.action"])
+additionalData$.record$ = IF a39.value$ != "" THEN additionalData$.record$ + [a39] ELSE additionalData$.record$
+a40.key$ = "mechanism"
+a40.value$ = STRING(json["$.logdata.mechanism"])
+additionalData$.record$ = IF a40.value$ != "" THEN additionalData$.record$ + [a40] ELSE additionalData$.record$
+a41.key$ = "mongodb_command"
+a41.value$ = STRING(json["$.logdata.command"])
+additionalData$.record$ = IF a41.value$ != "" THEN additionalData$.record$ + [a41] ELSE additionalData$.record$
+a42.key$ = "query"
+a42.value$ = STRING(json["$.logdata.query"])
+additionalData$.record$ = IF a42.value$ != "" THEN additionalData$.record$ + [a42] ELSE additionalData$.record$
+a43.key$ = "error"
+a43.value$ = err
+additionalData$.record$ = IF a43.value$ != "" THEN additionalData$.record$ + [a43] ELSE additionalData$.record$
