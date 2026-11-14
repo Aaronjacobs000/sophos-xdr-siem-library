@@ -1,0 +1,27 @@
+{
+  "title": "ConnectWise PSA playbook failure tickets",
+  "vendor": "ConnectWise",
+  "product": "ConnectWise PSA",
+  "use_case": "Open a ConnectWise PSA ticket when a playbook run fails or finishes with the outcome FAIL, or when Sophos Fusion raises a health event such as Collector Down, naming the playbook, the error and the tenant.",
+  "trigger": "Platform Events, source Playbook Execution, events failed and completed, with the Only When filter in SETUP.md, which skips runs a Playbook Execution event started. For health events, configure it again on Platform Events, source Health, event create. SETUP.md has both filters.",
+  "connections": [
+    "Unofficial_ConnectWisePSA 1.0.0, the ConnectWise PSA connector from this library: Basic sign-in with an API member's keys and your ConnectWise clientId"
+  ],
+  "requires": "ConnectWise PSA with an API member that can create tickets, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It opens tickets about every playbook run in the tenant, so check who sees the ticket's company.",
+  "rollback": "Close or delete the tickets in ConnectWise PSA. Turn the playbook off to stop new ones.",
+  "tested": {
+    "validated": "2026-11-15",
+    "tenant": null
+  },
+  "connector": "connectors/connectwise/connectwise-psa",
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://developer.connectwise.com/Products/ConnectWise_PSA/REST",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/"
+  ],
+  "summary": "This playbook opens a ConnectWise PSA ticket when a playbook run fails or finishes with the outcome FAIL, and when Sophos Fusion raises a health event such as Collector Down. The ticket names the playbook, its template, the error and the tenant. It runs on Playbook Execution and Health events and calls the library's ConnectWise PSA connector, so it needs that connector and an API member that can create tickets.",
+  "notes": "Setup:\n- One configured playbook takes one trigger, so set it up once for Playbook Execution and again for Health if you want both.\n- Board and Company are spelled as they are in ConnectWise PSA. For a partner-level playbook, Company by tenant maps each Sophos Fusion tenant ID to its company identifier.\n- Pair it with Playbook failure alerts to post to chat as well. It opens tickets only, so it has no dry run.\n\nHow it works:\n- The ticket carries the same text as Playbook failure alerts, plus the tenant's name and ID.\n- It never acts on a run that a Playbook Execution event started, on the library's playbook failure playbooks or on Sophos's Send Notification Message templates, so a failed ticket can't start another.\n\nTesting:\n- On 2026-11-15 a renamed copy, with a renamed copy of its connector imported for the check, passed playbookValidateDSLV2 with no errors or warnings in a Sophos Fusion test tenant.\n- In that tenant the copy ran on real Playbook Execution events for a failed run and a run that finished with the outcome FAIL. It built the ticket with the board, company, severity and impact, and called ConnectWise PSA, which refused the made-up connection's credential (400 Invalid Token). The run finished FAIL with that error, and the loop guard held.\n\nKnown gaps:\n- Not run against a real ConnectWise PSA account: no ticket was created.\n- No real health event happened in the test tenants during testing, so the health path ran by hand on a made-up Collector Down event in the documented shape.\n- A playbook that catches an error and sets no outcome finishes Completed with the outcome UNKNOWN, and isn't caught.\n- It opens or posts once per failed run. A playbook that fails on every event posts every time until you turn it off or add it to Playbooks to ignore."
+}

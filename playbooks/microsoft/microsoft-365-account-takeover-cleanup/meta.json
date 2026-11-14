@@ -1,0 +1,40 @@
+{
+  "title": "Microsoft 365 account takeover cleanup",
+  "vendor": "Microsoft",
+  "product": "Microsoft Entra ID and Exchange Online",
+  "use_case": "When a Microsoft 365 account is taken over, revoke the user's sign-in sessions, make them change their password, turn off inbox rules that forward, redirect or delete mail, confirm them as compromised in Entra ID, and record the inbox rules before and after on the case.",
+  "trigger": "Platform Events, source Identity Findings, event Created, or source Alert2 (detections), event create, each with the Only When filter in SETUP.md. Or User Initiated, a Response Action on Case, to run it by hand from a case.",
+  "connections": [
+    "Taegis.MicrosoftGraphAPI 2.12.2, the Microsoft Graph API connector Sophos manages, to look users up, revoke sessions, require a password change, turn off inbox rules and confirm compromise",
+    "Taegis.Case 1.0.5 and Taegis.Alert 1.3.6, the case and detection connectors Sophos manages, to read the case's detections and add the comment"
+  ],
+  "requires": "Microsoft 365 with Exchange Online mailboxes, a Microsoft Graph API connection with the permissions in SETUP.md, Microsoft Entra ID P2 for Confirm compromised, Sophos ITDR for the identity finding trigger, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and Sophos MDR may already be acting on the same user. A run from a case acts only on self-managed cases unless you turn on Include Sophos-managed cases. The identity finding and detection triggers don't check who works the detection, so agree them with the Sophos MDR team first.",
+  "rollback": "Turn the inbox rules back on (the case comment names them), enable the account if Disable account was on, and dismiss the user's risk in Entra ID. Revoked sessions stay revoked, so the user signs in again, and the password change at the next sign-in can't be withdrawn once it's used.",
+  "tested": {
+    "validated": "2026-11-15",
+    "tenant": {
+      "date": "2026-11-15",
+      "region": "us01"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/ITDR/ITDRResponseActions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft365/ResponseActions/",
+    "https://learn.microsoft.com/en-us/defender-office-365/responding-to-a-compromised-email-account",
+    "https://learn.microsoft.com/en-us/entra/identity/users/users-revoke-access",
+    "https://learn.microsoft.com/en-us/graph/api/user-revokesigninsessions?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/resources/passwordprofile?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/messagerule-update?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/riskyuser-confirmcompromised?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/entra/id-protection/concept-identity-protection-risks",
+    "https://learn.microsoft.com/en-us/defender-xdr/alert-policies"
+  ],
+  "summary": "This playbook cleans up a taken-over Microsoft 365 account: it revokes the user's sign-in sessions, makes them change their password at the next sign-in, turns off inbox rules that forward, redirect or delete mail, confirms them as compromised in Entra ID and comments the inbox rules before and after on the case. It runs on a Sophos ITDR leaked credential finding, a Microsoft account compromise detection or by hand from a case, through the Microsoft Graph API connector. Dry run is on.",
+  "notes": "Setup:\n- Every step is one setting, so turn off the ones you don't want. Disable account is off unless you turn it on.\n- Confirm compromised needs Microsoft Entra ID P2. Without it Microsoft Graph refuses the call and the run ends FAIL, so turn the setting off.\n- Fusion won't save a playbook without a connection for every connector the template lists, so there is no Active Directory step. The comment flags synced users.\n- There's no approval step. Dry run, Domains, Excluded users and Max users per run are the controls.\n\nHow it works:\n- A finding run acts on the finding's user. A detection run acts on the userName entities with an @, or targetUserName when there are none. A run by hand from a case acts on the users in all of the case's detections.\n- It turns off an inbox rule only when the rule is on and forwards, forwards as an attachment, redirects, deletes or permanently deletes mail. Rules that only move or mark mail are listed and left on.\n- With dry run off it reads the inbox rules again after turning them off and lists what is on, so the comment shows the result, not the request.\n- A detection run waits up to Seconds to wait for the case, then comments on the detection's case. A finding run has no case, so its outcome is only in the execution.\n\nTesting:\n- On 2026-11-15 the dsl passed playbookValidateDSLV2 with no errors or warnings in two Sophos Fusion test tenants, us01 and eu02.\n- In the us01 tenant a renamed copy ran by hand 15 times against a test user in a test Microsoft 365 tenant, through the Marketplace Microsoft Graph API connection, with made-up detections, a made-up ITDR finding and a real test case. It revoked sessions, required a password change, disabled the account, turned off three test rules that forwarded, redirected and deleted mail, and left a mark-as-read rule and a rule already off alone. Entra ID and the mailbox were read back after each run, and the Entra ID audit log recorded the disable, the session revoke and the forced password change.\n- It also handled dry run, a second run on the same user, Max users per run, Excluded users, other domains, other titles and categories, an unknown user and a case with no detections.\n\nKnown gaps:\n- Require a password change doesn't change the password: whoever signs in next with it sets the new one, so it relies on MFA to stop an attacker who has it.\n- Confirm compromised wasn't proven: the test tenant has Entra ID P1, and Microsoft Graph answered 403 not licensed, which the comment reports.\n- No real ITDR finding or Microsoft detection was used; both were made up in the shapes Fusion's own functions read. A run by hand from the case menu wasn't tested: the API refuses User Initiated runs.\n- MFA methods, OAuth app consents and mailbox forwarding set in Exchange Online aren't covered. A synced user wasn't tested."
+}
