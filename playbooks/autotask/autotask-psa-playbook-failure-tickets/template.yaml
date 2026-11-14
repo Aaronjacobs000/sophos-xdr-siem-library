@@ -1,0 +1,235 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_PlaybookFailure_AutotaskPSA
+version: 1.0.0
+title: Autotask PSA playbook failure tickets (unofficial)
+description: Opens a Autotask PSA ticket when a playbook run fails or finishes with the outcome FAIL, and when Sophos Fusion raises a health event such as Collector Down. The ticket names the playbook, the error and the tenant. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs on Playbook Execution events and on health events. When a playbook run fails, or finishes with the outcome FAIL, it opens a Autotask PSA ticket that names the configured playbook, its template, the error and the tenant. When Sophos Fusion raises a health event, such as a data collector going down, it opens a ticket with the event's name, severity, message and the collector, rule or asset it's about. Sophos doesn't make, maintain or support this playbook.
+
+    It opens one ticket per failed run and never updates or closes one. Pair it with Playbook failure alerts to post to chat as well.
+
+    # Loops
+    It never acts on a run that a Playbook Execution event started, on the library's playbook failure playbooks, this one included, or on Sophos Fusion's Send Notification Message playbooks. So a failure here can't start another run.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Alert on a FAIL outcome | Also act when a run finishes with the outcome FAIL, not only when it fails | On |
+    | Playbooks to watch | Names of the configured playbooks or templates to act on. Empty means every playbook | None |
+    | Playbooks to ignore | Names of the configured playbooks or templates never to act on | None |
+    | Error length | The most characters of the error to send | 1000 |
+    | Company ID | The Autotask company ID for new tickets | None |
+    | Company by tenant | JSON of Sophos Fusion tenant ID to Autotask company ID, for a partner-level playbook | {} |
+    | Queue ID | The queue picklist value, 0 to leave it out | 0 |
+    | Priority | The priority picklist value for new tickets | 2 (Medium) |
+    | New ticket status | The status picklist value for new tickets | 1 (New) |
+    | Due in hours | The ticket's due date, in hours from when it opens | 24 |
+changeNotes: First version
+tags:
+    - Category:Platform
+    - Type:Notification
+connectorCategories:
+    - Generic
+connectors:
+    - Unofficial_AutotaskPSA:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - failed
+            - completed
+        source: execution
+        filter: "inputs.execution.triggerContext != 'execution' && !string(inputs.execution.template.name).startsWith('Unofficial_PlaybookFailure_') && !string(inputs.execution.template.name).startsWith('Taegis.Send_Notification_Message') && (inputs.event == 'failed' || inputs.execution.outcomeStatus == 'FAIL')"
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - create
+        source: health
+        filter: "inputs.health.name in ['Collector Down', 'Collector Warning', 'Collector health status Alert', 'Collector Endpoint Certificate Expiration Alert', 'Data Sources Alert']"
+inputs:
+    properties:
+        settings:
+            properties:
+                error_length:
+                    default: 1000
+                    description: The most characters of the error to send, 100 to 4000
+                    title: Error length
+                    type: integer
+                fail_outcome:
+                    default: true
+                    description: Also act when a run finishes with the outcome FAIL. A playbook that catches its own errors usually finishes that way instead of failing.
+                    title: Alert on a FAIL outcome
+                    type: boolean
+                ignore:
+                    description: Names of the configured playbooks or templates never to act on, as the playbook list or the template's export shows them
+                    items:
+                        type: string
+                    title: Playbooks to ignore
+                    type: array
+                watch:
+                    description: Names of the configured playbooks or templates to act on. With none, every playbook's failures count.
+                    items:
+                        type: string
+                    title: Playbooks to watch
+                    type: array
+            title: Playbook settings
+            type: object
+        ticket:
+            properties:
+                company_by_tenant:
+                    default: '{}'
+                    description: 'JSON of Sophos Fusion tenant ID to Autotask company ID, such as {"<tenant ID>": 174}. A tenant not in it uses Company ID.'
+                    title: Company by tenant
+                    type: string
+                company_id:
+                    description: The Autotask company ID for new tickets
+                    title: Company ID
+                    type: integer
+                due_hours:
+                    default: 24
+                    description: The ticket's due date is this many hours after it opens
+                    minimum: 1
+                    title: Due in hours
+                    type: integer
+                new_status:
+                    default: 1
+                    description: The status picklist value for new tickets. 1 is New in Autotask's standard list.
+                    title: New ticket status
+                    type: integer
+                priority:
+                    default: 2
+                    description: The priority picklist value for new tickets. In Autotask's standard list 1 is High, 2 Medium, 3 Low and 4 Critical.
+                    title: Priority
+                    type: integer
+                queue_id:
+                    default: 0
+                    description: The queue picklist value for new tickets. 0 leaves the queue out.
+                    title: Queue ID
+                    type: integer
+            required:
+                - company_id
+            title: Ticket settings
+            type: object
+    required:
+        - ticket
+    type: object
+outputs:
+    properties:
+        message:
+            description: The ticket opened, or why none was
+            type: string
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        ticket_id:
+            description: The new ticket's ID, or empty
+            type: string
+    type: object
+dsl:
+    name: Unofficial_PlaybookFailure_AutotaskPSA
+    description: Opens a Autotask PSA ticket for a failed playbook run or a health event.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        message: finish.variables.message
+        status: finish.variables.status
+        ticket_id: result.variables.ticket_id
+    tasks:
+        # The settings, and the run or health event that started this one. A field can be JSON null, which has(x, 'path') treats as missing.
+        - name: setup
+          let:
+            fail_outcome: "inputs.?settings.fail_outcome.orValue(true)"
+            watch: "inputs.?settings.watch.orValue([]).map(n, string(n).trim().toLower()).filter(n, n != '')"
+            ignore: "inputs.?settings.ignore.orValue([]).map(n, string(n).trim().toLower()).filter(n, n != '')"
+            error_length: "int(inputs.?settings.error_length.orValue(1000)) < 100 ? 100 : int(inputs.?settings.error_length.orValue(1000)) > 4000 ? 4000 : int(inputs.?settings.error_length.orValue(1000))"
+            source: "has(inputs, 'execution.id') ? 'execution' : has(inputs, 'health.name') ? 'health' : ''"
+            tenant_id: "has(inputs, 'execution.tenant') ? string(inputs.execution.tenant) : has(inputs, 'health.data.tenant') ? string(inputs.health.data.tenant) : has(inputs, 'tenant.id') ? string(inputs.tenant.id) : string(TDR.tenant)"
+            tenant_name: "has(inputs, 'tenant.name') ? string(inputs.tenant.name) : ''"
+        - name: run
+          let:
+            template: "has(inputs, 'execution.template.name') ? string(inputs.execution.template.name) : ''"
+            instance: "has(inputs, 'execution.instance.name') ? string(inputs.execution.instance.name) : ''"
+            state: "has(inputs, 'execution.state') ? string(inputs.execution.state) : ''"
+            outcome: "has(inputs, 'execution.outcomeStatus') ? string(inputs.execution.outcomeStatus) : ''"
+            started_by: "has(inputs, 'execution.triggerCategory') ? string(inputs.execution.triggerCategory) + (has(inputs, 'execution.triggerContext') ? ' (' + string(inputs.execution.triggerContext) + ')' : '') : ''"
+            loop: "has(inputs, 'execution.triggerContext') && string(inputs.execution.triggerContext) == 'execution'"
+            case_id: "has(inputs, 'execution.investigationId') ? string(inputs.execution.investigationId) : ''"
+            run_id: "has(inputs, 'execution.id') ? string(inputs.execution.id) : ''"
+            finished_at: "has(inputs, 'execution.updatedAt') ? string(inputs.execution.updatedAt) : has(inputs, 'execution.createdAt') ? string(inputs.execution.createdAt) : ''"
+            error: >-
+                has(inputs, 'execution.reason') && string(inputs.execution.reason) != '' ? string(inputs.execution.reason) :
+                has(inputs, 'execution.outcomeMessage') && string(inputs.execution.outcomeMessage) != '' ? string(inputs.execution.outcomeMessage) :
+                has(inputs, 'execution.outputs') && type(inputs.execution.outputs) == type('') && inputs.execution.outputs != '' ? inputs.execution.outputs :
+                'The run carries no error text. Open it under Automations > Playbooks > Executions.'
+        # Stop before sending anything when the event isn't one to act on.
+        - name: check
+          let:
+            stop: >-
+                setup.variables.source == '' ? 'The playbook ran without a playbook run or a health event, so it sent nothing.' :
+                setup.variables.source == 'health' ? '' :
+                run.variables.loop ? 'The run was started by a Playbook Execution event, so it is skipped. This stops alert loops.' :
+                run.variables.template.startsWith('Unofficial_PlaybookFailure_') || run.variables.template.startsWith('Taegis.Send_Notification_Message') ? 'The run is a failure alert or notification playbook, so it is skipped. This stops alert loops.' :
+                run.variables.state != 'Failed' && !(setup.variables.fail_outcome && run.variables.outcome == 'FAIL') ? 'The run ended ' + run.variables.state + ' with the outcome ' + run.variables.outcome + ', so it is skipped.' :
+                run.variables.template.toLower() in setup.variables.ignore || run.variables.instance.toLower() in setup.variables.ignore ? run.variables.instance + ' is on Playbooks to ignore.' :
+                size(setup.variables.watch) > 0 && !(run.variables.template.toLower() in setup.variables.watch) && !(run.variables.instance.toLower() in setup.variables.watch) ? run.variables.instance + ' is not on Playbooks to watch.' : ''
+        - name: post
+          let:
+            error: "size(run.variables.error) > setup.variables.error_length ? run.variables.error.substring(0, setup.variables.error_length) + '...' : run.variables.error"
+            title: >-
+                setup.variables.source == 'health' ? 'Sophos Fusion health event: ' + (has(inputs, 'health.name') ? string(inputs.health.name) : '') + (has(inputs, 'health.subject.name') ? ' on ' + string(inputs.health.subject.name) : '') :
+                'Playbook ' + (run.variables.state == 'Failed' ? 'failed' : 'finished with FAIL') + ': ' + (run.variables.instance != '' ? run.variables.instance : run.variables.template)
+            subtitle: >-
+                setup.variables.source == 'health' ? (has(inputs, 'health.severity') ? string(inputs.health.severity) + ' severity' : '') :
+                'Template ' + run.variables.template
+        - name: body
+          let:
+            message: >-
+                setup.variables.source == 'health' ?
+                (has(inputs, 'health.message') ? string(inputs.health.message) : 'No message.') +
+                (has(inputs, 'health.subject.name') ? '\n\nAbout: ' + (has(inputs, 'health.subject.type') ? string(inputs.health.subject.type) + ' ' : '') + string(inputs.health.subject.name) : '') +
+                (has(inputs, 'health.severity') ? '\n\nSeverity: ' + string(inputs.health.severity) : '') +
+                (has(inputs, 'health.time') ? '\n\nAt: ' + string(inputs.health.time) : '') :
+                'Error: ' + post.variables.error +
+                '\n\nPlaybook: ' + run.variables.instance + ' (template ' + run.variables.template + ')' +
+                '\n\nResult: ' + run.variables.state + ', outcome ' + run.variables.outcome +
+                (run.variables.started_by != '' ? '\n\nStarted by: ' + run.variables.started_by : '') +
+                (run.variables.case_id != '' ? '\n\nCase ID: ' + run.variables.case_id : '') +
+                '\n\nRun ID: ' + run.variables.run_id + (run.variables.finished_at != '' ? ' at ' + run.variables.finished_at : '')
+        - name: build
+          condition: "check.variables.stop == ''"
+          let:
+            ticket: |-
+                merge(
+                  {
+                    'companyID': int(decodeJSON(inputs.?ticket.company_by_tenant.orValue('{}'))[?setup.variables.tenant_id].orValue(inputs.ticket.company_id)),
+                    'title': cel.bind(t, 'Sophos Fusion ' + post.variables.title, size(t) > 255 ? t.substring(0, 252) + '...' : t),
+                    'description': cel.bind(d, body.variables.message + (setup.variables.tenant_name != '' ? '\n\nTenant: ' + setup.variables.tenant_name + ' (' + setup.variables.tenant_id + ')' : '\n\nTenant: ' + setup.variables.tenant_id), size(d) > 7990 ? d.substring(0, 7990) : d),
+                    'status': int(inputs.?ticket.new_status.orValue(1)),
+                    'priority': int(inputs.?ticket.priority.orValue(2)),
+                    'dueDateTime': string(now() + duration(string(int(inputs.?ticket.due_hours.orValue(24)) < 1 ? 1 : int(inputs.?ticket.due_hours.orValue(24))) + 'h'))
+                  },
+                  int(inputs.?ticket.queue_id.orValue(0)) > 0 ? {'queueID': int(inputs.ticket.queue_id)} : {}
+                )
+        - name: create_ticket
+          condition: "check.variables.stop == ''"
+          action: Unofficial_AutotaskPSA.createTicket
+          optional: true
+          retry: 2
+          inputs:
+            ticket: build.variables.ticket
+        - name: result
+          let:
+            ticket_id: "check.variables.stop == '' && has(create_ticket, 'outputs.id') ? string(create_ticket.outputs.id) : ''"
+            ticket_url: "check.variables.stop == '' && has(create_ticket, 'outputs.ticket_url') ? string(create_ticket.outputs.ticket_url) : ''"
+            error: "check.variables.stop == '' && has(create_ticket, 'status.error') ? (type(create_ticket.status.error) == type('') ? create_ticket.status.error : toString(create_ticket.status.error)) : ''"
+        - name: finish
+          let:
+            status: "check.variables.stop != '' || result.variables.ticket_id != '' ? 'SUCCESS' : 'FAIL'"
+            message: >-
+                check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
+                result.variables.ticket_id != '' ? 'Opened Autotask PSA ticket ' + result.variables.ticket_id + ': ' + post.variables.title :
+                'No Autotask PSA ticket was opened for ' + post.variables.title + '. ' + (result.variables.error != '' ? result.variables.error : 'No ticket ID came back.')

@@ -1,0 +1,31 @@
+{
+  "title": "Playbook failure alerts",
+  "vendor": "Sophos",
+  "product": "Sophos Fusion",
+  "use_case": "Post to Teams, Slack or Google Chat when a playbook run fails or finishes with the outcome FAIL, or when Sophos Fusion raises a health event such as Collector Down, naming the playbook, the error and the tenant.",
+  "trigger": "Platform Events, source Playbook Execution, events failed and completed, with the Only When filter in SETUP.md, which skips runs a Playbook Execution event started. For health events, configure it again on Platform Events, source Health, event create. SETUP.md has both filters.",
+  "connections": [
+    "The Send Notification Message interface, set to Sophos's Teams, Slack or Google Chat template and a webhook connection: Taegis.MicrosoftTeams, Taegis.SalesforceSlack or Taegis.GoogleChatWebhook"
+  ],
+  "requires": "Microsoft Teams with Workflows, Slack or Google Chat, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "notify",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and it doesn't change what Sophos MDR does. It posts about every playbook run in the tenant, so check who is in the channel.",
+  "rollback": "None for posted messages. Turn the playbook off to stop posting.",
+  "tested": {
+    "validated": "2026-11-15",
+    "tenant": {
+      "date": "2026-11-15",
+      "region": "eu02"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/SupportedAutomations/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/ConfiguredPlaybooks/index.html"
+  ],
+  "summary": "This playbook posts to Teams, Slack or Google Chat when a playbook run fails or finishes with the outcome FAIL, and when Sophos Fusion raises a health event such as Collector Down. The post names the playbook, its template, the error and the tenant. It runs on Playbook Execution and Health events and posts through Sophos Fusion's Send Notification Message interface, so it needs one of Sophos's Send Notification Message templates and a chat connection.",
+  "notes": "Setup:\n- One configured playbook takes one trigger, so set it up once for Playbook Execution and again for Health if you want both.\n- On the configure page, pick the chat templates for the Send Notification Message interface and their connections. Pick more than one to post to each.\n- Pair it with Autotask PSA playbook failure tickets or ConnectWise PSA playbook failure tickets to open a ticket as well.\n\nHow it works:\n- The error is the run's reason, its outcome message or, for a run that failed outright, the error Sophos Fusion stored as its outputs, cut to Error length.\n- It never posts about a run that a Playbook Execution event started, about the library's playbook failure playbooks or about Sophos's Send Notification Message templates. The trigger filter and the playbook both check, so a failing post can't start another post.\n\nTesting:\n- On 2026-11-15 the dsl passed playbookValidateDSLV2 with no errors or warnings in two Sophos Fusion test tenants, eu02 and us01.\n- In the eu02 tenant a renamed copy ran on real Playbook Execution events from throwaway playbooks: one that failed on a missing key, one that failed on a bad type conversion, and one that finished with the outcome FAIL. Each event started it about 1.5 seconds after the run ended. It posted through Sophos's Send Notification Message Microsoft Teams template to a Teams Workflows webhook, which accepted every post.\n- A copy whose chat connection pointed at an address that doesn't exist finished FAIL with the connection's error, and neither copy ran again: the loop guard held. A run that finished with the outcome UNKNOWN didn't start it.\n- A stand-in chat template showed the exact text the interface passes on, ${...} in an error included.\n- Run by hand, it posted a made-up Collector Down health event, and skipped runs on Playbooks to ignore, runs not on Playbooks to watch, its own runs and runs a Playbook Execution event started.\n\nKnown gaps:\n- A webhook that accepts a post doesn't show how Teams draws it, and the test channel wasn't read back.\n- No real health event happened in the test tenants during testing, so the health path ran by hand on a made-up Collector Down event in the documented shape.\n- A playbook that catches an error and sets no outcome finishes Completed with the outcome UNKNOWN, and isn't caught.\n- It opens or posts once per failed run. A playbook that fails on every event posts every time until you turn it off or add it to Playbooks to ignore."
+}

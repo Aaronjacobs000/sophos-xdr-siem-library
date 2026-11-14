@@ -1,0 +1,519 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_M365_AccountTakeover_Cleanup
+version: 1.0.0
+title: Microsoft 365 account takeover cleanup (unofficial)
+description: When a Sophos ITDR leaked credential finding, a detection or an analyst flags a Microsoft 365 account as taken over, revokes the user's sign-in sessions, makes them change their password at the next sign-in, turns off inbox rules that forward, redirect or delete mail, confirms the user as compromised in Entra ID and records the inbox rules before and after on the case. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs on a new Sophos ITDR leaked credential finding, on a detection whose title is on Detection titles, or by hand from a case. For each user in scope it looks the user up in Entra ID and reads their inbox rules. Then it revokes their sign-in sessions, sets them to change their password at the next sign-in, turns off every enabled inbox rule that forwards, redirects or deletes mail, and confirms them as compromised in Entra ID. Disable account is off unless you turn it on. It reads the inbox rules again afterwards and adds a comment to the case with the rules before and after. Sophos doesn't make, maintain or support this playbook.
+
+    When the user is synced from on-premises Active Directory, the comment says to disable the account and reset its password there too, because the next sync can undo changes made in Entra ID.
+
+    It doesn't reset MFA methods, remove OAuth app consents or turn off mailbox forwarding set in Exchange Online, which the Microsoft Graph API connector can't reach.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook looks the user up, reads their inbox rules and records what it would do, and changes nothing.
+    - It only acts on users whose user principal name is in a domain you list. With no domains set, it acts on no one.
+    - It never acts on a user on Excluded users.
+    - A run that finds more users in scope than Max users per run acts on none of them.
+    - By default it acts only on self-managed cases, never on cases Sophos MDR manages.
+    - Rollback: turn the inbox rules back on, enable the account if you disabled it, and dismiss the user's risk in Entra ID. Revoked sessions and the password change can't be undone.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only record what the playbook would do | On |
+    | Domains | User principal name domains in scope | None |
+    | Excluded users | User principal names never to act on | None |
+    | Detection titles | Titles of the detections it acts on | Six Microsoft account compromise alert titles |
+    | Finding categories | Sophos ITDR finding categories it acts on | CREDENTIAL_LEAK |
+    | Revoke sign-in sessions | Revoke the user's refresh and session tokens | On |
+    | Require a password change | Make the user change their password at the next sign-in | On |
+    | Turn off inbox rules | Turn off enabled inbox rules that forward, redirect or delete mail | On |
+    | Confirm compromised | Confirm the user as compromised in Entra ID Protection, which needs Entra ID P2 | On |
+    | Disable account | Also disable the account in Entra ID | Off |
+    | Max users per run | A run with more users in scope acts on none | 1 |
+    | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
+    | Seconds to wait for the case | Detection trigger only: how long to wait before looking for the detection's case | 60 |
+changeNotes: First version
+tags:
+    - Category:IAM
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.MicrosoftGraphAPI:2.12.2
+    - Taegis.Case:1.0.5
+    - Taegis.Alert:1.3.6
+playbooks:
+    - Taegis.Wait_For_Case_Processing:1.0.0
+    - Taegis.GetCaseDetections:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - created
+        source: identityFindings
+        filter: "inputs.identityFindings.new.check.category.toLower() == 'credential_leak' && inputs.identityFindings.new.primaryReference.derivedType == 'USER'"
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - create
+        source: alert2
+        filter: "detectionTitle(inputs) in ['Suspicious email forwarding activity', 'User restricted from sending email', 'Suspicious inbox forwarding', 'Suspicious inbox manipulation rule', 'Suspicious inbox manipulation rules', 'Leaked credentials']"
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Microsoft 365 takeover cleanup (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                case_wait_seconds:
+                    default: 60
+                    description: Detection trigger only. Seconds to wait before looking for the case the detection went into, so the outcome can be recorded there. 0 to 300.
+                    title: Seconds to wait for the case
+                    type: integer
+                confirm_compromised:
+                    default: true
+                    description: Confirm the user as compromised in Entra ID Protection, which raises their user risk to high. It needs Microsoft Entra ID P2; turn it off without P2.
+                    title: Confirm compromised
+                    type: boolean
+                detection_titles:
+                    default:
+                        - Suspicious email forwarding activity
+                        - User restricted from sending email
+                        - Suspicious inbox forwarding
+                        - Suspicious inbox manipulation rule
+                        - Suspicious inbox manipulation rules
+                        - Leaked credentials
+                    description: Titles of the detections this playbook acts on, as they show on the Detections page. Matches ignore case. A run by hand from a case acts on the users in all of the case's detections.
+                    items:
+                        type: string
+                    title: Detection titles
+                    type: array
+                disable_account:
+                    default: false
+                    description: Also disable the account in Entra ID. The user can't sign in until you enable it again.
+                    title: Disable account
+                    type: boolean
+                disable_inbox_rules:
+                    default: true
+                    description: Turn off enabled inbox rules that forward, forward as an attachment, redirect, delete or permanently delete mail. Other rules are left alone.
+                    title: Turn off inbox rules
+                    type: boolean
+                domains:
+                    description: User principal name domains in scope, such as example.com. A user in any other domain is left alone. With none, the playbook acts on no one.
+                    items:
+                        type: string
+                    title: Domains
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would do. Turn it off after you've read a test run.
+                    title: Dry run
+                    type: boolean
+                excluded_users:
+                    description: User principal names the playbook never acts on, such as break-glass and service accounts
+                    items:
+                        type: string
+                    title: Excluded users
+                    type: array
+                finding_categories:
+                    default:
+                        - CREDENTIAL_LEAK
+                    description: Sophos ITDR finding categories this playbook acts on. Matches ignore case.
+                    items:
+                        type: string
+                    title: Finding categories
+                    type: array
+                force_password_change:
+                    default: true
+                    description: Make the user change their password at the next sign-in
+                    title: Require a password change
+                    type: boolean
+                include_sophos_managed:
+                    default: false
+                    description: When on, the playbook also acts on cases Sophos MDR manages. Leave it off unless you've agreed it with the Sophos MDR team.
+                    title: Include Sophos-managed cases
+                    type: boolean
+                max_users:
+                    default: 1
+                    description: If a run finds more users in scope than this, it acts on none of them and says so on the case.
+                    title: Max users per run
+                    type: integer
+                revoke_sessions:
+                    default: true
+                    description: Revoke the user's Entra ID refresh and session tokens, so every app must sign in again
+                    title: Revoke sign-in sessions
+                    type: boolean
+            required:
+                - domains
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        case_id:
+            description: The case the outcome was recorded on, or empty
+            type: string
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        users:
+            description: Each user the playbook looked at, with the result (cleaned up, would clean up, skipped or failed), what happened, and the inbox rules before and after
+            type: array
+    type: object
+dsl:
+    name: Unofficial_M365_AccountTakeover_Cleanup
+    description: Revokes sessions, requires a password change, turns off forwarding, redirecting and deleting inbox rules and confirms the user as compromised for a taken-over Microsoft 365 account, within the domains you list, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        case_id: target.variables.case_id
+        status: finish.variables.status
+        users: report.variables.results
+    tasks:
+        # The settings, and whether a case, a detection or an identity finding started the run. The case, detection and finding macros return an empty value of another type for an event they don't read, so each one's type is checked.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
+            excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
+            titles: "inputs.?configuration.detection_titles.orValue(['Suspicious email forwarding activity', 'User restricted from sending email', 'Suspicious inbox forwarding', 'Suspicious inbox manipulation rule', 'Suspicious inbox manipulation rules', 'Leaked credentials']).map(t, string(t).trim().toLower()).filter(t, t != '')"
+            categories: "inputs.?configuration.finding_categories.orValue(['CREDENTIAL_LEAK']).map(c, string(c).trim().toLower()).filter(c, c != '')"
+            revoke: "inputs.?configuration.revoke_sessions.orValue(true)"
+            force_change: "inputs.?configuration.force_password_change.orValue(true)"
+            rules_off: "inputs.?configuration.disable_inbox_rules.orValue(true)"
+            confirm: "inputs.?configuration.confirm_compromised.orValue(true)"
+            disable: "inputs.?configuration.disable_account.orValue(false)"
+            max_users: "int(inputs.?configuration.max_users.orValue(1)) < 1 ? 1 : int(inputs.?configuration.max_users.orValue(1))"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            wait: "int(inputs.?configuration.case_wait_seconds.orValue(60)) < 0 ? 0 : int(inputs.?configuration.case_wait_seconds.orValue(60)) > 300 ? 300 : int(inputs.?configuration.case_wait_seconds.orValue(60))"
+            source: "type(caseId(inputs)) == type('') && caseId(inputs) != '' ? 'case' : has(inputs, 'alert2') ? 'detection' : has(inputs, 'identityFindings') ? 'finding' : ''"
+            case_id: "type(caseId(inputs)) == type('') ? caseId(inputs) : ''"
+            tenant_id: "type(caseTenantId(inputs)) == type('') && caseTenantId(inputs) != '' ? caseTenantId(inputs) : type(detectionTenantId(inputs)) == type('') && detectionTenantId(inputs) != '' ? detectionTenantId(inputs) : type(findingTenantId(inputs)) == type('') && findingTenantId(inputs) != '' ? findingTenantId(inputs) : string(TDR.tenant)"
+            detection: "has(inputs, 'alert2') ? inputs.alert2 : {}"
+        # Identity finding trigger: the finding's category and the user's names.
+        - name: finding
+          let:
+            category: "type(findingCheck(inputs, 'category')) == type('') ? findingCheck(inputs, 'category').toLower() : ''"
+            title: "type(findingCheck(inputs, 'title')) == type('') ? findingCheck(inputs, 'title') : ''"
+            reference: "type(findingPrimaryReference(inputs, 'derivedType')) == type('') ? findingPrimaryReference(inputs, 'derivedType') : ''"
+            external_id: "type(findingIdentityExternalId(inputs)) == type('') ? findingIdentityExternalId(inputs) : ''"
+            names: "((type(findingIdentityUsernames(inputs)) == type([]) ? findingIdentityUsernames(inputs) : []) + (type(findingIdentityEmails(inputs)) == type([]) ? findingIdentityEmails(inputs) : []) + [findingIdentityPrimaryUsername(inputs)]).filter(n, type(n) == type('')).map(n, n.trim().toLower()).filter(n, n.contains('@'))"
+        - name: fetch_case
+          condition: "setup.variables.source == 'case'"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Stop before any other call when there's nothing in scope.
+        - name: check
+          let:
+            stop: >-
+                setup.variables.source == '' ? 'The playbook ran without a case, a detection or an identity finding, so it did nothing.' :
+                size(setup.variables.domains) == 0 ? 'No domains are set, so no user is in scope.' :
+                setup.variables.source == 'detection' && !(detectionTitle(setup.variables.detection).trim().toLower() in setup.variables.titles) ? 'The detection ' + detectionTitle(setup.variables.detection) + ' is not on Detection titles, so nothing was done.' :
+                setup.variables.source == 'finding' && !(finding.variables.category in setup.variables.categories) ? 'The finding is in the category ' + finding.variables.category + ', which is not on Finding categories, so nothing was done.' :
+                setup.variables.source == 'finding' && finding.variables.reference != 'USER' ? 'The finding is about an object of type ' + finding.variables.reference + ', not a user.' :
+                setup.variables.source == 'case' && !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was done.' :
+                setup.variables.source == 'case' && has(fetch_case, 'outputs.case.primaryStatus.isClosed') && fetch_case.outputs.case.primaryStatus.isClosed == true ? 'The case is closed, so nothing was done.' :
+                setup.variables.source == 'case' && !setup.variables.sophos_managed && (has(fetch_case, 'outputs.case.managedBy') ? string(fetch_case.outputs.case.managedBy) : '') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was done. Include Sophos-managed cases is off.' : ''
+        # Case run: wait until the case's detections are attached, then read them.
+        - name: wait_case
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.Wait_For_Case_Processing
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            sleep_time: '10s'
+            states:
+                - 'detections'
+        - name: case_detections
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id metadata { title severity } entities { entities }'
+            limit: 200
+        - name: matched
+          let:
+            list: >-
+                check.variables.stop != '' || setup.variables.source == 'finding' ? [] :
+                setup.variables.source == 'case' ? (has(case_detections, 'outputs.detections') ? case_detections.outputs.detections : []) : [setup.variables.detection]
+        # The users: each detection's userName entities, or its targetUserName entities when it has no userName with an @. For a finding, its user principal name, or its Entra ID object ID when it has none.
+        - name: names
+          let:
+            list: >-
+                check.variables.stop != '' ? [] :
+                setup.variables.source == 'finding' ? (size(finding.variables.names) > 0 ? [finding.variables.names[0]] : isUUID(finding.variables.external_id) ? [finding.variables.external_id.toLower()] : []) :
+                unique(flatten(matched.variables.list.map(d,
+                detectionEntities(d).exists(e, e.lowerAscii().startsWith('username:') && e.contains('@')) ?
+                detectionEntities(d).filter(e, e.lowerAscii().startsWith('username:') && e.contains('@')).map(e, e.substring(9).trim().lowerAscii()) :
+                detectionEntities(d).filter(e, e.lowerAscii().startsWith('targetusername:') && e.contains('@')).map(e, e.substring(15).trim().lowerAscii()))))
+        # A name without an @ is an object ID, checked against Domains after the lookup.
+        - name: scope
+          let:
+            in_scope: "names.variables.list.filter(n, (!n.contains('@') || setup.variables.domains.exists(d, n.endsWith('@' + d))) && !(n in setup.variables.excluded))"
+            excluded: "names.variables.list.filter(n, n in setup.variables.excluded)"
+            outside: "names.variables.list.filter(n, n.contains('@') && !setup.variables.domains.exists(d, n.endsWith('@' + d)) && !(n in setup.variables.excluded))"
+        - name: gate
+          let:
+            problem: >-
+                check.variables.stop != '' ? '' :
+                size(names.variables.list) == 0 ? (setup.variables.source == 'finding' ? 'The finding has no user principal name or object ID, so nothing was done.' : 'No detection names a user principal name in its userName or targetUserName entities, so nothing was done.') :
+                size(scope.variables.in_scope) > setup.variables.max_users ? 'Found ' + string(size(scope.variables.in_scope)) + ' users in scope, more than Max users per run (' + string(setup.variables.max_users) + '), so nothing was done: ' + scope.variables.in_scope.join(', ') + '. Check them and clean them up by hand.' : ''
+            go: "check.variables.stop == '' && size(scope.variables.in_scope) > 0 && size(scope.variables.in_scope) <= setup.variables.max_users"
+        # One pass per user in scope.
+        - name: users
+          condition: "gate.variables.go"
+          range: scope.variables.in_scope
+          variables:
+            results: []
+          for:
+            - name: entra_lookup
+              action: Taegis.MicrosoftGraphAPI.lookUpUser
+              optional: true
+              retry: 1
+              inputs:
+                id: users.value
+                select: 'id,userPrincipalName,mail,accountEnabled,onPremisesSyncEnabled'
+            - name: entra
+              let:
+                found: "has(entra_lookup, 'outputs.id') && has(entra_lookup, 'outputs.userPrincipalName')"
+                id: "has(entra_lookup, 'outputs.id') ? string(entra_lookup.outputs.id) : ''"
+                upn: "has(entra_lookup, 'outputs.userPrincipalName') ? string(entra_lookup.outputs.userPrincipalName).toLower() : users.value"
+                mail: "has(entra_lookup, 'outputs.mail') ? string(entra_lookup.outputs.mail).toLower() : ''"
+                enabled: "!has(entra_lookup, 'outputs.accountEnabled') || entra_lookup.outputs.accountEnabled != false"
+                synced: "has(entra_lookup, 'outputs.onPremisesSyncEnabled') && entra_lookup.outputs.onPremisesSyncEnabled == true"
+                error: "has(entra_lookup, 'status.error') ? (type(entra_lookup.status.error) == type('') ? entra_lookup.status.error : toString(entra_lookup.status.error)) : ''"
+            - name: person
+              let:
+                skip: >-
+                    !entra.variables.found ? '' :
+                    !setup.variables.domains.exists(d, entra.variables.upn.endsWith('@' + d)) ? 'Not in a domain on Domains, so nothing was done.' :
+                    entra.variables.upn in setup.variables.excluded || entra.variables.mail in setup.variables.excluded ? 'On Excluded users, so nothing was done.' : ''
+                act: "entra.variables.found && (!setup.variables.domains.exists(d, entra.variables.upn.endsWith('@' + d)) ? false : !(entra.variables.upn in setup.variables.excluded || entra.variables.mail in setup.variables.excluded))"
+            - name: rules_before
+              condition: "person.variables.act"
+              action: Taegis.MicrosoftGraphAPI.listMessageRules
+              optional: true
+              retry: 1
+              inputs:
+                id: entra.variables.id
+            - name: before
+              let:
+                read: "has(rules_before, 'outputs.message.value') && type(rules_before.outputs.message.value) == type([])"
+                list: "has(rules_before, 'outputs.message.value') && type(rules_before.outputs.message.value) == type([]) ? rules_before.outputs.message.value : []"
+                error: "has(rules_before, 'status.error') ? (type(rules_before.status.error) == type('') ? rules_before.status.error : toString(rules_before.status.error)) : 'no reply from Microsoft Graph'"
+            # The enabled rules that forward, redirect or delete mail, and a line for every rule.
+            - name: plan
+              let:
+                bad: >-
+                    before.variables.list.filter(r, has(r, 'id') && has(r, 'isEnabled') && r.isEnabled == true && (
+                    (has(r, 'actions.forwardTo') && size(r.actions.forwardTo) > 0) ||
+                    (has(r, 'actions.forwardAsAttachmentTo') && size(r.actions.forwardAsAttachmentTo) > 0) ||
+                    (has(r, 'actions.redirectTo') && size(r.actions.redirectTo) > 0) ||
+                    (has(r, 'actions.delete') && r.actions.delete == true) ||
+                    (has(r, 'actions.permanentDelete') && r.actions.permanentDelete == true)))
+                described: >-
+                    before.variables.list.map(r, (has(r, 'displayName') ? string(r.displayName) : 'A rule with no name') + (has(r, 'isEnabled') && r.isEnabled == true ? '' : ' (off)') + ': ' +
+                    cel.bind(p, [
+                      has(r, 'actions.forwardTo') && size(r.actions.forwardTo) > 0 ? 'forwards to ' + r.actions.forwardTo.map(a, has(a, 'emailAddress.address') ? string(a.emailAddress.address) : 'an address').join(', ') : '',
+                      has(r, 'actions.forwardAsAttachmentTo') && size(r.actions.forwardAsAttachmentTo) > 0 ? 'forwards as an attachment to ' + r.actions.forwardAsAttachmentTo.map(a, has(a, 'emailAddress.address') ? string(a.emailAddress.address) : 'an address').join(', ') : '',
+                      has(r, 'actions.redirectTo') && size(r.actions.redirectTo) > 0 ? 'redirects to ' + r.actions.redirectTo.map(a, has(a, 'emailAddress.address') ? string(a.emailAddress.address) : 'an address').join(', ') : '',
+                      has(r, 'actions.delete') && r.actions.delete == true ? 'deletes' : '',
+                      has(r, 'actions.permanentDelete') && r.actions.permanentDelete == true ? 'permanently deletes' : '',
+                      has(r, 'actions.moveToFolder') ? 'moves to a folder' : '',
+                      has(r, 'actions.markAsRead') && r.actions.markAsRead == true ? 'marks as read' : ''
+                    ].filter(x, x != ''), size(p) > 0 ? p.join(', ') : 'other actions'))
+            # The tasks that change anything, and only with dry run off.
+            - name: disable_account
+              condition: "!setup.variables.dry_run && setup.variables.disable && person.variables.act && entra.variables.enabled"
+              action: Taegis.MicrosoftGraphAPI.disableUser
+              optional: true
+              retry: 2
+              inputs:
+                id: entra.variables.id
+            - name: revoke
+              condition: "!setup.variables.dry_run && setup.variables.revoke && person.variables.act"
+              action: Taegis.MicrosoftGraphAPI.revokeSignInSessions
+              optional: true
+              retry: 2
+              inputs:
+                id: entra.variables.id
+            - name: force_change
+              condition: "!setup.variables.dry_run && setup.variables.force_change && person.variables.act"
+              action: Taegis.MicrosoftGraphAPI.forcePasswordChange
+              optional: true
+              retry: 2
+              inputs:
+                id: entra.variables.id
+            - name: rule_off
+              condition: "!setup.variables.dry_run && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
+              range: plan.variables.bad
+              variables:
+                done: []
+              for:
+                - name: rule_update
+                  action: Taegis.MicrosoftGraphAPI.updateMessageRule
+                  optional: true
+                  retry: 2
+                  inputs:
+                    id: entra.variables.id
+                    ruleId: rule_off.value.id
+                    body: "{'isEnabled': false}"
+                - name: rule_done
+                  let:
+                    done: "append(rule_off.variables.done, {'id': string(rule_off.value.id), 'name': has(rule_off.value, 'displayName') ? string(rule_off.value.displayName) : 'A rule with no name', 'ok': has(rule_update, 'outputs.outcome') && rule_update.outputs.outcome == 'success', 'error': has(rule_update, 'status.error') ? (type(rule_update.status.error) == type('') ? rule_update.status.error : toString(rule_update.status.error)) : ''})"
+            - name: confirm
+              condition: "!setup.variables.dry_run && setup.variables.confirm && person.variables.act"
+              action: Taegis.MicrosoftGraphAPI.confirmCompromisedRiskyUser
+              optional: true
+              retry: 1
+              inputs:
+                userIds: "[entra.variables.id]"
+            # Read the rules again, so the case shows what is on now.
+            - name: rules_after
+              condition: "!setup.variables.dry_run && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
+              action: Taegis.MicrosoftGraphAPI.listMessageRules
+              optional: true
+              retry: 1
+              inputs:
+                id: entra.variables.id
+            - name: after
+              let:
+                read: "has(rules_after, 'outputs.message.value') && type(rules_after.outputs.message.value) == type([])"
+                list: "has(rules_after, 'outputs.message.value') && type(rules_after.outputs.message.value) == type([]) ? rules_after.outputs.message.value : []"
+                turned_off: "has(rule_off, 'variables.done') ? rule_off.variables.done : []"
+            - name: after_check
+              let:
+                still_on: "plan.variables.bad.filter(b, after.variables.list.exists(a, has(a, 'id') && a.id == b.id && has(a, 'isEnabled') && a.isEnabled == true)).map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name')"
+                described: >-
+                    after.variables.list.map(r, (has(r, 'displayName') ? string(r.displayName) : 'A rule with no name') + (has(r, 'isEnabled') && r.isEnabled == true ? ' (on)' : ' (off)'))
+            - name: flags
+              let:
+                disable_ok: "has(disable_account, 'outputs.outcome') && disable_account.outputs.outcome == 'success'"
+                revoke_ok: "has(revoke, 'outputs.outcome') && revoke.outputs.outcome == 'success'"
+                password_ok: "has(force_change, 'outputs.outcome') && force_change.outputs.outcome == 'success'"
+                confirm_ok: "has(confirm, 'outputs.outcome') && confirm.outputs.outcome == 'success'"
+                rules_failed: "after.variables.turned_off.filter(x, !x.ok)"
+                disable_error: "has(disable_account, 'status.error') ? (type(disable_account.status.error) == type('') ? disable_account.status.error : toString(disable_account.status.error)) : 'no success reply from Microsoft Graph'"
+                revoke_error: "has(revoke, 'status.error') ? (type(revoke.status.error) == type('') ? revoke.status.error : toString(revoke.status.error)) : 'no success reply from Microsoft Graph'"
+                password_error: "has(force_change, 'status.error') ? (type(force_change.status.error) == type('') ? force_change.status.error : toString(force_change.status.error)) : 'no success reply from Microsoft Graph'"
+                confirm_error: "has(confirm, 'status.error') ? (type(confirm.status.error) == type('') ? confirm.status.error : toString(confirm.status.error)) : 'no success reply from Microsoft Graph'"
+            # A line per step, in the order the steps ran.
+            - name: steps
+              let:
+                lines: >-
+                    !entra.variables.found ? ['Not found in Entra ID, so nothing was done.' + (entra.variables.error != '' ? ' ' + entra.variables.error : '')] :
+                    person.variables.skip != '' ? [person.variables.skip] :
+                    (!setup.variables.disable ? [] : !entra.variables.enabled ? ['The account is already disabled in Entra ID.'] : setup.variables.dry_run ? ['Would disable the account in Entra ID.'] : flags.variables.disable_ok ? ['Disabled the account in Entra ID.'] : ['Disabling the account in Entra ID failed: ' + flags.variables.disable_error]) +
+                    (!setup.variables.revoke ? [] : setup.variables.dry_run ? ['Would revoke its sign-in sessions.'] : flags.variables.revoke_ok ? ['Revoked its sign-in sessions.'] : ['Revoking its sign-in sessions failed: ' + flags.variables.revoke_error]) +
+                    (!setup.variables.force_change ? [] : setup.variables.dry_run ? ['Would require a password change at the next sign-in.'] : flags.variables.password_ok ? ['Set it to change its password at the next sign-in.'] : ['Requiring a password change failed: ' + flags.variables.password_error]) +
+                    (!before.variables.read ? ['Its inbox rules could not be read, so none were turned off: ' + before.variables.error] :
+                     size(before.variables.list) == 0 ? ['It has no inbox rules.'] :
+                     ['Inbox rules before: ' + plan.variables.described.join('; ') + '.'] +
+                     (size(plan.variables.bad) == 0 ? ['No enabled rule forwards, redirects or deletes mail.'] :
+                      !setup.variables.rules_off ? ['Left on, as Turn off inbox rules is off: ' + plan.variables.bad.map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name').join(', ') + '.'] :
+                      setup.variables.dry_run ? ['Would turn off: ' + plan.variables.bad.map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name').join(', ') + '.'] :
+                      (size(after.variables.turned_off.filter(x, x.ok)) > 0 ? ['Turned off: ' + after.variables.turned_off.filter(x, x.ok).map(x, x.name).join(', ') + '.'] : []) +
+                      (size(flags.variables.rules_failed) > 0 ? ['Turning off failed for: ' + flags.variables.rules_failed.map(x, x.name + ' (' + x.error + ')').join(', ') + '.'] : []) +
+                      (!after.variables.read ? ['The inbox rules could not be read again afterwards.'] :
+                       ['Inbox rules after: ' + after_check.variables.described.join('; ') + '.'] +
+                       (size(after_check.variables.still_on) > 0 ? ['Still on afterwards: ' + after_check.variables.still_on.join(', ') + '.'] : [])))) +
+                    (!setup.variables.confirm ? [] : setup.variables.dry_run ? ['Would confirm it as compromised in Entra ID.'] : flags.variables.confirm_ok ? ['Confirmed it as compromised in Entra ID.'] : ['Confirming it as compromised in Entra ID failed: ' + flags.variables.confirm_error + (flags.variables.confirm_error.contains('not licensed') ? ' It needs Microsoft Entra ID P2; turn off Confirm compromised without it.' : '')]) +
+                    (entra.variables.synced ? ['The account is synced from on-premises Active Directory: disable it and reset its password there too, or the next sync can undo the changes made in Entra ID.'] : [])
+                failed: >-
+                    !entra.variables.found ? true :
+                    person.variables.skip != '' || setup.variables.dry_run ? false :
+                    (setup.variables.disable && entra.variables.enabled && !flags.variables.disable_ok) ||
+                    (setup.variables.revoke && !flags.variables.revoke_ok) ||
+                    (setup.variables.force_change && !flags.variables.password_ok) ||
+                    !before.variables.read ||
+                    (setup.variables.rules_off && size(plan.variables.bad) > 0 && (size(flags.variables.rules_failed) > 0 || !after.variables.read || size(after_check.variables.still_on) > 0)) ||
+                    (setup.variables.confirm && !flags.variables.confirm_ok)
+            - name: record
+              let:
+                results: >-
+                    append(users.variables.results, {
+                      'user': entra.variables.upn,
+                      'result': steps.variables.failed ? 'failed' : person.variables.skip != '' ? 'skipped' : setup.variables.dry_run ? 'would clean up' : 'cleaned up',
+                      'text': steps.variables.lines.join(' '),
+                      'lines': steps.variables.lines,
+                      'rules_before': plan.variables.described,
+                      'rules_turned_off': after.variables.turned_off.filter(x, x.ok).map(x, x.name),
+                      'rules_after': after_check.variables.described,
+                      'synced': entra.variables.synced
+                    })
+        - name: report
+          let:
+            results: "has(users, 'variables.results') ? users.variables.results : []"
+        - name: text
+          let:
+            others: >-
+                (check.variables.stop == '' && size(scope.variables.excluded) > 0 ? ['Not acted on, on Excluded users: ' + scope.variables.excluded.join(', ') + '.'] : []) +
+                (check.variables.stop == '' && size(scope.variables.outside) > 0 ? ['Not acted on, not in a domain on Domains: ' + scope.variables.outside.join(', ') + '.'] : [])
+            from: >-
+                setup.variables.source == 'finding' ? 'From the Sophos ITDR finding ' + finding.variables.title + '.' :
+                setup.variables.source == 'detection' ? 'From the detection ' + detectionTitle(setup.variables.detection) + '.' : 'Run from the case.'
+            lines: >-
+                gate.variables.problem != '' ? ['- ' + gate.variables.problem] :
+                report.variables.results.map(r, '**' + r.user + '**\n' + r.lines.map(l, '- ' + l).join('\n'))
+        - name: comment_text
+          let:
+            body: >-
+                size(text.variables.lines) + size(text.variables.others) == 0 ? '' :
+                '**Microsoft 365 account takeover cleanup (automated)**\n' + text.variables.from + '\n\n' + (text.variables.lines + text.variables.others).join('\n\n') +
+                (setup.variables.dry_run ? '\n\nDry run is on, so nothing was changed.' : report.variables.results.exists(r, r.result == 'cleaned up' || r.result == 'failed') ? '\n\nTo undo: turn the inbox rules back on in Outlook, enable the account if it was disabled, and dismiss the user\'s risk in Entra ID.' : '')
+        # Detection trigger: find the case the detection went into, if it's in one.
+        - name: wait_for_case
+          condition: "setup.variables.source == 'detection' && comment_text.variables.body != '' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && setup.variables.wait > 0"
+          sleep: "string(setup.variables.wait) + 's'"
+        - name: reread
+          condition: "setup.variables.source == 'detection' && comment_text.variables.body != '' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && detectionId(inputs) != ''"
+          action: Taegis.Alert.query
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            cql_query: "'from detection where id in (\\'' + detectionId(inputs) + '\\')'"
+            limit: 1
+            offset: 0
+        - name: target
+          let:
+            case_id: >-
+                setup.variables.source == 'case' ? setup.variables.case_id :
+                setup.variables.source != 'detection' ? '' :
+                (size(setup.variables.detection.?investigation_ids.orValue([])) > 0 ? setup.variables.detection.investigation_ids :
+                has(reread, 'outputs') && type(reread.outputs) == type([]) && size(reread.outputs) > 0 && has(reread.outputs[0], 'investigation_ids') && type(reread.outputs[0].investigation_ids) == type([]) ? reread.outputs[0].investigation_ids : [])
+                .map(i, type(i) == type('') ? i : has(i, 'id') ? string(i.id) : '').filter(i, i != '')[?0].orValue('')
+        - name: comment
+          condition: "target.variables.case_id != '' && comment_text.variables.body != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: target.variables.case_id
+            comment: comment_text.variables.body
+        - name: finish
+          let:
+            status: "gate.variables.problem != '' || report.variables.results.exists(r, r.result == 'failed') || (comment_text.variables.body != '' && target.variables.case_id != '' && !has(comment, 'outputs.comment.id')) ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
+                gate.variables.problem != '' ? gate.variables.problem :
+                (size(report.variables.results) == 0 && size(text.variables.others) == 0 ? 'No user was acted on.' : (report.variables.results.map(r, r.user + ': ' + r.text) + text.variables.others).join(' ')) +
+                (comment_text.variables.body == '' ? '' : target.variables.case_id == '' ? ' No case holds this, so the outcome is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')
