@@ -346,6 +346,9 @@ test('checks: the risk tier can\'t be less than what the template calls, and des
     assert.ok(!has(chat, 'tier'), name);
     assert.ok(chat.problems.some((p) => p.level === 'warning' && p.code === 'review'), name);
   }
+  // The Send Notification Message interface only posts a message, through the chat playbooks chosen for it.
+  const notifyInterface = TEMPLATE.replace('connectors:\n', 'interfaces:\n    - Taegis.SendNotificationMessage:1.1.1\nconnectors:\n').replace("        - name: wait\n", "        - name: post\n          call: Taegis.SendNotificationMessage\n        - name: wait\n").replace('action: Acme_Widget.lockWidget', 'action: Acme_Widget.getWidget');
+  assert.ok(!has(check(playbookEntry({ yaml: notifyInterface, meta: { risk_tier: 'notify' } })), 'tier'));
   // A case link is a note on the case, and a work note only renders text.
   const linked = check(playbookEntry({ yaml: TEMPLATE.replace('action: Acme_Widget.lockWidget', 'action: Acme_Widget.getWidget').replace('action: Taegis.Case.addComment', 'action: Taegis.Case.createLink'), meta: { risk_tier: 'notify' } }));
   assert.ok(!has(linked, 'tier'));
