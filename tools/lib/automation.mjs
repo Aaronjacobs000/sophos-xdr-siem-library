@@ -41,6 +41,9 @@ export const KNOWN_TIERS = {
   'Taegis.Case.queryCustom': 'lookup',
   // Renders a case event as text and returns it; it writes nothing.
   'Taegis.CaseWorkNote': 'lookup',
+  // An interface: posts a message through the chat playbooks (Teams, Slack, Google Chat) chosen for it
+  // when the playbook is configured.
+  'Taegis.SendNotificationMessage': 'notify',
 };
 // Connectors that send data to an address set in the connection rather than in the connector:
 // the generic webhooks, and the Teams and Slack connectors, which post to the webhook URL in their connection.
