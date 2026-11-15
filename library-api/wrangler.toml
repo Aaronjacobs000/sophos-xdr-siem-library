@@ -1,0 +1,33 @@
+# Cloudflare Worker settings for the library API: star and view counts for the library site.
+# Secrets never go in this file: set IP_HASH_SALT and GOATCOUNTER_TOKEN with wrangler secret put
+# (see README.md). The hostname is a Workers custom domain, attached once through the API.
+name = "xdr-siem-library-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+preview_urls = false
+
+[vars]
+# The origins /v1 answers, comma separated: the library site only.
+ALLOWED_ORIGINS = "https://aaronjacobs000.github.io"
+# The site whose library-index.json lists the entries a star can name. Ends with a slash.
+SITE_URL = "https://aaronjacobs000.github.io/sophos-xdr-siem-library/"
+GOATCOUNTER_SITE = "https://xdr-siem-library.goatcounter.com"
+# The day the site started counting visits; view counts start here.
+VIEWS_SINCE = "2026-10-27T00:00:00Z"
+
+[triggers]
+crons = ["41 * * * *"]
+
+[[durable_objects.bindings]]
+name = "LIBRARY"
+class_name = "LibraryStats"
+
+# The free plan needs SQLite-backed Durable Objects.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LibraryStats"]
+
+# Off, so request logs with callers' addresses aren't kept.
+[observability]
+enabled = false

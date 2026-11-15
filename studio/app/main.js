@@ -11,6 +11,7 @@ import { TOOL_VERSION, SITE_NAME } from '../core/version.js';
 import { routeOf } from './routes.js';
 import { clear } from './dom.js';
 import { startCounting } from './analytics.js';
+import { loadStars } from './stars.js';
 
 const app = document.getElementById('app');
 
@@ -59,3 +60,4 @@ route();
 updateMeta();
 refreshLibrary();
 startCounting();
+loadStars();

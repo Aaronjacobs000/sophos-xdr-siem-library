@@ -6,6 +6,7 @@ import { state } from '../store.js';
 import { loadAutomationEntry, githubUrl, siteUrl } from '../library-client.js';
 import { renderMarkdown } from '../markdown.js';
 import { notesView } from './common.js';
+import { starSlot } from '../stars.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const TIER_PILL = { lookup: 'green', notify: 'blue', 'reversible action': 'amber', destructive: 'red' };
@@ -57,7 +58,7 @@ function playbookCard(e) {
   if (m.connector) pills.append(pill('needs a library connector', 'cyan'));
   a.append(pills, h('span', { class: 'sub', text: m.use_case }));
   a.append(h('span', { class: 'foot2' }, h('span', { text: HANDLE.test(m.author || '') ? `@${m.author}` : '' }), testedPill(m.tested)));
-  return a;
+  return h('div', { class: 'cardwrap' }, a, starSlot(`playbooks/${e.id}`, m.title));
 }
 
 function connectorCard(e) {
@@ -69,7 +70,7 @@ function connectorCard(e) {
   for (const t of tiers) pills.append(tierPill(t));
   a.append(pills, h('span', { class: 'sub', text: m.auth }));
   a.append(h('span', { class: 'foot2' }, h('span', { text: HANDLE.test(m.author || '') ? `@${m.author}` : '' }), testedPill(m.tested)));
-  return a;
+  return h('div', { class: 'cardwrap' }, a, starSlot(`connectors/${e.id}`, m.title));
 }
 
 function tierLegend() {
@@ -143,7 +144,7 @@ function examplePanel(folder, e) {
 function drawPlaybook(root, e) {
   const m = e.meta;
   root.append(h('div', { class: 'libhead' }, h('div', {}, h('span', { class: 'sub', text: `${m.vendor} · ${m.product}` }), h('h1', { text: m.title })),
-    h('div', { class: 'actions' }, tierPill(m.risk_tier), testedPill(m.tested))));
+    h('div', { class: 'actions' }, tierPill(m.risk_tier), testedPill(m.tested), starSlot(`playbooks/${e.id}`, m.title))));
   root.append(readFirst('playbooks'));
   const connector = m.connector ? (state.library.connectors || []).find((c) => `connectors/${c.id}` === m.connector) : null;
   const grid = h('div', { class: 'grid g-entry' });
@@ -182,7 +183,7 @@ function drawPlaybook(root, e) {
 function drawConnector(root, e) {
   const m = e.meta;
   root.append(h('div', { class: 'libhead' }, h('div', {}, h('span', { class: 'sub', text: m.vendor }), h('h1', { text: m.title })),
-    h('div', { class: 'actions' }, testedPill(m.tested))));
+    h('div', { class: 'actions' }, testedPill(m.tested), starSlot(`connectors/${e.id}`, m.title))));
   root.append(readFirst('connectors'));
   const fns = h('table', { class: 'rec fntable' });
   for (const [f, t] of Object.entries(m.functions || {})) fns.append(h('tr', {}, h('td', { text: f }), h('td', {}, tierPill(t))));

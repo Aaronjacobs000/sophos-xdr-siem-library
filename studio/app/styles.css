@@ -242,6 +242,21 @@ table.rec td:last-child { font-family: var(--mono); overflow-wrap: anywhere; whi
 .card .vendor { color: var(--muted); font-size: 13.5px; }
 .card .pills { display: flex; gap: 5px; flex-wrap: wrap; }
 .card .foot2 { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; margin-top: auto; flex-wrap: wrap; }
+/* stars: a card's star sits outside its link, over the top right corner */
+.cardwrap { position: relative; display: flex; min-width: 0; }
+.cardwrap > .card { flex: 1 1 auto; }
+.cardwrap > .starslot { position: absolute; top: 10px; right: 10px; }
+.cardwrap:has(.star) > .card .vendor { padding-right: 66px; }
+.starslot { display: inline-flex; }
+.libhead .actions .starslot { align-self: center; }
+.star { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 3px 10px 3px 8px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--charcoal); font-size: 13px; font-weight: 600; line-height: 1; cursor: pointer; }
+.star:hover { border-color: var(--orange); }
+.star svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.star.on { border-color: #F2C46B; background: #FFF6E3; color: #7A4F00; }
+.star.on svg { fill: var(--orange); stroke: var(--orange); }
+.sortpick { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.sortsel { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; font-size: 14px; background: #fff; color: var(--ink); }
+.sortsel:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 2px #E6E3FE; }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13.5px; }
 
 /* playbooks and connectors */

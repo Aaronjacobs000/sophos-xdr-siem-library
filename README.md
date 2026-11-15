@@ -22,11 +22,11 @@ This repo was called sophos-ngsiem-parser-studio until October 2026. Links to th
 
 The lint checks syntax and directives, documented functions and their arguments, every `$` field against the destination schema, sub-fields against their types, enum values, regex patterns that Go's RE2 engine rejects, DATETIME layouts, and confirm strings that overlap a parser in the library. Each schema page on docs.sophos.com is linked from the map step.
 
-Mapping is rules only. There is no AI service and no backend.
+Mapping is rules only. There is no AI service, and the studio has no backend.
 
 ## Privacy
 
-Everything runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page counts visits with [GoatCounter](https://www.goatcounter.com/), an open-source counter that uses no cookies. It sends the route you open, such as `/parsers/vendor/product`, and on the first page the site that linked you there, and nothing you type or paste. GoatCounter works out the country from the IP address and doesn't keep the address or browser details. The page's content security policy only lets it fetch from the site itself, to read the library, and send those counts to GoatCounter. The site never connects to a Sophos Fusion tenant.
+Everything but the stars runs in the browser tab. Your samples are never uploaded and never written to browser storage. The page counts visits with [GoatCounter](https://www.goatcounter.com/), an open-source counter that uses no cookies. It sends the route you open, such as `/parsers/vendor/product`, and on the first page the site that linked you there, and nothing you type or paste. GoatCounter works out the country from the IP address and doesn't keep the address or browser details. A star sends only the entry's id to the library's star API, [library-api/](library-api/), which the page also asks for the star and view counts. The API keeps a salted one-way hash of the IP address, never the address, so each address stars an entry once, and the browser remembers your stars with no sign-in or cookie. The page's content security policy only lets it fetch from the site itself, to read the library, send those counts to GoatCounter, and reach the star API. The site never connects to a Sophos Fusion tenant.
 
 ## The emulator and its limits
 
@@ -142,6 +142,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | `connectors/` | Custom connectors, and the allowlist of the hosts they may call. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `chat-bridge/` | The Cloudflare Worker that carries Teams and Slack replies back to Sophos Fusion cases. Its tests are `test/chat-bridge.test.mjs`. |
+| `library-api/` | The Cloudflare Worker behind the site's stars and its Most viewed sort. Its tests are `test/library-api.test.mjs`. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
 | `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, the review label, and the Pages deploy. |
