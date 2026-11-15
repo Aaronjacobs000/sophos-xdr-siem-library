@@ -6,10 +6,11 @@ Cleans up a taken-over Microsoft 365 account in one run, and records the inbox r
 
 | Step | How |
 | --- | --- |
+| Take the password away from the attacker | Reset it to a random one that nobody sees. The user gets a new one from your helpdesk or self-service password reset |
 | End the attacker's sessions | Revoke sign-in sessions |
-| Make the user set a new password | Require a password change at the next sign-in. It doesn't change the password itself, so whoever signs in next with it sets the new one; MFA is what stops an attacker there |
+| Make the user set a new password | Require a password change at the next sign-in |
 | Remove the usual persistence | Turn off inbox rules that forward, redirect or delete mail |
-| Raise the user's risk in Entra ID Protection | Confirm compromised, which needs Entra ID P2 |
+| Raise the user's risk in Entra ID Protection | Confirm compromised. It needs Entra ID P2; without it the playbook skips this step and says so on the case |
 | Lock the account, if you want that | Disable account, off by default |
 | Show what changed | A case comment with the inbox rules before and after |
 
