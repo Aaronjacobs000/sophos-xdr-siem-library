@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_SophosEndpoint_TamperProtectionPasswords
-version: 1.0.0
+version: 1.0.1
 title: Sophos Endpoint tamper protection passwords (unofficial)
 description: Gives every device in the groups you list a new tamper protection password, and turns tamper protection back on where it's off, after an admin account is compromised. It starts in dry run, which only comments with what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -22,7 +22,7 @@ documentation: |
     | Device groups | IDs of the device groups whose devices get a new password, up to 50 | None |
     | Turn tamper protection on | Also turn it on for devices where it's off | On |
     | Most devices per run | A run that finds more devices changes none | 25 |
-changeNotes: First version
+changeNotes: The read-back runs with nolog, so the execution log no longer records the tamper protection passwords Sophos sends back.
 tags:
     - Type:Response
 connectorCategories:
@@ -210,9 +210,11 @@ dsl:
             changed: []
             unchanged: []
           for:
+            # Sophos answers with the device's password and its earlier ones. The connector leaves them out of the outputs, but the execution log records each response body, so nolog keeps this task out of it.
             - name: read_tp
               action: Unofficial_SophosEndpoint.getTamperProtection
               optional: true
+              nolog: true
               retry: 2
               inputs:
                 endpoint_id: readback.value.id

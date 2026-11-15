@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Slack_CaseChatSync
-version: 1.0.2
+version: 1.0.3
 title: Slack case chat sync (unofficial)
 description: Posts a message to a Slack channel when a case is created or its status, severity, assignee or title changes, or someone comments. With the library's chat bridge, its buttons set the case status or add a comment from Slack. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -29,7 +29,7 @@ documentation: |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Two-way buttons | Add the status, close and comment buttons; needs the chat bridge as the Slack app's interactivity URL | Off |
     | Status buttons | Comma-separated case status names to offer as buttons | active,awaiting_action |
-changeNotes: Simple HTML such as <b> in a comment shows as plain text instead of raw tags, and each table row, Markdown or HTML, shows as one line of header and value pairs.
+changeNotes: The post to Slack runs with nolog, so the execution log no longer records the incoming webhook URL.
 tags:
     - Type:Notification
 connectorCategories:
@@ -232,10 +232,12 @@ dsl:
                 ] +
                 (card.variables.comment_text != '' ? [{'type': 'section', 'text': {'type': 'plain_text', 'text': card.variables.comment_text}}] : []) +
                 (size(build.variables.buttons) > 0 ? [{'type': 'actions', 'block_id': 'fusion_case', 'elements': build.variables.buttons}] : [])
+        # The execution log records each request's URL, which here is the incoming webhook URL and works as its key, so nolog keeps this task's request out of it.
         - name: post
           condition: "decide.variables.skip == ''"
           action: Taegis.SalesforceSlack.sendMessage
           optional: true
+          nolog: true
           retry: 2
           inputs:
             request_body:
