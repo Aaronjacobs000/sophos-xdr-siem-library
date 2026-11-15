@@ -1,0 +1,590 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_Phishing_Triage_Purge
+version: 1.0.0
+title: Phishing triage and purge (unofficial)
+description: For a phishing email, finds its copies in your Microsoft 365 mailboxes, checks the sender, the authentication results and the links, moves each copy out of the users' folders and records the triage and the mailbox list on the case. Run it from a case whose detections name the email, or by hand with the email's Internet message ID. It never deletes mail, and it starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs from a case, on a new case from an automatic case rule, or by hand with the Internet message ID of the email. From a case it takes the Internet message ID, the sender and the recipients from the email detections in the case: Microsoft Defender for Office 365 alerts, Sophos Email and other email gateway detections carry them. Sophos doesn't make, maintain or support this playbook.
+
+    It searches the mailboxes named on the email and in the detections, every mailbox in your domains (up to 100 per domain), and the recipients Microsoft Defender advanced hunting finds where the tenant has it. Then it reads one copy and checks the sender, Reply-To, SPF, DKIM, DMARC, Microsoft's spam verdict, attachments and link domains. It moves every copy to the folder you choose, by default Recoverable Items, which takes it out of the user's folders and leaves it recoverable. It reads the mailboxes again afterwards and comments on the case with the triage, each mailbox and what is left.
+
+    It doesn't block the sender, detonate links or delete anything. The comment names the sender so you can block them with Block Email Address or in the Tenant Allow/Block List.
+
+    # Safety
+    - Dry run is on until you turn it off. In dry run the playbook searches, reads one copy and records what it would move, and moves nothing.
+    - It only searches and moves mail in mailboxes whose address is in a domain you list. With no domains set, it does nothing.
+    - It never touches a mailbox on Excluded mailboxes, or the sender's own mailbox.
+    - A run that finds copies in more mailboxes than Max mailboxes per run moves none of them.
+    - A case whose detections name more than one email moves nothing; run it by hand on each.
+    - By default it acts only on self-managed cases, never on cases Sophos MDR manages.
+    - Rollback: users get a copy back from Recoverable Items with Recover Deleted Items in Outlook, or an admin moves it back. Copies moved to Deleted Items or Junk Email can be moved back by hand.
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Only record what the playbook would do | On |
+    | Domains | Mailbox domains in scope | None |
+    | Excluded mailboxes | Mailboxes never to search or change | None |
+    | Move copies to | Recoverable Items, Deleted Items or Junk Email | Recoverable Items |
+    | Search every mailbox in Domains | Also search each mailbox in your domains, up to 100 per domain | On |
+    | Search with Defender advanced hunting | Find the recipients in Microsoft Defender's EmailEvents table, where the tenant has it | On |
+    | Max mailboxes per run | A run with copies in more mailboxes moves none | 20 |
+    | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
+    | Internet message ID | Run by hand: the email's Message-ID header | None |
+    | Case | Run by hand: the case to record the outcome on | None |
+    | Mailboxes to search | Run by hand: mailboxes that hold a copy, such as the person who reported it | None |
+changeNotes: First version
+tags:
+    - Category:Email
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.MicrosoftGraphAPI:2.12.2
+    - Taegis.Case:1.0.5
+    - Taegis.Alert:1.3.6
+playbooks:
+    - Taegis.Wait_For_Case_Processing:1.0.0
+    - Taegis.GetCaseDetections:1.0.0
+triggerHints:
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Phishing triage and purge (unofficial)
+    - isProactiveResponse: false
+      type: generic
+      config:
+        usage: other
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Create
+        source: case
+        filter: "caseManagedBy(inputs) == 'CUSTOMER' && caseTitle(inputs).startsWith('Phishing')"
+inputs:
+    properties:
+        configuration:
+            properties:
+                destination:
+                    default: recoverableitemsdeletions
+                    description: Where each copy goes. recoverableitemsdeletions is Recoverable Items, which the user doesn't see in their folders and can recover with Recover Deleted Items in Outlook. deleteditems is Deleted Items and junkemail is Junk Email, which the user still sees.
+                    enum:
+                        - recoverableitemsdeletions
+                        - deleteditems
+                        - junkemail
+                    title: Move copies to
+                    type: string
+                domains:
+                    description: Mailbox domains in scope, such as example.com. A mailbox in any other domain is never searched or changed. With none, the playbook does nothing.
+                    items:
+                        type: string
+                    title: Domains
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would move. Turn it off after you've read a test run.
+                    title: Dry run
+                    type: boolean
+                excluded_mailboxes:
+                    description: Mailbox addresses the playbook never searches or changes, such as a report mailbox you keep as evidence
+                    items:
+                        type: string
+                    title: Excluded mailboxes
+                    type: array
+                include_sophos_managed:
+                    default: false
+                    description: When on, the playbook also acts on cases Sophos MDR manages. Leave it off unless you've agreed it with the Sophos MDR team.
+                    title: Include Sophos-managed cases
+                    type: boolean
+                max_mailboxes:
+                    default: 20
+                    description: If a run finds copies in more mailboxes than this, it moves none of them and lists them on the case.
+                    title: Max mailboxes per run
+                    type: integer
+                search_directory:
+                    default: true
+                    description: Also search every mailbox whose address is in Domains, up to the first 100 per domain, so copies sent by Bcc or to a group are found. The comment says when a domain has more.
+                    title: Search every mailbox in Domains
+                    type: boolean
+                use_hunting:
+                    default: true
+                    description: Also find the recipients in Microsoft Defender advanced hunting (the EmailEvents table, last 30 days). It needs Microsoft Defender for Office 365 Plan 2 or Microsoft 365 E5 and the ThreatHunting.Read.All permission. Without them the playbook says so and searches the other mailboxes.
+                    title: Search with Defender advanced hunting
+                    type: boolean
+            required:
+                - domains
+            title: Playbook settings
+            type: object
+        message:
+            properties:
+                case_id:
+                    description: For a run by hand. The case to record the outcome on, as its short ID such as CSE00042 or its full ID. Leave it blank in the configured playbook.
+                    title: Case
+                    type: string
+                internet_message_id:
+                    description: For a run by hand. The email's Internet message ID, its Message-ID header, such as <abc123@mail.example.com>. Leave it blank in the configured playbook.
+                    title: Internet message ID
+                    type: string
+                mailboxes:
+                    description: For a run by hand. Mailboxes that hold a copy, such as the person who reported it. Optional.
+                    items:
+                        type: string
+                    title: Mailboxes to search
+                    type: array
+            title: Email, for a run by hand
+            type: object
+    type: object
+outputs:
+    properties:
+        case_id:
+            description: The case the outcome was recorded on, or empty
+            type: string
+        internet_message_id:
+            description: The Internet message ID the playbook searched for, or empty
+            type: string
+        mailboxes:
+            description: Each mailbox with a copy, with the number of copies, the result (moved, would move, left or failed) and the copies left afterwards
+            type: array
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        triage:
+            description: What the playbook found on the email, one line each
+            type: array
+    type: object
+dsl:
+    name: Unofficial_Phishing_Triage_Purge
+    description: Finds a phishing email's copies in the mailboxes in your domains, triages one copy and moves every copy to Recoverable Items or another folder you choose, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        case_id: target.variables.case_id
+        internet_message_id: msg.variables.mid
+        mailboxes: report.variables.mailboxes
+        status: finish.variables.status
+        triage: report.variables.triage
+    tasks:
+        # The settings, and whether a case or a run by hand started the playbook.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
+            excluded: "inputs.?configuration.excluded_mailboxes.orValue([]).map(m, string(m).trim().toLower()).filter(m, m != '')"
+            destination: "string(inputs.?configuration.destination.orValue('recoverableitemsdeletions')).trim().toLower() in ['recoverableitemsdeletions', 'deleteditems', 'junkemail'] ? string(inputs.?configuration.destination.orValue('recoverableitemsdeletions')).trim().toLower() : 'recoverableitemsdeletions'"
+            directory: "inputs.?configuration.search_directory.orValue(true)"
+            hunting: "inputs.?configuration.use_hunting.orValue(true)"
+            max_mailboxes: "int(inputs.?configuration.max_mailboxes.orValue(20)) < 1 ? 1 : int(inputs.?configuration.max_mailboxes.orValue(20))"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            manual_id: "has(inputs, 'message.internet_message_id') && type(inputs.message.internet_message_id) == type('') ? inputs.message.internet_message_id.trim() : ''"
+            manual_case: "has(inputs, 'message.case_id') && type(inputs.message.case_id) == type('') ? inputs.message.case_id.trim() : ''"
+            manual_mailboxes: "has(inputs, 'message.mailboxes') && type(inputs.message.mailboxes) == type([]) ? inputs.message.mailboxes.map(m, string(m).trim().toLower()).filter(m, m.contains('@')) : []"
+            case_id: "type(caseId(inputs)) == type('') ? caseId(inputs) : ''"
+            tenant_id: "type(caseTenantId(inputs)) == type('') && caseTenantId(inputs) != '' ? caseTenantId(inputs) : string(TDR.tenant)"
+        - name: start
+          let:
+            source: "setup.variables.case_id != '' ? 'case' : setup.variables.manual_id != '' ? 'manual' : ''"
+            short_id: "setup.variables.case_id == '' && setup.variables.manual_case.upperAscii().startsWith('CSE')"
+        # A run by hand can name its case by short ID, such as CSE00042.
+        - name: find_case
+          condition: "start.variables.source == 'manual' && start.variables.short_id"
+          action: Taegis.Case.searchCustom
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            arguments: "{'query': 'shortId = \\'' + setup.variables.manual_case.upperAscii().replace('\\'', '') + '\\''}"
+            fields: 'id'
+        - name: case_ref
+          let:
+            id: >-
+                start.variables.source == 'case' ? setup.variables.case_id :
+                start.variables.source != 'manual' || setup.variables.manual_case == '' ? '' :
+                start.variables.short_id ? (has(find_case, 'outputs.cases') && type(find_case.outputs.cases) == type([]) && size(find_case.outputs.cases) > 0 && has(find_case.outputs.cases[0], 'id') ? string(find_case.outputs.cases[0].id) : '') :
+                setup.variables.manual_case
+        - name: fetch_case
+          condition: "case_ref.variables.id != ''"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: case_ref.variables.id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Stop before any mailbox call when there's nothing in scope.
+        - name: check
+          let:
+            stop: >-
+                start.variables.source == '' ? 'The playbook ran without a case or an Internet message ID, so it did nothing.' :
+                size(setup.variables.domains) == 0 ? 'No domains are set, so no mailbox is in scope.' :
+                start.variables.source == 'manual' && setup.variables.manual_case != '' && case_ref.variables.id == '' ? 'The case ' + setup.variables.manual_case + ' was not found, so nothing was done.' :
+                case_ref.variables.id != '' && !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was done.' :
+                case_ref.variables.id != '' && has(fetch_case, 'outputs.case.primaryStatus.isClosed') && fetch_case.outputs.case.primaryStatus.isClosed == true ? 'The case is closed, so nothing was done.' :
+                case_ref.variables.id != '' && !setup.variables.sophos_managed && (has(fetch_case, 'outputs.case.managedBy') ? string(fetch_case.outputs.case.managedBy) : '') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was done. Include Sophos-managed cases is off.' : ''
+        # Case run: wait until the case's detections are attached, then read them with their events.
+        - name: wait_case
+          condition: "check.variables.stop == '' && start.variables.source == 'case'"
+          exec: Taegis.Wait_For_Case_Processing
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            sleep_time: '10s'
+            states:
+                - 'detections'
+        - name: case_detections
+          condition: "check.variables.stop == '' && start.variables.source == 'case'"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id metadata { title } entities { entities } event_ids { event_data }'
+            limit: 200
+        # The email events in the case's detections: each has message_id, from_email_address, to_email_address and cc_email_address.
+        - name: evidence
+          let:
+            detections: "check.variables.stop == '' && start.variables.source == 'case' && has(case_detections, 'outputs.detections') && type(case_detections.outputs.detections) == type([]) ? case_detections.outputs.detections : []"
+        - name: emails
+          let:
+            events: "flatten(evidence.variables.detections.map(d, has(d, 'event_ids') && type(d.event_ids) == type([]) ? d.event_ids.map(e, has(e, 'event_data') ? e.event_data : {}) : [])).filter(e, has(e, 'message_id') && type(e.message_id) == type('') && e.message_id.trim() != '')"
+            entities: "flatten(evidence.variables.detections.map(d, detectionEntities(d))).filter(e, type(e) == type(''))"
+        - name: msg
+          let:
+            ids: >-
+                check.variables.stop != '' ? [] :
+                unique((start.variables.source == 'manual' ? [setup.variables.manual_id] : emails.variables.events.map(e, e.message_id))
+                .map(m, '<' + m.trim().replace('<', '').replace('>', '') + '>').filter(m, m != '<>'))
+            mid: >-
+                check.variables.stop != '' ? '' :
+                (start.variables.source == 'manual' ? [setup.variables.manual_id] : emails.variables.events.map(e, e.message_id))
+                .map(m, '<' + m.trim().replace('<', '').replace('>', '') + '>').filter(m, m != '<>')[?0].orValue('')
+            named: >-
+                unique((setup.variables.manual_mailboxes +
+                flatten(emails.variables.events.map(e, (has(e, 'to_email_address') && type(e.to_email_address) == type([]) ? e.to_email_address : []) + (has(e, 'cc_email_address') && type(e.cc_email_address) == type([]) ? e.cc_email_address : []))) +
+                emails.variables.entities.filter(e, e.lowerAscii().startsWith('toemailaddress:') || e.lowerAscii().startsWith('username:')).map(e, e.substring(e.indexOf(':') + 1)))
+                .map(m, string(m).trim().toLower()).filter(m, m.contains('@')))
+            senders: >-
+                unique((flatten(emails.variables.events.map(e, has(e, 'from_email_address') && type(e.from_email_address) == type([]) ? e.from_email_address : [])) +
+                emails.variables.entities.filter(e, e.lowerAscii().startsWith('fromemailaddress:')).map(e, e.substring(e.indexOf(':') + 1)))
+                .map(m, string(m).trim().toLower()).filter(m, m.contains('@')))
+        - name: gate1
+          let:
+            problem: >-
+                check.variables.stop != '' ? '' :
+                size(msg.variables.ids) == 0 ? 'No email detection in the case names an Internet message ID, so nothing was done. Run the playbook by hand with the email\'s Internet message ID.' :
+                size(msg.variables.ids) > 1 ? 'The case\'s detections name ' + string(size(msg.variables.ids)) + ' emails and a run acts on one, so nothing was done: ' + msg.variables.ids.join(', ') + '. Run the playbook by hand on each.' : ''
+            go: "check.variables.stop == '' && size(msg.variables.ids) == 1"
+            query_id: "msg.variables.mid.replace('\\'', '\\'\\'').toURLQuery()"
+            kql_id: "msg.variables.mid.replace('\"', '').replace('\\\\', '')"
+        # Defender advanced hunting knows every recipient. Without Defender for Office 365 Plan 2 or E5 it refuses, and the playbook carries on without it.
+        - name: hunt
+          condition: "gate1.variables.go && setup.variables.hunting"
+          action: Taegis.MicrosoftGraphAPI.runHuntingQuery
+          optional: true
+          inputs:
+            query: "'EmailEvents | where Timestamp > ago(30d) | where InternetMessageId == \"' + gate1.variables.kql_id + '\" | distinct RecipientEmailAddress | take 500'"
+            timespan: "'P30D'"
+        - name: hunted
+          let:
+            list: "has(hunt, 'outputs.results') && type(hunt.outputs.results) == type([]) ? hunt.outputs.results.map(r, has(r, 'RecipientEmailAddress') ? string(r.RecipientEmailAddress).trim().toLower() : '').filter(m, m.contains('@')) : []"
+            error: "!has(hunt, 'outputs.results') && has(hunt, 'status.error') ? (type(hunt.status.error) == type('') ? hunt.status.error : toString(hunt.status.error)) : ''"
+        # Every mailbox in each domain on Domains. Microsoft Graph returns the first 100 per domain.
+        - name: directory
+          condition: "gate1.variables.go && setup.variables.directory"
+          range: setup.variables.domains
+          variables:
+            found: []
+            notes: []
+          for:
+            - name: dir_search
+              action: Taegis.MicrosoftGraphAPI.searchUser
+              optional: true
+              retry: 1
+              inputs:
+                filter: "'endsWith(mail,\\'@' + directory.value + '\\')'"
+                select: "'id,mail'"
+            - name: dir_add
+              let:
+                found: "directory.variables.found + (has(dir_search, 'outputs.value') && type(dir_search.outputs.value) == type([]) ? dir_search.outputs.value.map(u, has(u, 'mail') && type(u.mail) == type('') ? u.mail.trim().toLower() : '').filter(m, m.contains('@')) : [])"
+                notes: >-
+                    !has(dir_search, 'outputs.value') ? append(directory.variables.notes, 'The mailboxes in ' + directory.value + ' could not be listed: ' + (type(dir_search.status.error) == type('') ? dir_search.status.error : toString(dir_search.status.error))) :
+                    has(dir_search, 'outputs.value') && type(dir_search.outputs.value) == type([]) && '@odata.count' in dir_search.outputs && int(dir_search.outputs['@odata.count']) > size(dir_search.outputs.value) ? append(directory.variables.notes, directory.value + ' has ' + string(dir_search.outputs['@odata.count']) + ' mailboxes and only the first ' + string(size(dir_search.outputs.value)) + ' were searched.') :
+                    directory.variables.notes
+        - name: scope
+          let:
+            listed: "has(directory, 'variables.found') ? directory.variables.found : []"
+            dir_notes: "has(directory, 'variables.notes') ? directory.variables.notes : []"
+        - name: scope2
+          let:
+            all: "unique(msg.variables.named + hunted.variables.list + scope.variables.listed)"
+        - name: scope3
+          let:
+            in_scope: "gate1.variables.go ? scope2.variables.all.filter(m, setup.variables.domains.exists(d, m.endsWith('@' + d)) && !(m in setup.variables.excluded)) : []"
+            outside: "gate1.variables.go ? scope2.variables.all.filter(m, !setup.variables.domains.exists(d, m.endsWith('@' + d))) : []"
+            excluded: "gate1.variables.go ? scope2.variables.all.filter(m, setup.variables.domains.exists(d, m.endsWith('@' + d)) && m in setup.variables.excluded) : []"
+        # Search each mailbox for the email, in every folder.
+        - name: search
+          condition: "gate1.variables.go && size(scope3.variables.in_scope) > 0"
+          range: scope3.variables.in_scope
+          variables:
+            hits: []
+            misses: []
+          for:
+            - name: lookup
+              action: Taegis.MicrosoftGraphAPI.getMessageByInternetMessageId
+              optional: true
+              retry: 1
+              inputs:
+                id: search.value
+                internetMessageId: gate1.variables.query_id
+                operator: "'eq'"
+                select: "'id,subject,receivedDateTime,parentFolderId,from,toRecipients,ccRecipients'"
+            - name: lookup_add
+              let:
+                hits: "has(lookup, 'outputs.message.value') && type(lookup.outputs.message.value) == type([]) && size(lookup.outputs.message.value) > 0 ? append(search.variables.hits, {'mailbox': search.value, 'copies': lookup.outputs.message.value}) : search.variables.hits"
+                misses: "!has(lookup, 'outputs.message.value') && has(lookup, 'status.error') ? append(search.variables.misses, search.value) : search.variables.misses"
+        # The email's own To and Cc lines can name mailboxes the first pass didn't search.
+        - name: first
+          let:
+            hits: "has(search, 'variables.hits') ? search.variables.hits : []"
+            misses: "has(search, 'variables.misses') ? search.variables.misses : []"
+        - name: more
+          let:
+            list: >-
+                unique(flatten(flatten(first.variables.hits.map(h, h.copies.map(c, (has(c, 'toRecipients') && type(c.toRecipients) == type([]) ? c.toRecipients : []) + (has(c, 'ccRecipients') && type(c.ccRecipients) == type([]) ? c.ccRecipients : []))))
+                .map(r, has(r, 'emailAddress.address') ? [string(r.emailAddress.address).trim().toLower()] : [])))
+                .filter(m, m.contains('@') && setup.variables.domains.exists(d, m.endsWith('@' + d)) && !(m in setup.variables.excluded) && !(m in scope3.variables.in_scope))
+        - name: search_more
+          condition: "gate1.variables.go && size(more.variables.list) > 0"
+          range: more.variables.list
+          variables:
+            hits: []
+            misses: []
+          for:
+            - name: lookup_more
+              action: Taegis.MicrosoftGraphAPI.getMessageByInternetMessageId
+              optional: true
+              retry: 1
+              inputs:
+                id: search_more.value
+                internetMessageId: gate1.variables.query_id
+                operator: "'eq'"
+                select: "'id,subject,receivedDateTime,parentFolderId,from,toRecipients,ccRecipients'"
+            - name: lookup_more_add
+              let:
+                hits: "has(lookup_more, 'outputs.message.value') && type(lookup_more.outputs.message.value) == type([]) && size(lookup_more.outputs.message.value) > 0 ? append(search_more.variables.hits, {'mailbox': search_more.value, 'copies': lookup_more.outputs.message.value}) : search_more.variables.hits"
+                misses: "!has(lookup_more, 'outputs.message.value') && has(lookup_more, 'status.error') ? append(search_more.variables.misses, search_more.value) : search_more.variables.misses"
+        - name: found
+          let:
+            hits: "first.variables.hits + (has(search_more, 'variables.hits') ? search_more.variables.hits : [])"
+            misses: "first.variables.misses + (has(search_more, 'variables.misses') ? search_more.variables.misses : [])"
+            searched: "size(scope3.variables.in_scope) + size(more.variables.list)"
+        # The sender, from the detections or the first copy found. The sender's own mailbox holds the sent copy and is left alone.
+        - name: sender
+          let:
+            address: >-
+                size(msg.variables.senders) > 0 ? msg.variables.senders[0] :
+                size(found.variables.hits) > 0 && has(found.variables.hits[0].copies[0], 'from.emailAddress.address') ? string(found.variables.hits[0].copies[0].from.emailAddress.address).trim().toLower() : ''
+        - name: plan
+          let:
+            hits: "found.variables.hits.filter(h, h.mailbox != sender.variables.address)"
+            sender_hit: "found.variables.hits.exists(h, h.mailbox == sender.variables.address)"
+        - name: plan2
+          let:
+            copies: "flatten(plan.variables.hits.map(h, h.copies.map(c, {'mailbox': h.mailbox, 'id': string(c.id)})))"
+            triage_from: "size(plan.variables.hits) > 0 ? plan.variables.hits[0] : size(found.variables.hits) > 0 ? found.variables.hits[0] : {}"
+        # Triage: read one copy with its headers and body.
+        - name: triage_read
+          condition: "gate1.variables.go && has(plan2.variables.triage_from, 'mailbox')"
+          action: Taegis.MicrosoftGraphAPI.getMessage
+          optional: true
+          retry: 1
+          inputs:
+            id: plan2.variables.triage_from.mailbox
+            messageId: string(plan2.variables.triage_from.copies[0].id)
+            select: "'subject,from,sender,replyTo,hasAttachments,internetMessageHeaders,body'"
+        - name: mail
+          let:
+            read: "has(triage_read, 'outputs.message.id')"
+            subject: "has(triage_read, 'outputs.message.subject') ? string(triage_read.outputs.message.subject) : ''"
+            from: "has(triage_read, 'outputs.message.from.emailAddress.address') ? string(triage_read.outputs.message.from.emailAddress.address).trim().toLower() : ''"
+            from_name: "has(triage_read, 'outputs.message.from.emailAddress.name') ? string(triage_read.outputs.message.from.emailAddress.name) : ''"
+            sent_by: "has(triage_read, 'outputs.message.sender.emailAddress.address') ? string(triage_read.outputs.message.sender.emailAddress.address).trim().toLower() : ''"
+            reply_to: "has(triage_read, 'outputs.message.replyTo') && type(triage_read.outputs.message.replyTo) == type([]) ? triage_read.outputs.message.replyTo.map(r, has(r, 'emailAddress.address') ? string(r.emailAddress.address).trim().toLower() : '').filter(m, m != '') : []"
+            attachments: "has(triage_read, 'outputs.message.hasAttachments') && triage_read.outputs.message.hasAttachments == true"
+            auth: "has(triage_read, 'outputs.message.internetMessageHeaders') && type(triage_read.outputs.message.internetMessageHeaders) == type([]) ? triage_read.outputs.message.internetMessageHeaders.filter(h, has(h, 'name') && string(h.name).lowerAscii() == 'authentication-results').map(h, has(h, 'value') ? string(h.value).lowerAscii() : '').join(' ') : ''"
+            antispam: "has(triage_read, 'outputs.message.internetMessageHeaders') && type(triage_read.outputs.message.internetMessageHeaders) == type([]) ? triage_read.outputs.message.internetMessageHeaders.filter(h, has(h, 'name') && string(h.name).lowerAscii() == 'x-forefront-antispam-report').map(h, has(h, 'value') ? string(h.value).lowerAscii() : '').join(';') : ''"
+            body: "has(triage_read, 'outputs.message.body.content') ? string(triage_read.outputs.message.body.content) : ''"
+        # The link hosts in the body. Safe Links rewrites each link to a Microsoft address with the real one in url=.
+        - name: links
+          let:
+            hosts: >-
+                take(unique(mail.variables.body.split('href=').map(p, p.trim()).filter(p, p.startsWith('"http') || p.startsWith('\'http')).map(p, p.substring(1))
+                .map(u, u.lowerAscii().contains('.safelinks.protection.outlook.') && u.contains('url=') ? u.split('url=')[1].replace('%3A', ':').replace('%3a', ':').replace('%2F', '/').replace('%2f', '/') : u)
+                .map(u, u.split('/')).filter(parts, size(parts) > 2)
+                .map(parts, parts[2].split('"')[0].split('\'')[0].split('&')[0].split('?')[0].split(':')[0].lowerAscii()).filter(h, h != '')), 10)
+        - name: verdict
+          let:
+            spf: "mail.variables.auth.contains('spf=') ? mail.variables.auth.split('spf=')[1].split(' ')[0].split(';')[0] : 'none'"
+            dkim: "mail.variables.auth.contains('dkim=') ? mail.variables.auth.split('dkim=')[1].split(' ')[0].split(';')[0] : 'none'"
+            dmarc: "mail.variables.auth.contains('dmarc=') ? mail.variables.auth.split('dmarc=')[1].split(' ')[0].split(';')[0] : 'none'"
+            compauth: "mail.variables.auth.contains('compauth=') ? mail.variables.auth.split('compauth=')[1].split(' ')[0].split(';')[0] : ''"
+            scl: "mail.variables.antispam.contains('scl:') ? mail.variables.antispam.split('scl:')[1].split(';')[0].trim() : ''"
+            category: "mail.variables.antispam.contains('cat:') ? mail.variables.antispam.split('cat:')[1].split(';')[0].trim().upperAscii() : ''"
+            external: "mail.variables.from != '' && !setup.variables.domains.exists(d, mail.variables.from.endsWith('@' + d))"
+            reply_differs: "mail.variables.reply_to.exists(r, r.split('@')[size(r.split('@')) - 1] != mail.variables.from.split('@')[size(mail.variables.from.split('@')) - 1])"
+            sender_differs: "mail.variables.sent_by != '' && mail.variables.from != '' && mail.variables.sent_by != mail.variables.from"
+        - name: flags
+          let:
+            list: >-
+                (verdict.variables.spf in ['fail', 'softfail'] ? ['SPF ' + verdict.variables.spf] : []) +
+                (verdict.variables.dkim == 'fail' ? ['DKIM fail'] : []) +
+                (verdict.variables.dmarc in ['fail', 'temperror', 'permerror'] ? ['DMARC ' + verdict.variables.dmarc] : []) +
+                (verdict.variables.compauth == 'fail' ? ['composite authentication fail'] : []) +
+                (verdict.variables.category in ['PHSH', 'HPHSH', 'HPHISH', 'SPOOF', 'MALW', 'GIMP', 'UIMP', 'DIMP'] ? ['Microsoft category ' + verdict.variables.category] : []) +
+                (verdict.variables.reply_differs ? ['Reply-To goes to another domain'] : []) +
+                (verdict.variables.sender_differs ? ['sent on behalf of another address'] : [])
+        - name: triage
+          let:
+            lines: >-
+                !gate1.variables.go || size(found.variables.hits) == 0 ? [] :
+                !mail.variables.read ? ['The copy could not be read for triage: ' + (has(triage_read, 'status.error') ? (type(triage_read.status.error) == type('') ? triage_read.status.error : toString(triage_read.status.error)) : 'no reply from Microsoft Graph')] :
+                ['Subject: ' + mail.variables.subject] +
+                ['From: ' + (mail.variables.from_name != '' ? mail.variables.from_name + ' <' + mail.variables.from + '>' : mail.variables.from) + (verdict.variables.external ? ', outside your domains' : ', inside your domains')] +
+                (size(mail.variables.reply_to) > 0 ? ['Reply-To: ' + mail.variables.reply_to.join(', ')] : []) +
+                (verdict.variables.sender_differs ? ['Sent by: ' + mail.variables.sent_by] : []) +
+                [mail.variables.auth == '' ? 'Authentication: no Authentication-Results header' : 'Authentication: SPF ' + verdict.variables.spf + ', DKIM ' + verdict.variables.dkim + ', DMARC ' + verdict.variables.dmarc + (verdict.variables.compauth != '' ? ', composite ' + verdict.variables.compauth : '')] +
+                (verdict.variables.scl != '' || verdict.variables.category != '' ? ['Microsoft filtering: SCL ' + (verdict.variables.scl != '' ? verdict.variables.scl : 'none') + (verdict.variables.category != '' ? ', category ' + verdict.variables.category : '')] : []) +
+                ['Attachments: ' + (mail.variables.attachments ? 'yes' : 'none')] +
+                [size(links.variables.hosts) > 0 ? 'Links to: ' + links.variables.hosts.join(', ') : 'Links: none found in the body'] +
+                [size(flags.variables.list) > 0 ? 'Red flags: ' + flags.variables.list.join(', ') : 'Red flags: none in the headers; check the links and the content']
+        # Stop when there are copies in more mailboxes than the limit.
+        - name: gate2
+          let:
+            problem: >-
+                !gate1.variables.go ? '' :
+                size(plan.variables.hits) > setup.variables.max_mailboxes ? 'Found copies in ' + string(size(plan.variables.hits)) + ' mailboxes, more than Max mailboxes per run (' + string(setup.variables.max_mailboxes) + '), so none were moved: ' + plan.variables.hits.map(h, h.mailbox).join(', ') + '. Raise the limit or move them by hand.' : ''
+            go: "gate1.variables.go && size(plan.variables.hits) > 0 && size(plan.variables.hits) <= setup.variables.max_mailboxes"
+        # The tasks that change anything, and only with dry run off.
+        - name: purge
+          condition: "!setup.variables.dry_run && gate2.variables.go && size(plan2.variables.copies) > 0"
+          range: plan2.variables.copies
+          variables:
+            done: []
+          for:
+            - name: move
+              action: Taegis.MicrosoftGraphAPI.moveMessage
+              optional: true
+              retry: 1
+              inputs:
+                id: purge.value.mailbox
+                messageId: purge.value.id
+                destinationId: setup.variables.destination
+            - name: move_done
+              let:
+                done: "append(purge.variables.done, {'mailbox': purge.value.mailbox, 'ok': has(move, 'outputs.outcome') && move.outputs.outcome == 'success', 'error': has(move, 'status.error') ? (type(move.status.error) == type('') ? move.status.error : toString(move.status.error)) : ''})"
+        # Read each mailbox again, so the case shows what is left outside the destination folder.
+        - name: recheck
+          condition: "!setup.variables.dry_run && gate2.variables.go && size(plan.variables.hits) > 0"
+          range: plan.variables.hits
+          variables:
+            left: []
+          for:
+            - name: dest_folder
+              action: Taegis.MicrosoftGraphAPI.getMailFolder
+              optional: true
+              retry: 1
+              inputs:
+                id: recheck.value.mailbox
+                mailFolderId: setup.variables.destination
+            - name: lookup_again
+              action: Taegis.MicrosoftGraphAPI.getMessageByInternetMessageId
+              optional: true
+              retry: 1
+              inputs:
+                id: recheck.value.mailbox
+                internetMessageId: gate1.variables.query_id
+                operator: "'eq'"
+                select: "'id,parentFolderId'"
+            - name: left_add
+              let:
+                left: >-
+                    append(recheck.variables.left, {'mailbox': recheck.value.mailbox,
+                    'read': has(lookup_again, 'outputs.message.value') && type(lookup_again.outputs.message.value) == type([]),
+                    'count': has(lookup_again, 'outputs.message.value') && type(lookup_again.outputs.message.value) == type([]) ? size(lookup_again.outputs.message.value.filter(c, !has(dest_folder, 'outputs.mailFolders.id') || !has(c, 'parentFolderId') || c.parentFolderId != dest_folder.outputs.mailFolders.id)) : 0})
+        - name: outcome
+          let:
+            moved: "has(purge, 'variables.done') ? purge.variables.done : []"
+            left: "has(recheck, 'variables.left') ? recheck.variables.left : []"
+        - name: report
+          let:
+            mailboxes: >-
+                plan.variables.hits.map(h, {
+                  'mailbox': h.mailbox,
+                  'copies': size(h.copies),
+                  'result': setup.variables.dry_run || !gate2.variables.go ? (gate2.variables.go ? 'would move' : 'left') :
+                    outcome.variables.moved.exists(m, m.mailbox == h.mailbox && !m.ok) || outcome.variables.left.exists(l, l.mailbox == h.mailbox && (!l.read || l.count > 0)) ? 'failed' : 'moved',
+                  'left': outcome.variables.left.filter(l, l.mailbox == h.mailbox).map(l, l.read ? l.count : -1)[?0].orValue(-1)
+                })
+            triage: triage.variables.lines
+        - name: folder
+          let:
+            name: "setup.variables.destination == 'recoverableitemsdeletions' ? 'Recoverable Items' : setup.variables.destination == 'deleteditems' ? 'Deleted Items' : 'Junk Email'"
+        - name: text
+          let:
+            from: "start.variables.source == 'case' ? 'Run from the case.' : 'Run by hand on ' + msg.variables.mid + '.'"
+            searched: >-
+                !gate1.variables.go ? [] :
+                ['Searched ' + string(found.variables.searched) + (found.variables.searched == 1 ? ' mailbox' : ' mailboxes') + (setup.variables.directory ? ', including every mailbox listed in your domains' : '') + '.'] +
+                (!setup.variables.hunting ? [] : hunted.variables.error != '' ? ['Defender advanced hunting was not available, so the search went on without it: ' + hunted.variables.error] : ['Defender advanced hunting found ' + string(size(hunted.variables.list)) + ' recipients.']) +
+                scope.variables.dir_notes +
+                (size(found.variables.misses) > 0 ? ['Could not be searched: ' + found.variables.misses.join(', ') + '.'] : []) +
+                (size(scope3.variables.outside) > 0 ? ['Not searched, not in a domain on Domains: ' + scope3.variables.outside.join(', ') + '.'] : []) +
+                (size(scope3.variables.excluded) > 0 ? ['Not searched, on Excluded mailboxes: ' + scope3.variables.excluded.join(', ') + '.'] : []) +
+                (plan.variables.sender_hit ? ['Left alone: the sender\'s own mailbox, ' + sender.variables.address + '.'] : [])
+            copies: >-
+                !gate1.variables.go ? [] :
+                gate2.variables.problem != '' ? [gate2.variables.problem] :
+                size(found.variables.hits) == 0 ? ['No copy was found in the mailboxes searched.'] :
+                size(plan.variables.hits) == 0 ? ['The only copy is in the sender\'s own mailbox, which is left alone.'] :
+                report.variables.mailboxes.map(m, m.mailbox + ': ' + string(m.copies) + (m.copies == 1 ? ' copy, ' : ' copies, ') +
+                  (m.result == 'would move' ? 'would move to ' + folder.variables.name : m.result == 'moved' ? 'moved to ' + folder.variables.name : m.result == 'left' ? 'left in place' :
+                   'moving failed' + (m.left > 0 ? ', ' + string(m.left) + ' left' : m.left < 0 ? ', could not check what is left' : '') +
+                   cel.bind(errs, outcome.variables.moved.filter(x, x.mailbox == m.mailbox && !x.ok && x.error != '').map(x, x.error), size(errs) > 0 ? ' (' + errs[0] + ')' : '')))
+        - name: comment_text
+          let:
+            body: >-
+                check.variables.stop != '' ? '' :
+                '**Phishing triage and purge (automated)**\n' + text.variables.from + '\n\n' +
+                (gate1.variables.problem != '' ? '- ' + gate1.variables.problem :
+                  'Internet message ID: ' + msg.variables.mid +
+                  (size(triage.variables.lines) > 0 ? '\n\n**Triage**\n' + triage.variables.lines.map(l, '- ' + l).join('\n') : '') +
+                  '\n\n**Copies**\n' + text.variables.copies.map(l, '- ' + l).join('\n') +
+                  '\n\n**Search**\n' + text.variables.searched.map(l, '- ' + l).join('\n') +
+                  (sender.variables.address != '' ? '\n\nNext: block ' + sender.variables.address + ' with Block Email Address or in the Tenant Allow/Block List, and check who opened the email or its links.' : '') +
+                  (setup.variables.dry_run && gate2.variables.go ? '\n\nDry run is on, so nothing was moved.' : report.variables.mailboxes.exists(m, m.result == 'moved' || m.result == 'failed') ? '\n\nTo undo: ' + (setup.variables.destination == 'recoverableitemsdeletions' ? 'the user restores the email with Recover Deleted Items in Outlook, or an admin moves it back.' : 'move the email back from ' + folder.variables.name + '.') : ''))
+        - name: target
+          let:
+            case_id: "check.variables.stop == '' && has(fetch_case, 'outputs.case.id') ? string(fetch_case.outputs.case.id) : ''"
+        - name: comment
+          condition: "target.variables.case_id != '' && comment_text.variables.body != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: target.variables.case_id
+            comment: comment_text.variables.body
+        - name: finish
+          let:
+            status: "check.variables.stop == '' && (gate1.variables.problem != '' || gate2.variables.problem != '' || report.variables.mailboxes.exists(m, m.result == 'failed') || (target.variables.case_id != '' && comment_text.variables.body != '' && !has(comment, 'outputs.comment.id'))) ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
+                gate1.variables.problem != '' ? gate1.variables.problem :
+                text.variables.copies.join(' ') + ' ' + text.variables.searched.join(' ') +
+                (target.variables.case_id == '' ? ' No case was given, so the outcome is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')
