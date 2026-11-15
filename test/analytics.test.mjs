@@ -28,13 +28,13 @@ test('count.js is GoatCounter\'s v5 file unchanged, and the page loads it with i
   assert.ok(html.indexOf(tag) < html.indexOf('src="app/main.js"'), 'count.js runs before the page\'s module');
 });
 
-test('the content security policy keeps scripts and images on the site and allows only the count endpoint', async () => {
+test('the content security policy keeps scripts and images on the site and allows only the count endpoint and the star API', async () => {
   const html = await readFile(path.join(ROOT, 'studio/index.html'), 'utf8');
   const csp = Object.fromEntries(/http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)[1]
     .split(';').map((d) => d.trim().split(/\s+/)).map(([k, ...v]) => [k, v.join(' ')]));
   assert.equal(csp['script-src'], "'self'");
   assert.equal(csp['img-src'], "'self' data:");
-  assert.equal(csp['connect-src'], `'self' ${ENDPOINT}`);
+  assert.equal(csp['connect-src'], `'self' ${ENDPOINT} https://library-api.aaronjacobs.dev`);
   assert.equal(Object.values(csp).filter((v) => v.includes('goatcounter')).length, 1);
 });
 

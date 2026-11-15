@@ -27,6 +27,9 @@ async function pool(items, n, fn) {
   return out;
 }
 
+// When the entry was added to the library, as an ISO time, or null when the index doesn't say.
+const added = (e) => (typeof e.added === 'string' && Number.isFinite(Date.parse(e.added)) ? e.added : null);
+
 // Returns {entries, bridges, playbooks, connectors, source: 'site'|'none', at, sha?, error?}.
 // bridges lists each bridges/<name> folder with its file names, and playbooks and connectors each
 // entry's metadata and file names. One request: the index the site build wrote.
@@ -34,9 +37,9 @@ export async function loadLibrary() {
   try {
     const index = JSON.parse(await fetchText(siteUrl('library-index.json')));
     const entries = (index.entries || []).filter((e) => e && e.meta && typeof e.id === 'string')
-      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], vendor: e.meta.vendor, product: e.meta.product, loaded: false }));
+      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], vendor: e.meta.vendor, product: e.meta.product, added: added(e), loaded: false }));
     const automation = (list) => (Array.isArray(list) ? list : []).filter((e) => e && e.meta && typeof e.id === 'string')
-      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], loaded: false }));
+      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], added: added(e), loaded: false }));
     return { entries, bridges: index.bridges || [], playbooks: automation(index.playbooks), connectors: automation(index.connectors), source: 'site', at: index.generated || null, sha: index.commit || null };
   } catch (err) {
     return { entries: [], bridges: [], playbooks: [], connectors: [], source: 'none', at: null, error: err.message };

@@ -67,6 +67,10 @@ test('the site build publishes the index, the entry files and the bridges next t
         for (const f of e.files) assert.ok((await stat(path.join(out, folder, e.id, f))).isFile(), `${folder}/${e.id}/${f}`);
       }
     }
+    // The ids the library API takes: every entry, by section.
+    const ids = JSON.parse(await readFile(path.join(out, 'library-ids.json'), 'utf8'));
+    assert.deepEqual(ids.ids, [...index.entries.map((e) => `parsers/${e.id}`), ...index.playbooks.map((e) => `playbooks/${e.id}`), ...index.connectors.map((e) => `connectors/${e.id}`)]);
+    assert.equal(ids.commit, index.commit);
     // The page itself, with the new name.
     const html = await readFile(path.join(out, 'index.html'), 'utf8');
     assert.match(html, /<title>Unofficial Sophos Fusion XDR and SIEM Library<\/title>/);
