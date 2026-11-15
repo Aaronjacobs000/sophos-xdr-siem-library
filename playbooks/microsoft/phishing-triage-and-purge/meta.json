@@ -1,0 +1,39 @@
+{
+  "title": "Phishing triage and purge",
+  "vendor": "Microsoft",
+  "product": "Exchange Online",
+  "use_case": "When a phishing email is reported or detected, find its copies in your Microsoft 365 mailboxes, check the sender, SPF, DKIM, DMARC, Microsoft's spam verdict and the link domains, move every copy to Recoverable Items, and record the triage and each mailbox on the case.",
+  "trigger": "User Initiated, a Response Action on Case, to run it from a case whose detections name the email. Or a Generic Trigger, to run it by hand with the email's Internet message ID. Or Platform Events, source Case, event Create, with the Only When filter in SETUP.md, for an automatic case rule.",
+  "connections": [
+    "Taegis.MicrosoftGraphAPI 2.12.2, the Microsoft Graph API connector Sophos manages, to list mailboxes, find and read the email, move copies and run the advanced hunting query",
+    "Taegis.Case 1.0.5 and Taegis.Alert 1.3.6, the case and detection connectors Sophos manages, to read the case's detections and add the comment"
+  ],
+  "requires": "Microsoft 365 with Exchange Online mailboxes, a Microsoft Graph API connection with the permissions in SETUP.md, Microsoft Defender for Office 365 Plan 2 or Microsoft 365 E5 for the advanced hunting search (skipped without it), and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and Sophos MDR may already be acting on the same email. A run from a case acts only on self-managed cases unless you turn on Include Sophos-managed cases. Agree an automatic case rule trigger with the Sophos MDR team first.",
+  "rollback": "Users get a copy back from Recoverable Items with Recover Deleted Items in Outlook, or an admin moves it back. Copies moved to Deleted Items or Junk Email can be moved back by hand. The case comment names each mailbox, and nothing is deleted.",
+  "tested": {
+    "validated": "2026-11-15",
+    "tenant": {
+      "date": "2026-11-15",
+      "region": "us01"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft365/ResponseActions/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/AutomaticCases/",
+    "https://learn.microsoft.com/en-us/graph/api/message-move?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/resources/mailfolder?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/graph/api/security-security-runhuntingquery?view=graph-rest-1.0",
+    "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-emailevents-table",
+    "https://learn.microsoft.com/en-us/defender-office-365/message-headers-eop-mdo",
+    "https://learn.microsoft.com/en-us/defender-office-365/email-authentication-about",
+    "https://learn.microsoft.com/en-us/defender-office-365/tenant-allow-block-list-about"
+  ],
+  "summary": "This playbook handles a phishing email in Microsoft 365: it finds the email's copies in the mailboxes in your domains, reads one to check the sender, SPF, DKIM, DMARC, Microsoft's spam verdict and the link domains, moves every copy to Recoverable Items and comments the triage and each mailbox on the case. It runs from a case whose detections name the email, or by hand with the Internet message ID, through the Microsoft Graph API connector. Dry run is on.",
+  "notes": "Setup:\n- Domains is the scope: no mailbox outside it is searched or changed, and with none set the playbook does nothing. The sender's own mailbox is left alone.\n- Move copies to is Recoverable Items by default, which the user doesn't see in their folders and can recover in Outlook. Nothing is ever deleted.\n- It doesn't block the sender or detonate links. The comment names the sender for Block Email Address or the Tenant Allow/Block List.\n- There's no approval step. Dry run, Domains, Excluded mailboxes and Max mailboxes per run are the controls.\n\nHow it works:\n- From a case it reads the email detections' events (message_id, from, to and cc), so Microsoft Defender for Office 365, Sophos Email and other gateway detections all work. A case naming more than one email moves nothing.\n- It searches the named recipients, every mailbox in Domains (first 100 per domain) and, where the tenant has it, the recipients Defender advanced hunting finds. Without advanced hunting the comment says so and the run carries on.\n- It reads one copy for triage, moves every copy, then searches again and reports what is left outside the destination folder.\n\nTesting:\n- On 2026-11-15 the dsl passed playbookValidateDSLV2 with no errors or warnings in two Sophos Fusion test tenants, us01 and eu02, and imported, exported and deleted cleanly in eu02.\n- In the us01 tenant it ran 11 times against a test Microsoft 365 tenant through the Marketplace connection. On a real inbound Microsoft email it read SPF, DKIM, DMARC, SCL and the links correctly, moved the copy to Recoverable Items and to Junk Email, and the read-back found none left; the email was moved back after.\n- A real Microsoft Defender for Office 365 detection attached to a test case gave the case run its message ID and recipient. It also handled a short case ID, an unknown case, no domains, Excluded mailboxes and the missing advanced hunting license.\n\nKnown gaps:\n- No real phishing email was used, and no email with copies in several mailboxes. The per-run limit, the multi-email stop and the sender's own mailbox were checked with Fusion's expression engine on made-up data.\n- Defender advanced hunting answered not provisioned in the test tenant, so its search is unproven. The run from the case menu and the automatic case rule trigger weren't tested."
+}
