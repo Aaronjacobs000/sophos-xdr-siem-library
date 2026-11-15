@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Rewst_CaseHandoff
-version: 1.0.1
+version: 1.0.2
 title: Rewst case handoff (unofficial)
 description: Sends a short, fixed set of case fields to a Rewst webhook trigger when a case is created or changes, so a Rewst workflow can ticket, document or notify across an MSP's tools. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -23,7 +23,7 @@ documentation: |
     | Managed by | any, self or sophos | any |
     | Send comments | Send new comments, with their text | Off |
     | Rewst comment prefix | Comments that start with it aren't sent | `[rewst]` |
-changeNotes: An internal comment is no longer sent to Rewst.
+changeNotes: The send to Rewst runs with nolog, so the execution log no longer records the Rewst trigger URL.
 tags:
     - Type:Notification
 connectorCategories:
@@ -134,10 +134,12 @@ dsl:
                 setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not sent.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was sent.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from Rewst, so it was not sent back.' : ''
+        # The execution log records each request's URL, which here is the Rewst trigger URL, so nolog keeps this task's request out of it.
         - name: send
           condition: "decide.variables.skip == ''"
           action: Taegis.Webhook.post
           optional: true
+          nolog: true
           retry: 2
           inputs:
             source: 'sophos-fusion'

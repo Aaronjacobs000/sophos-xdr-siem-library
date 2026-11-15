@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_PlaybookFailure_Alerts
-version: 1.0.0
+version: 1.0.1
 title: Playbook failure alerts (unofficial)
 description: Posts to Teams, Slack or Google Chat when a playbook run fails or finishes with the outcome FAIL, and when Sophos Fusion raises a health event such as Collector Down. The post names the playbook, the error and the tenant. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -20,7 +20,7 @@ documentation: |
     | Playbooks to watch | Names of the configured playbooks or templates to act on. Empty means every playbook | None |
     | Playbooks to ignore | Names of the configured playbooks or templates never to act on | None |
     | Error length | The most characters of the error to send | 1000 |
-changeNotes: First version
+changeNotes: The call to the chat templates runs with nolog, so the execution log no longer records their webhook URLs.
 tags:
     - Category:Platform
     - Type:Notification
@@ -155,10 +155,12 @@ dsl:
                 (run.variables.started_by != '' ? '\n\nStarted by: ' + run.variables.started_by : '') +
                 (run.variables.case_id != '' ? '\n\nCase ID: ' + run.variables.case_id : '') +
                 '\n\nRun ID: ' + run.variables.run_id + (run.variables.finished_at != '' ? ' at ' + run.variables.finished_at : '')
+        # The chat template this calls posts to a webhook URL that works as its key, and the execution log records each request's URL, so nolog keeps this call out of it.
         - name: notify
           condition: "check.variables.stop == ''"
           call: Taegis.SendNotificationMessage
           optional: true
+          nolog: true
           inputs:
             tenant_id: setup.variables.tenant_id
             tenant_name: setup.variables.tenant_name
