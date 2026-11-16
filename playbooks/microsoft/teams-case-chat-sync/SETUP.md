@@ -52,7 +52,9 @@ Teams cards from a Workflows webhook can't send button clicks back, so the two-w
 1. Deploy the chat bridge as its README says.
 2. In Teams, open the team's Manage team > Apps and choose Create an outgoing webhook. Name it as Bridge name, such as Fusion, and set the callback URL to `https://<your bridge>/teams/outgoing`.
 3. Copy the security token Teams shows into the bridge's `TEAMS_HMAC_SECRET`.
-4. In the channel, reply with `@Fusion active CSE00042`, `@Fusion close CSE00042 false_positive test box` or `@Fusion comment CSE00042 called the user`. The bridge answers in the thread, and the case gets a comment that names who acted.
+4. In the channel, reply with `@Fusion in_progress CSE00042`, `@Fusion customer_action_required CSE00042`, `@Fusion close CSE00042 false_positive test box` or `@Fusion comment CSE00042 called the user`. The bridge answers in the thread, and the case gets a comment that names who acted.
+
+The card's reply line names the statuses a Sophos MDR tenant's cases use, in_progress and customer_action_required. A tenant without Sophos MDR uses active and awaiting_action instead: set the bridge's `BRIDGE_ALLOWED_STATUSES` to `active,awaiting_action,closed` and reply with those.
 
 Outgoing webhooks work in standard channels only, and only when someone @mentions them.
 
