@@ -376,8 +376,12 @@ test('Teams: an approval request always posts as Approval needed, without its ap
   assert.deepEqual(r.posts, ['Taegis.MicrosoftTeams.sendWorkflowMessage']);
   assert.equal(r.vars.card.variables.headline, 'Approval needed');
   const text = r.vars.card.variables.comment_text;
-  assert.match(text, /@Fusion approve CSE00002 AP-7K2M9QX4, or @Fusion deny CSE00002 AP-7K2M9QX4/);
-  assert.doesNotMatch(text, /approval-|```/);
+  assert.doesNotMatch(text, /approval-|```|approves request/);
+  // Under the headline: the request ID, its expiry and the two exact reply lines, and no general reply line.
+  const lines = r.body.filter((b) => b.type === 'TextBlock').map((b) => b.text);
+  assert.equal(lines[2], '**Request AP-7K2M9QX4**, open until {{DATE(2026-11-16T10:15:15Z, SHORT)}} {{TIME(2026-11-16T10:15:15Z)}}. Reply in this channel with one of these lines:');
+  assert.deepEqual(lines.slice(3, 5), ['@Fusion approve CSE00002 AP-7K2M9QX4', '@Fusion deny CSE00002 AP-7K2M9QX4']);
+  assert.equal(lines.some((l) => l.startsWith('Reply in this channel: ')), false);
   // The filters still hold for any other comment.
   assert.equal(run(TEAMS, { event: 'Comment Added', kase, comment: normal, settings: strict }).skip, 'The case is below the minimum severity, so nothing was posted.');
   // An internal or bridge comment that holds a request line still posts nothing.
@@ -385,12 +389,33 @@ test('Teams: an approval request always posts as Approval needed, without its ap
   assert.equal(run(TEAMS, { event: 'Comment Added', kase, comment: { ...request, comment: '[chat-sync] ' + REQUEST }, settings: strict }).skip, 'The comment came from the chat bridge, so it was not posted back.');
 });
 
+// A request whose human part runs past every cut still shows its ID and reply lines; the bridge name comes from the request when the setting is empty.
+const LONG = REQUEST.replace('From the detection Suspicious inbox forwarding.', 'From the detection Suspicious inbox forwarding.\n\n' + Array.from({ length: 60 }, (_, i) => `- Inbox rule ${i}: forwards to rule${i}@example.com`).join('\n'));
+
+test('Teams: a long approval request keeps its request ID and reply lines, in the card and in Recent comments', () => {
+  const kase = caseWith(MDR, { shortId: 'CSE00002', severity: 2 });
+  const r = run(TEAMS, { event: 'Comment Added', kase, comment: { ...request, comment: LONG }, settings: { ...strict, bridge_name: '' } });
+  assert.ok(r.vars.card.variables.comment_text.endsWith('...'));
+  const lines = r.body.filter((b) => b.type === 'TextBlock').map((b) => b.text);
+  assert.deepEqual(lines.slice(3, 5), ['@Fusion approve CSE00002 AP-7K2M9QX4', '@Fusion deny CSE00002 AP-7K2M9QX4']);
+  // A later card lists the request in Recent comments with its ID and reply lines, not cut mid-rule.
+  const later = run(TEAMS, { event: 'Comment Added', kase: caseWith(MDR, { shortId: 'CSE00002' }), comment: normal, settings: { ...SETTINGS, bridge_name: 'Fusion' }, comments: [{ ...request, id: 'c-21', comment: LONG }] });
+  const recent = later.body.filter((b) => b.type === 'Container').map((c) => c.items[c.items.length - 1].text);
+  assert.equal(recent.length, 1);
+  assert.match(recent[0], /^\*\*Approval needed: Microsoft 365 account takeover cleanup\*\*/);
+  assert.ok(recent[0].endsWith('Request AP-7K2M9QX4: @Fusion approve CSE00002 AP-7K2M9QX4, or @Fusion deny CSE00002 AP-7K2M9QX4'), recent[0]);
+});
+
 test('Slack: an approval request posts with Approve and Deny buttons in place of the status buttons', () => {
   const kase = caseWith(MDR, { shortId: 'CSE00002', severity: 2 });
   const r = run(SLACK, { event: 'Comment Added', kase, comment: request, settings: { ...strict, two_way: true } });
   assert.equal(r.skip, '');
   assert.equal(r.vars.card.variables.headline, 'Approval needed');
-  assert.doesNotMatch(r.vars.card.variables.comment_text, /approval-|```/);
+  assert.doesNotMatch(r.vars.card.variables.comment_text, /approval-|```|approves request/);
+  const blocks = r.vars.blocks.variables.list;
+  assert.equal(blocks[2].text.text, '*Request AP-7K2M9QX4*, open until 2026-11-16 10:15:15 UTC. Approve or Deny below.\nIn Teams: `@Fusion approve CSE00002 AP-7K2M9QX4` or `@Fusion deny CSE00002 AP-7K2M9QX4`');
+  const off = run(SLACK, { event: 'Comment Added', kase, comment: { ...request, comment: LONG }, settings: strict }).vars.blocks.variables.list;
+  assert.equal(off[2].text.text, '*Request AP-7K2M9QX4*, open until 2026-11-16 10:15:15 UTC. Turn on Two-way buttons to approve or deny it here.\nIn Teams: `@Fusion approve CSE00002 AP-7K2M9QX4` or `@Fusion deny CSE00002 AP-7K2M9QX4`');
   const buttons = r.vars.build.variables.buttons;
   assert.deepEqual(buttons.map((b) => b.action_id), ['fusion_open', 'fusion_approve', 'fusion_deny']);
   assert.deepEqual(buttons.slice(1).map((b) => b.value), ['case-1|CSE00002|AP-7K2M9QX4', 'case-1|CSE00002|AP-7K2M9QX4']);

@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Slack_CaseChatSync
-version: 1.1.0
+version: 1.1.1
 title: Slack case chat sync (unofficial)
 description: Posts a message to a Slack channel when a case is created or its status, severity, assignee or title changes, or someone comments. With the library's chat bridge, its buttons set the case status or add a comment from Slack. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -18,7 +18,7 @@ documentation: |
     - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
     - Internal comments aren't posted.
     - Updates are posted only when the status, severity, assignee or title changed.
-    - An approval request from a library playbook, a comment with an `approval-request:` line, is always posted, whatever Minimum severity, Managed by and Post comments say. It posts as Approval needed and leaves out the request's `approval-` lines. With Two-way buttons on it gets Approve and Deny buttons in place of the status buttons; the Approval before acting playbook runs the request once someone approves it.
+    - An approval request from a library playbook, a comment with an `approval-request:` line, is always posted, whatever Minimum severity, Managed by and Post comments say. It posts as Approval needed and leaves out the request's `approval-` lines. Under the headline the message shows the request ID, when it expires, and the Teams lines to approve or deny it, however long the request is. With Two-way buttons on it gets Approve and Deny buttons in place of the status buttons; the Approval before acting playbook runs the request once someone approves it.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -30,7 +30,7 @@ documentation: |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Two-way buttons | Add the status, close and comment buttons; needs the chat bridge as the Slack app's interactivity URL | Off |
     | Status buttons | Comma-separated case status names to offer as buttons. A tenant without Sophos MDR uses active,awaiting_action | in_progress,customer_action_required |
-changeNotes: Approval requests from the library's account takeover cleanup and phishing triage and purge playbooks post as Approval needed, always, with Approve and Deny buttons when Two-way buttons is on. Status buttons now defaults to in_progress,customer_action_required, the statuses a Sophos MDR tenant uses and the chat bridge allows by default.
+changeNotes: An approval message always shows the request ID, its expiry and how to answer it under the headline, so a long request can't push them out of the message.
 tags:
     - Type:Notification
 connectorCategories:
@@ -182,7 +182,8 @@ dsl:
                 setup.variables.event == 'comment added' ? 'New comment from ' + resolveSubjectName(read.variables.author) :
                 'Case shared from Sophos Fusion'
             comment_text: |-
-                cel.bind(t, cel.bind(s0, read.variables.approval && read.variables.comment.indexOf('```') > 0 ? read.variables.comment.substring(0, read.variables.comment.indexOf('```')).trim() : read.variables.comment,
+                cel.bind(t, cel.bind(s0, !read.variables.approval ? read.variables.comment : cel.bind(h, read.variables.comment.indexOf('```') > 0 ? read.variables.comment.substring(0, read.variables.comment.indexOf('```')).trim() : read.variables.comment,
+                    cel.bind(i, h.indexOf('approves request ' + read.variables.comment.split('\napproval-request: ')[1].split('\n')[0].trim()), i > 0 && h.substring(0, i).lastIndexOf('\n\n') > 0 ? h.substring(0, h.substring(0, i).lastIndexOf('\n\n')) : h)),
                   cel.bind(s1, cel.bind(a, s0.replace('\r', '').split('<style'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</style>') >= 0 ? x.substring(x.indexOf('</style>') + 8) : '<style' + x).join('')),
                   cel.bind(s2, cel.bind(a, s1.split('<table'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</table>') < 0 ? '<table' + x :
                     cel.bind(t, x.substring(0, x.indexOf('</table>')).split('<tr'), cel.bind(rows, t.slice(1, size(t)).map(r, cel.bind(q, r.replace('<th', '<td').split('<td'),
@@ -208,6 +209,8 @@ dsl:
             link: createShareLink(inputs)
             value: "read.variables.case.?id.orValue('') + '|' + read.variables.case.?shortId.orValue('')"
             request_id: "read.variables.approval ? read.variables.comment.split('\\napproval-request: ')[1].split('\\n')[0].trim() : ''"
+            request_expires: "read.variables.approval && read.variables.comment.contains('\\napproval-expires: ') ? read.variables.comment.split('\\napproval-expires: ')[1].split('\\n')[0].trim().replace('T', ' ').replace('Z', ' UTC') : ''"
+            bridge_name: "read.variables.comment.contains('- Teams: @') ? read.variables.comment.split('- Teams: @')[1].split(' ')[0] : 'Fusion'"
         - name: build
           condition: "decide.variables.skip == ''"
           let:
@@ -231,7 +234,10 @@ dsl:
             list: |-
                 [
                   {'type': 'header', 'text': {'type': 'plain_text', 'text': build.variables.header_text}},
-                  {'type': 'section', 'text': {'type': 'mrkdwn', 'text': card.variables.headline}},
+                  {'type': 'section', 'text': {'type': 'mrkdwn', 'text': card.variables.headline}}] +
+                (!read.variables.approval ? [] : [{'type': 'section', 'text': {'type': 'mrkdwn', 'text': '*Request ' + card.variables.request_id + '*' + (card.variables.request_expires != '' ? ', open until ' + card.variables.request_expires : '') + '. ' +
+                  (setup.variables.two_way && !card.variables.closed ? 'Approve or Deny below.' : 'Turn on Two-way buttons to approve or deny it here.') +
+                  '\nIn Teams: `@' + card.variables.bridge_name + ' approve ' + card.variables.ref + ' ' + card.variables.request_id + '` or `@' + card.variables.bridge_name + ' deny ' + card.variables.ref + ' ' + card.variables.request_id + '`'}}]) + [
                   {'type': 'section', 'fields': [
                     {'type': 'mrkdwn', 'text': '*Severity*\n' + card.variables.severity_name},
                     {'type': 'mrkdwn', 'text': '*Status*\n' + card.variables.status_name},
