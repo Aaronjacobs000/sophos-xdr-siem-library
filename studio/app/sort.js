@@ -30,3 +30,18 @@ export function sortEntries(list, sort, { section = 'parsers', stars = {}, views
         : byId;
   return [...list].sort(cmp);
 }
+
+// The entries a list tags Popular: its most viewed, at most POPULAR_TOP of them, each with at least
+// POPULAR_MIN views, so thin data tags fewer or none. A tie across the last place tags none of the
+// tied entries, so the tag never picks between equal counts. The view numbers are never shown.
+// Returns ids as in views, such as 'parsers/acme/widget'.
+export const POPULAR_TOP = 3;
+export const POPULAR_MIN = 5;
+
+export function popularIds(views, section, { top = POPULAR_TOP, min = POPULAR_MIN } = {}) {
+  const rows = Object.entries(views && typeof views === 'object' ? views : {})
+    .filter(([k, v]) => k.startsWith(`${section}/`) && Number.isFinite(v) && v >= min)
+    .sort((a, b) => b[1] - a[1]);
+  const cut = rows.length > top && rows[top][1] === rows[top - 1][1] ? rows[top][1] : -Infinity;
+  return new Set(rows.slice(0, top).filter(([, v]) => v > cut).map(([k]) => k));
+}

@@ -4,7 +4,8 @@
 // they do without it. A star sends only the entry's id. Which entries this browser starred is kept
 // in localStorage, so there is no sign-in and no cookie.
 
-import { h, toast } from './dom.js';
+import { h, pill, toast } from './dom.js';
+import { popularIds } from './sort.js';
 
 export const API = 'https://library-api.aaronjacobs.dev';
 const KEY = 'library-stars';
@@ -29,6 +30,7 @@ const counts = (o) => {
 // sets the count; a failed request puts both back. Taps while a request is out are sent after it.
 export function createStars({ api = API, fetchImpl = (...a) => globalThis.fetch(...a), storage = browserStorage(), timeoutMs = 5000, onChange = () => {}, onError = () => {} } = {}) {
   let stats = null;
+  const popular = new Map();
   const mine = new Set();
   const want = new Map();
   const busy = new Set();
@@ -61,6 +63,7 @@ export function createStars({ api = API, fetchImpl = (...a) => globalThis.fetch(
         const r = await call('/v1/stats', 'GET');
         if (!r.ok || !r.body || typeof r.body !== 'object') return false;
         stats = { stars: counts(r.body.stars), views: counts(r.body.views) };
+        popular.clear();
         return true;
       } catch {
         return false;
@@ -75,6 +78,12 @@ export function createStars({ api = API, fetchImpl = (...a) => globalThis.fetch(
       return Math.max(0, base + (want.get(id) ? 1 : -1));
     },
     views: (id) => (stats && stats.views[id]) || 0,
+    // The section's entries tagged Popular (see popularIds), none until the counts load.
+    popular(section) {
+      if (!stats) return new Set();
+      if (!popular.has(section)) popular.set(section, popularIds(stats.views, section));
+      return popular.get(section);
+    },
     // The counts as shown, for sorting.
     snapshot() {
       if (!stats) return { stars: {}, views: {} };
@@ -160,11 +169,32 @@ export function starSlot(id, name) {
   return slot;
 }
 
-// Draws the stars on the page, or only one entry's, and turns on the sorts that need the counts.
+function fillPopular(slot) {
+  const id = slot.dataset.popular;
+  const on = stars.popular(id.split('/')[0]).has(id);
+  if (on && !slot.firstElementChild) {
+    const tag = pill('Popular', 'popular');
+    tag.title = 'One of the most viewed in this list';
+    slot.append(tag);
+  } else if (!on && slot.firstElementChild) slot.firstElementChild.remove();
+}
+
+// Where a card's Popular tag goes, in its row of pills: empty until the counts load, then the tag
+// when the entry is one of its section's most viewed. id is as for starSlot.
+export function popularSlot(id) {
+  const slot = h('span', { class: 'popslot', dataset: { popular: id } });
+  if (stars.ready()) fillPopular(slot);
+  return slot;
+}
+
+// Draws the stars on the page, or only one entry's, and turns on the sorts that need the counts and
+// the Popular tags.
 export function paintStars(id = null) {
   if (typeof document === 'undefined' || !stars.ready()) return;
   for (const slot of document.querySelectorAll(id ? `.starslot[data-star="${id}"]` : '.starslot[data-star]')) fill(slot);
-  if (!id) for (const o of document.querySelectorAll('select[data-sort] option[data-needs="stats"]')) o.disabled = false;
+  if (id) return;
+  for (const o of document.querySelectorAll('select[data-sort] option[data-needs="stats"]')) o.disabled = false;
+  for (const slot of document.querySelectorAll('.popslot[data-popular]')) fillPopular(slot);
 }
 
 export async function loadStars() {

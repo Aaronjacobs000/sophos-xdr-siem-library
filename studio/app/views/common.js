@@ -1,5 +1,7 @@
-import { h, pill } from '../dom.js';
+import { h, pill, clear } from '../dom.js';
 import { state } from '../store.js';
+import { stars } from '../stars.js';
+import { SORTS, sortEntries } from '../sort.js';
 import { go } from '../nav.js';
 import { schemaInfo } from '../../core/schemas.js';
 import { noteBlocks } from '../../core/notes.js';
@@ -58,4 +60,35 @@ export function notesView(text) {
     else box.append(h('p', { text: b.text }));
   }
   return box;
+}
+
+// The search box and Sort menu over a library list, then its cards: the same on Parsers, Playbooks
+// and Connectors. section is parsers, playbooks or connectors, text gives the text the search
+// matches for an entry's metadata, card draws an entry, and none is what an empty list says. Each
+// list keeps its own search and sort while the tab is open.
+export function searchList(root, { section, entries, placeholder, label, text, card, none }) {
+  const keep = state.lists[section] || (state.lists[section] = { q: '', sort: 'az' });
+  const search = h('input', { class: 'input', type: 'search', placeholder, 'aria-label': label, value: keep.q });
+  const sort = sortPicker(section, entries, keep.sort, () => { keep.sort = sort.value; draw(); });
+  const cards = h('div', { class: 'cards' });
+  root.append(h('div', { class: 'libtools' }, search, h('label', { class: 'sortpick' }, 'Sort', sort)), cards);
+  const draw = () => {
+    clear(cards);
+    const q = keep.q.toLowerCase().trim();
+    const list = entries.filter((e) => !q || text(e.meta).includes(q));
+    if (!list.length) { cards.append(h('p', { class: 'empty', text: state.library.status !== 'ready' ? 'Loading…' : entries.length ? 'No entries match.' : none })); return; }
+    for (const e of sortEntries(list, sort.value, { section, ...stars.snapshot() })) cards.append(card(e));
+  };
+  search.addEventListener('input', () => { keep.q = search.value; draw(); });
+  draw();
+}
+
+// The Sort menu. The sorts by count stay off until the counts load, and Newest when no entry has a
+// date. The choice lasts while the tab is open, like the search.
+function sortPicker(section, entries, chosen, onchange) {
+  const can = (s) => !s.needs || (s.needs === 'stats' ? stars.ready() : entries.some((e) => e.added));
+  const current = SORTS.find((s) => s.value === chosen && can(s)) ? chosen : 'az';
+  const sel = h('select', { class: 'sortsel', dataset: { sort: section }, onchange });
+  for (const s of SORTS) sel.append(h('option', { value: s.value, selected: s.value === current, disabled: !can(s), dataset: s.needs ? { needs: s.needs } : null, text: s.label }));
+  return sel;
 }

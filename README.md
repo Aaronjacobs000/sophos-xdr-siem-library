@@ -142,7 +142,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | `connectors/` | Custom connectors, and the allowlist of the hosts they may call. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |
 | `chat-bridge/` | The Cloudflare Worker that carries Teams and Slack replies back to Sophos Fusion cases. Its tests are `test/chat-bridge.test.mjs`. |
-| `library-api/` | The Cloudflare Worker behind the site's stars and its Most viewed sort. Its tests are `test/library-api.test.mjs`. |
+| `library-api/` | The Cloudflare Worker behind the site's stars, its Most viewed sort and its Popular tags. Its tests are `test/library-api.test.mjs`. |
 | `tools/` | Command-line tools and the scripts the workflows run. |
 | `test/` | Unit tests (`node --test`). |
 | `.github/workflows/` | CI, the library checks for pull requests, the issue-form route, the review label, and the Pages deploy. |
