@@ -5,8 +5,9 @@ import { h, clear, pill, ext, copyText, toast, download } from '../dom.js';
 import { state } from '../store.js';
 import { loadAutomationEntry, githubUrl, siteUrl } from '../library-client.js';
 import { renderMarkdown } from '../markdown.js';
-import { notesView } from './common.js';
-import { starSlot } from '../stars.js';
+import { notesView, searchList } from './common.js';
+import { starSlot, popularSlot } from '../stars.js';
+import { automationSearchText } from '../../core/library.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const TIER_PILL = { lookup: 'green', notify: 'blue', 'reversible action': 'amber', destructive: 'red' };
@@ -17,8 +18,8 @@ const TIERS = {
   destructive: 'Changes something that can\'t be undone. Needs a recorded run in a real tenant before it can be in the library.',
 };
 const KIND = {
-  playbooks: { one: 'playbook', file: 'template.yaml', title: 'Playbooks', sub: 'Sophos Fusion playbook templates that people share. Playbooks that change tickets or devices ship with dry run on; those that only post to chat, comment on the case or send a case to Rewst have none. You set up each one\'s trigger and connections in your tenant.' },
-  connectors: { one: 'connector', file: 'connector.yaml', title: 'Connectors', sub: 'Custom connectors for Sophos Fusion playbooks, for products that have no connector from Sophos. Each one calls only hosts its vendor documents.' },
+  playbooks: { one: 'playbook', file: 'template.yaml', title: 'Playbooks', search: 'Search vendor, product, title, tier or author', sub: 'Sophos Fusion playbook templates that people share. Playbooks that change tickets or devices ship with dry run on; those that only post to chat, comment on the case or send a case to Rewst have none. You set up each one\'s trigger and connections in your tenant.' },
+  connectors: { one: 'connector', file: 'connector.yaml', title: 'Connectors', search: 'Search vendor, product, function, tier or author', sub: 'Custom connectors for Sophos Fusion playbooks, for products that have no connector from Sophos. Each one calls only hosts its vendor documents.' },
 };
 
 const tierPill = (t) => pill(t || 'no tier', TIER_PILL[t] || 'grey');
@@ -42,11 +43,7 @@ export function renderAutomationList(root, folder) {
     h('div', {}, h('h1', { text: k.title }), h('p', { class: 'sub', text: k.sub })),
     h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl(`/tree/main/${folder}`), target: '_blank', rel: 'noopener noreferrer', text: 'Browse on GitHub' }))));
   root.append(readFirst(folder));
-  const cards = h('div', { class: 'cards' });
-  root.append(cards);
-  const list = L[folder] || [];
-  if (!list.length) cards.append(h('p', { class: 'empty', text: L.status === 'ready' ? `No ${folder} yet.` : 'Loading…' }));
-  for (const e of list) cards.append(folder === 'playbooks' ? playbookCard(e) : connectorCard(e));
+  searchList(root, { section: folder, entries: L[folder] || [], placeholder: k.search, label: `Search the ${folder}`, text: (m) => automationSearchText(folder, m), card: folder === 'playbooks' ? playbookCard : connectorCard, none: `No ${folder} yet.` });
   if (folder === 'playbooks') root.append(tierLegend());
 }
 
@@ -54,7 +51,7 @@ function playbookCard(e) {
   const m = e.meta;
   const a = h('a', { class: 'card', href: `#/playbooks/${e.id}` });
   a.append(h('span', { class: 'vendor', text: `${m.vendor} · ${m.product}` }), h('h2', { text: m.title }));
-  const pills = h('span', { class: 'pills' }, tierPill(m.risk_tier));
+  const pills = h('span', { class: 'pills' }, popularSlot(`playbooks/${e.id}`), tierPill(m.risk_tier));
   if (m.connector) pills.append(pill('needs a library connector', 'cyan'));
   a.append(pills, h('span', { class: 'sub', text: m.use_case }));
   a.append(h('span', { class: 'foot2' }, h('span', { text: HANDLE.test(m.author || '') ? `@${m.author}` : '' }), testedPill(m.tested)));
@@ -66,7 +63,7 @@ function connectorCard(e) {
   const a = h('a', { class: 'card', href: `#/connectors/${e.id}` });
   a.append(h('span', { class: 'vendor', text: m.vendor }), h('h2', { text: m.title }));
   const tiers = [...new Set(Object.values(m.functions || {}))];
-  const pills = h('span', { class: 'pills' }, pill(`${Object.keys(m.functions || {}).length} functions`, 'grey'));
+  const pills = h('span', { class: 'pills' }, popularSlot(`connectors/${e.id}`), pill(`${Object.keys(m.functions || {}).length} functions`, 'grey'));
   for (const t of tiers) pills.append(tierPill(t));
   a.append(pills, h('span', { class: 'sub', text: m.auth }));
   a.append(h('span', { class: 'foot2' }, h('span', { text: HANDLE.test(m.author || '') ? `@${m.author}` : '' }), testedPill(m.tested)));

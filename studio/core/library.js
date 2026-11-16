@@ -74,6 +74,18 @@ export function searchText(meta) {
   return JSON.stringify([m.vendor, m.product, m.author, m.format, (Array.isArray(m.parsers) ? m.parsers : []).map((p) => [p && p.name, p && p.schema]), bridge ? ['needs a bridge', bridge] : []]).toLowerCase();
 }
 
+// The same for a playbook or connector, by folder: vendor, product, title and author; a playbook's
+// use case, risk tier and, when it needs one, "needs a library connector" and the connector; a
+// connector's sign-in, function names and their risk tiers.
+export function automationSearchText(folder, meta) {
+  const m = meta && typeof meta === 'object' ? meta : {};
+  const fns = m.functions && typeof m.functions === 'object' && !Array.isArray(m.functions) ? m.functions : {};
+  const own = folder === 'playbooks'
+    ? [m.use_case, m.risk_tier, m.connector ? ['needs a library connector', m.connector] : []]
+    : [m.auth, Object.entries(fns)];
+  return JSON.stringify([m.vendor, m.product, m.title, m.author, own]).toLowerCase();
+}
+
 // The scripts a bridge folder offers: its .py files, leaving out tests unless that's all.
 export function bridgeScripts(fileNames) {
   const py = (fileNames || []).filter((f) => /^[A-Za-z0-9_.-]+\.py$/.test(f)).sort();

@@ -254,6 +254,9 @@ table.rec td:last-child { font-family: var(--mono); overflow-wrap: anywhere; whi
 .star svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .star.on { border-color: #F2C46B; background: #FFF6E3; color: #7A4F00; }
 .star.on svg { fill: var(--orange); stroke: var(--orange); }
+/* Popular: an outlined pill in the star's colors, first in a card's pills once the counts load */
+.popslot { display: contents; }
+.p-popular { background: #fff; color: #7A4F00; box-shadow: inset 0 0 0 1px #F2C46B; }
 .sortpick { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
 .sortsel { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; font-size: 14px; background: #fff; color: var(--ink); }
 .sortsel:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 2px #E6E3FE; }

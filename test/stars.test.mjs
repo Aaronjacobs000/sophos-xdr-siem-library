@@ -8,9 +8,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { sortEntries, SORTS } from '../studio/app/sort.js';
+import { sortEntries, SORTS, popularIds, POPULAR_TOP, POPULAR_MIN } from '../studio/app/sort.js';
 import { createStars, API } from '../studio/app/stars.js';
-import { searchText } from '../studio/core/library.js';
+import { searchText, automationSearchText } from '../studio/core/library.js';
 import { parseAddedLog } from '../tools/lib/added-dates.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,6 +55,59 @@ test('sorts work on the search results', () => {
   assert.deepEqual(ids(sortEntries(found, 'stars', opts)), ['zed/acme-bridge', 'acme/widget', 'acme/gadget']);
   assert.deepEqual(ids(sortEntries(found, 'views', opts)), ['acme/gadget', 'acme/widget', 'zed/acme-bridge']);
   assert.deepEqual(ids(sortEntries(found, 'newest', opts)), ['acme/gadget', 'acme/widget', 'zed/acme-bridge']);
+});
+
+test('playbooks and connectors: the search matches what the cards show, and the sorts work on its results', () => {
+  const playbooks = [
+    { id: 'acme/widget-lock', added: '2026-11-01T00:00:00.000Z', meta: { title: 'Widget lock', vendor: 'Acme', product: 'Widget', use_case: 'Lock a widget when a case opens.', risk_tier: 'reversible action', connector: 'connectors/acme/acme-widget', author: 'someone' } },
+    { id: 'beta/case-post', added: '2026-11-05T00:00:00.000Z', meta: { title: 'Case post', vendor: 'Beta', product: 'Chat', use_case: 'Post the case to chat.', risk_tier: 'notify', connector: null, author: 'other' } },
+    { id: 'acme/gadget-read', meta: { title: 'Gadget read', vendor: 'Acme', product: 'Gadget', use_case: 'Read a gadget.', risk_tier: 'lookup', connector: null } },
+  ];
+  const find = (q) => ids(playbooks.filter((e) => automationSearchText('playbooks', e.meta).includes(q)));
+  assert.deepEqual(find('acme'), ['acme/widget-lock', 'acme/gadget-read']);
+  assert.deepEqual(find('case'), ['acme/widget-lock', 'beta/case-post']);
+  assert.deepEqual(find('notify'), ['beta/case-post']);
+  assert.deepEqual(find('needs a library connector'), ['acme/widget-lock']);
+  assert.deepEqual(find('@other'), []);
+  assert.deepEqual(find('other'), ['beta/case-post']);
+  const found = playbooks.filter((e) => automationSearchText('playbooks', e.meta).includes('acme'));
+  const opts = { section: 'playbooks', stars: { 'playbooks/acme/gadget-read': 2, 'parsers/acme/widget-lock': 9 }, views: { 'playbooks/acme/widget-lock': 7 } };
+  assert.deepEqual(ids(sortEntries(found, 'az', opts)), ['acme/gadget-read', 'acme/widget-lock']);
+  assert.deepEqual(ids(sortEntries(found, 'stars', opts)), ['acme/gadget-read', 'acme/widget-lock']);
+  assert.deepEqual(ids(sortEntries(found, 'views', opts)), ['acme/widget-lock', 'acme/gadget-read']);
+  assert.deepEqual(ids(sortEntries(found, 'newest', opts)), ['acme/widget-lock', 'acme/gadget-read']);
+  const connector = { title: 'Acme Widget', vendor: 'Acme', product: 'Widget', auth: 'API key in a header', functions: { lockWidget: 'reversible action', getWidget: 'lookup' }, author: 'someone' };
+  for (const q of ['acme', 'api key', 'lockwidget', 'reversible action', 'someone']) assert.ok(automationSearchText('connectors', connector).includes(q), q);
+  assert.ok(!automationSearchText('connectors', connector).includes('needs a library connector'));
+  for (const bad of [null, undefined, 'text', { functions: ['x'] }]) assert.equal(typeof automationSearchText('connectors', bad), 'string');
+});
+
+test('Popular: the top three by views in a section, none below the floor, and never an arbitrary pick from a tie', () => {
+  assert.deepEqual([POPULAR_TOP, POPULAR_MIN], [3, 5]);
+  const set = (...a) => new Set(a);
+  // The most viewed three, in this section only.
+  assert.deepEqual(popularIds({ 'parsers/a/a': 40, 'parsers/b/b': 30, 'parsers/c/c': 20, 'parsers/d/d': 10, 'playbooks/x/x': 99 }, 'parsers'), set('parsers/a/a', 'parsers/b/b', 'parsers/c/c'));
+  assert.deepEqual(popularIds({ 'parsers/a/a': 40, 'playbooks/x/x': 99 }, 'playbooks'), set('playbooks/x/x'));
+  // Thin data: fewer, and none under the floor.
+  assert.deepEqual(popularIds({ 'connectors/a/a': 5, 'connectors/b/b': 3, 'connectors/c/c': 1 }, 'connectors'), set('connectors/a/a'));
+  assert.deepEqual(popularIds({ 'connectors/a/a': 4, 'connectors/b/b': 1 }, 'connectors'), set());
+  // A tie across third place tags none of the tied entries.
+  assert.deepEqual(popularIds({ 'playbooks/a/a': 13, 'playbooks/b/b': 10, 'playbooks/c/c': 5, 'playbooks/d/d': 5, 'playbooks/e/e': 4 }, 'playbooks'), set('playbooks/a/a', 'playbooks/b/b'));
+  assert.deepEqual(popularIds({ 'parsers/a/a': 9, 'parsers/b/b': 9, 'parsers/c/c': 9, 'parsers/d/d': 9 }, 'parsers'), set());
+  // A tie that stays inside the top three is fine.
+  assert.deepEqual(popularIds({ 'parsers/a/a': 9, 'parsers/b/b': 9, 'parsers/c/c': 9, 'parsers/d/d': 8 }, 'parsers'), set('parsers/a/a', 'parsers/b/b', 'parsers/c/c'));
+  // No view data: no tags.
+  for (const none of [{}, null, undefined]) assert.deepEqual(popularIds(none, 'parsers'), set());
+});
+
+test('Popular: the star state tags each section from its view counts once they load', async () => {
+  const api = fakeApi(() => json({ stars: {}, views: { 'parsers/acme/widget': 12, 'parsers/acme/gadget': 2, 'connectors/acme/widget': 6 } }));
+  const s = createStars({ fetchImpl: api.fetchImpl, storage: memoryStorage() });
+  assert.deepEqual(s.popular('parsers'), new Set());
+  await s.load();
+  assert.deepEqual(s.popular('parsers'), new Set(['parsers/acme/widget']));
+  assert.deepEqual(s.popular('connectors'), new Set(['connectors/acme/widget']));
+  assert.deepEqual(s.popular('playbooks'), new Set());
 });
 
 test('A to Z is the order the site build writes the real library in', async () => {
@@ -231,6 +284,12 @@ test('the page loads the counts after it draws, and the Sort menu sits next to t
   const main = await readFile(path.join(ROOT, 'studio/app/main.js'), 'utf8');
   assert.ok(main.indexOf('loadStars();') > main.indexOf('route();\n'), 'the first draw doesn\'t wait for the API');
   assert.doesNotMatch(main, /await\s+loadStars/);
+  const common = await readFile(path.join(ROOT, 'studio/app/views/common.js'), 'utf8');
+  assert.match(common, /h\('div', \{ class: 'libtools' \}, search, h\('label', \{ class: 'sortpick' \}, 'Sort', sort\)\)/);
+  // Parsers, Playbooks and Connectors all draw their list through it, with a Popular slot on each card.
   const lib = await readFile(path.join(ROOT, 'studio/app/views/library.js'), 'utf8');
-  assert.match(lib, /h\('div', \{ class: 'libtools' \}, search, h\('label', \{ class: 'sortpick' \}, 'Sort', sort\)\)/);
+  const auto = await readFile(path.join(ROOT, 'studio/app/views/automation.js'), 'utf8');
+  assert.match(lib, /searchList\(root, \{ section: 'parsers'/);
+  assert.match(auto, /searchList\(root, \{ section: folder/);
+  for (const section of ['parsers', 'playbooks', 'connectors']) assert.ok((section === 'parsers' ? lib : auto).includes(`popularSlot(\`${section}/\${e.id}\`)`), section);
 });

@@ -7,10 +7,9 @@ import { renderMarkdown } from '../markdown.js';
 import { highlightSample, highlightScript } from '../highlight.js';
 import { call } from '../emulator-client.js';
 import { resultCard, resultDetail } from './test.js';
-import { problemRow, SHIP_LABELS, FORMAT_LABELS, notesView } from './common.js';
+import { problemRow, SHIP_LABELS, FORMAT_LABELS, notesView, searchList } from './common.js';
 import { analyse } from '../plan.js';
-import { starSlot, stars } from '../stars.js';
-import { SORTS, sortEntries } from '../sort.js';
+import { starSlot, popularSlot } from '../stars.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 
@@ -30,31 +29,9 @@ export function renderLibrary(root) {
     h('div', {}, h('h1', { text: 'Parsers' }), h('p', { class: 'sub', text: 'Parsers people have shared, each with synthetic samples and the emulator\'s expected output. Open one to read it, test it against your own line, or fork it.' })),
     h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl('/tree/main/parsers'), target: '_blank', rel: 'noopener noreferrer', text: 'Browse on GitHub' }), h('a', { class: 'btn primary', href: '#/build/sample', text: 'Build a parser' })));
   root.append(head, sourceLine());
-  const search = h('input', { class: 'input', type: 'search', placeholder: 'Search vendor, product, schema, author or bridge', 'aria-label': 'Search the library', value: state.libQuery || '' });
-  const sort = sortPicker(state.library.entries, () => { state.libSort = sort.value; draw(); });
-  const cards = h('div', { class: 'cards' });
-  root.append(h('div', { class: 'libtools' }, search, h('label', { class: 'sortpick' }, 'Sort', sort)), cards);
-  const draw = () => {
-    clear(cards);
-    const q = (state.libQuery || '').toLowerCase().trim();
-    const list = state.library.entries.filter((e) => !q || searchText(e.meta).includes(q));
-    if (!list.length) { cards.append(h('p', { class: 'empty', text: state.library.status === 'ready' ? 'No entries match.' : 'Loading…' })); return; }
-    for (const e of sortEntries(list, sort.value, { section: 'parsers', ...stars.snapshot() })) cards.append(card(e));
-  };
-  search.addEventListener('input', () => { state.libQuery = search.value; draw(); });
-  draw();
+  searchList(root, { section: 'parsers', entries: state.library.entries, placeholder: 'Search vendor, product, schema, author or bridge', label: 'Search the library', text: searchText, card, none: 'No entries match.' });
   root.append(legend());
   root.append(h('div', { class: 'callout blue' }, pill('Read first', 'blue'), h('span', { text: 'Library parsers have passed the emulator and the repo checks, not Sophos. Test every parser with Run Test in Sophos Fusion before you turn it on. Sophos does not maintain or support custom parsers.' })));
-}
-
-// The Sort menu. The sorts by count stay off until the counts load, and Newest when no entry has a
-// date. The choice lasts while the tab is open, like the search.
-function sortPicker(entries, onchange) {
-  const can = (s) => !s.needs || (s.needs === 'stats' ? stars.ready() : entries.some((e) => e.added));
-  const current = SORTS.find((s) => s.value === state.libSort && can(s)) ? state.libSort : 'az';
-  const sel = h('select', { class: 'sortsel', dataset: { sort: 'parsers' }, onchange });
-  for (const s of SORTS) sel.append(h('option', { value: s.value, selected: s.value === current, disabled: !can(s), dataset: s.needs ? { needs: s.needs } : null, text: s.label }));
-  return sel;
 }
 
 function legend() {
@@ -70,7 +47,7 @@ function card(e) {
   const schemas = [...new Set((m.parsers || []).map((p) => p.schema).filter((s) => s && s !== 'scwx.generic'))];
   const a = h('a', { class: 'card', href: `#/parsers/${e.id}` });
   a.append(h('span', { class: 'vendor', text: m.vendor }), h('h2', { text: m.product }));
-  const pills = h('span', { class: 'pills' }, pill(FORMAT_LABELS[m.format] || m.format, 'grey'), pill(SHIP_LABELS[m.ship_method] || m.ship_method, 'grey'));
+  const pills = h('span', { class: 'pills' }, popularSlot(`parsers/${e.id}`), pill(FORMAT_LABELS[m.format] || m.format, 'grey'), pill(SHIP_LABELS[m.ship_method] || m.ship_method, 'grey'));
   if (hasBridge(m)) pills.append(pill('needs a bridge', 'cyan'));
   for (const s of schemas) pills.append(pill(s, 'blue'));
   a.append(pills);
