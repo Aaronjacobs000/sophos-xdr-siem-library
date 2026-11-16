@@ -35,6 +35,8 @@ On the template, choose Use this Template. Pick one trigger per configured playb
 - **Search every mailbox in Domains:** on. It finds copies sent by Bcc or to a group. Microsoft Graph returns the first 100 mailboxes per domain, and the comment says when a domain has more.
 - **Search with Defender advanced hunting:** on. It finds every recipient where the tenant has Microsoft Defender for Office 365 Plan 2 or Microsoft 365 E5. Without it the playbook says so in the comment and searches the other mailboxes. Advanced hunting answers that it is not provisioned until an admin has opened the [Microsoft Defender portal](https://security.microsoft.com) once, so open it before the first run; until then the comment shows that answer and the search goes on without it.
 - **Max mailboxes per run:** 20. A run with copies in more mailboxes moves none and lists them.
+- **Ask for approval first:** off. Turn it on, with dry run off, to have someone approve the moves in Teams or Slack first: the run writes an approval request on the case and moves nothing until then. It needs the chat bridge and the Approval before acting playbook; see [its setup](../approval-before-acting/SETUP.md). A run by hand needs Case set, since the request goes on the case.
+- **Approval window (hours)** and **Bridge name:** how long a request stays open, 4 hours by default, and your Teams outgoing webhook's name for the request's reply line.
 - **Dry run:** leave it on.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
 

@@ -349,3 +349,54 @@ test('Teams: with a bridge name the reply line names the statuses a Sophos MDR t
   ]);
   assert.deepEqual(reply(run(TEAMS, { kase })), []);
 });
+
+// An approval request as the library's account takeover cleanup writes it, with a made-up user.
+const REQUEST = [
+  '**Approval needed: Microsoft 365 account takeover cleanup**',
+  'From the detection Suspicious inbox forwarding.',
+  '',
+  'Nothing changes until someone approves request AP-7K2M9QX4. It is open until 2026-11-16 10:15:15 UTC.',
+  '- Teams: @Fusion approve CSE00002 AP-7K2M9QX4, or @Fusion deny CSE00002 AP-7K2M9QX4',
+  '- Slack: Approve or Deny on the message',
+  '',
+  '```',
+  'approval-request: AP-7K2M9QX4',
+  'approval-expires: 2026-11-16T10:15:15Z',
+  'approval-source: Microsoft 365 account takeover cleanup',
+  'approval-action: entra.revoke_sessions; user=00000000-0000-4000-8000-000000000001; label=aj.test@example.com',
+  '```',
+].join('\n');
+const request = { id: 'c-20', authorId: 'playbook-subject', comment: REQUEST };
+const strict = { ...SETTINGS, min_severity: 8, managed_by: 'self', post_comments: false, bridge_name: 'Fusion' };
+
+test('Teams: an approval request always posts as Approval needed, without its approval- lines', () => {
+  const kase = caseWith(MDR, { shortId: 'CSE00002', severity: 2 });
+  const r = run(TEAMS, { event: 'Comment Added', kase, comment: request, settings: strict });
+  assert.equal(r.skip, '');
+  assert.deepEqual(r.posts, ['Taegis.MicrosoftTeams.sendWorkflowMessage']);
+  assert.equal(r.vars.card.variables.headline, 'Approval needed');
+  const text = r.vars.card.variables.comment_text;
+  assert.match(text, /@Fusion approve CSE00002 AP-7K2M9QX4, or @Fusion deny CSE00002 AP-7K2M9QX4/);
+  assert.doesNotMatch(text, /approval-|```/);
+  // The filters still hold for any other comment.
+  assert.equal(run(TEAMS, { event: 'Comment Added', kase, comment: normal, settings: strict }).skip, 'The case is below the minimum severity, so nothing was posted.');
+  // An internal or bridge comment that holds a request line still posts nothing.
+  assert.equal(run(TEAMS, { event: 'Comment Added', kase, comment: { ...request, isInternal: true }, settings: strict }).skip, 'The comment is internal, so it was not posted.');
+  assert.equal(run(TEAMS, { event: 'Comment Added', kase, comment: { ...request, comment: '[chat-sync] ' + REQUEST }, settings: strict }).skip, 'The comment came from the chat bridge, so it was not posted back.');
+});
+
+test('Slack: an approval request posts with Approve and Deny buttons in place of the status buttons', () => {
+  const kase = caseWith(MDR, { shortId: 'CSE00002', severity: 2 });
+  const r = run(SLACK, { event: 'Comment Added', kase, comment: request, settings: { ...strict, two_way: true } });
+  assert.equal(r.skip, '');
+  assert.equal(r.vars.card.variables.headline, 'Approval needed');
+  assert.doesNotMatch(r.vars.card.variables.comment_text, /approval-|```/);
+  const buttons = r.vars.build.variables.buttons;
+  assert.deepEqual(buttons.map((b) => b.action_id), ['fusion_open', 'fusion_approve', 'fusion_deny']);
+  assert.deepEqual(buttons.slice(1).map((b) => b.value), ['case-1|CSE00002|AP-7K2M9QX4', 'case-1|CSE00002|AP-7K2M9QX4']);
+  assert.equal(buttons[1].confirm.confirm.text, 'Approve');
+  // Without Two-way buttons only the link is there; on any other comment the status buttons are the Sophos MDR ones by default.
+  assert.deepEqual(run(SLACK, { event: 'Comment Added', kase, comment: request, settings: strict }).vars.build.variables.buttons.map((b) => b.action_id), ['fusion_open']);
+  const other = run(SLACK, { event: 'Comment Added', kase: caseWith(MDR), comment: normal, settings: { ...SETTINGS, two_way: true } });
+  assert.deepEqual(other.vars.build.variables.buttons.map((b) => b.action_id), ['fusion_open', 'fusion_status_in_progress', 'fusion_status_customer_action_required', 'fusion_close', 'fusion_comment']);
+});

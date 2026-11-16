@@ -10,7 +10,8 @@ workers_dev = true
 BRIDGE_DRY_RUN = "1"
 # The statuses a Sophos MDR tenant's cases use. A tenant without Sophos MDR uses "active,awaiting_action,closed".
 BRIDGE_ALLOWED_STATUSES = "in_progress,customer_action_required,closed"
-BRIDGE_ALLOWED_VERDICTS = "false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable"
+# The first seven are a tenant without Sophos MDR's verdicts; the last two are a Sophos MDR tenant's.
+BRIDGE_ALLOWED_VERDICTS = "false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable,true_positive_benign,true_positive_malicious"
 BRIDGE_COMMENT_PREFIX = "[chat-sync]"
 
 # Keeps the bridge's log lines, which name who acted on which case, in Workers Logs.

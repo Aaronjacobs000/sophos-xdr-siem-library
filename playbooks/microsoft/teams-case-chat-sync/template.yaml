@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Teams_CaseChatSync
-version: 1.2.3
+version: 1.3.0
 title: Teams case chat sync (unofficial)
 description: Posts a card to a Teams channel when a case is created or its status, severity, assignee or title changes, or someone comments. The card carries the case's key findings, recommended next steps and latest comments, and names the case so the channel can act on it through the library's chat bridge. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -26,6 +26,7 @@ documentation: |
     - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
     - Internal comments aren't posted.
     - Updates are posted only when the status, severity, assignee or title changed.
+    - An approval request from a library playbook, a comment with an `approval-request:` line, is always posted, whatever Minimum severity, Managed by and Post comments say. It posts as Approval needed and leaves out the request's `approval-` lines. Approve or deny it through the chat bridge; the Approval before acting playbook runs it.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -43,7 +44,7 @@ documentation: |
     | Show recommendations | The recommended next steps from the key findings | On |
     | Recent comments | How many of the latest comments to show; 0 leaves them out | 3 |
     | Section length | Most characters shown for key findings and for recommendations | 600 |
-changeNotes: The card's reply line names in_progress and customer_action_required, the statuses Sophos MDR tenants use, in place of active, which they don't have.
+changeNotes: Approval requests from the library's account takeover cleanup and phishing triage and purge playbooks post as Approval needed, always, whatever the severity, managed-by and comment filters say, without the request's approval- lines.
 tags:
     - Type:Notification
 connectorCategories:
@@ -208,6 +209,7 @@ dsl:
             comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
             author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
             internal_comment: "setup.variables.event == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
+            approval: "setup.variables.event == 'comment added' && caseComment(inputs).contains('\\napproval-request: AP-')"
             changed: "setup.variables.event == 'update' ? [['Status', caseFieldChanged(inputs, 'primaryStatus')], ['Severity', caseFieldChanged(inputs, 'severity')], ['Assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['Title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
         - name: decide
           let:
@@ -215,12 +217,12 @@ dsl:
             managed: "read.variables.case.?managedBy.orValue('')"
             skip: |-
                 !read.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was posted.' :
-                int(read.variables.case.?severity.orValue(0)) < setup.variables.min_severity ? 'The case is below the minimum severity, so nothing was posted.' :
-                setup.variables.managed_by == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was posted.' :
-                setup.variables.managed_by == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was posted.' :
+                !read.variables.approval && int(read.variables.case.?severity.orValue(0)) < setup.variables.min_severity ? 'The case is below the minimum severity, so nothing was posted.' :
+                !read.variables.approval && setup.variables.managed_by == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was posted.' :
+                !read.variables.approval && setup.variables.managed_by == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was posted.' :
                 !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook posts creates, updates and comments only.' :
                 setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was posted.' :
-                setup.variables.event == 'comment added' && !setup.variables.post_comments ? 'Comments are not posted.' :
+                setup.variables.event == 'comment added' && !setup.variables.post_comments && !read.variables.approval ? 'Comments are not posted.' :
                 setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not posted.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
@@ -331,9 +333,10 @@ dsl:
             headline: |-
                 setup.variables.event == 'create' ? 'New case' :
                 setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
+                read.variables.approval ? 'Approval needed' :
                 setup.variables.event == 'comment added' ? cel.bind(who, read.variables.author != '' ? resolveSubjectName(read.variables.author) : '', who != '' && who != read.variables.author ? 'New comment from ' + who : 'New comment') :
                 'Case shared from Sophos Fusion'
-            comment_text: "cel.bind(t, markup.variables.texts[1], size(t) > 1500 ? t.substring(0, 1500) + '...' : t)"
+            comment_text: "cel.bind(r, markup.variables.texts[1], cel.bind(t, read.variables.approval && r.indexOf('```') > 0 ? r.substring(0, r.indexOf('```')).trim() : r, size(t) > 1500 ? t.substring(0, 1500) + '...' : t))"
             details: |-
                 !setup.variables.show_details ? [] :
                 cel.bind(t, read.variables.case.?type.title.orValue(''), t != null && t != '' ? [{'title': 'Type', 'value': t}] : []) +

@@ -1,7 +1,7 @@
 // Chat bridge for Sophos Fusion cases: turns a Slack button or modal, or a Teams outgoing webhook
-// command, into a case status change or a case comment, through the Sophos Fusion Cases GraphQL API.
-// Unofficial, from the Unofficial Sophos Fusion XDR and SIEM Library. A Cloudflare Worker with no
-// dependencies; README.md has the setup.
+// command, into a case status change, a case comment or an approval decision, through the Sophos
+// Fusion Cases GraphQL API. Unofficial, from the Unofficial Sophos Fusion XDR and SIEM Library. A
+// Cloudflare Worker with no dependencies; README.md has the setup.
 //
 //   POST /slack/interactivity   the Slack app's interactivity request URL
 //   POST /teams/outgoing        the Teams outgoing webhook's callback URL
@@ -11,15 +11,21 @@
 // the Teams outgoing webhook HMAC. Every write names the person who acted in the case comment and in
 // the log, and every comment starts with BRIDGE_COMMENT_PREFIX so the outbound chat playbooks don't
 // post it back to the channel.
+//
+// An approval decision is a comment that Sophos Fusion records as written by the bridge's own API
+// credential, so the library's Approval before acting playbook can tell it from one typed in the
+// console: "[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams."
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHORT_ID = /^CSE\d{3,10}$/i;
+const REQUEST_ID = /^AP-[A-Z2-9]{8}$/;
 const SLACK_TOLERANCE_SECONDS = 300;
 const TEAMS_BUDGET_MS = 4200;
 const MAX_COMMENT = 4000;
 // The statuses a Sophos MDR tenant's cases move between. A tenant without Sophos MDR uses active,awaiting_action,closed.
 const DEFAULT_STATUSES = 'in_progress,customer_action_required,closed';
-const DEFAULT_VERDICTS = 'false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable';
+// The first seven are a tenant without Sophos MDR's; true_positive_benign and true_positive_malicious are a Sophos MDR tenant's.
+const DEFAULT_VERDICTS = 'false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable,true_positive_benign,true_positive_malicious';
 const DEFAULT_API = 'https://api.taegis.sophos.com/graphql';
 const TOKEN_URL = 'https://id.sophos.com/api/v2/oauth2/token';
 const WHOAMI_URL = 'https://api.central.sophos.com/whoami/v1';
@@ -176,11 +182,39 @@ async function verdictFor(env, cfg, kase, statusId, name) {
 
 const clean = (s, max = MAX_COMMENT) => String(s || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, max);
 const nice = (s) => String(s || '').replace(/_/g, ' ');
+const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// One action from a chat platform: {kind: 'status'|'close'|'comment', ref, status, verdict, text,
-// actor: {platform, id, name}}. Returns {ok, message, case}.
+async function recentComments(env, cfg, kase) {
+  const d = await gql(env, cfg, 'query($a: CaseCommentsArguments!) { caseComments(arguments: $a) { comments { id authorId comment } } }', { a: { caseId: kase.id, orderBy: 'DESCENDING', perPage: 100 } });
+  return (d.caseComments && d.caseComments.comments) || [];
+}
+
+// Approve or deny a request a library playbook left on the case. The bridge only checks that the
+// request is there and that it hasn't decided it already; the Approval before acting playbook
+// checks the rest (who wrote the request, expiry, and that it runs once) before anything runs.
+async function decide(env, cfg, a, kase, label, who, done) {
+  const id = String(a.request || '').toUpperCase();
+  if (!REQUEST_ID.test(id)) return done(false, `Add the request ID from the approval card after the case ID, such as ${label} AP-7K2M9QX4.`, kase);
+  const comments = await recentComments(env, cfg, kase);
+  if (!comments.some((c) => String(c.comment || '').includes(`\napproval-request: ${id}`))) return done(false, `No approval request ${id} on ${label}.`, kase);
+  const self = String(env.FUSION_CLIENT_ID || '').toLowerCase();
+  const before = new RegExp(`^${escapeRe(`${cfg.prefix} Approval decision: `.trimStart())}(approve|deny) ${id} by (.*) via \\w+\\.$`);
+  for (const c of comments) {
+    const m = String(c.authorId || '').toLowerCase() === self ? before.exec(String(c.comment || '')) : null;
+    if (m) return done(false, `${id} was already ${m[1] === 'approve' ? 'approved' : 'denied'} by ${m[2]}, so nothing changed.`, kase);
+  }
+  const comment = `${cfg.prefix} Approval decision: ${a.kind} ${id} by ${who.replace(/\s+/g, ' ')}.`.trim();
+  if (cfg.dryRun) return done(true, `Dry run: would record on ${label}: ${comment}`, kase);
+  await gql(env, cfg, 'mutation($i: AddCaseComment!) { addCaseComment(input: $i) { id } }', { i: { caseId: kase.id, comment } });
+  return done(true, a.kind === 'approve'
+    ? `Approved ${id} on ${label}. The Approval before acting playbook checks it, runs the held actions and puts the outcome on the case.`
+    : `Denied ${id} on ${label}. Nothing will run.`, kase);
+}
+
+// One action from a chat platform: {kind: 'status'|'close'|'comment'|'approve'|'deny', ref, status,
+// verdict, text, request, actor: {platform, id, name}}. Returns {ok, message, case}.
 export async function act(env, cfg, a, log = console.log) {
-  const entry = { at: new Date().toISOString(), platform: a.actor.platform, user_id: a.actor.id, user_name: a.actor.name, action: a.kind, ref: a.ref, status: a.status || null, verdict: a.verdict || null, dry_run: cfg.dryRun };
+  const entry = { at: new Date().toISOString(), platform: a.actor.platform, user_id: a.actor.id, user_name: a.actor.name, action: a.kind, ref: a.ref, status: a.status || null, verdict: a.verdict || null, request: a.request || null, dry_run: cfg.dryRun };
   const done = (ok, message, kase) => { log(JSON.stringify({ ...entry, case_id: kase ? kase.id : null, ok, result: message })); return { ok, message, case: kase || null }; };
   try {
     const kase = await findCase(env, cfg, a.ref);
@@ -189,6 +223,7 @@ export async function act(env, cfg, a, log = console.log) {
     if (kase.primaryStatus && kase.primaryStatus.isClosed) return done(false, `${label} is closed, so it can't be changed from chat. Reopen it in Sophos Fusion first.`, kase);
     const who = `${clean(a.actor.name, 200) || 'Unknown user'} via ${a.actor.platform}`;
     const note = clean(a.text);
+    if (a.kind === 'approve' || a.kind === 'deny') return await decide(env, cfg, a, kase, label, who, done);
     if (a.kind === 'comment') {
       if (!note) return done(false, 'Add the comment text after the case ID.', kase);
       const comment = `${cfg.prefix} ${who}: ${note}`.trim();
@@ -238,7 +273,8 @@ export function teamsText(html) {
     .trim();
 }
 
-// "<status> <ref> [note]", "close <ref> <verdict> [note]", "comment <ref> <text>".
+// "<status> <ref> [note]", "close <ref> <verdict> [note]", "comment <ref> <text>",
+// "approve <ref> <request ID>", "deny <ref> <request ID>".
 export function parseCommand(text, cfg) {
   const words = text.split(' ').filter(Boolean);
   const first = (words[0] || '').toLowerCase();
@@ -247,6 +283,7 @@ export function parseCommand(text, cfg) {
   const ref = words[1] || '';
   if (!ref || !(UUID.test(ref) || SHORT_ID.test(ref))) return null;
   if (verb === 'comment') return { kind: 'comment', ref, text: words.slice(2).join(' ') };
+  if (verb === 'approve' || verb === 'deny') return { kind: verb, ref, request: (words[2] || '').toUpperCase() };
   if (verb === 'close') return { kind: 'close', ref, verdict: (words[2] || '').toLowerCase(), text: words.slice(3).join(' ') };
   if (cfg.statuses.includes(verb) && verb !== 'closed') return { kind: 'status', ref, status: verb, text: words.slice(2).join(' ') };
   return null;
@@ -254,7 +291,7 @@ export function parseCommand(text, cfg) {
 
 function teamsUsage(cfg) {
   const statuses = cfg.statuses.filter((s) => s !== 'closed');
-  return `Commands: ${statuses.map((s) => `${s} <case>`).join(', ')}, close <case> <verdict> [note], comment <case> <text>. A case is its ID, such as CSE00042. Verdicts: ${cfg.verdicts.join(', ')}.`;
+  return `Commands: ${statuses.map((s) => `${s} <case>`).join(', ')}, close <case> <verdict> [note], comment <case> <text>, approve <case> <request>, deny <case> <request>. A case is its ID, such as CSE00042, and a request is the AP- ID on an approval card. Verdicts: ${cfg.verdicts.join(', ')}.`;
 }
 
 const teamsReply = (text) => new Response(JSON.stringify({ type: 'message', text }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -303,6 +340,14 @@ async function slackRespond(responseUrl, text) {
   try { u = new URL(responseUrl); } catch { return; }
   if (u.protocol !== 'https:' || u.hostname !== 'hooks.slack.com') return;
   await fetch(u.toString(), { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ response_type: 'ephemeral', replace_original: false, text }) });
+}
+
+// Messages from before Slack case chat sync 1.1.0 have Set active and Set awaiting action buttons,
+// which a Sophos MDR tenant calls in_progress and customer_action_required.
+const SLACK_OLD = { active: 'in_progress', awaiting_action: 'customer_action_required' };
+export function slackStatus(name, cfg) {
+  const s = String(name || '').toLowerCase();
+  return SLACK_OLD[s] && !cfg.statuses.includes(s) && cfg.statuses.includes(SLACK_OLD[s]) ? SLACK_OLD[s] : s;
 }
 
 function parseValue(v) {
@@ -370,8 +415,13 @@ async function handleSlack(request, env, ctx, cfg) {
       return ok();
     }
     if (id.startsWith('fusion_status_')) {
-      const status = id.slice('fusion_status_'.length);
+      const status = slackStatus(id.slice('fusion_status_'.length), cfg);
       ctx.waitUntil(act(env, cfg, { kind: 'status', ref, status, text: '', actor }).then((r) => slackRespond(responseUrl, r.message)));
+      return ok();
+    }
+    if (id === 'fusion_approve' || id === 'fusion_deny') {
+      const request = String(action.value || '').split('|')[2] || '';
+      ctx.waitUntil(act(env, cfg, { kind: id.slice('fusion_'.length), ref, request, text: '', actor }).then((r) => slackRespond(responseUrl, r.message)));
       return ok();
     }
     return ok();

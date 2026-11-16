@@ -1,9 +1,9 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Phishing_Triage_Purge
-version: 1.0.0
+version: 1.1.0
 title: Phishing triage and purge (unofficial)
-description: For a phishing email, finds its copies in your Microsoft 365 mailboxes, checks the sender, the authentication results and the links, moves each copy out of the users' folders and records the triage and the mailbox list on the case. Run it from a case whose detections name the email, or by hand with the email's Internet message ID. It never deletes mail, and it starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: For a phishing email, finds its copies in your Microsoft 365 mailboxes, checks the sender, the authentication results and the links, moves each copy out of the users' folders and records the triage and the mailbox list on the case. Run it from a case whose detections name the email, or by hand with the email's Internet message ID. It never deletes mail, it starts in dry run, which only records what it would do, and it can ask for approval in Teams or Slack before it moves anything. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Runs from a case, on a new case from an automatic case rule, or by hand with the Internet message ID of the email. From a case it takes the Internet message ID, the sender and the recipients from the email detections in the case: Microsoft Defender for Office 365 alerts, Sophos Email and other email gateway detections carry them. Sophos doesn't make, maintain or support this playbook.
@@ -14,6 +14,7 @@ documentation: |
 
     # Safety
     - Dry run is on until you turn it off. In dry run the playbook searches, reads one copy and records what it would move, and moves nothing.
+    - Ask for approval first, off by default, holds the moves for a person to approve. The run writes an approval request on the case, with a line for each copy and a request ID, and moves nothing. The library's Approval before acting playbook moves the copies once someone approves the request in Teams or Slack through the chat bridge, and does nothing if they deny it or the request expires.
     - It only searches and moves mail in mailboxes whose address is in a domain you list. With no domains set, it does nothing.
     - It never touches a mailbox on Excluded mailboxes, or the sender's own mailbox.
     - A run that finds copies in more mailboxes than Max mailboxes per run moves none of them.
@@ -35,7 +36,10 @@ documentation: |
     | Internet message ID | Run by hand: the email's Message-ID header | None |
     | Case | Run by hand: the case to record the outcome on | None |
     | Mailboxes to search | Run by hand: mailboxes that hold a copy, such as the person who reported it | None |
-changeNotes: First version
+    | Ask for approval first | Write an approval request on the case and move nothing; Approval before acting runs it once approved | Off |
+    | Approval window (hours) | How long a request stays open | 4 |
+    | Bridge name | The chat bridge's @mention name in Teams, for the request's reply line | Fusion |
+changeNotes: New Ask for approval first input. With it on, a run that would move copies writes an approval request on the case, with a request ID and an expiry, and moves nothing; the library's Approval before acting playbook moves them once someone approves it in Teams or Slack through the chat bridge.
 tags:
     - Category:Email
     - Type:Response
@@ -70,6 +74,21 @@ inputs:
     properties:
         configuration:
             properties:
+                approval:
+                    default: false
+                    description: When on, a run that would move anything writes an approval request on the case and moves nothing. The library's Approval before acting playbook moves the copies once someone approves the request in Teams or Slack through the chat bridge. It needs a case.
+                    title: Ask for approval first
+                    type: boolean
+                approval_hours:
+                    default: 4
+                    description: How long an approval request stays open, in hours, 1 to 72. An approval after that moves nothing.
+                    title: Approval window (hours)
+                    type: integer
+                bridge_name:
+                    default: Fusion
+                    description: The @mention name of the chat bridge's Teams outgoing webhook, for the reply line in the approval request
+                    title: Bridge name
+                    type: string
                 destination:
                     default: recoverableitemsdeletions
                     description: Where each copy goes. recoverableitemsdeletions is Recoverable Items, which the user doesn't see in their folders and can recover with Recover Deleted Items in Outlook. deleteditems is Deleted Items and junkemail is Junk Email, which the user still sees.
@@ -173,6 +192,10 @@ dsl:
         - name: setup
           let:
             dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            approval: "inputs.?configuration.approval.orValue(false)"
+            hold: "inputs.?configuration.dry_run.orValue(true) || inputs.?configuration.approval.orValue(false)"
+            approval_hours: "int(inputs.?configuration.approval_hours.orValue(4)) < 1 ? 1 : int(inputs.?configuration.approval_hours.orValue(4)) > 72 ? 72 : int(inputs.?configuration.approval_hours.orValue(4))"
+            bridge_name: "cel.bind(b, inputs.?configuration.bridge_name.orValue('Fusion'), b == null || string(b).trim() == '' ? 'Fusion' : string(b).trim())"
             domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
             excluded: "inputs.?configuration.excluded_mailboxes.orValue([]).map(m, string(m).trim().toLower()).filter(m, m != '')"
             destination: "string(inputs.?configuration.destination.orValue('recoverableitemsdeletions')).trim().toLower() in ['recoverableitemsdeletions', 'deleteditems', 'junkemail'] ? string(inputs.?configuration.destination.orValue('recoverableitemsdeletions')).trim().toLower() : 'recoverableitemsdeletions'"
@@ -472,7 +495,7 @@ dsl:
             go: "gate1.variables.go && size(plan.variables.hits) > 0 && size(plan.variables.hits) <= setup.variables.max_mailboxes"
         # The tasks that change anything, and only with dry run off.
         - name: purge
-          condition: "!setup.variables.dry_run && gate2.variables.go && size(plan2.variables.copies) > 0"
+          condition: "!setup.variables.hold && gate2.variables.go && size(plan2.variables.copies) > 0"
           range: plan2.variables.copies
           variables:
             done: []
@@ -490,7 +513,7 @@ dsl:
                 done: "append(purge.variables.done, {'mailbox': purge.value.mailbox, 'ok': has(move, 'outputs.outcome') && move.outputs.outcome == 'success', 'error': has(move, 'status.error') ? (type(move.status.error) == type('') ? move.status.error : toString(move.status.error)) : ''})"
         # Read each mailbox again, so the case shows what is left outside the destination folder.
         - name: recheck
-          condition: "!setup.variables.dry_run && gate2.variables.go && size(plan.variables.hits) > 0"
+          condition: "!setup.variables.hold && gate2.variables.go && size(plan.variables.hits) > 0"
           range: plan.variables.hits
           variables:
             left: []
@@ -527,11 +550,18 @@ dsl:
                 plan.variables.hits.map(h, {
                   'mailbox': h.mailbox,
                   'copies': size(h.copies),
-                  'result': setup.variables.dry_run || !gate2.variables.go ? (gate2.variables.go ? 'would move' : 'left') :
+                  'result': setup.variables.hold || !gate2.variables.go ? (gate2.variables.go ? 'would move' : 'left') :
                     outcome.variables.moved.exists(m, m.mailbox == h.mailbox && !m.ok) || outcome.variables.left.exists(l, l.mailbox == h.mailbox && (!l.read || l.count > 0)) ? 'failed' : 'moved',
                   'left': outcome.variables.left.filter(l, l.mailbox == h.mailbox).map(l, l.read ? l.count : -1)[?0].orValue(-1)
                 })
             triage: triage.variables.lines
+        # Ask for approval first: one request line per copy, for the Approval before acting playbook.
+        - name: request
+          let:
+            needed: "setup.variables.approval && !setup.variables.dry_run && gate2.variables.go && size(plan2.variables.copies) > 0"
+            actions: "plan2.variables.copies.map(c, 'mail.move; mailbox=' + c.mailbox + '; message=' + c.id + '; folder=' + setup.variables.destination)"
+            id: "'AP-' + generateString(8, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789')"
+            expires: "string(now() + duration(string(setup.variables.approval_hours) + 'h')).substring(0, 19) + 'Z'"
         - name: folder
           let:
             name: "setup.variables.destination == 'recoverableitemsdeletions' ? 'Recoverable Items' : setup.variables.destination == 'deleteditems' ? 'Deleted Items' : 'Junk Email'"
@@ -560,7 +590,7 @@ dsl:
           let:
             body: >-
                 check.variables.stop != '' ? '' :
-                '**Phishing triage and purge (automated)**\n' + text.variables.from + '\n\n' +
+                (request.variables.needed ? '**Approval needed: Phishing triage and purge**\n' : '**Phishing triage and purge (automated)**\n') + text.variables.from + '\n\n' +
                 (gate1.variables.problem != '' ? '- ' + gate1.variables.problem :
                   'Internet message ID: ' + msg.variables.mid +
                   (size(triage.variables.lines) > 0 ? '\n\n**Triage**\n' + triage.variables.lines.map(l, '- ' + l).join('\n') : '') +
@@ -571,20 +601,34 @@ dsl:
         - name: target
           let:
             case_id: "check.variables.stop == '' && has(fetch_case, 'outputs.case.id') ? string(fetch_case.outputs.case.id) : ''"
+        # The approval request: how to answer it, then the lines the Approval before acting playbook reads.
+        - name: final
+          let:
+            ref: "has(fetch_case, 'outputs.case.shortId') ? string(fetch_case.outputs.case.shortId) : target.variables.case_id"
+            body: >-
+                !request.variables.needed || target.variables.case_id == '' || comment_text.variables.body == '' ? comment_text.variables.body :
+                cel.bind(ref, has(fetch_case, 'outputs.case.shortId') ? string(fetch_case.outputs.case.shortId) : target.variables.case_id,
+                  comment_text.variables.body + '\n\nNothing moves until someone approves request ' + request.variables.id + '. It is open until ' + request.variables.expires.replace('T', ' ').replace('Z', ' UTC') + '.\n' +
+                  '- Teams: @' + setup.variables.bridge_name + ' approve ' + ref + ' ' + request.variables.id + ', or @' + setup.variables.bridge_name + ' deny ' + ref + ' ' + request.variables.id + '\n' +
+                  '- Slack: Approve or Deny on the message\n\n' +
+                  '```\napproval-request: ' + request.variables.id + '\napproval-expires: ' + request.variables.expires + '\napproval-source: Phishing triage and purge\n' +
+                  request.variables.actions.map(a, 'approval-action: ' + a).join('\n') + '\n```')
         - name: comment
-          condition: "target.variables.case_id != '' && comment_text.variables.body != ''"
+          condition: "target.variables.case_id != '' && final.variables.body != ''"
           action: Taegis.Case.addComment
           optional: true
           retry: 1
           inputs:
             tenant_id: setup.variables.tenant_id
             caseId: target.variables.case_id
-            comment: comment_text.variables.body
+            comment: final.variables.body
         - name: finish
           let:
-            status: "check.variables.stop == '' && (gate1.variables.problem != '' || gate2.variables.problem != '' || report.variables.mailboxes.exists(m, m.result == 'failed') || (target.variables.case_id != '' && comment_text.variables.body != '' && !has(comment, 'outputs.comment.id'))) ? 'FAIL' : 'SUCCESS'"
+            status: "check.variables.stop == '' && (gate1.variables.problem != '' || gate2.variables.problem != '' || report.variables.mailboxes.exists(m, m.result == 'failed') || (request.variables.needed && target.variables.case_id == '') || (target.variables.case_id != '' && final.variables.body != '' && !has(comment, 'outputs.comment.id'))) ? 'FAIL' : 'SUCCESS'"
             message: >-
                 check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
                 gate1.variables.problem != '' ? gate1.variables.problem :
+                (request.variables.needed && target.variables.case_id == '' ? 'Ask for approval first needs a case to hold the request, and this run has none, so nothing was moved. ' :
+                 request.variables.needed ? 'Asked for approval: request ' + request.variables.id + ' on ' + final.variables.ref + ', open until ' + request.variables.expires + '. ' : '') +
                 text.variables.copies.join(' ') + ' ' + text.variables.searched.join(' ') +
                 (target.variables.case_id == '' ? ' No case was given, so the outcome is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')

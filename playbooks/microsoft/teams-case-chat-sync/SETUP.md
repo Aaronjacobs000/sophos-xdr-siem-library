@@ -56,6 +56,8 @@ Teams cards from a Workflows webhook can't send button clicks back, so the two-w
 
 The card's reply line names the statuses a Sophos MDR tenant's cases use, in_progress and customer_action_required. A tenant without Sophos MDR uses active and awaiting_action instead: set the bridge's `BRIDGE_ALLOWED_STATUSES` to `active,awaiting_action,closed` and reply with those.
 
+An approval request from the [Approval before acting](../approval-before-acting/) setup posts as Approval needed, with its own reply lines: `@Fusion approve CSE00042 AP-7K2M9QX4` or `@Fusion deny CSE00042 AP-7K2M9QX4`.
+
 Outgoing webhooks work in standard channels only, and only when someone @mentions them.
 
 ## Rollback
