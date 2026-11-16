@@ -1,0 +1,467 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_M365_Approval_Before_Acting
+version: 1.0.0
+title: Approval before acting (unofficial)
+description: Runs the Microsoft 365 actions that the library's account takeover cleanup and phishing purge playbooks hold for approval, once someone approves the request in Teams or Slack through the library's chat bridge. It trusts only a decision the chat bridge's own API credential wrote and a request a playbook wrote, does nothing on a denied or expired request, runs each request once, and records the approver and the outcome on the case. It starts in dry run. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    Runs when a comment is added to a case. It acts only on an approval decision that the library's chat bridge wrote, such as `[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams.`, and only on a request that a playbook wrote on the same case. Sophos doesn't make, maintain or support this playbook.
+
+    1. Microsoft 365 account takeover cleanup or Phishing triage and purge, with Ask for approval first on, writes an approval request on the case in place of acting. The request lists each action, its target and a request ID such as AP-7K2M9QX4, and when it expires.
+    2. Teams case chat sync or Slack case chat sync posts the request to the channel.
+    3. Someone replies `@Fusion approve CSE00042 AP-7K2M9QX4` in Teams, or clicks Approve in Slack. The chat bridge checks the Teams or Slack signature and writes the decision on the case.
+    4. This playbook checks the decision and the request, then runs the actions once and comments the outcome and the approver on the case.
+
+    # What it checks
+    - The decision: Sophos Fusion must record it as written by the chat bridge's API credential (Chat bridge author ID), unedited. A decision typed in the console, or written by any other credential, does nothing, and nothing is written to the case.
+    - The request: it must be on the same case, written by a playbook (the author of this playbook's own comments) and unedited.
+    - Expiry: a decision written after the request's expiry runs nothing. The case gets a comment saying so.
+    - Deny: runs nothing, and the case gets a comment naming who denied it.
+    - Once only: before acting it records that it has the decision, then reads the case again. If an earlier decision on the same request is there, it runs nothing again.
+    - The case: a closed case runs nothing.
+
+    # The actions
+    | Action | Request line | What it calls |
+    | ------ | ------------ | ------------- |
+    | Disable the account | entra.disable_account | Microsoft Graph disableUser |
+    | Reset the password to a random one nobody sees | entra.reset_password | changePassword, with nolog |
+    | Revoke sign-in sessions | entra.revoke_sessions | revokeSignInSessions |
+    | Require a password change at the next sign-in | entra.require_password_change | forcePasswordChange, only when no reset of the same user went through in this run |
+    | Turn off an inbox rule | entra.inbox_rule_off | updateMessageRule |
+    | Confirm compromised | entra.confirm_compromised | getRiskyUser, then confirmCompromisedRiskyUser; skipped without Microsoft Entra ID P2 in the tenant |
+    | Move a copy of an email | mail.move | moveMessage, to Recoverable Items, Deleted Items or Junk Email only |
+
+    # Playbook Inputs
+    | Input | What it does | Default |
+    | ----- | ------------ | ------- |
+    | Dry run | Check the decision and the request and record what would run, changing nothing | On |
+    | Chat bridge author ID | The client ID of the chat bridge's Sophos Fusion API credential. Only decisions it wrote are trusted | None |
+    | Bridge comment prefix | The chat bridge's BRIDGE_COMMENT_PREFIX | `[chat-sync]` |
+    | Allowed actions | The actions this playbook may run; others in a request are skipped | All seven |
+    | Max actions per request | A request with more actions runs none | 50 |
+changeNotes: First version
+tags:
+    - Category:IAM
+    - Category:Email
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.MicrosoftGraphAPI:2.12.2
+    - Taegis.Case:1.0.5
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - Comment Added
+        source: case
+        filter: "caseComment(inputs).contains('Approval decision: ')"
+inputs:
+    properties:
+        configuration:
+            properties:
+                allowed_actions:
+                    default:
+                        - entra.disable_account
+                        - entra.reset_password
+                        - entra.revoke_sessions
+                        - entra.require_password_change
+                        - entra.inbox_rule_off
+                        - entra.confirm_compromised
+                        - mail.move
+                    description: The actions this playbook may run. An action in a request that isn't on the list is skipped and named in the outcome.
+                    items:
+                        type: string
+                    title: Allowed actions
+                    type: array
+                bridge_author:
+                    default: ""
+                    description: The client ID of the chat bridge's Sophos Fusion API credential, from Global Settings > API Credentials. Sophos Fusion records it as the author of every comment the bridge writes. Only decisions it wrote are trusted; with none set, nothing is.
+                    title: Chat bridge author ID
+                    type: string
+                comment_prefix:
+                    default: '[chat-sync]'
+                    description: The chat bridge's BRIDGE_COMMENT_PREFIX, which starts every comment it writes
+                    title: Bridge comment prefix
+                    type: string
+                dry_run:
+                    default: true
+                    description: When on, the playbook checks the decision and the request and records what it would run, and changes nothing. Turn it off after you've read a test run.
+                    title: Dry run
+                    type: boolean
+                max_actions:
+                    default: 50
+                    description: A request with more actions than this runs none of them.
+                    title: Max actions per request
+                    type: integer
+            required:
+                - bridge_author
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        actions:
+            description: Each action in the request with its result (done, would, skipped or failed) and what happened
+            type: array
+        decision:
+            description: approve or deny, as the chat bridge recorded it
+            type: string
+        request_id:
+            description: The request ID, such as AP-7K2M9QX4
+            type: string
+        result:
+            description: What the playbook did with the decision, such as run, denied, expired, already or ignored
+            type: string
+    type: object
+dsl:
+    name: Unofficial_M365_Approval_Before_Acting
+    description: Runs the Microsoft 365 actions in an approval request once the chat bridge records an approval, after checking who wrote the decision and the request, the expiry and that the request hasn't run, or records what it would run.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        actions: results.variables.list
+        decision: decision.variables.kind
+        request_id: decision.variables.request_id
+        result: verdict.variables.result
+    tasks:
+        # The settings, the case and the comment that started the run.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            bridge_author: "cel.bind(a, inputs.?configuration.bridge_author.orValue(''), a == null ? '' : string(a).trim().lowerAscii())"
+            prefix: "cel.bind(p, inputs.?configuration.comment_prefix.orValue('[chat-sync]'), p == null ? '' : string(p).trim())"
+            allowed: "inputs.?configuration.allowed_actions.orValue(['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move']).map(a, string(a).trim().lowerAscii()).filter(a, a != '')"
+            max_actions: "int(inputs.?configuration.max_actions.orValue(50)) < 1 ? 1 : int(inputs.?configuration.max_actions.orValue(50))"
+            case_id: "type(caseId(inputs)) == type('') ? caseId(inputs) : ''"
+            tenant_id: "type(caseTenantId(inputs)) == type('') && caseTenantId(inputs) != '' ? caseTenantId(inputs) : string(TDR.tenant)"
+            text: "type(caseComment(inputs)) == type('') ? caseComment(inputs) : ''"
+            comment_id: "cel.bind(i, inputs.?case.delta.comment.id.orValue(inputs.?case.comment.id.orValue('')), i == null ? '' : string(i))"
+        - name: heads
+          let:
+            decision: "setup.variables.prefix == '' ? 'Approval decision: ' : setup.variables.prefix + ' Approval decision: '"
+            claim: "setup.variables.prefix == '' ? 'Approval ' : setup.variables.prefix + ' Approval '"
+        # The decision the chat bridge writes: "<prefix> Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams."
+        - name: parse
+          let:
+            rest: "setup.variables.text.startsWith(heads.variables.decision) ? setup.variables.text.substring(size(heads.variables.decision)).trim() : ''"
+        - name: decision
+          let:
+            kind: "parse.variables.rest.split(' ')[0].lowerAscii()"
+            request_id: "size(parse.variables.rest.split(' ')) > 1 ? parse.variables.rest.split(' ')[1].upperAscii() : ''"
+            approver: "parse.variables.rest.indexOf(' by ') > 0 && parse.variables.rest.lastIndexOf(' via ') > parse.variables.rest.indexOf(' by ') ? parse.variables.rest.substring(parse.variables.rest.indexOf(' by ') + 4, parse.variables.rest.lastIndexOf(' via ')).trim() : 'someone'"
+            platform: "parse.variables.rest.lastIndexOf(' via ') > 0 ? parse.variables.rest.substring(parse.variables.rest.lastIndexOf(' via ') + 5).replace('.', '').trim() : 'chat'"
+        - name: fetch_case
+          condition: "setup.variables.case_id != '' && parse.variables.rest != ''"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Stop before reading the comments when this isn't a decision this playbook can use.
+        - name: gate
+          let:
+            stop: >-
+                setup.variables.case_id == '' ? 'The playbook ran without a case, so it did nothing.' :
+                parse.variables.rest == '' ? 'The comment is not an approval decision, so it was ignored.' :
+                setup.variables.bridge_author == '' ? 'Chat bridge author ID is not set, so no decision is trusted and nothing was done.' :
+                !(decision.variables.kind in ['approve', 'deny']) || !decision.variables.request_id.matches('^AP-[A-Z2-9]{8}$') ? 'The approval decision could not be read, so it was ignored.' :
+                !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was done.' : ''
+        - name: read_comments
+          condition: "gate.variables.stop == ''"
+          action: Taegis.Case.getComments
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            orderBy: 'DESCENDING'
+            perPage: 100
+        - name: comments
+          let:
+            list: "gate.variables.stop == '' && has(read_comments, 'outputs.comments') && type(read_comments.outputs.comments) == type([]) ? read_comments.outputs.comments : []"
+        # The decision as the case stores it, not as the event carried it: its author must be the chat bridge's credential, and it must be unedited.
+        - name: stored
+          let:
+            this: "comments.variables.list.filter(c, has(c, 'id') && string(c.id) == setup.variables.comment_id)"
+        - name: trust
+          let:
+            signed: >-
+                size(stored.variables.this) == 1 && has(stored.variables.this[0], 'authorId') && has(stored.variables.this[0], 'comment') &&
+                string(stored.variables.this[0].authorId).lowerAscii() == setup.variables.bridge_author &&
+                string(stored.variables.this[0].createdAt) == string(stored.variables.this[0].updatedAt) &&
+                string(stored.variables.this[0].comment) == setup.variables.text
+            created: "size(stored.variables.this) == 1 && has(stored.variables.this[0], 'createdAt') ? string(stored.variables.this[0].createdAt) : ''"
+            requests: >-
+                comments.variables.list.filter(c, has(c, 'comment') && string(c.comment).contains('\napproval-request: ' + decision.variables.request_id))
+        - name: gate2
+          let:
+            stop: >-
+                gate.variables.stop != '' ? gate.variables.stop :
+                !has(read_comments, 'outputs.comments') ? 'The case comments could not be read, so nothing was done.' :
+                !trust.variables.signed ? 'The decision was not written by the chat bridge (Chat bridge author ID), or was edited, so it was ignored and nothing was written to the case.' : ''
+        # A trusted decision on a request this case holds: record it before anything else, so a second decision can see it.
+        - name: claim
+          condition: "gate2.variables.stop == '' && size(trust.variables.requests) > 0"
+          action: Taegis.Case.addComment
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            comment: "heads.variables.claim + decision.variables.request_id + ': ' + decision.variables.kind + ' from ' + decision.variables.approver + ' via ' + decision.variables.platform + ' received. Checking it.'"
+        - name: settle
+          condition: "has(claim, 'outputs.comment.id')"
+          sleep: "'5s'"
+        - name: reread
+          condition: "has(claim, 'outputs.comment.id')"
+          action: Taegis.Case.getComments
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            orderBy: 'DESCENDING'
+            perPage: 100
+        # This playbook's own author is the one its claim got, the same identity every playbook's case comments get.
+        - name: mine
+          let:
+            author: "has(claim, 'outputs.comment.authorId') ? string(claim.outputs.comment.authorId).lowerAscii() : ''"
+            id: "has(claim, 'outputs.comment.id') ? string(claim.outputs.comment.id) : ''"
+            created: "has(claim, 'outputs.comment.createdAt') ? string(claim.outputs.comment.createdAt) : ''"
+            list: "has(reread, 'outputs.comments') && type(reread.outputs.comments) == type([]) ? reread.outputs.comments : []"
+        - name: lookup
+          let:
+            request: >-
+                mine.variables.author == '' ? [] :
+                mine.variables.list.filter(c, has(c, 'comment') && has(c, 'authorId') && string(c.authorId).lowerAscii() == mine.variables.author &&
+                  string(c.createdAt) == string(c.updatedAt) && string(c.comment).contains('\napproval-request: ' + decision.variables.request_id))
+            claims: >-
+                mine.variables.author == '' ? [] :
+                mine.variables.list.filter(c, has(c, 'comment') && has(c, 'authorId') && string(c.authorId).lowerAscii() == mine.variables.author &&
+                  string(c.id) != mine.variables.id && string(c.comment).startsWith(heads.variables.claim + decision.variables.request_id + ': '))
+        - name: first
+          let:
+            earlier: "mine.variables.created == '' ? [] : lookup.variables.claims.filter(c, timestamp(string(c.createdAt)) < timestamp(mine.variables.created) || (string(c.createdAt) == mine.variables.created && string(c.id) < mine.variables.id))"
+        - name: earliest
+          let:
+            said: >-
+                cel.bind(e, first.variables.earlier.filter(c, !first.variables.earlier.exists(o, timestamp(string(o.createdAt)) < timestamp(string(c.createdAt)))), size(e) == 0 ? '' :
+                  cel.bind(t, string(e[0].comment).substring(size(heads.variables.claim + decision.variables.request_id + ': ')), (t.indexOf(' received') > 0 ? t.substring(0, t.indexOf(' received')) : t) + ' at ' + string(e[0].createdAt).substring(0, 19) + 'Z'))
+        # The request's lines: the human summary, then approval-request, approval-expires, approval-source and one approval-action line per action.
+        - name: request
+          let:
+            lines: "size(lookup.variables.request) > 0 ? string(lookup.variables.request[0].comment).split('\\n').map(l, l.trim()) : []"
+        - name: fields
+          let:
+            expires: "request.variables.lines.filter(l, l.startsWith('approval-expires: ')).map(l, l.substring(18).trim())[?0].orValue('')"
+            source: "request.variables.lines.filter(l, l.startsWith('approval-source: ')).map(l, l.substring(17).trim())[?0].orValue('a playbook')"
+            actions: "request.variables.lines.filter(l, l.startsWith('approval-action: ')).map(l, l.substring(17).trim()).filter(l, l != '')"
+        - name: timing
+          let:
+            valid: "fields.variables.expires.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$') && trust.variables.created != ''"
+        - name: timing2
+          let:
+            expired: "timing.variables.valid && timestamp(trust.variables.created) > timestamp(fields.variables.expires)"
+        # Each action line is "<kind>; key=value; ...". Values never hold "; ".
+        - name: plan
+          let:
+            list: >-
+                fields.variables.actions.map(a, cel.bind(parts, a.split('; '), cel.bind(kv, parts.slice(1, size(parts)).map(p, p.trim()), {
+                  'kind': parts[0].trim().lowerAscii(),
+                  'user': kv.filter(p, p.startsWith('user=')).map(p, p.substring(5))[?0].orValue(''),
+                  'label': kv.filter(p, p.startsWith('label=')).map(p, p.substring(6))[?0].orValue(''),
+                  'rule': kv.filter(p, p.startsWith('rule=')).map(p, p.substring(5))[?0].orValue(''),
+                  'name': kv.filter(p, p.startsWith('name=')).map(p, p.substring(5))[?0].orValue(''),
+                  'mailbox': kv.filter(p, p.startsWith('mailbox=')).map(p, p.substring(8))[?0].orValue(''),
+                  'message': kv.filter(p, p.startsWith('message=')).map(p, p.substring(8))[?0].orValue(''),
+                  'folder': kv.filter(p, p.startsWith('folder=')).map(p, p.substring(7).lowerAscii())[?0].orValue('')
+                })))
+        - name: verdict
+          let:
+            result: >-
+                gate2.variables.stop != '' ? 'ignored' :
+                size(trust.variables.requests) == 0 ? 'not_found' :
+                !has(claim, 'outputs.comment.id') ? 'claim_failed' :
+                !has(reread, 'outputs.comments') ? 'unreadable' :
+                size(lookup.variables.request) == 0 ? 'untrusted' :
+                size(first.variables.earlier) > 0 ? 'already' :
+                decision.variables.kind == 'deny' ? 'denied' :
+                !timing.variables.valid ? 'no_expiry' :
+                timing2.variables.expired ? 'expired' :
+                has(fetch_case, 'outputs.case.primaryStatus.isClosed') && fetch_case.outputs.case.primaryStatus.isClosed == true ? 'closed' :
+                size(plan.variables.list) == 0 ? 'empty' :
+                size(plan.variables.list) > setup.variables.max_actions ? 'too_many' : 'run'
+        # One pass per action, in the request's order. The tasks that change anything run only with dry run off.
+        - name: run
+          condition: "verdict.variables.result == 'run'"
+          range: plan.variables.list
+          variables:
+            done: []
+          for:
+            - name: check_action
+              let:
+                known: "run.value.kind in ['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move']"
+                allowed: "run.value.kind in setup.variables.allowed"
+                complete: "run.value.kind == 'mail.move' ? run.value.mailbox != '' && run.value.message != '' && run.value.folder in ['recoverableitemsdeletions', 'deleteditems', 'junkemail'] : run.value.kind == 'entra.inbox_rule_off' ? run.value.user != '' && run.value.rule != '' : run.value.user != ''"
+                who: "run.value.label != '' ? run.value.label : run.value.kind == 'mail.move' ? run.value.mailbox : run.value.user"
+            - name: go
+              let:
+                ok: "check_action.variables.known && check_action.variables.allowed && check_action.variables.complete"
+                act: "check_action.variables.known && check_action.variables.allowed && check_action.variables.complete && !setup.variables.dry_run"
+                reset_done: "run.variables.done.exists(d, d.kind == 'entra.reset_password' && d.user == run.value.user && d.result == 'done')"
+            - name: do_disable
+              condition: "go.variables.act && run.value.kind == 'entra.disable_account'"
+              action: Taegis.MicrosoftGraphAPI.disableUser
+              optional: true
+              retry: 2
+              inputs:
+                id: run.value.user
+            # The connector makes the new password from its connection's Password to use in response actions setting. The execution log records each request body, so nolog keeps this task's request out of it.
+            - name: do_reset
+              condition: "go.variables.act && run.value.kind == 'entra.reset_password'"
+              action: Taegis.MicrosoftGraphAPI.changePassword
+              optional: true
+              nolog: true
+              retry: 1
+              inputs:
+                id: run.value.user
+            - name: do_revoke
+              condition: "go.variables.act && run.value.kind == 'entra.revoke_sessions'"
+              action: Taegis.MicrosoftGraphAPI.revokeSignInSessions
+              optional: true
+              retry: 2
+              inputs:
+                id: run.value.user
+            # A reset already makes the user change the password at the next sign-in, so this runs only when no reset of the same user went through.
+            - name: do_force
+              condition: "go.variables.act && run.value.kind == 'entra.require_password_change' && !go.variables.reset_done"
+              action: Taegis.MicrosoftGraphAPI.forcePasswordChange
+              optional: true
+              retry: 2
+              inputs:
+                id: run.value.user
+            - name: do_rule
+              condition: "go.variables.act && run.value.kind == 'entra.inbox_rule_off'"
+              action: Taegis.MicrosoftGraphAPI.updateMessageRule
+              optional: true
+              retry: 2
+              inputs:
+                id: run.value.user
+                ruleId: run.value.rule
+                body: "{'isEnabled': false}"
+            # Confirm compromised needs Entra ID P2 in the tenant. Reading the user's risk is the check: without P2 Microsoft Graph answers that the tenant is not licensed.
+            - name: do_risk
+              condition: "go.variables.act && run.value.kind == 'entra.confirm_compromised'"
+              action: Taegis.MicrosoftGraphAPI.getRiskyUser
+              optional: true
+              inputs:
+                id: run.value.user
+            - name: license
+              let:
+                no_p2: "run.value.kind == 'entra.confirm_compromised' && has(do_risk, 'status.error') && (type(do_risk.status.error) == type('') ? do_risk.status.error : toString(do_risk.status.error)).lowerAscii().contains('licens')"
+            - name: do_confirm
+              condition: "go.variables.act && run.value.kind == 'entra.confirm_compromised' && !license.variables.no_p2"
+              action: Taegis.MicrosoftGraphAPI.confirmCompromisedRiskyUser
+              optional: true
+              retry: 1
+              inputs:
+                userIds: "[run.value.user]"
+            - name: do_move
+              condition: "go.variables.act && run.value.kind == 'mail.move'"
+              action: Taegis.MicrosoftGraphAPI.moveMessage
+              optional: true
+              retry: 1
+              inputs:
+                id: run.value.mailbox
+                messageId: run.value.message
+                destinationId: run.value.folder
+            - name: outcome
+              let:
+                ok: >-
+                    run.value.kind == 'entra.disable_account' ? has(do_disable, 'outputs.outcome') && do_disable.outputs.outcome == 'success' :
+                    run.value.kind == 'entra.reset_password' ? has(do_reset, 'outputs.outcome') && do_reset.outputs.outcome == 'success' :
+                    run.value.kind == 'entra.revoke_sessions' ? has(do_revoke, 'outputs.outcome') && do_revoke.outputs.outcome == 'success' :
+                    run.value.kind == 'entra.require_password_change' ? go.variables.reset_done || (has(do_force, 'outputs.outcome') && do_force.outputs.outcome == 'success') :
+                    run.value.kind == 'entra.inbox_rule_off' ? has(do_rule, 'outputs.outcome') && do_rule.outputs.outcome == 'success' :
+                    run.value.kind == 'entra.confirm_compromised' ? license.variables.no_p2 || (has(do_confirm, 'outputs.outcome') && do_confirm.outputs.outcome == 'success') :
+                    run.value.kind == 'mail.move' ? has(do_move, 'outputs.outcome') && do_move.outputs.outcome == 'success' : false
+                error: >-
+                    cel.bind(e,
+                      run.value.kind == 'entra.disable_account' ? (has(do_disable, 'status.error') ? toString(do_disable.status.error) : '') :
+                      run.value.kind == 'entra.reset_password' ? (has(do_reset, 'status.error') ? toString(do_reset.status.error) : '') :
+                      run.value.kind == 'entra.revoke_sessions' ? (has(do_revoke, 'status.error') ? toString(do_revoke.status.error) : '') :
+                      run.value.kind == 'entra.require_password_change' ? (has(do_force, 'status.error') ? toString(do_force.status.error) : '') :
+                      run.value.kind == 'entra.inbox_rule_off' ? (has(do_rule, 'status.error') ? toString(do_rule.status.error) : '') :
+                      run.value.kind == 'entra.confirm_compromised' ? (has(do_confirm, 'status.error') ? toString(do_confirm.status.error) : '') :
+                      run.value.kind == 'mail.move' ? (has(do_move, 'status.error') ? toString(do_move.status.error) : '') : '',
+                      e != '' ? e : 'no success reply from Microsoft Graph')
+            - name: describe
+              let:
+                folder: "run.value.folder == 'recoverableitemsdeletions' ? 'Recoverable Items' : run.value.folder == 'deleteditems' ? 'Deleted Items' : 'Junk Email'"
+                rule: "run.value.name != '' ? run.value.name : 'a rule'"
+            - name: line
+              let:
+                result: "!go.variables.ok ? 'skipped' : setup.variables.dry_run ? 'would' : outcome.variables.ok ? 'done' : 'failed'"
+                text: >-
+                    !check_action.variables.known ? 'Skipped an action this playbook does not run: ' + run.value.kind + '.' :
+                    !check_action.variables.allowed ? 'Skipped, not on Allowed actions: ' + run.value.kind + ' for ' + check_action.variables.who + '.' :
+                    !check_action.variables.complete ? 'Skipped ' + run.value.kind + ': the request line is missing its target.' :
+                    run.value.kind == 'entra.disable_account' ? (setup.variables.dry_run ? 'Would disable the account of ' + check_action.variables.who + '.' : outcome.variables.ok ? 'Disabled the account of ' + check_action.variables.who + '.' : 'Disabling the account of ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
+                    run.value.kind == 'entra.reset_password' ? (setup.variables.dry_run ? 'Would reset the password of ' + check_action.variables.who + ' to a new random one.' : outcome.variables.ok ? 'Reset the password of ' + check_action.variables.who + ' to a new random one that nobody has seen. The user needs a new password from your helpdesk or self-service password reset; check their MFA methods first.' : 'Resetting the password of ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
+                    run.value.kind == 'entra.revoke_sessions' ? (setup.variables.dry_run ? 'Would revoke the sign-in sessions of ' + check_action.variables.who + '.' : outcome.variables.ok ? 'Revoked the sign-in sessions of ' + check_action.variables.who + '.' : 'Revoking the sign-in sessions of ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
+                    run.value.kind == 'entra.require_password_change' ? (setup.variables.dry_run ? 'Would require ' + check_action.variables.who + ' to change the password at the next sign-in, unless a reset does.' : go.variables.reset_done ? 'The reset also set ' + check_action.variables.who + ' to change the password at the next sign-in.' : outcome.variables.ok ? 'Set ' + check_action.variables.who + ' to change the password at the next sign-in.' : 'Requiring a password change for ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
+                    run.value.kind == 'entra.inbox_rule_off' ? (setup.variables.dry_run ? 'Would turn off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + '.' : outcome.variables.ok ? 'Turned off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + '.' : 'Turning off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
+                    run.value.kind == 'entra.confirm_compromised' ? (setup.variables.dry_run ? 'Would confirm ' + check_action.variables.who + ' as compromised in Entra ID.' : license.variables.no_p2 ? 'Skipped confirm compromised for ' + check_action.variables.who + ': the tenant has no Microsoft Entra ID P2, which it needs.' : outcome.variables.ok ? 'Confirmed ' + check_action.variables.who + ' as compromised in Entra ID.' : 'Confirming ' + check_action.variables.who + ' as compromised failed: ' + outcome.variables.error) :
+                    (setup.variables.dry_run ? 'Would move a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + '.' : outcome.variables.ok ? 'Moved a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + '.' : 'Moving a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + ' failed: ' + outcome.variables.error)
+            - name: record
+              let:
+                done: "append(run.variables.done, {'kind': run.value.kind, 'user': run.value.user, 'target': check_action.variables.who, 'result': line.variables.result, 'text': line.variables.text})"
+        - name: results
+          let:
+            list: "has(run, 'variables.done') ? run.variables.done : []"
+        - name: words
+          let:
+            title: "'**Approval ' + decision.variables.request_id"
+            by: "decision.variables.approver + ' via ' + decision.variables.platform"
+            when: "trust.variables.created != '' ? ' at ' + trust.variables.created.substring(0, 19) + 'Z' : ''"
+            undo: >-
+                results.variables.list.exists(r, r.result == 'done' && r.kind in ['entra.disable_account', 'entra.inbox_rule_off', 'entra.confirm_compromised']) ? '\n\nTo undo: enable the account if it was disabled, turn the inbox rules back on in Outlook, and dismiss the user\'s risk in Entra ID. A password reset and revoked sessions can\'t be undone.' :
+                results.variables.list.exists(r, r.result == 'done' && r.kind == 'mail.move') ? '\n\nTo undo: the user restores the email with Recover Deleted Items in Outlook, or an admin moves it back.' : ''
+        - name: text
+          let:
+            body: >-
+                verdict.variables.result in ['ignored', 'claim_failed'] ? '' :
+                verdict.variables.result == 'not_found' ? words.variables.title + ' not found.** ' + words.variables.by + ' answered ' + decision.variables.kind + ', but no request ' + decision.variables.request_id + ' is among the case\'s latest 100 comments, so nothing was done.' :
+                verdict.variables.result == 'unreadable' ? words.variables.title + ' not checked.** The case comments could not be read again, so nothing was done. Answer again in a minute.' :
+                verdict.variables.result == 'untrusted' ? words.variables.title + ' refused.** The request on this case was not written by a playbook, or was edited, so nothing ran.' :
+                verdict.variables.result == 'already' ? words.variables.title + ' already decided.** ' + words.variables.by + ' answered ' + decision.variables.kind + ', but the request was already answered (' + earliest.variables.said + '), so nothing ran again.' :
+                verdict.variables.result == 'denied' ? words.variables.title + ' denied** by ' + words.variables.by + words.variables.when + '. Nothing was changed.' :
+                verdict.variables.result == 'no_expiry' ? words.variables.title + ' refused.** The request has no readable expiry, so nothing ran.' :
+                verdict.variables.result == 'expired' ? words.variables.title + ' expired** at ' + fields.variables.expires + ', before ' + words.variables.by + ' approved it' + words.variables.when + '. Nothing was changed. Run ' + fields.variables.source + ' again to ask again.' :
+                verdict.variables.result == 'closed' ? words.variables.title + ' not run.** The case is closed, so nothing was changed.' :
+                verdict.variables.result == 'empty' ? words.variables.title + ' not run.** The request lists no actions.' :
+                verdict.variables.result == 'too_many' ? words.variables.title + ' not run.** The request lists ' + string(size(plan.variables.list)) + ' actions, more than Max actions per request (' + string(setup.variables.max_actions) + '), so none ran.' :
+                words.variables.title + ' approved** by ' + words.variables.by + words.variables.when + '.\n' +
+                'Requested by ' + fields.variables.source + '.' + (setup.variables.dry_run ? ' Dry run is on, so nothing was changed.' : '') + '\n\n' +
+                results.variables.list.map(r, '- ' + r.text).join('\n') + words.variables.undo
+        - name: comment
+          condition: "text.variables.body != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: setup.variables.case_id
+            comment: text.variables.body
+        - name: finish
+          let:
+            status: "verdict.variables.result in ['claim_failed', 'unreadable'] || results.variables.list.exists(r, r.result == 'failed') || (text.variables.body != '' && !has(comment, 'outputs.comment.id')) ? 'FAIL' : 'SUCCESS'"
+            message: >-
+                verdict.variables.result == 'ignored' ? 'Skipped: ' + gate2.variables.stop :
+                verdict.variables.result == 'claim_failed' ? 'Recording the decision on the case failed, so nothing ran: ' + (has(claim, 'status.error') ? (type(claim.status.error) == type('') ? claim.status.error : toString(claim.status.error)) : 'no reply') :
+                text.variables.body.replace('**', '').replace('\n\n', ' ').replace('\n', ' ') +
+                (has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')

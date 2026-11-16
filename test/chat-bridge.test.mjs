@@ -3,7 +3,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac, randomBytes } from 'node:crypto';
-import worker, { verifySlack, verifyTeams, teamsText, parseCommand, settings, resetCache, safeEqual } from '../chat-bridge/worker.js';
+import worker, { verifySlack, verifyTeams, teamsText, parseCommand, settings, resetCache, safeEqual, slackStatus } from '../chat-bridge/worker.js';
 
 const CASE_ID = '11111111-2222-4333-8444-555555555555';
 const STATUS = { open: 'aaaaaaaa-0000-4000-8000-000000000001', active: 'aaaaaaaa-0000-4000-8000-000000000002', closed: 'aaaaaaaa-0000-4000-8000-000000000003', awaiting_action: 'aaaaaaaa-0000-4000-8000-000000000004', in_progress: 'aaaaaaaa-0000-4000-8000-000000000005', customer_action_required: 'aaaaaaaa-0000-4000-8000-000000000006' };
@@ -20,6 +20,7 @@ const MDR_ENV = { ...ENV, BRIDGE_ALLOWED_STATUSES: undefined };
 let calls;
 let kase;
 let logs;
+let caseComments;
 const realFetch = globalThis.fetch;
 const realLog = console.log;
 
@@ -31,6 +32,7 @@ beforeEach(() => {
   calls = [];
   logs = [];
   kase = fusionCase();
+  caseComments = [];
   resetCache();
   console.log = (line) => logs.push(line);
   globalThis.fetch = async (url, init = {}) => {
@@ -43,6 +45,7 @@ beforeEach(() => {
     if (u.startsWith('https://hooks.slack.com/')) return new Response('ok');
     if (u === 'https://api.taegis.sophos.com/graphql') {
       const { query, variables } = JSON.parse(body);
+      if (query.includes('caseComments')) return json({ data: { caseComments: { comments: caseComments } } });
       if (query.includes('cases(arguments')) return json({ data: { cases: { cases: variables.q === "shortId = 'CSE00042'" && kase ? [kase] : [] } } });
       if (query.includes('case(arguments')) return json({ data: { case: kase && variables.a.id === CASE_ID ? kase : null } });
       if (query.includes('casePrimaryStatuses')) return json({ data: { casePrimaryStatuses: { primaryStatuses: Object.entries(STATUS).map(([name, id]) => ({ id, name, title: name.replace('_', ' ').replace(/^./, (c) => c.toUpperCase()), isClosed: name === 'closed' })) } } });
@@ -126,6 +129,7 @@ test('settings: the Fusion API must be https on taegis.sophos.com, and the lists
   assert.equal(settings({ FUSION_API: 'https://api.region1.taegis.sophos.com/graphql' }).api, 'https://api.region1.taegis.sophos.com/graphql');
   const s = settings({});
   assert.deepEqual(s.statuses, ['in_progress', 'customer_action_required', 'closed']);
+  assert.ok(s.verdicts.includes('false_positive') && s.verdicts.includes('true_positive_benign') && s.verdicts.includes('true_positive_malicious'));
   assert.equal(s.prefix, '[chat-sync]');
   assert.equal(s.dryRun, false);
 });
@@ -202,7 +206,7 @@ test('Teams: a comment command adds a prefixed comment; unknown text gets the us
 test('Teams: with the default statuses the usage names in_progress and customer_action_required, and an old card\'s active sets in_progress', async () => {
   let c = ctx();
   let reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> help'), MDR_ENV, c)).json();
-  assert.match(reply.text, /^Commands: in_progress <case>, customer_action_required <case>, close <case> <verdict> \[note\], comment <case> <text>\./);
+  assert.match(reply.text, /^Commands: in_progress <case>, customer_action_required <case>, close <case> <verdict> \[note\], comment <case> <text>, approve <case> <request>, deny <case> <request>\./);
   assert.doesNotMatch(reply.text, /active|awaiting/);
   c = ctx();
   reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> customer_action_required CSE00042 waiting on the user'), MDR_ENV, c)).json();
@@ -319,6 +323,95 @@ test('Slack: a response_url that isn\'t Slack\'s is never called', async () => {
   await worker.fetch(slackRequest(payload), ENV, c);
   await c.settle();
   assert.equal(calls.filter((x) => x.url.includes('attacker')).length, 0);
+});
+
+// ---------------------------------------------------------------- approvals
+
+const REQUEST = 'AP-7K2M9QX4';
+const requestComment = (id = REQUEST) => ({ id: 'r1', authorId: 'playbook-subject', comment: `**Approval needed: Microsoft 365 account takeover cleanup**\nRequest ${id}.\n\n\`\`\`\napproval-request: ${id}\napproval-expires: 2026-11-16T10:30:00Z\n\`\`\`` });
+
+test('approvals: approve and deny parse with the request ID, in any case', () => {
+  const cfg = settings({});
+  assert.deepEqual(parseCommand('approve CSE00042 ap-7k2m9qx4', cfg), { kind: 'approve', ref: 'CSE00042', request: REQUEST });
+  assert.deepEqual(parseCommand(`deny ${CASE_ID} ${REQUEST} not now`, cfg), { kind: 'deny', ref: CASE_ID, request: REQUEST });
+  assert.deepEqual(parseCommand('approve CSE00042', cfg), { kind: 'approve', ref: 'CSE00042', request: '' });
+  assert.equal(parseCommand('approve AP-7K2M9QX4', cfg), null);
+});
+
+test('approvals: Teams approve writes one signed decision comment, as the bridge, and replies', async () => {
+  caseComments = [requestComment()];
+  const c = ctx();
+  const reply = await (await worker.fetch(teamsRequest(`<at>Fusion</at> approve CSE00042 ${REQUEST}`), MDR_ENV, c)).json();
+  await c.settle();
+  assert.match(reply.text, /^Approved AP-7K2M9QX4 on CSE00042\./);
+  const m = mutations();
+  assert.equal(m.length, 1);
+  assert.deepEqual(m[0].variables.i, { caseId: CASE_ID, comment: '[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams.' });
+  const read = calls.filter((x) => x.url.endsWith('/graphql')).map((x) => JSON.parse(x.body)).find((b) => b.query.includes('caseComments'));
+  assert.deepEqual(read.variables.a, { caseId: CASE_ID, orderBy: 'DESCENDING', perPage: 100 });
+  assert.ok(logs.some((l) => JSON.parse(l).request === REQUEST));
+});
+
+test('approvals: Teams deny records the decision and says nothing will run', async () => {
+  caseComments = [requestComment()];
+  const c = ctx();
+  const reply = await (await worker.fetch(teamsRequest(`<at>Fusion</at> deny CSE00042 ${REQUEST}`), MDR_ENV, c)).json();
+  await c.settle();
+  assert.equal(reply.text, 'Denied AP-7K2M9QX4 on CSE00042. Nothing will run.');
+  assert.equal(mutations()[0].variables.i.comment, '[chat-sync] Approval decision: deny AP-7K2M9QX4 by Jane Analyst via Teams.');
+});
+
+test('approvals: no request, a bad ID, a closed case, an earlier decision and dry run write nothing', async () => {
+  const say = async (text, env = MDR_ENV) => { const c = ctx(); const r = await (await worker.fetch(teamsRequest(`<at>Fusion</at> ${text}`), env, c)).json(); await c.settle(); return r.text; };
+  assert.equal(await say(`approve CSE00042 ${REQUEST}`), 'No approval request AP-7K2M9QX4 on CSE00042.');
+  caseComments = [requestComment('AP-22222222')];
+  assert.equal(await say(`approve CSE00042 ${REQUEST}`), 'No approval request AP-7K2M9QX4 on CSE00042.');
+  assert.match(await say('approve CSE00042'), /Add the request ID/);
+  assert.match(await say('approve CSE00042 AP-1234'), /Add the request ID/);
+  caseComments = [requestComment()];
+  kase = fusionCase({ primaryStatus: { id: STATUS.closed, name: 'closed', title: 'Closed', isClosed: true } });
+  assert.match(await say(`approve CSE00042 ${REQUEST}`), /is closed/);
+  kase = fusionCase();
+  // A decision the bridge wrote earlier stops a second one; the same text from anyone else doesn't.
+  caseComments = [{ id: 'd0', authorId: 'someone-in-the-console', comment: '[chat-sync] Approval decision: deny AP-7K2M9QX4 by Mallory via Teams.' }, { id: 'd1', authorId: 'CLIENT', comment: '[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Slack.' }, requestComment()];
+  assert.equal(await say(`deny CSE00042 ${REQUEST}`), 'AP-7K2M9QX4 was already approved by Jane Analyst, so nothing changed.');
+  assert.equal(mutations().length, 0);
+  caseComments = [{ id: 'd0', authorId: 'someone-in-the-console', comment: '[chat-sync] Approval decision: deny AP-7K2M9QX4 by Mallory via Teams.' }, requestComment()];
+  assert.match(await say(`approve CSE00042 ${REQUEST}`, { ...MDR_ENV, BRIDGE_DRY_RUN: '1' }), /^Dry run: would record on CSE00042: \[chat-sync\] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams\.$/);
+  assert.equal(mutations().length, 0);
+  // The bridge recognizes its own earlier decision by its client ID, whatever the case of the letters.
+  caseComments = [{ id: 'd1', authorId: 'client', comment: '[chat-sync] Approval decision: deny AP-7K2M9QX4 by Bob via Teams.' }, requestComment()];
+  assert.equal(await say(`approve CSE00042 ${REQUEST}`, { ...MDR_ENV, FUSION_CLIENT_ID: 'Client' }), 'AP-7K2M9QX4 was already denied by Bob, so nothing changed.');
+  assert.equal(mutations().length, 0);
+});
+
+test('approvals: Slack Approve and Deny buttons carry the request and answer through response_url', async () => {
+  caseComments = [requestComment()];
+  const c = ctx();
+  const res = await worker.fetch(slackRequest(blockAction('fusion_approve', `${CASE_ID}|CSE00042|${REQUEST}`)), MDR_ENV, c);
+  assert.equal(res.status, 200);
+  await c.settle();
+  assert.equal(mutations()[0].variables.i.comment, '[chat-sync] Approval decision: approve AP-7K2M9QX4 by jane via Slack.');
+  const answer = calls.find((x) => x.url.startsWith('https://hooks.slack.com/'));
+  assert.match(JSON.parse(answer.body).text, /^Approved AP-7K2M9QX4 on CSE00042/);
+  calls = [];
+  const c2 = ctx();
+  await worker.fetch(slackRequest(blockAction('fusion_deny', `${CASE_ID}|CSE00042|`)), MDR_ENV, c2);
+  await c2.settle();
+  assert.equal(mutations().length, 0);
+  assert.ok(calls.some((x) => x.url.startsWith('https://hooks.slack.com/') && /Add the request ID/.test(x.body)));
+});
+
+test('Slack: old Set active and Set awaiting action buttons work on a Sophos MDR tenant', async () => {
+  const mdr = settings({});
+  assert.equal(slackStatus('active', mdr), 'in_progress');
+  assert.equal(slackStatus('awaiting_action', mdr), 'customer_action_required');
+  assert.equal(slackStatus('in_progress', mdr), 'in_progress');
+  assert.equal(slackStatus('active', settings({ BRIDGE_ALLOWED_STATUSES: 'active,awaiting_action,closed' })), 'active');
+  const c = ctx();
+  await worker.fetch(slackRequest(blockAction('fusion_status_awaiting_action')), MDR_ENV, c);
+  await c.settle();
+  assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.customer_action_required });
 });
 
 test('a bridge without settings refuses, and only the three routes answer', async () => {

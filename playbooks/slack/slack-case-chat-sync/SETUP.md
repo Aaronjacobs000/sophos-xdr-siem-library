@@ -28,7 +28,7 @@ On the template, choose Use this Template, then set:
 - **Bridge comment prefix:** leave it at `[chat-sync]`, the prefix the chat bridge writes.
 - **Ignore comments by:** optionally, the subject ID of the chat bridge's API credential, as a second guard.
 - **Two-way buttons:** off until the chat bridge works (step 5).
-- **Status buttons:** the case status names to offer, which the bridge must also allow.
+- **Status buttons:** the case status names to offer, which the bridge must also allow. The default, in_progress,customer_action_required, is what a Sophos MDR tenant's cases use; a tenant without Sophos MDR uses active,awaiting_action.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
 
 Save it and leave it off.
@@ -44,7 +44,9 @@ Save it and leave it off.
 1. Deploy the [chat bridge](../../../chat-bridge/) as its README says, with the app's signing secret and bot token.
 2. In the Slack app, turn on Interactivity and set the request URL to `https://<your bridge>/slack/interactivity`.
 3. In the configured playbook, turn on Two-way buttons.
-4. On the next message, use Set active, Close case or Add comment. Close case and Add comment open a form. The bridge replies to you in the channel, and the case gets a comment that names who acted.
+4. On the next message, use Set in progress, Close case or Add comment. Close case and Add comment open a form. The bridge replies to you in the channel, and the case gets a comment that names who acted.
+
+With the bridge and Two-way buttons, an approval request from the [Approval before acting](../../microsoft/approval-before-acting/) setup posts as Approval needed with Approve and Deny buttons. Approve asks you to confirm first.
 
 ## Rollback
 

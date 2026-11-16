@@ -1,9 +1,9 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_M365_AccountTakeover_Cleanup
-version: 1.1.1
+version: 1.2.0
 title: Microsoft 365 account takeover cleanup (unofficial)
-description: When a Sophos ITDR leaked credential finding, a detection or an analyst flags a Microsoft 365 account as taken over, resets the user's password, revokes their sign-in sessions, makes them change their password at the next sign-in, turns off inbox rules that forward, redirect or delete mail, confirms the user as compromised in Entra ID where the tenant has Entra ID P2, and records the inbox rules before and after on the case. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: When a Sophos ITDR leaked credential finding, a detection or an analyst flags a Microsoft 365 account as taken over, resets the user's password, revokes their sign-in sessions, makes them change their password at the next sign-in, turns off inbox rules that forward, redirect or delete mail, confirms the user as compromised in Entra ID where the tenant has Entra ID P2, and records the inbox rules before and after on the case. It starts in dry run, which only records what it would do, and can ask for approval in Teams or Slack before it acts. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Runs on a new Sophos ITDR leaked credential finding, on a detection whose title is on Detection titles, or by hand from a case. For each user in scope it looks the user up in Entra ID and reads their inbox rules. Then it resets their password to a random one that the Microsoft Graph API connector makes and nobody sees, revokes their sign-in sessions, sets them to change their password at the next sign-in, turns off every enabled inbox rule that forwards, redirects or deletes mail, and confirms them as compromised in Entra ID. Disable account is off unless you turn it on.
@@ -16,6 +16,7 @@ documentation: |
 
     # Safety
     - Dry run is on until you turn it off. In dry run the playbook looks the user up, reads their inbox rules, checks for Entra ID P2 and records what it would do, and changes nothing.
+    - Ask for approval first, off by default, writes an approval request on the case in place of acting. The Approval before acting playbook runs it once someone approves it in Teams or Slack through the chat bridge.
     - It only acts on users whose user principal name is in a domain you list. With no domains set, it acts on no one.
     - It never acts on a user on Excluded users.
     - A run that finds more users in scope than Max users per run acts on none of them.
@@ -40,7 +41,10 @@ documentation: |
     | Max users per run | A run with more users in scope acts on none | 1 |
     | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
     | Seconds to wait for the case | Detection trigger only: how long to wait before looking for the detection's case | 60 |
-changeNotes: After a password reset, which already makes the user change the password at the next sign-in, Require a password change no longer makes a second call, which Entra ID's audit log recorded as a failure. With Reset the password off it still makes the call. The text now says Entra ID P2 is checked for the tenant, not the user.
+    | Ask for approval first | Write an approval request in place of acting | Off |
+    | Approval window (hours) | How long a request stays open | 4 |
+    | Bridge name | The chat bridge's Teams @mention name | Fusion |
+changeNotes: New Ask for approval first input. A run that would change anything writes an approval request on the case in place of acting, and the Approval before acting playbook runs it once someone approves it through the chat bridge.
 tags:
     - Category:IAM
     - Type:Response
@@ -78,6 +82,21 @@ inputs:
     properties:
         configuration:
             properties:
+                approval:
+                    default: false
+                    description: A run that would change anything writes an approval request on the case and changes nothing, until the Approval before acting playbook runs it on an approval from the chat bridge. Needs a case.
+                    title: Ask for approval first
+                    type: boolean
+                approval_hours:
+                    default: 4
+                    description: How long an approval request stays open, 1 to 72 hours
+                    title: Approval window (hours)
+                    type: integer
+                bridge_name:
+                    default: Fusion
+                    description: The chat bridge's Teams @mention name, for the request's reply line
+                    title: Bridge name
+                    type: string
                 case_wait_seconds:
                     default: 60
                     description: Detection trigger only. Seconds to wait before looking for the case the detection went into, so the outcome can be recorded there. 0 to 300.
@@ -192,6 +211,10 @@ dsl:
         - name: setup
           let:
             dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            approval: "inputs.?configuration.approval.orValue(false)"
+            hold: "inputs.?configuration.dry_run.orValue(true) || inputs.?configuration.approval.orValue(false)"
+            approval_hours: "int(inputs.?configuration.approval_hours.orValue(4)) < 1 ? 1 : int(inputs.?configuration.approval_hours.orValue(4)) > 72 ? 72 : int(inputs.?configuration.approval_hours.orValue(4))"
+            bridge_name: "cel.bind(b, inputs.?configuration.bridge_name.orValue('Fusion'), b == null || string(b).trim() == '' ? 'Fusion' : string(b).trim())"
             domains: "inputs.?configuration.domains.orValue([]).map(d, string(d).trim().toLower()).map(d, d.split('@')[size(d.split('@')) - 1]).filter(d, d != '')"
             excluded: "inputs.?configuration.excluded_users.orValue([]).map(u, string(u).trim().toLower()).filter(u, u != '')"
             titles: "inputs.?configuration.detection_titles.orValue(['Suspicious email forwarding activity', 'User restricted from sending email', 'Suspicious inbox forwarding', 'Suspicious inbox manipulation rule', 'Suspicious inbox manipulation rules', 'Leaked credentials']).map(t, string(t).trim().toLower()).filter(t, t != '')"
@@ -351,7 +374,7 @@ dsl:
                     ].filter(x, x != ''), size(p) > 0 ? p.join(', ') : 'other actions'))
             # The tasks that change anything, and only with dry run off.
             - name: disable_account
-              condition: "!setup.variables.dry_run && setup.variables.disable && person.variables.act && entra.variables.enabled"
+              condition: "!setup.variables.hold && setup.variables.disable && person.variables.act && entra.variables.enabled"
               action: Taegis.MicrosoftGraphAPI.disableUser
               optional: true
               retry: 2
@@ -359,7 +382,7 @@ dsl:
                 id: entra.variables.id
             # The connector makes the new password from its connection's Password to use in response actions setting, a new random one each time by default. It isn't in the task's inputs or outputs, but the execution log records each request body, so nolog keeps this task's request out of it.
             - name: reset_password
-              condition: "!setup.variables.dry_run && setup.variables.reset && person.variables.act"
+              condition: "!setup.variables.hold && setup.variables.reset && person.variables.act"
               action: Taegis.MicrosoftGraphAPI.changePassword
               optional: true
               nolog: true
@@ -367,7 +390,7 @@ dsl:
               inputs:
                 id: entra.variables.id
             - name: revoke
-              condition: "!setup.variables.dry_run && setup.variables.revoke && person.variables.act"
+              condition: "!setup.variables.hold && setup.variables.revoke && person.variables.act"
               action: Taegis.MicrosoftGraphAPI.revokeSignInSessions
               optional: true
               retry: 2
@@ -375,14 +398,14 @@ dsl:
                 id: entra.variables.id
             # A reset already makes the user change the password at the next sign-in, and a second call is logged in Entra ID as a failure, so this runs only when no reset went through.
             - name: force_change
-              condition: "!setup.variables.dry_run && setup.variables.force_change && person.variables.act && !(has(reset_password, 'outputs.outcome') && reset_password.outputs.outcome == 'success')"
+              condition: "!setup.variables.hold && setup.variables.force_change && person.variables.act && !(has(reset_password, 'outputs.outcome') && reset_password.outputs.outcome == 'success')"
               action: Taegis.MicrosoftGraphAPI.forcePasswordChange
               optional: true
               retry: 2
               inputs:
                 id: entra.variables.id
             - name: rule_off
-              condition: "!setup.variables.dry_run && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
+              condition: "!setup.variables.hold && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
               range: plan.variables.bad
               variables:
                 done: []
@@ -408,8 +431,20 @@ dsl:
             - name: license_check
               let:
                 no_p2: "has(risk_check, 'status.error') && (type(risk_check.status.error) == type('') ? risk_check.status.error : toString(risk_check.status.error)).lowerAscii().contains('licens')"
+            # Ask for approval first: this user's steps, as request lines.
+            - name: held
+              let:
+                actions: >-
+                    setup.variables.dry_run || !setup.variables.approval || !person.variables.act ? [] :
+                    cel.bind(u, '; user=' + entra.variables.id + '; label=' + entra.variables.upn,
+                      (setup.variables.disable && entra.variables.enabled ? ['entra.disable_account' + u] : []) +
+                      (setup.variables.reset ? ['entra.reset_password' + u] : []) +
+                      (setup.variables.revoke ? ['entra.revoke_sessions' + u] : []) +
+                      (setup.variables.force_change ? ['entra.require_password_change' + u] : []) +
+                      (setup.variables.rules_off ? plan.variables.bad.map(r, 'entra.inbox_rule_off' + u + '; rule=' + string(r.id) + '; name=' + (has(r, 'displayName') ? string(r.displayName) : 'A rule with no name').replace(';', ',').replace('\n', ' ')) : []) +
+                      (setup.variables.confirm && !license_check.variables.no_p2 ? ['entra.confirm_compromised' + u] : []))
             - name: confirm
-              condition: "!setup.variables.dry_run && setup.variables.confirm && person.variables.act && !license_check.variables.no_p2"
+              condition: "!setup.variables.hold && setup.variables.confirm && person.variables.act && !license_check.variables.no_p2"
               action: Taegis.MicrosoftGraphAPI.confirmCompromisedRiskyUser
               optional: true
               retry: 1
@@ -417,7 +452,7 @@ dsl:
                 userIds: "[entra.variables.id]"
             # Read the rules again, so the case shows what is on now.
             - name: rules_after
-              condition: "!setup.variables.dry_run && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
+              condition: "!setup.variables.hold && setup.variables.rules_off && person.variables.act && size(plan.variables.bad) > 0"
               action: Taegis.MicrosoftGraphAPI.listMessageRules
               optional: true
               retry: 1
@@ -453,26 +488,26 @@ dsl:
                 lines: >-
                     !entra.variables.found ? ['Not found in Entra ID, so nothing was done.' + (entra.variables.error != '' ? ' ' + entra.variables.error : '')] :
                     person.variables.skip != '' ? [person.variables.skip] :
-                    (!setup.variables.disable ? [] : !entra.variables.enabled ? ['The account is already disabled in Entra ID.'] : setup.variables.dry_run ? ['Would disable the account in Entra ID.'] : flags.variables.disable_ok ? ['Disabled the account in Entra ID.'] : ['Disabling the account in Entra ID failed: ' + flags.variables.disable_error]) +
-                    (!setup.variables.reset ? [] : setup.variables.dry_run ? ['Would reset its password to a new random one.'] : flags.variables.reset_ok ? ['Reset its password to a new random one that nobody has seen. The user needs a new password from your helpdesk or self-service password reset; check their MFA methods first.'] : ['Resetting its password failed: ' + flags.variables.reset_error]) +
-                    (!setup.variables.revoke ? [] : setup.variables.dry_run ? ['Would revoke its sign-in sessions.'] : flags.variables.revoke_ok ? ['Revoked its sign-in sessions.'] : ['Revoking its sign-in sessions failed: ' + flags.variables.revoke_error]) +
-                    (!setup.variables.force_change ? [] : setup.variables.dry_run ? ['Would require a password change at the next sign-in.'] : flags.variables.reset_ok ? ['The reset also set it to change its password at the next sign-in.'] : flags.variables.password_ok ? ['Set it to change its password at the next sign-in.'] : ['Requiring a password change failed: ' + flags.variables.password_error]) +
+                    (!setup.variables.disable ? [] : !entra.variables.enabled ? ['The account is already disabled in Entra ID.'] : setup.variables.hold ? ['Would disable the account in Entra ID.'] : flags.variables.disable_ok ? ['Disabled the account in Entra ID.'] : ['Disabling the account in Entra ID failed: ' + flags.variables.disable_error]) +
+                    (!setup.variables.reset ? [] : setup.variables.hold ? ['Would reset its password to a new random one.'] : flags.variables.reset_ok ? ['Reset its password to a new random one that nobody has seen. The user needs a new password from your helpdesk or self-service password reset; check their MFA methods first.'] : ['Resetting its password failed: ' + flags.variables.reset_error]) +
+                    (!setup.variables.revoke ? [] : setup.variables.hold ? ['Would revoke its sign-in sessions.'] : flags.variables.revoke_ok ? ['Revoked its sign-in sessions.'] : ['Revoking its sign-in sessions failed: ' + flags.variables.revoke_error]) +
+                    (!setup.variables.force_change ? [] : setup.variables.hold ? ['Would require a password change at the next sign-in.'] : flags.variables.reset_ok ? ['The reset also set it to change its password at the next sign-in.'] : flags.variables.password_ok ? ['Set it to change its password at the next sign-in.'] : ['Requiring a password change failed: ' + flags.variables.password_error]) +
                     (!before.variables.read ? ['Its inbox rules could not be read, so none were turned off: ' + before.variables.error] :
                      size(before.variables.list) == 0 ? ['It has no inbox rules.'] :
                      ['Inbox rules before: ' + plan.variables.described.join('; ') + '.'] +
                      (size(plan.variables.bad) == 0 ? ['No enabled rule forwards, redirects or deletes mail.'] :
                       !setup.variables.rules_off ? ['Left on, as Turn off inbox rules is off: ' + plan.variables.bad.map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name').join(', ') + '.'] :
-                      setup.variables.dry_run ? ['Would turn off: ' + plan.variables.bad.map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name').join(', ') + '.'] :
+                      setup.variables.hold ? ['Would turn off: ' + plan.variables.bad.map(b, has(b, 'displayName') ? string(b.displayName) : 'A rule with no name').join(', ') + '.'] :
                       (size(after.variables.turned_off.filter(x, x.ok)) > 0 ? ['Turned off: ' + after.variables.turned_off.filter(x, x.ok).map(x, x.name).join(', ') + '.'] : []) +
                       (size(flags.variables.rules_failed) > 0 ? ['Turning off failed for: ' + flags.variables.rules_failed.map(x, x.name + ' (' + x.error + ')').join(', ') + '.'] : []) +
                       (!after.variables.read ? ['The inbox rules could not be read again afterwards.'] :
                        ['Inbox rules after: ' + after_check.variables.described.join('; ') + '.'] +
                        (size(after_check.variables.still_on) > 0 ? ['Still on afterwards: ' + after_check.variables.still_on.join(', ') + '.'] : [])))) +
-                    (!setup.variables.confirm ? [] : flags.variables.no_p2 ? [(setup.variables.dry_run ? 'Would skip' : 'Skipped') + ' confirm compromised: the tenant has no Microsoft Entra ID P2, which it needs.'] : setup.variables.dry_run ? ['Would confirm it as compromised in Entra ID.'] : flags.variables.confirm_ok ? ['Confirmed it as compromised in Entra ID.'] : ['Confirming it as compromised in Entra ID failed: ' + flags.variables.confirm_error]) +
+                    (!setup.variables.confirm ? [] : flags.variables.no_p2 ? [(setup.variables.hold ? 'Would skip' : 'Skipped') + ' confirm compromised: the tenant has no Microsoft Entra ID P2, which it needs.'] : setup.variables.hold ? ['Would confirm it as compromised in Entra ID.'] : flags.variables.confirm_ok ? ['Confirmed it as compromised in Entra ID.'] : ['Confirming it as compromised in Entra ID failed: ' + flags.variables.confirm_error]) +
                     (entra.variables.synced ? ['The account is synced from on-premises Active Directory: disable it and reset its password there too, or the next sync can undo the changes made in Entra ID.'] : [])
                 failed: >-
                     !entra.variables.found ? true :
-                    person.variables.skip != '' || setup.variables.dry_run ? false :
+                    person.variables.skip != '' || setup.variables.hold ? false :
                     (setup.variables.disable && entra.variables.enabled && !flags.variables.disable_ok) ||
                     (setup.variables.reset && !flags.variables.reset_ok) ||
                     (setup.variables.revoke && !flags.variables.revoke_ok) ||
@@ -485,17 +520,24 @@ dsl:
                 results: >-
                     append(users.variables.results, {
                       'user': entra.variables.upn,
-                      'result': steps.variables.failed ? 'failed' : person.variables.skip != '' ? 'skipped' : setup.variables.dry_run ? 'would clean up' : 'cleaned up',
+                      'result': steps.variables.failed ? 'failed' : person.variables.skip != '' ? 'skipped' : setup.variables.dry_run ? 'would clean up' : setup.variables.approval ? 'waiting for approval' : 'cleaned up',
                       'text': steps.variables.lines.join(' '),
                       'lines': steps.variables.lines,
                       'rules_before': plan.variables.described,
                       'rules_turned_off': after.variables.turned_off.filter(x, x.ok).map(x, x.name),
                       'rules_after': after_check.variables.described,
-                      'synced': entra.variables.synced
+                      'synced': entra.variables.synced,
+                      'actions': held.variables.actions
                     })
         - name: report
           let:
             results: "has(users, 'variables.results') ? users.variables.results : []"
+        - name: request
+          let:
+            actions: "flatten(report.variables.results.map(r, has(r, 'actions') ? r.actions : []))"
+            needed: "setup.variables.approval && !setup.variables.dry_run && report.variables.results.exists(r, has(r, 'actions') && size(r.actions) > 0)"
+            id: "'AP-' + generateString(8, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789')"
+            expires: "string(now() + duration(string(setup.variables.approval_hours) + 'h')).substring(0, 19) + 'Z'"
         - name: text
           let:
             others: >-
@@ -511,8 +553,8 @@ dsl:
           let:
             body: >-
                 size(text.variables.lines) + size(text.variables.others) == 0 ? '' :
-                '**Microsoft 365 account takeover cleanup (automated)**\n' + text.variables.from + '\n\n' + (text.variables.lines + text.variables.others).join('\n\n') +
-                (setup.variables.dry_run ? '\n\nDry run is on, so nothing was changed.' : report.variables.results.exists(r, r.result == 'cleaned up' || r.result == 'failed') ? '\n\nTo undo: turn the inbox rules back on in Outlook, enable the account if it was disabled, and dismiss the user\'s risk in Entra ID. A password reset can\'t be undone.' : '')
+                (request.variables.needed ? '**Approval needed: Microsoft 365 account takeover cleanup**\n' : '**Microsoft 365 account takeover cleanup (automated)**\n') + text.variables.from + '\n\n' + (text.variables.lines + text.variables.others).join('\n\n') +
+                (setup.variables.dry_run ? '\n\nDry run is on, so nothing was changed.' : setup.variables.approval ? '' : report.variables.results.exists(r, r.result == 'cleaned up' || r.result == 'failed') ? '\n\nTo undo: turn the inbox rules back on in Outlook, enable the account if it was disabled, and dismiss the user\'s risk in Entra ID. A password reset can\'t be undone.' : '')
         # Detection trigger: find the case the detection went into, if it's in one.
         - name: wait_for_case
           condition: "setup.variables.source == 'detection' && comment_text.variables.body != '' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && setup.variables.wait > 0"
@@ -535,20 +577,44 @@ dsl:
                 (size(setup.variables.detection.?investigation_ids.orValue([])) > 0 ? setup.variables.detection.investigation_ids :
                 has(reread, 'outputs') && type(reread.outputs) == type([]) && size(reread.outputs) > 0 && has(reread.outputs[0], 'investigation_ids') && type(reread.outputs[0].investigation_ids) == type([]) ? reread.outputs[0].investigation_ids : [])
                 .map(i, type(i) == type('') ? i : has(i, 'id') ? string(i.id) : '').filter(i, i != '')[?0].orValue('')
+        - name: case_short
+          condition: "request.variables.needed && target.variables.case_id != '' && setup.variables.source != 'case'"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: target.variables.case_id
+            fields: 'id shortId'
+        - name: case_ref
+          let:
+            short: >-
+                setup.variables.source == 'case' && has(fetch_case, 'outputs.case.shortId') ? string(fetch_case.outputs.case.shortId) :
+                has(case_short, 'outputs.case.shortId') ? string(case_short.outputs.case.shortId) : target.variables.case_id
+        - name: final
+          let:
+            body: >-
+                !request.variables.needed || target.variables.case_id == '' || comment_text.variables.body == '' ? comment_text.variables.body :
+                cel.bind(r, case_ref.variables.short + ' ' + request.variables.id, comment_text.variables.body + '\n\nNothing changes until someone approves request ' + request.variables.id + '. It is open until ' + request.variables.expires.replace('T', ' ').replace('Z', ' UTC') + '.\n' +
+                  '- Teams: @' + setup.variables.bridge_name + ' approve ' + r + ', or @' + setup.variables.bridge_name + ' deny ' + r + '\n- Slack: Approve or Deny on the message\n\n' +
+                  '```\napproval-request: ' + request.variables.id + '\napproval-expires: ' + request.variables.expires + '\napproval-source: Microsoft 365 account takeover cleanup\n' +
+                  request.variables.actions.map(a, 'approval-action: ' + a).join('\n') + '\n```')
         - name: comment
-          condition: "target.variables.case_id != '' && comment_text.variables.body != ''"
+          condition: "target.variables.case_id != '' && final.variables.body != ''"
           action: Taegis.Case.addComment
           optional: true
           retry: 1
           inputs:
             tenant_id: setup.variables.tenant_id
             caseId: target.variables.case_id
-            comment: comment_text.variables.body
+            comment: final.variables.body
         - name: finish
           let:
-            status: "gate.variables.problem != '' || report.variables.results.exists(r, r.result == 'failed') || (comment_text.variables.body != '' && target.variables.case_id != '' && !has(comment, 'outputs.comment.id')) ? 'FAIL' : 'SUCCESS'"
+            status: "gate.variables.problem != '' || report.variables.results.exists(r, r.result == 'failed') || (request.variables.needed && target.variables.case_id == '') || (final.variables.body != '' && target.variables.case_id != '' && !has(comment, 'outputs.comment.id')) ? 'FAIL' : 'SUCCESS'"
             message: >-
                 check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
                 gate.variables.problem != '' ? gate.variables.problem :
+                (request.variables.needed && target.variables.case_id == '' ? 'Ask for approval first needs a case to hold the request, and this run has none, so nothing was done. ' :
+                 request.variables.needed ? 'Asked for approval: request ' + request.variables.id + ' on ' + case_ref.variables.short + ', open until ' + request.variables.expires + '. ' : '') +
                 (size(report.variables.results) == 0 && size(text.variables.others) == 0 ? 'No user was acted on.' : (report.variables.results.map(r, r.user + ': ' + r.text) + text.variables.others).join(' ')) +
                 (comment_text.variables.body == '' ? '' : target.variables.case_id == '' ? ' No case holds this, so the outcome is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the comment to the case failed.')

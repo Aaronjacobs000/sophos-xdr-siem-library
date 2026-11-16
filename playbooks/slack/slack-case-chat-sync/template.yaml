@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Slack_CaseChatSync
-version: 1.0.3
+version: 1.1.0
 title: Slack case chat sync (unofficial)
 description: Posts a message to a Slack channel when a case is created or its status, severity, assignee or title changes, or someone comments. With the library's chat bridge, its buttons set the case status or add a comment from Slack. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -18,6 +18,7 @@ documentation: |
     - Comments that start with the bridge prefix, `[chat-sync]` unless you change it, aren't posted, so a comment the bridge wrote doesn't come back to the channel.
     - Internal comments aren't posted.
     - Updates are posted only when the status, severity, assignee or title changed.
+    - An approval request from a library playbook, a comment with an `approval-request:` line, is always posted, whatever Minimum severity, Managed by and Post comments say. It posts as Approval needed and leaves out the request's `approval-` lines. With Two-way buttons on it gets Approve and Deny buttons in place of the status buttons; the Approval before acting playbook runs the request once someone approves it.
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -28,8 +29,8 @@ documentation: |
     | Bridge comment prefix | Comments that start with it aren't posted | `[chat-sync]` |
     | Ignore comments by | Comma-separated subject IDs whose comments aren't posted | None |
     | Two-way buttons | Add the status, close and comment buttons; needs the chat bridge as the Slack app's interactivity URL | Off |
-    | Status buttons | Comma-separated case status names to offer as buttons | active,awaiting_action |
-changeNotes: The post to Slack runs with nolog, so the execution log no longer records the incoming webhook URL.
+    | Status buttons | Comma-separated case status names to offer as buttons. A tenant without Sophos MDR uses active,awaiting_action | in_progress,customer_action_required |
+changeNotes: Approval requests from the library's account takeover cleanup and phishing triage and purge playbooks post as Approval needed, always, with Approve and Deny buttons when Two-way buttons is on. Status buttons now defaults to in_progress,customer_action_required, the statuses a Sophos MDR tenant uses and the chat bridge allows by default.
 tags:
     - Type:Notification
 connectorCategories:
@@ -92,8 +93,8 @@ inputs:
                     title: Post comments
                     type: boolean
                 status_buttons:
-                    default: active,awaiting_action
-                    description: Comma-separated case status names to offer as buttons, which the chat bridge must also allow
+                    default: in_progress,customer_action_required
+                    description: Comma-separated case status names to offer as buttons, which the chat bridge must also allow. A tenant without Sophos MDR uses active,awaiting_action.
                     title: Status buttons
                     type: string
                 two_way:
@@ -131,7 +132,7 @@ dsl:
             prefix: "inputs.?settings.comment_prefix.orValue('[chat-sync]')"
             ignore_authors: "inputs.?settings.ignore_authors.orValue('').split(',').map(a, a.trim()).filter(a, a != '')"
             two_way: "inputs.?settings.two_way.orValue(false)"
-            status_buttons: "inputs.?settings.status_buttons.orValue('active,awaiting_action').split(',').map(s, s.trim().lowerAscii()).filter(s, s != '' && s != 'closed')"
+            status_buttons: "inputs.?settings.status_buttons.orValue('in_progress,customer_action_required').split(',').map(s, s.trim().lowerAscii()).filter(s, s != '' && s != 'closed')"
         - name: fetch_case
           action: Taegis.Case.queryCustom
           optional: true
@@ -146,6 +147,7 @@ dsl:
             comment: "setup.variables.event == 'comment added' ? caseComment(inputs) : ''"
             author: "setup.variables.event == 'comment added' ? caseCommentAuthorId(inputs) : ''"
             internal_comment: "setup.variables.event == 'comment added' && (inputs.?case.delta.comment.isInternal.orValue(false) == true || inputs.?case.comment.isInternal.orValue(false) == true)"
+            approval: "setup.variables.event == 'comment added' && caseComment(inputs).contains('\\napproval-request: AP-')"
             changed: "setup.variables.event == 'update' ? [['Status', caseFieldChanged(inputs, 'primaryStatus')], ['Severity', caseFieldChanged(inputs, 'severity')], ['Assignee', caseFieldChanged(inputs, 'assignee') || caseFieldChanged(inputs, 'assigneeId')], ['Title', caseFieldChanged(inputs, 'title')]].filter(c, c[1]).map(c, c[0]) : []"
         - name: decide
           let:
@@ -153,12 +155,12 @@ dsl:
             managed: "read.variables.case.?managedBy.orValue('')"
             skip: |-
                 !read.variables.case.?id.hasValue() ? 'The case could not be read, so nothing was posted.' :
-                int(read.variables.case.?severity.orValue(0)) < setup.variables.min_severity ? 'The case is below the minimum severity, so nothing was posted.' :
-                setup.variables.managed_by == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was posted.' :
-                setup.variables.managed_by == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was posted.' :
+                !read.variables.approval && int(read.variables.case.?severity.orValue(0)) < setup.variables.min_severity ? 'The case is below the minimum severity, so nothing was posted.' :
+                !read.variables.approval && setup.variables.managed_by == 'self' && read.variables.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was posted.' :
+                !read.variables.approval && setup.variables.managed_by == 'sophos' && read.variables.case.?managedBy.orValue('') != 'PROVIDER' ? 'The case is not managed by Sophos MDR, so nothing was posted.' :
                 !(setup.variables.event in ['create', 'update', 'comment added', 'manual']) ? 'This playbook posts creates, updates and comments only.' :
                 setup.variables.event == 'update' && size(read.variables.changed) == 0 ? 'No status, severity, assignee or title change, so nothing was posted.' :
-                setup.variables.event == 'comment added' && !setup.variables.post_comments ? 'Comments are not posted.' :
+                setup.variables.event == 'comment added' && !setup.variables.post_comments && !read.variables.approval ? 'Comments are not posted.' :
                 setup.variables.event == 'comment added' && read.variables.internal_comment ? 'The comment is internal, so it was not posted.' :
                 setup.variables.event == 'comment added' && read.variables.comment == '' ? 'The event carried no comment text, so nothing was posted.' :
                 setup.variables.event == 'comment added' && setup.variables.prefix != '' && read.variables.comment.startsWith(setup.variables.prefix) ? 'The comment came from the chat bridge, so it was not posted back.' :
@@ -176,10 +178,11 @@ dsl:
             headline: |-
                 setup.variables.event == 'create' ? 'New case' :
                 setup.variables.event == 'update' ? 'Case updated: ' + read.variables.changed.join(', ') :
+                read.variables.approval ? 'Approval needed' :
                 setup.variables.event == 'comment added' ? 'New comment from ' + resolveSubjectName(read.variables.author) :
                 'Case shared from Sophos Fusion'
             comment_text: |-
-                cel.bind(t, cel.bind(s0, read.variables.comment,
+                cel.bind(t, cel.bind(s0, read.variables.approval && read.variables.comment.indexOf('```') > 0 ? read.variables.comment.substring(0, read.variables.comment.indexOf('```')).trim() : read.variables.comment,
                   cel.bind(s1, cel.bind(a, s0.replace('\r', '').split('<style'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</style>') >= 0 ? x.substring(x.indexOf('</style>') + 8) : '<style' + x).join('')),
                   cel.bind(s2, cel.bind(a, s1.split('<table'), a[0] + a.slice(1, size(a)).map(x, x.indexOf('</table>') < 0 ? '<table' + x :
                     cel.bind(t, x.substring(0, x.indexOf('</table>')).split('<tr'), cel.bind(rows, t.slice(1, size(t)).map(r, cel.bind(q, r.replace('<th', '<td').split('<td'),
@@ -204,13 +207,19 @@ dsl:
                   size(t) > 2500 ? t.substring(0, 2500) + '...' : t)
             link: createShareLink(inputs)
             value: "read.variables.case.?id.orValue('') + '|' + read.variables.case.?shortId.orValue('')"
+            request_id: "read.variables.approval ? read.variables.comment.split('\\napproval-request: ')[1].split('\\n')[0].trim() : ''"
         - name: build
           condition: "decide.variables.skip == ''"
           let:
             header_text: "size(card.variables.ref + ': ' + card.variables.title) > 150 ? (card.variables.ref + ': ' + card.variables.title).substring(0, 147) + '...' : card.variables.ref + ': ' + card.variables.title"
             buttons: |-
                 (card.variables.link != '' ? [{'type': 'button', 'action_id': 'fusion_open', 'text': {'type': 'plain_text', 'text': 'Open in Sophos Fusion'}, 'url': card.variables.link}] : []) +
-                (setup.variables.two_way && !card.variables.closed ?
+                (setup.variables.two_way && !card.variables.closed && read.variables.approval ? [
+                    {'type': 'button', 'action_id': 'fusion_approve', 'style': 'primary', 'text': {'type': 'plain_text', 'text': 'Approve'}, 'value': card.variables.value + '|' + card.variables.request_id,
+                     'confirm': {'title': {'type': 'plain_text', 'text': 'Approve ' + card.variables.request_id + '?'}, 'text': {'type': 'plain_text', 'text': 'The held actions run on ' + card.variables.ref + '.'}, 'confirm': {'type': 'plain_text', 'text': 'Approve'}, 'deny': {'type': 'plain_text', 'text': 'Cancel'}}},
+                    {'type': 'button', 'action_id': 'fusion_deny', 'style': 'danger', 'text': {'type': 'plain_text', 'text': 'Deny'}, 'value': card.variables.value + '|' + card.variables.request_id}
+                  ] :
+                 setup.variables.two_way && !card.variables.closed ?
                   setup.variables.status_buttons.map(s, {'type': 'button', 'action_id': 'fusion_status_' + s, 'text': {'type': 'plain_text', 'text': 'Set ' + s.replace('_', ' ')}, 'value': card.variables.value}) +
                   [
                     {'type': 'button', 'action_id': 'fusion_close', 'style': 'danger', 'text': {'type': 'plain_text', 'text': 'Close case'}, 'value': card.variables.value},

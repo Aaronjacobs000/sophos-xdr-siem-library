@@ -1,13 +1,15 @@
 # Chat bridge for Sophos Fusion cases (unofficial)
 
-> **Unofficial, and not yet run with a real Slack workspace or a real Teams outgoing webhook.** On 2026-10-22 it ran locally in the Cloudflare Workers runtime (`wrangler dev`), with dry run off, against a Sophos Fusion test tenant. Signed requests shaped like a Teams outgoing webhook's set a case to Active, added a comment and closed the case with a verdict, and each change read back on the case. A request with a bad signature got 401. Its unit tests sign requests the way Slack and Microsoft document, including Slack's own published example. Run it with dry run on first.
+> **Unofficial. Run with a real Teams outgoing webhook, not yet with a real Slack workspace.** On 2026-11-16 a comment sent from a real Teams channel's outgoing webhook landed on a test case in a Sophos Fusion tenant. Signed requests shaped like a Teams outgoing webhook's have set statuses, closed a case with a verdict, and approved and denied requests for the Approval before acting playbook, each read back on the case, and a bad signature got 401. The Slack path has run only in the unit tests, which sign requests the way Slack documents, including Slack's own published example. Run it with dry run on first.
 
-Sophos Fusion playbooks can post a case to Teams or Slack, but nothing in a playbook can receive a reply. This bridge takes a Slack button or form, or a Teams outgoing webhook command, checks that the request came from Slack or Teams, and sets the case status or adds a case comment through the Sophos Fusion Cases API. Every write adds a case comment that names the person who acted.
+Sophos Fusion playbooks can post a case to Teams or Slack, but nothing in a playbook can receive a reply. This bridge takes a Slack button or form, or a Teams outgoing webhook command, checks that the request came from Slack or Teams, and sets the case status, adds a case comment or records an approval decision through the Sophos Fusion Cases API. Every write adds a case comment that names the person who acted.
 
 It's an optional add-on for two playbooks in this library, which post the cases it acts on and work fine without it:
 
 - [Teams case chat sync](../playbooks/microsoft/teams-case-chat-sync/): a card for each new or changed case, with the commands to reply with.
 - [Slack case chat sync](../playbooks/slack/slack-case-chat-sync/): a message for each new or changed case, with Set status, Close case and Add comment buttons.
+
+[Approval before acting](../playbooks/microsoft/approval-before-acting/) needs it: approvals reach the case only through the bridge.
 
 ## How it works
 
@@ -34,11 +36,16 @@ A request that fails its check gets 401 and reaches neither Sophos Fusion nor Sl
 
 | Action | Teams | Slack | Sophos Fusion call |
 | --- | --- | --- | --- |
-| Set a status | `@Fusion in_progress CSE00042 [note]` | Set active, Set awaiting action | `updateCase` with the status, then `addCaseComment` |
+| Set a status | `@Fusion in_progress CSE00042 [note]` | Set in progress, Set customer action required | `updateCase` with the status, then `addCaseComment` |
 | Close | `@Fusion close CSE00042 <verdict> [note]` | Close case, then a form with the verdict and why | `updateCase` with the closed status, verdict and close reason, then `addCaseComment` |
 | Comment | `@Fusion comment CSE00042 <text>` | Add comment, then a form | `addCaseComment` |
+| Approve or deny a request | `@Fusion approve CSE00042 AP-7K2M9QX4`, `@Fusion deny CSE00042 AP-7K2M9QX4` | Approve or Deny on an Approval needed message | `caseComments`, then `addCaseComment` |
 
-A case is its short ID, such as CSE00042, or its ID. The bridge only sets the statuses in `BRIDGE_ALLOWED_STATUSES` and the verdicts in `BRIDGE_ALLOWED_VERDICTS`. By default those are the statuses a Sophos MDR tenant's cases use: in_progress, customer_action_required and closed. A tenant without Sophos MDR uses active, awaiting_action and closed, so set `BRIDGE_ALLOWED_STATUSES` to `active,awaiting_action,closed` there. It refuses to change the status of a case Sophos MDR manages, since a customer can't do that in Sophos Fusion either, and it refuses any change to a closed case. A comment it writes reads like `[chat-sync] Jane Analyst via Teams set the status to In Progress: looking now`.
+A case is its short ID, such as CSE00042, or its ID. The bridge only sets the statuses in `BRIDGE_ALLOWED_STATUSES` and the verdicts in `BRIDGE_ALLOWED_VERDICTS`. By default those are the statuses a Sophos MDR tenant's cases use: in_progress, customer_action_required and closed. A tenant without Sophos MDR uses active, awaiting_action and closed, so set `BRIDGE_ALLOWED_STATUSES` to `active,awaiting_action,closed` there. Where active and awaiting_action aren't allowed, active from an older Teams card and the Set active and Set awaiting action buttons on older Slack messages set in_progress and customer_action_required. It refuses to change the status of a case Sophos MDR manages, since a customer can't do that in Sophos Fusion either, and it refuses any change to a closed case. A comment it writes reads like `[chat-sync] Jane Analyst via Teams set the status to In Progress: looking now`.
+
+### Approvals
+
+An approval answers a request that a library playbook left on the case, such as account takeover cleanup with Ask for approval first on. The bridge looks for the request ID in the case's latest 100 comments and checks that it hasn't already written a decision for it. Then it writes one comment, `[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams.`, and answers in chat. It doesn't check expiry or who wrote the request, and it runs nothing: the [Approval before acting](../playbooks/microsoft/approval-before-acting/) playbook does those checks and runs the actions. That playbook trusts the decision because Sophos Fusion records it as written by the bridge's API credential, which nobody can do from the console. So keep that credential to the bridge alone.
 
 ### Why a Cloudflare Worker
 
@@ -85,7 +92,7 @@ Secrets go in with `wrangler secret put`; the rest are `[vars]` in `wrangler.tom
 | `FUSION_TENANT_ID` | var | The tenant ID. Without it the bridge asks `whoami` once and keeps the answer. |
 | `FUSION_API` | var | The Sophos Fusion GraphQL URL. Defaults to `https://api.taegis.sophos.com/graphql`; only hosts on `taegis.sophos.com` are accepted. |
 | `BRIDGE_ALLOWED_STATUSES` | var | Status names the bridge may set. Defaults to `in_progress,customer_action_required,closed`, the statuses a Sophos MDR tenant's cases use; a tenant without Sophos MDR needs `active,awaiting_action,closed`. |
-| `BRIDGE_ALLOWED_VERDICTS` | var | Verdict names a close may use. |
+| `BRIDGE_ALLOWED_VERDICTS` | var | Verdict names a close may use. Defaults to a tenant without Sophos MDR's verdicts plus true_positive_benign and true_positive_malicious, which a Sophos MDR tenant uses. |
 | `BRIDGE_COMMENT_PREFIX` | var | The start of every comment the bridge writes. Defaults to `[chat-sync]`; keep it the same as the playbooks' Bridge comment prefix. |
 | `BRIDGE_DRY_RUN` | var | `1` to check and answer without writing. |
 | `SLACK_ALLOWED_USERS` | var | Comma-separated Slack user IDs who may act. Empty lets everyone who can click. |
@@ -110,4 +117,4 @@ Each action logs one JSON line with the time, platform, user ID and name, action
 node --test test/chat-bridge.test.mjs
 ```
 
-The tests run the Worker in Node against a mocked Sophos Fusion and Slack: signatures (with Slack's published example), commands, the status, close and comment writes and their comment text, allowlists, Sophos MDR and closed cases, dry run, the Teams time budget, and the response URL check.
+The tests run the Worker in Node against a mocked Sophos Fusion and Slack: signatures (with Slack's published example), commands, the status, close, comment and approval writes and their comment text, allowlists, Sophos MDR and closed cases, dry run, the Teams time budget, and the response URL check.

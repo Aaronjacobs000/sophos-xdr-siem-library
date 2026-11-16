@@ -11,6 +11,7 @@ Finds every copy of a phishing email in your Microsoft 365 mailboxes, checks it,
 | Triage it | Sender, Reply-To, SPF, DKIM, DMARC, Microsoft's spam verdict, attachments and link domains, from one copy |
 | Pull it from the mailboxes | Move each copy to Recoverable Items (or Deleted Items or Junk Email), then check again |
 | Show what happened | A case comment with the triage, each mailbox and what is left |
+| Ask a person first, if you want that | Ask for approval first, off by default: a request on the case that someone approves in Teams or Slack, through the chat bridge and [Approval before acting](../approval-before-acting/) |
 
 ## What it doesn't cover
 
