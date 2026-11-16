@@ -1,0 +1,589 @@
+apiVersion: v0.0.1
+kind: Playbook
+name: Unofficial_Ransomware_Containment_Chain_No_M365
+version: 1.0.0
+title: Ransomware containment chain without Microsoft 365 (unofficial)
+description: The Ransomware containment chain without its Microsoft 365 user step. On a Critical ransomware or hands-on-keyboard detection, or by hand from a case, isolates the host, turns on Adaptive Attack Protection, blocks the file hash, collects forensic logs, pages on-call and comments a timeline on the case. Dry run is on. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+documentation: |
+    # Overview
+    The Ransomware containment chain without its Microsoft 365 user step, so it needs no Microsoft Graph API connection. Runs on a detection at or above Minimum severity whose title holds one of Detection titles or whose ATT&CK techniques include one on ATT&CK techniques, or by hand from a case on the case's detections at or above Minimum severity. In order, it:
+
+    1. Isolates each Sophos endpoint the detections name.
+    2. Turns on Adaptive Attack Protection for 24 hours on each one and the other devices in its device group.
+    3. Blocks the detections' SHA-256 hashes, for the whole tenant.
+    4. Asks each endpoint for its forensic logs, which go to your forensic snapshot S3 bucket.
+    5. Pages on-call through Send Notification Message: Teams, Slack or Google Chat.
+    6. Comments a timeline on the case: each step, its time and outcome.
+
+    Every step is a setting you can turn off. Sophos doesn't make, maintain or support this playbook.
+
+    # Safety
+    - Dry run is on until you turn it off. It records what it would do, and still pages.
+    - Each step has a per-run limit, servers aren't isolated unless you turn that on, and excluded devices are never touched.
+    - It never blocks the hashes of a detection that names a file on Never block or under Windows\System32 or SysWOW64, which often carry the hash of the Windows program the attacker ran.
+changeNotes: First version
+tags:
+    - Category:Endpoint
+    - Type:Response
+connectorCategories:
+    - Generic
+connectors:
+    - Taegis.SophosEndpoint:1.3.4
+    - Taegis.Case:1.0.5
+    - Taegis.Alert:1.3.6
+playbooks:
+    - Taegis.Wait_For_Case_Processing:1.0.0
+    - Taegis.GetCaseDetections:1.0.0
+interfaces:
+    - Taegis.SendNotificationMessage:1.1.1
+triggerHints:
+    - isProactiveResponse: false
+      type: platform
+      config:
+        events:
+            - create
+        source: alert2
+        filter: "detectionSeverityNice(inputs) == 'Critical' && (['ransom', 'cryptoguard', 'hands-on-keyboard', 'hands on keyboard'].exists(t, detectionTitle(inputs).lowerAscii().contains(t)) || detectionAttackTechniqueIds(inputs).exists(t, t in ['T1486', 'T1490']))"
+    - isProactiveResponse: false
+      type: actions
+      config:
+        category: response
+        context: case
+        name: Ransomware containment without Microsoft 365 (unofficial)
+inputs:
+    properties:
+        configuration:
+            properties:
+                aap_scope:
+                    default: group
+                    description: host, or group for the other devices in each device's group too
+                    enum:
+                        - group
+                        - host
+                    title: Adaptive Attack Protection for
+                    type: string
+                adaptive_attack_protection:
+                    default: true
+                    description: Turn on Adaptive Attack Protection for 24 hours
+                    title: Adaptive Attack Protection
+                    type: boolean
+                attack_techniques:
+                    default:
+                        - T1486
+                        - T1490
+                    description: Detection trigger only. A detection with one of these techniques qualifies.
+                    items:
+                        type: string
+                    title: ATT&CK techniques
+                    type: array
+                block_hashes:
+                    default: true
+                    description: Block the SHA-256 hashes the detections name, in Sophos Endpoint for the whole tenant
+                    title: Block file hashes
+                    type: boolean
+                case_wait_seconds:
+                    default: 60
+                    description: Detection trigger only. Seconds to wait, after acting, for the detection's case. 0 to 300.
+                    title: Seconds to wait for the case
+                    type: integer
+                detection_titles:
+                    default:
+                        - ransom
+                        - cryptoguard
+                        - hands-on-keyboard
+                        - hands on keyboard
+                    description: Detection trigger only. A detection whose title holds one of these qualifies.
+                    items:
+                        type: string
+                    title: Detection titles
+                    type: array
+                dry_run:
+                    default: true
+                    description: When on, the playbook only records what it would do, and still pages
+                    title: Dry run
+                    type: boolean
+                excluded_devices:
+                    description: Host names or Sophos device IDs never to isolate or change
+                    items:
+                        type: string
+                    title: Excluded devices
+                    type: array
+                forensic_logs:
+                    default: true
+                    description: Ask each device for its forensic logs. Needs a forensic snapshot S3 bucket.
+                    title: Collect forensic logs
+                    type: boolean
+                include_sophos_managed:
+                    default: false
+                    description: Also act on cases Sophos MDR manages, in a run from a case
+                    title: Include Sophos-managed cases
+                    type: boolean
+                isolate_host:
+                    default: true
+                    description: Isolate each Sophos endpoint the detections name. Restore Host releases it.
+                    title: Isolate the host
+                    type: boolean
+                isolate_servers:
+                    default: false
+                    description: Also isolate servers
+                    title: Isolate servers
+                    type: boolean
+                max_devices:
+                    default: 3
+                    description: With more devices than this, no device is isolated or changed
+                    title: Max devices per run
+                    type: integer
+                max_group_devices:
+                    default: 50
+                    description: A device group with more other devices than this is left alone
+                    title: Max group devices
+                    type: integer
+                max_hashes:
+                    default: 3
+                    description: With more hashes than this, none is blocked
+                    title: Max file hashes per run
+                    type: integer
+                min_severity:
+                    default: Critical
+                    description: The lowest detection severity the playbook acts on
+                    enum:
+                        - Critical
+                        - High
+                    title: Minimum severity
+                    type: string
+                never_block:
+                    default:
+                        - powershell.exe
+                        - pwsh.exe
+                        - cmd.exe
+                        - explorer.exe
+                        - svchost.exe
+                        - services.exe
+                        - lsass.exe
+                        - rundll32.exe
+                        - regsvr32.exe
+                        - mshta.exe
+                        - wscript.exe
+                        - cscript.exe
+                        - msiexec.exe
+                        - wmic.exe
+                        - wmiprvse.exe
+                        - certutil.exe
+                        - bitsadmin.exe
+                        - schtasks.exe
+                        - vssadmin.exe
+                        - msbuild.exe
+                        - python.exe
+                        - java.exe
+                        - node.exe
+                        - w3wp.exe
+                    description: File names and hashes never to block. A detection naming one of these files has none of its hashes blocked.
+                    items:
+                        type: string
+                    title: Never block
+                    type: array
+                page_oncall:
+                    default: true
+                    description: Post the timeline through Send Notification Message
+                    title: Page on-call
+                    type: boolean
+            title: Playbook settings
+            type: object
+    type: object
+outputs:
+    properties:
+        case_id:
+            description: The case the timeline was recorded on, or empty
+            type: string
+        status:
+            description: SUCCESS or FAIL
+            type: string
+        timeline:
+            description: Each step with its time (UTC), its result (done, would, waiting, already, skipped or failed) and what happened
+            type: array
+    type: object
+dsl:
+    name: Unofficial_Ransomware_Containment_Chain_No_M365
+    description: Contains a ransomware or hands-on-keyboard detection and comments a timeline, or records what it would do.
+    outcomeStatus: finish.variables.status
+    outcomeMessage: finish.variables.message
+    outputs:
+        case_id: target.variables.case_id
+        status: finish.variables.status
+        timeline: timeline.variables.steps
+    tasks:
+        # The settings, and whether a case or a detection started the run.
+        - name: setup
+          let:
+            dry_run: "inputs.?configuration.dry_run.orValue(true)"
+            approval: "!inputs.?configuration.dry_run.orValue(true) && inputs.?configuration.approval.orValue(false)"
+            approval_hours: "cel.bind(n, int(inputs.?configuration.approval_hours.orValue(4)), n < 1 ? 1 : n > 72 ? 72 : n)"
+            bridge_name: "cel.bind(b, inputs.?configuration.bridge_name.orValue('Fusion'), b == null || string(b).trim() == '' ? 'Fusion' : string(b).trim())"
+            severities: "inputs.?configuration.min_severity.orValue('Critical') == 'High' ? ['High', 'Critical'] : ['Critical']"
+            titles: "inputs.?configuration.detection_titles.orValue(['ransom', 'cryptoguard', 'hands-on-keyboard', 'hands on keyboard']).map(t, string(t).trim().lowerAscii()).filter(t, t != '')"
+            techniques: "inputs.?configuration.attack_techniques.orValue(['T1486', 'T1490']).map(t, string(t).trim().upperAscii()).filter(t, t != '')"
+            isolate: "inputs.?configuration.isolate_host.orValue(true)"
+            servers: "inputs.?configuration.isolate_servers.orValue(false)"
+            aap: "inputs.?configuration.adaptive_attack_protection.orValue(true)"
+            aap_group: "inputs.?configuration.aap_scope.orValue('group') != 'host'"
+            group_cap: "cel.bind(n, int(inputs.?configuration.max_group_devices.orValue(50)), n < 1 ? 1 : n)"
+            block: "inputs.?configuration.block_hashes.orValue(true)"
+            never: "inputs.?configuration.never_block.orValue([]).map(n, string(n).trim().lowerAscii()).filter(n, n != '')"
+            hash_cap: "cel.bind(n, int(inputs.?configuration.max_hashes.orValue(3)), n < 1 ? 1 : n)"
+            forensic: "inputs.?configuration.forensic_logs.orValue(true)"
+            page: "inputs.?configuration.page_oncall.orValue(true)"
+            device_cap: "cel.bind(n, int(inputs.?configuration.max_devices.orValue(3)), n < 1 ? 1 : n)"
+            excluded: "inputs.?configuration.excluded_devices.orValue([]).map(d, string(d).trim().lowerAscii()).filter(d, d != '')"
+            sophos_managed: "inputs.?configuration.include_sophos_managed.orValue(false)"
+            wait: "cel.bind(n, int(inputs.?configuration.case_wait_seconds.orValue(60)), n < 0 ? 0 : n > 300 ? 300 : n)"
+            source: "type(caseId(inputs)) == type('') && caseId(inputs) != '' ? 'case' : has(inputs, 'alert2') ? 'detection' : ''"
+            case_id: "type(caseId(inputs)) == type('') ? caseId(inputs) : ''"
+            tenant_id: "type(caseTenantId(inputs)) == type('') && caseTenantId(inputs) != '' ? caseTenantId(inputs) : type(detectionTenantId(inputs)) == type('') && detectionTenantId(inputs) != '' ? detectionTenantId(inputs) : string(TDR.tenant)"
+            detection: "has(inputs, 'alert2') ? inputs.alert2 : {}"
+            started: "string(now()).substring(11, 19)"
+        - name: fetch_case
+          condition: "setup.variables.source == 'case'"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 2
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: setup.variables.case_id
+            fields: 'id shortId managedBy primaryStatus { isClosed }'
+        # Does the detection qualify: its severity, and a title or a technique on the lists.
+        - name: match
+          let:
+            severity: "setup.variables.source == 'detection' && detectionSeverityNice(setup.variables.detection) in setup.variables.severities"
+            kind: >-
+                setup.variables.source == 'detection' && (setup.variables.titles.exists(t, detectionTitle(setup.variables.detection).lowerAscii().contains(t)) ||
+                (type(detectionAttackTechniqueIds(setup.variables.detection)) == type([]) ? detectionAttackTechniqueIds(setup.variables.detection) : []).exists(t, string(t).upperAscii() in setup.variables.techniques))
+        - name: check
+          let:
+            stop: >-
+                setup.variables.source == '' ? 'The playbook ran without a case or a detection, so it did nothing.' :
+                setup.variables.source == 'detection' && !match.variables.severity ? 'The detection ' + detectionTitle(setup.variables.detection) + ' is below Minimum severity, so nothing was done.' :
+                setup.variables.source == 'detection' && !match.variables.kind ? 'The detection ' + detectionTitle(setup.variables.detection) + ' has no title on Detection titles and no technique on ATT&CK techniques, so nothing was done.' :
+                setup.variables.source == 'case' && !has(fetch_case, 'outputs.case.id') ? 'The case could not be read, so nothing was done.' :
+                setup.variables.source == 'case' && fetch_case.outputs.case.?primaryStatus.isClosed.orValue(false) == true ? 'The case is closed, so nothing was done.' :
+                setup.variables.source == 'case' && !setup.variables.sophos_managed && fetch_case.outputs.case.?managedBy.orValue('') != 'CUSTOMER' ? 'The case is not self-managed, so nothing was done. Include Sophos-managed cases is off.' : ''
+        - name: wait_case
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.Wait_For_Case_Processing
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            sleep_time: '10s'
+            states:
+                - 'detections'
+        - name: case_detections
+          condition: "check.variables.stop == '' && setup.variables.source == 'case'"
+          exec: Taegis.GetCaseDetections
+          optional: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            case_id: setup.variables.case_id
+            fields: 'id metadata { title severity } entities { entities }'
+            limit: 200
+        - name: matched
+          let:
+            list: >-
+                check.variables.stop != '' ? [] : setup.variables.source == 'detection' ? [setup.variables.detection] :
+                case_detections.?outputs.detections.orValue([]).filter(d, d != null && detectionSeverityNice(d) in setup.variables.severities)
+        # A detection naming a file on Never block or under System32 or SysWOW64 often carries a Windows program's hash, so its hashes aren't blocked.
+        - name: guard
+          let:
+            flags: >-
+                matched.variables.list.map(d, detectionEntities(d).exists(e, e.lowerAscii().matches('^(filename|processname|processimagepath|programname|filepath|parentprocessimagepath):') &&
+                  cel.bind(v, e.substring(e.indexOf(':') + 1).trim().lowerAscii(), v.contains('\\windows\\system32\\') || v.contains('\\windows\\syswow64\\') || v.substring(v.lastIndexOf('\\') + 1) in setup.variables.never)))
+        # What the detections name: devices, SHA-256 hashes and users.
+        - name: evidence
+          let:
+            hosts: "unique(flatten(matched.variables.list.map(d, detectionEntities(d).filter(e, e.startsWith('hostId:')).map(e, e.substring(7).trim().lowerAscii())))).filter(h, h != '')"
+            host_names: "unique(flatten(matched.variables.list.map(d, detectionEntities(d).filter(e, e.startsWith('hostName:')).map(e, e.substring(9).trim().lowerAscii()))))"
+            guarded: "lists.range(size(matched.variables.list)).filter(i, guard.variables.flags[i]).map(i, detectionTitle(matched.variables.list[i]))"
+            hashes: >-
+                unique(flatten(lists.range(size(matched.variables.list)).filter(i, !guard.variables.flags[i]).map(i, detectionEntities(matched.variables.list[i])
+                  .filter(e, e.startsWith('fileSha256:') || e.startsWith('sha256:')).map(e, e.substring(e.indexOf(':') + 1).trim().lowerAscii()))))
+                  .filter(h, h.matches('^[0-9a-f]{64}$') && !(h in setup.variables.never))
+            users: "unique(flatten(matched.variables.list.map(d, detectionEntities(d).filter(e, e.startsWith('userName:') || e.startsWith('targetUserName:')).map(e, e.substring(e.indexOf(':') + 1).trim()))))"
+        - name: device_gate
+          let:
+            problem: >-
+                check.variables.stop == '' && size(evidence.variables.hosts) > setup.variables.device_cap ?
+                'The detections name ' + string(size(evidence.variables.hosts)) + ' devices, more than Max devices per run (' + string(setup.variables.device_cap) + '), so no device was isolated or changed. Contain them by hand.' : ''
+            go: "check.variables.stop == '' && size(evidence.variables.hosts) > 0 && size(evidence.variables.hosts) <= setup.variables.device_cap"
+        # Each device: look it up, isolate it and turn on Adaptive Attack Protection.
+        - name: devices
+          condition: "device_gate.variables.go"
+          range: evidence.variables.hosts
+          variables:
+            list: []
+            steps: []
+          for:
+            - name: lookup
+              action: Taegis.SophosEndpoint.lookupHostIdentifier
+              optional: true
+              inputs:
+                endpoint_id: devices.value
+            - name: dev
+              let:
+                found: "has(lookup, 'outputs.id')"
+                name: "cel.bind(n, lookup.?outputs.hostname.orValue(''), n == null || n == '' ? devices.value : string(n))"
+                isolated: "lookup.?outputs.isolation.status.orValue('') == 'isolated'"
+                server: "lookup.?outputs.type.orValue('') == 'server'"
+                group: "cel.bind(g, lookup.?outputs.group.id.orValue(''), g == null ? '' : string(g))"
+                person: "cel.bind(p, lookup.?outputs.associatedPerson.viaLogin.orValue(''), p == null ? '' : string(p))"
+                error: "cel.bind(x, lookup.?status.error.orValue(''), x == null || x == '' || string(x).contains('(404)') ? 'not found' : type(x) == type('') ? x : toString(x))"
+            - name: scope
+              let:
+                excluded: "devices.value in setup.variables.excluded || dev.variables.name.lowerAscii() in setup.variables.excluded"
+                act: "dev.variables.found && !(devices.value in setup.variables.excluded || dev.variables.name.lowerAscii() in setup.variables.excluded)"
+                isolate: "setup.variables.isolate && dev.variables.found && !dev.variables.isolated && (!dev.variables.server || setup.variables.servers) && !(devices.value in setup.variables.excluded || dev.variables.name.lowerAscii() in setup.variables.excluded)"
+            - name: isolate
+              condition: "!setup.variables.dry_run && !setup.variables.approval && scope.variables.isolate"
+              action: Taegis.SophosEndpoint.isolate
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: devices.value
+                comment: "'Isolated by the Ransomware containment chain playbook (unofficial)'"
+            - name: isolate_done
+              let:
+                when: "string(now()).substring(11, 19)"
+                error: "cel.bind(x, isolate.?status.error.orValue(''), x == null || x == '' ? 'no success reply from Sophos Endpoint' : cel.bind(e, type(x) == type('') ? x : toString(x), e.contains('\"message\":\"') ? e.substring(e.indexOf('\"message\":\"') + 11).split('\"')[0] : e))"
+            - name: aap
+              condition: "!setup.variables.dry_run && setup.variables.aap && scope.variables.act"
+              action: Taegis.SophosEndpoint.updateAdaptiveAttackProtection
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: devices.value
+                body: "{'enabled': true, 'expiresAfter': 'PT24H'}"
+            - name: device_done
+              let:
+                list: "append(devices.variables.list, {'id': devices.value, 'name': dev.variables.name, 'act': scope.variables.act, 'isolate': scope.variables.isolate, 'group': dev.variables.group, 'person': dev.variables.person})"
+                steps: >-
+                    devices.variables.steps + cel.bind(n, dev.variables.name, cel.bind(t, isolate_done.variables.when,
+                      !dev.variables.found ? [{'when': t, 'result': 'skipped', 'text': devices.value + ' is not a Sophos endpoint in this tenant (' + dev.variables.error + '), so it was skipped.'}] :
+                      scope.variables.excluded ? [{'when': t, 'result': 'skipped', 'text': n + ' is on Excluded devices, so it was skipped.'}] :
+                      (!setup.variables.isolate ? [] : [cel.bind(r, dev.variables.isolated ? 'already' : !scope.variables.isolate ? 'skipped' : setup.variables.dry_run ? 'would' : setup.variables.approval ? 'waiting' : isolate.?outputs.enabled.orValue(false) == true ? 'done' : 'failed',
+                        {'when': t, 'result': r, 'text': {'already': n + ' was already isolated.', 'skipped': n + ' is a server and Isolate servers is off, so it was not isolated.', 'would': 'Would isolate ' + n + '.',
+                          'waiting': 'Isolating ' + n + ' waits for approval.', 'done': 'Isolated ' + n + '.', 'failed': 'Isolating ' + n + ' failed: ' + isolate_done.variables.error}[r]})]) +
+                      (!setup.variables.aap ? [] : [cel.bind(r, setup.variables.dry_run ? 'would' : has(aap, 'outputs.actualState') ? 'done' : 'failed',
+                        {'when': string(now()).substring(11, 19), 'result': r, 'text': {'would': 'Would turn on Adaptive Attack Protection on ' + n + ' for 24 hours.', 'done': 'Turned on Adaptive Attack Protection on ' + n + ' for 24 hours.',
+                          'failed': 'Turning on Adaptive Attack Protection on ' + n + ' failed: ' + cel.bind(x, aap.?status.error.orValue(''), x == null || x == '' ? 'no success reply from Sophos Endpoint' : type(x) == type('') ? x : toString(x))}[r]})])))
+        - name: found
+          let:
+            list: "has(devices, 'variables.list') ? devices.variables.list : []"
+            steps: "has(devices, 'variables.steps') ? devices.variables.steps : []"
+        # Adaptive Attack Protection for the other devices in each device's group.
+        - name: groups
+          condition: "setup.variables.aap && setup.variables.aap_group && found.variables.list.exists(d, d.act && d.group != '')"
+          action: Taegis.SophosEndpoint.endpointGroups
+          optional: true
+          retry: 1
+        - name: peers
+          let:
+            wanted: "unique(found.variables.list.filter(d, d.act && d.group != '').map(d, d.group))"
+            in_groups: "groups.?outputs.items.orValue([]).filter(g, g != null && string(g.?id.orValue('')) in found.variables.list.filter(d, d.act).map(d, d.group))"
+        - name: peer_list
+          let:
+            all: >-
+                unique(flatten(peers.variables.in_groups.map(g, g.?endpoints.items.orValue([]).map(i, string(i.?id.orValue('')) + '|' + string(i.?hostname.orValue(''))))))
+                  .filter(p, !p.startsWith('|') && !(p.split('|')[0] in found.variables.list.map(d, d.id)) && !(p.split('|')[0] in setup.variables.excluded) && !(p.split('|')[1].lowerAscii() in setup.variables.excluded))
+            partial: "peers.variables.in_groups.exists(g, int(g.?endpoints.total.orValue(0)) > int(g.?endpoints.itemsCount.orValue(0)))"
+        - name: peer_aap
+          condition: "!setup.variables.dry_run && size(peer_list.variables.all) > 0 && size(peer_list.variables.all) <= setup.variables.group_cap && !peer_list.variables.partial"
+          range: peer_list.variables.all
+          variables:
+            done: []
+          for:
+            - name: peer_set
+              action: Taegis.SophosEndpoint.updateAdaptiveAttackProtection
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: peer_aap.value.split('|')[0]
+                body: "{'enabled': true, 'expiresAfter': 'PT24H'}"
+            - name: peer_done
+              let:
+                done: "append(peer_aap.variables.done, {'name': peer_aap.value.split('|')[1], 'ok': has(peer_set, 'outputs.actualState')})"
+        - name: group_step
+          let:
+            steps: >-
+                cel.bind(t, string(now()).substring(11, 19), cel.bind(all, peer_list.variables.all, cel.bind(done, has(peer_aap, 'variables.done') ? peer_aap.variables.done : [],
+                  !setup.variables.aap || !setup.variables.aap_group || size(peers.variables.wanted) == 0 ? [] :
+                  !has(groups, 'outputs.items') ? [{'when': t, 'result': 'failed', 'text': 'The device groups could not be read, so only the named devices got Adaptive Attack Protection.'}] :
+                  peer_list.variables.partial ? [{'when': t, 'result': 'skipped', 'text': 'Sophos Endpoint listed only part of the device group, so its other devices were left alone.'}] :
+                  size(all) == 0 ? [] :
+                  size(all) > setup.variables.group_cap ? [{'when': t, 'result': 'skipped', 'text': 'The device group has ' + string(size(all)) + ' other devices, more than Max group devices (' + string(setup.variables.group_cap) + '), so they were left alone.'}] :
+                  setup.variables.dry_run ? [{'when': t, 'result': 'would', 'text': 'Would turn on Adaptive Attack Protection for 24 hours on the other devices in the group: ' + all.map(p, p.split('|')[1]).join(', ') + '.'}] :
+                  (done.exists(p, p.ok) ? [{'when': t, 'result': 'done', 'text': 'Turned on Adaptive Attack Protection for 24 hours on the other devices in the group: ' + done.filter(p, p.ok).map(p, p.name).join(', ') + '.'}] : []) +
+                  (done.exists(p, !p.ok) ? [{'when': t, 'result': 'failed', 'text': 'Turning on Adaptive Attack Protection failed on: ' + done.filter(p, !p.ok).map(p, p.name).join(', ') + '.'}] : []))))
+        # The user step's lines and the actions it held for approval. This version has no user step, so both are empty.
+        - name: people
+          let:
+            steps: "[]"
+            held: "[]"
+        # Block the hashes, for the whole tenant in Sophos Endpoint.
+        - name: hashes
+          condition: "check.variables.stop == '' && !setup.variables.dry_run && setup.variables.block && size(evidence.variables.hashes) > 0 && size(evidence.variables.hashes) <= setup.variables.hash_cap"
+          range: evidence.variables.hashes
+          variables:
+            steps: []
+          for:
+            - name: block_hash
+              action: Taegis.SophosEndpoint.blockFilehash
+              optional: true
+              inputs:
+                sha256: hashes.value
+                fileName: "'unknown'"
+                path: "'unknown'"
+                comment: "'Blocked by the Ransomware containment chain playbook (unofficial)'"
+            - name: hash_done
+              let:
+                steps: >-
+                    hashes.variables.steps + [cel.bind(e, cel.bind(x, block_hash.?status.error.orValue(''), x == null ? '' : type(x) == type('') ? x : toString(x)),
+                      cel.bind(r, has(block_hash, 'outputs.id') ? 'done' : e.lowerAscii().matches('already|exist|409|duplicate') ? 'already' : 'failed',
+                        {'when': string(now()).substring(11, 19), 'result': r, 'text': {'done': 'Blocked ' + hashes.value + '.', 'already': hashes.value + ' was already blocked.', 'failed': 'Blocking ' + hashes.value + ' failed: ' + (e != '' ? e : 'no success reply from Sophos Endpoint')}[r]}))]
+        - name: hash_step
+          let:
+            steps: >-
+                cel.bind(t, string(now()).substring(11, 19), check.variables.stop != '' || !setup.variables.block ? [] :
+                (size(evidence.variables.guarded) > 0 ? [{'when': t, 'result': 'skipped', 'text': 'Did not block the hashes in ' + evidence.variables.guarded.join(', ') + ': a detection that names a Windows program or a file on Never block often carries that program\'s hash. Check them and block by hand.'}] : []) +
+                (size(evidence.variables.hashes) == 0 ? (size(evidence.variables.guarded) == 0 ? [{'when': t, 'result': 'skipped', 'text': 'The detections name no SHA-256 hash to block.'}] : []) :
+                 size(evidence.variables.hashes) > setup.variables.hash_cap ? [{'when': t, 'result': 'failed', 'text': 'The detections name ' + string(size(evidence.variables.hashes)) + ' hashes, more than Max file hashes per run (' + string(setup.variables.hash_cap) + '), so none was blocked: ' + evidence.variables.hashes.join(', ') + '.'}] :
+                 setup.variables.dry_run ? evidence.variables.hashes.map(h, {'when': t, 'result': 'would', 'text': 'Would block ' + h + '.'}) :
+                 has(hashes, 'variables.steps') ? hashes.variables.steps : []))
+        # Ask each device for its forensic logs.
+        - name: forensics
+          condition: "!setup.variables.dry_run && setup.variables.forensic && found.variables.list.exists(d, d.act)"
+          range: found.variables.list.filter(d, d.act)
+          variables:
+            steps: []
+          for:
+            - name: request_logs
+              action: Taegis.SophosEndpoint.requestForensicLogs
+              optional: true
+              inputs:
+                endpoint_id: forensics.value.id
+                body: "{'mode': 'standard', 'expires': 'PT4H'}"
+            - name: logs_done
+              let:
+                steps: >-
+                    forensics.variables.steps + [cel.bind(n, forensics.value.name, has(request_logs, 'outputs.id') ?
+                      {'when': string(now()).substring(11, 19), 'result': 'done', 'text': 'Asked ' + n + ' for its forensic logs. It uploads them to your forensic snapshot S3 bucket when it next checks in, within four hours.'} :
+                      {'when': string(now()).substring(11, 19), 'result': 'failed', 'text': 'Asking ' + n + ' for its forensic logs failed: ' + cel.bind(x, request_logs.?status.error.orValue(''), x == null || x == '' ? 'no success reply from Sophos Endpoint' : cel.bind(e, type(x) == type('') ? x : toString(x), e.contains('"message":"') ? e.substring(e.indexOf('"message":"') + 11).split('"')[0] : e))})]
+        # The timeline, in the order the steps ran.
+        - name: timeline
+          let:
+            steps: >-
+                check.variables.stop != '' ? [] :
+                (device_gate.variables.problem != '' ? [{'when': setup.variables.started, 'result': 'failed', 'text': device_gate.variables.problem}] :
+                 size(evidence.variables.hosts) == 0 ? [{'when': setup.variables.started, 'result': 'skipped', 'text': 'The detections name no device, so nothing was isolated or changed on a device.'}] : []) +
+                found.variables.steps + group_step.variables.steps + people.variables.steps + hash_step.variables.steps +
+                (!setup.variables.forensic ? [] : setup.variables.dry_run ? found.variables.list.filter(d, d.act).map(d, {'when': string(now()).substring(11, 19), 'result': 'would', 'text': 'Would ask ' + d.name + ' for its forensic logs.'}) :
+                 has(forensics, 'variables.steps') ? forensics.variables.steps : [])
+        # Ask for approval first: the isolations and user steps it held, as request lines.
+        - name: request
+          let:
+            actions: "(setup.variables.approval ? found.variables.list.filter(d, d.isolate).map(d, 'endpoint.isolate; device=' + d.id + '; label=' + d.name) : []) + people.variables.held"
+            needed: "setup.variables.approval && size(found.variables.list.filter(d, d.isolate)) + size(people.variables.held) > 0"
+            id: "'AP-' + generateString(8, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789')"
+            expires: "string(now() + duration(string(setup.variables.approval_hours) + 'h')).substring(0, 19) + 'Z'"
+        # Detection trigger: find the case the detection went into, if it's in one.
+        - name: wait_for_case
+          condition: "check.variables.stop == '' && setup.variables.source == 'detection' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && setup.variables.wait > 0"
+          sleep: "string(setup.variables.wait) + 's'"
+        - name: reread
+          condition: "check.variables.stop == '' && setup.variables.source == 'detection' && size(setup.variables.detection.?investigation_ids.orValue([])) == 0 && detectionId(inputs) != ''"
+          action: Taegis.Alert.query
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            cql_query: "'from detection where id in (\\'' + detectionId(inputs) + '\\')'"
+            limit: 1
+            offset: 0
+        - name: target
+          let:
+            case_id: >-
+                setup.variables.source == 'case' ? setup.variables.case_id :
+                setup.variables.source != 'detection' || check.variables.stop != '' ? '' :
+                (size(setup.variables.detection.?investigation_ids.orValue([])) > 0 ? setup.variables.detection.investigation_ids :
+                has(reread, 'outputs') && type(reread.outputs) == type([]) && size(reread.outputs) > 0 && has(reread.outputs[0], 'investigation_ids') && type(reread.outputs[0].investigation_ids) == type([]) ? reread.outputs[0].investigation_ids : [])
+                .map(i, type(i) == type('') ? i : has(i, 'id') ? string(i.id) : '').filter(i, i != '')[?0].orValue('')
+        - name: case_short
+          condition: "target.variables.case_id != '' && setup.variables.source != 'case'"
+          action: Taegis.Case.queryCustom
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            id: target.variables.case_id
+            fields: 'id shortId'
+        - name: case_ref
+          let:
+            short: >-
+                cel.bind(s, setup.variables.source == 'case' ? fetch_case.?outputs.case.shortId.orValue('') : case_short.?outputs.case.shortId.orValue(''), s == null || s == '' ? target.variables.case_id : string(s))
+            on_hold: "request.variables.needed && target.variables.case_id == ''"
+        - name: words
+          let:
+            head: >-
+                (request.variables.needed && !case_ref.variables.on_hold ? '**Approval needed: Ransomware containment chain**' : '**Ransomware containment chain (automated)**') +
+                (setup.variables.source == 'detection' ? '\nFrom the detection ' + detectionTitle(setup.variables.detection) + ' (' + detectionSeverityNice(setup.variables.detection) + '). Times are UTC.' : '\nRun from the case on ' + string(size(matched.variables.list)) + ' detections at or above Minimum severity. Times are UTC.')
+            lines: "(case_ref.variables.on_hold ? ['- Ask for approval first needs a case to hold the request, and this run has none, so the isolation and the user steps did not run. Contain them by hand.'] : []) + timeline.variables.steps.map(s, '- ' + s.when + ' ' + s.text)"
+        # Page on-call. The chat templates post to a webhook URL that works as a key, and the execution log records request URLs, so nolog.
+        - name: page
+          condition: "check.variables.stop == '' && setup.variables.page"
+          call: Taegis.SendNotificationMessage
+          optional: true
+          nolog: true
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            tenant_name: "cel.bind(n, inputs.?tenant.name.orValue(''), n == null ? '' : string(n))"
+            title: "(setup.variables.dry_run ? 'Dry run: ' : '') + 'Ransomware containment on ' + (size(found.variables.list) > 0 ? found.variables.list.map(d, d.name).join(', ') : 'no Sophos endpoint') + (case_ref.variables.short != '' ? ', ' + case_ref.variables.short : '')"
+            subtitle: "size(matched.variables.list) > 0 ? detectionTitle(matched.variables.list[0]) : ''"
+            message_label: "'Timeline (UTC)'"
+            message: "words.variables.lines.map(l, l.substring(2)).join('\\n\\n') + (request.variables.needed && !case_ref.variables.on_hold ? '\\n\\nApproval request ' + request.variables.id + ': reply @' + setup.variables.bridge_name + ' approve ' + case_ref.variables.short + ' ' + request.variables.id + ', or deny.' : '') + (case_ref.variables.short != '' ? '\\n\\nCase: ' + case_ref.variables.short : '\\n\\nNo case holds this yet.')"
+        - name: paged
+          let:
+            all: "has(page, 'outputs') && type(page.outputs) == type([]) ? page.outputs : []"
+            when: "string(now()).substring(11, 19)"
+        - name: page_line
+          let:
+            failed: "setup.variables.page && check.variables.stop == '' && (size(paged.variables.all) == 0 || paged.variables.all.exists(o, o.?outputs.success.orValue(false) != true))"
+            text: >-
+                !setup.variables.page || check.variables.stop != '' ? [] :
+                size(paged.variables.all) == 0 ? ['- ' + paged.variables.when + ' Paging on-call failed: no chat playbook answered for Send Notification Message.'] :
+                ['- ' + paged.variables.when + ' Paged on-call through ' + paged.variables.all.map(o, cel.bind(t, o.?playbook_title.orValue(''), t == null || t == '' ? 'a chat playbook' : string(t)) + (o.?outputs.success.orValue(false) == true ? '' : ' (failed)')).join(', ') + '.']
+        - name: final
+          let:
+            body: >-
+                check.variables.stop != '' || target.variables.case_id == '' ? '' :
+                words.variables.head + '\n\n' + (words.variables.lines + page_line.variables.text).join('\n') + (setup.variables.dry_run ? '\n\nDry run is on, so nothing was changed.' : '') +
+                (!request.variables.needed ? '' : cel.bind(r, case_ref.variables.short + ' ' + request.variables.id,
+                  '\n\nNothing that waits for approval changes until someone approves request ' + request.variables.id + '. It is open until ' + request.variables.expires.replace('T', ' ').replace('Z', ' UTC') + '.\n' +
+                  '- Teams: @' + setup.variables.bridge_name + ' approve ' + r + ', or @' + setup.variables.bridge_name + ' deny ' + r + '\n- Slack: Approve or Deny on the message\n\n' +
+                  '```\napproval-request: ' + request.variables.id + '\napproval-expires: ' + request.variables.expires + '\napproval-source: Ransomware containment chain\n' +
+                  request.variables.actions.map(a, 'approval-action: ' + a).join('\n') + '\n```'))
+        - name: comment
+          condition: "final.variables.body != ''"
+          action: Taegis.Case.addComment
+          optional: true
+          retry: 1
+          inputs:
+            tenant_id: setup.variables.tenant_id
+            caseId: target.variables.case_id
+            comment: final.variables.body
+        - name: finish
+          let:
+            status: >-
+                check.variables.stop == '' && (timeline.variables.steps.exists(s, s.result == 'failed') || page_line.variables.failed || case_ref.variables.on_hold ||
+                (final.variables.body != '' && !has(comment, 'outputs.comment.id'))) ? 'FAIL' : 'SUCCESS'
+            message: >-
+                check.variables.stop != '' ? 'Skipped: ' + check.variables.stop :
+                (words.variables.lines + page_line.variables.text).map(l, l.substring(2)).join(' ') + (size(words.variables.lines + page_line.variables.text) == 0 ? 'Every step is off, so nothing was done.' : '') +
+                (request.variables.needed && !case_ref.variables.on_hold ? ' Asked for approval: request ' + request.variables.id + ' on ' + case_ref.variables.short + '.' : '') +
+                (final.variables.body == '' ? ' No case holds this, so the timeline is only in this execution.' : has(comment, 'outputs.comment.id') ? ' Recorded on the case.' : ' Adding the timeline to the case failed.')
