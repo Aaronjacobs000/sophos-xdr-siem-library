@@ -1,14 +1,14 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_M365_Approval_Before_Acting
-version: 1.0.0
+version: 2.0.0
 title: Approval before acting (unofficial)
-description: Runs the Microsoft 365 actions that the library's account takeover cleanup and phishing purge playbooks hold for approval, once someone approves the request in Teams or Slack through the library's chat bridge. It trusts only a decision the chat bridge's own API credential wrote and a request a playbook wrote, does nothing on a denied or expired request, runs each request once, and records the approver and the outcome on the case. It starts in dry run. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
+description: Runs the actions that the library's account takeover cleanup, phishing purge and ransomware containment chain playbooks hold for approval, once someone approves the request in Teams or Slack through the library's chat bridge. It trusts only a decision the chat bridge's own API credential wrote and a request a playbook wrote, does nothing on a denied or expired request, runs each request once, and records the approver and the outcome on the case. It starts in dry run. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Runs when a comment is added to a case. It acts only on an approval decision that the library's chat bridge wrote, such as `[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams.`, and only on a request that a playbook wrote on the same case. Sophos doesn't make, maintain or support this playbook.
 
-    1. Microsoft 365 account takeover cleanup or Phishing triage and purge, with Ask for approval first on, writes an approval request on the case in place of acting. The request lists each action, its target and a request ID such as AP-7K2M9QX4, and when it expires.
+    1. Microsoft 365 account takeover cleanup, Phishing triage and purge or Ransomware containment chain, with Ask for approval first on, writes an approval request on the case in place of acting. The request lists each action, its target and a request ID such as AP-7K2M9QX4, and when it expires.
     2. Teams case chat sync or Slack case chat sync posts the request to the channel.
     3. Someone replies `@Fusion approve CSE00042 AP-7K2M9QX4` in Teams, or clicks Approve in Slack. The chat bridge checks the Teams or Slack signature and writes the decision on the case.
     4. This playbook checks the decision and the request, then runs the actions once and comments the outcome and the approver on the case.
@@ -31,6 +31,7 @@ documentation: |
     | Turn off an inbox rule | entra.inbox_rule_off | updateMessageRule |
     | Confirm compromised | entra.confirm_compromised | getRiskyUser, then confirmCompromisedRiskyUser; skipped without Microsoft Entra ID P2 in the tenant |
     | Move a copy of an email | mail.move | moveMessage, to Recoverable Items, Deleted Items or Junk Email only |
+    | Isolate a host | endpoint.isolate | Sophos Endpoint lookupHostIdentifier, then isolate unless it's already isolated |
 
     # Playbook Inputs
     | Input | What it does | Default |
@@ -38,9 +39,9 @@ documentation: |
     | Dry run | Check the decision and the request and record what would run, changing nothing | On |
     | Chat bridge author ID | The client ID of the chat bridge's Sophos Fusion API credential. Only decisions it wrote are trusted | None |
     | Bridge comment prefix | The chat bridge's BRIDGE_COMMENT_PREFIX | `[chat-sync]` |
-    | Allowed actions | The actions this playbook may run; others in a request are skipped | All seven |
+    | Allowed actions | The actions this playbook may run; others in a request are skipped | All eight |
     | Max actions per request | A request with more actions runs none | 50 |
-changeNotes: First version
+changeNotes: Runs endpoint.isolate, the host isolation the Ransomware containment chain holds for approval, through the Sophos Endpoint connector. A major version because the configured playbook now needs a Sophos Endpoint connection.
 tags:
     - Category:IAM
     - Category:Email
@@ -49,6 +50,7 @@ connectorCategories:
     - Generic
 connectors:
     - Taegis.MicrosoftGraphAPI:2.12.2
+    - Taegis.SophosEndpoint:1.3.4
     - Taegis.Case:1.0.5
 triggerHints:
     - isProactiveResponse: false
@@ -71,6 +73,7 @@ inputs:
                         - entra.inbox_rule_off
                         - entra.confirm_compromised
                         - mail.move
+                        - endpoint.isolate
                     description: The actions this playbook may run. An action in a request that isn't on the list is skipped and named in the outcome.
                     items:
                         type: string
@@ -118,7 +121,7 @@ outputs:
     type: object
 dsl:
     name: Unofficial_M365_Approval_Before_Acting
-    description: Runs the Microsoft 365 actions in an approval request once the chat bridge records an approval, after checking who wrote the decision and the request, the expiry and that the request hasn't run, or records what it would run.
+    description: Runs the actions in an approval request once the chat bridge records an approval, after checking who wrote the decision and the request, the expiry and that the request hasn't run, or records what it would run.
     outcomeStatus: finish.variables.status
     outcomeMessage: finish.variables.message
     outputs:
@@ -133,7 +136,7 @@ dsl:
             dry_run: "inputs.?configuration.dry_run.orValue(true)"
             bridge_author: "cel.bind(a, inputs.?configuration.bridge_author.orValue(''), a == null ? '' : string(a).trim().lowerAscii())"
             prefix: "cel.bind(p, inputs.?configuration.comment_prefix.orValue('[chat-sync]'), p == null ? '' : string(p).trim())"
-            allowed: "inputs.?configuration.allowed_actions.orValue(['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move']).map(a, string(a).trim().lowerAscii()).filter(a, a != '')"
+            allowed: "inputs.?configuration.allowed_actions.orValue(['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move', 'endpoint.isolate']).map(a, string(a).trim().lowerAscii()).filter(a, a != '')"
             max_actions: "int(inputs.?configuration.max_actions.orValue(50)) < 1 ? 1 : int(inputs.?configuration.max_actions.orValue(50))"
             case_id: "type(caseId(inputs)) == type('') ? caseId(inputs) : ''"
             tenant_id: "type(caseTenantId(inputs)) == type('') && caseTenantId(inputs) != '' ? caseTenantId(inputs) : string(TDR.tenant)"
@@ -278,7 +281,8 @@ dsl:
                   'name': kv.filter(p, p.startsWith('name=')).map(p, p.substring(5))[?0].orValue(''),
                   'mailbox': kv.filter(p, p.startsWith('mailbox=')).map(p, p.substring(8))[?0].orValue(''),
                   'message': kv.filter(p, p.startsWith('message=')).map(p, p.substring(8))[?0].orValue(''),
-                  'folder': kv.filter(p, p.startsWith('folder=')).map(p, p.substring(7).lowerAscii())[?0].orValue('')
+                  'folder': kv.filter(p, p.startsWith('folder=')).map(p, p.substring(7).lowerAscii())[?0].orValue(''),
+                  'device': kv.filter(p, p.startsWith('device=')).map(p, p.substring(7))[?0].orValue('')
                 })))
         - name: verdict
           let:
@@ -304,10 +308,10 @@ dsl:
           for:
             - name: check_action
               let:
-                known: "run.value.kind in ['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move']"
+                known: "run.value.kind in ['entra.disable_account', 'entra.reset_password', 'entra.revoke_sessions', 'entra.require_password_change', 'entra.inbox_rule_off', 'entra.confirm_compromised', 'mail.move', 'endpoint.isolate']"
                 allowed: "run.value.kind in setup.variables.allowed"
-                complete: "run.value.kind == 'mail.move' ? run.value.mailbox != '' && run.value.message != '' && run.value.folder in ['recoverableitemsdeletions', 'deleteditems', 'junkemail'] : run.value.kind == 'entra.inbox_rule_off' ? run.value.user != '' && run.value.rule != '' : run.value.user != ''"
-                who: "run.value.label != '' ? run.value.label : run.value.kind == 'mail.move' ? run.value.mailbox : run.value.user"
+                complete: "run.value.kind == 'endpoint.isolate' ? run.value.device != '' : run.value.kind == 'mail.move' ? run.value.mailbox != '' && run.value.message != '' && run.value.folder in ['recoverableitemsdeletions', 'deleteditems', 'junkemail'] : run.value.kind == 'entra.inbox_rule_off' ? run.value.user != '' && run.value.rule != '' : run.value.user != ''"
+                who: "run.value.label != '' ? run.value.label : run.value.kind == 'mail.move' ? run.value.mailbox : run.value.kind == 'endpoint.isolate' ? run.value.device : run.value.user"
             - name: go
               let:
                 ok: "check_action.variables.known && check_action.variables.allowed && check_action.variables.complete"
@@ -379,6 +383,24 @@ dsl:
                 id: run.value.mailbox
                 messageId: run.value.message
                 destinationId: run.value.folder
+            # A host: read it first, and isolate it unless it's already isolated.
+            - name: do_lookup
+              condition: "go.variables.act && run.value.kind == 'endpoint.isolate'"
+              action: Taegis.SophosEndpoint.lookupHostIdentifier
+              optional: true
+              inputs:
+                endpoint_id: run.value.device
+            - name: host
+              let:
+                already: "do_lookup.?outputs.isolation.status.orValue('') == 'isolated'"
+            - name: do_isolate
+              condition: "go.variables.act && run.value.kind == 'endpoint.isolate' && has(do_lookup, 'outputs.id') && !host.variables.already"
+              action: Taegis.SophosEndpoint.isolate
+              optional: true
+              retry: 1
+              inputs:
+                endpoint_id: run.value.device
+                comment: "'Isolated by Approval before acting (unofficial) after ' + decision.variables.request_id + ' was approved by ' + decision.variables.approver"
             - name: outcome
               let:
                 ok: >-
@@ -388,7 +410,8 @@ dsl:
                     run.value.kind == 'entra.require_password_change' ? go.variables.reset_done || (has(do_force, 'outputs.outcome') && do_force.outputs.outcome == 'success') :
                     run.value.kind == 'entra.inbox_rule_off' ? has(do_rule, 'outputs.outcome') && do_rule.outputs.outcome == 'success' :
                     run.value.kind == 'entra.confirm_compromised' ? license.variables.no_p2 || (has(do_confirm, 'outputs.outcome') && do_confirm.outputs.outcome == 'success') :
-                    run.value.kind == 'mail.move' ? has(do_move, 'outputs.outcome') && do_move.outputs.outcome == 'success' : false
+                    run.value.kind == 'mail.move' ? has(do_move, 'outputs.outcome') && do_move.outputs.outcome == 'success' :
+                    run.value.kind == 'endpoint.isolate' ? host.variables.already || do_isolate.?outputs.enabled.orValue(false) == true : false
                 error: >-
                     cel.bind(e,
                       run.value.kind == 'entra.disable_account' ? (has(do_disable, 'status.error') ? toString(do_disable.status.error) : '') :
@@ -397,7 +420,8 @@ dsl:
                       run.value.kind == 'entra.require_password_change' ? (has(do_force, 'status.error') ? toString(do_force.status.error) : '') :
                       run.value.kind == 'entra.inbox_rule_off' ? (has(do_rule, 'status.error') ? toString(do_rule.status.error) : '') :
                       run.value.kind == 'entra.confirm_compromised' ? (has(do_confirm, 'status.error') ? toString(do_confirm.status.error) : '') :
-                      run.value.kind == 'mail.move' ? (has(do_move, 'status.error') ? toString(do_move.status.error) : '') : '',
+                      run.value.kind == 'mail.move' ? (has(do_move, 'status.error') ? toString(do_move.status.error) : '') :
+                      run.value.kind == 'endpoint.isolate' ? (!has(do_lookup, 'outputs.id') ? 'the device was not found in Sophos Endpoint' : has(do_isolate, 'status.error') ? toString(do_isolate.status.error) : '') : '',
                       e != '' ? e : 'no success reply from Microsoft Graph')
             - name: describe
               let:
@@ -416,6 +440,7 @@ dsl:
                     run.value.kind == 'entra.require_password_change' ? (setup.variables.dry_run ? 'Would require ' + check_action.variables.who + ' to change the password at the next sign-in, unless a reset does.' : go.variables.reset_done ? 'The reset also set ' + check_action.variables.who + ' to change the password at the next sign-in.' : outcome.variables.ok ? 'Set ' + check_action.variables.who + ' to change the password at the next sign-in.' : 'Requiring a password change for ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
                     run.value.kind == 'entra.inbox_rule_off' ? (setup.variables.dry_run ? 'Would turn off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + '.' : outcome.variables.ok ? 'Turned off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + '.' : 'Turning off the inbox rule ' + describe.variables.rule + ' of ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
                     run.value.kind == 'entra.confirm_compromised' ? (setup.variables.dry_run ? 'Would confirm ' + check_action.variables.who + ' as compromised in Entra ID.' : license.variables.no_p2 ? 'Skipped confirm compromised for ' + check_action.variables.who + ': the tenant has no Microsoft Entra ID P2, which it needs.' : outcome.variables.ok ? 'Confirmed ' + check_action.variables.who + ' as compromised in Entra ID.' : 'Confirming ' + check_action.variables.who + ' as compromised failed: ' + outcome.variables.error) :
+                    run.value.kind == 'endpoint.isolate' ? (setup.variables.dry_run ? 'Would isolate ' + check_action.variables.who + '.' : host.variables.already ? check_action.variables.who + ' was already isolated.' : outcome.variables.ok ? 'Isolated ' + check_action.variables.who + '.' : 'Isolating ' + check_action.variables.who + ' failed: ' + outcome.variables.error) :
                     (setup.variables.dry_run ? 'Would move a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + '.' : outcome.variables.ok ? 'Moved a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + '.' : 'Moving a copy in ' + run.value.mailbox + ' to ' + describe.variables.folder + ' failed: ' + outcome.variables.error)
             - name: record
               let:
@@ -430,7 +455,8 @@ dsl:
             when: "trust.variables.created != '' ? ' at ' + trust.variables.created.substring(0, 19) + 'Z' : ''"
             undo: >-
                 results.variables.list.exists(r, r.result == 'done' && r.kind in ['entra.disable_account', 'entra.inbox_rule_off', 'entra.confirm_compromised']) ? '\n\nTo undo: enable the account if it was disabled, turn the inbox rules back on in Outlook, and dismiss the user\'s risk in Entra ID. A password reset and revoked sessions can\'t be undone.' :
-                results.variables.list.exists(r, r.result == 'done' && r.kind == 'mail.move') ? '\n\nTo undo: the user restores the email with Recover Deleted Items in Outlook, or an admin moves it back.' : ''
+                results.variables.list.exists(r, r.result == 'done' && r.kind == 'mail.move') ? '\n\nTo undo: the user restores the email with Recover Deleted Items in Outlook, or an admin moves it back.' :
+                results.variables.list.exists(r, r.result == 'done' && r.kind == 'endpoint.isolate') ? '\n\nTo release a device, use Restore Host on it in Sophos Fusion.' : ''
         - name: text
           let:
             body: >-

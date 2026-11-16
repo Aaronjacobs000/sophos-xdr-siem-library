@@ -1,6 +1,6 @@
 # Approval before acting
 
-Holds the Microsoft 365 actions of account takeover cleanup and phishing triage and purge until someone approves them in Teams or Slack, then runs them once and records who approved them on the case.
+Holds the actions of account takeover cleanup, phishing triage and purge and the ransomware containment chain until someone approves them in Teams or Slack, then runs them once and records who approved them on the case.
 
 It needs the library's [chat bridge](../../../chat-bridge/), which carries the approval back to the case. Teams and Slack case chat sync work without the bridge; this playbook doesn't.
 
@@ -8,11 +8,15 @@ It needs the library's [chat bridge](../../../chat-bridge/), which carries the a
 
 | Step | Who | What happens |
 | --- | --- | --- |
-| Ask | Account takeover cleanup 1.2.0 or Phishing triage and purge 1.1.0, with Ask for approval first on | Writes an approval request on the case: each action, its target, a request ID such as AP-7K2M9QX4, and when it expires. Changes nothing |
+| Ask | Account takeover cleanup 1.2.0, Phishing triage and purge 1.1.0 or Ransomware containment chain 1.0.0, with Ask for approval first on | Writes an approval request on the case: each action, its target, a request ID such as AP-7K2M9QX4, and when it expires. Changes nothing |
 | Post | Teams case chat sync 1.3.0 or Slack case chat sync 1.1.0 | Posts the request to the channel as Approval needed, whatever its severity and managed-by filters say |
 | Answer | Someone in the channel | Teams: `@Fusion approve CSE00042 AP-7K2M9QX4` or `deny`. Slack: Approve or Deny on the message |
 | Record | The chat bridge | Checks the Teams or Slack signature and writes the decision on the case as its own API credential |
 | Act | This playbook | Checks the decision and the request, then runs the actions once and comments the outcome and the approver |
+
+## What it runs
+
+It runs the takeover cleanup's and the ransomware chain's Microsoft 365 user steps, the phishing purge's email moves and, from 2.0.0, the ransomware chain's host isolation through the Sophos Endpoint connector. It leaves a host that's already isolated as it is.
 
 ## What it checks before it acts
 
@@ -26,6 +30,5 @@ It needs the library's [chat bridge](../../../chat-bridge/), which carries the a
 
 ## What it doesn't cover
 
-- Isolating a host. No library playbook isolates yet, and adding it here would make every user of this playbook add a Sophos Endpoint connection.
 - Approving from the Sophos Fusion console. A person there can run the action directly.
 - Reminders, escalation to a second approver, or more than one approval per request.

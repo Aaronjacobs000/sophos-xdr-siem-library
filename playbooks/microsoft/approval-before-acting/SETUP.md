@@ -6,7 +6,7 @@ Four pieces work together, and you set up each once:
 
 1. The chat bridge, which carries the answer from Teams or Slack to the case.
 2. Teams case chat sync 1.3.0 or Slack case chat sync 1.1.0, which posts the request to the channel.
-3. Microsoft 365 account takeover cleanup 1.2.0 or Phishing triage and purge 1.1.0, with Ask for approval first on, which writes the request in place of acting.
+3. Microsoft 365 account takeover cleanup 1.2.0, Phishing triage and purge 1.1.0 or Ransomware containment chain 1.0.0, with Ask for approval first on, which writes the request in place of acting.
 4. This playbook, which runs the request once someone approves it.
 
 ## 1. The chat bridge
@@ -24,7 +24,7 @@ Use Teams case chat sync 1.3.0 or Slack case chat sync 1.1.0, set up as its SETU
 
 ## 3. Ask for approval in the playbooks that act
 
-In each configured Microsoft 365 account takeover cleanup or Phishing triage and purge playbook you want held:
+In each configured Microsoft 365 account takeover cleanup, Phishing triage and purge or Ransomware containment chain playbook you want held:
 
 - **Ask for approval first:** on.
 - **Approval window (hours):** how long a request stays open, 4 by default, 1 to 72.
@@ -48,10 +48,10 @@ On the template, choose Use this Template, then set:
   ```
 
   Without the filter it runs on every comment and skips all but decisions.
-- **Connections:** the Microsoft Graph API connection the requesting playbooks use, and the Case connection.
+- **Connections:** the Microsoft Graph API connection the requesting playbooks use, the Case connection and, from 2.0.0, the Sophos Endpoint connection, which signs in as the platform and isolates the hosts the ransomware chain holds. Version 1.0.0 doesn't isolate.
 - **Chat bridge author ID:** the client ID from step 1. With none set, nothing is trusted.
 - **Bridge comment prefix:** the bridge's BRIDGE_COMMENT_PREFIX, `[chat-sync]` by default.
-- **Allowed actions:** all seven by default. Take off any you never want run from chat.
+- **Allowed actions:** all eight by default. Take off any you never want run from chat, such as endpoint.isolate.
 - **Max actions per request:** 50. A request with more runs none.
 - **Dry run:** leave it on.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
@@ -82,4 +82,4 @@ Save it and leave it off.
 
 ## Rollback
 
-Enable the account if it was disabled, turn the inbox rules back on, dismiss the user's risk in Entra ID, and restore moved email from Recoverable Items. A password reset and revoked sessions can't be undone. To stop approvals, turn this playbook off: requests then stay unanswered and expire.
+Enable the account if it was disabled, turn the inbox rules back on, dismiss the user's risk in Entra ID, restore moved email from Recoverable Items, and release an isolated device with Restore Host. A password reset and revoked sessions can't be undone. To stop approvals, turn this playbook off: requests then stay unanswered and expire.

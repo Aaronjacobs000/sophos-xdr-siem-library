@@ -1,0 +1,36 @@
+{
+  "title": "Ransomware containment chain",
+  "vendor": "Sophos",
+  "product": "Sophos Endpoint",
+  "use_case": "On a Critical ransomware or hands-on-keyboard detection, isolate the host, turn on Adaptive Attack Protection for it and its device group, lock the Microsoft 365 user out, block the file hash, collect forensic logs, page on-call and comment a timeline on the case.",
+  "trigger": "Platform Events, source Alert2 (detections), event create, with the Only When filter in SETUP.md. Or User Initiated, a Response Action on Case, to run it by hand from a case.",
+  "connections": [
+    "Taegis.SophosEndpoint 1.3.4, the Sophos Endpoint connector Sophos manages, to isolate, turn on Adaptive Attack Protection, block hashes and request forensic logs",
+    "Taegis.MicrosoftGraphAPI 2.12.2, the Microsoft Graph API connector Sophos manages, to find the user, revoke sessions and require a password change",
+    "Taegis.Case 1.0.5 and Taegis.Alert 1.3.6, the case and detection connectors Sophos manages, to read detections and comment the timeline",
+    "The Send Notification Message interface, set to Sophos's Teams, Slack or Google Chat template and a webhook connection, to page on-call"
+  ],
+  "requires": "Sophos Endpoint devices, Microsoft 365 with a Microsoft Graph API connection, Teams, Slack or Google Chat, an S3 bucket for forensic snapshots for the forensic step, and Sophos Fusion playbooks under Security Operations > Automations",
+  "license": "MIT",
+  "risk_tier": "reversible action",
+  "mdr_note": "Sophos MDR doesn't run or watch this playbook, and Sophos MDR may already be containing the same host. A run from a case acts only on self-managed cases unless you turn on Include Sophos-managed cases. The detection trigger doesn't check who works the detection, so agree it with the Sophos MDR team first.",
+  "rollback": "Release each device with Restore Host, turn Adaptive Attack Protection off or let it expire after 24 hours, and remove the blocked hashes from Blocked Items. Revoked sessions stay revoked, and the user sets a new password at the next sign-in.",
+  "tested": {
+    "validated": "2026-11-16",
+    "tenant": {
+      "date": "2026-11-16",
+      "region": "us01"
+    }
+  },
+  "connector": null,
+  "author": "Aaronjacobs000",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Automations/Playbooks/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/index.html?contextId=forensic-snapshot",
+    "https://developer.sophos.com/docs/endpoint-v1/1/overview",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/Products/Microsoft365/ResponseActions/",
+    "https://attack.mitre.org/techniques/T1486/"
+  ],
+  "summary": "This playbook contains a Critical ransomware or hands-on-keyboard detection: it isolates the host, turns on Adaptive Attack Protection for it and its device group, locks the Microsoft 365 user out, blocks the file hash, collects forensic logs, pages on-call and comments a timeline on the case. It runs on a detection or by hand from a case, through connectors Sophos manages, and can hold the isolation and user steps for approval in Teams or Slack. Dry run is on.",
+  "notes": "Setup:\n- Sophos Fusion won't save a configured playbook without a connection for every connector its template lists, so this one needs a Microsoft Graph API connection. Without Microsoft 365, use Ransomware containment chain without Microsoft 365.\n- Forensic logs need an AWS S3 bucket set up for forensic snapshots, Windows devices and an XDR or MDR license. Without the bucket Sophos answers \"Upload disabled\", so turn the step off.\n- Ask for approval first needs Approval before acting 2.0.0, which runs the held isolation.\n\nHow it works:\n- Devices are the detections' hostId entities; users are their userName or targetUserName, or each device's signed-in person when they name none.\n- It never blocks the hashes of a detection that names a file on Never block or under Windows\\System32 or SysWOW64: those often carry the hash of powershell.exe or cmd.exe.\n- A user it can't match in Microsoft 365, a local account or an empty Domains skips the user step without failing the run.\n\nTesting:\n- On 2026-11-16 the dsl passed playbookValidateDSLV2 with no errors or warnings in us01 and eu02, and a renamed copy imported, exported (same apart from whitespace and connector order) and was deleted in eu02.\n- In us01 renamed copies ran 12 times on made-up detections, offline test devices, a test case and a test Microsoft 365 user. Read back: Adaptive Attack Protection on the device and its group, the blocked hash (a repeat reported already blocked), revoked sessions, the password change flag, the Teams page and the timeline. All reverted.\n- Dry run, the limits, a non-Sophos host, a local account, a DOMAIN\\name match, Never block and the filters held. Ask for approval first posted a request that the chat bridge approved and Approval before acting 2.0.0 ran. No log held a secret.\n\nKnown gaps:\n- Isolation never ran: no test device was online, and an isolation sent to an offline device can't be released until it connects. Approval before acting reached its isolate step with a made-up device ID.\n- Forensic logs only reached Sophos's Upload disabled answer: the test tenant has no S3 bucket.\n- No real ransomware or hands-on-keyboard detection was used, and the case menu run wasn't tested: the API refuses User Initiated runs."
+}
