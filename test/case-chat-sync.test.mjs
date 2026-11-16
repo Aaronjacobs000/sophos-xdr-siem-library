@@ -340,3 +340,12 @@ test('Teams: the card names the tenant and links the case, and each can be turne
   const none = run(TEAMS, { kase: caseWith(MDR, { tenant: null }) });
   assert.equal(facts(none)[0].title, 'Severity');
 });
+
+test('Teams: with a bridge name the reply line names the statuses a Sophos MDR tenant uses, and without one there is none', () => {
+  const reply = (r) => r.body.filter((b) => b.type === 'TextBlock' && String(b.text).startsWith('Reply in this channel')).map((b) => b.text);
+  const kase = caseWith(MDR, { shortId: 'CSE00002' });
+  assert.deepEqual(reply(run(TEAMS, { kase, settings: { ...SETTINGS, bridge_name: 'Fusion' } })), [
+    'Reply in this channel: @Fusion in_progress CSE00002 | @Fusion customer_action_required CSE00002 | @Fusion close CSE00002 <verdict> <note> | @Fusion comment CSE00002 <text>',
+  ]);
+  assert.deepEqual(reply(run(TEAMS, { kase })), []);
+});

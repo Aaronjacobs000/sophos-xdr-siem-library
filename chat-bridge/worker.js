@@ -17,7 +17,8 @@ const SHORT_ID = /^CSE\d{3,10}$/i;
 const SLACK_TOLERANCE_SECONDS = 300;
 const TEAMS_BUDGET_MS = 4200;
 const MAX_COMMENT = 4000;
-const DEFAULT_STATUSES = 'active,awaiting_action,closed';
+// The statuses a Sophos MDR tenant's cases move between. A tenant without Sophos MDR uses active,awaiting_action,closed.
+const DEFAULT_STATUSES = 'in_progress,customer_action_required,closed';
 const DEFAULT_VERDICTS = 'false_positive,threat_mitigated,confirmed_security_incident,authorized_activity,inconclusive,informational,not_vulnerable';
 const DEFAULT_API = 'https://api.taegis.sophos.com/graphql';
 const TOKEN_URL = 'https://id.sophos.com/api/v2/oauth2/token';
@@ -240,7 +241,9 @@ export function teamsText(html) {
 // "<status> <ref> [note]", "close <ref> <verdict> [note]", "comment <ref> <text>".
 export function parseCommand(text, cfg) {
   const words = text.split(' ').filter(Boolean);
-  const verb = (words[0] || '').toLowerCase();
+  const first = (words[0] || '').toLowerCase();
+  // Cards from before Teams case chat sync 1.2.3 say active, which a Sophos MDR tenant calls in_progress.
+  const verb = first === 'active' && !cfg.statuses.includes('active') && cfg.statuses.includes('in_progress') ? 'in_progress' : first;
   const ref = words[1] || '';
   if (!ref || !(UUID.test(ref) || SHORT_ID.test(ref))) return null;
   if (verb === 'comment') return { kind: 'comment', ref, text: words.slice(2).join(' ') };

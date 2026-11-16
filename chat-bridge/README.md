@@ -34,11 +34,11 @@ A request that fails its check gets 401 and reaches neither Sophos Fusion nor Sl
 
 | Action | Teams | Slack | Sophos Fusion call |
 | --- | --- | --- | --- |
-| Set a status | `@Fusion active CSE00042 [note]` | Set active, Set awaiting action | `updateCase` with the status, then `addCaseComment` |
+| Set a status | `@Fusion in_progress CSE00042 [note]` | Set active, Set awaiting action | `updateCase` with the status, then `addCaseComment` |
 | Close | `@Fusion close CSE00042 <verdict> [note]` | Close case, then a form with the verdict and why | `updateCase` with the closed status, verdict and close reason, then `addCaseComment` |
 | Comment | `@Fusion comment CSE00042 <text>` | Add comment, then a form | `addCaseComment` |
 
-A case is its short ID, such as CSE00042, or its ID. The bridge only sets the statuses in `BRIDGE_ALLOWED_STATUSES` and the verdicts in `BRIDGE_ALLOWED_VERDICTS`. It refuses to change the status of a case Sophos MDR manages, since a customer can't do that in Sophos Fusion either, and it refuses any change to a closed case. A comment it writes reads like `[chat-sync] Jane Analyst via Teams set the status to Active: looking now`.
+A case is its short ID, such as CSE00042, or its ID. The bridge only sets the statuses in `BRIDGE_ALLOWED_STATUSES` and the verdicts in `BRIDGE_ALLOWED_VERDICTS`. By default those are the statuses a Sophos MDR tenant's cases use: in_progress, customer_action_required and closed. A tenant without Sophos MDR uses active, awaiting_action and closed, so set `BRIDGE_ALLOWED_STATUSES` to `active,awaiting_action,closed` there. It refuses to change the status of a case Sophos MDR manages, since a customer can't do that in Sophos Fusion either, and it refuses any change to a closed case. A comment it writes reads like `[chat-sync] Jane Analyst via Teams set the status to In Progress: looking now`.
 
 ### Why a Cloudflare Worker
 
@@ -84,7 +84,7 @@ Secrets go in with `wrangler secret put`; the rest are `[vars]` in `wrangler.tom
 | `TEAMS_HMAC_SECRET` | secret | The outgoing webhook's security token. Required for Teams. |
 | `FUSION_TENANT_ID` | var | The tenant ID. Without it the bridge asks `whoami` once and keeps the answer. |
 | `FUSION_API` | var | The Sophos Fusion GraphQL URL. Defaults to `https://api.taegis.sophos.com/graphql`; only hosts on `taegis.sophos.com` are accepted. |
-| `BRIDGE_ALLOWED_STATUSES` | var | Status names the bridge may set. Defaults to `active,awaiting_action,closed`. |
+| `BRIDGE_ALLOWED_STATUSES` | var | Status names the bridge may set. Defaults to `in_progress,customer_action_required,closed`, the statuses a Sophos MDR tenant's cases use; a tenant without Sophos MDR needs `active,awaiting_action,closed`. |
 | `BRIDGE_ALLOWED_VERDICTS` | var | Verdict names a close may use. |
 | `BRIDGE_COMMENT_PREFIX` | var | The start of every comment the bridge writes. Defaults to `[chat-sync]`; keep it the same as the playbooks' Bridge comment prefix. |
 | `BRIDGE_DRY_RUN` | var | `1` to check and answer without writing. |

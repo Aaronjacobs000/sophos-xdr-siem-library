@@ -6,11 +6,14 @@ import { createHmac, randomBytes } from 'node:crypto';
 import worker, { verifySlack, verifyTeams, teamsText, parseCommand, settings, resetCache, safeEqual } from '../chat-bridge/worker.js';
 
 const CASE_ID = '11111111-2222-4333-8444-555555555555';
-const STATUS = { open: 'aaaaaaaa-0000-4000-8000-000000000001', active: 'aaaaaaaa-0000-4000-8000-000000000002', closed: 'aaaaaaaa-0000-4000-8000-000000000003', awaiting_action: 'aaaaaaaa-0000-4000-8000-000000000004' };
+const STATUS = { open: 'aaaaaaaa-0000-4000-8000-000000000001', active: 'aaaaaaaa-0000-4000-8000-000000000002', closed: 'aaaaaaaa-0000-4000-8000-000000000003', awaiting_action: 'aaaaaaaa-0000-4000-8000-000000000004', in_progress: 'aaaaaaaa-0000-4000-8000-000000000005', customer_action_required: 'aaaaaaaa-0000-4000-8000-000000000006' };
 const VERDICT = 'bbbbbbbb-0000-4000-8000-000000000001';
 const SLACK_SECRET = 'test-signing-secret';
 const TEAMS_SECRET = randomBytes(32).toString('base64');
-const ENV = { FUSION_CLIENT_ID: 'client', FUSION_CLIENT_SECRET: 'secret', FUSION_TENANT_ID: 'tenant-1', SLACK_SIGNING_SECRET: SLACK_SECRET, SLACK_BOT_TOKEN: 'xoxb-test', TEAMS_HMAC_SECRET: TEAMS_SECRET };
+// Most tests model a tenant without Sophos MDR, whose cases use active and awaiting_action.
+const ENV = { FUSION_CLIENT_ID: 'client', FUSION_CLIENT_SECRET: 'secret', FUSION_TENANT_ID: 'tenant-1', SLACK_SIGNING_SECRET: SLACK_SECRET, SLACK_BOT_TOKEN: 'xoxb-test', TEAMS_HMAC_SECRET: TEAMS_SECRET, BRIDGE_ALLOWED_STATUSES: 'active,awaiting_action,closed' };
+// The defaults: a Sophos MDR tenant, whose cases use in_progress and customer_action_required.
+const MDR_ENV = { ...ENV, BRIDGE_ALLOWED_STATUSES: undefined };
 
 // ---------------------------------------------------------------- a mocked Sophos Fusion and Slack
 
@@ -122,14 +125,14 @@ test('settings: the Fusion API must be https on taegis.sophos.com, and the lists
   assert.throws(() => settings({ FUSION_API: 'http://api.taegis.sophos.com/graphql' }), /FUSION_API/);
   assert.equal(settings({ FUSION_API: 'https://api.region1.taegis.sophos.com/graphql' }).api, 'https://api.region1.taegis.sophos.com/graphql');
   const s = settings({});
-  assert.deepEqual(s.statuses, ['active', 'awaiting_action', 'closed']);
+  assert.deepEqual(s.statuses, ['in_progress', 'customer_action_required', 'closed']);
   assert.equal(s.prefix, '[chat-sync]');
   assert.equal(s.dryRun, false);
 });
 
 test('Teams text: mentions and markup come out, and commands parse only with a case ID', () => {
   assert.equal(teamsText('<at>Fusion</at>&nbsp;close CSE00042 false_positive <b>test</b> box'), 'close CSE00042 false_positive test box');
-  const cfg = settings({});
+  const cfg = settings({ BRIDGE_ALLOWED_STATUSES: 'active,awaiting_action,closed' });
   assert.deepEqual(parseCommand('active CSE00042 looking now', cfg), { kind: 'status', ref: 'CSE00042', status: 'active', text: 'looking now' });
   assert.deepEqual(parseCommand('close CSE00042 false_positive lab box', cfg), { kind: 'close', ref: 'CSE00042', verdict: 'false_positive', text: 'lab box' });
   assert.deepEqual(parseCommand(`comment ${CASE_ID} hello there`, cfg), { kind: 'comment', ref: CASE_ID, text: 'hello there' });
@@ -137,6 +140,19 @@ test('Teams text: mentions and markup come out, and commands parse only with a c
   assert.equal(parseCommand('closed CSE00042', cfg), null);
   assert.equal(parseCommand('active 42', cfg), null);
   assert.equal(parseCommand('help', cfg), null);
+});
+
+test('Teams text: the default statuses are a Sophos MDR tenant\'s, and active still means in_progress there', () => {
+  const cfg = settings({});
+  assert.deepEqual(parseCommand('in_progress CSE00042 looking now', cfg), { kind: 'status', ref: 'CSE00042', status: 'in_progress', text: 'looking now' });
+  assert.deepEqual(parseCommand('customer_action_required CSE00042', cfg), { kind: 'status', ref: 'CSE00042', status: 'customer_action_required', text: '' });
+  assert.deepEqual(parseCommand('Active CSE00042 on it', cfg), { kind: 'status', ref: 'CSE00042', status: 'in_progress', text: 'on it' });
+  assert.equal(parseCommand('awaiting_action CSE00042', cfg), null);
+  assert.equal(parseCommand('on_hold CSE00042', cfg), null);
+  // Where active is a real status, it stays active.
+  assert.equal(parseCommand('active CSE00042', settings({ BRIDGE_ALLOWED_STATUSES: 'active,in_progress,closed' })).status, 'active');
+  // With neither, it isn't a command.
+  assert.equal(parseCommand('active CSE00042', settings({ BRIDGE_ALLOWED_STATUSES: 'awaiting_action,closed' })), null);
 });
 
 // ---------------------------------------------------------------- Teams
@@ -181,6 +197,27 @@ test('Teams: a comment command adds a prefixed comment; unknown text gets the us
   c = ctx();
   const reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> what is this'), ENV, c)).json();
   assert.match(reply.text, /^Commands: active <case>, awaiting_action <case>, close <case> <verdict>/);
+});
+
+test('Teams: with the default statuses the usage names in_progress and customer_action_required, and an old card\'s active sets in_progress', async () => {
+  let c = ctx();
+  let reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> help'), MDR_ENV, c)).json();
+  assert.match(reply.text, /^Commands: in_progress <case>, customer_action_required <case>, close <case> <verdict> \[note\], comment <case> <text>\./);
+  assert.doesNotMatch(reply.text, /active|awaiting/);
+  c = ctx();
+  reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> customer_action_required CSE00042 waiting on the user'), MDR_ENV, c)).json();
+  await c.settle();
+  let m = mutations();
+  assert.deepEqual(m[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.customer_action_required });
+  assert.match(m[1].variables.i.comment, /^\[chat-sync\] Jane Analyst via Teams set the status to .+: waiting on the user$/);
+  calls = [];
+  c = ctx();
+  reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> active CSE00042'), MDR_ENV, c)).json();
+  await c.settle();
+  m = mutations();
+  assert.equal(m.length, 2);
+  assert.deepEqual(m[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.in_progress });
+  assert.match(reply.text, /^CSE00042 is now in_progress\./);
 });
 
 test('Teams: allowlists, Sophos MDR cases, closed cases and dry run all stop before a write', async () => {
