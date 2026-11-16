@@ -1,14 +1,14 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_M365_AccountTakeover_Cleanup
-version: 1.1.0
+version: 1.1.1
 title: Microsoft 365 account takeover cleanup (unofficial)
 description: When a Sophos ITDR leaked credential finding, a detection or an analyst flags a Microsoft 365 account as taken over, resets the user's password, revokes their sign-in sessions, makes them change their password at the next sign-in, turns off inbox rules that forward, redirect or delete mail, confirms the user as compromised in Entra ID where the tenant has Entra ID P2, and records the inbox rules before and after on the case. It starts in dry run, which only records what it would do. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
     # Overview
     Runs on a new Sophos ITDR leaked credential finding, on a detection whose title is on Detection titles, or by hand from a case. For each user in scope it looks the user up in Entra ID and reads their inbox rules. Then it resets their password to a random one that the Microsoft Graph API connector makes and nobody sees, revokes their sign-in sessions, sets them to change their password at the next sign-in, turns off every enabled inbox rule that forwards, redirects or deletes mail, and confirms them as compromised in Entra ID. Disable account is off unless you turn it on.
 
-    Confirm compromised needs Microsoft Entra ID P2. Without it the playbook skips that step, says so on the case and runs the rest. It reads the inbox rules again afterwards and adds a comment to the case with the rules before and after. Sophos doesn't make, maintain or support this playbook.
+    Confirm compromised needs Microsoft Entra ID P2 in the tenant. Microsoft checks the tenant's license, not the user's, so with P2 anywhere in the tenant every user is confirmed, even one with only P1. Only in a tenant with no P2 at all does the playbook skip that step, say so on the case and run the rest. It reads the inbox rules again afterwards and adds a comment to the case with the rules before and after. Sophos doesn't make, maintain or support this playbook.
 
     When the user is synced from on-premises Active Directory, the comment says to disable the account and reset its password there too, because the next sync can undo changes made in Entra ID.
 
@@ -35,12 +35,12 @@ documentation: |
     | Reset the password | Set a new random password that nobody sees | On |
     | Require a password change | Make the user change their password at the next sign-in | On |
     | Turn off inbox rules | Turn off enabled inbox rules that forward, redirect or delete mail | On |
-    | Confirm compromised | Confirm the user as compromised in Entra ID Protection. Needs Entra ID P2; skipped without it | On |
+    | Confirm compromised | Confirm the user as compromised in Entra ID Protection. Needs Entra ID P2 in the tenant, not on the user; skipped in a tenant with no P2 | On |
     | Disable account | Also disable the account in Entra ID | Off |
     | Max users per run | A run with more users in scope acts on none | 1 |
     | Include Sophos-managed cases | Also act on cases Sophos MDR manages | Off |
     | Seconds to wait for the case | Detection trigger only: how long to wait before looking for the detection's case | 60 |
-changeNotes: Resets the password to a random one by default, with Reset the password to go back to only requiring a change at the next sign-in. Without Entra ID P2, Confirm compromised is skipped and the comment says why, so the run no longer ends FAIL.
+changeNotes: After a password reset, which already makes the user change the password at the next sign-in, Require a password change no longer makes a second call, which Entra ID's audit log recorded as a failure. With Reset the password off it still makes the call. The text now says Entra ID P2 is checked for the tenant, not the user.
 tags:
     - Category:IAM
     - Type:Response
@@ -85,7 +85,7 @@ inputs:
                     type: integer
                 confirm_compromised:
                     default: true
-                    description: Confirm the user as compromised in Entra ID Protection, which raises their user risk to high. It needs Microsoft Entra ID P2. Without P2 the playbook skips this step, says so and runs the rest.
+                    description: Confirm the user as compromised in Entra ID Protection, which raises their user risk to high. It needs Microsoft Entra ID P2 in the tenant, not on the user, so with P2 anywhere in the tenant every user is confirmed, even one with only P1. In a tenant with no P2 at all the playbook skips this step, says so and runs the rest.
                     title: Confirm compromised
                     type: boolean
                 detection_titles:
@@ -138,7 +138,7 @@ inputs:
                     type: array
                 force_password_change:
                     default: true
-                    description: Make the user change their password at the next sign-in
+                    description: Make the user change their password at the next sign-in. A password reset already does this, so the playbook only makes its own call when Reset the password is off or the reset failed.
                     title: Require a password change
                     type: boolean
                 password_reset:
@@ -373,8 +373,9 @@ dsl:
               retry: 2
               inputs:
                 id: entra.variables.id
+            # A reset already makes the user change the password at the next sign-in, and a second call is logged in Entra ID as a failure, so this runs only when no reset went through.
             - name: force_change
-              condition: "!setup.variables.dry_run && setup.variables.force_change && person.variables.act"
+              condition: "!setup.variables.dry_run && setup.variables.force_change && person.variables.act && !(has(reset_password, 'outputs.outcome') && reset_password.outputs.outcome == 'success')"
               action: Taegis.MicrosoftGraphAPI.forcePasswordChange
               optional: true
               retry: 2
@@ -397,7 +398,7 @@ dsl:
                 - name: rule_done
                   let:
                     done: "append(rule_off.variables.done, {'id': string(rule_off.value.id), 'name': has(rule_off.value, 'displayName') ? string(rule_off.value.displayName) : 'A rule with no name', 'ok': has(rule_update, 'outputs.outcome') && rule_update.outputs.outcome == 'success', 'error': has(rule_update, 'status.error') ? (type(rule_update.status.error) == type('') ? rule_update.status.error : toString(rule_update.status.error)) : ''})"
-            # Confirm compromised needs Entra ID P2. Reading the user's risk is the check: without P2, Microsoft Graph answers that the tenant is not licensed, and the step is skipped.
+            # Confirm compromised needs Entra ID P2 in the tenant; Microsoft checks the tenant, not the user. Reading the user's risk is the check: without P2, Microsoft Graph answers that the tenant is not licensed, and the step is skipped.
             - name: risk_check
               condition: "setup.variables.confirm && person.variables.act"
               action: Taegis.MicrosoftGraphAPI.getRiskyUser
@@ -455,7 +456,7 @@ dsl:
                     (!setup.variables.disable ? [] : !entra.variables.enabled ? ['The account is already disabled in Entra ID.'] : setup.variables.dry_run ? ['Would disable the account in Entra ID.'] : flags.variables.disable_ok ? ['Disabled the account in Entra ID.'] : ['Disabling the account in Entra ID failed: ' + flags.variables.disable_error]) +
                     (!setup.variables.reset ? [] : setup.variables.dry_run ? ['Would reset its password to a new random one.'] : flags.variables.reset_ok ? ['Reset its password to a new random one that nobody has seen. The user needs a new password from your helpdesk or self-service password reset; check their MFA methods first.'] : ['Resetting its password failed: ' + flags.variables.reset_error]) +
                     (!setup.variables.revoke ? [] : setup.variables.dry_run ? ['Would revoke its sign-in sessions.'] : flags.variables.revoke_ok ? ['Revoked its sign-in sessions.'] : ['Revoking its sign-in sessions failed: ' + flags.variables.revoke_error]) +
-                    (!setup.variables.force_change ? [] : setup.variables.dry_run ? ['Would require a password change at the next sign-in.'] : flags.variables.password_ok ? ['Set it to change its password at the next sign-in.'] : ['Requiring a password change failed: ' + flags.variables.password_error]) +
+                    (!setup.variables.force_change ? [] : setup.variables.dry_run ? ['Would require a password change at the next sign-in.'] : flags.variables.reset_ok ? ['The reset also set it to change its password at the next sign-in.'] : flags.variables.password_ok ? ['Set it to change its password at the next sign-in.'] : ['Requiring a password change failed: ' + flags.variables.password_error]) +
                     (!before.variables.read ? ['Its inbox rules could not be read, so none were turned off: ' + before.variables.error] :
                      size(before.variables.list) == 0 ? ['It has no inbox rules.'] :
                      ['Inbox rules before: ' + plan.variables.described.join('; ') + '.'] +
@@ -475,7 +476,7 @@ dsl:
                     (setup.variables.disable && entra.variables.enabled && !flags.variables.disable_ok) ||
                     (setup.variables.reset && !flags.variables.reset_ok) ||
                     (setup.variables.revoke && !flags.variables.revoke_ok) ||
-                    (setup.variables.force_change && !flags.variables.password_ok) ||
+                    (setup.variables.force_change && !flags.variables.reset_ok && !flags.variables.password_ok) ||
                     !before.variables.read ||
                     (setup.variables.rules_off && size(plan.variables.bad) > 0 && (size(flags.variables.rules_failed) > 0 || !after.variables.read || size(after_check.variables.still_on) > 0)) ||
                     (setup.variables.confirm && !flags.variables.no_p2 && !flags.variables.confirm_ok)

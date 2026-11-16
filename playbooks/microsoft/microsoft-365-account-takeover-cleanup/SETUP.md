@@ -39,7 +39,7 @@ On the template, choose Use this Template. Pick one trigger per configured playb
 - **Connections:** the three connections above.
 - **Domains:** the user principal name domains in scope, such as `example.com`. With none, the playbook acts on no one.
 - **Excluded users:** break-glass accounts, service accounts and anyone else it must never touch.
-- **Steps:** Reset the password, Revoke sign-in sessions, Require a password change, Turn off inbox rules and Confirm compromised are on; Disable account is off. Confirm compromised needs Microsoft Entra ID P2. Without it the playbook skips that step and says so on the case, so you can leave it on either way. Turn off Reset the password to only require a change at the next sign-in.
+- **Steps:** Reset the password, Revoke sign-in sessions, Require a password change, Turn off inbox rules and Confirm compromised are on; Disable account is off. Confirm compromised needs Microsoft Entra ID P2 in the tenant. Microsoft checks the tenant's license, not the user's, so with P2 anywhere in the tenant every user is confirmed, even one with only P1. Only in a tenant with no P2 at all does the playbook skip that step and say so on the case, so you can leave it on either way. Turn off Reset the password to only require a change at the next sign-in; with it on, the reset itself requires the change.
 - **Max users per run:** 1. A run with more users in scope acts on none and says so.
 - **Dry run:** leave it on.
 - **Version:** pin the template version. A configured playbook picks up minor and patch template versions on its own, so pin it to stop a library update from changing what runs.
