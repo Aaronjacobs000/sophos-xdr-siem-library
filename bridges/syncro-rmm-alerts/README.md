@@ -75,7 +75,7 @@ WantedBy=multi-user.target
 - It asks for `status=all` and `created_after=<cursor minus the overlap>`, and reads every page (25 alerts each) up to `meta.total_pages`.
 - It sends the alerts it hasn't sent before, oldest first, then moves the cursor to the newest `created_at`, but never past the time of the run, and remembers the IDs inside the overlap.
 
-Rate limit: 180 requests a minute per address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Syncro API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+Rate limit: 180 requests a minute per address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Syncro API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.

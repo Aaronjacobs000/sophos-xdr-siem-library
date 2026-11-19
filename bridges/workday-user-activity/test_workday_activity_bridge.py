@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import socket
+import stat
 import sys
 import tempfile
 import threading
@@ -61,6 +62,9 @@ class Mock:
         self.requests = []
         self.token_requests = []
         self.ingest_codes = []
+        self.ingest_max_lines = None  # a POST with more lines than this is answered 413
+        self.ingest_refuse = {}       # text: (status, message); a POST with a line holding the text gets that answer
+        self.ingest_posts = []        # the number of lines in each POST that got past ingest_codes
         self.ingested = []
         self.issued = 0
         self.valid = set()
@@ -137,8 +141,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(code, {})
         if self.headers.get("Content-Encoding") == "gzip":
             body = gzip.decompress(body)
-        m.ingested.append({"headers": dict(self.headers), "raw": body.decode(),
-                           "lines": [json.loads(x) for x in body.decode().splitlines() if x.strip()]})
+        lines = [x for x in body.decode().splitlines() if x.strip()]
+        m.ingest_posts.append(len(lines))
+        for text, (code, message) in m.ingest_refuse.items():
+            if any(text in x for x in lines):
+                return self._send(code, {"message": message})
+        if m.ingest_max_lines is not None and len(lines) > m.ingest_max_lines:
+            return self._send(413, {"message": "Request Entity Too Large"})
+        m.ingested.append({"headers": dict(self.headers), "raw": body.decode(), "lines": [json.loads(x) for x in lines]})
         self._send(200, {})
 
 
@@ -427,8 +437,8 @@ class BridgeTest(unittest.TestCase):
 
     def test_window_end_moves_only_after_ingest_accepts_its_window(self):
         self.mock.entries = [entry(0, self.ago(100)), entry(1, self.ago(30))]
-        self.mock.ingest_codes = [200, 400]
-        with self.assertRaises(c.BridgeError):
+        self.mock.ingest_codes = [200, 401]
+        with self.assertRaises(c.IngestRefused):
             c.run_once(self.cfg(BRIDGE_LOOKBACK_HOURS="2", BRIDGE_WINDOW_MINUTES="60"))
         reqs = [r["query"] for r in self.mock.requests]
         self.assertEqual(self.saved()["activity"]["until"], c._parse_time(reqs[0]["to"]))
@@ -436,6 +446,124 @@ class BridgeTest(unittest.TestCase):
         self.mock.ingested.clear()
         c.run_once(self.cfg(BRIDGE_LOOKBACK_HOURS="2", BRIDGE_WINDOW_MINUTES="60"))
         self.assertEqual([r["sessionId"] for r in self.sent()], [self.mock.entries[1]["sessionId"]])
+
+    def dead_letters(self):
+        path = self.cfg()["dead_letter_file"]
+        if not os.path.exists(path):
+            return []
+        with open(path, encoding="utf-8") as fh:
+            return [json.loads(x) for x in fh]
+
+    def test_a_batch_too_large_for_ingest_goes_again_in_halves(self):
+        # HTTP Ingest answers 413 to a POST of more than 2 lines: 5 go as 2 and 3, and the 3 as 1 and 2.
+        self.mock.entries = [entry(i, self.ago(10 - i)) for i in range(5)]
+        self.mock.ingest_max_lines = 2
+        self.assertEqual(c.run_once(self.cfg(BRIDGE_WINDOW_MINUTES="1440")), 5)
+        self.assertEqual(self.mock.ingest_posts, [5, 2, 3, 1, 2])
+        self.assertEqual([r["sessionId"] for r in self.sent()], [e["sessionId"] for e in self.mock.entries])
+        self.assertIn("until", self.saved()["activity"])
+        self.assertEqual(self.dead_letters(), [])
+        log = self.logbuf.getvalue()
+        self.assertIn("refused a batch of 5 entries as too large (HTTP 413); sending it in halves", log)
+        self.assertIn("run finished: 5 records sent in 3 batches\n", log)
+
+    def test_an_entry_too_large_on_its_own_is_set_aside_and_the_window_moves_on(self):
+        # HTTP Ingest answers 413 to any POST that holds the third entry, even alone. The entries
+        # around it go, it goes to the dead-letter file, and the window's end moves.
+        self.mock.entries = [entry(i, self.ago(10 - i)) for i in range(4)]
+        self.mock.entries[2]["taskDisplayName"] = "Oversized Report"
+        self.mock.ingest_refuse = {"Oversized Report": (413, "Request Entity Too Large")}
+        cfg = self.cfg(BRIDGE_WINDOW_MINUTES="1440")
+        self.assertEqual(c.run_once(cfg), 3)
+        self.assertEqual(self.mock.ingest_posts, [4, 2, 2, 1, 1])
+        self.assertEqual([r["sessionId"] for r in self.sent()], [self.mock.entries[i]["sessionId"] for i in (0, 1, 3)])
+        [aside] = self.dead_letters()
+        q = self.mock.requests[0]["query"]
+        start = c._wd_time(c._parse_time(q["from"]) + 1)
+        self.assertEqual((aside["status"], aside["message"]), (413, "Request Entity Too Large"))
+        self.assertEqual((aside["window_start"], aside["window_end"]), (start, q["to"]))
+        self.assertEqual(aside["record"], {"workday_record": "user_activity", "workday_tenant": TENANT, **self.mock.entries[2]})
+        self.assertRegex(aside["set_aside_at"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertEqual(self.saved()["activity"]["until"], c._parse_time(q["to"]))
+        log = self.logbuf.getvalue()
+        self.assertIn(f"HTTP Ingest refused 1 entry from the window {start} to {q['to']} (HTTP 413); set aside in "
+                      f"{cfg['dead_letter_file']}", log)
+        self.assertIn(f"run finished: 3 records sent in 2 batches, 1 set aside in {cfg['dead_letter_file']}", log)
+        for secret in (INGEST_KEY, "00000000-example-integration"):
+            self.assertNotIn(secret, log)
+        if os.name == "posix":
+            self.assertEqual(stat.S_IMODE(os.stat(cfg["dead_letter_file"]).st_mode), 0o600)
+        # The next run reads the overlap again, but neither sends the entry nor sets it aside twice.
+        self.mock.ingested.clear()
+        c.run_once(cfg)
+        self.assertEqual(self.sent(), [])
+        self.assertEqual(len(self.dead_letters()), 1)
+
+    def test_a_batch_ingest_rejects_is_set_aside_whole_and_later_windows_go_on(self):
+        # A 400 says HTTP Ingest can't take the request, so the batch isn't split: both entries of
+        # the first window are set aside, and the last window's entry still goes.
+        self.mock.entries = [entry(0, self.ago(150)), entry(1, self.ago(140)), entry(2, self.ago(30))]
+        self.mock.entries[0]["taskDisplayName"] = "Unreadable Report"
+        self.mock.ingest_refuse = {"Unreadable Report": (400, "Bad Request")}
+        self.assertEqual(c.run_once(self.cfg(BRIDGE_LOOKBACK_HOURS="3", BRIDGE_WINDOW_MINUTES="60")), 1)
+        self.assertEqual(self.mock.ingest_posts, [2, 1])
+        self.assertEqual([r["sessionId"] for r in self.sent()], [self.mock.entries[2]["sessionId"]])
+        aside = self.dead_letters()
+        self.assertEqual([a["record"]["sessionId"] for a in aside], [e["sessionId"] for e in self.mock.entries[:2]])
+        first = self.mock.requests[0]["query"]
+        start = c._wd_time(c._parse_time(first["from"]) + 1)
+        self.assertEqual({(a["status"], a["message"], a["window_start"], a["window_end"]) for a in aside},
+                         {(400, "Bad Request", start, first["to"])})
+        self.assertIn(f"HTTP Ingest refused 2 entries from the window {start} to {first['to']} (HTTP 400)", self.logbuf.getvalue())
+        self.assertEqual(self.saved()["activity"]["until"], c._parse_time(self.mock.requests[-1]["query"]["to"]))
+
+    def run_main(self, argv, runs):
+        """main with the real run against the mock; the run after `runs` runs raises KeyboardInterrupt,
+        so main can't loop forever. Returns main's exit code."""
+        saved = (c.load_config, c.run_once, c.logging.basicConfig)
+        cfg, started = self.cfg(BRIDGE_WINDOW_MINUTES="1440"), []
+
+        def run_once(*args, **kwargs):
+            started.append(1)
+            if len(started) > runs:
+                raise KeyboardInterrupt()
+            return saved[1](*args, **kwargs)
+
+        c.load_config, c.run_once = (lambda env=None: cfg), run_once
+        # main sets up the root logger; a handler left there would print the log of later tests.
+        c.logging.basicConfig = lambda **kwargs: None
+        try:
+            return c.main(argv)
+        finally:
+            c.load_config, c.run_once, c.logging.basicConfig = saved
+
+    def test_a_refused_ingest_key_stops_the_run_and_with_interval_polling_goes_on(self):
+        # 401 and 403 mean a wrong key or URL, so the run stops and the window stays where it was.
+        # With --interval the bridge logs it and tries again at the next interval rather than
+        # exiting, so a service manager doesn't restart it in a loop.
+        self.mock.entries = [entry(0, self.ago(5))]
+        for code in (401, 403):
+            with self.subTest(code=code):
+                self.logbuf.seek(0)
+                self.logbuf.truncate()
+                del self.slept[:]
+                refused = (f"HTTP Ingest at {self.base[len('http://'):]} refused the key (HTTP {code}); check "
+                           "NGSIEM_INGEST_KEY and NGSIEM_INGEST_URL, which the bridge reads when it starts")
+                self.mock.ingest_codes = [code, code]
+                self.assertEqual(self.run_main(["--interval", "5"], runs=2), 130)
+                self.assertEqual(self.logbuf.getvalue().count(f"{refused}; trying again in 5 seconds\n"), 2)
+                self.assertEqual(self.slept, [5, 5])
+                # A single run stops with the same error.
+                self.mock.ingest_codes = [code]
+                self.assertEqual(self.run_main([], runs=1), 1)
+                self.assertIn(f"{refused}\n", self.logbuf.getvalue())
+                self.assertFalse(os.path.exists(self.state))
+                self.assertEqual(self.dead_letters(), [])
+                for secret in (INGEST_KEY, "00000000-example-integration"):
+                    self.assertNotIn(secret, self.logbuf.getvalue())
+        # Once HTTP Ingest takes the key, the entry the refused runs held back goes.
+        self.assertEqual(c.run_once(self.cfg(BRIDGE_WINDOW_MINUTES="1440")), 1)
+        self.assertEqual(len(self.sent()), 1)
 
     def test_window_end_stays_before_now(self):
         self.mock.entries = [entry(0, self.ago(5))]

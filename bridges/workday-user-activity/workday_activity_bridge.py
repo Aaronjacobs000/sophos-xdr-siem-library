@@ -17,8 +17,9 @@ Each run reads from the end of its last window, less an overlap, to three minute
 windows of BRIDGE_WINDOW_MINUTES, paging with offset until it reaches total. Entries carry no ID,
 so repeats are dropped by a hash of the whole entry. The request and response shapes follow
 Workday's Privacy API reference. Configuration comes from environment variables (see README.md).
-A window's end only moves after HTTP Ingest accepted every entry in it. --dry-run prints what
-would be sent and changes nothing.
+A window's end only moves after HTTP Ingest accepted every entry in it, or refused some and the
+bridge set them aside in the dead-letter file. --dry-run prints what would be sent and changes
+nothing.
 """
 from __future__ import annotations
 
@@ -83,6 +84,12 @@ class NetworkError(BridgeError):
 class HostNotFound(NetworkError):
     """A host name in a URL setting didn't resolve, even after the retries. Until a run has worked,
     it stops the bridge even with --interval, since it is most likely a mistyped URL."""
+
+
+class IngestRefused(BridgeError):
+    """HTTP Ingest refused the key or the URL (401 or 403). Sending the same window again can't
+    help, so the run stops; with --interval the bridge logs it and tries again at the next
+    interval, so a service manager doesn't restart it in a loop."""
 
 
 # ---------------------------------------------------------------- configuration
@@ -168,6 +175,8 @@ def load_config(env: dict | None = None) -> dict:
     if parts.path or parts.query or parts.fragment or not parts.hostname:
         raise BridgeError("WORKDAY_HOST_URL takes the scheme and host only, such as https://wd2-impl-services1.workday.com, "
                           "from the Workday REST API Endpoint on View API Clients")
+    # Entries HTTP Ingest refuses go next to the state file: workday_activity_state.dead-letter.jsonl.
+    cfg["dead_letter_file"] = os.path.splitext(cfg["state_file"])[0] + ".dead-letter.jsonl"
     cfg["token_url"] = f"{cfg['host_url']}/ccx/oauth2/{cfg['tenant']}/token"
     cfg["activity_url"] = f"{cfg['host_url']}/ccx/api/privacy/v1/{cfg['tenant']}/activityLogging"
     if cfg["ingest_url"]:
@@ -409,18 +418,42 @@ class Workday:
 
 # ---------------------------------------------------------------- HTTP Ingest
 
+def _ingest_message(body: bytes) -> str:
+    """HTTP Ingest's reason for refusing a batch, for the dead-letter file. Its error body isn't
+    documented, so this takes a message, error or detail field from JSON, or else the text."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        data = None
+    if isinstance(data, dict):
+        for key in ("message", "error", "detail"):
+            if isinstance(data.get(key), str) and data[key].strip():
+                return " ".join(data[key].split())[:200]
+        if not data:
+            return "no message"
+    return " ".join(body.decode("utf-8", "replace").split())[:200] or "no message"
+
+
 class Sink:
-    """Batches records as NDJSON and posts them to HTTP Ingest, or prints them in dry-run."""
+    """Batches records as NDJSON and posts them to HTTP Ingest, or prints them in dry-run. A batch
+    HTTP Ingest refuses as too large (413) goes again in halves, down to one record. A batch it
+    refuses with 400, or a single record still too large, is set aside in the dead-letter file, so
+    one bad batch can't stop the bridge."""
 
     def __init__(self, cfg: dict, dry_run: bool, out=None):
         self.cfg, self.dry_run = cfg, dry_run
         self.out = out or sys.stdout
         self.sent = 0
         self.batches = 0
+        self.set_aside = 0
+        self._refused = []
         if not dry_run and not (cfg["ingest_url"] and cfg["ingest_key"]):
             raise BridgeError("NGSIEM_INGEST_URL and NGSIEM_INGEST_KEY are required unless --dry-run is set")
 
-    def send(self, records: list[dict]) -> None:
+    def send(self, records: list[dict], window: tuple[int, int]) -> int:
+        """Sends the records from one window and returns how many HTTP Ingest took (or dry-run
+        printed). The ones it refused are in the dead-letter file when this returns."""
+        before, self._refused = self.sent, []
         batch, size = [], 0
         for rec in records:
             line = json.dumps(rec, separators=(",", ":"), ensure_ascii=False)
@@ -432,6 +465,9 @@ class Sink:
             size += n
         if batch:
             self._post(batch)
+        if self._refused:
+            self._dead_letter(window)
+        return self.sent - before
 
     def _post(self, lines: list[str]) -> None:
         body = ("\n".join(lines) + "\n").encode("utf-8")
@@ -443,9 +479,46 @@ class Sink:
             if self.cfg["gzip"]:
                 body = gzip.compress(body)
                 headers["Content-Encoding"] = "gzip"
-            _request("POST", self.cfg["ingest_url"], headers, body, self.cfg["timeout"], "HTTP Ingest POST")
+            try:
+                _request("POST", self.cfg["ingest_url"], headers, body, self.cfg["timeout"], "HTTP Ingest POST")
+            except HttpStatus as e:
+                if e.code == 413 and len(lines) > 1:
+                    LOG.info("HTTP Ingest refused a batch of %d entries as too large (HTTP 413); sending it in halves",
+                             len(lines))
+                    half = len(lines) // 2
+                    self._post(lines[:half])
+                    self._post(lines[half:])
+                    return
+                if e.code in (400, 413):
+                    # Sending the same lines again would be refused again, so they are set aside.
+                    self._refused.append((e.code, _ingest_message(e.body), lines))
+                    return
+                if e.code in (401, 403):
+                    raise IngestRefused(f"HTTP Ingest at {_host(self.cfg['ingest_url'])} refused the key (HTTP {e.code}); "
+                                        "check NGSIEM_INGEST_KEY and NGSIEM_INGEST_URL, which the bridge reads when it "
+                                        "starts") from None
+                raise
         self.sent += len(lines)
         self.batches += 1
+
+    def _dead_letter(self, window: tuple[int, int]) -> None:
+        """Appends each refused record to the dead-letter file as one JSON line, with the window it
+        came from, the HTTP status and HTTP Ingest's message, then logs how many, naming the window
+        and the file, never the key or the URL path."""
+        start, end = _wd_time(window[0]), _wd_time(window[1])
+        at, path, count = _wd_time(time.time()), self.cfg["dead_letter_file"], 0
+        # The file holds user activity, so only the bridge's account can read it, like the state file.
+        with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600), "a", encoding="utf-8") as fh:
+            for code, message, lines in self._refused:
+                for line in lines:
+                    fh.write(json.dumps({"set_aside_at": at, "window_start": start, "window_end": end, "status": code,
+                                         "message": message, "record": json.loads(line)},
+                                        separators=(",", ":"), ensure_ascii=False) + "\n")
+                count += len(lines)
+        codes = " and ".join(str(code) for code in sorted({code for code, _, _ in self._refused}))
+        LOG.error("HTTP Ingest refused %d %s from the window %s to %s (HTTP %s); set aside in %s",
+                  count, "entry" if count == 1 else "entries", start, end, codes, path)
+        self.set_aside += count
 
 
 # ---------------------------------------------------------------- collection
@@ -537,11 +610,11 @@ def read_window(cfg: dict, seen: dict, sink: Sink, save, client: Workday, start:
                 fresh[k] = (t if t is not None else now, e)
         if fresh:
             batch = sorted(fresh.values(), key=lambda te: te[0])
-            sink.send([{RECORD_KEY: RECORD, TENANT_KEY: cfg["tenant"],
-                        **{f: v for f, v in e.items() if f not in (RECORD_KEY, TENANT_KEY)}} for _, e in batch])
-            # Only now that HTTP Ingest took them do they count as sent.
+            sent += sink.send([{RECORD_KEY: RECORD, TENANT_KEY: cfg["tenant"],
+                                **{f: v for f, v in e.items() if f not in (RECORD_KEY, TENANT_KEY)}} for _, e in batch],
+                              (start, end))
+            # Only now that HTTP Ingest took them, or they were set aside, are they marked as seen.
             seen.update({k: t for k, (t, _) in fresh.items()})
-            sent += len(fresh)
             save()
         offset += len(rows)
         # A page can hold fewer entries than the limit, so the end is an empty page or reaching total.
@@ -605,7 +678,9 @@ def run_once(cfg: dict, dry_run: bool = False, out=None) -> int:
     sink = Sink(cfg, dry_run, out)
     save = (lambda: None) if dry_run else (lambda: save_state(cfg["state_file"], state))
     count = collect(cfg, state, sink, save, Workday(cfg), time.time())
-    LOG.info("run finished: %d records sent in %d batches%s", sink.sent, sink.batches, " (dry run, nothing sent)" if dry_run else "")
+    LOG.info("run finished: %d records sent in %d batches%s%s", sink.sent, sink.batches,
+             f", {sink.set_aside} set aside in {cfg['dead_letter_file']}" if sink.set_aside else "",
+             " (dry run, nothing sent)" if dry_run else "")
     return count
 
 
@@ -635,9 +710,10 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 run_once(cfg, dry_run)
                 worked = True
-            except NetworkError as e:
+            except (NetworkError, IngestRefused) as e:
                 # A host name that doesn't resolve before any run has worked is most likely a
-                # mistyped URL, so it stops the bridge.
+                # mistyped URL, so it stops the bridge. A refused HTTP Ingest key doesn't, so a
+                # service manager doesn't restart the bridge in a loop.
                 if not args.interval or (isinstance(e, HostNotFound) and not worked):
                     raise
                 LOG.error("%s; trying again in %d seconds", e, args.interval)
