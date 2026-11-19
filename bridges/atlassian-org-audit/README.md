@@ -82,7 +82,7 @@ WantedBy=multi-user.target
 
 - The first run asks `/events-stream` for events from the lookback (`from`, in epoch milliseconds) in ascending order. Every later request sends the `cursor` from the last page's `meta.next`, which Atlassian says keeps the sort order and can be used after the last page to poll for new events. The bridge saves the cursor after each page is sent, and stops when a page comes back empty or without a cursor.
 - If Atlassian refuses the saved cursor (`ADMIN-400-1`), the bridge reads again from the last event's time minus the overlap. Events carry a unique `id`, so the bridge drops ones it has sent.
-- The events stream allows 60 requests a minute per user and 50 per API path. On 429 the bridge waits until the `X-RateLimit-Reset` time Atlassian sends, and retries 408, 500, 502, 503 and 504 with backoff, up to 6 times. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Atlassian or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+- The events stream allows 60 requests a minute per user and 50 per API path. On 429 the bridge waits until the `X-RateLimit-Reset` time Atlassian sends, and retries 408, 500, 502, 503 and 504 with backoff, up to 5 times (6 attempts in all). HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Atlassian or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.

@@ -88,7 +88,7 @@ WantedBy=multi-user.target
 - It sends the detections it hasn't sent, oldest first, then moves the cursor to the start of the run.
 - ESET filters on when a detection happened, not when it reached ESET Connect, so a detection from a device that was offline for longer than the overlap is missed. Raise `BRIDGE_OVERLAP_SECONDS` if your devices report late.
 
-ESET allows 10 calls a second per API user, account and address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from ESET or HTTP Ingest is refused, not followed, so no password, token or key goes to another URL, and the run stops with an error that says so.
+ESET allows 10 calls a second per API user, account and address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from ESET or HTTP Ingest is refused, not followed, so no password, token or key goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a batch and saving the cursor can send that batch again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.

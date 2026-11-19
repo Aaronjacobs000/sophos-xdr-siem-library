@@ -42,7 +42,7 @@ Everything comes from environment variables. Keep the client secret, the refresh
 | `WORKDAY_REFRESH_TOKEN` | none | The integration system user's refresh token. |
 | `WORKDAY_PAGE_LIMIT` | `1000` | Entries per request, 1 to 1000. Workday's reference gives 1000 as the most in one place and 100 in another; set 100 if Workday refuses 1000. |
 | `WORKDAY_INSTANCES_RETURNED` | `1` | `instancesReturned`, 1 to 25: one query returns at most this many times 10,000 entries. Workday recommends 1 as the fastest. |
-| `BRIDGE_STATE_FILE` | `workday_activity_state.json` | The last window end and the entries sent within the overlap. |
+| `BRIDGE_STATE_FILE` | `workday_activity_state.json` | The last window end and the entries sent within the overlap. The dead-letter file goes next to it (see Files it writes). |
 | `BRIDGE_LOOKBACK_HOURS` | `24` | How far back the first run starts, up to 720 (the 30 days Workday keeps). |
 | `BRIDGE_OVERLAP_SECONDS` | `900` | How far before the last window's end each run reads again, for entries Workday writes late. Repeats are dropped. |
 | `BRIDGE_WINDOW_MINUTES` | `60` | How long each query's window is, 1 to 1440. |
@@ -61,8 +61,8 @@ python3 workday_activity_bridge.py                   # one pass, for cron or a s
 python3 workday_activity_bridge.py --interval 300    # keep polling every 5 minutes
 ```
 
-Exit code 0 means every window was read and sent. On an error the bridge logs it with the HTTP status and Workday's message, stops, and leaves the window where it was, so the next run reads the same entries again and drops the ones it already sent. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
-With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval; a configuration or credential error still stops it.
+Exit code 0 means every window was read, and each entry was sent or, if HTTP Ingest refused it, set aside in the dead-letter file. On an error the bridge logs it with the HTTP status and Workday's message, stops, and leaves the window where it was, so the next run reads the same entries again and drops the ones it already sent. A response over 64 MB also stops the run, so a broken or hostile endpoint can't use up memory. With `--interval`, any other unexpected error is logged with the line it came from, never a key, and the bridge tries again at the next interval.
+With `--interval`, a network error that outlasts the retries is logged, naming only the host, and the bridge tries again at the next interval. So is an HTTP Ingest 401 or 403 (a wrong key or URL), so `Restart=on-failure` doesn't restart the bridge in a loop; it reads the key and URL when it starts, so restart it once you've fixed them. Any other configuration or credential error still stops it.
 A 408, 429, 500, 502, 503 or 504 that outlasts the retries, a read timeout, and an answer cut off partway count as network errors too; a host name that doesn't resolve stops the bridge if no run has worked yet, since it is most likely a mistyped URL.
 An answer that ends short of its Content-Length counts as cut off partway too, so nothing from it is sent or saved. A 501 or 505 stops the bridge, since a retry won't change it, with a message that says what the code means. A user name or password before the host in a URL setting (`user:pass@`) stops the bridge at startup, since it can't use them.
 
@@ -95,13 +95,22 @@ WantedBy=multi-user.target
 - Each run reads from the end of its last window, less `BRIDGE_OVERLAP_SECONDS`, to three minutes before now, and never from more than 30 days back, in windows of `BRIDGE_WINDOW_MINUTES`, oldest first: `GET activityLogging?from=<start>&to=<end>&limit=<WORKDAY_PAGE_LIMIT>&offset=<n>&instancesReturned=<WORKDAY_INSTANCES_RETURNED>`, with times in UTC as `2026-10-03T07:00:00Z`. Workday doesn't say whether it includes the ends, so each window starts a second before the last one ended, and the repeat is dropped.
 - Workday answers `{"total": <entries matched>, "data": [...]}`. The bridge adds the entries it got to `offset` and asks again until `offset` reaches `total`, or a page is empty when there is no `total`. A page can hold fewer entries than the limit and still have more after it.
 - One query returns at most `instancesReturned` times 10,000 entries. A window whose `total` reaches that is read again in halves, before anything from it is sent. A one-minute window that still reaches it is read with `instancesReturned` at its maximum of 25 (250,000 entries), and if it reaches even that, the bridge logs how many it couldn't read.
-- Entries have no ID, so the bridge drops repeats by a hash of the whole entry. Each window's end is saved once every page of it was sent, and never past the time of the run.
-- The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. A refused token request (400 `invalid_grant` for the refresh token, `invalid_request` for the tenant, 401 `invalid_client` for the client) stops the run with what to check, as do a 403 (scope or System Auditing permissions), a 404 (host or tenant) and a 400, with Workday's message. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from Workday or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
+- Entries have no ID, so the bridge drops repeats by a hash of the whole entry. Each window's end is saved once every page of it was sent or set aside, and never past the time of the run.
+- The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes. A refused token request (400 `invalid_grant` for the refresh token, `invalid_request` for the tenant, 401 `invalid_client` for the client) stops the run with what to check, as do a 403 (scope or System Auditing permissions), a 404 (host or tenant) and a 400, with Workday's message. HTTP Ingest 400, 401, 403 and 413 are not retried.
+- A batch HTTP Ingest answers with 413 (too large) goes again in halves, down to one entry. A batch it answers with 400, and an entry still too large on its own, are set aside in the dead-letter file, the run logs an error with the window and how many, and the rest of the window goes on, so one bad batch can't stop the bridge. A 401 or 403 from HTTP Ingest means a wrong key or URL: the run stops and the window stays where it was.
+- A redirect from Workday or HTTP Ingest is refused, not followed, so no key goes to another URL, and the run stops with an error that says so.
 
-HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch again; HTTP Ingest does not remove duplicates.
+HTTP Ingest delivers at least once. A crash between sending a batch and saving the state can send that batch, or set it aside, again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
 
 The bridge never logs the client secret, the refresh token, an access token, the HTTP Ingest key, or the HTTP Ingest URL path.
+
+## Files it writes
+
+- `BRIDGE_STATE_FILE`: the last window end, and a hash of each entry sent within the overlap.
+- The dead-letter file, next to the state file with `.dead-letter.jsonl` in place of `.json` (`workday_activity_state.dead-letter.jsonl` by default): the entries HTTP Ingest refused, one JSON line each, with `set_aside_at`, `window_start` and `window_end` (UTC), `status`, `message` (HTTP Ingest's answer, up to 200 characters) and `record` (the entry as it was sent). The bridge creates it readable only by its own account, adds to it and never reads it back, so check `status` and `message`, send the records again yourself if you need them, and clear it. An entry refused with 413 on its own is over HTTP Ingest's size limit. If the log often shows batches sent in halves, lower `BRIDGE_BATCH_BYTES`.
+
+With `--dry-run` the bridge writes neither.
 
 ## Tests
 
@@ -109,7 +118,7 @@ The bridge never logs the client secret, the refresh token, an access token, the
 python3 -m unittest discover -s bridges/workday-user-activity -p 'test_*.py' -v
 ```
 
-The tests start a local mock of the token endpoint, the activityLogging resource and HTTP Ingest, built from the documented shapes, and check the token request and its renewal, the query and headers, paging with `offset` and `total`, windows, the second before each one, overlaps and repeats, halving a window that reaches the `instancesReturned` cap, the lookback and the 30-day limit, that a window ends only after HTTP Ingest accepted it and never past now, Workday's errors, dry-run, retries, batching and gzip, refused redirects, the response size cap, settings, times on Python 3.9 to 3.13, and that no secret reaches the log.
+The tests start a local mock of the token endpoint, the activityLogging resource and HTTP Ingest, built from the documented shapes, and check the token request and its renewal, the query and headers, paging with `offset` and `total`, windows, the second before each one, overlaps and repeats, halving a window that reaches the `instancesReturned` cap, the lookback and the 30-day limit, that a window ends only after HTTP Ingest accepted it and never past now, sending a batch HTTP Ingest answers with 413 in halves, setting aside what it refuses in the dead-letter file, an HTTP Ingest 401 or 403 with and without `--interval`, Workday's errors, dry-run, retries, batching and gzip, refused redirects, the response size cap, settings, times on Python 3.9 to 3.13, and that no secret reaches the log.
 
 ## References
 

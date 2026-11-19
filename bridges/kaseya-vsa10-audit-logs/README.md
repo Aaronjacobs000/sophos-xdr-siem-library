@@ -78,7 +78,7 @@ WantedBy=multi-user.target
 - The first run asks for `$filter=AuditLogRecordDateTime ge <now minus the lookback>` (a standard OData date filter; the documentation's own example filters with `year()`), unless `VSA10_START_ID` is set. Later runs ask for `$filter=AuditLogRecordId gt <cursor>`.
 - Every request sorts by `AuditLogRecordId asc` and reads `$top` records. After each page HTTP Ingest accepts, the cursor moves to that page's last ID. It stops at a short page.
 
-Rate limits: about 3600 requests an hour per token and endpoint, and at most 100 failed requests a minute (2000 an hour) per address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the VSA 10 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+Rate limits: about 3600 requests an hour per token and endpoint, and at most 100 failed requests a minute (2000 an hour) per address. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes, and stops on 401 or 403. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the VSA 10 API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving the cursor can send that page again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.

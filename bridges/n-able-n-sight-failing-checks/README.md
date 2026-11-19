@@ -77,7 +77,7 @@ WantedBy=multi-user.target
 - A check is identified by device type, device ID and check ID. Each record holds the client, site and device, the check ID, type, description, output and status, the check's date and time as the API gives them, and `ObservedAt`, the UTC time the bridge saw the change, which the parser uses as the event time.
 - A record only says what changed between two polls, so a check that fails and clears between polls isn't seen.
 
-The documentation gives no rate limits. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. An XML result whose status isn't OK, such as a wrong key, stops the run. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the N-sight API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+The documentation gives no rate limits. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes. An XML result whose status isn't OK, such as a wrong key, stops the run. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the N-sight API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice; HTTP Ingest does not remove duplicates.
 

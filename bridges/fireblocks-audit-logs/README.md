@@ -100,7 +100,7 @@ WantedBy=multi-user.target
 - Each run reads one window, from the last window's end less `BRIDGE_OVERLAP_SECONDS` to a minute before now: `GET /v1/management/audit_logs?startTime=<ms>&endTime=<ms>&order=ASC&pageSize=500`, plus `category` once for each category in `FIREBLOCKS_CATEGORIES`. It follows each response's `next` cursor as `pageCursor` until `next` is null. (It reads the older `cursor` field when `next` is missing.)
 - Events already sent inside the overlap are dropped by their `id`, or by their whole content when they have none.
 
-Fireblocks rate-limits API calls. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 6 times, honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Fireblocks API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
+Fireblocks rate-limits API calls. The bridge waits and retries 408, 429, 500, 502, 503 and 504 up to 5 times (6 attempts in all), honoring `Retry-After` up to 5 minutes. HTTP Ingest 400, 401, 403 and 413 are not retried. A redirect from the Fireblocks API or HTTP Ingest is refused, not followed, so no key or token goes to another URL, and the run stops with an error that says so.
 
 HTTP Ingest delivers at least once. A crash between sending a page and saving its progress can send that page again; HTTP Ingest does not remove duplicates.
 If HTTP Ingest's answer to a batch is cut off partway, the bridge sends that batch again, so it can arrive twice.
