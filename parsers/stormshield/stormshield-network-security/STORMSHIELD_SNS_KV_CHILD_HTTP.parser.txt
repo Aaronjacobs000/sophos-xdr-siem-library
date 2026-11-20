@@ -38,7 +38,7 @@ pq = arg|^(?P<path>[^?#]*)(?:\?(?P<query>[^#]*))?
 uriPath$ = IF STRING(pq["path"]) != "" THEN pq["path"] ELSE NULL
 uriQuery$ = IF STRING(pq["query"]) != "" THEN pq["query"] ELSE NULL
 act = LOWERCASE(STRING(kv["action"]))
-blocked$ = IF act == "block" THEN 1 ELSE 0
+blocked$ = IF act == "block" THEN 2 ELSE 1
 sensorTypeActions$ = IF act == "block" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 
 # Keys with no HTTP field go to event_metadata.

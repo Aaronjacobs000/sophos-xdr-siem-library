@@ -20,7 +20,7 @@ classification$ = ips["class"]
 priority$ = INT(ips["prio"], 10)
 act = utd["act"]
 action$ = act
-blocked$ = IF act == "Drop" THEN 1 ELSE 0
+blocked$ = IF act == "Drop" THEN 2 ELSE 1
 sourceAddress$ = utd["src"]
 destinationAddress$ = utd["dst"]
 sourcePort$ = INT(utd["sport"], 10)

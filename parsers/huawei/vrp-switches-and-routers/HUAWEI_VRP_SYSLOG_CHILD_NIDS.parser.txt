@@ -22,7 +22,7 @@ sourceAddress$ = IF src != "" THEN src ELSE NULL
 atype = STRING(kv["AttackType"])
 message$ = IF atype != "" THEN atype ELSE desc
 classification$ = "attack defense"
-blocked$ = IF brief == "STRACK_DENY" THEN 1 ELSE 0
+blocked$ = IF brief == "STRACK_DENY" THEN 2 ELSE 1
 action$ = IF brief == "STRACK_DENY" THEN "deny" ELSE NULL
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 vlanText = STRING(kv["PVlanID"])

@@ -26,7 +26,7 @@
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
       "referer": "https://mail.example.com/",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -112,7 +112,7 @@
       "response_code": 200,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -187,7 +187,7 @@
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
       "referer": "http://files.example.net/dl/",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -291,7 +291,7 @@
       "is_top_private_domain_parsed": true,
       "response_code": 200,
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -344,7 +344,7 @@
       "is_top_private_domain_parsed": true,
       "user_agent": "python-requests/2.32.3",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {

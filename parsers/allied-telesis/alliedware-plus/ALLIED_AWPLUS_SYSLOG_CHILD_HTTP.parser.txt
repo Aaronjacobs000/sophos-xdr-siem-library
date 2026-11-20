@@ -21,7 +21,7 @@ uriScheme$ = IF u["scheme"] != "" THEN LOWERCASE(u["scheme"]) ELSE NULL
 sourceAddress$ = web["req"]
 
 act = STRING(web["act"])
-blocked$ = IF act == "BLOCK" THEN 1 ELSE 0
+blocked$ = IF act == "BLOCK" THEN 2 ELSE 1
 sensorTypeActions$ = IF act == "BLOCK" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 requestDirection$ = "OUTBOUND"
 

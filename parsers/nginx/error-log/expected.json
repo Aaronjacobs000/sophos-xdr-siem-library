@@ -59,7 +59,7 @@
       "uri_query_raw": "debug=1",
       "uri_query": "debug=1",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -102,7 +102,7 @@
       "uri_path_raw": "/login",
       "uri_path": "/login",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -186,7 +186,7 @@
       "uri_path_raw": "/files/image.iso",
       "uri_path": "/files/image.iso",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {

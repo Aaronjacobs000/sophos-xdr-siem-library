@@ -26,7 +26,7 @@ sourcePort$ = INT(utd["sport"], 10)
 destinationPort$ = INT(utd["dport"], 10)
 protocol$ = pnum
 act = utd["act"]
-blocked$ = IF act == "Drop" THEN 1 ELSE 0
+blocked$ = IF act == "Drop" THEN 2 ELSE 1
 sensorTypeActions$ = IF act == "Drop" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 requestDirection$ = "OUTBOUND"
 

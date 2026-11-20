@@ -162,7 +162,8 @@ export function analyseLine(line) {
   if (cef) {
     const obj = cef;
     out.format = 'cef';
-    obj.header.forEach((v, i) => { if (i > 0) out.fields.push({ key: CEF_HEADER[i], index: i, value: v, header: true }); });
+    // The header's severity runs 0 to 10, or Low, Medium, High and Very-High, with 10 the highest.
+    obj.header.forEach((v, i) => { if (i > 0) out.fields.push({ key: CEF_HEADER[i], index: i, value: v, header: true, ...(CEF_HEADER[i] === 'severity' ? { scale: 'severity10' } : {}) }); });
     // A label CEF() resolves is a key of its own, so it's listed once, as that key. A label with a
     // header field's name is listed by the key it labels, as is one CEF() didn't resolve because
     // another key has its name: the parser reads a header field by number under its name, and
@@ -187,8 +188,9 @@ export function analyseLine(line) {
     if (leefPipes) out.leefPipes = true;
     out.format = 'leef';
     obj.header.forEach((v, i) => { if (i > 0 && i < 5) out.fields.push({ key: LEEF_HEADER[i], index: i, value: v, header: true }); });
-    // A label LEEF() resolves isn't listed: the key it labels and its <key>Label are.
-    for (const [k, v] of obj.map) if (!obj.labels.has(k)) out.fields.push({ key: k, value: v });
+    // A label LEEF() resolves isn't listed: the key it labels and its <key>Label are. LEEF's sev
+    // runs 1 to 10, with 10 the highest.
+    for (const [k, v] of obj.map) if (!obj.labels.has(k)) out.fields.push({ key: k, value: v, ...(k === 'sev' ? { scale: 'severity10' } : {}) });
     return out;
   }
   const j = findJson(afterTag) || findJson(body);
@@ -370,7 +372,7 @@ export function analyseSample(lines) {
   const keys = new Map();
   for (const e of events) {
     for (const f of e.fields) {
-      if (!keys.has(f.key)) keys.set(f.key, { key: f.key, path: f.path, index: f.index, header: f.header, label: f.label, values: [], lines: 0 });
+      if (!keys.has(f.key)) keys.set(f.key, { key: f.key, path: f.path, index: f.index, header: f.header, label: f.label, scale: f.scale, values: [], lines: 0 });
       const k = keys.get(f.key);
       k.values.push(f.value);
       k.lines++;

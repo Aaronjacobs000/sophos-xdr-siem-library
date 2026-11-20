@@ -43,7 +43,7 @@ classification$ = json["$.typeName"]
 applicationName$ = IF processPath != "" THEN processPath ELSE NULL
 sourceUsername$ = IF userName != "" THEN userName ELSE NULL
 action$ = IF responseName != "" THEN responseName ELSE NULL
-blocked$ = IF CONTAINS(responseText, "block") OR CONTAINS(responseText, "denied") THEN 1 ELSE 0
+blocked$ = IF CONTAINS(responseText, "block") OR CONTAINS(responseText, "denied") THEN 2 ELSE 1
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 
 m1.key$ = "detection_uuid"

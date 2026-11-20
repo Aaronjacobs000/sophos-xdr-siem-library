@@ -43,7 +43,7 @@ signatureId$ = STRING(kv["alarmid"])
 priority$ = STRING(kv["pri"])
 act = LOWERCASE(STRING(kv["action"]))
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF act == "block" THEN 1 ELSE 0
+blocked$ = IF act == "block" THEN 2 ELSE 1
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 
 # Keys with no NIDS field go to event_metadata.

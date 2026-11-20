@@ -266,6 +266,9 @@ export function makeMapping(k, field, schemaId, origin = 'you') {
     m.origin = origin === 'alias' ? 'shape' : origin;
   } else if (field === 'protocol$') {
     m.transform = { kind: 'protocol' };
+  } else if (field === 'priority$' && k.scale === 'severity10') {
+    // NIDS priority runs 1 (highest) to 5 (lowest); CEF's severity and LEEF's sev run up to 10.
+    m.transform = { kind: 'priority' };
   } else if (field === 'queryType$' && !NUMERIC_SHAPES.has(k.shape)) {
     m.transform = { kind: 'dns-type' };
   } else if (field === 'responseCode$' && f.type === 'int32' && !NUMERIC_SHAPES.has(k.shape)) {

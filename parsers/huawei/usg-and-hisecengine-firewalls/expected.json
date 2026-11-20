@@ -314,7 +314,7 @@
       "classification": "Injection",
       "signature_id": 1000001,
       "action": "block",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "priority": 1,
       "event_metadata": {
@@ -380,7 +380,7 @@
       "classification": "Botnet",
       "signature_id": 1000002,
       "action": "alert",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "priority": 2,
       "event_metadata": {
@@ -449,7 +449,7 @@
       "message": "Malicious Domain: c2.example.net",
       "classification": "Botnet",
       "action": "block",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "priority": 1,
       "event_metadata": {
@@ -509,7 +509,7 @@
       "classification": "XSS",
       "signature_id": 2000101,
       "action": "Block",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "priority": 2,
       "event_metadata": {
@@ -687,7 +687,7 @@
       "source_username": "jsmith",
       "l7_protocol": "HTTP",
       "uri_host": "bad.example.com",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "event_metadata": {
         "record": [
@@ -968,7 +968,7 @@
       "l7_protocol": "HTTP",
       "uri_host": "shop.example.net",
       "uri_path": "/search?q=router,sort=price",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "event_metadata": {
         "record": [

@@ -331,7 +331,7 @@
       "uri_host": "malware.example.com",
       "uri_path": "/download/setup.exe",
       "source_address": "192.0.2.25",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "request_direction": "OUTBOUND",
       "event_metadata": {

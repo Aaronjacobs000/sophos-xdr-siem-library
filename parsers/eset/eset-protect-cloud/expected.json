@@ -155,7 +155,7 @@
       "classification": "TCP Port scanning attack",
       "application_name": "System",
       "action": "Blocked",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -203,7 +203,7 @@
       "application_name": "C:\\Users\\jlee\\AppData\\Local\\Temp\\helper.exe",
       "source_username": "EXAMPLE\\jlee",
       "action": "Blocked",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [

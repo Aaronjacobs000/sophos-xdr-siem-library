@@ -43,7 +43,7 @@ vlanText = vlanRaw|^(?P<n>\d{1,4})$
 vlan$ = IF vlanText["n"] != "" THEN INT(vlanText["n"], 10) ELSE NULL
 act = LOWERCASE(STRING(v["act"]))
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF act == "blocked" THEN 1 ELSE 0
+blocked$ = IF act == "blocked" THEN 2 ELSE 1
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 
 m1.key$ = "event_type"

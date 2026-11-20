@@ -45,7 +45,7 @@ classification$ = IF cat != "" THEN cat ELSE NULL
 signatureId$ = STRING(kv["SignId"])
 act = STRING(kv["Action"])
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF LOWERCASE(act) == "block" THEN 1 ELSE 0
+blocked$ = IF LOWERCASE(act) == "block" THEN 2 ELSE 1
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 # Huawei's severities, as priorities with 1 the highest: high 1, medium 2, low 3, information 4.
 sev = LOWERCASE(STRING(kv["Severity"]))

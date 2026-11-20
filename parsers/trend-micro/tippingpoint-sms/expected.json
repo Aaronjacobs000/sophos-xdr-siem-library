@@ -20,7 +20,7 @@
       "classification": "Traffic Normalization",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Block",
-      "blocked": 1,
+      "blocked": 2,
       "vlan": 0,
       "event_metadata": {
         "record": [
@@ -93,7 +93,7 @@
       "classification": "Vulnerabilities",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Block",
-      "blocked": 1,
+      "blocked": 2,
       "vlan": 20,
       "event_metadata": {
         "record": [
@@ -182,7 +182,7 @@
       "classification": "P2P",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Permit",
-      "blocked": 0,
+      "blocked": 1,
       "vlan": 0,
       "source_username": "jlee",
       "event_metadata": {
@@ -256,7 +256,7 @@
       "classification": "Reputation",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Block",
-      "blocked": 1,
+      "blocked": 2,
       "vlan": 0,
       "event_metadata": {
         "record": [
@@ -321,7 +321,7 @@
       "classification": "Exploits",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Block",
-      "blocked": 1,
+      "blocked": 2,
       "vlan": 0,
       "event_metadata": {
         "record": [
@@ -389,7 +389,7 @@
       "classification": "Streaming Media",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "action": "Rate Limit",
-      "blocked": 0,
+      "blocked": 1,
       "vlan": 0,
       "event_metadata": {
         "record": [

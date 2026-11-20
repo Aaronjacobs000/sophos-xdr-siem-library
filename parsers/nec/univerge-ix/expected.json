@@ -316,7 +316,7 @@
       "signature_id": 80600001,
       "priority": 1,
       "action": "Drop",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "protocol": 6,
       "event_metadata": {
@@ -399,7 +399,7 @@
       "protocol": 6,
       "uri_host": "www.example.com",
       "uri_path": "/download/sample.zip",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "request_direction": "OUTBOUND",
       "event_metadata": {
@@ -434,7 +434,7 @@
       "destination_port": 443,
       "protocol": 6,
       "uri_host": "social.example.org",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "request_direction": "OUTBOUND",
       "event_metadata": {
@@ -478,7 +478,7 @@
       "destination_port": 80,
       "uri_host": "bad.example.net",
       "uri_path": "/path/index.html",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "request_direction": "OUTBOUND",
       "event_metadata": {

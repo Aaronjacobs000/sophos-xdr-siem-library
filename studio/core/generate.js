@@ -199,6 +199,22 @@ export function mappingLines(m, read, sampleValues = []) {
         `${field} = IF proto == "ICMP" THEN 1 ELSE ${field}`,
       ];
     }
+    case 'priority': {
+      // The standard CEF bands. LEEF's sev runs 1 to 10 the same way, without the names.
+      const v = `${field.replace(/\$/g, '').replace(/[^A-Za-z0-9_]/g, '_')}Raw`;
+      const any = (xs) => xs.map((x) => `${v} == ${q(x)}`).join(' OR ');
+      return [
+        `# ${field} runs from 1 (highest) to 5 (lowest). The severity runs 0 to 10, or Low, Medium, High and`,
+        '# Very-High: 9 to 10 is 1, 7 to 8 is 2, 4 to 6 is 3, 1 to 3 is 4 and 0 is 5. Unknown and anything else give NULL.',
+        `${v} = LOWERCASE(STRING(${src}))`,
+        `${field} = NULL`,
+        `${field} = IF ${any(['9', '10', 'very-high'])} THEN 1 ELSE ${field}`,
+        `${field} = IF ${any(['7', '8', 'high'])} THEN 2 ELSE ${field}`,
+        `${field} = IF ${any(['4', '5', '6', 'medium'])} THEN 3 ELSE ${field}`,
+        `${field} = IF ${any(['1', '2', '3', 'low'])} THEN 4 ELSE ${field}`,
+        `${field} = IF ${v} == "0" THEN 5 ELSE ${field}`,
+      ];
+    }
     case 'enum': {
       const v = `${field.replace(/\$$/, '').replace(/\./g, '_')}Raw`;
       const lines = [
@@ -223,15 +239,27 @@ function sampleFor(unit, lines) {
   return lines[i] ?? lines[0] ?? '';
 }
 
+// A mapping with alts reads another key on the lines of some event types, which lack its own key.
+function altRead(m, read) {
+  const cond = (a) => a.values.map((v) => `STRING(${read(a.when)}) == ${q(v)}`).join(' OR ');
+  const src = m.alts.reduceRight((acc, a) => `(IF ${cond(a)} THEN ${read(a)} ELSE ${acc})`, read(m));
+  return (x) => (x === m ? src : read(x));
+}
+
 function unitBody(plan, unit, read, keysByName) {
   const out = [];
   for (const m of unit.mappings || []) {
     if (!m.field) continue;
     const k = keysByName.get(m.key);
+    if (m.alts && m.alts.length) {
+      for (const a of m.alts) out.push(`# ${m.field} reads ${a.key} where ${a.when.key} is ${a.values.join(' or ')}, since those lines have no ${m.key}.`);
+      out.push(...mappingLines(m, altRead(m, read), k ? k.values : []));
+      continue;
+    }
     out.push(...mappingLines(m, read, k ? k.values : []));
   }
   if (unit.metadata && hasEventMetadata(unit.schema)) {
-    const mapped = new Set((unit.mappings || []).filter((m) => m.field).map((m) => m.key));
+    const mapped = new Set((unit.mappings || []).filter((m) => m.field).flatMap((m) => [m.key, ...(m.alts || []).map((a) => a.key)]));
     const extra = (unit.keys || []).filter((k) => !mapped.has(k.key) && k.key !== (plan.split && plan.split.key) && !k.header).slice(0, 25);
     if (extra.length) {
       const used = new Set();

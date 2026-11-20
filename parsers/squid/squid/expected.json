@@ -21,7 +21,7 @@
       "index_of_top_private_domain": 4,
       "is_top_private_domain_parsed": true,
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -66,7 +66,7 @@
       "index_of_top_private_domain": 7,
       "is_top_private_domain_parsed": true,
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -112,7 +112,7 @@
       "index_of_top_private_domain": 6,
       "is_top_private_domain_parsed": true,
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -156,7 +156,7 @@
       "index_of_top_private_domain": 4,
       "is_top_private_domain_parsed": true,
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {

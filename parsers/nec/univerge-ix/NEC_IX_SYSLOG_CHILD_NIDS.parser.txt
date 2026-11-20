@@ -41,7 +41,7 @@ priority$ = IF sev == "2" THEN 2 ELSE priority$
 priority$ = IF sev == "1" THEN 3 ELSE priority$
 uact = STRING(json["$.act"])
 action$ = IF isUtm AND uact != "" THEN uact ELSE NULL
-blocked$ = IF isUtm AND (uact == "Drop" OR uact == "Block") THEN 1 ELSE NULL
+blocked$ = IF isUtm AND (uact == "Drop" OR uact == "Block") THEN 2 ELSE NULL
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 
 # protocol takes the IANA number: the UTM record gives it; an IDS category names it.

@@ -9,6 +9,7 @@ import { buildPlan, writeParsers, keysFor, remap, setUnitSchema } from '../studi
 import { runParsers, execute, rootVars } from '../studio/core/engine.js';
 import { extraction } from '../studio/core/generate.js';
 import { toPlain } from '../studio/core/values.js';
+import { GENERIC as GENERIC_ID } from '../studio/core/schemas.js';
 
 const codes = (r) => r.problems.map((p) => `${p.level}:${p.code}`);
 
@@ -752,4 +753,111 @@ test('detect: a LEEF line with a CEF header later in it is read as LEEF, and a l
   const results = runParsers(writeParsers(plan, lines), lines, { now: '2026-10-15T00:00:00Z' });
   assert.deepEqual(results.map((r) => r.error?.message ?? null), [null, null]);
   assert.deepEqual(results.map((r) => r.normalized.source_address), ['192.0.2.5', '192.0.2.6']);
+});
+
+// A synthetic network detection source in CEF, with the event's category in cat and a level in cs1.
+const ndr = (sig, name, sev, cat, extra = '') => `<134>Nov 20 10:15:01 ndr-probe-01 CEF:0|Acme|Acme NDR|3.2|${sig}|${name}|${sev}|cat=${cat} src=192.0.2.10 spt=51515 dst=198.51.100.20 dpt=22 proto=TCP cs1Label=level cs1=medium msg=${name}${extra}`;
+const NDR_LINES = [
+  ndr(1001, 'Horizontal port scan', 5, 'Reconnaissance'),
+  ndr(2003, 'SSH brute force', 7, 'Credential Access'),
+  ndr(2101, 'C2 beacon', 10, 'Command and Control'),
+  ndr(3005, 'DNS tunnelling', 'High', 'Exfiltration'),
+  ndr(4002, 'Cleartext protocol', 2, 'Policy Violation'),
+  ndr(5001, 'New device', 0, 'Asset Discovery'),
+  ndr(6001, 'Unusual volume', 'Unknown', 'Anomaly'),
+];
+
+test('event types that all go to one schema get one standalone parser, not a child each', () => {
+  const a = analyseSample(NDR_LINES);
+  assert.equal(a.split.key, 'cat');
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Acme NDR', shipMethod: 'syslog' });
+  assert.equal(plan.split, null);
+  assert.deepEqual(plan.units.map((u) => [u.eventType, u.schema, u.lines.length]), [[null, 'scwx.nids', 7]]);
+  const ps = writeParsers(plan, NDR_LINES);
+  assert.deepEqual(ps.map((p) => [p.name, p.role, p.schema]), [['ACME_NDR_CEF_STANDALONE_NIDS', 'standalone', 'scwx.nids']]);
+  const results = runParsers(ps, NDR_LINES);
+  assert.deepEqual(results.map((r) => r.error ?? null), NDR_LINES.map(() => null));
+  assert.ok(results.every((r) => r.schema === 'scwx.nids' && r.normalized.signature_id && r.normalized.source_address === '192.0.2.10'));
+  // The category is a field of the standalone parser, not lost with the split.
+  assert.deepEqual(results.map((r) => r.normalized.log_type), ['Reconnaissance', 'Credential Access', 'Command and Control', 'Exfiltration', 'Policy Violation', 'Asset Discovery', 'Anomaly']);
+  assert.deepEqual(lintParsers(ps, { samples: NDR_LINES }).problems.filter((p) => p.level === 'error' || p.level === 'warning'), []);
+});
+
+test('event types that go to different schemas keep a parent and children', () => {
+  const a = analyseSample(NDR_LINES);
+  const picks = { 'Credential Access': 'scwx.auth', Anomaly: GENERIC_ID };
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Acme NDR', shipMethod: 'syslog' }, picks);
+  assert.equal(plan.split.key, 'cat');
+  assert.equal(plan.units.length, 7);
+  const ps = writeParsers(plan, NDR_LINES);
+  assert.deepEqual(ps.map((p) => p.role), ['parent', 'child', 'child', 'child', 'child', 'child', 'child']);
+  assert.equal(ps.find((p) => /eventType\$=="Credential Access"/.test(p.text)).schema, 'scwx.auth');
+  // Every pick the same schema, or every pick but one generic, is still one shape: only a mix of real schemas splits.
+  const same = buildPlan(a, { vendor: 'Acme', product: 'Acme NDR' }, Object.fromEntries(a.types.map((t) => [t, 'scwx.thirdpartyalert'])));
+  assert.deepEqual([same.split, same.units.map((u) => u.schema)], [null, ['scwx.thirdpartyalert']]);
+  const generic = buildPlan(a, { vendor: 'Acme', product: 'Acme NDR' }, Object.fromEntries(a.types.map((t) => [t, GENERIC_ID])));
+  assert.equal(generic.split.key, 'cat');
+});
+
+test('a standalone parser reads another key on the event types whose lines lack the usual one', () => {
+  const lines = [
+    '{"event_type":"ids_alert","src_ip":"192.0.2.1","dest_ip":"198.51.100.1","signature":"ET SCAN one","signature_id":"2001"}',
+    '{"event_type":"ids_alert","src_ip":"192.0.2.2","dest_ip":"198.51.100.2","signature":"ET SCAN two","signature_id":"2002"}',
+    '{"event_type":"ips_drop","client_ip":"192.0.2.3","dest_ip":"198.51.100.3","signature":"ET EXPLOIT three","signature_id":"2003"}',
+  ];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'IDS', shipMethod: 'syslog' }, { ids_alert: 'scwx.nids', ips_drop: 'scwx.nids' });
+  const ps = writeParsers(plan, lines);
+  assert.equal(ps.length, 1);
+  assert.match(ps[0].text, /^sourceAddress\$ = \(IF STRING\(json\["\$\.event_type"\]\) == "ips_drop" THEN json\["\$\.client_ip"\] ELSE json\["\$\.src_ip"\]\)$/m);
+  assert.doesNotMatch(ps[0].text, /md_client_ip/);
+  const results = runParsers(ps, lines);
+  assert.deepEqual(results.map((r) => r.normalized.source_address), ['192.0.2.1', '192.0.2.2', '192.0.2.3']);
+});
+
+test('an Antivirus standalone parser keeps the event type a parent would have set', () => {
+  const lines = ['{"type":"threat_found","threat":"EICAR","file":"C:\\\\t\\\\a.com","sha256":"' + 'a'.repeat(64) + '"}', '{"type":"threat_cleaned","threat":"EICAR","file":"C:\\\\t\\\\b.com","sha256":"' + 'b'.repeat(64) + '"}'];
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'AV' }, { threat_found: 'scwx.antivirus', threat_cleaned: 'scwx.antivirus' });
+  assert.equal(plan.split, null);
+  const results = runParsers(writeParsers(plan, lines), lines);
+  assert.deepEqual(results.map((r) => r.normalized.event_type), ['threat_found', 'threat_cleaned']);
+});
+
+test('the CEF severity becomes NIDS priority 1 (highest) to 5 (lowest), and Unknown gives NULL', () => {
+  const sevs = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Low', 'Medium', 'High', 'Very-High', 'Unknown', 'high', '11'];
+  const lines = sevs.map((s, i) => ndr(1000 + i, 'Test', s, 'Intrusion'));
+  const a = analyseSample(lines);
+  const plan = buildPlan(a, { vendor: 'Acme', product: 'Acme NDR' }, { __single: 'scwx.nids' });
+  const m = plan.units[0].mappings.find((x) => x.field === 'priority$');
+  assert.deepEqual([m.key, m.transform.kind], ['severity', 'priority']);
+  const ps = writeParsers(plan, lines);
+  const results = runParsers(ps, lines);
+  assert.deepEqual(results.map((r) => r.error ?? null), lines.map(() => null));
+  assert.deepEqual(results.map((r) => r.normalized.priority ?? null), [5, 4, 4, 4, 3, 3, 3, 2, 2, 1, 1, 4, 3, 2, 1, null, 2, null]);
+});
+
+test('LEEF sev becomes NIDS priority on the same bands; other sources keep their own number', () => {
+  const leef = [1, 4, 7, 10].map((s) => `<134>Nov 20 10:15:01 ips-01 LEEF:2.0|Acme|Acme IPS|1.0|sig${s}|^|cat=Exploit^sev=${s}^src=192.0.2.10^dst=198.51.100.20^msg=Test ${s}`);
+  const lp = buildPlan(analyseSample(leef), { vendor: 'Acme', product: 'Acme IPS' }, { __single: 'scwx.nids' });
+  assert.equal(lp.units[0].mappings.find((x) => x.field === 'priority$').transform.kind, 'priority');
+  assert.deepEqual(runParsers(writeParsers(lp, leef), leef).map((r) => r.normalized.priority), [4, 3, 2, 1]);
+  // Suricata's alert.severity already runs 1 (highest) to 3, so it isn't moved onto the CEF bands.
+  const eve = [1, 2, 3].map((s) => `{"event_type":"alert","src_ip":"192.0.2.1","dest_ip":"198.51.100.1","alert":{"signature":"ET TEST ${s}","signature_id":${2000 + s},"severity":${s}}}`);
+  const ep = buildPlan(analyseSample(eve), { vendor: 'OISF', product: 'Suricata' }, { __single: 'scwx.nids' });
+  assert.notEqual(ep.units[0].mappings.find((x) => x.field === 'priority$').transform.kind, 'priority');
+  assert.deepEqual(runParsers(writeParsers(ep, eve), eve).map((r) => r.normalized.priority), [1, 2, 3]);
+});
+
+test('lint: a number outside the range the schema page gives is a warning', () => {
+  const head = '!CONFIRMWITH=PATTERN\n!CONFIRMSTRING=CEF:0\\|Acme\\|\n';
+  const nids = (body) => lintParsers([{ name: 'ACME_NDR_CEF', text: `${head}!SCHEMA=scwx.nids\nvalues = CEF(originalData$)\n${body}` }], { samples: NDR_LINES.slice(0, 3) }).problems.filter((p) => p.code === 'range');
+  // The CEF severity copied in unconverted: 7 and 10 are outside 1 to 5.
+  const raw = nids('priority$ = INT(values[6], 10)');
+  assert.deepEqual(raw.map((p) => [p.level, p.lines]), [['warning', [2]], ['warning', [3]]]);
+  assert.match(raw[0].message, /priority: 7 is outside the 1 to 5 the NIDS schema page gives \(1 is the highest priority and 5 the lowest\)/);
+  assert.deepEqual(nids('priority$ = 3\nblocked$ = 2'), []);
+  assert.match(nids('blocked$ = 0')[0].message, /blocked: 0 is outside the 1 to 3 .*1 = NotBlocked, 2 = Blocked, 3 = WouldHaveBlocked/);
+  const http = lintParsers([{ name: 'ACME_WEB', text: `${head}!SCHEMA=scwx.http\nblocked$ = 4\n` }], { samples: NDR_LINES.slice(0, 1) }).problems.filter((p) => p.code === 'range');
+  assert.equal(http.length, 1);
 });

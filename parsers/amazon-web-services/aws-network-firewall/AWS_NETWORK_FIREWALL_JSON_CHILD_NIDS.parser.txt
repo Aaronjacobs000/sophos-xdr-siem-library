@@ -32,7 +32,7 @@ classification$ = IF category != "" THEN category ELSE NULL
 # alert.action is what the rule did: allowed for ALERT and pass rules, blocked for DROP and REJECT.
 act = STRING(json["$.event.alert.action"])
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF act == "blocked" THEN 1 ELSE 0
+blocked$ = IF act == "blocked" THEN 2 ELSE 1
 
 # AWS managed threat signature rule groups use Emerging Threats rules ("ET " and "ETPRO ").
 etRule = signature|^(ET|ETPRO)\s
