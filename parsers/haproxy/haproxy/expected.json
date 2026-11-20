@@ -17,7 +17,7 @@
       "uri_path_raw": "/index.html",
       "uri_path": "/index.html",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -71,7 +71,7 @@
       "uri_path_raw": "/wp-login.php",
       "uri_path": "/wp-login.php",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -128,7 +128,7 @@
       "uri_query_raw": "next=%2Fadmin",
       "uri_query": "next=%2Fadmin",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -195,7 +195,7 @@
       "request_direction": "INBOUND",
       "uri_scheme": "http",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -250,7 +250,7 @@
       "uri_path_raw": "/healthz",
       "uri_path": "/healthz",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -318,7 +318,7 @@
       "uri_query_raw": "download=1",
       "uri_query": "download=1",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -372,7 +372,7 @@
       "uri_path_raw": "/reports/export",
       "uri_path": "/reports/export",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {

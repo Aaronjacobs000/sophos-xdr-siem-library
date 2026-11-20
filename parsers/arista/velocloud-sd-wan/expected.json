@@ -419,7 +419,7 @@
       "signature_id": 2024218,
       "priority": 1,
       "action": "Drop",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {

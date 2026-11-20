@@ -19,7 +19,7 @@
       "priority": 3,
       "message": "Block TLS to denylisted domain",
       "action": "blocked",
-      "blocked": 1,
+      "blocked": 2,
       "direction": "CLIENT_TO_SERVER",
       "event_metadata": {
         "record": [
@@ -69,7 +69,7 @@
       "message": "ET POLICY Suspicious User-Agent (agentupdater) Outbound",
       "classification": "Potentially Bad Traffic",
       "action": "allowed",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "EMERGING_THREATS",
       "direction": "CLIENT_TO_SERVER",
       "event_metadata": {
@@ -118,7 +118,7 @@
       "priority": 3,
       "message": "Network Firewall stateful rule 7",
       "action": "blocked",
-      "blocked": 1,
+      "blocked": 2,
       "direction": "CLIENT_TO_SERVER",
       "event_metadata": {
         "record": [
@@ -176,7 +176,7 @@
       "message": "ET ATTACK_RESPONSE Possible Loader Config Inbound",
       "classification": "A Network Trojan was detected",
       "action": "allowed",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "EMERGING_THREATS",
       "direction": "SERVER_TO_CLIENT",
       "event_metadata": {

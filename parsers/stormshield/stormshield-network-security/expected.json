@@ -338,7 +338,7 @@
       "signature_id": 140,
       "priority": 1,
       "action": "block",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -415,7 +415,7 @@
       "signature_id": 85,
       "priority": 4,
       "action": "pass",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -473,7 +473,7 @@
       "uri_host": "login.example.org",
       "uri_path": "/account/verify.php",
       "uri_query": "id=7731&lang=en",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "event_metadata": {
         "record": [
@@ -536,7 +536,7 @@
       "uri_host": "downloads.example.net",
       "uri_path": "/search",
       "uri_query": "q=firewall+logs&page=2",
-      "blocked": 0,
+      "blocked": 1,
       "sensor_type_actions": "HTTP_ALLOWED",
       "event_metadata": {
         "record": [

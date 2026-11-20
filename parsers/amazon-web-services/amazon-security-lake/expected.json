@@ -474,7 +474,7 @@
       "is_top_private_domain_parsed": true,
       "request_direction": "INBOUND",
       "response_code": 403,
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "http_request_headers": {
         "record": [

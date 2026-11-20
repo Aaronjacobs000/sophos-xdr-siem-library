@@ -29,7 +29,7 @@ uriQuery$ = req["query"]
 
 denied = text == "access forbidden by rule" OR (CONTAINS(text, "limiting requests, excess: ") AND NOT CONTAINS(text, "dry run")) OR (CONTAINS(text, "limiting connections by zone ") AND NOT CONTAINS(text, "dry run"))
 sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE NULL
-blocked$ = IF denied THEN 1 ELSE NULL
+blocked$ = IF denied THEN 2 ELSE NULL
 
 e1.key$ = "error"
 e1.value$ = text

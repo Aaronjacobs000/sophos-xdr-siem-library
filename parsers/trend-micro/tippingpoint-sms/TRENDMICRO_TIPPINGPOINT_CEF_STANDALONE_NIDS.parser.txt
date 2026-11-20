@@ -64,7 +64,7 @@ countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 # act is the filter's flow control, for example Block, Permit, Rate Limit or Trust.
 act = STRING(v["act"])
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF CONTAINS(LOWERCASE(act), "block") THEN 1 ELSE 0
+blocked$ = IF CONTAINS(LOWERCASE(act), "block") THEN 2 ELSE 1
 
 vlanText = STRING(v["cn1"])
 vlanNum = vlanText|^(?P<n>\d{1,4})$

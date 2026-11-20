@@ -21,7 +21,7 @@
       "classification": "A Network Trojan was detected",
       "priority": 1,
       "action": "allowed",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "EMERGING_THREATS",
       "direction": "SERVER_TO_CLIENT",
       "event_metadata": {
@@ -60,7 +60,7 @@
       "classification": "Potentially Bad Traffic",
       "priority": 2,
       "action": "blocked",
-      "blocked": 1,
+      "blocked": 2,
       "direction": "CLIENT_TO_SERVER",
       "event_metadata": {
         "record": [

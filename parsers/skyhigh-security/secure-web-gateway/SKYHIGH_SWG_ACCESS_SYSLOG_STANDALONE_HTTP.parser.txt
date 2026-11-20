@@ -55,7 +55,7 @@ isTopPrivateDomainParsed$ = tld != -1
 block = m["block"]
 denied = block != "" AND block != "0"
 sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
-blocked$ = IF denied THEN 1 ELSE 0
+blocked$ = IF denied THEN 2 ELSE 1
 
 r1.key$ = "block_reason_id"
 r1.value$ = block

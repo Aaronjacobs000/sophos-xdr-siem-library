@@ -33,7 +33,7 @@ uriQuery$ = req["query"]
 state = http["state"]
 denied = state|^P[RT]
 sensorTypeActions$ = IF denied[0] != "" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
-blocked$ = IF denied[0] != "" THEN 1 ELSE 0
+blocked$ = IF denied[0] != "" THEN 2 ELSE 1
 
 r1.key$ = "frontend"
 r1.value$ = frontend

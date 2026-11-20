@@ -60,7 +60,7 @@ referer$ = IF ref == "NA" THEN NULL ELSE ref
 action = json["$.pe_action"]
 denied = action == "block"
 sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
-blocked$ = IF denied THEN 1 ELSE 0
+blocked$ = IF denied THEN 2 ELSE 1
 
 # Up to three values of a field that can be a list, joined with commas.
 r0 = json["$.pe_rulename[0]"]

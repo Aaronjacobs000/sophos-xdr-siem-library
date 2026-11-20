@@ -17,7 +17,7 @@
       "event_id": 85,
       "vlan": 0,
       "action": "notified",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -69,7 +69,7 @@
       "event_id": 88,
       "vlan": 20,
       "action": "notified",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -125,7 +125,7 @@
       "event_id": 84,
       "vlan": 0,
       "action": "notified",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -178,7 +178,7 @@
       "event_id": 12,
       "vlan": 0,
       "action": "blocked",
-      "blocked": 1,
+      "blocked": 2,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -227,7 +227,7 @@
       "event_id": 15,
       "vlan": 0,
       "action": "notified",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -397,7 +397,7 @@
       "event_id": 41,
       "vlan": 0,
       "action": "notified",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [

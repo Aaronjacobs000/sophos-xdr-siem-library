@@ -46,7 +46,7 @@ signatureId$ = STRING(kv["AttackID"])
 act = STRING(kv["Action"])
 action$ = IF act != "" THEN act ELSE NULL
 lact = LOWERCASE(act)
-blocked$ = IF CONTAINS(lact, "reset") OR CONTAINS(lact, "drop") OR CONTAINS(lact, "block") THEN 1 ELSE 0
+blocked$ = IF CONTAINS(lact, "reset") OR CONTAINS(lact, "drop") OR CONTAINS(lact, "block") THEN 2 ELSE 1
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 # Comware's severities, as priorities with 1 the highest: critical and high 1, medium 2, low 3.
 sev = UPPERCASE(STRING(kv["Severity"]))

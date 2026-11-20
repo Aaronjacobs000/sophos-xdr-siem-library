@@ -25,7 +25,7 @@ message$ = json["$.alert.signature"]
 classification$ = json["$.alert.category"]
 priority$ = json["$.alert.severity"]
 action$ = json["$.alert.action"]
-blocked$ = IF json["$.alert.action"] == "blocked" THEN 1 ELSE 0
+blocked$ = IF json["$.alert.action"] == "blocked" THEN 2 ELSE 1
 
 # Emerging Threats rule names start with "ET " or "ETPRO ".
 signature = json["$.alert.signature"]

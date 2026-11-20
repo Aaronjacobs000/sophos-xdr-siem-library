@@ -24,7 +24,7 @@ client = STRING(url["client"])
 sourceAddress$ = IF IS_VALID_IP(client) THEN client ELSE NULL
 
 act = STRING(url["act"])
-blocked$ = IF act == "Rejected" THEN 1 ELSE 0
+blocked$ = IF act == "Rejected" THEN 2 ELSE 1
 sensorTypeActions$ = IF act == "Rejected" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 requestDirection$ = "OUTBOUND"
 

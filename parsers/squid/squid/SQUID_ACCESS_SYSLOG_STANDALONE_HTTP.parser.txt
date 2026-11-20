@@ -43,7 +43,7 @@ isTopPrivateDomainParsed$ = tld != -1
 
 denied = CONTAINS(m["result"], "DENIED")
 sensorTypeActions$ = IF denied THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
-blocked$ = IF denied THEN 1 ELSE 0
+blocked$ = IF denied THEN 2 ELSE 1
 
 result.key$ = "squid_result"
 result.value$ = m["result"]

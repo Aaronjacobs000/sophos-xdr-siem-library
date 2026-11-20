@@ -236,7 +236,7 @@
       "source_address": "198.51.100.9",
       "message": "Arp Miss Attack",
       "classification": "attack defense",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
         "record": [
@@ -268,7 +268,7 @@
       "host_id": "sw01.example.com",
       "message": "Gateway Attack",
       "classification": "attack defense",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "vlan": 20,
       "event_metadata": {
@@ -302,7 +302,7 @@
       "source_address": "203.0.113.88",
       "message": "Some packets are dropped because an attack is detected.",
       "classification": "attack defense",
-      "blocked": 1,
+      "blocked": 2,
       "action": "deny",
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "event_metadata": {
@@ -331,7 +331,7 @@
       "host_id": "sw01.example.com",
       "message": "User attack occurred.",
       "classification": "attack defense",
-      "blocked": 0,
+      "blocked": 1,
       "countermeasure_author": "VENDOR_OF_SENSOR",
       "vlan": 30,
       "event_metadata": {

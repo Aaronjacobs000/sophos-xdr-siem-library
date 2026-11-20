@@ -82,8 +82,8 @@ applicationName$ = IF svc != "" AND svc != "unknown" THEN svc ELSE NULL
 # would_block are what an inline rule would have done on a passive sensor, cant_ means it couldn't.
 act = STRING(json["$.action"])
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = 0
-blocked$ = IF act == "block" OR act == "drop" OR act == "reset" OR act == "force_block" OR act == "force_drop" OR act == "force_reset" THEN 1 ELSE blocked$
+blocked$ = 1
+blocked$ = IF act == "block" OR act == "drop" OR act == "reset" OR act == "force_block" OR act == "force_drop" OR act == "force_reset" THEN 2 ELSE blocked$
 
 dir = STRING(json["$.dir"])
 direction$ = NULL

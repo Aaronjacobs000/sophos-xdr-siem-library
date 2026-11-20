@@ -35,7 +35,7 @@ responseCode$ = IF cd["n"] != "" THEN INT(cd["n"], 10) ELSE NULL
 
 # action_id is 1 for allowed and 2 for denied.
 act = STRING(json["$.action_id"])
-blocked$ = IF act == "2" THEN 1 ELSE 0
+blocked$ = IF act == "2" THEN 2 ELSE 1
 sensorTypeActions$ = NULL
 sensorTypeActions$ = IF act == "1" THEN "HTTP_ALLOWED" ELSE sensorTypeActions$
 sensorTypeActions$ = IF act == "2" THEN "HTTP_BLOCKED" ELSE sensorTypeActions$

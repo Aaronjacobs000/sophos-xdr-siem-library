@@ -37,7 +37,7 @@ uriPath$ = IF page != "" AND STRING(masked[0]) == "" THEN page ELSE NULL
 ref = STRING(kv["Referer"])
 referer$ = IF ref != "" AND ref != "-" THEN ref ELSE NULL
 act = LOWERCASE(STRING(kv["Action"]))
-blocked$ = IF act == "block" THEN 1 ELSE 0
+blocked$ = IF act == "block" THEN 2 ELSE 1
 sensorTypeActions$ = IF act == "block" THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 
 # Keys with no HTTP field go to event_metadata.

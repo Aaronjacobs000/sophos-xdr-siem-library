@@ -35,7 +35,7 @@ action$ = IF atp["v"] != "" THEN atp["v"] ELSE NULL
 # IPS mode drops the flow; IDS mode only logs it. Arista doesn't list the ATP_ACTION values.
 atpLower = LOWERCASE(atp["v"])
 blockWord = atpLower|^(?:drop|block|deny|reject|reset)
-blocked$ = IF blockWord[0] != "" THEN 1 ELSE 0
+blocked$ = IF blockWord[0] != "" THEN 2 ELSE 1
 
 domain = kv|\sDEST_DOMAIN=(?P<v>\S+)
 attacker = kv|\sSRC_IP=(?P<v>[0-9A-Fa-f.:]+)

@@ -19,7 +19,7 @@ protocol$ = 6
 direction$ = "INBOUND"
 countermeasureAuthor$ = "VENDOR_OF_SENSOR"
 action$ = status
-blocked$ = IF status == "blocked" THEN 1 ELSE NULL
+blocked$ = IF status == "blocked" THEN 2 ELSE NULL
 sourceUsername$ = IF user != "" AND user != "N/A" THEN user ELSE NULL
 
 # Key=value lists every signature id and violation; CEF names one signature or violation (or

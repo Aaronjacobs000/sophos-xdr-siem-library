@@ -39,7 +39,7 @@ uriScheme$ = IF u["scheme"] != "" THEN LOWERCASE(u["scheme"]) ELSE NULL
 # UTM: Block stops the request, Pass only logs it. url-flt: BLOCK or PASS.
 act = IF isUtm THEN UPPERCASE(STRING(json["$.act"])) ELSE STRING(url["act"])
 isBlocked = act == "BLOCK" OR act == "DROP"
-blocked$ = IF isBlocked THEN 1 ELSE 0
+blocked$ = IF isBlocked THEN 2 ELSE 1
 sensorTypeActions$ = IF isBlocked THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 requestDirection$ = "OUTBOUND"
 

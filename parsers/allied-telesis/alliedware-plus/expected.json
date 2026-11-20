@@ -339,7 +339,7 @@
       "uri_path": "/download/setup.exe",
       "uri_scheme": "http",
       "source_address": "192.0.2.45",
-      "blocked": 1,
+      "blocked": 2,
       "sensor_type_actions": "HTTP_BLOCKED",
       "request_direction": "OUTBOUND",
       "event_metadata": {
@@ -378,7 +378,7 @@
       "uri_query": "page=2",
       "uri_scheme": "https",
       "source_address": "192.0.2.47",
-      "blocked": 0,
+      "blocked": 1,
       "sensor_type_actions": "HTTP_ALLOWED",
       "request_direction": "OUTBOUND",
       "event_metadata": {

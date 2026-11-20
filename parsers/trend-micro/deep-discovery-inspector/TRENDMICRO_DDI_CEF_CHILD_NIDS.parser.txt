@@ -40,7 +40,7 @@ classification$ = IF detection != "" THEN detection ELSE NULL
 classification$ = IF detection == "" AND category != "" THEN category ELSE classification$
 act = LOWERCASE(STRING(v["act"]))
 action$ = IF act != "" THEN act ELSE NULL
-blocked$ = IF act == "blocked" THEN 1 ELSE 0
+blocked$ = IF act == "blocked" THEN 2 ELSE 1
 user = STRING(v["suid"])
 sourceUsername$ = IF user != "" THEN user ELSE NULL
 vlanText = STRING(v["flexNumber1"])

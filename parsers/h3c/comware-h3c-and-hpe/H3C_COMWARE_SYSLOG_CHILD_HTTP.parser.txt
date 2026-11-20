@@ -40,7 +40,7 @@ uriHost$ = IF STRING(u["host"]) != "" THEN u["host"] ELSE NULL
 uriPath$ = IF STRING(u["path"]) != "" THEN u["path"] ELSE NULL
 act = LOWERCASE(STRING(kv["Action"]))
 stop = CONTAINS(act, "drop") OR CONTAINS(act, "reset") OR CONTAINS(act, "block")
-blocked$ = IF stop THEN 1 ELSE 0
+blocked$ = IF stop THEN 2 ELSE 1
 sensorTypeActions$ = IF stop THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
 
 # Keys with no HTTP field go to event_metadata.

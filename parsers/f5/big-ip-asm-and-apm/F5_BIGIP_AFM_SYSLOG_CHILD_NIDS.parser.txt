@@ -29,7 +29,7 @@ message$ = IF name != "" THEN name ELSE "F5 BIG-IP AFM DoS event"
 classification$ = IF isCef THEN "Network DoS Event" ELSE msgName["v"]
 logType$ = "DoS"
 action$ = IF action != "" THEN action ELSE NULL
-blocked$ = IF LOWERCASE(action) == "drop" THEN 1 ELSE 0
+blocked$ = IF LOWERCASE(action) == "drop" THEN 2 ELSE 1
 sourceAddress$ = IF srcIp != "" THEN srcIp ELSE NULL
 sourcePort$ = IF srcPort != "" THEN srcPort ELSE NULL
 destinationAddress$ = IF dstIp != "" THEN dstIp ELSE NULL

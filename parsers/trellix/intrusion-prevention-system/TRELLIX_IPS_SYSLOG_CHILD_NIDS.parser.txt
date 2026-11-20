@@ -37,7 +37,7 @@ result = IF isTemplate THEN STRING(kv["RESULT_STATUS"]) ELSE d["result"]
 action$ = IF result != "" THEN result ELSE NULL
 resultLower = LOWERCASE(result)
 blockWord = resultLower|block
-blocked$ = IF blockWord[0] != "" THEN 1 ELSE 0
+blocked$ = IF blockWord[0] != "" THEN 2 ELSE 1
 dirRaw = IF isTemplate THEN STRING(kv["DIRECTION"]) ELSE d["dir"]
 dirText = LOWERCASE(dirRaw)
 direction$ = NULL

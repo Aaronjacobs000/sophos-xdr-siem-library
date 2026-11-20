@@ -81,7 +81,7 @@ userAgent$ = ua
 detail = m["detail"]
 blockedReq = detail == "ClientGeoBlocked" OR detail == "InvalidRequestBlocked"
 sensorTypeActions$ = IF blockedReq THEN "HTTP_BLOCKED" ELSE "HTTP_ALLOWED"
-blocked$ = IF blockedReq THEN 1 ELSE 0
+blocked$ = IF blockedReq THEN 2 ELSE 1
 
 # Fields with no HTTP schema home go to event_metadata. cs(Cookie) stays in original_data only.
 r1.key$ = "edge_location"

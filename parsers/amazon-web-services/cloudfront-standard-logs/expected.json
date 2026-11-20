@@ -38,7 +38,7 @@
       "protocol": 6,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.108 Safari/537.36",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -104,7 +104,7 @@
       "protocol": 6,
       "user_agent": "python-requests/2.32.3",
       "sensor_type_actions": "HTTP_BLOCKED",
-      "blocked": 1,
+      "blocked": 2,
       "event_metadata": {
         "record": [
           {
@@ -166,7 +166,7 @@
       "protocol": 6,
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -237,7 +237,7 @@
       "protocol": 6,
       "user_agent": "curl/8.5.0",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -295,7 +295,7 @@
       "protocol": 6,
       "user_agent": "Wget/1.21.4",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
@@ -360,7 +360,7 @@
       "protocol": 17,
       "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
       "sensor_type_actions": "HTTP_ALLOWED",
-      "blocked": 0,
+      "blocked": 1,
       "event_metadata": {
         "record": [
           {
