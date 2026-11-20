@@ -4,7 +4,7 @@
 // values that change or fail on the way in.
 
 import { JsonValue, ObjValue, RecordValue, TimeValue, MatchValue, RuntimeError, toStr, toPlain, isList, hasOwn, wrapJson } from './values.js';
-import { fieldsByParser, schemaInfo, typeKind, enumMembers, enumNumbers, messageType, INT_TYPES } from './schemas.js';
+import { fieldsByParser, schemaInfo, typeKind, enumMembers, enumNumbers, messageType, documentedRange, INT_TYPES } from './schemas.js';
 import { trimPairs, stringOf } from './functions.js';
 import { AUTH0_LOG_TYPES } from './auth0-log-types.js';
 
@@ -291,6 +291,10 @@ export function normalize(vars, schemaId, opts = {}) {
     if (schemaId === 'scwx.auth' && field.name === 'event_metadata') auth0Codes(val, notes);
     // "" is the protobuf default, so it isn't stored.
     if (val === undefined || val === null || val === '') continue;
+    // The engine stores a number outside the range the schema page gives, so a vendor scale copied
+    // in unconverted goes unnoticed there.
+    const range = documentedRange(schemaId, field.name);
+    if (range && typeof val === 'number' && (val < range.min || val > range.max)) notes.push({ level: 'warning', code: 'range', field: field.name, message: `${field.name}: ${val} is outside the ${range.min} to ${range.max} the ${info.name} schema page gives (${range.means}). Map the source's values onto that scale.` });
     if (!field.repeated && typeKind(field.type) === 'enum' && enumNumbers(field.type)['0'] === val && !KEEPS_ZERO.has(`${schemaId}:${field.name}`)) {
       notes.push({ level: 'info', code: 'enum-zero', field: field.name, message: `${field.name}: ${val} is the zero value of ${field.type}, so the engine leaves the field out` });
       continue;

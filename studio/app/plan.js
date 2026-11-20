@@ -4,7 +4,7 @@
 import { analyseSample, shapeOf, timeLayout, patternFields } from '../core/detect.js';
 import { suggestMappings, pickSchema, makeMapping } from '../core/mapping.js';
 import { generateParsers, baseName, childName } from '../core/generate.js';
-import { hasEventMetadata, GENERIC } from '../core/schemas.js';
+import { hasEventMetadata, fieldsByParser, GENERIC } from '../core/schemas.js';
 
 export function analyse(lines) {
   return analyseSample(lines);
@@ -17,7 +17,7 @@ export function keysFor(analysis, lineIdx) {
     const e = analysis.events[i];
     if (!e) continue;
     for (const f of e.fields) {
-      if (!keys.has(f.key)) keys.set(f.key, { key: f.key, path: f.path, index: f.index, header: f.header, label: f.label, values: [], lines: 0 });
+      if (!keys.has(f.key)) keys.set(f.key, { key: f.key, path: f.path, index: f.index, header: f.header, label: f.label, scale: f.scale, values: [], lines: 0 });
       const k = keys.get(f.key);
       k.values.push(f.value);
       k.lines++;
@@ -69,7 +69,8 @@ function joinDateTime(mappings, keys) {
 export function makeUnit(analysis, { eventType = null, lines, schema = null, taken, base }) {
   const keys = keysFor(analysis, lines);
   const sid = schema || pickSchema(keys, eventType ?? '', { child: eventType !== null, extraText: analysis.hintText || '' });
-  const mappings = sid === GENERIC ? [] : joinDateTime(suggestMappings(keys.filter((k) => !analysis.split || k.key !== analysis.split.key), sid), keys);
+  // A child's split key is eventType$, set by the parent; a standalone parser maps it like any key.
+  const mappings = sid === GENERIC ? [] : joinDateTime(suggestMappings(keys.filter((k) => eventType === null || !analysis.split || k.key !== analysis.split.key), sid), keys);
   return {
     eventType, lines, keys, schema: sid, mappings, constants: [],
     metadata: sid !== GENERIC && hasEventMetadata(sid),
@@ -77,8 +78,9 @@ export function makeUnit(analysis, { eventType = null, lines, schema = null, tak
   };
 }
 
-// source: {vendor, product, version, shipMethod}
-export function buildPlan(analysis, source) {
+// source: {vendor, product, version, shipMethod}. picks: a schema per event type, or __single for
+// a standalone parser, from the Sample step; the rest are suggested.
+export function buildPlan(analysis, source, picks = {}) {
   const base = baseName(source.vendor || analysis.vendor, source.product || analysis.product, analysis.format);
   const plan = {
     vendor: source.vendor || analysis.vendor || '',
@@ -96,16 +98,60 @@ export function buildPlan(analysis, source) {
     units: [],
   };
   const taken = new Set([plan.parentName]);
+  const pick = (k) => (Object.hasOwn(picks, k) && picks[k]) || null;
   if (analysis.split && analysis.types.length > 1) {
     for (const t of analysis.types) {
       const lines = analysis.events.map((e, i) => [e, i]).filter(([e]) => e.fields.some((f) => f.key === analysis.split.key && f.value === t)).map(([, i]) => i);
-      plan.units.push(makeUnit(analysis, { eventType: t, lines, taken, base }));
+      plan.units.push(makeUnit(analysis, { eventType: t, lines, schema: pick(t), taken, base }));
     }
+    standaloneForOneSchema(plan, analysis);
   } else {
     plan.split = null;
-    plan.units.push(makeUnit(analysis, { lines: analysis.events.map((_, i) => i), taken, base }));
+    plan.units.push(makeUnit(analysis, { lines: analysis.events.map((_, i) => i), schema: pick('__single'), taken, base }));
   }
   return plan;
+}
+
+// The schema every event type goes to, or null when they go to different ones or stay generic.
+export function oneSchema(schemas) {
+  const set = new Set(schemas);
+  return set.size === 1 && !set.has(GENERIC) && !set.has(null) && !set.has(undefined) ? [...set][0] : null;
+}
+
+// Parent and children route event types to different schemas. When every event type goes to the
+// same one, one standalone parser reads every line. A field an event type fills from a key its
+// lines have, where the standalone parser reads a key they lack, reads that key on its lines.
+function standaloneForOneSchema(plan, analysis) {
+  const schema = oneSchema(plan.units.map((u) => u.schema));
+  if (!schema) return;
+  const perType = plan.units;
+  const unit = makeUnit(analysis, { lines: analysis.events.map((_, i) => i), schema, taken: new Set(), base: plan.baseName });
+  const when = plan.split;
+  for (const m of unit.mappings) {
+    if (!m.field) continue;
+    const alts = [];
+    for (const u of perType) {
+      if (u.keys.some((k) => k.key === m.key)) continue;
+      const own = u.mappings.find((x) => x.field === m.field && x.key !== m.key);
+      if (!own || !sameTransform(own.transform, m.transform)) continue;
+      const alt = alts.find((x) => x.key === own.key);
+      if (alt) alt.values.push(u.eventType);
+      else alts.push({ key: own.key, path: own.path, index: own.index, when, values: [u.eventType] });
+      if (m.transform.kind === 'enum') for (const r of own.transform.map) if (!m.transform.map.some((x) => x.match === r.match)) m.transform.map.push(r);
+    }
+    if (alts.length) m.alts = alts;
+  }
+  // Antivirus stores eventType$, which a parent sets from the split key, as event_type.
+  const typeKey = unit.keys.find((k) => k.key === when.key);
+  if (typeKey && fieldsByParser(schema).has('eventType$') && !unit.mappings.some((m) => m.field === 'eventType$')) unit.mappings.unshift(makeMapping(typeKey, 'eventType$', schema, 'alias'));
+  plan.split = null;
+  plan.units = [unit];
+}
+
+// Enum maps differ with the values seen, so two enum transforms match on their type.
+function sameTransform(a, b) {
+  if (a.kind === 'enum' && b.kind === 'enum') return a.type === b.type;
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 export function setUnitSchema(plan, analysis, unit, schema) {

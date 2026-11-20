@@ -41,6 +41,20 @@ const ENGINE_DROPS = {
   'scwx.registry': new Set(['ruleContext$']),
 };
 
+// Numeric fields whose schema page gives their values: NIDS priority runs from 1 (highest) to 5
+// (lowest), and blocked in NIDS and HTTP is 1 = NotBlocked, 2 = Blocked, 3 = WouldHaveBlocked.
+const PRIORITY = { min: 1, max: 5, means: '1 is the highest priority and 5 the lowest' };
+const BLOCKED = { min: 1, max: 3, means: '1 = NotBlocked, 2 = Blocked, 3 = WouldHaveBlocked' };
+const RANGES = {
+  'scwx.nids': { priority: PRIORITY, blocked: BLOCKED },
+  'scwx.http': { blocked: BLOCKED },
+};
+
+export function documentedRange(schemaId, fieldName) {
+  const r = RANGES[schemaId];
+  return r && Object.hasOwn(r, fieldName) ? r[fieldName] : null;
+}
+
 export function schemaInfo(id) {
   if (id === GENERIC) return { id, name: 'Generic', page: 'https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/#generic-schema', documentedId: true, fields: GENERIC_FIELDS };
   const s = data.schemas[id];

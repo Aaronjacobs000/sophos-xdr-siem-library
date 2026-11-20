@@ -2,7 +2,7 @@ import { h, clear, pill, select, bytes, toast } from '../dom.js';
 import { state, sampleLines, subscribe } from '../store.js';
 import { go } from '../nav.js';
 import { highlightSample } from '../highlight.js';
-import { analyse, buildPlan, keysFor, makeUnit } from '../plan.js';
+import { analyse, buildPlan, keysFor, oneSchema } from '../plan.js';
 import { headerLabel } from '../../core/detect.js';
 import { compileGo, checkRe2 } from '../../core/goregex.js';
 import { call } from '../emulator-client.js';
@@ -150,15 +150,31 @@ function drawRight(right) {
   const tree = h('div', { class: 'tree' });
   state.unitSchemas ||= {};
   const schemaOpts = [{ value: GENERIC, label: 'stay generic (no child)' }, ...SCHEMA_IDS.filter((x) => x !== GENERIC).map((id) => ({ value: id, label: `${id} (${schemaInfo(id).name})` }))];
+  let shapeNote = null;
   if (a.split && a.types.length > 1) {
-    tree.append(h('div', { class: 'row' }, h('span', { class: 'name', text: '…_PARENT' }), pill('scwx.generic', 'grey'), h('span', { class: 'why', text: `all ${a.lines} lines` })));
+    // When every event type goes to one schema, one standalone parser reads them all; a parent and
+    // children only route event types to different schemas.
+    const top = h('div', { class: 'row' });
+    const childNames = [];
+    const paintShape = () => {
+      const one = oneSchema(a.types.map((t) => state.unitSchemas[t]));
+      clear(top);
+      top.append(h('span', { class: 'name', text: one ? '…_STANDALONE' : '…_PARENT' }), pill(one || 'scwx.generic', one ? 'blue' : 'grey'), h('span', { class: 'why', text: `all ${a.lines} lines` }));
+      for (const n of childNames) n.textContent = one ? 'event type' : '…_CHILD';
+      shapeNote.textContent = one ? `Every event type goes to the ${schemaInfo(one).name} schema, so one standalone parser reads them all. Pick another schema for an event type to get a parent and children.` : 'The parent hands each event type to the child for its schema.';
+    };
+    shapeNote = h('p', { class: 'sub' });
+    tree.append(top);
     for (const t of a.types) {
       const idx = a.events.map((e, i) => [e, i]).filter(([e]) => e.fields.some((f) => f.key === a.split.key && f.value === t)).map(([, i]) => i);
-      if (!state.unitSchemas[t]) state.unitSchemas[t] = childSchema(keysFor(a, idx), t);
-      tree.append(h('div', { class: 'row child' }, h('span', { class: 'name', text: '…_CHILD' }),
-        select(schemaOpts, state.unitSchemas[t], (v) => { state.unitSchemas[t] = v; state.plan = null; mapBtn.textContent = mapLabel(); }, { 'aria-label': `Schema for ${t}` }),
+      if (!Object.hasOwn(state.unitSchemas, t)) state.unitSchemas[t] = childSchema(keysFor(a, idx), t);
+      const name = h('span', { class: 'name', text: '…_CHILD' });
+      childNames.push(name);
+      tree.append(h('div', { class: 'row child' }, name,
+        select(schemaOpts, state.unitSchemas[t], (v) => { state.unitSchemas[t] = v; state.plan = null; mapBtn.textContent = mapLabel(); paintShape(); }, { 'aria-label': `Schema for ${t}` }),
         h('span', { class: 'why', text: `${t} · ${idx.length} line${idx.length === 1 ? '' : 's'}` })));
     }
+    paintShape();
   } else {
     if (!state.unitSchemas.__single) state.unitSchemas.__single = pickSchema(a.keys, '', { extraText: a.hintText });
     tree.append(h('div', { class: 'row' }, h('span', { class: 'name', text: '…_STANDALONE' }),
@@ -166,6 +182,7 @@ function drawRight(right) {
       h('span', { class: 'why', text: `all ${a.lines} lines` })));
   }
   right.append(tree);
+  if (shapeNote) right.append(shapeNote);
 
   // Confirm string
   right.append(h('h3', { text: a.split && a.types.length > 1 ? 'Confirm string for the parent' : 'Confirm string' }));
@@ -222,7 +239,8 @@ function drawRight(right) {
 
   // Counts the children that get a parser, so a schema pick above updates it.
   function mapLabel() {
-    const n = a.split && a.types.length > 1 ? a.types.filter((t) => state.unitSchemas[t] !== GENERIC).length : 1;
+    const split = a.split && a.types.length > 1 && !oneSchema(a.types.map((t) => state.unitSchemas[t]));
+    const n = split ? a.types.filter((t) => state.unitSchemas[t] !== GENERIC).length : 1;
     return n > 1 ? `Map fields for ${n} event types` : 'Map fields';
   }
   mapBtn = h('button', { class: 'btn primary', disabled: !state.confirm.text, onclick: () => next(), text: mapLabel() });
@@ -248,28 +266,14 @@ function ensureLibraryLoaded() {
 function next() {
   if (state.edited && state.parsers && !confirm('You edited the parser scripts by hand. Writing them again from the map replaces those edits. Continue?')) return;
   const a = state.analysis;
-  const plan = buildPlan(a, state.source);
+  // The schema picks from the shape tree. When every event type goes to one schema, the plan is
+  // one standalone parser.
+  const plan = buildPlan(a, state.source, state.unitSchemas);
   plan.confirm = { ...state.confirm };
-  // Apply the schema picks from the shape tree.
-  if (plan.split) {
-    for (const u of plan.units) {
-      const want = state.unitSchemas[u.eventType];
-      if (want && want !== u.schema) Object.assign(u, rebuild(plan, a, u, want));
-    }
-  } else if (state.unitSchemas.__single && plan.units[0].schema !== state.unitSchemas.__single) {
-    Object.assign(plan.units[0], rebuild(plan, a, plan.units[0], state.unitSchemas.__single));
-  }
   state.plan = plan;
   state.mapTab = plan.split ? 1 : 0;
   state.edited = false;
   state.parsers = null;
   go('#/build/map');
-}
-
-function rebuild(plan, a, u, schema) {
-  if (schema === GENERIC) return { schema: GENERIC, mappings: [], metadata: false };
-  const taken = new Set([plan.parentName, ...plan.units.filter((x) => x !== u).map((x) => x.name)]);
-  const fresh = makeUnit(a, { eventType: u.eventType, lines: u.lines, schema, taken, base: plan.baseName });
-  return { schema: fresh.schema, mappings: fresh.mappings, metadata: fresh.metadata, name: fresh.name };
 }
 

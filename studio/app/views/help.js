@@ -13,7 +13,7 @@ export function renderHelp(root) {
     p('Parser Studio is open source under the MIT license. The code is in the ', ext(githubUrl(), 'library\'s repo on GitHub'), ', which is also where issues and contributions go.'),
     h('h2', { text: 'The three steps' }),
     h('ul', {},
-      li(h('b', { text: 'Sample.' }), ' Paste or drop lines. The page works out the syslog header, the body format (JSON, CEF, LEEF, key=value, delimited or plain text) and the key that splits event types, then suggests a parent with one child per event type, or one standalone parser.'),
+      li(h('b', { text: 'Sample.' }), ' Paste or drop lines. The page works out the syslog header, the body format (JSON, CEF, LEEF, key=value, delimited or plain text) and the key that splits event types, then suggests a parent with one child per event type when the event types go to different schemas, or one standalone parser.'),
       li(h('b', { text: 'Map fields.' }), ' Each source key gets a parser field from a dictionary of common names and the shape of its values. You change any mapping, map values to enum names, add fixed values, and send leftovers to event_metadata.'),
       li(h('b', { text: 'Test and export.' }), ' The page writes the scripts, runs every sample through an emulator, and lints the result. Edit the scripts and the results update. Copy them into Sophos Fusion or download a test pack.')),
     h('h2', { text: 'What the emulator is, and is not' }),

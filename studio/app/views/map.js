@@ -45,6 +45,7 @@ function transformOptions(type, field) {
     const out = [{ value: 'none', label: 'as is (a number)' }, { value: 'int', label: 'INT() a string' }];
     if (/Usec\$$/.test(field)) out.push({ value: 'datetime', label: 'DATETIME() with a layout' }, { value: 'epoch-s', label: 'epoch seconds' }, { value: 'epoch-ms', label: 'epoch milliseconds' });
     if (field === 'protocol$') out.push({ value: 'protocol', label: 'protocol name to number' });
+    if (field === 'priority$') out.push({ value: 'priority', label: 'severity 0 to 10 to priority 1 to 5' });
     return out;
   }
   if (type === 'bool') return [{ value: 'bool', label: 'true if "true"' }, { value: 'none', label: 'as is' }];
