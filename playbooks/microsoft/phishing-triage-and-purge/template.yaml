@@ -1,7 +1,7 @@
 apiVersion: v0.0.1
 kind: Playbook
 name: Unofficial_Phishing_Triage_Purge
-version: 1.1.0
+version: 1.1.1
 title: Phishing triage and purge (unofficial)
 description: For a phishing email, finds its copies in your Microsoft 365 mailboxes, checks the sender, the authentication results and the links, moves each copy out of the users' folders and records the triage and the mailbox list on the case. Run it from a case whose detections name the email, or by hand with the email's Internet message ID. It never deletes mail, it starts in dry run, which only records what it would do, and it can ask for approval in Teams or Slack before it moves anything. From the Unofficial Sophos Fusion XDR and SIEM Library, not from Sophos.
 documentation: |
@@ -142,7 +142,7 @@ inputs:
         message:
             properties:
                 case_id:
-                    description: For a run by hand. The case to record the outcome on, as its short ID such as CSE00042 or its full ID. Leave it blank in the configured playbook.
+                    description: For a run by hand. The case to record the outcome on, as its short ID such as CSE00042 or E-01167, or its full ID. Leave it blank in the configured playbook.
                     title: Case
                     type: string
                 internet_message_id:
@@ -211,8 +211,8 @@ dsl:
         - name: start
           let:
             source: "setup.variables.case_id != '' ? 'case' : setup.variables.manual_id != '' ? 'manual' : ''"
-            short_id: "setup.variables.case_id == '' && setup.variables.manual_case.upperAscii().startsWith('CSE')"
-        # A run by hand can name its case by short ID, such as CSE00042.
+            short_id: "setup.variables.case_id == '' && (setup.variables.manual_case.upperAscii().startsWith('CSE') || setup.variables.manual_case.upperAscii().startsWith('E-'))"
+        # A run by hand can name its case by short ID, such as CSE00042 or E-01167.
         - name: find_case
           condition: "start.variables.source == 'manual' && start.variables.short_id"
           action: Taegis.Case.searchCustom
