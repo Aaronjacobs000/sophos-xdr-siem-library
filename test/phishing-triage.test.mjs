@@ -57,3 +57,9 @@ test('a run by hand searches E-01167 and CSE00042 by short ID, in any case, and 
   // A case run never searches.
   assert.equal(manualRun('E-01167', { caseId: CASE_UUID }).search, false);
 });
+
+test('the 1.1.1 change notes describe the short ID fix, not the 1.1.0 change', () => {
+  assert.equal(TEMPLATE.version, '1.1.1');
+  assert.match(TEMPLATE.changeNotes, /E-01167/);
+  assert.doesNotMatch(TEMPLATE.changeNotes, /Ask for approval first/);
+});

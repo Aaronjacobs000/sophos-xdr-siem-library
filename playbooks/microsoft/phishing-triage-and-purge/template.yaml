@@ -39,7 +39,7 @@ documentation: |
     | Ask for approval first | Write an approval request on the case and move nothing; Approval before acting runs it once approved | Off |
     | Approval window (hours) | How long a request stays open | 4 |
     | Bridge name | The chat bridge's @mention name in Teams, for the request's reply line | Fusion |
-changeNotes: New Ask for approval first input. With it on, a run that would move copies writes an approval request on the case, with a request ID and an expiry, and moves nothing; the library's Approval before acting playbook moves them once someone approves it in Teams or Slack through the chat bridge.
+changeNotes: A run by hand now finds its case from an E- short ID such as E-01167, as it does from CSE00042. Before, it read an E- short ID as a full case ID and found no case.
 tags:
     - Category:Email
     - Type:Response
