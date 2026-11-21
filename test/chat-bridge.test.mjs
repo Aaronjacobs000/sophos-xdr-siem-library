@@ -46,7 +46,7 @@ beforeEach(() => {
     if (u === 'https://api.taegis.sophos.com/graphql') {
       const { query, variables } = JSON.parse(body);
       if (query.includes('caseComments')) return json({ data: { caseComments: { comments: caseComments } } });
-      if (query.includes('cases(arguments')) return json({ data: { cases: { cases: variables.q === "shortId = 'CSE00042'" && kase ? [kase] : [] } } });
+      if (query.includes('cases(arguments')) return json({ data: { cases: { cases: kase && variables.q === `shortId = '${kase.shortId}'` ? [kase] : [] } } });
       if (query.includes('case(arguments')) return json({ data: { case: kase && variables.a.id === CASE_ID ? kase : null } });
       if (query.includes('casePrimaryStatuses')) return json({ data: { casePrimaryStatuses: { primaryStatuses: Object.entries(STATUS).map(([name, id]) => ({ id, name, title: name.replace('_', ' ').replace(/^./, (c) => c.toUpperCase()), isClosed: name === 'closed' })) } } });
       if (query.includes('casePrimaryVerdicts')) return json({ data: { casePrimaryVerdicts: { primaryVerdicts: [{ id: VERDICT, name: 'false_positive', title: 'False Positive' }] } } });
@@ -418,4 +418,39 @@ test('a bridge without settings refuses, and only the three routes answer', asyn
   assert.equal((await worker.fetch(new Request('https://bridge.example.com/healthz'), ENV, ctx())).status, 200);
   assert.equal((await worker.fetch(new Request('https://bridge.example.com/other', { method: 'POST' }), ENV, ctx())).status, 404);
   assert.equal((await worker.fetch(new Request('https://bridge.example.com/slack/interactivity', { method: 'POST' }), { ...ENV, FUSION_API: 'https://example.com/graphql' }, ctx())).status, 500);
+});
+
+// ---------------------------------------------------------------- short IDs
+
+// Sophos Fusion issues short IDs like E-01167 beside CSE00042 since 18/11/2026.
+test('short IDs: E-01167 parses like CSE00042, in any case, and a Classic case ID does not', () => {
+  const cfg = settings(ENV);
+  for (const ref of ['E-01167', 'e-01167', 'CSE00001', 'cse00001', CASE_ID]) {
+    assert.deepEqual(parseCommand(`active ${ref} on it`, cfg), { kind: 'status', ref, status: 'active', text: 'on it' }, ref);
+    assert.deepEqual(parseCommand(`approve ${ref} AP-7K2M9QX4`, cfg), { kind: 'approve', ref, request: 'AP-7K2M9QX4' }, ref);
+  }
+  for (const ref of ['1-598868', 'E-', 'E01167', 'X-01167', 'AP-7K2M9QX4']) assert.equal(parseCommand(`active ${ref}`, cfg), null, ref);
+});
+
+test('short IDs: a Teams command and a Slack button on an E-01167 case find it by short ID and change it', async () => {
+  kase = fusionCase({ shortId: 'E-01167' });
+  let c = ctx();
+  const res = await worker.fetch(teamsRequest('<at>Fusion</at> active e-01167 on it'), ENV, c);
+  await c.settle();
+  assert.match((await res.json()).text, /^E-01167 is now Active\./);
+  const searches = () => calls.filter((x) => x.url.endsWith('/graphql')).map((x) => JSON.parse(x.body)).filter((b) => b.query.includes('cases(arguments'));
+  assert.deepEqual(searches().map((b) => b.variables.q), ["shortId = 'E-01167'"]);
+  assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
+
+  calls = [];
+  c = ctx();
+  await worker.fetch(slackRequest(blockAction('fusion_status_active', '|E-01167')), ENV, c);
+  await c.settle();
+  assert.deepEqual(searches().map((b) => b.variables.q), ["shortId = 'E-01167'"]);
+  assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
+});
+
+test('short IDs: the Teams usage names both formats', async () => {
+  const reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> help'), ENV, ctx())).json();
+  assert.match(reply.text, /A case is its ID, such as CSE00042 or E-01167,/);
 });
