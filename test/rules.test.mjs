@@ -91,6 +91,10 @@ test('QL: a rule query reads one schema and fields rules can match, with enums b
   assert.match(probs("from nids where sensor_type = 'x'", 'scwx.auth'), /the entry is for scwx.auth/);
   assert.match(probs("from widgets where a = 1"), /not a schema/);
   assert.equal(schemaFromQlName('thirdpartyalert'), 'scwx.thirdpartyalert');
+  // Rules take FROM thirdpartyalert, but Data Lake Search refuses it, so a rule query can't use it.
+  assert.match(probs("from thirdpartyalert where sensor_type = 'OpenCanary'", 'scwx.thirdpartyalert'), /write FROM thirdparty: Data Lake Search refuses FROM thirdpartyalert/);
+  assert.match(probs("FROM Third_Party_Alert where sensor_type = 'OpenCanary'"), /write FROM thirdparty/);
+  assert.equal(probs("FROM ThirdParty where sensor_type = 'OpenCanary'"), '');
   assert.equal(schemaFromQlName('management_event'), 'scwx.managementevent');
   assert.deepEqual(pinnedSensorTypes(parseQuery("from nids where sensor_type in ('a', 'b') and priority = 1")), ['a', 'b']);
   assert.deepEqual(pinnedSensorTypes(parseQuery("from nids where sensor_type = 'a' or priority = 1")), [], 'an OR doesn\'t pin it');

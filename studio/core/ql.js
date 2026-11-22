@@ -11,7 +11,8 @@
 //
 // Measured in a lab tenant with validateQLFilter (22/11/2026): an enum field takes its member name,
 // such as severity = 'HIGH', and refuses a number; "NOT IN" is a syntax error, and !IN works;
-// FROM thirdpartyalert reads as FROM thirdparty. Earlier (20/11/2026): a field missing from the event
+// FROM thirdpartyalert reads as FROM thirdparty, though Data Lake Search refuses it (23/11/2026), so
+// a rule query says thirdparty. Earlier (20/11/2026): a field missing from the event
 // matches != in both Data Lake Search and a live rule. What isn't measured: whether MATCHES_REGEX
 // finds a match anywhere or needs the whole value (this reads it as anywhere), and CIDR in a rule.
 
@@ -77,7 +78,8 @@ export function tokenize(text) {
   return out;
 }
 
-// QL schema names, such as nids or thirdparty, as schema ids. FROM thirdpartyalert works too, and an
+// QL schema names, such as nids or thirdparty, as schema ids. Rules take FROM thirdpartyalert too, so
+// it reads as thirdparty here, but Data Lake Search refuses it, so ruleQueryProblems does. An
 // underscore is optional (management_event).
 export function schemaFromQlName(name) {
   const n = String(name || '').toLowerCase().replace(/_/g, '');
@@ -384,6 +386,7 @@ export function ruleQueryProblems(parsed, { schemaId = null } = {}) {
   const sid = schemaFromQlName(parsed.schemas[0]);
   if (!sid) { err('ql', `${parsed.schemas[0]} is not a schema a custom parser writes to`); return out; }
   if (schemaId && sid !== schemaId) err('ql', `the query reads ${parsed.schemas[0]} (${sid}), but the entry is for ${schemaId}`);
+  if (sid === 'scwx.thirdpartyalert' && String(parsed.schemas[0]).toLowerCase().replace(/_/g, '') !== 'thirdparty') err('ql', `write FROM thirdparty: Data Lake Search refuses FROM ${parsed.schemas[0]}, though rules take it, so the query can't run as a search`);
   if (sid === GENERIC) warn('ql', 'the generic schema has only a few fields, so check the query matches the raw text you expect');
   const banned = new Set([...NO_MATCH_FIELDS.all, ...(NO_MATCH_FIELDS[sid] || [])]);
   for (const c of conditions(parsed.where)) {
