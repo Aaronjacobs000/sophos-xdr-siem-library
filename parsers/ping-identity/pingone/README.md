@@ -10,11 +10,11 @@ PingOne posts its webhook straight to a Sophos NG-SIEM HTTP Ingest integration i
 2. In the PingOne admin console, go to Integrations > Webhooks and add a webhook:
    - Protocol HTTPS, Destination URL the HTTP Ingest URL, and Allow TLS connection with untrusted certificates off.
    - Under Headers, Add Custom HTTP Headers: Key `Authorization`, Value `Bearer <Integration Key>`.
-   - Payload Format NDJSON, Event Schema Ping Activity Format. Not JSON array: HTTP Ingest would store a whole batch of up to 500 events as one record, which the parsers leave unclaimed.
+   - Payload Format NDJSON, Event Schema Ping Activity Format. In a lab tenant on 2026-11-23 HTTP Ingest also split a JSON array of two events into one record per event, with the keys in alphabetical order, and the parsers took both, but NDJSON is the format the parsers were built for.
    - Turn on Include IP address and Include User Agent, or the events carry neither.
    - Event Types: the sign-on, MFA and password types below, and the admin change types you want, such as users, roles, groups, applications, populations, identity providers and sign-on policies.
 
-This route hasn't been tested end to end: the parsers passed Run Test on NDJSON lines, but no event was sent through HTTP Ingest. PingOne's webhook page offers NDJSON and also says its requests don't use line-delimited JSON, so after you set it up, search for a few PingOne events and check each event is its own record. If a whole batch arrives as one record, nothing is normalized.
+This route hasn't been tested end to end: in a lab tenant the sample events reached HTTP Ingest one per request and parsed, but none came from a PingOne webhook. PingOne's webhook page offers NDJSON and also says its requests don't use line-delimited JSON, so after you set it up, search for a few PingOne events and check each event is its own record. If a whole batch arrives as one record, nothing is normalized.
 
 ## Add the parsers
 
