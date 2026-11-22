@@ -155,6 +155,9 @@ test('detection checks: the contributor rules CI can check fail when broken', ()
   assert.match(errors(validateRuleEntry(rules.find((x) => x.id === DET), opts({ coverage: denied }))), /OpenCanary is a sensor type Sophos's own rules name/);
   // 3. No IOC rules.
   assert.match(check('rules.yaml', swapQuery("from thirdparty where sensor_type = 'OpenCanary' and source_address in ('203.0.113.9', '198.51.100.4')")), /only matches literal IP addresses/);
+  assert.match(check('rules.yaml', swapQuery("from thirdparty where sensor_type = 'OpenCanary' and domain_name = 'bad.example.net'")), /only matches literal IP addresses/);
+  // A dotted event name, such as vault.export, looks like a domain but isn't an IOC.
+  assert.doesNotMatch(check('rules.yaml', swapQuery("from thirdparty where sensor_type = 'OpenCanary' and alert_category in ('vault.export', 'repo.destroy')")), /only matches literal IP addresses/);
   // 6. A condition beyond sensor_type, and Low rules ship off.
   assert.match(check('rules.yaml', swapQuery("from thirdparty where sensor_type = 'OpenCanary'")), /needs a condition beyond sensor_type/);
   assert.match(check('rules.yaml', (t) => t.replace('severity: critical', 'severity: low')), /is low, so it ships off/);

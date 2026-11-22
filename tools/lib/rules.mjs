@@ -220,11 +220,20 @@ export function entrySensorTypes(parserEntry, schemaId) {
 
 // ---------------------------------------------------------------- detection entries
 
+// A value that looks like a domain is only an IOC on a field that holds a host or domain name:
+// dotted event names, such as vault.export or repo.destroy, look like domains too.
+const DOMAIN_FIELD = /domain|host|dns|query_name|url|uri|fqdn|sni|server_name|referr?er|email|sender|recipient/i;
+function iocLiteral(field, l) {
+  if (!l || l.kind !== 'string') return false;
+  if (IOC.ip.test(l.value) || IOC.hash.test(l.value)) return true;
+  return IOC.domain.test(l.value) && DOMAIN_FIELD.test(field);
+}
+
 // True when every condition beyond the sensor type compares a field with IPs, domains or hashes.
 function iocOnly(parsed) {
   const leaves = conditions(parsed.where).filter((c) => c.field !== 'sensor_type');
   if (!leaves.length) return false;
-  return leaves.every((c) => ['=', 'in'].includes(c.op) && (c.values || [c.value]).every((l) => l && l.kind === 'string' && Object.values(IOC).some((re) => re.test(l.value))));
+  return leaves.every((c) => ['=', 'in'].includes(c.op) && (c.values || [c.value]).every((l) => iocLiteral(c.field, l)));
 }
 
 function checkRules(r, entry, ctx) {
