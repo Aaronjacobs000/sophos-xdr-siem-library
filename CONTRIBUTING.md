@@ -134,12 +134,13 @@ The folder comes from `vendor` and `title` in `meta.json`, in lowercase with hyp
 5. One line, one rule. Each trigger line matches exactly one rule across the whole library, and every entry has lines that must not trigger.
 6. Narrow and quiet. Every rule has a condition beyond `sensor_type` and a stated daily volume. Low and Informational rules ship off.
 7. A case rule collects only its own entry's detections. Its filter takes custom detections (`metadata.creator.detector.detector_id = 'app:event-filter-ql'`) with the entry's rule names as titles, its `group_by` carries the rule's name, it ships in Test state, and its template is a Security Case with no assignee. It can only collect Medium and higher rules, because case rules skip Low and Informational detections.
+   - Group on an entity the detections carry: a detection without the grouping attributes doesn't match the rule ([Automatic cases](https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/AutomaticCases/)). In a lab tenant FileMod detections carried no host name, so a group on `alertHostnames` skipped every one: group them on the `hostId` entity, as [rules/qnap/qnap-one-case-per-nas](rules/qnap/qnap-one-case-per-nas/) does, and do the same for any schema whose records hold no host name.
 8. The MDR note uses public wording: the detections and cases are the customer's to work. Nothing about internal tiers or roadmaps.
 
 ### What the rule checks look at
 
 - `meta.json` has the required fields, the folder holds only the allowed files, and its path comes from `vendor` and `title`.
-- `rules.yaml` and `case-rule.yaml` parse and have the required fields, and MITRE IDs are valid.
+- `rules.yaml` and `case-rule.yaml` parse and have the required fields, and MITRE IDs are valid. A case rule for FileMod detections can't group on `alertHostnames`.
 - Each query parses, reads one schema, and uses only that schema's fields, none of them one that rules can't match: host names, the geo and blocklist fields on auth, netflow and dnsquery, or whois. An enum field is compared by name, such as `severity = 'HIGH'`, since Sophos refuses a number there. `NOT IN` is a syntax error: write `!IN`.
 - Regex has no backreferences, lookarounds, atomic groups or possessive quantifiers, which the rule engine refuses.
 - The emulator runs the linked parser on its `samples.log`, then runs the rules on the records, and the result has to match `tests.json` exactly.

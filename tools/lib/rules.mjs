@@ -357,6 +357,10 @@ function checkCaseRule(r, entry, ctx) {
   }
   if (!Array.isArray(rule.group_by) || !rule.group_by.length || rule.group_by.some((g) => typeof g !== 'string')) e('group', 'group_by must list the expressions that group detections into a case', 'group_by');
   else if (typeof rule.name === 'string' && rule.group_by.some((g) => !g.includes(rule.name))) e('group', `each group_by expression must carry the rule's name, ${rule.name}, so only this rule adds to its cases: grouping isn't tied to a rule`, 'group_by');
+  // A detection matches a case rule only if it holds the grouping attributes, and a FileMod
+  // detection holds no host name: in a lab tenant a case rule grouped on alertHostnames skipped
+  // every one. Its hostId is there.
+  if (Array.isArray(rule.group_by) && ctx.detection && ctx.detection.meta && ctx.detection.meta.schema === 'scwx.filemod' && rule.group_by.some((g) => typeof g === 'string' && /\balertHostnames\s*\(/.test(g))) e('group', 'group_by uses alertHostnames, but a FileMod detection carries no host name, so the rule would skip every detection: group on the hostId entity instead, as rules/qnap/qnap-one-case-per-nas does', 'group_by');
   // The template: a Security Case with no assignee.
   const tl = doc.templateLine;
   for (const k of Object.keys(template)) if (!TEMPLATE_KEYS.includes(k)) r.warn('case', `the template's "${k}" isn't a field the library knows`, file, tl);
