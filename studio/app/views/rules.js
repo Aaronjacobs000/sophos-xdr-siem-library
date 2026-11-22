@@ -8,7 +8,7 @@ import { loadRuleEntry, loadEntry, githubUrl } from '../library-client.js';
 import { renderMarkdown } from '../markdown.js';
 import { notesView, searchList } from './common.js';
 import { starSlot, popularSlot } from '../stars.js';
-import { compileRules, ruleHits, ruleSearchText, testedState, SEVERITIES, SEVERITY_BANDS } from '../../core/rules.js';
+import { compileRules, ruleHits, ruleSearchText, testedState, parserLabel, SEVERITIES, SEVERITY_BANDS } from '../../core/rules.js';
 import { qlName } from '../../core/ql.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
@@ -19,7 +19,7 @@ const kindPill = (k) => (k === 'case' ? pill('case rule', 'cyan') : pill('detect
 const testedPill = (m) => { const t = testedState(m); return pill(t.label, t.tone); };
 const author = (m) => (HANDLE.test(m.author || '') ? `@${m.author}` : '');
 const parserOf = (m) => (m && typeof m.parser === 'string' ? state.library.entries.find((e) => `parsers/${e.id}` === m.parser) || null : null);
-const parserName = (m) => { const p = parserOf(m); return p ? `${p.meta.vendor} ${p.meta.product}` : (m && m.parser) || 'unknown'; };
+const parserName = (m) => { const p = parserOf(m); return p ? parserLabel(p.meta) : (m && m.parser) || 'unknown'; };
 const ruleById = (path) => (state.library.rules || []).find((r) => `rules/${r.id}` === path) || null;
 const order = (list) => [...list].sort((a, b) => SEVERITIES.indexOf(a) - SEVERITIES.indexOf(b));
 
