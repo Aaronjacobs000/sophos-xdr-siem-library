@@ -308,5 +308,277 @@
         "md5": "54da99a45b34abfae0bd89537f65c145"
       }
     }
+  },
+  {
+    "line": 10,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791858031000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104262",
+      "title": "Airlock Blocklist Execution [Audit]: rclone.exe",
+      "summary": "C:\\ProgramData\\sync\\rclone.exe",
+      "target_host_name": "FS-01",
+      "host_id": "FS-01",
+      "target_user_name": "CORP\\svc-sync",
+      "severity": "HIGH",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Blocklist Execution [Audit]"
+          },
+          {
+            "key": "policy_group",
+            "value": "Servers"
+          },
+          {
+            "key": "policy_version",
+            "value": "2210.144"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\ProgramData\\sync\\rclone.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "a39f5c386737ffaf9c0a248a85cb5820c576c77d059e12e32215ddea4cbd5c0e"
+          },
+          {
+            "key": "parent_process",
+            "value": "cmd.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.30"
+          },
+          {
+            "key": "commandline",
+            "value": "copy D:\\Shares\\Finance remote:archive"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791858667000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104266",
+      "title": "Airlock Blocked Execution: setup.exe",
+      "summary": "C:\\Users\\bwong\\AppData\\Local\\Temp\\7zS1A2B\\setup.exe",
+      "target_host_name": "WS-OPS-057",
+      "host_id": "WS-OPS-057",
+      "target_user_name": "CORP\\bwong",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Blocked Execution"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3819"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Users\\bwong\\AppData\\Local\\Temp\\7zS1A2B\\setup.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "ca73d52acd1658a290b1b2643bc724db3cfeab2ede1f89268cdf88bd6305aa75"
+          },
+          {
+            "key": "parent_process",
+            "value": "invoice_viewer.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.58"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791859244000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104270",
+      "title": "Airlock Blocked Execution: update.exe",
+      "summary": "C:\\Program Files\\Example Updater\\update.exe",
+      "target_host_name": "WS-FIN-041",
+      "host_id": "WS-FIN-041",
+      "target_user_name": "CORP\\jdoe",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Blocked Execution"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3819"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Program Files\\Example Updater\\update.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "8591ce9cb1dc8e60a0d3663e2d8a530cc2ab8fe5ba1afa66374534a1dea23284"
+          },
+          {
+            "key": "parent_process",
+            "value": "services.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.41"
+          },
+          {
+            "key": "publisher",
+            "value": "Example Software Ltd"
+          },
+          {
+            "key": "commandline",
+            "value": "/silent"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791859939000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104275",
+      "title": "Airlock Untrusted Execution [OTP]: profiler",
+      "summary": "/Applications/Example Profiler.app/Contents/MacOS/profiler",
+      "target_host_name": "mac-eng-07.example.com",
+      "host_id": "mac-eng-07.example.com",
+      "target_user_name": "amy",
+      "severity": "LOW",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Untrusted Execution [OTP]"
+          },
+          {
+            "key": "policy_group",
+            "value": "Apple Mac"
+          },
+          {
+            "key": "policy_version",
+            "value": "v486"
+          },
+          {
+            "key": "image_path",
+            "value": "/Applications/Example Profiler.app/Contents/MacOS/profiler"
+          },
+          {
+            "key": "sha256",
+            "value": "09bca72ec56d2d1040eabc2967f2bbf3063929551d7e3f7960ffdbb6e2b4e6ef"
+          },
+          {
+            "key": "parent_process",
+            "value": "launchd"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.57"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "AIRLOCK_DIGITAL_JSON_PARENT > AIRLOCK_DIGITAL_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "Airlock Digital",
+      "event_time_usec": 1791860756000000,
+      "event_time_fidelity": "MICRO",
+      "vendor": "Airlock Digital",
+      "alert_category": "Application Control",
+      "alert_id": "104281",
+      "title": "Airlock Untrusted Execution [Audit]: notes_reader.exe",
+      "summary": "C:\\Users\\bwong\\Downloads\\notes_reader.exe",
+      "target_host_name": "WS-OPS-057",
+      "host_id": "WS-OPS-057",
+      "target_user_name": "CORP\\bwong",
+      "severity": "LOW",
+      "action": "SUCCEEDED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "execution_type",
+            "value": "Untrusted Execution [Audit]"
+          },
+          {
+            "key": "policy_group",
+            "value": "Workstations"
+          },
+          {
+            "key": "policy_version",
+            "value": "4646.3819"
+          },
+          {
+            "key": "image_path",
+            "value": "C:\\Users\\bwong\\Downloads\\notes_reader.exe"
+          },
+          {
+            "key": "sha256",
+            "value": "83d12d5ffc1d2eed8daa4dd14e296e85ae539a032ad812e3885857d63e2dc02d"
+          },
+          {
+            "key": "parent_process",
+            "value": "explorer.exe"
+          },
+          {
+            "key": "local_ip",
+            "value": "192.0.2.58"
+          }
+        ]
+      }
+    }
   }
 ]

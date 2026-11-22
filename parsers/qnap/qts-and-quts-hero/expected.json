@@ -264,5 +264,125 @@
       "event_time_usec": 1791972005000000,
       "host_id": "nas01"
     }
+  },
+  {
+    "line": 14,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972131000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/Reports/budget-2027.xlsx.encrypted",
+      "action": "Rename",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972132000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Projects/plans/site-map.pdf.deadbolt",
+      "action": "Rename",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972134000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/Reports/RESTORE_FILES_INFO.txt",
+      "action": "Add",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972135000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Projects/plans/HOW_TO_DECRYPT.txt",
+      "action": "Write",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972140000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Finance/@Recycle/old-budget.xlsx",
+      "action": "Delete",
+      "process_username": "jsmith",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972242000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Projects/plans/draft-final.docx",
+      "action": "Rename",
+      "process_username": "akim",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972270000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Projects/locked-list-old.txt",
+      "action": "Rename",
+      "process_username": "akim",
+      "was_modification_allowed": true
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "QNAP_QULOG_SYSLOG_PARENT > QNAP_QULOG_SYSLOG_CHILD_FILEMOD",
+    "schema": "scwx.filemod",
+    "normalized": {
+      "sensor_type": "QNAP QuLog Center",
+      "event_time_usec": 1791972312000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "nas01",
+      "file_name": "Projects/plans/readme.txt",
+      "action": "Write",
+      "process_username": "akim",
+      "was_modification_allowed": true
+    }
   }
 ]

@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Yamaha RTX router admin access",
+  "vendor": "Yamaha",
+  "product": "RTX and NVR routers",
+  "parser": "parsers/yamaha/rtx-and-nvr-routers",
+  "schema": "scwx.auth",
+  "sensor_types": [
+    "Yamaha RTX"
+  ],
+  "volume": "None on a normal day. Each admin session that enters administrator mode makes one detection, each Telnet login one, and each lockout one.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/AuthSchema/",
+    "https://www.rtpro.yamaha.co.jp/RT/FAQ/Syslog/syslog-messages.html",
+    "https://www.rtpro.yamaha.co.jp/RT/docs/login-radius/index.html"
+  ],
+  "summary": "Three custom detection rules for Yamaha RTX and NVR routers, on the Auth records the library's Yamaha parsers write from the routers' login messages. They make a detection when someone enters administrator mode, signs in over Telnet, or gets a login type locked out after failed logins. Each rule matches sensor type Yamaha RTX only.",
+  "notes": "Setup:\n- Add the library's Yamaha RTX and NVR router parsers and keep syslog info on, which holds the login messages, first, then run the check-your-data search to see logins arrive.\n\nHow it works:\n- The parser writes administrator mode ('administrator' succeeded for ...) as action PRIVILEGE, and a login type locked out after failed logins (Login access from ... was restricted.) as an account lockout.\n- The Telnet rule takes successful Telnet logins only. Failed ones make none, since a router whose Telnet login faces the internet sees them all day.\n\nTuning:\n- If your admins still use Telnet inside the network, leave out their management address in the query itself, such as and source_address != '192.0.2.10'. A suppression rule would hide Sophos's detections for that address as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 10 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only the sample SSH and HTTP sign-ins that name a user, as an unseen user or address.\n\nKnown gaps:\n- The router doesn't log what was changed in administrator mode, so the rule shows that someone could change the router, not what they changed.\n- Serial logins name no address, so the case rule can't group them.",
+  "links": {
+    "case_rule": "rules/yamaha/yamaha-rtx-one-case-per-source-ip",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

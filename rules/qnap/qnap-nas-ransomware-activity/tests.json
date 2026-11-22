@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "QNAP file renamed with a ransomware extension": [7, 14, 15],
+    "QNAP ransom note written to a share": [16, 17],
+    "QNAP Recycle Bin files deleted": [18]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 19, 20, 21]
+}

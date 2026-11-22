@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: eset_protect_one_case_per_device
+title: ESET PROTECT, one case per device (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('ESET detected LSASS memory access', 'ESET HIPS blocked a High severity action', 'ESET Inspect rule at High severity')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' eset_protect_one_case_per_device')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: eset_protect_high_severity_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: eset_protect_high_severity_unofficial
+title: ESET PROTECT high severity detections (unofficial)
+description: Case for ESET PROTECT high severity detections custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - eset
+    type: SECURITY_INVESTIGATION
+    title: ESET PROTECT high severity detections on one device
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

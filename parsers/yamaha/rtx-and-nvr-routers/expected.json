@@ -608,5 +608,114 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 21,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792053012000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.44",
+      "target_host_name": "rtx01",
+      "logon_application_family": "TELNET",
+      "auth_system": "Yamaha RTX",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "TELNET"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792053040000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.44",
+      "target_host_name": "rtx01",
+      "logon_application_family": "TELNET",
+      "auth_system": "Yamaha RTX",
+      "action": "PRIVILEGE",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "TELNET"
+          },
+          {
+            "key": "administrator_mode",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 23,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792053182000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "203.0.113.61",
+      "target_host_name": "rtx01",
+      "logon_application_family": "TELNET",
+      "auth_system": "Yamaha RTX",
+      "action": "ACCOUNT",
+      "auth_category": "ACCOUNT_LOCK",
+      "action_result": "FAILED",
+      "failure_category": "ACCOUNT_LOCKED_OUT",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "TELNET"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 24,
+    "extractor_path": "YAMAHA_RTX_SYSLOG_PARENT > YAMAHA_RTX_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Yamaha RTX",
+      "event_time_usec": 1792053310000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "rtx01",
+      "source_address": "192.0.2.26",
+      "target_user_name": "akim",
+      "target_host_name": "rtx01",
+      "logon_application_family": "SSH",
+      "auth_system": "Yamaha RTX",
+      "action": "LOGON",
+      "auth_category": "ACCOUNT_LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "login_type",
+            "value": "SSH"
+          }
+        ]
+      }
+    }
   }
 ]

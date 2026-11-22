@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "ESET detected LSASS memory access": [8, 10],
+    "ESET HIPS blocked a High severity action": [7, 12],
+    "ESET Inspect rule at High severity": [11]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 9, 13, 14]
+}

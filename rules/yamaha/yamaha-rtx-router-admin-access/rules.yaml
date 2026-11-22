@@ -1,0 +1,37 @@
+# Custom detection rules for Yamaha RTX and NVR routers, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Yamaha RTX administrator mode entered
+    description: Someone entered administrator mode on a Yamaha RTX router, which lets them change its configuration, filters and VPN settings.
+    severity: medium
+    mitre:
+      - T1078.003
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'Yamaha RTX'
+        and action = 'PRIVILEGE'
+        and action_result = 'SUCCESS'
+  - name: Yamaha RTX login over Telnet
+    description: Someone signed in to a Yamaha RTX router over Telnet, which sends the password in clear text. From an address outside your network, it also means the router's Telnet login faces the internet.
+    severity: high
+    mitre:
+      - T1021
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'Yamaha RTX'
+        and logon_application_family = 'TELNET'
+        and action = 'LOGON'
+        and action_result = 'SUCCESS'
+  - name: Yamaha RTX login locked out
+    description: A Yamaha RTX router stopped taking logins of one type, such as Telnet or SSH, after too many failed logins. Someone may be guessing the password.
+    severity: medium
+    mitre:
+      - T1110
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'Yamaha RTX'
+        and auth_category = 'ACCOUNT_LOCK'

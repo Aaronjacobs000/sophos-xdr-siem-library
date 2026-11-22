@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Airlock Digital application control alerts",
+  "vendor": "Airlock Digital",
+  "product": "Application Control",
+  "parser": "parsers/airlock-digital/application-control",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Airlock Digital"
+  ],
+  "volume": "A few a week once the policies have settled: each blocklisted file, each blocked untrusted file in a user folder and each OTP makes one detection. Expect more during a roll-out, while users still run software the policy hasn't learned.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://www.airlockdigital.com/airlock-digital-siem",
+    "https://www.airlockdigital.com/airlock-blog/airlock-otp"
+  ],
+  "summary": "Three custom detection rules for Airlock Digital Application Control, on the third-party alert records the library's Airlock parsers write. They make a detection when a blocklisted file tries to run, when Airlock blocks an untrusted file in a user or temp folder, and when a one-time password lets an untrusted file run. Each rule matches sensor type Airlock Digital only.",
+  "notes": "Setup:\n- Add the library's Airlock Digital parsers and an external logging receiver in JSON form in the Airlock console, sending Generic Syslog to the data collector, first, then run the check-your-data search to see execution alerts arrive.\n\nHow it works:\n- The parser sends Airlock's blocked, blocklisted, audit mode and OTP executions to the third-party alert schema, titled with Airlock's execution type and the file name, such as Airlock Blocklist Execution: psexec.exe.\n- The blocklist rule takes Blocklist executions, blocked or in audit mode. A blocklisted file that ran in audit mode wasn't stopped.\n- The user folder rule takes blocked executions of files under C:\\Users, a Temp folder, /Users or /tmp. A blocked file elsewhere, such as an updater in Program Files, makes none.\n- The OTP rule takes executions an OTP allowed. Untrusted files that ran only because a policy is in audit mode make none, since there are many while a policy is built.\n\nTuning:\n- If one file is blocked every day on purpose, leave it out in the query itself, such as and summary !contains 'notes_reader.exe'. A suppression rule would hide Sophos's detections for those computers as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 9 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on these events.\n- Airlock's JSON lines posted to HTTP Ingest on their own were stored as Generic, with only the value of their event key kept, and no parser saw them. With a syslog header in front, as the data collector receives Generic Syslog, every line reached the parsers, so the lab sent them that way.\n\nKnown gaps:\n- Policy changes and server activity go to ManagementEvent, and executions Airlock allowed go to Process, so they have no rule here.\n- An OTP is issued in the Airlock console, which these records don't show: the detection names the file and computer, not who issued the OTP.",
+  "links": {
+    "case_rule": "rules/airlock-digital/airlock-digital-one-case-per-host",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
