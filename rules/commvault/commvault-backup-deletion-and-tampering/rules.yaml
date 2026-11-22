@@ -1,0 +1,34 @@
+# Custom detection rules for Commvault, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Commvault backup data deleted
+    description: "Someone deleted or erased Commvault backup data: a backup set, a storage policy or its copy, a snapshot, a library, a mount path, media or a client. Ransomware crews delete backups before they encrypt, so restores fail."
+    severity: high
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Commvault'
+        and operation_name in ('Delete Backup Set', 'Erase Backup Data', 'Delete Storage Policy', 'Delete Storage Policy Copy', 'Delete Snapshot', 'Force Delete Snapshot', 'Delete a Library', 'Delete a Mount Path', 'Delete Media', 'Delete Disk Media Content', 'Hard Delete Client', 'Hard Delete iDataAgent')
+  - name: Commvault backups turned off or all jobs stopped
+    description: Someone turned off backups for a storage policy copy, turned off a schedule policy, or killed or suspended all jobs. Ransomware crews stop backups before they encrypt.
+    severity: high
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Commvault'
+        and operation_name in ('Disable Backups for Storage Policy Copy', 'Disable Schedule Policy', 'Kill All Jobs', 'Suspend All Jobs')
+  - name: Commvault ransomware protection blocked a process
+    description: Commvault's ransomware protection stopped a process from writing to backup storage on a MediaAgent. Something on that MediaAgent tried to change backup data.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Commvault'
+        and operation_name = 'Ransomware protection detected unauthorized access'

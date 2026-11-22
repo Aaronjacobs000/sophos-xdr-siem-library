@@ -1,0 +1,34 @@
+# Custom detection rules for PingOne, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: PingOne role assigned
+    description: Someone assigned a PingOne role, such as Environment Admin, to a user or an app. An attacker who gets into the identity provider gives an account they control an admin role, so it keeps access after the password is reset.
+    severity: high
+    mitre:
+      - T1098.003
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'PingOne'
+        and event_name = 'ROLE_ASSIGNMENT.CREATED'
+  - name: PingOne identity provider added or changed
+    description: Someone added or changed an external identity provider in PingOne. An identity provider an attacker controls lets them sign in as your users without their passwords or MFA.
+    severity: high
+    mitre:
+      - T1484.002
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'PingOne'
+        and event_name in ('IDENTITY_PROVIDER.CREATED', 'IDENTITY_PROVIDER.UPDATED')
+  - name: PingOne MFA policy changed
+    description: Someone changed PingOne's MFA settings or an MFA policy (an Auth Method Policy), or deleted one. Weakening MFA keeps a stolen password useful.
+    severity: medium
+    mitre:
+      - T1556.006
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'PingOne'
+        and event_name in ('MFA_SETTINGS.UPDATED', 'DEVICE_AUTHENTICATION_POLICY.UPDATED', 'DEVICE_AUTHENTICATION_POLICY.DELETED')

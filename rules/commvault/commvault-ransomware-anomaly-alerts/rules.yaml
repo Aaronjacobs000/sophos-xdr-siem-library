@@ -1,0 +1,14 @@
+# Custom detection rules for Commvault, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Commvault detected a ransomware anomaly
+    description: Commvault found a file activity or file type anomaly in a backup job, its sign that files on the client were encrypted. The files that job backed up may already be encrypted, so restore from a job before it.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Commvault'
+        and alert_category = 'Anomaly detection'

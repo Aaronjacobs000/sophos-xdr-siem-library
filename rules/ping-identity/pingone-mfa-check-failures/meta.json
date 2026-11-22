@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "PingOne MFA check failures",
+  "vendor": "Ping Identity",
+  "product": "PingOne",
+  "parser": "parsers/ping-identity/pingone",
+  "schema": "scwx.auth",
+  "sensor_types": [
+    "PingOne"
+  ],
+  "volume": "A few a day in a large environment, since people mistype one-time passcodes. Several for one user in a short time means someone else is trying that user's password.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/AuthSchema/",
+    "https://developer.pingidentity.com/pingone-api/platform/reference/audit-reporting-events.html",
+    "https://docs.pingidentity.com/pingone/integrations/p1_create_webhook.html"
+  ],
+  "summary": "One custom detection rule for PingOne, on the Auth records the library's PingOne parsers write from PingOne's audit activities. It makes a detection when a sign-on fails its MFA check: a wrong one-time passcode, a rejected push or a failed security key check. It matches sensor type PingOne only.",
+  "notes": "Setup:\n- Add the library's PingOne parsers and point a PingOne webhook at HTTP Ingest first, as the parser entry's README says, then run the check-your-data search to see audit activities arrive.\n\nHow it works:\n- The parsers write a failed OTP.CHECK, ASSERTION.CHECK or PUSH_BIOMETRICS.REJECTED activity with failure category INCORRECT_MFA, and the rule takes that category.\n- The case rule puts each user's failures in one case, so many failures for one user show as one case with many detections.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 10 records agreed: 8 sample lines, and the two events of the sample JSON array, which HTTP Ingest stored as one record each. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-on, as an unseen user, address or application.\n\nKnown gaps:\n- Rules can't count, so each failure is its own detection.\n- Password failures, lockouts and sign-ins from new places aren't taken: Sophos's own sign-in detections cover those.",
+  "links": {
+    "case_rule": "rules/ping-identity/pingone-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

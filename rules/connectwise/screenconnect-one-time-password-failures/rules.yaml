@@ -1,0 +1,14 @@
+# Custom detection rules for ConnectWise ScreenConnect, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: ScreenConnect one-time password failed
+    description: Someone signed in to ScreenConnect with the right password and a wrong one-time password. A technician account reaches every machine the instance manages, so check who else has its password.
+    severity: medium
+    mitre:
+      - T1078
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'ConnectWise ScreenConnect'
+        and failure_category = 'INCORRECT_MFA'

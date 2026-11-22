@@ -1,0 +1,17 @@
+# Custom detection rules for Huawei USG and HiSecEngine firewalls, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Huawei USG web admin login from outside
+    description: Someone signed in to a Huawei USG or HiSecEngine firewall's web admin from an address outside the private ranges. An admin interface that faces the internet is a way in, and attackers who get a firewall's admin password sign in this way.
+    severity: high
+    mitre:
+      - T1133
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'Huawei USG'
+        and auth_system = 'Huawei USG web management'
+        and action = 'LOGON'
+        and action_result = 'SUCCESS'
+        and not (source_address matches_regex '^(10|127)\.|^192\.168\.|^172\.(1[6-9]|2[0-9]|3[01])\.')

@@ -1,0 +1,38 @@
+{
+  "kind": "detection",
+  "title": "BeyondTrust API and user changes",
+  "vendor": "BeyondTrust",
+  "product": "Privileged Remote Access and Remote Support",
+  "parser": "parsers/beyondtrust/privileged-remote-access-and-remote-support",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "BeyondTrust Secure Remote Access"
+  ],
+  "volume": "None on a normal day. Each rule takes one admin change, a few a month where admins add technicians.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://docs.beyondtrust.com/pra/docs/events",
+    "https://docs.beyondtrust.com/pra/docs/fields",
+    "https://docs.beyondtrust.com/rs/docs/events"
+  ],
+  "summary": "Three custom detection rules for BeyondTrust Privileged Remote Access and Remote Support, on the ManagementEvent records the library's BeyondTrust parsers write from the appliance syslog. They make a detection when someone turns on the API, adds or changes an API account, or adds a local user. Each rule matches sensor type BeyondTrust Secure Remote Access only.",
+  "notes": "Setup:\n- Add the library's BeyondTrust parsers and send the appliance syslog to the data collector first, then run the check-your-data search to see events arrive.\n\nHow it works:\n- In the US Treasury breach of December 2024, attackers used a stolen BeyondTrust Remote Support SaaS API key to reset local application passwords. These rules take the changes that set up that kind of access.\n- The parsers write each syslog event's name, such as api_account_added, as the operation name and the whole field list as the operation.\n- The API account rule takes api_account_added and api_account_changed. The user rule takes user_added. Both are in BeyondTrust's list of syslog events.\n- The API setting rule takes a setting_changed event whose field list sets new_api to 1.\n\nTuning:\n- If an admin account adds users every day, leave it out in the query itself, such as and username != 'provisioning'. A suppression rule would hide Sophos's detections for that site as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on any of the three; sent again about 30 minutes after, they did.\n- Data Lake Search warned that operation's value will never match the enum values ADDED, MODIFIED, REMOVED and UNKNOWN, and returned the sample line all the same. The live rule fired on it too.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- BeyondTrust's docs list setting_changed but not each setting's field name, so the API setting rule matches the sample's new_api=1. Change a test setting and read the syslog line before you rely on it.\n- The appliance syslog has no API calls or session activity, so an API key already in an attacker's hands, used as it is, makes none of these detections.",
+  "links": {
+    "case_rule": "rules/beyondtrust/beyondtrust-one-case-per-site",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "PingOne role assigned": [7],
+    "PingOne identity provider added or changed": [14],
+    "PingOne MFA policy changed": [15]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
+}

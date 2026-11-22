@@ -1011,5 +1011,33 @@
         ]
       }
     }
+  },
+  {
+    "line": 22,
+    "extractor_path": "HUAWEI_USG_SYSLOG_PARENT > HUAWEI_USG_SYSLOG_CHILD_AUTH",
+    "schema": "scwx.auth",
+    "normalized": {
+      "sensor_type": "Huawei USG",
+      "event_time_usec": 1792057580000000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "WEBM/6/LOGINSUCC",
+      "host_id": "fw01.example.com",
+      "target_user_name": "admin",
+      "source_address": "203.0.113.88",
+      "target_host_name": "fw01.example.com",
+      "auth_system": "Huawei USG web management",
+      "logon_application_family": "Web",
+      "auth_category": "ACCOUNT_LOGON",
+      "action": "LOGON",
+      "action_result": "SUCCESS",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "log_name",
+            "value": "WEBM/6/LOGINSUCC"
+          }
+        ]
+      }
+    }
   }
 ]

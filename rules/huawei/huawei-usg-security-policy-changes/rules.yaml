@@ -1,0 +1,16 @@
+# Custom detection rules for Huawei USG and HiSecEngine firewalls, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Huawei USG policy rule allows RDP or SMB
+    description: Someone added or changed a security policy rule on a Huawei USG or HiSecEngine firewall that permits RDP or SMB. Ransomware crews get in over RDP and move between machines over SMB, so check where the rule lets them come from.
+    severity: high
+    mitre:
+      - T1562.004
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Huawei USG'
+        and operation_name in ('security policy rule added', 'security policy rule modified')
+        and operation contains 'action=permit'
+        and (operation contains 'service-name=rdp' or operation contains 'application-name=rdp' or operation contains 'service-name=smb' or operation contains 'application-name=smb')

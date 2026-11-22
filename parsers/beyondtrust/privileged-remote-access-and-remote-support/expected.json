@@ -258,5 +258,21 @@
       "source_address": "198.51.100.61",
       "target_hostname": "access.example.com"
     }
+  },
+  {
+    "line": 16,
+    "extractor_path": "BEYONDTRUST_SRA_SYSLOG_PARENT > BEYONDTRUST_SRA_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "BeyondTrust Secure Remote Access",
+      "sensor_id": "pra01.example.com",
+      "event_time_usec": 1791855785000000,
+      "event_time_fidelity": "MICRO",
+      "operation_name": "api_account_added",
+      "operation": "event=api_account_added;new_enabled=1;new_ip_addresses=0.0.0.0/0;new_name=Integration Sync;new_permissions:command=full_access;site=access.example.com;when=1791855785;who=Sam Admin(sadmin) using password;who_ip=198.51.100.61",
+      "username": "sadmin",
+      "source_address": "198.51.100.61",
+      "target_hostname": "access.example.com"
+    }
   }
 ]

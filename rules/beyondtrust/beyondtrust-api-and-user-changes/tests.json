@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "BeyondTrust API turned on": [8],
+    "BeyondTrust API account added or changed": [16],
+    "BeyondTrust local user added": [7]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15]
+}

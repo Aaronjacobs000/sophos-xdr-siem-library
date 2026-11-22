@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "Huawei USG IPS botnet alerts",
+  "vendor": "Huawei",
+  "product": "USG and HiSecEngine Firewalls",
+  "parser": "parsers/huawei/usg-and-hisecengine-firewalls",
+  "schema": "scwx.nids",
+  "sensor_types": [
+    "Huawei USG"
+  ],
+  "volume": "None on a normal day. An infected host beacons on a schedule, so expect several an hour from it, all in its case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/NIDSSchema/",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_IPS_DETECT_4.html"
+  ],
+  "summary": "One custom detection rule for Huawei USG and HiSecEngine firewalls, on the NIDS records the library's Huawei USG parsers write from IPS logs. It makes a detection when the firewall's IPS sees botnet command and control traffic or a botnet domain lookup. It matches sensor type Huawei USG only.",
+  "notes": "Setup:\n- Add the library's Huawei USG and HiSecEngine parsers and send the firewall's info-center logs to the data collector first, then run the check-your-data search to see logs arrive.\n- Turn on IPS with botnet detection in the security policies that cover outbound traffic.\n\nHow it works:\n- IPS/4/BOTNET logs, and IPS/4/DOMAIN logs of the Botnet category, both carry the classification Botnet, and the rule takes that classification, blocked or not.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on line 8; sent again about 30 minutes after, they did.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- Other IPS detections, such as an attack on a server, aren't taken.\n- A beacon the IPS has no signature for makes none.",
+  "links": {
+    "case_rule": "rules/huawei/huawei-usg-one-case-per-inside-host",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+# Custom detection rules for ConnectWise ScreenConnect, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: ScreenConnect command added a local account
+    description: A command queued through a ScreenConnect session added a local account or put one in a local group, with net user /add, net localgroup /add, New-LocalUser or Add-LocalGroupMember. An attacker in ScreenConnect adds an account this way to keep access to the machine.
+    severity: high
+    mitre:
+      - T1136.001
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'ConnectWise ScreenConnect'
+        and operation_name = 'QueuedCommand'
+        and (((command contains 'net user' or command contains 'net1 user' or command contains 'localgroup') and command contains '/add') or command contains 'new-localuser' or command contains 'add-localgroupmember')
+  - name: ScreenConnect sent an executable to a machine
+    description: "A ScreenConnect session sent a program or script to a machine: a file whose name holds .exe, .dll, .msi, .ps1, .bat, .cmd, .vbs, .hta or .scr. Payloads and second remote access tools arrive this way."
+    severity: medium
+    mitre:
+      - T1105
+      - T1219
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'ConnectWise ScreenConnect'
+        and operation_name = 'SentFiles'
+        and (result contains '.exe' or result contains '.dll' or result contains '.msi' or result contains '.ps1' or result contains '.bat' or result contains '.cmd' or result contains '.vbs' or result contains '.hta' or result contains '.scr')

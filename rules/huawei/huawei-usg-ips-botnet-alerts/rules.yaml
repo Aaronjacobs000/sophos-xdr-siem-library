@@ -1,0 +1,14 @@
+# Custom detection rules for Huawei USG and HiSecEngine firewalls, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Huawei USG IPS caught botnet traffic
+    description: A Huawei USG or HiSecEngine firewall's IPS saw botnet command and control traffic, or a lookup of a botnet domain, whether it blocked it or not. The host that sent it is probably infected.
+    severity: high
+    mitre:
+      - T1071
+    enabled_by_default: true
+    query: |-
+      from nids
+      where sensor_type = 'Huawei USG'
+        and classification = 'Botnet'

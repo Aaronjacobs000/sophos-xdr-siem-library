@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: huawei_usg_one_case_per_source_ip
+title: Huawei USG, one case per source IP (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Huawei USG web admin login from outside')
+append_filter: ""
+group_by:
+    - ${alertSourceIPs(inputs).map(ip, ip + ' huawei_usg_one_case_per_source_ip')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: huawei_usg_web_admin_login_from_outside_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: huawei_usg_web_admin_login_from_outside_unofficial
+title: Huawei USG web admin login from outside (unofficial)
+description: Case for Huawei USG web admin login from outside custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - huawei
+    type: SECURITY_INVESTIGATION
+    title: Huawei USG web admin logins from one outside address
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

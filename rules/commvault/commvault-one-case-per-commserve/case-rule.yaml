@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: commvault_one_case_per_commserve
+title: Commvault, one case per CommServe (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Commvault backup data deleted', 'Commvault backups turned off or all jobs stopped', 'Commvault ransomware protection blocked a process')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('sensorHostId:')).map(e, e.split(':')[1] + ' commvault_one_case_per_commserve')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: commvault_backup_deletion_and_tampering_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: commvault_backup_deletion_and_tampering_unofficial
+title: Commvault backup deletion and tampering (unofficial)
+description: Case for Commvault backup deletion and tampering custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - commvault
+    type: SECURITY_INVESTIGATION
+    title: Commvault backup deletion and tampering on one CommServe
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

@@ -1,0 +1,35 @@
+# Custom detection rules for BeyondTrust Privileged Remote Access and Remote Support, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: BeyondTrust API turned on
+    description: Someone turned on BeyondTrust's API in the site's settings. An API key lets a script do what an admin can, without the admin's sign-in or MFA.
+    severity: high
+    mitre:
+      - T1133
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'BeyondTrust Secure Remote Access'
+        and operation_name = 'setting_changed'
+        and operation contains 'new_api=1'
+  - name: BeyondTrust API account added or changed
+    description: Someone added or changed a BeyondTrust API account, which holds an OAuth client ID and secret and the APIs it may call. An attacker with one can reset passwords and reach every system the site manages.
+    severity: high
+    mitre:
+      - T1098.001
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'BeyondTrust Secure Remote Access'
+        and operation_name in ('api_account_added', 'api_account_changed')
+  - name: BeyondTrust local user added
+    description: Someone added a local user to BeyondTrust's /login or /appliance. An attacker with admin rights adds a user of their own to keep access.
+    severity: medium
+    mitre:
+      - T1136
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'BeyondTrust Secure Remote Access'
+        and operation_name = 'user_added'
