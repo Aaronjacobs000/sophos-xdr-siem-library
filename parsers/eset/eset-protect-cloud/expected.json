@@ -380,5 +380,232 @@
       "event_time_usec": 1791867600000000,
       "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70"
     }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791868814000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "sub_provider": "HIPS",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d50",
+      "alert_category": "HIPS",
+      "title": "Suspicious process memory access",
+      "summary": "Suspicious process memory access: Attempt to read the memory of lsass.exe.",
+      "target_host_name": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "source_user_name": "EXAMPLE\\akim",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70"
+          },
+          {
+            "key": "type_name",
+            "value": "HIPS"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Users\\Public\\svc\\mem.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\Windows\\System32\\lsass.exe"
+          },
+          {
+            "key": "response",
+            "value": "Blocked"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791869500000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d51",
+      "alert_category": "CORRELATION_RULE",
+      "title": "Volume shadow copies deleted",
+      "summary": "Volume shadow copies deleted: vssadmin.exe deleted the volume shadow copies.",
+      "target_host_name": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "source_user_name": "EXAMPLE\\mpatel",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9"
+          },
+          {
+            "key": "type_name",
+            "value": "Correlation rule"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\System32\\vssadmin.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\Windows\\System32\\vssadmin.exe"
+          },
+          {
+            "key": "file_sha1",
+            "value": "33dfba4a31fd97cb42db13312eac224157107a9a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791869582000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "sub_provider": "HIPS",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d52",
+      "alert_category": "HIPS",
+      "title": "Attempt to terminate a protected process",
+      "summary": "Attempt to terminate a protected process: Attempt to terminate a protected security service.",
+      "target_host_name": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9",
+      "source_user_name": "NT AUTHORITY\\SYSTEM",
+      "vendor_severity": "HIGH",
+      "severity": "HIGH",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "0e1d2c3b-4a59-4687-b6c5-d4e3f2a1b0c9"
+          },
+          {
+            "key": "type_name",
+            "value": "HIPS"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Users\\Public\\svc\\updater.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\Program Files\\ESET\\ESET Security\\ekrn.exe"
+          },
+          {
+            "key": "response",
+            "value": "Blocked"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791870051000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d53",
+      "alert_category": "CORRELATION_RULE",
+      "title": "Scheduled task created by a script",
+      "summary": "Scheduled task created by a script: A script host created a scheduled task.",
+      "target_host_name": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "source_user_name": "EXAMPLE\\akim",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70"
+          },
+          {
+            "key": "type_name",
+            "value": "Correlation rule"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Windows\\System32\\schtasks.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\Windows\\System32\\schtasks.exe"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ESET_CONNECT_JSON_PARENT > ESET_CONNECT_JSON_CHILD_THIRDPARTYALERT",
+    "schema": "scwx.thirdpartyalert",
+    "normalized": {
+      "sensor_type": "ESET PROTECT",
+      "event_time_usec": 1791870330000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "vendor": "ESET",
+      "provider": "ESET PROTECT",
+      "sub_provider": "HIPS",
+      "alert_id": "b6f1c2d3-e4a5-4b6c-8d7e-9f0a1b2c3d54",
+      "alert_category": "HIPS",
+      "title": "Change to a protected file",
+      "summary": "Change to a protected file: Attempt to modify a file in a protected folder.",
+      "target_host_name": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70",
+      "source_user_name": "EXAMPLE\\akim",
+      "vendor_severity": "MEDIUM",
+      "severity": "MEDIUM",
+      "action": "BLOCKED",
+      "additional_data": {
+        "record": [
+          {
+            "key": "device_uuid",
+            "value": "5f2c1a7e-8b3d-4e6f-9a01-2b3c4d5e6f70"
+          },
+          {
+            "key": "type_name",
+            "value": "HIPS"
+          },
+          {
+            "key": "process_path",
+            "value": "C:\\Program Files\\Example Sync\\sync.exe"
+          },
+          {
+            "key": "object_name",
+            "value": "C:\\ProgramData\\Example\\config.ini"
+          },
+          {
+            "key": "response",
+            "value": "Blocked"
+          }
+        ]
+      }
+    }
   }
 ]

@@ -18,3 +18,7 @@
 <13>1 2026-10-15T08:20:00+09:00 rtx1220-01 - - - - LAN2 Rejected at IN(10) filter: TCP 203.0.113.5:40122 > 192.0.2.1:23
 <14>Oct 15 08:10:41 rtx01 [L2TP] TUNNEL[1] connected from 203.0.113.1
 <15>Oct 15 08:11:00 rtx01 [IKE] initiate ISAKMP phase to 203.0.113.9
+<14>Oct 15 08:30:12 rtx01 Login succeeded for TELNET: 203.0.113.44
+<14>Oct 15 08:30:40 rtx01 'administrator' succeeded for TELNET: 203.0.113.44
+<14>Oct 15 08:33:02 rtx01 Login access from TELNET was restricted. : 203.0.113.61
+<14>Oct 15 08:35:10 rtx01 Login succeeded for SSH: 192.0.2.26 akim

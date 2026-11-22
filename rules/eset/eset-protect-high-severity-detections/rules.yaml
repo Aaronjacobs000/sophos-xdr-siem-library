@@ -1,0 +1,36 @@
+# Custom detection rules for ESET PROTECT Cloud, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: ESET detected LSASS memory access
+    description: ESET saw a process read, or try to read, the memory of lsass.exe, which holds Windows sign-in secrets. Credential theft tools such as Mimikatz and procdump do this.
+    severity: high
+    mitre:
+      - T1003.001
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'ESET PROTECT'
+        and summary contains 'lsass'
+  - name: ESET HIPS blocked a High severity action
+    description: ESET's host intrusion prevention (HIPS) blocked something it rates High, such as a change to a protected registry key or an attempt to stop ESET itself.
+    severity: high
+    mitre: []
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'ESET PROTECT'
+        and alert_category in ('HIPS', 'HIPS_RULE')
+        and severity = 'HIGH'
+        and summary !contains 'lsass'
+  - name: ESET Inspect rule at High severity
+    description: An ESET Inspect correlation rule fired at High severity, such as one for deleted shadow copies.
+    severity: high
+    mitre: []
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'ESET PROTECT'
+        and alert_category = 'CORRELATION_RULE'
+        and severity = 'HIGH'
+        and summary !contains 'lsass'

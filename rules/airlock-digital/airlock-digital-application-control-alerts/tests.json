@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Airlock Digital caught a blocklisted file": [4, 10],
+    "Airlock Digital blocked an untrusted file in a user folder": [1, 11],
+    "Airlock Digital one-time password let an untrusted file run": [5, 13]
+  },
+  "quiet": [2, 3, 6, 7, 8, 9, 12, 14]
+}

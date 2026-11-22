@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "ESET PROTECT high severity detections",
+  "vendor": "ESET",
+  "product": "ESET PROTECT Cloud",
+  "parser": "parsers/eset/eset-protect-cloud",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "ESET PROTECT"
+  ],
+  "volume": "As many as ESET's own High severity HIPS and ESET Inspect detections, plus any that name lsass.exe: on a tuned ESET console, a few a week. Each ESET detection makes one.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://help.eset.com/eset_connect/en-US/incident_management_v1_detections_get.html"
+  ],
+  "summary": "Three custom detection rules for ESET PROTECT Cloud, on the third-party alert records the library's ESET parsers write from the ESET Connect API. They make a Sophos detection from ESET's detections of LSASS memory access, and from its High severity HIPS and ESET Inspect detections. Each rule matches sensor type ESET PROTECT only.",
+  "notes": "Setup:\n- Add the library's ESET PROTECT Cloud parsers and the example bridge in bridges/eset-connect first, then run the check-your-data search to see detections arrive.\n\nHow it works:\n- The parser sends ESET's HIPS, web access, suspicious activity and ESET Inspect detections to the third-party alert schema with ESET's category and severity, and the detection's name and circumstances as the summary.\n- The LSASS rule takes any of those detections that names lsass, whatever its category or severity. The other two leave those out, so each ESET detection makes one detection.\n- The HIPS rule takes HIPS and HIPS rule detections at ESET's High level, and the ESET Inspect rule takes correlation rule detections at High. ESET's Medium ones make none.\n- ESET's detection names the technique, and the API's record doesn't carry it, so those two rules list no MITRE technique.\n\nTuning:\n- To take ESET's Medium detections as well, change severity = 'HIGH' to severity in ('MEDIUM', 'HIGH'), and expect many more.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 8 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on these events.\n\nKnown gaps:\n- Antivirus detections, ransomware included, go to the Antivirus schema and network attacks to NIDS, so they have no rule here.\n- A detection names its device by UUID only, so its detections and cases carry the UUID, not the device name.",
+  "links": {
+    "case_rule": "rules/eset/eset-protect-one-case-per-device",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

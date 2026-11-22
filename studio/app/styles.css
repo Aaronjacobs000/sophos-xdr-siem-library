@@ -333,7 +333,9 @@ dialog::backdrop { background: rgba(0, 26, 71, .45); }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button.on { background: var(--blue); color: #fff; }
 .seg button .n { font-weight: 500; opacity: .75; margin-left: 4px; }
-.filterbar .sortpick { flex: none; }
+.filterbar .sortpick { flex: none; max-width: 100%; }
+.filterbar .sortsel { min-width: 0; max-width: 100%; }
+@media (max-width: 359px) { .seg button { padding: 7px 7px; font-size: 13px; } }
 .resultline { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
 .card .query { font-family: var(--mono); font-size: 12px; color: var(--charcoal); background: var(--line-soft); border-radius: 5px; padding: 5px 7px; overflow-wrap: anywhere; }
 .rules { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); align-items: start; }

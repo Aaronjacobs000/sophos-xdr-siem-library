@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: airlock_one_case_per_host
+title: Airlock Digital, one case per host (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Airlock Digital caught a blocklisted file', 'Airlock Digital blocked an untrusted file in a user folder', 'Airlock Digital one-time password let an untrusted file run')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' airlock_one_case_per_host')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: airlock_application_control_alerts_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: airlock_application_control_alerts_unofficial
+title: Airlock Digital application control alerts (unofficial)
+description: Case for Airlock Digital application control alerts custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - airlock-digital
+    type: SECURITY_INVESTIGATION
+    title: Airlock Digital application control alerts on one host
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

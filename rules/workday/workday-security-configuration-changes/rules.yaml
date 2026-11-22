@@ -1,0 +1,47 @@
+# Custom detection rules for Workday user activity, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Workday security group changed
+    description: Someone created, edited or added members to a Workday security group. Groups decide what people and integrations can see and change, and adding someone to a group that already has permissions takes effect at once.
+    severity: medium
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Workday User Activity'
+        and event_type = 'WRITE'
+        and event_name contains 'Security Group'
+  - name: Workday API client registered
+    description: Someone registered a Workday API client, which gives a program its own way in to Workday's APIs. Check the person and the integration meant to do it.
+    severity: high
+    mitre:
+      - T1098.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Workday User Activity'
+        and event_type = 'WRITE'
+        and event_name contains 'Register API Client'
+  - name: Workday tenant security setup changed
+    description: Someone changed Edit Tenant Setup - Security, which holds the tenant's sign-in and password settings.
+    severity: high
+    mitre:
+      - T1556
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Workday User Activity'
+        and event_type = 'WRITE'
+        and event_name = 'Edit Tenant Setup - Security'
+  - name: Workday security policy changes activated
+    description: Someone ran Activate Pending Security Policy Changes, which puts every pending security policy change live at once. Workday keeps the task in its own domain, so the people who edit policies don't also activate them.
+    severity: medium
+    mitre:
+      - T1484
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Workday User Activity'
+        and event_name = 'Activate Pending Security Policy Changes'

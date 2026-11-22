@@ -1,0 +1,36 @@
+# Custom detection rules for Airlock Digital Application Control, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Airlock Digital caught a blocklisted file
+    description: A file on an Airlock blocklist tried to run, and Airlock blocked it, or let it run because the computer's policy is in audit mode. A blocklist holds files you decided must never run, such as remote admin and file transfer tools.
+    severity: high
+    mitre:
+      - T1204.002
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Airlock Digital'
+        and title contains 'Blocklist'
+  - name: Airlock Digital blocked an untrusted file in a user folder
+    description: Airlock blocked a file it doesn't trust from running out of a user's profile or a temp folder, such as Downloads or AppData. A phishing download or a dropper's payload starts there.
+    severity: medium
+    mitre:
+      - T1204.002
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Airlock Digital'
+        and action = 'BLOCKED'
+        and title !contains 'Blocklist'
+        and (summary contains ':\Users' or summary contains '\Temp' or summary contains '/Users/' or summary contains '/tmp/')
+  - name: Airlock Digital one-time password let an untrusted file run
+    description: Someone used an Airlock one-time password (OTP) to run a file the policy would have blocked. An OTP lifts application control on that computer for a while, so check who asked for it and what ran.
+    severity: medium
+    mitre:
+      - T1562.001
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Airlock Digital'
+        and title contains '[OTP]'

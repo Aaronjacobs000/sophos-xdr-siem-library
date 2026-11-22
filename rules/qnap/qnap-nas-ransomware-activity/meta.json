@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "QNAP NAS ransomware activity",
+  "vendor": "QNAP",
+  "product": "QTS and QuTS hero",
+  "parser": "parsers/qnap/qts-and-quts-hero",
+  "schema": "scwx.filemod",
+  "sensor_types": [
+    "QNAP QuLog Center"
+  ],
+  "volume": "None on a normal day. A ransomware run on a share makes one detection for each file it renames and each note it writes, so expect hundreds in minutes, all in one case for the NAS. An admin emptying a share's Recycle Bin over the network makes one detection per file.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/FileModSchema/",
+    "https://www.qnap.com/en/how-to/faq/article/what-kind-of-syslog-format-can-qnap-nas-receive-and-send",
+    "https://www.qnap.com/en/security-advisory/qsa-22-21"
+  ],
+  "summary": "Three custom detection rules for QNAP QTS and QuTS hero, on the FileMod records the library's QNAP parsers write from QuLog Center's access log. They make a detection when a file on a share is renamed to a ransomware extension, a ransom note is written to a share, or files are deleted from a share's Recycle Bin. Each rule matches sensor type QNAP QuLog Center only.",
+  "notes": "Setup:\n- Add the library's QNAP QTS and QuTS hero parsers and send QuLog Center's access log to the data collector first, then run the check-your-data search to see file changes arrive.\n- QuLog logs file changes only for the connection types you pick under Access Log Settings, so turn on the ones people reach shares with, such as Samba and FTP.\n\nHow it works:\n- QuLog's access log writes one line for each file change, and the parser writes the path as the file name, the new path for a rename.\n- The extension rule takes renames to .locked, .encrypted, .encrypt, .deadbolt and .checkmate, extensions DeadBolt, eCh0raix, Checkmate and other ransomware give encrypted files. A name that only contains one of them, such as locked-list-old.txt, makes none.\n- The ransom note rule takes new or written files with DECRYPT, RESTORE_FILES, RECOVER_FILES or RANSOM in the name, in any case. Checkmate's note, !CHECKMATE_DECRYPTION_README, is one (QNAP advisory QSA-22-21).\n- The Recycle Bin rule takes deletes under a share's @Recycle folder, where the Network Recycle Bin keeps deleted files.\n\nTuning:\n- If an app keeps files with one of these names on a share, leave its folder out in the query itself, such as and file_name !contains 'Apps/keystore/'. A suppression rule would hide Sophos's detections for that NAS as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 12 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user or address.\n\nKnown gaps:\n- These rules see file changes made over a connection QuLog logs. Ransomware that runs on the NAS itself, as DeadBolt did, may change files without one, so watch the NAS's sign-ins and its own security alerts too.\n- Qlocker moved files into 7z archives instead of renaming them, which these rules don't take.\n- Rules can't count, so a big run makes one detection per file. Sophos turns off a rule that makes over 5,000 detections in an hour, so after a big run check the rule is still on.",
+  "links": {
+    "case_rule": "rules/qnap/qnap-one-case-per-nas",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

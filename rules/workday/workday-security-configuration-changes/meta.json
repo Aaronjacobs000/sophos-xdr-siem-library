@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Workday security configuration changes",
+  "vendor": "Workday",
+  "product": "Workday user activity",
+  "parser": "parsers/workday/workday-user-activity",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Workday User Activity"
+  ],
+  "volume": "A few a week. Each rule takes one activity entry for one admin task. Security group changes are the busiest, during a security project or when HR partners change.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://doc.workday.com/admin-guide/en-us/manage-workday/tenant-configuration/user-activity-logging/unv1636547598141.html",
+    "https://doc.workday.com/workday-education/en-us/course-manuals/security-for-administrators/security-policy-configuration-and-activation.html"
+  ],
+  "summary": "Four custom detection rules for Workday, on the CloudAudit records the library's Workday parser writes from the user activity log. They make a detection when someone changes a security group, registers an API client, changes the tenant's security setup or activates pending security policy changes. Each rule matches sensor type Workday User Activity only.",
+  "notes": "Setup:\n- Add the library's Workday user activity parser and the example bridge in bridges/workday-user-activity first, then run the check-your-data search to see activity arrive.\n\nHow it works:\n- The parser writes the task's name as the event name and Workday's activity category as the event type, so the rules take WRITE entries for the security tasks by name.\n- The security group rule takes any task with Security Group in its name that changed data, such as Edit Integration System Security Group (Unconstrained) or Assign Users to User-Based Security Group. Views of security groups make none.\n- The API client rule takes Register API Client and Register API Client for Integrations.\n\nTuning:\n- If one admin manages security groups as their job, leave them out in the query itself, such as and user_name != 'secadmin'. A suppression rule would hide Sophos's detections for that user as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 14 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on these events.\n\nKnown gaps:\n- The log holds no sign-ins, so a change made from a stolen session looks the same as the admin's own.\n- The bridge polls the log, so detections arrive up to one poll interval after the change.",
+  "links": {
+    "case_rule": "rules/workday/workday-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

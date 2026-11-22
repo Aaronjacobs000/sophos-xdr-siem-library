@@ -1,0 +1,37 @@
+# Custom detection rules for QNAP QTS and QuTS hero, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: QNAP file renamed with a ransomware extension
+    description: Someone renamed a file on a QNAP share to an extension ransomware gives the files it encrypts, such as .locked, .encrypted, .deadbolt or .checkmate. Ransomware on a PC encrypts the shares it can reach as the signed-in user, so check that user's computer first.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from filemod
+      where sensor_type = 'QNAP QuLog Center'
+        and action = 'Rename'
+        and (file_name matches '*.locked' or file_name matches '*.encrypted' or file_name matches '*.encrypt' or file_name matches '*.deadbolt' or file_name matches '*.checkmate')
+  - name: QNAP ransom note written to a share
+    description: "Someone added or wrote a file on a QNAP share with a name ransom notes use: DECRYPT, RESTORE_FILES, RECOVER_FILES or RANSOM. Ransomware leaves a note in each folder it encrypts."
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from filemod
+      where sensor_type = 'QNAP QuLog Center'
+        and action in ('Add', 'Write')
+        and (file_name contains 'decrypt' or file_name contains 'restore_files' or file_name contains 'recover_files' or file_name contains 'ransom')
+  - name: QNAP Recycle Bin files deleted
+    description: Someone deleted files from a share's Network Recycle Bin, the @Recycle folder, over the network. Ransomware empties it so the files it deleted can't be brought back.
+    severity: medium
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from filemod
+      where sensor_type = 'QNAP QuLog Center'
+        and action = 'Delete'
+        and file_name contains '@Recycle'
