@@ -180,6 +180,17 @@ test('the scan lets Tenable.ad and Trellix ::~~ line breaks through', () => {
   assert.deepEqual(kinds('next hop beef:: via eth0'), ['ip']);
 });
 
+test('the scan checks an IPv4 address right after a colon, and the IPv4-mapped form', () => {
+  assert.deepEqual(kinds('IP:10.20.0.5'), ['ip']);
+  assert.deepEqual(kinds('SRC:8.8.4.4'), ['ip']);
+  assert.deepEqual(kinds('IP:192.0.2.5'), []);
+  assert.deepEqual(kinds('client ::ffff:10.20.0.5'), ['ip']);
+  assert.deepEqual(kinds('client 0:0:0:0:0:FFFF:192.168.1.4'), ['ip']);
+  assert.deepEqual(kinds('client ::ffff:203.0.113.5'), []);
+  // The last 32 bits of another IPv6 address are left to the IPv6 check, as before.
+  assert.deepEqual(kinds('v6=2001:db8::192.0.2.1 v6b=2001:db8::10.20.0.5'), []);
+});
+
 test('the scan reads session IDs and GUIDs as identifiers unless they look like a random token', () => {
   assert.deepEqual(kinds('session_id="q6GJMuPu003642-q6GJMuPv003642" client_ip="192.0.2.4"'), []);
   assert.deepEqual(kinds('{"SessionId":"3fa85f64-5717-4562-b3fc-2c963f66afa6"}'), []);

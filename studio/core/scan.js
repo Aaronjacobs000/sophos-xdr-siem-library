@@ -97,6 +97,17 @@ function highEntropy(s) {
   return s.length >= 32 && /[A-Z]/.test(s) && /[a-z]/.test(s) && /\d/.test(s) && entropy(s) >= 4.2;
 }
 
+// An IPv4 address right after a colon, as in IP:10.20.0.5, is checked like any other, unless it
+// ends an IPv6 address, as in 2001:db8::192.0.2.1. The IPv4-mapped form, ::ffff:10.20.0.5, is the
+// IPv4 address itself, so it is checked too. before: the text before the address.
+function v6Tail(before, v4) {
+  const prefix = /[0-9A-Fa-f:]*$/.exec(before)[0];
+  if (!isIpv6(prefix + v4)) return false;
+  const groups = prefix.slice(0, -1).split(':').filter(Boolean);
+  const mapped = groups.length > 0 && /^ffff$/i.test(groups[groups.length - 1]) && groups.slice(0, -1).every((g) => /^0{1,4}$/.test(g));
+  return !mapped;
+}
+
 // True when the text just before an IPv4-shaped value marks it as a version number.
 function versionContext(text, index) {
   const before = text.slice(Math.max(0, index - 60), index);
@@ -133,8 +144,9 @@ export function scanText(text, opts = {}) {
     if (SESSION_ID_KEY.test(m[1]) && !highEntropy(value)) continue;
     add('error', 'secret', `"${m[1]}" has a value that looks real. Replace it with REDACTED.`, m.index, `${m[1]}=...`);
   }
-  for (const m of text.matchAll(/(?<![\w.:])((?:\d{1,3}\.){3}\d{1,3})(?![\w.]*\d)/g)) {
+  for (const m of text.matchAll(/(?<![\w.])((?:\d{1,3}\.){3}\d{1,3})(?![\w.]*\d)/g)) {
     if (!isIpv4(m[1])) continue;
+    if (text[m.index - 1] === ':' && v6Tail(text.slice(0, m.index), m[1])) continue;
     const why = classifyV4(m[1]);
     // A version number passes only where the address would be public; a private, carrier-grade
     // NAT or link-local value is blocked whatever comes before it.
