@@ -33,13 +33,15 @@ p { margin: 0; }
 .glyph { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg, var(--blue), var(--cyan)); display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: #fff; flex: none; }
 .brand { font-family: var(--head); font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
 .brand small { font-family: var(--body); font-size: 13px; color: #A9BCD6; font-weight: 400; margin-left: 8px; letter-spacing: 0; }
-.topnav { display: flex; gap: 4px; margin-left: 10px; }
-.topnav a { color: #C8D6EA; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+/* The menu, version and badge wrap as one group, so the badge never sits alone under the brand. */
+.topend { display: flex; flex: 1 1 auto; align-items: center; flex-wrap: wrap; gap: inherit; min-width: 0; }
+.topnav { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 10px; }
+.topnav a { color: #C8D6EA; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 14px; white-space: nowrap; }
 .topnav a:hover { background: rgba(255,255,255,.08); color: #fff; }
 .topnav a.on { background: rgba(255,255,255,.14); color: #fff; }
 .top .spacer { flex: 1; }
 .top .meta { color: #A9BCD6; font-size: 13px; }
-.unofficial { border: 1px solid #F2B84B; color: #FFD58A; border-radius: 999px; padding: 3px 11px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; text-decoration: none; }
+.unofficial { margin-left: auto; border: 1px solid #F2B84B; color: #FFD58A; border-radius: 999px; padding: 3px 11px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; text-decoration: none; }
 .unofficial:hover { background: rgba(242,184,75,.16); color: #FFE7B8; }
 .unofficial:focus-visible, .brandlink:focus-visible, .topnav a:focus-visible { outline: 2px solid #FFD58A; outline-offset: 2px; }
 .notice { background: #FFF6E3; border-bottom: 1px solid #F2D08C; color: #5A4300; font-size: 14px; padding: 8px 20px; text-wrap: balance; }
@@ -364,18 +366,25 @@ table.samples td:first-child { color: var(--muted); width: 34px; }
 .moves { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
 .moves li + li { margin-top: 3px; }
 @media (max-width: 720px) { .yamlview { white-space: pre-wrap; word-break: break-word; } }
-@media (max-width: 1640px) {
+/* Eight menu items and the Unofficial tool badge on one line down to 1280 px, with room for a
+   classic scrollbar. Each step hides or tightens something just before the line would wrap. */
+@media (max-width: 1980px) {
   .brand small { display: none; }
 }
-@media (max-width: 1520px) {
+@media (max-width: 1720px) {
   .top .meta { display: none; }
 }
-/* Seven sections and the Unofficial tool badge on one line down to 1280 px. */
-@media (max-width: 1440px) {
+@media (max-width: 1500px) {
   .top { gap: 12px; }
   .brand { font-size: 16px; }
   .topnav { margin-left: 0; gap: 2px; }
   .topnav a { padding: 6px 7px; }
+}
+@media (min-width: 721px) and (max-width: 1360px) {
+  .top { gap: 10px; }
+  .brand { font-size: 15px; }
+  .topnav a { padding: 6px 5px; font-size: 13.5px; }
+  .unofficial { padding: 3px 9px; }
 }
 @media (max-width: 720px) {
   .top { padding: 8px 16px; gap: 10px; }
