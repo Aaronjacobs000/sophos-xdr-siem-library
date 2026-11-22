@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "GravityZone ransomware mitigation": [10],
+    "GravityZone EDR incident at High severity": [5, 6],
+    "GravityZone blocked an exploit": [8],
+    "GravityZone Sandbox Analyzer found a threat": [11]
+  },
+  "quiet": [1, 2, 3, 4, 7, 9, 12, 13, 14]
+}

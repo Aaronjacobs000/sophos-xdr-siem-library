@@ -1,0 +1,38 @@
+{
+  "kind": "detection",
+  "title": "Huawei VRP logging and local account changes",
+  "vendor": "Huawei",
+  "product": "VRP Switches and Routers",
+  "parser": "parsers/huawei/vrp-switches-and-routers",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "Huawei VRP"
+  ],
+  "volume": "None on a normal day. Network admins change log hosts and local accounts a few times a year.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100463960/e34f6eab/cli-5-cmdrecord",
+    "https://support.huawei.com/enterprise/en/doc/EDOC1100410647/7295e8a9/aaa",
+    "https://support.huawei.cn/enterprise/en/doc/EDOC1100335756/39d8e202/information-management-configuration-commands"
+  ],
+  "summary": "Three custom detection rules for Huawei VRP switches and routers, on the ManagementEvent records the library's Huawei VRP parsers write from the info-center log. They make a detection when someone turns remote logging off, adds a local account, or changes a local account's password. Each rule matches sensor type Huawei VRP only.",
+  "notes": "Setup:\n- Add the library's Huawei VRP parsers and send the devices' info-center logs to the data collector at the informational level first, as the parser entry's README says, then run the check-your-data search to see logs arrive.\n\nHow it works:\n- SHELL/5/CMDRECORD and CLI/5/CMDRECORD record each command an admin runs, with the user, the address and the command, which the parsers write as the operation name command and the command text.\n- The logging rule takes undo info-center loghost, which stops logs going to one log host, and undo info-center enable, which stops the information center altogether.\n- AAA/6/LOCALACCOUNT_CREATE_SUCCESS and AAA/6/LOCALACCOUNT_MODIFY report a local account created and its password changed, with the admin who did it.\n- USG and HiSecEngine firewalls send these same messages, so the rules cover their admin commands and local accounts too.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 5 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- A command that removes the only log host, or turns the information center off, can stop the device sending even its own command record. Send the logs to two log hosts, so the record of one being removed still arrives.\n- An account given a higher privilege level, or a log host changed to another address, isn't taken.",
+  "links": {
+    "case_rule": "rules/huawei/huawei-vrp-one-case-per-device",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

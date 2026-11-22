@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "OneLogin admin privileges and user impersonation",
+  "vendor": "OneLogin",
+  "product": "OneLogin Events",
+  "parser": "parsers/onelogin/onelogin-events",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "OneLogin"
+  ],
+  "volume": "None on a normal day. Privilege grants come with admin changes, a few a month. Assume User comes with help desk work, so expect some from support admins.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://developers.onelogin.com/api-docs/1/events/event-resource",
+    "https://developers.onelogin.com/api-docs/1/events/webhooks"
+  ],
+  "summary": "Two custom detection rules for OneLogin, on the CloudAudit records the library's OneLogin parsers write from OneLogin's events. They make a detection when someone grants an admin privilege to a user or a role, and when an admin signs in as another user with Assume User. Each rule matches sensor type OneLogin only.",
+  "notes": "Setup:\n- Add the library's OneLogin parsers and point a OneLogin Event Webhook for Log Management at HTTP Ingest first, as the parser entry says, then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the admin who acted as the user, the account acted on as the target user, and the event type's name as the event name. They name the common event types and write the rest as event_type_id_ and the number.\n- The privilege rule takes event types 72, 2106, 2107, 2110 and 2111 from OneLogin's event list: a privilege granted or assigned to a user or a role, in the admin portal or through the API. It can't tell Super User from a narrower privilege, since the parsers don't keep the privilege's name.\n- OneLogin roles give access to apps, not admin rights, so a role assigned to a user (event type 4) isn't taken.\n- The Assume User rule takes USER_ASSUMED_USER and EXTERNAL_ASSUME_USER, where an admin from a parent or reseller account assumes the user.\n\nTuning:\n- If support admins assume users every day, leave them out in the query itself, such as and user_name != 'Help Desk Admin'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- The privilege's name is in the event's original data, not a field, so read it there.\n- A new API credential (event type 179) isn't taken.",
+  "links": {
+    "case_rule": "rules/onelogin/onelogin-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

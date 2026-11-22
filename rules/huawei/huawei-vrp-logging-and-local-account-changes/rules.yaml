@@ -1,0 +1,35 @@
+# Custom detection rules for Huawei VRP switches and routers, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Huawei VRP remote logging turned off
+    description: "Someone ran a command on a Huawei VRP switch or router that stops it sending logs: undo info-center loghost or undo info-center enable. Router intrusions turn logging off first, so what they do next goes unrecorded."
+    severity: high
+    mitre:
+      - T1562.006
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Huawei VRP'
+        and operation_name = 'command'
+        and (command contains 'undo info-center loghost' or command contains 'undo info-center enable')
+  - name: Huawei VRP local account added
+    description: Someone added a local account on a Huawei VRP switch or router. An attacker adds one so they can sign in again after the account they used is found.
+    severity: high
+    mitre:
+      - T1136.001
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Huawei VRP'
+        and operation_name = 'local account created'
+  - name: Huawei VRP local account password changed
+    description: Someone changed a local account's password on a Huawei VRP switch or router. An attacker resets an existing account's password to sign in with it and lock its owner out.
+    severity: medium
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Huawei VRP'
+        and operation_name = 'local account password changed'

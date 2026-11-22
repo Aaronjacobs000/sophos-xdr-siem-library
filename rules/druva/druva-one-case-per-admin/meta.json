@@ -1,0 +1,27 @@
+{
+  "kind": "case",
+  "title": "Druva: one case per admin",
+  "vendor": "Druva",
+  "product": "Druva Cloud Platform events",
+  "parser": "parsers/druva/druva-cloud-platform-events",
+  "mdr_note": "Cases your own case rules open are Managed By Self, and Sophos MDR doesn't work them. The filter takes only the two Druva admin and API credential changes custom detections, so Sophos's own detections still reach whoever works them today.",
+  "tested": {
+    "search": null,
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/AutomaticCases/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/MDR/MDRInvestigations/MDRCases/",
+    "https://developer.sophos.com/graphql/cases-v2/mutations/create-case-rule/"
+  ],
+  "summary": "An automatic case rule that opens one case per Druva admin for the two Druva admin and API credential changes rules, and adds that admin's later detections to it while it's open. It brings its own case template, a Security Case with no assignee, and ships in Test state.",
+  "notes": "How it works:\n- The filter takes only custom detections titled with one of the two rule names in rules/druva/druva-admin-and-api-credential-changes. group_by takes the detection's userName entity, the admin who made the change, and adds this rule's name to it, so no other case rule can add to these cases.\n- Case rules act only on Medium and higher detections. All of these rules are Medium or higher.\n- A closed case isn't matched again: the next detection opens a new case.\n- When it opens a case, it also adds earlier detections that fit its filter and group, even ones made before you added the rule. Sophos's Automatic cases page limits those to open detections of severity 0.6 and above (High and Critical), made within four hours of the detection that opened the case and not already in another case, up to 100.\n\nSetup:\n- Import alone leaves the rule inactive: in a lab tenant an imported case rule opened no case until it was saved once more through updateCaseRule, with no change. The library's tools/case-rule-install.mjs imports the file and makes that call.\n- Import puts the rule after your own case rules, whatever order the file has, so it moves none of them.\n\nTesting:\n- In a lab tenant on 2026-11-23, installed with tools/case-rule-install.mjs, it logged \"case would have successfully been created but rule is in test mode\" for a High Druva detection while in Test state.\n- Enabled, it opened one case, Managed By Self, from a High administrator detection, and the case took the same admin's two earlier High detections.\n\nKnown gaps:\n- Whether a Save in the console after Import does the same as updateCaseRule is unchecked.",
+  "links": {
+    "detection_rules": "rules/druva/druva-admin-and-api-credential-changes"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "GravityZone high severity alerts",
+  "vendor": "Bitdefender",
+  "product": "GravityZone",
+  "parser": "parsers/bitdefender/gravityzone",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Bitdefender GravityZone"
+  ],
+  "volume": "None on a normal day. Each blocked attack or High incident makes one detection, in the computer's case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://www.bitdefender.com/business/support/en/77209-135324-event-types.html",
+    "https://www.bitdefender.com/business/support/en/77209-135325-push-event-json-rpc-messages.html"
+  ],
+  "summary": "Four custom detection rules for Bitdefender GravityZone, on the third-party alert records the library's GravityZone parsers write from its push events. They make a detection when GravityZone's ransomware mitigation acts, when its EDR raises a High incident, when Advanced Anti-Exploit blocks an exploit, and when Sandbox Analyzer finds a file malicious. Each rule matches sensor type Bitdefender GravityZone only.",
+  "notes": "Setup:\n- Add the library's Bitdefender GravityZone parsers and point GravityZone's event push service at HTTP Ingest first, as the parser entry says, then run the check-your-data search to see events arrive. The push settings' subscribeToEventTypes must include the modules these rules read.\n\nHow it works:\n- The parsers write GravityZone's module, such as ransomware-mitigation, as the alert category, and the computer as the target host.\n- GravityZone rates only incidents, so the parsers set ransomware mitigation, Anti-Exploit and Sandbox Analyzer to High. The incident rule takes incidents and extended incidents GravityZone rates High.\n- Advanced Threat Control blocks, Network Attack Defense and Antiphishing aren't taken: GravityZone makes those every day as it blocks things, and an incident follows when one matters.\n- Antimalware detections go to the Antivirus schema, which these rules don't read.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 8 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on any of the samples, the Antivirus records included.\n- The lines went to HTTP Ingest one per request, as GravityZone's push service sends them, and each was stored as one record and parsed.\n\nKnown gaps:\n- An extended incident names no computer, so its detection carries no host name and the case rule doesn't take it.\n- When GravityZone batches several events in one POST, only the first is normalized, as the parser entry says.",
+  "links": {
+    "case_rule": "rules/bitdefender/gravityzone-one-case-per-computer",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

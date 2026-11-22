@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: druva_one_case_per_resource
+title: Druva, one case per resource (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Druva detected a data anomaly')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' druva_one_case_per_resource')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: druva_data_anomaly_alerts_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: druva_data_anomaly_alerts_unofficial
+title: Druva data anomaly alerts (unofficial)
+description: Case for Druva data anomaly alerts custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - druva
+    type: SECURITY_INVESTIGATION
+    title: Druva data anomaly on one resource
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

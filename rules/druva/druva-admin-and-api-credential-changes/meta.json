@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Druva admin and API credential changes",
+  "vendor": "Druva",
+  "product": "Druva Cloud Platform events",
+  "parser": "parsers/druva/druva-cloud-platform-events",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Druva Cloud Platform"
+  ],
+  "volume": "None on a normal day. Admins and API credentials change a few times a year.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://developer.druva.com/reference/cybersecurity-events",
+    "https://developer.druva.com/reference/druva-cloud-platform-events-v3"
+  ],
+  "summary": "Two custom detection rules for Druva, on the CloudAudit records the library's Druva parsers write from Druva Cloud Platform events. They make a detection when someone creates a Druva administrator or API credentials, the takeover that comes before backups get deleted. Each rule matches sensor type Druva Cloud Platform only.",
+  "notes": "Setup:\n- Add the library's Druva parsers and the example bridge in bridges/druva-platform-events first, then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the event type, such as Administrator Created, as the event name and the admin who made the change as the user.\n- The rules take Administrator Created, API Credentials Created and API Credentials Key Regenerated from Druva's Cloud Platform events reference.\n\nTuning:\n- If an automation creates API credentials as part of its setup, leave its admin out in the query itself, such as and user_name != 'backup-automation@example.com'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n- The events went in through bridges/druva-platform-events, run once on the lab machine against a local mock of the Druva Events API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- An existing administrator given a higher role (Administrator Updated) isn't taken.",
+  "links": {
+    "case_rule": "rules/druva/druva-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

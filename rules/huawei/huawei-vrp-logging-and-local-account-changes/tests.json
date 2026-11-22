@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Huawei VRP remote logging turned off": [3, 15],
+    "Huawei VRP local account added": [7],
+    "Huawei VRP local account password changed": [8]
+  },
+  "quiet": [1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22]
+}

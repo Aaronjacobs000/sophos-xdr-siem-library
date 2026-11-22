@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "TeamViewer two-factor enforcement removed": [5],
+    "TeamViewer script token added": [4],
+    "TeamViewer user role assigned": [6]
+  },
+  "quiet": [1, 2, 3, 7]
+}
