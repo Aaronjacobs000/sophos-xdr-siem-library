@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: opencanary_one_case_per_source_ip
+title: OpenCanary, one case per source IP (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('OpenCanary login with a planted credential', 'OpenCanary login attempt', 'OpenCanary file opened on the decoy share', 'OpenCanary Nmap scan')
+append_filter: ""
+group_by:
+    - ${alertSourceIPs(inputs).map(ip, ip + ' opencanary_one_case_per_source_ip')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: opencanary_honeypot_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: opencanary_honeypot_unofficial
+title: OpenCanary honeypot (unofficial)
+description: Case for OpenCanary custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - opencanary
+    type: SECURITY_INVESTIGATION
+    title: OpenCanary honeypot activity from one source IP
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

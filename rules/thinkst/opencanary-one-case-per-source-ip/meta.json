@@ -1,0 +1,27 @@
+{
+  "kind": "case",
+  "title": "OpenCanary: one case per source IP",
+  "vendor": "Thinkst",
+  "product": "OpenCanary",
+  "parser": "parsers/thinkst/opencanary",
+  "mdr_note": "Cases your own case rules open are Managed By Self, and Sophos MDR doesn't work them. The filter takes only the four OpenCanary custom detections, so Sophos's own detections still reach whoever works them today.",
+  "tested": {
+    "search": null,
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Cases/AutomaticCases/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/MDR/MDRInvestigations/MDRCases/",
+    "https://developer.sophos.com/graphql/cases-v2/mutations/create-case-rule/"
+  ],
+  "summary": "An automatic case rule that opens one case per source IP for the four OpenCanary honeypot rules, and adds later detections from the same address to it while it's open. It brings its own case template, a Security Case with no assignee, and ships in Test state.",
+  "notes": "How it works:\n- The filter takes only custom detections whose title is one of the four OpenCanary rule names, and group_by adds this rule's name to each source IP, so no other case rule can add to these cases.\n- Case rules act only on Medium and higher detections. All four OpenCanary rules are Medium or higher.\n- A closed case isn't matched again: the next detection from that address opens a new case.\n- When it opens a case, it also adds earlier detections from that address that fit its filter, even ones made before you added the rule.\n\nSetup:\n- Import alone leaves the rule inactive: in a lab tenant an imported case rule opened no case until it was saved once more through updateCaseRule, with no change. The library's tools/case-rule-install.mjs imports the file and makes that call.\n- Import puts the rule after your own case rules, whatever order the file has, so it moves none of them.\n\nTesting:\n- In a lab tenant on 2026-11-22, installed with tools/case-rule-install.mjs, it logged \"case would have successfully been created but rule is in test mode\" for a Medium OpenCanary detection while in Test state.\n- Enabled, it opened one case per source IP within seconds, Managed By Self, and each case took that address's earlier OpenCanary detections too.\n\nKnown gaps:\n- Whether a Save in the console after Import does the same as updateCaseRule is unchecked.",
+  "links": {
+    "detection_rules": "rules/thinkst/opencanary-honeypot-activity"
+  }
+}

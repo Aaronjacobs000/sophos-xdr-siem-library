@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "OpenCanary honeypot activity",
+  "vendor": "Thinkst",
+  "product": "OpenCanary",
+  "parser": "parsers/thinkst/opencanary",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "OpenCanary"
+  ],
+  "volume": "On a honeypot inside your network, none on a normal day, and each one is worth a look. A scan or a password spray can make dozens in a few minutes. On a honeypot that faces the internet, hundreds a day, so don't add these rules for one there.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://opencanary.readthedocs.io/en/latest/starting/configuration.html"
+  ],
+  "summary": "Four custom detection rules for OpenCanary, the open source honeypot from Thinkst, on the Thirdparty records the library's OpenCanary parsers write. They turn a login with a planted credential, any other login attempt, a file opened on the decoy share and an Nmap scan into detections. Each rule matches sensor type OpenCanary only.",
+  "notes": "Setup:\n- Add the library's Thinkst OpenCanary parsers first, then run the check-your-data search to see the events arrive.\n- Run OpenCanary inside your network. A honeypot that faces the internet gets scanned all day, and these rules would make hundreds of detections.\n\nHow it works:\n- The parser sets severity HIGH only for a login that used one of the credentials planted for the honeypot (honeycred in opencanary.conf). So the planted-credential rule takes those logins and the login rule takes every other one.\n- The Nmap rule leaves out logtype 5001, a single TCP SYN, which OpenCanary logs up to 5 times a second while someone scans it.\n\nTuning:\n- Leave out a scanner or monitoring host in the query itself, such as and source_address != '192.0.2.5'. A suppression rule would hide Sophos's detections for that host as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 52 records agreed.\n- As live rules there, each one fired on its sample lines within about two minutes. The first copy of one login line made no detection, and the same line sent again did. No Sophos detector made a detection on these events.\n\nKnown gaps:\n- Requests, bare connections and user-defined events have no rule. Search them when you need them.\n- These rules match the library parser's sensor type, so they don't cover the commercial Thinkst Canary, which Sophos Fusion reads through its own integration.",
+  "links": {
+    "case_rule": "rules/thinkst/opencanary-one-case-per-source-ip",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
