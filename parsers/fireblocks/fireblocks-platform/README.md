@@ -11,7 +11,7 @@ Start with the audit log: it is the record Fireblocks itself points SIEM tools a
 
 1. In Sophos Fusion, go to Security Operations > Integrations > Marketplace, choose Custom, then Set Up under HTTP Ingest. Copy the Integration Key and URL.
 2. In the Fireblocks Console, go to Developer center > API users and add an API user with the Auditor, Security Auditor or Non-Signing Admin role. Keep its private key (`fireblocks_secret.key`) and copy its API key.
-3. Run the bridge with those values, as its [README](../../../bridges/fireblocks-audit-logs/README.md) describes. Each event arrives as one record with `"fireblocks_record": "audit_log"` first.
+3. Run the bridge with those values, as its [README](../../../bridges/fireblocks-audit-logs/README.md) describes. Each event arrives as one record with `"fireblocks_record": "audit_log"` first and its `event` key renamed `fireblocks_event`: HTTP Ingest keeps only the value of a top-level `event` key that holds text, so a record sent with one never reaches the parsers.
 
 ## Send webhooks through the relay
 
@@ -43,6 +43,8 @@ In Sophos Fusion, go to Security Operations > Integrations > Custom Parsers. Add
 ## Testing
 
 On 30 October 2026 the parsers passed Run Test in a Sophos Fusion test tenant on the synthetic samples. With the children combined into the parent as one parser, 240 of 240 fields matched the emulator in each of 3 runs. With each child added as a separate parser under its parent, 240 of 240 matched again. In 3 Parse Message runs, no built-in parser claimed any of the records. After the custom alert flag was added, the Thirdparty child, run with its parent as one parser on the three alert samples and an AML flag record, matched the emulator on every field in 3 runs, with `is_custom_alert` true on the TAP block and the AML rejection only.
+
+On 23 November 2026 the bridge, run against a local mock of the audit log API that served the 15 audit samples, sent them through HTTP Ingest to a lab tenant with the parsers added: 5 went to Auth, 7 to CloudAudit and 3 to Thirdparty, every field as the emulator gives it. The six webhook samples, posted as the relay forwards them, went to CloudAudit the same way. Before the bridge renamed the `event` key, HTTP Ingest kept only its value, such as `Signed in`, as a Generic record.
 
 ## Limits
 

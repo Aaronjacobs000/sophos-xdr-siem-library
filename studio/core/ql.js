@@ -5,13 +5,14 @@
 // parser entry's samples without a tenant. The page and the Node tools share it.
 //
 // The operators, from the docs' Advanced Search query language page: =, !=, <, <=, >, >=, IN, !IN,
-// CONTAINS, !CONTAINS, MATCHES (a glob with * and ?), !MATCHES, MATCHES_REGEX, IS NULL and IS NOT
-// NULL. Operators and values are case-insensitive. A plain '...' string is taken as written, and an
-// e'...' string reads backslash escapes, the only way to put a quote in one.
+// CONTAINS, !CONTAINS, MATCHES (a glob with * and ?), !MATCHES, MATCHES_REGEX, !MATCHES_REGEX, IS
+// NULL and IS NOT NULL. Operators and values are case-insensitive. A plain '...' string is taken as
+// written, and an e'...' string reads backslash escapes, the only way to put a quote in one.
 //
 // Measured in a lab tenant with validateQLFilter (22/11/2026): an enum field takes its member name,
 // such as severity = 'HIGH', and refuses a number; "NOT IN" is a syntax error, and !IN works;
-// FROM thirdpartyalert reads as FROM thirdparty. Earlier (20/11/2026): a field missing from the event
+// FROM thirdpartyalert reads as FROM thirdparty, though Data Lake Search refuses it (23/11/2026), so
+// a rule query says thirdparty. Earlier (20/11/2026): a field missing from the event
 // matches != in both Data Lake Search and a live rule. What isn't measured: whether MATCHES_REGEX
 // finds a match anywhere or needs the whole value (this reads it as anywhere), and CIDR in a rule.
 
@@ -77,7 +78,8 @@ export function tokenize(text) {
   return out;
 }
 
-// QL schema names, such as nids or thirdparty, as schema ids. FROM thirdpartyalert works too, and an
+// QL schema names, such as nids or thirdparty, as schema ids. Rules take FROM thirdpartyalert too, so
+// it reads as thirdparty here, but Data Lake Search refuses it, so ruleQueryProblems does. An
 // underscore is optional (management_event).
 export function schemaFromQlName(name) {
   const n = String(name || '').toLowerCase().replace(/_/g, '');
@@ -104,7 +106,7 @@ class Reader {
 // {schemas: [ql names], where: node, whereText, time: [{key, value}], pipeline: text|null}
 // whereText is the condition as written, for a tool that adds to it.
 // node: {type: 'and'|'or', items} | {type: 'not', item} | {type: 'cmp', field, op, value?, values?, at}
-// op: = != < <= > >= in !in contains !contains matches !matches matches_regex null notnull
+// op: = != < <= > >= in !in contains !contains matches !matches matches_regex !matches_regex null notnull
 export function parseQuery(text) {
   const src = String(text ?? '');
   const bar = pipeIndex(src);
@@ -202,7 +204,6 @@ function comparison(r) {
     return { type: 'cmp', field: f.v, op: neg ? '!in' : 'in', values, at };
   }
   if (w.v === 'CONTAINS' || w.v === 'MATCHES' || w.v === 'MATCHES_REGEX') {
-    if (neg && w.v === 'MATCHES_REGEX') throw new QlError('!MATCHES_REGEX isn\'t an operator: put NOT before the condition', w.at);
     return { type: 'cmp', field: f.v, op: `${neg ? '!' : ''}${w.v.toLowerCase()}`, value: literal(r), at };
   }
   if (w.v === 'IS' && !neg) {
@@ -384,6 +385,7 @@ export function ruleQueryProblems(parsed, { schemaId = null } = {}) {
   const sid = schemaFromQlName(parsed.schemas[0]);
   if (!sid) { err('ql', `${parsed.schemas[0]} is not a schema a custom parser writes to`); return out; }
   if (schemaId && sid !== schemaId) err('ql', `the query reads ${parsed.schemas[0]} (${sid}), but the entry is for ${schemaId}`);
+  if (sid === 'scwx.thirdpartyalert' && String(parsed.schemas[0]).toLowerCase().replace(/_/g, '') !== 'thirdparty') err('ql', `write FROM thirdparty: Data Lake Search refuses FROM ${parsed.schemas[0]}, though rules take it, so the query can't run as a search`);
   if (sid === GENERIC) warn('ql', 'the generic schema has only a few fields, so check the query matches the raw text you expect');
   const banned = new Set([...NO_MATCH_FIELDS.all, ...(NO_MATCH_FIELDS[sid] || [])]);
   for (const c of conditions(parsed.where)) {
@@ -405,7 +407,7 @@ export function ruleQueryProblems(parsed, { schemaId = null } = {}) {
       if (['<', '<=', '>', '>='].includes(c.op)) err('enum', `${c.field} is an enum, so ${c.op} doesn't apply`);
     }
     if (['<', '<=', '>', '>='].includes(c.op) && f.kind === 'scalar' && !/int|float|double/.test(f.def.type)) warn('ql', `${c.field} is ${f.def.type}, so ${c.op} compares it as a number`);
-    if (c.op === 'matches_regex') for (const why of regexLimits(c.value.value)) err('regex', `${c.field} MATCHES_REGEX '${c.value.value}' uses ${why}, which the rule engine refuses`);
+    if (c.op === 'matches_regex' || c.op === '!matches_regex') for (const why of regexLimits(c.value.value)) err('regex', `${c.field} ${c.op.toUpperCase()} '${c.value.value}' uses ${why}, which the rule engine refuses`);
   }
   return out;
 }

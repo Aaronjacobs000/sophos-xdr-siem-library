@@ -13,7 +13,9 @@ user's RSA private key (RS256), that names the request's URI and a fresh nonce. 
 a small RSA signer built on the standard library for that.
 
 Each event goes to HTTP Ingest with "fireblocks_record": "audit_log" first, so the library parsers
-in parsers/fireblocks/fireblocks-platform can tell it from a Fireblocks webhook. The request and
+in parsers/fireblocks/fireblocks-platform can tell it from a Fireblocks webhook, and with its event
+key renamed fireblocks_event: HTTP Ingest keeps only the value of a top-level event key that holds
+text, so the record would arrive as just "Signed in" or "Failed". The request and
 response shapes follow Fireblocks' API reference. Configuration comes from environment variables
 (see README.md). A window's end only moves after HTTP Ingest accepted every event in it.
 --dry-run prints what would be sent and changes nothing.
@@ -55,6 +57,9 @@ MAX_ATTEMPTS = 6
 MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 MAX_PAGES = 10000
 RECORD_KEY = "fireblocks_record"
+# HTTP Ingest keeps only the value of a top-level event key that holds text, so the bridge sends an
+# event's event, such as "Signed in", under this name instead.
+EVENT_KEY = "fireblocks_event"
 AUDIT_PATH = "/v1/management/audit_logs"
 # startTime may be at most a year before now.
 RETENTION_SECONDS = 365 * 86400
@@ -605,7 +610,7 @@ def collect(cfg: dict, state: dict, sink: Sink, save, client: AuditLogs, now: fl
             key = _key(event)
             if key in seen or key in fresh:
                 continue
-            rec = {RECORD_KEY: "audit_log", **{k: v for k, v in event.items() if k != RECORD_KEY}}
+            rec = {RECORD_KEY: "audit_log", **{(EVENT_KEY if k == "event" else k): v for k, v in event.items() if k != RECORD_KEY}}
             t = _event_ms(event.get("timestamp"))
             fresh[key] = (t if t is not None else end, rec)
         if fresh:

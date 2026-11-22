@@ -1,4 +1,4 @@
-!SAMPLE={"fireblocks_record":"audit_log","id":"b5d7e42f-e5d3-4bf7-b950-b5ffbb8f4baf","timestamp":1793235731482,"createdAt":1793235731662,"user":"Pat Example","subject":"User","event":"Signed in","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
+!SAMPLE={"fireblocks_record":"audit_log","id":"b5d7e42f-e5d3-4bf7-b950-b5ffbb8f4baf","timestamp":1793235731482,"createdAt":1793235731662,"user":"Pat Example","subject":"User","fireblocks_event":"Signed in","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
 !CONFIRMWITH=PATTERN
 !CONFIRMSTRING=\{\s*"fireblocks_record"\s*:\s*"audit_log"|"workspaceId"\s*:\s*"[0-9A-Fa-f-]{36}".*"eventType"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+"|"eventType"\s*:\s*"[a-z0-9_]+\.[a-z0-9_.]+".*"workspaceId"\s*:\s*"[0-9A-Fa-f-]{36}"
 !SCHEMA=scwx.generic
@@ -8,9 +8,10 @@
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: Fireblocks workspace activity in either of two shapes, both sent to HTTP Ingest:
 #   Audit log events (GET /v1/management/audit_logs), pulled by the example bridge in
-#   bridges/fireblocks-audit-logs, which puts "fireblocks_record": "audit_log" first:
+#   bridges/fireblocks-audit-logs, which puts "fireblocks_record": "audit_log" first and sends the
+#   event key as fireblocks_event, since HTTP Ingest keeps only the value of a top-level event key:
 #     {"fireblocks_record":"audit_log","id":"...","timestamp":...,"user":"...","subject":"Sign in",
-#      "event":"Failed","category":"Administration","tenantId":"...","userId":"..."}
+#      "fireblocks_event":"Failed","category":"Administration","tenantId":"...","userId":"..."}
 #   Webhooks v2 notifications (transactions, allowlisted wallets, vault accounts and more),
 #   passed on unchanged by the /fireblocks route of bridges/webhook-relay:
 #     {"id":"...","resourceId":"...","webhookId":"...","workspaceId":"...",
@@ -42,7 +43,7 @@ eventTimeUsec$ = IF isHook AND createdMs["n"] != "" THEN INT(createdMs["n"], 10)
 # Audit events name what happened as a subject and an event, such as "Sign in" and "Failed". The
 # Help Center lists the same events with other words, such as "Failed sign-in", so both are read.
 subject = STRING(json["$.subject"])
-event = STRING(json["$.event"])
+event = STRING(json["$.fireblocks_event"])
 lsub = LOWERCASE(subject)
 lev = LOWERCASE(event)
 signSubject = CONTAINS(lsub, "sign") OR lsub == "user"

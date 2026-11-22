@@ -288,7 +288,7 @@ function checkRules(r, entry, ctx) {
     const beyond = conditions(parsed.where).filter((c) => c.field !== 'sensor_type');
     if (!beyond.length) r.error('rules', `${where} matches every event of the sensor type. Each rule needs a condition beyond sensor_type.`, 'rules.yaml', at);
     else if (iocOnly(parsed)) r.error('ioc', `${where} only matches literal IP addresses, domains or hashes. Sophos's IP and Domain Watchlists do that, so the library takes no IOC rules.`, 'rules.yaml', at);
-    if (conditions(parsed.where).some((c) => c.op === 'matches_regex')) r.review(`${where} uses MATCHES_REGEX. Rules and Data Lake Search use different regex engines, so run it as a live rule as well as a search.`, 'rules.yaml');
+    if (conditions(parsed.where).some((c) => c.op === 'matches_regex' || c.op === '!matches_regex')) r.review(`${where} uses MATCHES_REGEX. Rules and Data Lake Search use different regex engines, so run it as a live rule as well as a search.`, 'rules.yaml');
     const shared = sharedTechniques(ctx.coverage, m.schema, rule.mitre);
     if (shared.length) r.review(`${where} shares ${shared.join(', ')} with Sophos rules on ${m.schema} that match every sensor type. Check in Detector Explorer that Sophos doesn't already detect it.`, 'rules.yaml');
   }

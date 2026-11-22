@@ -1,4 +1,4 @@
-!SAMPLE={"fireblocks_record":"audit_log","id":"ac9bf075-554a-4b75-b7a3-5bcf724bcdd2","timestamp":1793237091447,"createdAt":1793237091627,"user":"Pat Example","subject":"Whitelisted address","event":"Added","category":"Whitelist","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
+!SAMPLE={"fireblocks_record":"audit_log","id":"ac9bf075-554a-4b75-b7a3-5bcf724bcdd2","timestamp":1793237091447,"createdAt":1793237091627,"user":"Pat Example","subject":"Whitelisted address","fireblocks_event":"Added","category":"Whitelist","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"ad0da9d5-4343-449c-af29-549e2691e2c8"}
 !CONFIRMWITH=EXPRESSION
 !CONFIRMSTRING=eventType$=="audit"
 !SCHEMA=scwx.cloudaudit

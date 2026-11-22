@@ -447,6 +447,25 @@ class BridgeTest(unittest.TestCase):
         self.assertEqual(len({(q["startTime"], q["endTime"]) for q in self.mock.queries}), 1)
         self.assertEqual({(q["order"], q["pageSize"]) for q in self.mock.queries}, {("ASC", "2")})
 
+    def test_the_event_key_is_sent_as_fireblocks_event_in_its_place(self):
+        # HTTP Ingest keeps only the value of a top-level event key that holds text, so the record
+        # would arrive as just "Signed in". The bridge renames the key and leaves the rest as it came.
+        self.mock.events = [event(0, self.ago(5)), event(1, self.ago(4), "Transactions", "Transaction", "Blocked by TAP")]
+        c.run_once(self.cfg())
+        rows = self.sent()
+        self.assertEqual([r["fireblocks_event"] for r in rows], ["Signed in", "Blocked by TAP"])
+        self.assertFalse(any("event" in r for r in rows))
+        self.assertEqual(list(rows[0]), ["fireblocks_record", "id", "timestamp", "createdAt", "user", "subject",
+                                         "fireblocks_event", "category", "tenantId", "userId"])
+        self.assertEqual({k: v for k, v in rows[1].items() if k not in ("fireblocks_record", "fireblocks_event")},
+                         {k: v for k, v in self.mock.events[1].items() if k != "event"})
+        self.assertNotIn('"event":', self.mock.ingested[0]["raw"])
+        # A dry run prints the same records.
+        out = io.StringIO()
+        os.remove(self.state)
+        c.run_once(self.cfg(NGSIEM_INGEST_URL="", NGSIEM_INGEST_KEY=""), dry_run=True, out=out)
+        self.assertEqual([json.loads(x) for x in out.getvalue().splitlines()], rows)
+
     def test_every_request_carries_the_api_key_and_its_own_signed_jwt(self):
         self.mock.events = [event(i, self.ago(10 - i)) for i in range(3)]
         c.run_once(self.cfg(FIREBLOCKS_PAGE_SIZE="1"))
