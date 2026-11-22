@@ -19,14 +19,14 @@ In Sophos Fusion, add an HTTP Ingest integration (Security Operations > Integrat
 - Alert raised payload:
 
 ```json
-{"source":"Datto RMM","event":"raised","alert_uid":"[alert_uid]","alert_type":"[alert_type]","alert_category":"[alert_category]","alert_priority":"[alert_priority]","alert_message":"[alert_message]","device_uid":"[device_uid]","device_hostname":"[device_hostname]","device_ip":"[device_ip]","device_os":"[device_os]","last_user":"[last_user]","site_name":"[site_name]","site_uid":"[site_uid]","platform":"[platform]"}
+{"source":"Datto RMM","datto_event":"raised","alert_uid":"[alert_uid]","alert_type":"[alert_type]","alert_category":"[alert_category]","alert_priority":"[alert_priority]","alert_message":"[alert_message]","device_uid":"[device_uid]","device_hostname":"[device_hostname]","device_ip":"[device_ip]","device_os":"[device_os]","last_user":"[last_user]","site_name":"[site_name]","site_uid":"[site_uid]","platform":"[platform]"}
 ```
 
-- Turn on When alert is resolved and use the same payload with `"event":"resolved"`.
+- Turn on When alert is resolved and use the same payload with `"datto_event":"resolved"`.
 
-Keep `"source":"Datto RMM"` and `"event"` as the first two keys: the parser's confirm string looks for them. Turning on Global Webhooks turns off webhooks set on single monitors.
+Keep `"source":"Datto RMM"` and `"datto_event"` as the first two keys: the parser's confirm string looks for them. Turning on Global Webhooks turns off webhooks set on single monitors.
 
-This route doesn't work yet. In a lab tenant on 2026-11-23, HTTP Ingest stored this payload as Generic with only the value of `event`, `raised` or `resolved`, so the parser never sees an alert. The Activity Log route below parsed.
+Don't name the key `event`. HTTP Ingest keeps only the value of a top-level `event` key that holds text, so it would store `raised` or `resolved` as a Generic record and the parser would never see the alert. That happened in a lab tenant on 2026-11-23; with `datto_event`, the same payloads parsed.
 
 ## Activity Log: bridge
 
