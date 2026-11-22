@@ -1,0 +1,24 @@
+# Custom detection rules for OneLogin, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: OneLogin admin privilege granted
+    description: Someone gave a OneLogin user, or a role, an admin privilege such as Super User. An attacker who gets into OneLogin gives an account they control admin rights, so it keeps access after the first account is cleaned up.
+    severity: high
+    mitre:
+      - T1098.003
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'OneLogin'
+        and event_name in ('event_type_id_72', 'event_type_id_2106', 'event_type_id_2107', 'event_type_id_2110', 'event_type_id_2111')
+  - name: OneLogin admin signed in as another user
+    description: A OneLogin admin used Assume User to sign in as someone else, which needs neither that user's password nor their MFA. An attacker with an admin account does this to reach any user's apps.
+    severity: medium
+    mitre:
+      - T1078.004
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'OneLogin'
+        and event_name in ('USER_ASSUMED_USER', 'EXTERNAL_ASSUME_USER')

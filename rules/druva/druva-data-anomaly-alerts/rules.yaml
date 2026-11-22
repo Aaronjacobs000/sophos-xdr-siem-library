@@ -1,0 +1,15 @@
+# Custom detection rules for Druva Cloud Platform, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Druva detected a data anomaly
+    description: Druva found unusual data activity in a resource's backup, such as many files encrypted, changed or deleted since the last one, its sign of ransomware. The latest snapshots may hold encrypted files, so restore from one before them.
+    severity: high
+    mitre:
+      - T1486
+      - T1485
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Druva Cloud Platform'
+        and title = 'Data Anomalies'

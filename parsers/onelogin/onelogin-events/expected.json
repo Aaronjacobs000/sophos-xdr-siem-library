@@ -333,5 +333,40 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 12,
+    "extractor_path": "ONELOGIN_EVENTS_JSON_PARENT > ONELOGIN_EVENTS_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "OneLogin",
+      "event_time_usec": 1791861122000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit",
+      "sensor_event_id": "1a2b3c4d-9e8f-4a7b-b6c5-0d1e2f3a4b6e",
+      "event_source": "OneLogin",
+      "event_name": "event_type_id_2107",
+      "user_name": "Sam Admin",
+      "user_id": "41230001",
+      "target_user_name": "Jo Newstarter",
+      "source_address": "198.51.100.61",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "event_type_id",
+            "value": "2107"
+          },
+          {
+            "key": "account_id",
+            "value": "54321"
+          },
+          {
+            "key": "user_id",
+            "value": "41235555"
+          }
+        ]
+      }
+    }
   }
 ]

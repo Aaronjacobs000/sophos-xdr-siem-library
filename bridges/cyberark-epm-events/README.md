@@ -1,6 +1,6 @@
 # CyberArk Endpoint Privilege Manager events bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real CyberArk EPM tenant or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from CyberArk's EPM web services reference. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real CyberArk EPM tenant. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the EPM API, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from CyberArk's EPM web services reference. Run it with `--dry-run` first and check what it would send.
 
 CyberArk Endpoint Privilege Manager (EPM SaaS) offers its endpoint events (threat protection detections, blocked applications, elevation requests, launches and installations) through its REST API only, which is pull only. This script reads every set the service user can view and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It adds `cyberark_epm_record`, `setId` and `setName` in front of each event, and the library parsers in `parsers/cyberark/endpoint-privilege-manager` normalize them. Sophos Fusion's CyberArk integrations cover Privileged Threat Analytics and the Vault, not EPM.
 

@@ -1,0 +1,44 @@
+# Custom detection rules for Bitdefender GravityZone, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: GravityZone ransomware mitigation
+    description: Bitdefender GravityZone's ransomware mitigation saw files being encrypted on a computer and restored them. A remote attack means another machine was encrypting the computer's shares over the network, so find that machine too.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Bitdefender GravityZone'
+        and alert_category = 'ransomware-mitigation'
+  - name: GravityZone EDR incident at High severity
+    description: GravityZone's EDR or XDR raised an incident it rates High, such as a malicious process found by Advanced Threat Control with the techniques it used.
+    severity: high
+    mitre: []
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Bitdefender GravityZone'
+        and alert_category in ('new-incident', 'new-extended-incident')
+        and severity = 'HIGH'
+  - name: GravityZone blocked an exploit
+    description: GravityZone's Advanced Anti-Exploit stopped an exploit technique, such as a ROP chain or a stack pivot, in a running application. Check what the application had opened and whether it's patched.
+    severity: high
+    mitre:
+      - T1203
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Bitdefender GravityZone'
+        and alert_category = 'antiexploit'
+  - name: GravityZone Sandbox Analyzer found a threat
+    description: GravityZone's Sandbox Analyzer ran a file from a computer and found it malicious, such as ransomware in a document. The file may have run on the computer before the verdict came back.
+    severity: high
+    mitre:
+      - T1204.002
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Bitdefender GravityZone'
+        and alert_category = 'network-sandboxing'

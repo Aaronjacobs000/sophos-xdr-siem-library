@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Druva data anomaly alerts",
+  "vendor": "Druva",
+  "product": "Druva Cloud Platform events",
+  "parser": "parsers/druva/druva-cloud-platform-events",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Druva Cloud Platform"
+  ],
+  "volume": "None on a normal day. Each anomaly Druva reports makes one detection, in the resource's case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://developer.druva.com/reference/cybersecurity-events",
+    "https://developer.druva.com/reference/druva-cloud-platform-events-v3"
+  ],
+  "summary": "One custom detection rule for Druva, on the third-party alert records the library's Druva parsers write from Druva Cloud Platform events. It makes a detection when Druva reports a data anomaly, its ransomware detection, in a resource's backup. It matches sensor type Druva Cloud Platform only.",
+  "notes": "Setup:\n- Add the library's Druva parsers and the example bridge in bridges/druva-platform-events first, then run the check-your-data search to see events arrive.\n\nHow it works:\n- Druva raises a Data Anomalies alert when a backup shows files encrypted, changed, added or deleted far beyond the resource's normal pattern. The parsers write the alert's name as the title and the resource as the target host, which the case rule groups on.\n- Druva's other alerts, an admin sign-in or a data download from a new location, aren't taken: people sign in from new places every week.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n- The events went in through bridges/druva-platform-events, run once on the lab machine against a local mock of the Druva Events API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- Druva finds the anomaly when the backup runs, so the detection can come hours after the encryption.\n- Threat Watch IOC matches aren't taken.",
+  "links": {
+    "case_rule": "rules/druva/druva-one-case-per-resource",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

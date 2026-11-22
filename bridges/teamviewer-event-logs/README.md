@@ -1,6 +1,6 @@
 # TeamViewer event log bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real TeamViewer company account or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from the request and response shapes in TeamViewer's Web API specification. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real TeamViewer company account. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the EventLogging endpoint, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from the request and response shapes in TeamViewer's Web API specification. Run it with `--dry-run` first and check what it would send.
 
 Remote access tools are a common way into a network, and TeamViewer's event log records who started, joined and ended remote sessions, sent or received files, recorded sessions or blanked the remote screen, plus user, role, policy, script token, SSO, conditional access and device management changes. TeamViewer has no syslog or push export for it. This script polls `POST /api/v2/EventLogging`, keeps a cursor, and sends each event unchanged as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. The library parser `TEAMVIEWER_EVENTLOG_JSON_STANDALONE_CLOUDAUDIT` in `parsers/teamviewer/event-log` then normalizes it to CloudAudit.
 

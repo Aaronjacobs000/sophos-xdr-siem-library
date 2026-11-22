@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "TeamViewer security changes",
+  "vendor": "TeamViewer",
+  "product": "Event Log",
+  "parser": "parsers/teamviewer/event-log",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "TeamViewer"
+  ],
+  "volume": "None on a normal day. Each rule takes one event for one admin change, so a company sees a few a month.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://webapi.teamviewer.com/api/v1/docs/index",
+    "https://www.teamviewer.com/en-us/global/support/knowledge-base/teamviewer-tensor/security/auditability-event-log/"
+  ],
+  "summary": "Three custom detection rules for TeamViewer, on the CloudAudit records the library's TeamViewer parser writes from the TeamViewer event log. They make a detection when an admin removes two-factor enforcement from accounts, adds a script token or assigns a user role, the changes that follow a TeamViewer account takeover. Each rule matches sensor type TeamViewer only.",
+  "notes": "Setup:\n- Add the library's TeamViewer parser and the example bridge in bridges/teamviewer-event-logs first, then run the check-your-data search to see events arrive. Event logging needs a Tensor license and a company admin to turn it on.\n\nHow it works:\n- The parser writes the event name from TeamViewer's event log, such as ScriptTokenAdded, and the author's email as the user.\n- Each rule takes one event name from the EventNames list in TeamViewer's Web API reference: RemovedTFAEnforcementFromAccounts, ScriptTokenAdded and UserRoleAssigned.\n- The role rule takes every role assignment. The new role is in the event's details, which the parser keeps in request_parameters, so the rule can't tell an admin role from another.\n\nTuning:\n- If an integration adds script tokens as part of its setup, leave its admin out in the query itself, such as and user_name != 'it-automation@example.com'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 to 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The events went in through bridges/teamviewer-event-logs, run once on the lab machine against a local mock of the TeamViewer EventLogging API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- A user who turns off two-factor on their own account (EditTFAUsage) isn't taken.",
+  "links": {
+    "case_rule": "rules/teamviewer/teamviewer-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
