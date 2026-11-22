@@ -6,6 +6,7 @@
 // double-quoted one is a CEL expression.
 //
 //   parseYaml(text) -> node, or throws YamlError (with .line)
+//   parseYamlDocuments(text) -> [node], one per document between --- lines
 //   node: {kind: 'map', line, entries: [{key, line, value}]}
 //         {kind: 'seq', line, items: [node]}
 //         {kind: 'scalar', line, style: 'plain'|'single'|'double'|'literal'|'folded', text, value}
@@ -431,6 +432,24 @@ export function parseYaml(text) {
   let src = String(text ?? '').replace(/\r\n?/g, '\n');
   if (src.charCodeAt(0) === 0xfeff) src = src.slice(1);
   return new Parser(src).document();
+}
+
+// A file of several documents split at --- lines, such as a case rule exported with its template.
+// Each document is parsed on its own, and its nodes keep their lines in the whole file. A ---
+// on the first line starts the first document.
+export function parseYamlDocuments(text) {
+  const lines = String(text ?? '').replace(/\r\n?/g, '\n').replace(/^\ufeff/, '').split('\n');
+  const docs = [];
+  let start = 0;
+  const flush = (end) => {
+    const body = lines.slice(start, end);
+    if (body.some((l) => l.trim() && !/^\s*#/.test(l))) docs.push(parseYaml('\n'.repeat(start) + body.join('\n')));
+  };
+  lines.forEach((l, i) => {
+    if (/^---\s*$/.test(l)) { flush(i); start = i + 1; }
+  });
+  flush(lines.length);
+  return docs;
 }
 
 export function toJS(node) {
