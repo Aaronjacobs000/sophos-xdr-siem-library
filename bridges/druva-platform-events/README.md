@@ -1,6 +1,6 @@
 # Druva Cloud Platform events bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Druva account or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from Druva's API reference. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Druva account. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the Events API, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from Druva's API reference. Run it with `--dry-run` first and check what it would send.
 
 Druva offers its cybersecurity and administrator audit events (data anomaly alerts, Threat Watch IOC matches, admin logins, restores and downloads, quarantine changes, API credential and administrator changes, rollback actions and the rest) only through the Druva Cloud Platform Events API, which is pull only. This script reads the API with its page token and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It adds a `"druva_record": "platform_event"` key in front of each event, and the library parsers in `parsers/druva/druva-cloud-platform-events` normalize them.
 
