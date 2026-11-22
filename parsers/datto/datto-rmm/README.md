@@ -26,6 +26,8 @@ In Sophos Fusion, add an HTTP Ingest integration (Security Operations > Integrat
 
 Keep `"source":"Datto RMM"` and `"event"` as the first two keys: the parser's confirm string looks for them. Turning on Global Webhooks turns off webhooks set on single monitors.
 
+This route doesn't work yet. In a lab tenant on 2026-11-23, HTTP Ingest stored this payload as Generic with only the value of `event`, `raised` or `resolved`, so the parser never sees an alert. The Activity Log route below parsed.
+
 ## Activity Log: bridge
 
 See `bridges/datto-rmm-activity-logs`. It posts each Activity Log record unchanged, one JSON object per line.
