@@ -7,12 +7,21 @@
 //     [--show-values] [--no-emulator]
 //   node tools/ql-check.mjs --discover [--env-file <path>] [--tenant <id>] [--earliest -7d]
 //     [--latest <time>] [--sample 100] [--no-emulator] [--reuse]
+//   node tools/ql-check.mjs rules/<vendor>/<name> [--env-file <path>] [--tenant <id>]
+//     [--earliest -7d] [--latest <time>] [--max 1000] [--where '<QL condition>'] [--reuse]
 //
 // It runs one QL search through the Sophos Fusion Search GraphQL API for the records the entry's
 // parsers made (by parser path, normalizer_revision), compares their fields with expected.json, and
 // runs the entry's parsers through the emulator on each record's raw line (original_data) to compare
 // the values. It only searches: it sends createSearch or getOrCreateSearch, search and searchResults,
 // nothing else.
+//
+// A detection rule entry is search-tested: each rule's query runs in Data Lake Search, and so does a
+// search for every record of the entry's sensor types. The rules then run offline on those records,
+// the way the library's checks run them on the emulator's, and the two have to return the same
+// records. Records whose raw line is a line of the parser entry's samples.log are held to
+// tests.json too. When they all agree, the entry can record tested.search. --where narrows every
+// search, such as to one test batch.
 //
 // --discover lists the library entries a tenant ingests, so the next tenant that sends a library
 // source can be checked without guessing. One search counts the tenant's records by parser path
@@ -32,8 +41,13 @@ import { loadEntryFromDir, loadLibrary } from './lib/fs-library.mjs';
 import { loadCredentials, SearchClient, searchRows, MAX_PAGE, ROW_CAP } from './lib/fusion-search.mjs';
 import { buildQuery, parserNames, groupRows, expectedRecords, compareFields, compareValues, formatFieldReport, formatValueReport, qlSchema } from './lib/ql-compare.mjs';
 import { discover, formatDiscovery, DEFAULT_SAMPLE } from './lib/ql-discover.mjs';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { ruleQueries, compareRuleSearches, formatRuleReport } from './lib/ql-rules.mjs';
+import { parsedRules } from './lib/rules.mjs';
+import { loadRuleEntry } from './lib/fs-rules.mjs';
 
-const USAGE = 'usage: ql-check.mjs parsers/<vendor>/<product> [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--max 1000] [--where \'<QL condition>\'] [--reuse] [--show-values] [--no-emulator]\n       ql-check.mjs --discover [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--sample 100] [--no-emulator] [--reuse]';
+const USAGE = 'usage: ql-check.mjs parsers/<vendor>/<product> [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--max 1000] [--where \'<QL condition>\'] [--reuse] [--show-values] [--no-emulator]\n       ql-check.mjs rules/<vendor>/<name> [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--max 1000] [--where \'<QL condition>\'] [--reuse]\n       ql-check.mjs --discover [--env-file <path>] [--tenant <id>] [--earliest -7d] [--latest <time>] [--sample 100] [--no-emulator] [--reuse]';
 
 export function parseArgs(argv) {
   const o = { dir: null, envFile: null, tenant: null, earliest: '-7d', latest: null, max: MAX_PAGE, where: null, reuse: false, showValues: false, emulator: true, discover: false, sample: DEFAULT_SAMPLE };
@@ -78,6 +92,11 @@ async function main() {
     process.exit(2);
   }
   if (opts.discover) return discoverMain(opts);
+  if (existsSync(path.join(opts.dir, 'rules.yaml'))) return rulesMain(opts);
+  if (existsSync(path.join(opts.dir, 'case-rule.yaml'))) {
+    console.error(`${opts.dir} is a case rule, which has no query to search. Install it with tools/case-rule-install.mjs and read its Rule Logs.`);
+    process.exit(2);
+  }
   const entry = await loadEntryFromDir(opts.dir);
   if (!entry.meta.parsers || !entry.meta.parsers.length) {
     console.error(`${opts.dir} has no parsers in meta.json`);
@@ -124,6 +143,38 @@ async function main() {
     else if (!compared && !noRecord) console.log('No real record had a raw line the emulator could compare.');
     else if (!noRecord) console.log('The emulator matched every real record.');
   }
+}
+
+async function rulesMain(opts) {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const entry = await loadRuleEntry(opts.dir, root);
+  const meta = entry.meta || {};
+  const rules = parsedRules(entry) || [];
+  if (meta.kind !== 'detection' || !rules.length) {
+    console.error(`${opts.dir} is not a detection rule entry with rules`);
+    process.exit(2);
+  }
+  const parser = typeof meta.parser === 'string' && existsSync(path.join(root, meta.parser)) ? await loadEntryFromDir(path.join(root, meta.parser), root) : null;
+  let tests = null;
+  try { tests = JSON.parse(await readFile(path.join(opts.dir, 'tests.json'), 'utf8')); } catch { tests = null; }
+  const log = (m) => console.error(`  ${m}`);
+  const creds = await loadCredentials({ envFile: opts.envFile });
+  if (opts.tenant) creds.tenantId = opts.tenant;
+  const client = new SearchClient(creds, { log });
+  const q = ruleQueries(meta, rules, opts);
+  console.log(`${entry.id}: ${q.universe}`);
+  const all = await searchRows(client, q.universe, { reuse: opts.reuse, max: opts.max, log });
+  if (all.partial || all.capped) console.log('The search for every record came back partial or capped, so the comparison is not complete.');
+  const byRule = new Map();
+  for (const r of q.rules) {
+    console.log(`${r.name}: ${r.text}`);
+    const res = await searchRows(client, r.text, { reuse: opts.reuse, max: opts.max, log });
+    if (res.partial || res.capped) console.log(`  The search came back ${res.partial ? 'partial' : 'capped'}, so this rule's comparison is not complete.`);
+    byRule.set(r.name, res.rows);
+  }
+  const report = compareRuleSearches(rules, all.rows, byRule, { samples: parser ? parser.samples : [], tests });
+  console.log('');
+  console.log(formatRuleReport(report).text);
 }
 
 async function discoverMain(opts) {

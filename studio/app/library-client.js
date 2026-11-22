@@ -30,9 +30,10 @@ async function pool(items, n, fn) {
 // When the entry was added to the library, as an ISO time, or null when the index doesn't say.
 const added = (e) => (typeof e.added === 'string' && Number.isFinite(Date.parse(e.added)) ? e.added : null);
 
-// Returns {entries, bridges, playbooks, connectors, source: 'site'|'none', at, sha?, error?}.
-// bridges lists each bridges/<name> folder with its file names, and playbooks and connectors each
-// entry's metadata and file names. One request: the index the site build wrote.
+// Returns {entries, bridges, rules, playbooks, connectors, source: 'site'|'none', at, sha?, error?}.
+// bridges lists each bridges/<name> folder with its file names; rules, playbooks and connectors each
+// entry's metadata and file names, and a rule entry its rules or its case rule's summary. One
+// request: the index the site build wrote.
 export async function loadLibrary() {
   try {
     const index = JSON.parse(await fetchText(siteUrl('library-index.json')));
@@ -40,9 +41,11 @@ export async function loadLibrary() {
       .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], vendor: e.meta.vendor, product: e.meta.product, added: added(e), loaded: false }));
     const automation = (list) => (Array.isArray(list) ? list : []).filter((e) => e && e.meta && typeof e.id === 'string')
       .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], added: added(e), loaded: false }));
-    return { entries, bridges: index.bridges || [], playbooks: automation(index.playbooks), connectors: automation(index.connectors), source: 'site', at: index.generated || null, sha: index.commit || null };
+    const rules = (Array.isArray(index.rules) ? index.rules : []).filter((e) => e && e.meta && typeof e.id === 'string' && (e.meta.kind === 'detection' || e.meta.kind === 'case'))
+      .map((e) => ({ id: e.id, meta: e.meta, files: e.files || [], added: added(e), rules: Array.isArray(e.rules) ? e.rules : [], case_rule: e.case_rule || null, overlap: e.overlap || null, loaded: false }));
+    return { entries, bridges: index.bridges || [], rules, playbooks: automation(index.playbooks), connectors: automation(index.connectors), source: 'site', at: index.generated || null, sha: index.commit || null };
   } catch (err) {
-    return { entries: [], bridges: [], playbooks: [], connectors: [], source: 'none', at: null, error: err.message };
+    return { entries: [], bridges: [], rules: [], playbooks: [], connectors: [], source: 'none', at: null, error: err.message };
   }
 }
 
@@ -53,6 +56,16 @@ export async function loadAutomationEntry(folder, entry) {
   const names = entry.files.filter((f) => /^(template\.yaml|connector\.yaml|SETUP\.md|README\.md)$/.test(f));
   const texts = {};
   await pool(names, 4, async (n) => { texts[n] = await fetchText(siteUrl(`${folder}/${entry.id}/${n}`)); });
+  Object.assign(entry, { texts, loaded: true });
+  return entry;
+}
+
+// Fetch the text files of a rule entry, as entry.texts by file name.
+export async function loadRuleEntry(entry) {
+  if (entry.loaded) return entry;
+  const names = entry.files.filter((f) => /^(rules\.yaml|tests\.json|case-rule\.yaml|README\.md)$/.test(f));
+  const texts = {};
+  await pool(names, 4, async (n) => { texts[n] = await fetchText(siteUrl(`rules/${entry.id}/${n}`)); });
   Object.assign(entry, { texts, loaded: true });
   return entry;
 }

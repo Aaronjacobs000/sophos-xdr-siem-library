@@ -7,6 +7,7 @@ import { renderLibrary, renderEntry } from './views/library.js';
 import { renderHelp } from './views/help.js';
 import { renderHome } from './views/home.js';
 import { renderAutomationList, renderAutomationEntry } from './views/automation.js';
+import { renderRulesList, renderRuleEntry } from './views/rules.js';
 import { TOOL_VERSION, SITE_NAME } from '../core/version.js';
 import { routeOf } from './routes.js';
 import { clear } from './dom.js';
@@ -24,6 +25,8 @@ function route() {
   clear(app);
   if (r.view === 'entry') renderEntry(app, r.id);
   else if (r.view === 'parsers') renderLibrary(app);
+  else if (r.view === 'rules') renderRulesList(app);
+  else if (r.view === 'rule') renderRuleEntry(app, r.id);
   else if (r.view === 'playbooks' || r.view === 'connectors') renderAutomationList(app, r.view);
   else if (r.view === 'playbook' || r.view === 'connector') renderAutomationEntry(app, `${r.view}s`, r.id);
   else if (r.view === 'help') renderHelp(app);
@@ -45,7 +48,7 @@ export async function refreshLibrary() {
   state.library.status = 'loading';
   emit('library');
   const r = await loadLibrary();
-  Object.assign(state.library, { status: 'ready', entries: r.entries, bridges: r.bridges || [], playbooks: r.playbooks || [], connectors: r.connectors || [], source: r.source, at: r.at, sha: r.sha || null, error: r.error || null });
+  Object.assign(state.library, { status: 'ready', entries: r.entries, bridges: r.bridges || [], rules: r.rules || [], playbooks: r.playbooks || [], connectors: r.connectors || [], source: r.source, at: r.at, sha: r.sha || null, error: r.error || null });
   emit('library');
 }
 

@@ -19,7 +19,7 @@ export const state = {
   origin: null,        // {kind: 'library'|'fork', id, meta}
   now: null,           // reference time for the emulator
   lists: {},           // each library list's search and sort, as {parsers: {q, sort}}
-  library: { status: 'idle', entries: [], bridges: [], playbooks: [], connectors: [], source: null, at: null, error: null },
+  library: { status: 'idle', entries: [], bridges: [], rules: [], playbooks: [], connectors: [], source: null, at: null, error: null },
 };
 
 const listeners = new Set();

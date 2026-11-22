@@ -100,10 +100,12 @@ const unstar = (id, opts) => call('DELETE', `/v1/stars/${id}`, opts);
 const stats = async (opts) => (await call('GET', '/v1/stats', opts)).json();
 
 test('ids: section, vendor and name slugs only', () => {
-  for (const id of ['parsers/acme/widget', 'playbooks/sophos/sophos-mobile-lock', 'connectors/1password/1password-events']) assert.ok(isEntryId(id), id);
+  for (const id of ['parsers/acme/widget', 'rules/thinkst/opencanary-honeypot-activity', 'playbooks/sophos/sophos-mobile-lock', 'connectors/1password/1password-events']) assert.ok(isEntryId(id), id);
   for (const id of ['parsers/acme', 'parsers/acme/widget/extra', 'bridges/acme/widget', 'parsers/Acme/Widget', 'parsers/acme/a b', 'parsers/../widget', 'parsers/acme/-widget', 'parsers/acme/widget-', 'parsers/acme/wid--get', 'parsers%2Facme%2Fwidget', `parsers/acme/${'a'.repeat(200)}`, '', null, 42]) assert.ok(!isEntryId(id), String(id));
   assert.deepEqual(entryIds(INDEX), ['parsers/acme/widget', 'parsers/acme/gadget', 'parsers/beta/thing', 'playbooks/acme/widget-lock', 'connectors/acme/widget']);
   assert.deepEqual(entryIds({ entries: [{ id: 'Bad/ID' }, null, { id: 'ok/one' }] }), ['parsers/ok/one']);
+  // Rule entries, from an index the site built before library-ids.json held them.
+  assert.deepEqual(entryIds({ ...INDEX, rules: [{ id: 'acme/widget-alerts' }] }), ['parsers/acme/widget', 'parsers/acme/gadget', 'parsers/beta/thing', 'rules/acme/widget-alerts', 'playbooks/acme/widget-lock', 'connectors/acme/widget']);
 });
 
 test('CORS: only the library site\'s origin gets an answer', async () => {

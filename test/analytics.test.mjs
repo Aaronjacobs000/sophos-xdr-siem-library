@@ -49,6 +49,7 @@ test('countPath sends the route only', () => {
     '#/parsers/acme/thing?sample=Oct 14 01:02:03 host secret': '/parsers/unknown',
     '#/parsers/Acme/Thing': '/parsers/unknown',
     [`#/parsers/acme/${'a'.repeat(61)}`]: '/parsers/unknown',
+    '#/rules': '/rules', '#/rules/thinkst/opencanary-honeypot-activity': '/rules/thinkst/opencanary-honeypot-activity', '#/rules/thinkst/<b>': '/rules/unknown',
     '#/playbooks': '/playbooks', '#/connectors': '/connectors',
     '#/playbooks/sophos/sophos-mobile-lock': '/playbooks/sophos/sophos-mobile-lock',
     '#/connectors/sophos/sophos-mobile': '/connectors/sophos/sophos-mobile',

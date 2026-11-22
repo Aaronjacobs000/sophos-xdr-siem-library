@@ -1,5 +1,5 @@
 // The page's hash routes, as {view, nav, title, canonical, library, id?, step?}: the home, the
-// parser library, playbooks and connectors (#/playbooks/<vendor>/<name> for one), Parser Studio
+// parser library, rules, playbooks and connectors (#/rules/<vendor>/<name> for one), Parser Studio
 // (#/build/<step>) and its help. The parser library
 // was at #/library before the site had sections, so #/library and #/library/<vendor>/<product> still
 // work and canonical gives the #/parsers address that replaces them. library is true for the views
@@ -16,6 +16,10 @@ export function routeOf(hash) {
     const canonical = head === 'library' ? `#/parsers${raw.slice('library'.length)}` : null;
     if (parts.length >= 3) return { view: 'entry', nav: 'parsers', title: 'Parsers', canonical, library: true, id: `${parts[1]}/${parts[2]}` };
     return { view: 'parsers', nav: 'parsers', title: 'Parsers', canonical, library: true };
+  }
+  if (head === 'rules') {
+    if (parts.length >= 3) return { view: 'rule', nav: 'rules', title: 'Rules', canonical: null, library: true, id: `${parts[1]}/${parts[2]}` };
+    return { view: 'rules', nav: 'rules', title: 'Rules', canonical: null, library: true };
   }
   if (head === 'playbooks' || head === 'connectors') {
     const title = head === 'playbooks' ? 'Playbooks' : 'Connectors';

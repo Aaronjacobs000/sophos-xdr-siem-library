@@ -1,0 +1,47 @@
+# Custom detection rules for OpenCanary, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: OpenCanary login with a planted credential
+    description: Someone signed in to an OpenCanary honeypot with one of the credentials planted for it, so they have read a planted credential from somewhere on your network.
+    severity: critical
+    mitre:
+      - T1078
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'OpenCanary'
+        and alert_category = 'Login attempt'
+        and severity = 'HIGH'
+  - name: OpenCanary login attempt
+    description: Someone tried to sign in to a fake service on an OpenCanary honeypot, such as SSH, RDP, MSSQL or a web login page. Nobody has a reason to sign in to a honeypot.
+    severity: high
+    mitre:
+      - T1110
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'OpenCanary'
+        and alert_category = 'Login attempt'
+        and severity != 'HIGH'
+  - name: OpenCanary file opened on the decoy share
+    description: Someone opened a file on an OpenCanary honeypot's SMB share, which holds only decoy files.
+    severity: high
+    mitre:
+      - T1039
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'OpenCanary'
+        and log_type = '5000'
+  - name: OpenCanary Nmap scan
+    description: An OpenCanary honeypot saw an Nmap OS, NULL, Xmas or FIN scan, which points at someone mapping the network.
+    severity: medium
+    mitre:
+      - T1046
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'OpenCanary'
+        and alert_category = 'Port scan'
+        and log_type != '5001'

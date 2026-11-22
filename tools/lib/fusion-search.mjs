@@ -4,6 +4,7 @@
 // until status is COMPLETE, outcome.success says whether every partition worked, and searchResults
 // pages the rows by cursor. Those four operations are the only ones this client sends: the
 // documents are fixed below and request() refuses anything else, so it can't write to a tenant.
+// Another tool can hand the client its own fixed set of documents (tools/lib/fusion-cases.mjs).
 //
 // Credentials come from the environment or an env file and never reach the output: errors carry
 // the API's message, not the request.
@@ -90,7 +91,9 @@ async function readError(res) {
 }
 
 export class SearchClient {
-  constructor({ clientId, clientSecret, tenantId = null }, { fetchImpl = globalThis.fetch, log = () => {}, timeoutMs = 120000 } = {}) {
+  constructor({ clientId, clientSecret, tenantId = null }, { fetchImpl = globalThis.fetch, log = () => {}, timeoutMs = 120000, documents = DOCUMENTS, retry = ['search', 'searchResults'] } = {}) {
+    this.documents = documents;
+    this.retry = new Set(retry);
     // Kept off the instance's enumerable fields, so printing the client prints no secret.
     Object.defineProperty(this, 'creds', { value: { clientId, clientSecret }, enumerable: false });
     this.tenantId = tenantId;
@@ -128,14 +131,14 @@ export class SearchClient {
     return this.tenantId;
   }
 
-  // Sends one of DOCUMENTS. HTTP 429 is retried after Retry-After; a 5xx, a timeout or a network
-  // error is retried for the two queries only, since a repeated createSearch starts another search.
+  // Sends one of its documents. HTTP 429 is retried after Retry-After; a 5xx, a timeout or a network
+  // error is retried for the queries in retry only, since a repeated createSearch starts another search.
   // A GraphQL error comes back as HTTP 200 with an errors array, so the body decides.
   async request(op, variables) {
-    const document = DOCUMENTS[op];
-    if (!document) throw new Error(`${op} is not one of the search operations this client sends`);
+    const document = Object.prototype.hasOwnProperty.call(this.documents, op) ? this.documents[op] : null;
+    if (!document) throw new Error(`${op} is not one of the ${this.documents === DOCUMENTS ? 'search ' : ''}operations this client sends`);
     const tenant = await this.resolveTenant();
-    const retryable = op === 'search' || op === 'searchResults';
+    const retryable = this.retry.has(op);
     for (let attempt = 0; ; attempt++) {
       const token = await this.getToken();
       const controller = new AbortController();

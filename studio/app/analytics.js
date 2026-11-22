@@ -23,8 +23,8 @@ const slugId = (id) => {
 export function countPath(hash) {
   const r = routeOf(hash);
   if (r.view === 'entry') return slugId(r.id) ? `/parsers/${r.id}` : '/parsers/unknown';
-  if (r.view === 'playbook' || r.view === 'connector') return slugId(r.id) ? `/${r.nav}/${r.id}` : `/${r.nav}/unknown`;
-  if (r.view === 'parsers' || r.view === 'playbooks' || r.view === 'connectors') return `/${r.view}`;
+  if (r.view === 'rule' || r.view === 'playbook' || r.view === 'connector') return slugId(r.id) ? `/${r.nav}/${r.id}` : `/${r.nav}/unknown`;
+  if (r.view === 'parsers' || r.view === 'rules' || r.view === 'playbooks' || r.view === 'connectors') return `/${r.view}`;
   if (r.view === 'help') return '/help';
   if (r.view === 'studio') return `/build/${STEPS.has(r.step) ? r.step : 'sample'}`;
   return '/';

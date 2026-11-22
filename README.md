@@ -2,9 +2,10 @@
 
 > **Unofficial project, not from Sophos.** This is a personal project by an individual. It is not an official Sophos product and it is not built, endorsed, supported, or warranted by Sophos. Raise problems as issues on this repository, not with Sophos support. Report a security problem privately, as [SECURITY.md](SECURITY.md) explains.
 
-A library of parsers, playbooks and connectors for Sophos Fusion that people share, with Parser Studio, a page that helps you write custom parsers and test them in your browser. It has three sections:
+A library of parsers, rules, playbooks and connectors for Sophos Fusion that people share, with Parser Studio, a page that helps you write custom parsers and test them in your browser. It has four sections:
 
 - Parsers: custom parsers for Sophos Next-Gen SIEM (Sophos NG-SIEM), each with synthetic samples and the emulator's expected output. Anyone can use them, test them against their own logs, fork them, and add to them.
+- Rules: custom detection rules and automatic case rules for sources that come in through a library parser, each tested against that parser's samples. Case rules ship in Test state. The owner reviews every one.
 - Playbooks: Sophos Fusion playbook templates to import, each with its setup steps, risk tier, MDR note and rollback. The ones that change tickets, devices or user accounts ship with dry run on. The IT Glue, NinjaOne, Rewst, Slack and Teams playbooks and the three playbook failure playbooks have no dry run: they only post a message, open a ticket, add a case comment or send case fields to Rewst. The owner reviews every one.
 - Connectors: custom connectors for products that have no connector from Sophos, or for functions Sophos's connector lacks, which the playbooks call. Each one calls only hosts its vendor documents.
 
@@ -80,6 +81,27 @@ A library entry that needs a bridge names it in `meta.json`, for example `"bridg
 
 Bridges were called collectors until October 2026, when they were renamed so nobody mistakes them for the Sophos data collector. The old `"collector"` key and `COLLECTOR_*` settings still work.
 
+## Rules
+
+Rules turn a library source's events into detections and cases. There are two kinds of entry, one folder each:
+
+```
+rules/thinkst/opencanary-honeypot-activity/
+  meta.json        kind, the parser it needs, schema, sensor types, volume, MDR note, tested status
+  rules.yaml       the detection rules: the fields of the Create Rule form
+  tests.json       the parser's sample lines each rule must trigger, and lines none may
+rules/thinkst/opencanary-one-case-per-source-ip/
+  meta.json        kind, the detection rules it collects, MDR note, tested status
+  case-rule.yaml   the automatic case rule and its case template, as Automatic Cases exports them
+rules/sophos-coverage.json   what Sophos's own rules cover, by schema, for the overlap check
+```
+
+Rules are only for sources that reach Sophos NG-SIEM through a library parser, and each query matches that parser's sensor type. Sophos's own detectors cover its products and built-in integrations, and its IP Watchlist, Domain Watchlist and DGA detectors already run on custom-parsed addresses and domains, so the library takes no rules for those and no IOC rules. Sophos MDR doesn't work custom detections, and cases from your own case rules are Managed By Self.
+
+Sophos Fusion has no export or import for custom detection rules, so you add each one under Security Operations > Rules > Create Rule from the fields on its page. A case rule imports as YAML, but in a lab tenant an imported case rule opened no case until it was saved once more with `updateCaseRule` and no change. `node tools/case-rule-install.mjs rules/<vendor>/<name> --env-file <path> --install` imports the file and makes that call, or `--method create` makes the rule with `createCaseRule`. Without `--install` it only reads the tenant and says what it would do.
+
+The checks parse each query with a small reader for the query language rules use, check every field against the schema and the fields rules can't match, refuse regex the rule engine can't run, and run the rules on the parser's samples in the emulator, which has to give exactly what `tests.json` lists. A parser entry's page lists the rules for it, and Run the rules too in its tester shows which rule each line you paste would trigger. `node tools/ql-check.mjs rules/<vendor>/<name> --env-file <path>` runs each query in Data Lake Search in a tenant that ingests the samples and checks it returns the lines the offline check predicts. An entry is marked search-tested, or ran in a tenant, only after that.
+
 ## Playbooks and connectors
 
 Sophos Fusion exports and imports playbook templates and custom connectors as YAML, so the library holds the files you import, as Sophos Fusion exports them:
@@ -108,7 +130,7 @@ Sophos Fusion playbooks can post a case to Teams or Slack, but can't take a repl
 
 ## Contributing
 
-Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Playbooks and connectors: fill in the playbook or connector issue form, or open a pull request; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
+Parsers: use **Share to the library** on the Test step. It runs the same checks as the repo, then you either open a pull request in the browser or fill in an issue form, both with your GitHub account. A workflow checks every submission. When the checks pass and the entry is new or already yours, it can merge without waiting for a person. Rules: open a pull request; the owner reviews each one. Playbooks and connectors: fill in the playbook or connector issue form, or open a pull request; the owner reviews each one. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
 ## Run it locally
 
@@ -138,6 +160,7 @@ node tools/emulate.mjs --lint samples.log TOP.parser.txt CHILD.parser.txt
 | --- | --- |
 | `studio/` | The static site. `studio/core/` is the emulator, lint, detection, mapping and library code, shared by the page and the Node tools. `studio/app/` is the interface. |
 | `parsers/` | The parser library. |
+| `rules/` | Detection rule sets and case rules, and the snapshot of Sophos's own rule coverage the checks read. |
 | `playbooks/` | Playbook templates, each with its metadata and setup steps. |
 | `connectors/` | Custom connectors, and the allowlist of the hosts they may call. |
 | `bridges/` | Example bridges for pull-only sources and a relay for webhooks, each with a README and unit tests. The maintainer reviews every one. |

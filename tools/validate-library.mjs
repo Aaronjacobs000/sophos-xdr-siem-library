@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Validates library entries: for parsers, metadata, lint, the emulator against expected.json, the
 // sample scan, and confirm-string overlap with the rest of the library; for playbooks and
-// connectors, the checks in tools/lib/automation.mjs.
+// connectors, the checks in tools/lib/automation.mjs; for rule entries, the checks in
+// tools/lib/rules.mjs.
 //
 //   node tools/validate-library.mjs [--root <repo>] [--all | --changed-files <list.txt>]
 //                                   [--base <base repo checkout>] [--author <github login>]
@@ -12,8 +13,9 @@
 // An entry's "bridge" must name a folder under bridges/ in --base when it is given (the base
 // branch), otherwise in --root. The legacy "collector" key still works, with a warning. Connectors
 // are checked against connectors/allowed-hosts.json from --base the same way, so a new host is
-// reviewed and merged before a connector can call it. Playbooks and connectors never merge without
-// a review.
+// reviewed and merged before a connector can call it. Rule entries are checked against
+// rules/sophos-coverage.json from --base too. Playbooks, connectors and rules never merge without
+// a review. A changed parser entry checks again the rule entries that need it.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -23,6 +25,8 @@ import { reviewReasons } from './lib/merge-rules.mjs';
 import { validateEntry, vendorNames } from '../studio/core/library.js';
 import { loadAutomation, loadAllowedHosts, connectorMap, ALLOWED_HOSTS } from './lib/fs-automation.mjs';
 import { validateAutomation, checkAllowedHosts } from './lib/automation.mjs';
+import { loadRules, loadCoverage } from './lib/fs-rules.mjs';
+import { validateRuleEntry, crossLibraryProblems, COVERAGE } from './lib/rules.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1]; };
@@ -42,6 +46,10 @@ const report = { passed: true, eligible: false, reasons: [], outside: [], entrie
 const automation = await loadAutomation(root);
 const allowedHosts = await loadAllowedHosts(baseRoot || root);
 let autoTargets = [...automation.playbooks, ...automation.connectors];
+const ruleEntries = await loadRules(root);
+const coverage = await loadCoverage(baseRoot || root);
+let ruleTargets = ruleEntries;
+let checkCoverage = true;
 let checkHosts = true;
 let targets = library;
 let changed = [];
@@ -73,6 +81,22 @@ if (changedFile) {
   // A changed connector checks again the playbooks that call it.
   for (const pb of automation.playbooks) if (pb.meta && typeof pb.meta.connector === 'string' && autoIds.has(pb.meta.connector)) autoIds.add(`playbooks/${pb.id}`);
   autoTargets = autoTargets.filter((e) => autoIds.has(`${e.folder}/${e.id}`));
+  // Rule entries: rules/<vendor>/<name>/<file>, and the coverage snapshot.
+  const ruleIds = new Set();
+  checkCoverage = false;
+  for (const f of changed.filter((x) => x.startsWith('rules/'))) {
+    if (f === COVERAGE) { checkCoverage = true; continue; }
+    const parts = f.split('/');
+    if (parts.length < 4) { report.reasons.push(`${f} is not inside rules/<vendor>/<name>/`); report.passed = false; continue; }
+    const id = `${parts[1]}/${parts[2]}`;
+    if (existsSync(path.join(root, 'rules', id))) ruleIds.add(id);
+    else if (!report.entries.some((e) => e.id === `rules/${id}`)) report.entries.push({ id: `rules/${id}`, status: 'deleted', ok: true, problems: [] });
+  }
+  // A changed parser entry checks again the rule entries that need it, and a changed detection
+  // entry the case entries that collect it.
+  for (const e of ruleEntries) if (e.meta && typeof e.meta.parser === 'string' && ids.has(e.meta.parser.replace(/^parsers\//, ''))) ruleIds.add(e.id);
+  for (const e of ruleEntries) if (e.meta && e.meta.links && typeof e.meta.links.detection_rules === 'string' && ruleIds.has(e.meta.links.detection_rules.replace(/^rules\//, ''))) ruleIds.add(e.id);
+  ruleTargets = ruleEntries.filter((e) => ruleIds.has(e.id));
 } else if (!all) {
   console.error('pass --all or --changed-files <list>');
   process.exit(2);
@@ -130,6 +154,43 @@ for (const entry of autoTargets) {
   if (!v.ok) report.passed = false;
 }
 
+// Rule entries. Every entry is checked, so no sample line triggers rules from two entries, but the
+// report lists only the entries in scope.
+if (checkCoverage && existsSync(path.join(root, COVERAGE))) {
+  let problems = [];
+  try {
+    const c = JSON.parse(await readFile(path.join(root, COVERAGE), 'utf8'));
+    if (!c || typeof c !== 'object' || !c.schemas || typeof c.schemas !== 'object') problems.push({ level: 'error', code: 'json', message: `${COVERAGE} must have "schemas"` });
+  } catch (e) { problems.push({ level: 'error', code: 'json', message: `${COVERAGE} is not valid JSON: ${e.message}` }); }
+  report.entries.push({ id: COVERAGE, kind: 'coverage', status: changedFile ? 'changed' : 'existing', ok: !problems.length, problems: problems.map((p) => ({ ...p, file: 'sophos-coverage.json', line: null })) });
+  if (problems.length) report.passed = false;
+}
+if (coverage.problem) { report.passed = false; report.reasons.push(coverage.problem); }
+if (ruleTargets.length) {
+  const playbookIds = automation.playbooks.map((e) => `playbooks/${e.id}`);
+  const results = new Map(ruleEntries.map((e) => [e.id, validateRuleEntry(e, { library, rules: ruleEntries, playbooks: playbookIds, coverage: coverage.coverage })]));
+  const cross = crossLibraryProblems(ruleEntries, results);
+  for (const entry of ruleTargets) {
+    const v = results.get(entry.id);
+    const problems = [...v.problems, ...(cross[entry.id] || [])];
+    let status = 'existing';
+    let baseAuthor = null;
+    if (baseRoot) {
+      const baseDir = path.join(baseRoot, 'rules', entry.id);
+      if (existsSync(baseDir)) {
+        status = 'changed';
+        try { baseAuthor = JSON.parse(await readFile(path.join(baseDir, 'meta.json'), 'utf8')).author || null; } catch { baseAuthor = null; }
+      } else status = 'new';
+    }
+    const ok = !problems.some((p) => p.level === 'error');
+    report.entries.push({
+      id: `rules/${entry.id}`, kind: entry.meta && entry.meta.kind === 'case' ? 'case rule' : 'detection rules', status, baseAuthor, author: entry.meta && entry.meta.author, ok,
+      problems: problems.map((p) => ({ level: p.level, code: p.code, file: p.file || null, line: p.line || null, message: p.message })),
+    });
+    if (!ok) report.passed = false;
+  }
+}
+
 // Merge without review only when the PR touches nothing but library entries, every entry
 // passes, and each changed entry already belongs to the PR author. Bridge code never merges
 // without review.
@@ -161,9 +222,11 @@ function markdown() {
   if (changedFile) {
     lines.push(report.eligible ? 'This change only adds or updates its author\'s own library entries, and every library check passed, so it qualifies to merge without a review.' : `This change needs a maintainer review: ${report.reasons.join('; ') || 'see above'}.`);
   }
-  lines.push('', report.entries.some((e) => e.kind === 'playbook' || e.kind === 'connector')
-    ? 'Parser results come from the Parser Studio emulator, not from Sophos NG-SIEM. Playbook and connector checks are offline: validate a template in a tenant with playbookValidateDSLV2 before it ships.'
-    : 'Results come from the Parser Studio emulator, not from Sophos NG-SIEM.');
+  const has = (...kinds) => report.entries.some((e) => kinds.includes(e.kind));
+  const close = [has('playbook', 'connector', 'detection rules', 'case rule') ? 'Parser results come from the Parser Studio emulator, not from Sophos NG-SIEM.' : 'Results come from the Parser Studio emulator, not from Sophos NG-SIEM.'];
+  if (has('playbook', 'connector')) close.push('Playbook and connector checks are offline: validate a template in a tenant with playbookValidateDSLV2 before it ships.');
+  if (has('detection rules', 'case rule')) close.push('Rule checks are offline too: run each query in Data Lake Search before a rule goes live, and read a case rule\'s Rule Logs before you turn it on.');
+  lines.push('', close.join(' '));
   return lines.join('\n') + '\n';
 }
 

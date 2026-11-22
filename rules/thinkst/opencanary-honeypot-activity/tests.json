@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "OpenCanary login with a planted credential": [12],
+    "OpenCanary login attempt": [4, 6, 11, 13, 21, 23, 25, 26, 27, 30, 32, 33, 46],
+    "OpenCanary file opened on the decoy share": [14],
+    "OpenCanary Nmap scan": [16, 17, 18, 19]
+  },
+  "quiet": [1, 2, 3, 5, 7, 8, 9, 10, 15, 20, 22, 24, 28, 29, 31, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48]
+}

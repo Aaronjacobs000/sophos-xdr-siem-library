@@ -1,5 +1,5 @@
 // An entry's About text: a summary of two or three sentences, then notes in labelled sections.
-// Parser entries, playbooks and connectors all use it.
+// Parser entries, playbooks, connectors and rule entries all use it.
 //
 // Notes are plain text, read line by line:
 //   a line that ends with a colon and holds nothing else   a section label, such as "Field mapping:"
@@ -15,6 +15,7 @@ export const NOTE_LABEL = /^([A-Z][^:\n]{0,47}):$/;
 // The usual sections, in the usual order. Other labels are allowed.
 export const NOTE_SECTIONS = ['Setup', 'Field mapping', 'Time', 'Sources and licenses', 'Made up in the samples', 'Testing', 'Known gaps'];
 export const AUTOMATION_NOTE_SECTIONS = ['Setup', 'How it works', 'Testing', 'Known gaps'];
+export const RULE_NOTE_SECTIONS = ['Setup', 'How it works', 'Tuning', 'Testing', 'Known gaps'];
 
 // What a summary says, and the sections to suggest, for each kind of entry.
 const KINDS = {
@@ -29,6 +30,10 @@ const KINDS = {
   connector: {
     summary: 'say what the connector calls and can do, how its connection signs in, and what it needs',
     labels: '"How it works:" or "Testing:"',
+  },
+  rule: {
+    summary: 'say what the rules detect or the case rule collects, which library parser they need, and what to expect',
+    labels: '"Setup:" or "How it works:"',
   },
 };
 
@@ -61,7 +66,7 @@ export function sentenceCount(text) {
 }
 
 // Problems with an entry's summary and notes, as {level, message}. required: whether a missing
-// summary or unlabelled notes are errors (true) or warnings. kind: parser, playbook or connector.
+// summary or unlabelled notes are errors (true) or warnings. kind: parser, playbook, connector or rule.
 export function aboutProblems(meta, { required = true, kind = 'parser' } = {}) {
   const k = KINDS[kind] || KINDS.parser;
   const out = [];

@@ -9,7 +9,7 @@ export function renderHome(root) {
   const ready = L.status === 'ready';
   const parsers = L.entries.reduce((k, e) => k + ((e.meta && Array.isArray(e.meta.parsers)) ? e.meta.parsers.length : 0), 0);
   root.append(h('div', { class: 'libhead' },
-    h('div', {}, h('h1', { text: SITE_NAME }), h('p', { class: 'sub', text: 'Parsers, playbooks and connectors for Sophos Fusion that people share, and Parser Studio to write and test your own parsers in the browser. A personal project, not from Sophos.' })),
+    h('div', {}, h('h1', { text: SITE_NAME }), h('p', { class: 'sub', text: 'Parsers, rules, playbooks and connectors for Sophos Fusion that people share, and Parser Studio to write and test your own parsers in the browser. A personal project, not from Sophos.' })),
     h('div', { class: 'actions' }, h('a', { class: 'btn quiet', href: githubUrl(), target: '_blank', rel: 'noopener noreferrer', text: 'The repo on GitHub' }), h('a', { class: 'btn primary', href: githubUrl('/blob/main/CONTRIBUTING.md'), target: '_blank', rel: 'noopener noreferrer', text: 'How to contribute' }))));
   const cards = h('div', { class: 'cards' });
   cards.append(
@@ -17,12 +17,14 @@ export function renderHome(root) {
       ready ? `${L.entries.length} entries · ${parsers} parsers` : 'Loading…'),
     section('#/build/sample', 'Tool', 'Parser Studio', 'Write a custom parser in your browser: paste sample lines, map the fields, and test the scripts in an emulator of the parser language. Then share them to the library.',
       'Runs in this tab. Nothing is uploaded.'),
+    section('#/rules', 'Library', 'Rules', 'Custom detection rules and automatic case rules for sources that come in through a library parser, each tested against the parser\'s samples. Case rules ship in Test state, and the owner reviews every one.',
+      ready ? `${count((L.rules || []).filter((r) => r.meta.kind === 'detection'), 'detection rule set')} · ${count((L.rules || []).filter((r) => r.meta.kind === 'case'), 'case rule')}` : 'Loading…'),
     section('#/playbooks', 'Library', 'Playbooks', 'Sophos Fusion playbook templates to import, each with its setup steps, risk tier and rollback. The ones that change tickets or devices ship with dry run on, and the owner reviews every one.',
       ready ? count(L.playbooks, 'playbook') : 'Loading…'),
     section('#/connectors', 'Library', 'Connectors', 'Custom connectors for products that have no connector from Sophos, which the playbooks call. Each one calls only hosts its vendor documents.',
       ready ? count(L.connectors, 'connector') : 'Loading…'));
   root.append(cards);
-  root.append(h('div', { class: 'callout blue' }, pill('Read first', 'blue'), h('span', { text: 'Everything here is a starting point that people share. Test a parser with Run Test, and run a playbook against a test target, in your own Sophos Fusion tenant before you turn it on. Sophos does not maintain or support any of it.' })));
+  root.append(h('div', { class: 'callout blue' }, pill('Read first', 'blue'), h('span', { text: 'Everything here is a starting point that people share. Test a parser with Run Test, run a rule\'s query in Data Lake Search, and run a playbook against a test target, in your own Sophos Fusion tenant before you turn it on. Sophos does not maintain or support any of it.' })));
 }
 
 const count = (list, one) => `${(list || []).length} ${one}${(list || []).length === 1 ? '' : 's'}`;
