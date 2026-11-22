@@ -644,5 +644,131 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 14,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791972137114000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0014",
+      "event_type": "IDENTITY_PROVIDER",
+      "event_source": "PingOne",
+      "event_name": "IDENTITY_PROVIDER.CREATED",
+      "user_name": "admin@example.com",
+      "user_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "USER",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "source_address": "198.51.100.200",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "logon_application_family": "PingOne Admin Console",
+      "status": "SUCCESS",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "4c1d9e2f-7a3b-4f60-8d15-b2e9c4a70f31",
+          "resource_type": "IDENTITY_PROVIDER",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Identity Provider Created"
+          },
+          {
+            "key": "result_description",
+            "value": "Created Identity Provider Partner SSO of type 'SAML'"
+          },
+          {
+            "key": "resource_name",
+            "value": "Partner SSO"
+          },
+          {
+            "key": "client_name",
+            "value": "PingOne Admin Console"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0014"
+          },
+          {
+            "key": "session_id",
+            "value": "9e8d7c6b-5a49-4382-a170-ffeeddcc0014"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "PINGONE_ACTIVITY_JSON_PARENT > PINGONE_ACTIVITY_JSON_CHILD_CLOUDAUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "PingOne",
+      "event_time_usec": 1791972342115000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "7f3e2d1c-0b9a-4876-9543-21fedcba0015",
+      "event_type": "DEVICE_AUTHENTICATION_POLICY",
+      "event_source": "PingOne",
+      "event_name": "DEVICE_AUTHENTICATION_POLICY.UPDATED",
+      "user_name": "admin@example.com",
+      "user_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "user_type": "USER",
+      "recipient_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b",
+      "source_address": "198.51.100.200",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      "logon_application_family": "PingOne Admin Console",
+      "status": "SUCCESS",
+      "management_event": true,
+      "read_only": false,
+      "resources": [
+        {
+          "resource_id": "9b27e5c0-1f84-4d3a-a6e2-5c8f0d1b7e49",
+          "resource_type": "DEVICE_AUTHENTICATION_POLICY",
+          "resource_account_id": "6c2f7a1e-3b4d-4e5f-9a0b-1c2d3e4f5a6b"
+        }
+      ],
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "description",
+            "value": "Auth Method Policy Updated"
+          },
+          {
+            "key": "result_description",
+            "value": "Updated Device Authentication Policy Default MFA Policy"
+          },
+          {
+            "key": "resource_name",
+            "value": "Default MFA Policy"
+          },
+          {
+            "key": "client_name",
+            "value": "PingOne Admin Console"
+          },
+          {
+            "key": "correlation_id",
+            "value": "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b0015"
+          },
+          {
+            "key": "session_id",
+            "value": "9e8d7c6b-5a49-4382-a170-ffeeddcc0015"
+          },
+          {
+            "key": "population_id",
+            "value": "0f1e2d3c-4b5a-4968-8776-655443322110"
+          }
+        ]
+      }
+    }
   }
 ]

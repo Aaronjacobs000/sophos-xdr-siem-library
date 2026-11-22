@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "ScreenConnect remote session actions",
+  "vendor": "ConnectWise",
+  "product": "ScreenConnect",
+  "parser": "parsers/connectwise/screenconnect",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "ConnectWise ScreenConnect"
+  ],
+  "volume": "None on a normal day for the account rule. The file rule makes one detection for each program a technician pushes, a few a day where installers go out through ScreenConnect.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/List_of_automation_definitions"
+  ],
+  "summary": "Two custom detection rules for ConnectWise ScreenConnect, on the ManagementEvent records the library's ScreenConnect parsers write from its session automation. They make a detection when a command queued through a session adds a local account or a local group member, and when a session sends a program or script to a machine. Each rule matches sensor type ConnectWise ScreenConnect only.",
+  "notes": "Setup:\n- Add the library's ScreenConnect parsers and send the automations in its README through bridges/webhook-relay, which adds the HTTP Ingest key, then run the check-your-data search to see events arrive.\n- The session automation's event filter needs QueuedCommand and SentFiles.\n\nHow it works:\n- The parsers write a queued command's text as the command and a sent file's name as the result, with the guest machine as the target host.\n- The account rule takes queued commands with net user, net1 user or net localgroup and /add, New-LocalUser or Add-LocalGroupMember, in any case.\n- The file rule takes sent files whose names hold one of nine program and script extensions.\n\nTuning:\n- If technicians push one installer to every machine, leave it out in the query itself, such as and result !contains 'AgentSetup.exe'. A suppression rule would hide Sophos's detections for those machines as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 3 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on either rule; sent again about 30 minutes after, they did.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The lines went through bridges/webhook-relay, run on the lab machine, as text/plain, the way ScreenConnect's Perform Web Request sends them.\n\nKnown gaps:\n- A command typed into a remote shell on the machine isn't a ScreenConnect command event. Sophos's own detections on the machine cover what it runs.\n- A file sent inside an archive, or renamed to another extension, makes none.",
+  "links": {
+    "case_rule": "rules/connectwise/screenconnect-one-case-per-machine",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

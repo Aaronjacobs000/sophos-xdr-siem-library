@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "Huawei USG security policy changes",
+  "vendor": "Huawei",
+  "product": "USG and HiSecEngine Firewalls",
+  "parser": "parsers/huawei/usg-and-hisecengine-firewalls",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "Huawei USG"
+  ],
+  "volume": "None on a normal day. One for each rule change that permits RDP or SMB.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_POLICY_POLICYMODIFY_6.html"
+  ],
+  "summary": "One custom detection rule for Huawei USG and HiSecEngine firewalls, on the ManagementEvent records the library's Huawei USG parsers write from the info-center log. It makes a detection when someone adds or changes a security policy rule that permits RDP or SMB. It matches sensor type Huawei USG only.",
+  "notes": "Setup:\n- Add the library's Huawei USG and HiSecEngine parsers and send the firewall's info-center logs to the data collector first, then run the check-your-data search to see logs arrive.\n\nHow it works:\n- POLICY/6/POLICYMODIFY names the admin, the rule, the change, and the rule's action, service and application. The parser writes the change as the operation name and the whole message as the operation.\n- The rule takes added and modified rules whose action is permit and whose service or application is RDP or SMB, in any case.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same record agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on the rule; sent again about 30 minutes after, they did.\n- Data Lake Search warned that operation's value will never match the enum values ADDED, MODIFIED, REMOVED and UNKNOWN, and returned the sample line all the same. The live rule fired on it too.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- The log names the rule's addresses but not its zones, so the rule can't tell a rule for inside traffic from one that lets the internet in. Read the rule on the firewall.\n- A permit rule for any service, or for a service group that holds RDP, isn't taken.",
+  "links": {
+    "case_rule": "rules/huawei/huawei-usg-one-case-per-firewall",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

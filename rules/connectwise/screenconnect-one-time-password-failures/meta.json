@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "ScreenConnect one-time password failures",
+  "vendor": "ConnectWise",
+  "product": "ScreenConnect",
+  "parser": "parsers/connectwise/screenconnect",
+  "schema": "scwx.auth",
+  "sensor_types": [
+    "ConnectWise ScreenConnect"
+  ],
+  "volume": "None to a few a week, from technicians who mistype a code. Several for one account in a short time means someone else has its password.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/AuthSchema/",
+    "https://docs.connectwise.com/ScreenConnect_Documentation/Get_started/Administration_page/Automations_page/List_of_automation_definitions"
+  ],
+  "summary": "One custom detection rule for ConnectWise ScreenConnect, on the Auth records the library's ScreenConnect parsers write from its security automation. It makes a detection when a sign-in gives the right password and a wrong one-time password. It matches sensor type ConnectWise ScreenConnect only.",
+  "notes": "Setup:\n- Add the library's ScreenConnect parsers and send the automations in its README through bridges/webhook-relay, which adds the HTTP Ingest key, then run the check-your-data search to see events arrive.\n- The security automation's event filter needs LoginAttempt.\n\nHow it works:\n- ScreenConnect logs the result OneTimePasswordInvalid when the password was right and the one-time password wrong, and the parsers write it with failure category INCORRECT_MFA, which the rule takes.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in that succeeded, as an unseen user, address or application.\n- The lines went through bridges/webhook-relay, run on the lab machine, as text/plain, the way ScreenConnect's Perform Web Request sends them.\n\nKnown gaps:\n- Sign-ins through an external identity provider check MFA there, not in ScreenConnect, so they make none.\n- Password failures and lockouts aren't taken: Sophos's own sign-in detections cover those.",
+  "links": {
+    "case_rule": "rules/connectwise/screenconnect-one-case-per-technician",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

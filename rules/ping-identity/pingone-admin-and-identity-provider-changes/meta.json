@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "PingOne admin and identity provider changes",
+  "vendor": "Ping Identity",
+  "product": "PingOne",
+  "parser": "parsers/ping-identity/pingone",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "PingOne"
+  ],
+  "volume": "None on a normal day. Each rule takes one audit activity for one admin change, so an environment sees a few a month, most of them admins at work.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://developer.pingidentity.com/pingone-api/platform/reference/audit-reporting-events.html",
+    "https://docs.pingidentity.com/pingone/integrations/p1_create_webhook.html"
+  ],
+  "summary": "Three custom detection rules for PingOne, on the CloudAudit records the library's PingOne parsers write from PingOne's audit activities. They make a detection when someone assigns a role, adds or changes an external identity provider, or changes or deletes an MFA policy. Each rule matches sensor type PingOne only.",
+  "notes": "Setup:\n- Add the library's PingOne parsers and point a PingOne webhook at HTTP Ingest first, as the parser entry's README says, then run the check-your-data search to see audit activities arrive.\n\nHow it works:\n- The parsers write each audit activity's action type, such as ROLE_ASSIGNMENT.CREATED, as the event name, and the admin or app that made the change as the user.\n- The role rule takes every role assignment, to a user or an app. PingOne names the role only in the activity's result description, such as Assigned role Environment Admin, so the rule can't tell an admin role from another.\n- The identity provider rule takes IDENTITY_PROVIDER.CREATED and IDENTITY_PROVIDER.UPDATED. A new external identity provider can sign users in on PingOne's behalf.\n- The MFA rule takes MFA_SETTINGS.UPDATED, and DEVICE_AUTHENTICATION_POLICY.UPDATED and DELETED, the Auth Method Policy changes that set which MFA methods a sign-on accepts.\n\nTuning:\n- If an app assigns roles through the API as part of onboarding, leave it out in the query itself, such as and user_name != 'HR Provisioning'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on the role rule; sent again about 30 minutes after, they did.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-on on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- A user's MFA device deleted (DEVICE.DELETED) isn't taken: people delete one each time they change phones.\n- Sign-ins that skip MFA after a policy change are Auth records, which rules/ping-identity/pingone-mfa-check-failures reads for failures only.",
+  "links": {
+    "case_rule": "rules/ping-identity/pingone-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

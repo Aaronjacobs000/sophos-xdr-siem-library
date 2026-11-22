@@ -1,0 +1,15 @@
+# Custom detection rules for PingOne, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: PingOne MFA check failed
+    description: "A PingOne sign-on failed its MFA check: a wrong one-time passcode, a rejected push or a failed security key check. PingOne asks for MFA after the password, so someone may hold the user's password."
+    severity: medium
+    mitre:
+      - T1078.004
+      - T1621
+    enabled_by_default: true
+    query: |-
+      from auth
+      where sensor_type = 'PingOne'
+        and failure_category = 'INCORRECT_MFA'

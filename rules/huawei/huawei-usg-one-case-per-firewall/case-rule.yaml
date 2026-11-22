@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: huawei_usg_one_case_per_firewall
+title: Huawei USG, one case per firewall (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Huawei USG policy rule allows RDP or SMB')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' huawei_usg_one_case_per_firewall')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: huawei_usg_security_policy_changes_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: huawei_usg_security_policy_changes_unofficial
+title: Huawei USG security policy changes (unofficial)
+description: Case for Huawei USG security policy changes custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - huawei
+    type: SECURITY_INVESTIGATION
+    title: Huawei USG security policy changes on one firewall
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

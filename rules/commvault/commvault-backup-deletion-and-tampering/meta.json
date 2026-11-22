@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Commvault backup deletion and tampering",
+  "vendor": "Commvault",
+  "product": "Commvault syslog",
+  "parser": "parsers/commvault/commvault-syslog",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "Commvault"
+  ],
+  "volume": "None on a normal day. Admins retiring a client or a storage policy make a few a month.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://documentation.commvault.com/11.40/commcell-console/operations_recorded_by_audit_trail.html",
+    "https://documentation.commvault.com/11.42/software/configuring_syslog_server.html"
+  ],
+  "summary": "Three custom detection rules for Commvault, on the ManagementEvent records the library's Commvault parsers write from the CommServe audit trail. They make a detection when someone deletes or erases backup data, turns backups off or stops all jobs, and when Commvault's ransomware protection blocks a process from backup storage. Each rule matches sensor type Commvault only.",
+  "notes": "Setup:\n- Add the library's Commvault parsers and turn on CommServe syslog forwarding of events, the audit trail and alerts first, then run the check-your-data search to see records arrive.\n\nHow it works:\n- The parsers write each audit trail record's operation, such as Delete Backup Set, as the operation name and the user who did it as the user name.\n- The deletion rule takes twelve delete and erase operations that Commvault's audit trail records as Critical. The backups off rule takes Disable Backups for Storage Policy Copy, Disable Schedule Policy, Kill All Jobs and Suspend All Jobs.\n- The ransomware protection rule takes the audit trail's Ransomware protection detected unauthorized access.\n\nTuning:\n- If an admin account retires clients on a schedule, leave it out in the query itself, such as and username != 'svc-retire'. A suppression rule would hide Sophos's detections for that CommServe as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines. Lines sent in the first 12 minutes after the rules were made made no detection on any of the three; sent again about 30 minutes after, they did.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- CommServe sends syslog in batches about every eight minutes, so detections can come that long after the change.\n- A retention cut made with Update Storage Policy Copy Properties isn't taken: admins make that change often.",
+  "links": {
+    "case_rule": "rules/commvault/commvault-one-case-per-commserve",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -361,5 +361,55 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 13,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791806324000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "channel": "Commvault audit trail",
+      "operation_name": "Delete Backup Set",
+      "operation": "Backup set [defaultBackupSet] of client [fileserver02] deleted",
+      "username": "svc-legacy",
+      "result": "Critical",
+      "event_id": 119301
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791806370000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "channel": "Commvault audit trail",
+      "operation_name": "Disable Backups for Storage Policy Copy",
+      "operation": "Backups disabled for copy [Primary] of storage policy [SP-Files]",
+      "username": "svc-legacy",
+      "result": "Critical",
+      "event_id": 119302
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "COMMVAULT_SYSLOG_PARENT > COMMVAULT_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Commvault",
+      "event_time_usec": 1791806412000000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "commserve01",
+      "channel": "Commvault audit trail",
+      "operation_name": "Ransomware protection detected unauthorized access",
+      "operation": "Ransomware protection on MediaAgent [ma01] blocked process [C:\\Users\\Public\\svchost32.exe] from writing to mount path [D:\\CVLibrary]",
+      "result": "Critical",
+      "event_id": 119303
+    }
   }
 ]

@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "Huawei USG web admin login from outside",
+  "vendor": "Huawei",
+  "product": "USG and HiSecEngine Firewalls",
+  "parser": "parsers/huawei/usg-and-hisecengine-firewalls",
+  "schema": "scwx.auth",
+  "sensor_types": [
+    "Huawei USG"
+  ],
+  "volume": "None where the web admin is reachable only from inside. Where admins sign in from outside, one for each sign-in.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/AuthSchema/",
+    "https://support.huawei.com/hedex/api/pages/EDOC1100605493/AEQ0723J/01/resources/V600R025C10/dc_USG_log_WEBM_LOGINFAIL_5.html"
+  ],
+  "summary": "One custom detection rule for Huawei USG and HiSecEngine firewalls, on the Auth records the library's Huawei USG parsers write from the info-center log. It makes a detection when someone signs in to the firewall's web admin from an address outside the private ranges. It matches sensor type Huawei USG only.",
+  "notes": "Setup:\n- Add the library's Huawei USG and HiSecEngine parsers and send the firewall's info-center logs to the data collector first, then run the check-your-data search to see logs arrive.\n\nHow it works:\n- The rule takes successful web admin sign-ins (WEBM/6/LOGINSUCC) from an address outside the private ranges of RFC 1918 and loopback, which its regex lists. Any other address counts as outside, including the documentation addresses, such as 192.0.2.10, that the samples use.\n\nTuning:\n- If admins sign in from a public range of your own, such as a VPN pool, add it to the regex in the query itself, such as |^198\\.51\\.100\\. for 198.51.100.0/24. A suppression rule would hide Sophos's detections for that address as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed: 6 sample lines, and a lab-only web admin sign-in from a private address, which the rule left out. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about two minutes. The private address sign-in made none.\n- Sophos's sign-in analytics also flagged both sample sign-ins this rule takes, as an unseen user or address. That check fires once for each new user or address; this rule fires for every sign-in from outside.\n\nKnown gaps:\n- CLI and SSH sign-ins are VRP messages, which the library's Huawei VRP switches and routers entry reads, so this rule doesn't see them.\n- Failed sign-ins and lockouts aren't taken: Sophos's own sign-in detections cover those.",
+  "links": {
+    "case_rule": "rules/huawei/huawei-usg-one-case-per-source-ip",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
