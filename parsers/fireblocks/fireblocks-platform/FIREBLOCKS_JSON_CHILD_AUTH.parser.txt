@@ -1,4 +1,4 @@
-!SAMPLE={"fireblocks_record":"audit_log","id":"e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b","timestamp":1793235947210,"createdAt":1793235947390,"user":"Sam Admin","subject":"Sign in","event":"Failed","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"4f04b1c0-aec7-4678-b398-507d62cebab1"}
+!SAMPLE={"fireblocks_record":"audit_log","id":"e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b","timestamp":1793235947210,"createdAt":1793235947390,"user":"Sam Admin","subject":"Sign in","fireblocks_event":"Failed","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"4f04b1c0-aec7-4678-b398-507d62cebab1"}
 !CONFIRMWITH=EXPRESSION
 !CONFIRMSTRING=eventType$=="auth"
 !SCHEMA=scwx.auth

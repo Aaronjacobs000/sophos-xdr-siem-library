@@ -1,8 +1,8 @@
 # Fireblocks audit log bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Fireblocks workspace or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from Fireblocks' API reference. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Fireblocks workspace. Its unit tests use a local mock server built from Fireblocks' API reference. In a lab tenant on 2026-11-23, its output for the library's sample events, read from such a mock, went through a real HTTP Ingest integration and parsed. Run it with `--dry-run` first and check what it would send.
 
-Fireblocks has no syslog and no SIEM connector of its own. Its audit log (sign-ins, user and role changes, admin quorum, policy changes, address and IP allowlists, signing keys, key backups, vaults, webhooks and transactions) reaches other tools through one pull-only endpoint, `GET /v1/management/audit_logs`, which Fireblocks names as the route for SIEM platforms. This script reads it and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It puts `"fireblocks_record": "audit_log"` first in each event, and the library parsers in `parsers/fireblocks/fireblocks-platform` normalize the events. In a lab tenant on 2026-11-23 they didn't: HTTP Ingest kept only the value of each event's `event` key, such as `Signed in`, so no parser saw the events.
+Fireblocks has no syslog and no SIEM connector of its own. Its audit log (sign-ins, user and role changes, admin quorum, policy changes, address and IP allowlists, signing keys, key backups, vaults, webhooks and transactions) reaches other tools through one pull-only endpoint, `GET /v1/management/audit_logs`, which Fireblocks names as the route for SIEM platforms. This script reads it and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It puts `"fireblocks_record": "audit_log"` first in each event and sends the event's `event` key as `fireblocks_event`, and the library parsers in `parsers/fireblocks/fireblocks-platform` normalize the events. HTTP Ingest keeps only the value of a top-level `event` key that holds text, so without the rename each event would arrive as just `Signed in` or `Failed`, a Generic record no parser sees.
 
 Fireblocks' transaction, allowlist and vault webhooks come in another way, through the `/fireblocks` route of [bridges/webhook-relay](../webhook-relay/).
 
@@ -109,10 +109,10 @@ The bridge never logs the private key, the API key, the HTTP Ingest key, or the 
 
 ## What it sends
 
-Each event as Fireblocks returns it, with `fireblocks_record` first:
+Each event as Fireblocks returns it, with `fireblocks_record` first and `event` renamed `fireblocks_event` in its place:
 
 ```json
-{"fireblocks_record":"audit_log","id":"e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b","timestamp":1793235947210,"createdAt":1793235947390,"user":"Sam Admin","subject":"Sign in","event":"Failed","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"4f04b1c0-aec7-4678-b398-507d62cebab1"}
+{"fireblocks_record":"audit_log","id":"e06fa38a-75d4-4aa1-9e9b-4ce3e9af964b","timestamp":1793235947210,"createdAt":1793235947390,"user":"Sam Admin","subject":"Sign in","fireblocks_event":"Failed","category":"Administration","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"4f04b1c0-aec7-4678-b398-507d62cebab1"}
 ```
 
 Fireblocks' API reference gives `timestamp` as epoch milliseconds and its Audit Logs guide as ISO 8601; the bridge and the parsers read both. What a live workspace sends hasn't been checked. An audit event carries no source address, client or object ID, so neither does the record.
@@ -123,7 +123,7 @@ Fireblocks' API reference gives `timestamp` as epoch milliseconds and its Audit 
 python3 -m unittest discover -s bridges/fireblocks-audit-logs -p 'test_*.py' -v
 ```
 
-The tests start a local mock of the audit log endpoint and HTTP Ingest, built from the documented shapes, with their own RSA keys. They check that every request's JWT verifies with the API user's public key and names that request's URI, a new nonce, the API key and the empty body's hash; paging oldest first by cursor (`next`, and the older `cursor`); the category filter; the lookback, the window and the overlap, and that repeats are dropped; that a window's end moves only after HTTP Ingest accepted its pages; a key or API key that isn't the API user's, and a role that can't read the log; PKCS #1 and PKCS #8 keys; dry-run, retries with a new JWT, batching and gzip; that redirects are refused; and that no secret reaches the log.
+The tests start a local mock of the audit log endpoint and HTTP Ingest, built from the documented shapes, with their own RSA keys. They check that every request's JWT verifies with the API user's public key and names that request's URI, a new nonce, the API key and the empty body's hash; paging oldest first by cursor (`next`, and the older `cursor`); the category filter; that the event key goes as `fireblocks_event` in its place; the lookback, the window and the overlap, and that repeats are dropped; that a window's end moves only after HTTP Ingest accepted its pages; a key or API key that isn't the API user's, and a role that can't read the log; PKCS #1 and PKCS #8 keys; dry-run, retries with a new JWT, batching and gzip; that redirects are refused; and that no secret reaches the log.
 
 ## References
 

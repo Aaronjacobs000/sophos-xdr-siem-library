@@ -1,4 +1,4 @@
-!SAMPLE={"fireblocks_record":"audit_log","id":"91dd9889-3d4c-4fff-9a06-0f954f186e70","timestamp":1793238312003,"createdAt":1793238312183,"user":"Treasury API","subject":"Transaction","event":"Blocked by TAP","category":"Transactions","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"fdbeec8b-8de2-479a-9afb-81bb68b24b78"}
+!SAMPLE={"fireblocks_record":"audit_log","id":"91dd9889-3d4c-4fff-9a06-0f954f186e70","timestamp":1793238312003,"createdAt":1793238312183,"user":"Treasury API","subject":"Transaction","fireblocks_event":"Blocked by TAP","category":"Transactions","tenantId":"52020d9c-c625-45e1-91e5-b4faa015b982","userId":"fdbeec8b-8de2-479a-9afb-81bb68b24b78"}
 !CONFIRMWITH=EXPRESSION
 !CONFIRMSTRING=eventType$=="alert"
 !SCHEMA=scwx.thirdpartyalert
