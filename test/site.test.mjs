@@ -93,6 +93,8 @@ test('the site build publishes the index, the entry files and the bridges next t
     const html = await readFile(path.join(out, 'index.html'), 'utf8');
     assert.match(html, /<title>Unofficial Sophos Fusion XDR and SIEM Library<\/title>/);
     assert.match(html, /<a href="#\/rules" data-nav="rules">Rules<\/a>/);
+    // The menu links out to the agent skills, in a new tab like the other outbound links.
+    assert.match(html, /<a href="https:\/\/github\.com\/Aaronjacobs000\/sophos-fusion-skills" target="_blank" rel="noopener noreferrer"[^>]*>Agent skills<\/a>/);
     assert.match(html, /case rules ship in Test state/);
     assert.doesNotMatch(html, /sophos-ngsiem-parser-studio|community/i);
   } finally {

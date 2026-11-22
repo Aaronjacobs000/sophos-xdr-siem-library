@@ -14,6 +14,8 @@ To report a security problem, follow [SECURITY.md](SECURITY.md) instead of openi
 | [A connector](#add-a-playbook-or-connector) | The [connector form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=connector-submission.yml), or a pull request | The checks run, then the owner reviews it. |
 | [A bridge](#bridges) | A pull request | CI runs its tests, then the maintainer reviews it. |
 
+To build an entry with a coding agent, try the unofficial [Sophos Fusion agent skills](https://github.com/Aaronjacobs000/sophos-fusion-skills). They write parsers, rules, playbooks and connectors and test them offline, then on your own tenant.
+
 ## Add parsers to the library
 
 Build and test the parsers in [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample), then choose **Share to the library** on the Test step. Fill in the details and run the library checks; they are the same checks the repo runs. When they pass, pick a route.
