@@ -1,0 +1,44 @@
+# Custom detection rules for 1Password Business, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: 1Password vault exported
+    description: Someone exported a whole 1Password vault. An export holds every password in the vault in a file that 1Password no longer protects, so check the person meant to do it.
+    severity: high
+    mitre:
+      - T1555.005
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = '1Password'
+        and event_name = 'vault.export'
+  - name: 1Password sign-in protection turned off
+    description: Someone turned off multi-factor authentication for the account or one person, or turned off Unlock with SSO. Anyone holding a password can then sign in with it alone.
+    severity: high
+    mitre:
+      - T1556.006
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = '1Password'
+        and event_name in ('account.disblmfa', 'user.disblmfa', 'sso.disblsso')
+  - name: 1Password firewall rules changed
+    description: Someone added or changed the account's firewall rules, which decide the countries and IP addresses that can reach 1Password.
+    severity: medium
+    mitre:
+      - T1562.007
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = '1Password'
+        and event_name = 'account.updatfw'
+  - name: 1Password account recovery started
+    description: An administrator started recovery for someone's 1Password account. Recovery lets that person set a new account password, so check they asked for it.
+    severity: medium
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = '1Password'
+        and event_name = 'user.beginr'

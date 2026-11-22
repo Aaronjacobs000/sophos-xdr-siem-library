@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: onepassword_one_case_per_user
+title: 1Password, one case per user (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('1Password vault exported', '1Password sign-in protection turned off', '1Password firewall rules changed', '1Password account recovery started')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' onepassword_one_case_per_user')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: onepassword_account_security_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: onepassword_account_security_unofficial
+title: 1Password account security changes (unofficial)
+description: Case for 1Password account security changes custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - 1password
+    type: SECURITY_INVESTIGATION
+    title: 1Password account security changes by one user
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

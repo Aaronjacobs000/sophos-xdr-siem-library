@@ -1,0 +1,47 @@
+# Custom detection rules for VMware ESXi, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: ESXi Shell turned off the host firewall
+    description: Someone turned off the ESXi host firewall from the ESXi Shell, which opens every service on the host to the network.
+    severity: high
+    mitre:
+      - T1562.004
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'VMware ESXi'
+        and command contains 'network firewall set'
+        and (command contains '--enabled false' or command contains '-e false' or command contains '--enabled=false' or command contains '-e 0' or command contains '--enabled 0')
+  - name: ESXi Shell weakened code signing checks
+    description: Someone turned off execInstalledOnly or set the VIB acceptance level to CommunitySupported, so the host runs binaries and installs packages that VMware didn't sign. Ransomware for ESXi needs one of these to run.
+    severity: high
+    mitre:
+      - T1562.001
+      - T1553
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'VMware ESXi'
+        and ((command contains 'execInstalledOnly' and (command contains '-i 0' or command contains '--int-value 0' or command contains '--int-value=0'))
+          or (command contains 'acceptance set' and command contains 'CommunitySupported'))
+  - name: ESXi Shell stopped virtual machines
+    description: Someone killed a virtual machine's process or powered it off from the ESXi Shell. Ransomware for ESXi stops the virtual machines first so it can encrypt their disks.
+    severity: high
+    mitre:
+      - T1489
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'VMware ESXi'
+        and (command contains 'vm process kill' or command contains 'vmsvc/power.off' or command contains 'vmsvc/power.shutdown')
+  - name: ESXi Shell deleted virtual machine snapshots
+    description: Someone deleted virtual machine snapshots from the ESXi Shell, which takes away a way to roll a virtual machine back.
+    severity: high
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'VMware ESXi'
+        and command contains 'vmsvc/snapshot.remove'

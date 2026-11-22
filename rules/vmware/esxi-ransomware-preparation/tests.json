@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "ESXi Shell turned off the host firewall": [8],
+    "ESXi Shell weakened code signing checks": [16, 17],
+    "ESXi Shell stopped virtual machines": [19, 20],
+    "ESXi Shell deleted virtual machine snapshots": [21]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 18, 22, 23, 24]
+}
