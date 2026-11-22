@@ -1,0 +1,55 @@
+# Custom detection rules for the GitHub Enterprise Cloud audit log, from the Unofficial Sophos Fusion
+# XDR and SIEM Library. Sophos Fusion has no import for custom detection rules: add each one under
+# Security Operations > Rules > Create Rule, with the fields below. Each rule's title becomes its
+# detections' title.
+rules:
+  - name: GitHub repository visibility changed
+    description: Someone changed a repository's visibility, usually from private to public. A repository made public by mistake or on purpose shares its code, history and any secrets in it with everyone.
+    severity: high
+    mitre:
+      - T1567.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitHub Enterprise Cloud'
+        and event_name = 'repo.access'
+  - name: GitHub audit log streaming changed or removed
+    description: Someone deleted or changed an audit log stream, such as the one that feeds Sophos NG-SIEM. Changing it can pause the stream or send the events somewhere else.
+    severity: high
+    mitre:
+      - T1562.008
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitHub Enterprise Cloud'
+        and event_name in ('audit_log_streaming.destroy', 'audit_log_streaming.update')
+  - name: GitHub two-factor or SSO requirement turned off
+    description: Someone turned off the two-factor authentication requirement, or SAML or OIDC single sign-on, for an organization or the enterprise. Members can then sign in with a password alone.
+    severity: high
+    mitre:
+      - T1556
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitHub Enterprise Cloud'
+        and event_name in ('org.disable_two_factor_requirement', 'business.disable_two_factor_requirement', 'org.disable_saml', 'business.disable_saml', 'business.disable_oidc')
+  - name: GitHub repository protection removed or bypassed
+    description: Someone removed or overrode branch protection, or bypassed or turned off secret scanning push protection, so code or a secret can reach a repository without the checks set for it.
+    severity: medium
+    mitre:
+      - T1562.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitHub Enterprise Cloud'
+        and event_name in ('protected_branch.destroy', 'protected_branch.policy_override', 'secret_scanning_push_protection.bypass', 'repository_secret_scanning_push_protection.disable')
+  - name: GitHub repository deleted
+    description: Someone deleted a repository. GitHub keeps a deleted repository for 90 days, so an owner can restore it if it shouldn't have gone.
+    severity: medium
+    mitre:
+      - T1485
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitHub Enterprise Cloud'
+        and event_name = 'repo.destroy'

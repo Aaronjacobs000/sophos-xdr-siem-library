@@ -13,3 +13,12 @@
 <38>2026-10-12T11:45:30.250Z esx01.example.com login[2102001]: root login on 'char/tty/1'
 <166>1 2026-10-12T11:50:00.311Z esx01.example.com Hostd 2098450 - [Originator@6876 sub="Vimsvc.ha-eventmgr" opID="esxui-1a2b-3c4d"] Event 56910 : User admin@192.0.2.25 logged in as VMware-client/6.5.0
 <166>2026-10-12T11:51:15.400Z esx01.example.com Hostd[2098460]: [Originator@6876 sub=Default] IpmiIfcOpenIpmiOpen: open(/dev/ipmi0, RDWR) failed 2 m
+<14>2026-10-12T11:52:05.114Z esx01.example.com shell[2101234]: esxcli system settings advanced set -o /User/execInstalledOnly -i 0
+<14>2026-10-12T11:52:31.506Z esx01.example.com shell[2101234]: esxcli software acceptance set --level=CommunitySupported
+<14>2026-10-12T11:53:02.871Z esx01.example.com shell[2101234]: esxcli vm process list
+<14>2026-10-12T11:53:40.239Z esx01.example.com shell[2101234]: esxcli vm process kill --type=force --world-id=2104411
+<14>2026-10-12T11:54:12.660Z esx01.example.com shell[2101234]: vim-cmd vmsvc/power.off 12
+<14>2026-10-12T11:54:55.018Z esx01.example.com shell[2101234]: vim-cmd vmsvc/snapshot.removeall 12
+<14>2026-10-12T11:55:20.447Z esx01.example.com shell[2101234]: vim-cmd vmsvc/snapshot.get 14
+<14>2026-10-12T11:56:02.903Z esx01.example.com shell[2101234]: esxcli network firewall set --enabled true
+<14>2026-10-12T11:56:30.125Z esx01.example.com shell[2101234]: esxcli system settings advanced list -o /User/execInstalledOnly

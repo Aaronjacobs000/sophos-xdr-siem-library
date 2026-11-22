@@ -8,7 +8,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseQuery, matches, ruleQueryProblems, regexLimits, pinnedSensorTypes, schemaFromQlName, valuesAt, QlError } from '../studio/core/ql.js';
-import { compileRules, ruleHits, compareTests, testedState } from '../studio/core/rules.js';
+import { compileRules, ruleHits, compareTests, testedState, parserLabel } from '../studio/core/rules.js';
 import { validateRuleEntry, crossLibraryProblems, coveragePatterns, sharedTechniques, readCaseRuleYaml, caseRuleTitles } from '../tools/lib/rules.mjs';
 import { loadRules, loadRuleEntry, loadCoverage } from '../tools/lib/fs-rules.mjs';
 import { loadLibrary } from '../tools/lib/fs-library.mjs';
@@ -393,4 +393,11 @@ test('the rule entries load from disk with their parsed rules, and the snapshot 
   const s = coverage.schemas['scwx.thirdpartyalert'];
   assert.deepEqual(Object.keys(s).sort(), ['any_sensor_rules', 'any_sensor_techniques', 'named_sensor_types', 'rules'], 'counts, techniques and sensor types only: no rule names or logic');
   assert.doesNotMatch(JSON.stringify(coverage), /"(name|query|filter|description)"\s*:/);
+});
+
+test('parserLabel names a parser entry without saying the vendor twice', () => {
+  assert.equal(parserLabel({ vendor: 'Thinkst', product: 'OpenCanary' }), 'Thinkst OpenCanary');
+  assert.equal(parserLabel({ vendor: '1Password', product: '1Password Business' }), '1Password Business');
+  assert.equal(parserLabel({ vendor: 'GitHub', product: 'GitHub Enterprise Cloud audit log' }), 'GitHub Enterprise Cloud audit log');
+  assert.equal(parserLabel({ vendor: 'Acme', product: '' }), 'Acme');
 });

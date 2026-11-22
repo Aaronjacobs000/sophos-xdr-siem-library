@@ -388,5 +388,140 @@
       "event_time_usec": 1791805875400000,
       "host_id": "esx01.example.com"
     }
+  },
+  {
+    "line": 16,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805925114000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli system settings advanced set -o /User/execInstalledOnly -i 0"
+    }
+  },
+  {
+    "line": 17,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805951506000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli software acceptance set --level=CommunitySupported"
+    }
+  },
+  {
+    "line": 18,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791805982871000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli vm process list"
+    }
+  },
+  {
+    "line": 19,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806020239000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli vm process kill --type=force --world-id=2104411"
+    }
+  },
+  {
+    "line": 20,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806052660000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "vim-cmd vmsvc/power.off 12"
+    }
+  },
+  {
+    "line": 21,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806095018000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "vim-cmd vmsvc/snapshot.removeall 12"
+    }
+  },
+  {
+    "line": 22,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806120447000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "vim-cmd vmsvc/snapshot.get 14"
+    }
+  },
+  {
+    "line": 23,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806162903000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli network firewall set --enabled true"
+    }
+  },
+  {
+    "line": 24,
+    "extractor_path": "VMWARE_ESXI_SYSLOG_PARENT > VMWARE_ESXI_SYSLOG_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "VMware ESXi",
+      "event_time_usec": 1791806190125000,
+      "event_time_fidelity": "MICRO",
+      "host_id": "esx01.example.com",
+      "target_hostname": "esx01.example.com",
+      "client_process_id": 2101234,
+      "operation_name": "ESXi Shell command",
+      "command": "esxcli system settings advanced list -o /User/execInstalledOnly"
+    }
   }
 ]

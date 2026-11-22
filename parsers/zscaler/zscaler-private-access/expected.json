@@ -429,5 +429,305 @@
         ]
       }
     }
+  },
+  {
+    "line": 8,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791857141000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.150",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Intranet portal",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791857141118000,
+      "end_timestamp_usec": 1791857141120000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_SCIM_INACTIVE",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "kim.former@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "rtqmzkwxnb"
+          },
+          {
+            "key": "connection_id",
+            "value": "rtqmzkwxnb,hcplvqdtzs"
+          },
+          {
+            "key": "host",
+            "value": "intranet.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Internal web apps"
+          },
+          {
+            "key": "service_port",
+            "value": "443"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 9,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791857352000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.24",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Source control",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791857352402000,
+      "end_timestamp_usec": 1791857352405000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY_POSTURE_FAILED",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "kqzrwtmvbx"
+          },
+          {
+            "key": "connection_id",
+            "value": "kqzrwtmvbx,mbwqxtzrkd"
+          },
+          {
+            "key": "host",
+            "value": "git.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Engineering apps"
+          },
+          {
+            "key": "service_port",
+            "value": "443"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Engineering, managed devices only"
+          },
+          {
+            "key": "client_private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 10,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791854523000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.77",
+      "destination_port": 22,
+      "protocol": 6,
+      "application_name": "Finance servers",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791854523210000,
+      "end_timestamp_usec": 1791854523212000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "contractor7@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "vbtmhqzkrn"
+          },
+          {
+            "key": "connection_id",
+            "value": "vbtmhqzkrn,nqzkwtxrmd"
+          },
+          {
+            "key": "host",
+            "value": "fin-db02.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Server admin"
+          },
+          {
+            "key": "service_port",
+            "value": "22"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Block contractors from servers"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 11,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791854620000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "198.51.100.77",
+      "destination_port": 443,
+      "protocol": 6,
+      "application_name": "Wiki",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791854620510000,
+      "end_timestamp_usec": 1791854620512000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_NO_POLICY_FOUND",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "contractor7@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "vbtmhqzkrn"
+          },
+          {
+            "key": "connection_id",
+            "value": "vbtmhqzkrn,zrkqwmtxbv"
+          },
+          {
+            "key": "host",
+            "value": "wiki.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Internal web apps"
+          },
+          {
+            "key": "service_port",
+            "value": "443"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 12,
+    "extractor_path": "ZSCALER_ZPA_LSS_JSON_PARENT > ZSCALER_ZPA_LSS_JSON_CHILD_NETFLOW",
+    "schema": "scwx.netflow",
+    "normalized": {
+      "sensor_type": "Zscaler Private Access",
+      "event_time_usec": 1791861327000000,
+      "event_time_fidelity": "MICRO",
+      "source_address": "203.0.113.24",
+      "destination_port": 3389,
+      "protocol": 6,
+      "application_name": "Build servers",
+      "tx_byte_count": 0,
+      "rx_byte_count": 0,
+      "start_timestamp_usec": 1791861327330000,
+      "end_timestamp_usec": 1791861327331000,
+      "connection_end_reason": "BRK_MT_SETUP_FAIL_SAML_EXPIRED",
+      "flow_action": "FW_BLOCKED",
+      "event_metadata": {
+        "record": [
+          {
+            "key": "username",
+            "value": "jdoe@example.com"
+          },
+          {
+            "key": "connection_status",
+            "value": "close"
+          },
+          {
+            "key": "session_id",
+            "value": "kqzrwtmvbx"
+          },
+          {
+            "key": "connection_id",
+            "value": "kqzrwtmvbx,pxtqmwzrkn"
+          },
+          {
+            "key": "host",
+            "value": "build01.example.com"
+          },
+          {
+            "key": "app_segment_group",
+            "value": "Server admin"
+          },
+          {
+            "key": "service_port",
+            "value": "3389"
+          },
+          {
+            "key": "client_country",
+            "value": "AU"
+          },
+          {
+            "key": "policy",
+            "value": "Engineering timeout"
+          },
+          {
+            "key": "client_private_ip",
+            "value": "198.51.100.24"
+          }
+        ]
+      }
+    }
   }
 ]

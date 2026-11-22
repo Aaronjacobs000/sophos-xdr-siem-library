@@ -511,5 +511,236 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 12,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791855738000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "P4TX7KQW2ZBN3JLV6HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "vault.export",
+      "user_name": "pat@example.com",
+      "user_id": "IR7VJHJ36JHINBFAD7V2T5MP3E",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "vault"
+          },
+          {
+            "key": "object_uuid",
+            "value": "VZSYVT2LGHTBWBQGUJAIZVRABM"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "F8RW3KZQN5TLJX7VH2DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "MD6GRHCSDN5QMBKE9NXODW3C4V"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 13,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791854980000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "S2KD5WQX7NBT3ZLV4HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "sso.disblsso",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "sso"
+          },
+          {
+            "key": "object_uuid",
+            "value": "H3NZ6QKW2XBT7JLV5DCYMPGSEA"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 14,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791855065000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "F7WQ2NZX5KBT3JLV6HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "account.updatfw",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "account"
+          },
+          {
+            "key": "object_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 15,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791855202000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "B9KX3QWN7ZBT2JLV5HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "user.beginr",
+      "user_name": "admin@example.com",
+      "user_id": "WZ5QK7NBRT3XJYH2LDCV6MPG4E",
+      "target_user_name": "pat@example.com",
+      "source_address": "203.0.113.25",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "user"
+          },
+          {
+            "key": "object_uuid",
+            "value": "IR7VJHJ36JHINBFAD7V2T5MP3E"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "E6ZQ2KXWN4TRJL7VH3DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "LC5FQGBRCM4PLAJD8MWNCV2B3U"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "line": 16,
+    "extractor_path": "ONEPASSWORD_EVENTS_JSON_PARENT > ONEPASSWORD_EVENTS_JSON_CHILD_AUDIT",
+    "schema": "scwx.cloudaudit",
+    "normalized": {
+      "sensor_type": "1Password",
+      "event_time_usec": 1791855891000000,
+      "event_time_fidelity": "MICRO",
+      "event_type": "audit_event",
+      "sensor_event_id": "C6NW4KQX2ZBT7JLV3HDCYMPGSA",
+      "event_source": "1Password",
+      "event_name": "vault.create",
+      "user_name": "pat@example.com",
+      "user_id": "IR7VJHJ36JHINBFAD7V2T5MP3E",
+      "source_address": "203.0.113.10",
+      "management_event": true,
+      "additional_event_data": {
+        "record": [
+          {
+            "key": "object_type",
+            "value": "vault"
+          },
+          {
+            "key": "object_uuid",
+            "value": "T5QW2KZX7NBR3JLV6HDCYMPGEA"
+          },
+          {
+            "key": "account_uuid",
+            "value": "M4E2SWNZAZFTRGQGDNS2E5A4MU"
+          },
+          {
+            "key": "session_uuid",
+            "value": "F8RW3KZQN5TLJX7VH2DCBYMPSA"
+          },
+          {
+            "key": "device_uuid",
+            "value": "MD6GRHCSDN5QMBKE9NXODW3C4V"
+          },
+          {
+            "key": "location",
+            "value": "Sydney, Australia"
+          }
+        ]
+      }
+    }
   }
 ]

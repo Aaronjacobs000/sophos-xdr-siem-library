@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Zscaler Private Access blocked access",
+  "vendor": "Zscaler",
+  "product": "Zscaler Private Access",
+  "parser": "parsers/zscaler/zscaler-private-access",
+  "schema": "scwx.netflow",
+  "sensor_types": [
+    "Zscaler Private Access"
+  ],
+  "volume": "None on most days for the SCIM and remote admin rules. Posture failures rise after an operating system update or an agent fault, and then come to a few a day.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/NetflowSchema/",
+    "https://help.zscaler.com/zpa/zpa-session-status-codes",
+    "https://help.zscaler.com/zpa/about-user-activity-log-fields"
+  ],
+  "summary": "Three custom detection rules for Zscaler Private Access, on the Netflow records the library's ZPA parsers write from User Activity logs. They make a detection when ZPA refuses a connection from a user deactivated in SCIM, from a device that failed a posture check, or to SSH, RDP or WinRM on a server the user has no access to. Each rule matches sensor type Zscaler Private Access only.",
+  "notes": "Setup:\n- Add the library's Zscaler Private Access parsers and a ZPA log receiver for User Activity logs first, then run the check-your-data search to see connections arrive.\n\nHow it works:\n- The parser writes ZPA's internal reason, the session status code, as connection_end_reason. Zscaler lists the codes on its session status codes page.\n- BRK_MT_SETUP_FAIL_SCIM_INACTIVE means the user is deactivated or not synced in SCIM. The usual cause is a device whose Client Connector is still signed in after the person left.\n- The remote admin rule takes a connection refused because a policy denies it (BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY) or no policy covers it (BRK_MT_SETUP_FAIL_NO_POLICY_FOUND), on ports 22, 3389, 5985 and 5986. A timeout policy block (BRK_MT_SETUP_FAIL_SAML_EXPIRED) only asks the user to sign in again, so it makes none.\n\nTuning:\n- Add any other admin ports you publish through ZPA, such as 2222 for SSH, to the destination_port list.\n- If new users show as not synced while SCIM catches up, add an application_name condition to the SCIM rule until it does.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 9 records agreed. Data Lake Search didn't find the records while they kept their October dates, so the samples went in with their dates moved to the test day.\n- As live rules there, each one fired on exactly its sample lines within about two minutes. Copies sent in the first minutes after the parsers were turned on made only some of these detections or none; the same lines sent 20 minutes later made every one.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only the sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- Netflow has no user field. The parser puts the user name in event_metadata, so the case rule groups by the client's public IP address.\n- App Connector, Service Edge and audit logs stay generic, so these rules don't see them.",
+  "links": {
+    "case_rule": "rules/zscaler/zscaler-private-access-one-case-per-source-ip",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

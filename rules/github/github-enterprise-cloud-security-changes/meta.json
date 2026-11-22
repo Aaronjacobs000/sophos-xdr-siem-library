@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "GitHub Enterprise Cloud security changes",
+  "vendor": "GitHub",
+  "product": "GitHub Enterprise Cloud audit log",
+  "parser": "parsers/github/github-enterprise-cloud-audit-log",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "GitHub Enterprise Cloud"
+  ],
+  "volume": "None on most days. Each rule takes one audit event per admin action. An enterprise that deletes repositories in bulk makes one repository deleted detection per repository.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/audit-log-events-for-your-enterprise"
+  ],
+  "summary": "Five custom detection rules for the GitHub Enterprise Cloud audit log, on the CloudAudit records the library's GitHub parsers write. They make a detection when someone changes a repository's visibility, changes or removes an audit log stream, turns off two-factor or SSO requirements, removes or bypasses repository protection, or deletes a repository. Each rule matches sensor type GitHub Enterprise Cloud only.",
+  "notes": "Setup:\n- Add the library's GitHub Enterprise Cloud audit log parsers and the S3 Ingest integration that reads the log stream first, then run the check-your-data search to see events arrive.\n\nHow it works:\n- GitHub names each event by its action, such as repo.access or protected_branch.destroy, and the parser writes that as the event name.\n- repo.access is logged for any visibility change, to public, private or internal. The record's visibility field says which.\n- The protection rule takes branch protection deleted (protected_branch.destroy) or overridden by a repository admin (protected_branch.policy_override), and secret scanning push protection bypassed at a push or turned off for a repository.\n\nTuning:\n- To keep a planned clean-up quiet, leave out the account that runs it in the query itself, such as and user_name != 'repo-archiver'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 13 records agreed. Data Lake Search didn't find the records while they kept their October dates, so the samples went in with their dates moved to the test day.\n- As live rules there, each one fired on exactly its sample lines within about two minutes. Copies sent in the first minutes after the parsers were turned on made only some of these detections or none; the same lines sent 20 minutes later made every one.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only the sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- If someone deletes the stream that feeds Sophos NG-SIEM, its destroy event may never arrive. A sudden stop in GitHub events is the other sign.\n- Repository rulesets, deploy keys and webhooks have no rule.",
+  "links": {
+    "case_rule": "rules/github/github-enterprise-cloud-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

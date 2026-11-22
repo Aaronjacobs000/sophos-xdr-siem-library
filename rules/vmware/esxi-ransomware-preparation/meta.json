@@ -1,0 +1,36 @@
+{
+  "kind": "detection",
+  "title": "ESXi ransomware preparation",
+  "vendor": "VMware",
+  "product": "ESXi",
+  "parser": "parsers/vmware/esxi",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "VMware ESXi"
+  ],
+  "volume": "None on a normal day: admins rarely use the ESXi Shell, so each one is worth a look. An admin who powers off or cleans up virtual machines from the shell during maintenance makes one detection per command.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-22",
+    "tenant": {
+      "date": "2026-11-22",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://knowledge.broadcom.com/external/article/321910/auditing-esxi-shell-logins-and-commands.html"
+  ],
+  "summary": "Four custom detection rules for VMware ESXi, on the ManagementEvent records the library's ESXi parsers write from ESXi Shell commands. They make a detection when someone turns off the host firewall, weakens code signing checks, stops virtual machines or deletes snapshots from the shell: the steps ransomware for ESXi takes before it encrypts. Each rule matches sensor type VMware ESXi only.",
+  "notes": "Setup:\n- Add the library's VMware ESXi parsers and send each host's syslog straight to the data collector (Syslog.global.logHost) first, then run the check-your-data search to see shell commands arrive.\n- ESXi logs shell commands only while the ESXi Shell or SSH is on, which is how these attacks run.\n\nHow it works:\n- Each shell.log line is one command, and the parser writes it as the command field. The rules match the esxcli and vim-cmd commands that ransomware scripts for ESXi run.\n- The code signing rule takes /User/execInstalledOnly set to 0 and the VIB acceptance level set to CommunitySupported. Setting execInstalledOnly to 1, or listing its value, makes none.\n- The snapshot rule takes vmsvc/snapshot.remove and vmsvc/snapshot.removeall.\n\nTuning:\n- A shell command carries no user name, so a query can't leave out one admin. If a maintenance script runs these commands, expect detections while it runs.\n\nTesting:\n- In a lab tenant on 2026-11-22, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 12 records agreed. Data Lake Search didn't find the records while they kept their October dates, so the samples went in with their dates moved to the test day.\n- As live rules there, each one fired on exactly its sample lines within about two minutes. Copies sent in the first minutes after the parsers were turned on made only some of these detections or none; the same lines sent 20 minutes later made every one.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only the sample sign-ins on Auth, as an unseen user, address or application.\n\nKnown gaps:\n- Changes made through the vSphere API, PowerCLI or vCenter don't go through the shell, so these rules don't see them. vCenter has its own integration.\n- shell.log holds the commands typed at the shell. Commands inside a script file may not appear, only the line that starts it.",
+  "links": {
+    "case_rule": "rules/vmware/esxi-one-case-per-host",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

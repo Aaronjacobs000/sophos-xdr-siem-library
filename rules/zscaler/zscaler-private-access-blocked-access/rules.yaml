@@ -1,0 +1,36 @@
+# Custom detection rules for Zscaler Private Access, from the Unofficial Sophos Fusion XDR and SIEM
+# Library. Sophos Fusion has no import for custom detection rules: add each one under Security
+# Operations > Rules > Create Rule, with the fields below. Each rule's title becomes its detections'
+# title.
+rules:
+  - name: ZPA access attempt by a user deactivated in SCIM
+    description: Zscaler Private Access refused a connection because the user is deactivated in SCIM, so a device still signed in as someone your identity provider turned off tried to reach a private application.
+    severity: high
+    mitre:
+      - T1078
+    enabled_by_default: true
+    query: |-
+      from netflow
+      where sensor_type = 'Zscaler Private Access'
+        and connection_end_reason = 'BRK_MT_SETUP_FAIL_SCIM_INACTIVE'
+  - name: ZPA access blocked by a failed device posture check
+    description: Zscaler Private Access refused a connection because the device failed a posture check, such as one for disk encryption or a running endpoint agent.
+    severity: medium
+    mitre:
+      - T1562.001
+    enabled_by_default: true
+    query: |-
+      from netflow
+      where sensor_type = 'Zscaler Private Access'
+        and connection_end_reason = 'BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY_POSTURE_FAILED'
+  - name: ZPA blocked a remote admin connection
+    description: Zscaler Private Access refused an SSH, RDP or WinRM connection because no access policy allows that user to reach the server. Someone tried to sign in to a server they have no access to.
+    severity: medium
+    mitre:
+      - T1021
+    enabled_by_default: true
+    query: |-
+      from netflow
+      where sensor_type = 'Zscaler Private Access'
+        and connection_end_reason in ('BRK_MT_SETUP_FAIL_REJECTED_BY_POLICY', 'BRK_MT_SETUP_FAIL_NO_POLICY_FOUND')
+        and destination_port in (22, 3389, 5985, 5986)

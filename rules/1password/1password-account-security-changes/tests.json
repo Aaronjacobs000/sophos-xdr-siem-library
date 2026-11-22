@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "1Password vault exported": [12],
+    "1Password sign-in protection turned off": [10, 13],
+    "1Password firewall rules changed": [14],
+    "1Password account recovery started": [15]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 16]
+}

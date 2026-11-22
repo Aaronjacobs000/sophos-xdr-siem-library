@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: github_one_case_per_user
+title: GitHub Enterprise Cloud, one case per user (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('GitHub repository visibility changed', 'GitHub audit log streaming changed or removed', 'GitHub two-factor or SSO requirement turned off', 'GitHub repository protection removed or bypassed', 'GitHub repository deleted')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' github_one_case_per_user')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: github_security_changes_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: github_security_changes_unofficial
+title: GitHub Enterprise Cloud security changes (unofficial)
+description: Case for GitHub Enterprise Cloud security changes custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - github
+    type: SECURITY_INVESTIGATION
+    title: GitHub security changes by one user
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

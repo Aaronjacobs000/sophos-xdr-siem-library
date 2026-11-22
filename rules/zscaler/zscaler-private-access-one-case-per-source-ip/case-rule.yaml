@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: zpa_one_case_per_source_ip
+title: Zscaler Private Access, one case per source IP (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('ZPA access attempt by a user deactivated in SCIM', 'ZPA access blocked by a failed device posture check', 'ZPA blocked a remote admin connection')
+append_filter: ""
+group_by:
+    - ${alertSourceIPs(inputs).map(ip, ip + ' zpa_one_case_per_source_ip')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: zpa_blocked_access_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: zpa_blocked_access_unofficial
+title: Zscaler Private Access blocked access (unofficial)
+description: Case for Zscaler Private Access blocked access custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - zscaler-private-access
+    type: SECURITY_INVESTIGATION
+    title: Zscaler Private Access blocked access from one source IP
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

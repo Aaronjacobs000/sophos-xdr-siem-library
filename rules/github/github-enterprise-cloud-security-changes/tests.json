@@ -1,0 +1,10 @@
+{
+  "triggers": {
+    "GitHub repository visibility changed": [12],
+    "GitHub audit log streaming changed or removed": [13],
+    "GitHub two-factor or SSO requirement turned off": [14],
+    "GitHub repository protection removed or bypassed": [7, 10, 15],
+    "GitHub repository deleted": [5]
+  },
+  "quiet": [1, 2, 3, 4, 6, 8, 9, 11, 16, 17]
+}

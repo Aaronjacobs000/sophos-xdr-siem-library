@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "ZPA access attempt by a user deactivated in SCIM": [8],
+    "ZPA access blocked by a failed device posture check": [9],
+    "ZPA blocked a remote admin connection": [3, 10]
+  },
+  "quiet": [1, 2, 4, 5, 6, 7, 11, 12]
+}
