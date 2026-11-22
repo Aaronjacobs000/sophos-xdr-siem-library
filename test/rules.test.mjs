@@ -218,6 +218,16 @@ test('case checks: the filter takes only the entry\'s own Medium and higher cust
   assert.deepEqual(caseRuleTitles("from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title = 'One'"), ['One']);
 });
 
+test('case checks: a case rule on FileMod detections groups on hostId, since they carry no host name', () => {
+  const QNAP = 'qnap/qnap-one-case-per-nas';
+  assert.equal(errors(validateRuleEntry(rules.find((x) => x.id === QNAP), opts())), '');
+  const byHost = (t) => t.replace(/\$\{alertEntities\(inputs\)\.filter\(e, e\.startsWith\('hostId:'\)\)\.map\(e, e\.split\(':'\)\[1\] \+ ' qnap_one_case_per_nas'\)\}/, "${alertHostnames(inputs).map(h, h + ' qnap_one_case_per_nas')}");
+  assert.notEqual(byHost(rules.find((x) => x.id === QNAP).files.find((f) => f.path === 'case-rule.yaml').content), rules.find((x) => x.id === QNAP).files.find((f) => f.path === 'case-rule.yaml').content, 'the test edit applies');
+  assert.match(errors(validateRuleEntry(variant(QNAP, 'case-rule.yaml', byHost), opts())), /a FileMod detection carries no host name.*hostId/);
+  // Other schemas have a host name, and alertHostnames groups their detections.
+  assert.doesNotMatch(errors(validateRuleEntry(rules.find((x) => x.id === 'airlock-digital/airlock-digital-one-case-per-host'), opts())), /host name/);
+});
+
 test('case checks: links must point both ways, and a case entry has no search record', () => {
   const v = validateRuleEntry(variant(CASE, 'meta.json', metaEdit((m) => { m.tested.search = '2026-11-22'; m.links.detection_rules = 'rules/thinkst/nothing'; })), opts());
   assert.match(errors(v), /tested.search is for detection rules/);

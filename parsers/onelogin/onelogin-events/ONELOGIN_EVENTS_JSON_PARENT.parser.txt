@@ -8,8 +8,8 @@
 # Emulator result, not run in Sophos NG-SIEM. Test with Parse Message and Run Test before you turn it on.
 # Source: OneLogin events from an Event Webhook for Log Management (Event Broadcaster) posting to
 # Sophos NG-SIEM HTTP Ingest with format SIEM (NDJSON), one event object per line, and the HTTP
-# Ingest key in a custom Authorization: Bearer header. The JSON Array format puts a whole batch on
-# one line, which HTTP Ingest reads as one record, so array lines stay unclaimed.
+# Ingest key in a custom Authorization: Bearer header. HTTP Ingest splits a JSON Array batch into
+# one record per event too, with the keys in alphabetical order, and this parser reads those.
 # Webhook events carry uuid and event_timestamp ("2026-10-13 03:00:05 UTC"); records from the
 # Events API carry id and created_at (RFC 3339). Both are read.
 # Parent: hands sign-ins, sign-outs, failed sign-ins, OTP failures, lockouts and password changes
