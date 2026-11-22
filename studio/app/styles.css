@@ -324,11 +324,58 @@ dialog::backdrop { background: rgba(0, 26, 71, .45); }
 .help code { font-family: var(--mono); font-size: 13.5px; background: #E9EFF5; padding: 1px 4px; border-radius: 3px; }
 .hidden { display: none !important; }
 .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* rules */
+.filterbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; background: #fff; overflow: hidden; max-width: 100%; }
+.seg button { border: 0; background: none; padding: 7px 12px; font-size: 14px; font-weight: 600; color: var(--charcoal); cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--blue); color: #fff; }
+.seg button .n { font-weight: 500; opacity: .75; margin-left: 4px; }
+.filterbar .sortpick { flex: none; }
+.resultline { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
+.card .query { font-family: var(--mono); font-size: 12px; color: var(--charcoal); background: var(--line-soft); border-radius: 5px; padding: 5px 7px; overflow-wrap: anywhere; }
+.rules { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); align-items: start; }
+.rule { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: #fff; min-width: 0; }
+.rule.off { background: #FAFCFE; }
+.rulehead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.rulehead h3 { font-family: var(--title); font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: -0.01em; color: var(--ink); margin: 0; }
+.rulehead .pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.rule .sub { margin-top: 6px; }
+.rule .kv { margin-top: 10px; font-size: 14px; grid-template-columns: 120px minmax(0, 1fr); }
+.qbox { margin-top: 10px; }
+.qbox .editortools { margin: 0 0 6px; }
+.qbox .editortools .lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+pre.code.qcode { padding: 10px 12px; margin: 0; white-space: pre-wrap; word-break: break-word; }
+table.samples { width: 100%; max-width: 980px; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+table.samples th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+table.samples td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: top; overflow-wrap: anywhere; }
+table.samples td:first-child { color: var(--muted); width: 34px; }
+.links { display: grid; gap: 8px; margin-top: 10px; }
+.linkrow { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; text-decoration: none; color: inherit; background: #fff; flex-wrap: wrap; }
+.linkrow:hover { border-color: var(--blue); }
+.linkrow .t, .linkrow .d { display: block; }
+.linkrow .t { font-family: var(--title); font-weight: 500; font-size: 15.5px; }
+.linkrow .d { color: var(--muted); font-size: 13.5px; margin-top: 2px; max-width: var(--measure); }
+.linkrow .pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.rulespanel { margin-top: 14px; }
+.rulespanel .bridgehead { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.rulehits { margin-top: 12px; }
+.rulehits h3 { font-size: 15px; margin-bottom: 4px; }
+.moves { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+.moves li + li { margin-top: 3px; }
+@media (max-width: 720px) { .yamlview { white-space: pre-wrap; word-break: break-word; } }
 @media (max-width: 1640px) {
   .brand small { display: none; }
 }
 @media (max-width: 1520px) {
   .top .meta { display: none; }
+}
+/* Seven sections and the Unofficial tool badge on one line down to 1280 px. */
+@media (max-width: 1440px) {
+  .top { gap: 12px; }
+  .brand { font-size: 16px; }
+  .topnav { margin-left: 0; gap: 2px; }
+  .topnav a { padding: 6px 7px; }
 }
 @media (max-width: 720px) {
   .top { padding: 8px 16px; gap: 10px; }

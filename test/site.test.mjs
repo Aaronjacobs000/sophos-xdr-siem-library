@@ -33,6 +33,12 @@ test('routes: the parser library\'s old addresses land on the same page under #/
   assert.equal(routeOf('#/library/acme/a%20b').id, 'acme/a b');
 });
 
+test('routes: rules have a list and a page each', () => {
+  assert.equal(routeOf('#/rules').view, 'rules');
+  const r = routeOf('#/rules/thinkst/opencanary-honeypot-activity');
+  assert.deepEqual([r.view, r.id, r.nav, r.title], ['rule', 'thinkst/opencanary-honeypot-activity', 'rules', 'Rules']);
+});
+
 test('routes: playbooks and connectors have a list and a page each', () => {
   assert.deepEqual(['#/playbooks', '#/connectors'].map((h) => routeOf(h).view), ['playbooks', 'connectors']);
   const pb = routeOf('#/playbooks/sophos/sophos-mobile-lock');
@@ -67,13 +73,27 @@ test('the site build publishes the index, the entry files and the bridges next t
         for (const f of e.files) assert.ok((await stat(path.join(out, folder, e.id, f))).isFile(), `${folder}/${e.id}/${f}`);
       }
     }
+    // Rule entries: listed with their rules or their case rule, the overlap the snapshot shows, and
+    // their files published.
+    const det = index.rules.find((e) => e.id === 'thinkst/opencanary-honeypot-activity');
+    assert.equal(det.meta.kind, 'detection');
+    assert.deepEqual(det.rules.map((r) => r.severity), ['critical', 'high', 'high', 'medium']);
+    assert.match(det.rules[0].query, /^from thirdparty\nwhere sensor_type = 'OpenCanary'/);
+    assert.deepEqual([det.overlap.named, det.overlap.techniques], [[], []]);
+    const cr = index.rules.find((e) => e.id === 'thinkst/opencanary-one-case-per-source-ip');
+    assert.equal(cr.case_rule.state, 'TEST');
+    assert.deepEqual(cr.case_rule.collects, det.rules.map((r) => r.name));
+    for (const e of index.rules) for (const f of e.files) assert.ok((await stat(path.join(out, 'rules', e.id, f))).isFile(), `rules/${e.id}/${f}`);
+    assert.ok((await stat(path.join(out, 'rules/sophos-coverage.json'))).isFile());
     // The ids the library API takes: every entry, by section.
     const ids = JSON.parse(await readFile(path.join(out, 'library-ids.json'), 'utf8'));
-    assert.deepEqual(ids.ids, [...index.entries.map((e) => `parsers/${e.id}`), ...index.playbooks.map((e) => `playbooks/${e.id}`), ...index.connectors.map((e) => `connectors/${e.id}`)]);
+    assert.deepEqual(ids.ids, [...index.entries.map((e) => `parsers/${e.id}`), ...index.rules.map((e) => `rules/${e.id}`), ...index.playbooks.map((e) => `playbooks/${e.id}`), ...index.connectors.map((e) => `connectors/${e.id}`)]);
     assert.equal(ids.commit, index.commit);
     // The page itself, with the new name.
     const html = await readFile(path.join(out, 'index.html'), 'utf8');
     assert.match(html, /<title>Unofficial Sophos Fusion XDR and SIEM Library<\/title>/);
+    assert.match(html, /<a href="#\/rules" data-nav="rules">Rules<\/a>/);
+    assert.match(html, /case rules ship in Test state/);
     assert.doesNotMatch(html, /sophos-ngsiem-parser-studio|community/i);
   } finally {
     await rm(out, { recursive: true, force: true });

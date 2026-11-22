@@ -9,7 +9,7 @@ The library site is static, so the stars on its cards and entry pages, and the c
 | `DELETE /v1/stars/<id>` | Takes the star back, and answers the same way with `"starred": false` |
 | `GET /healthz` | `ok` |
 
-An id is the entry's section and folder: `parsers/`, `playbooks/` or `connectors/`, then the vendor and name slugs. The API takes only ids in the site's `library-index.json`, which it reads every hour. When a request names a well-formed id it doesn't have, and its copy is more than five minutes old, it reads the index again, so an entry can be starred as soon as Pages publishes it.
+An id is the entry's section and folder: `parsers/`, `rules/`, `playbooks/` or `connectors/`, then the vendor and name slugs. The API takes only ids in the site's `library-index.json`, which it reads every hour. When a request names a well-formed id it doesn't have, and its copy is more than five minutes old, it reads the index again, so an entry can be starred as soon as Pages publishes it.
 
 ## What it keeps
 

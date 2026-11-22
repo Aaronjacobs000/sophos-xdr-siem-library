@@ -115,12 +115,12 @@ test('A to Z is the order the site build writes the real library in', async () =
   try {
     execFileSync(process.execPath, [path.join(ROOT, 'tools/build-site.mjs'), '--out', out], { stdio: 'pipe' });
     const index = JSON.parse(await readFile(path.join(out, 'library-index.json'), 'utf8'));
-    for (const [section, list] of [['parsers', index.entries], ['playbooks', index.playbooks], ['connectors', index.connectors]]) {
+    for (const [section, list] of [['parsers', index.entries], ['rules', index.rules], ['playbooks', index.playbooks], ['connectors', index.connectors]]) {
       assert.ok(list.length, section);
       assert.deepEqual(ids(sortEntries(list, 'az', { section })), ids(list), section);
       // Every id can carry a star, and a date when the checkout has its history.
       for (const e of list) {
-        assert.match(`${section}/${e.id}`, /^(?:parsers|playbooks|connectors)\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
+        assert.match(`${section}/${e.id}`, /^(?:parsers|rules|playbooks|connectors)\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
         if (e.added !== undefined) assert.equal(new Date(e.added).toISOString(), e.added, `${section}/${e.id}`);
       }
     }
@@ -131,13 +131,14 @@ test('A to Z is the order the site build writes the real library in', async () =
 
 test('add dates: the earliest commit that added each entry\'s meta.json', () => {
   const log = [
-    '\x002026-11-14T16:27:31Z', '', 'playbooks/acme/widget-lock/meta.json', 'parsers/acme/widget/meta.json',
+    '\x002026-11-14T16:27:31Z', '', 'playbooks/acme/widget-lock/meta.json', 'parsers/acme/widget/meta.json', 'rules/acme/widget-alerts/meta.json',
     '\x002026-10-13T19:43:44+11:00', '', 'parsers/acme/widget/meta.json', 'parsers/acme/widget/samples.log', 'parsers/Bad/Name/meta.json', 'parsers/acme/widget/extra/meta.json',
     '\x00not a date', '', 'connectors/acme/widget/meta.json',
   ].join('\n');
   assert.deepEqual([...parseAddedLog(log)], [
     ['playbooks/acme/widget-lock', '2026-11-14T16:27:31.000Z'],
     ['parsers/acme/widget', '2026-10-13T08:43:44.000Z'],
+    ['rules/acme/widget-alerts', '2026-11-14T16:27:31.000Z'],
   ]);
   assert.deepEqual([...parseAddedLog('')], []);
 });

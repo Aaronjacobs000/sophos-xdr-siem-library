@@ -10,6 +10,7 @@ import { resultCard, resultDetail } from './test.js';
 import { problemRow, SHIP_LABELS, FORMAT_LABELS, notesView, searchList } from './common.js';
 import { analyse } from '../plan.js';
 import { starSlot, popularSlot } from '../stars.js';
+import { rulesPanel, rulesFor, ruleHitsPanel } from './rules.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 
@@ -79,6 +80,8 @@ function drawEntry(root, e) {
       h('button', { class: 'btn primary', onclick: () => openInStudio(e, 'fork'), text: 'Fork it' })));
   root.append(head);
   if (hasBridge(m)) root.append(bridgeSection(e));
+  const rp = rulesPanel(e);
+  if (rp) root.append(rp);
   const grid = h('div', { class: 'grid g-entry' });
   root.append(grid);
   const left = h('section', { class: 'panel' });
@@ -96,6 +99,8 @@ function drawEntry(root, e) {
   row('Samples', m.sample_source === 'vendor-docs' ? 'from public vendor docs' : 'synthetic');
   row('Tested', m.tested && m.tested.tenant ? `passed Run Test in a tenant on ${m.tested.tenant}` : `emulator only (Parser Studio ${m.tested ? m.tested.emulator : ''})`);
   if (m.forked_from) row('Forked from', h('a', { href: `#/parsers/${m.forked_from}`, text: m.forked_from }));
+  const ruleEntries = rulesFor(e.id);
+  if (ruleEntries.length) row('Rules', h('span', {}, ...ruleEntries.flatMap((r, i) => [i ? ', ' : '', h('a', { href: `#/rules/${r.id}`, text: r.meta.title })])));
   if (Array.isArray(m.docs) && m.docs.length) {
     const d = h('span');
     m.docs.filter((u) => /^https:\/\//.test(u)).forEach((u, i) => { if (i) d.append(h('br')); d.append(ext(u, u.replace(/^https:\/\//, '').slice(0, 70))); });
@@ -134,9 +139,10 @@ function drawEntry(root, e) {
   const out = h('div');
   const runBtn = h('button', { class: 'btn primary', text: 'Run the parsers' });
   const useLib = h('button', { class: 'btn quiet', text: 'Run the entry\'s samples' });
-  right.append(ta, h('div', { class: 'actions' }, useLib, runBtn), out);
+  const withRules = ruleEntries.some((r) => r.meta.kind === 'detection') ? h('button', { class: 'btn quiet', text: 'Run the rules too' }) : null;
+  right.append(ta, h('div', { class: 'actions' }, useLib, runBtn, withRules), out);
   let sel = 0;
-  async function run(lines) {
+  async function run(lines, rules = false) {
     clear(out);
     if (!lines.length) { out.append(h('p', { class: 'empty', text: 'Paste at least one line.' })); return; }
     out.append(h('p', { class: 'sub', text: 'Running…' }));
@@ -153,6 +159,7 @@ function drawEntry(root, e) {
         if (unmatched) out.append(h('div', { class: 'callout' }, h('span', { text: `${unmatched} line${unmatched === 1 ? '' : 's'} matched none of these parsers. Your source may send a different format or version than the samples; fork the entry to adapt it.` })));
         const errs = lint.problems.filter((p) => p.level === 'error' && p.code === 'runtime');
         if (errs.length) { const l = h('div', { class: 'problems' }); errs.forEach((p) => l.append(problemRow(p))); out.append(l); }
+        if (rules) out.append(ruleHitsPanel(e.id, lint.results));
       };
       paint();
     } catch (err) {
@@ -162,7 +169,10 @@ function drawEntry(root, e) {
   }
   runBtn.addEventListener('click', () => run(ta.value.split(/\r?\n/).filter((l) => l.trim())));
   useLib.addEventListener('click', () => run(e.samples));
-  right.append(h('div', { class: 'callout blue' }, pill('Emulator', 'blue'), h('span', { text: 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on.' })));
+  if (withRules) withRules.addEventListener('click', () => { const lines = ta.value.split(/\r?\n/).filter((l) => l.trim()); run(lines.length ? lines : e.samples, true); });
+  right.append(h('div', { class: 'callout blue' }, pill('Emulator', 'blue'), h('span', { text: withRules
+    ? 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on. Run the rules too shows which library rule each parsed line would trigger: the same check the repo runs, not Sophos\'s rule engine.'
+    : 'These results come from the Parser Studio emulator. Run Test in your own tenant before you turn a parser on.' })));
 }
 
 // Sources that need a bridge: its README and script, from the same commit as the entry.

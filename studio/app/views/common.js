@@ -62,24 +62,29 @@ export function notesView(text) {
   return box;
 }
 
-// The search box and Sort menu over a library list, then its cards: the same on Parsers, Playbooks
-// and Connectors. section is parsers, playbooks or connectors, text gives the text the search
-// matches for an entry's metadata, card draws an entry, and none is what an empty list says. Each
-// list keeps its own search and sort while the tab is open.
-export function searchList(root, { section, entries, placeholder, label, text, card, none }) {
+// The search box and Sort menu over a library list, then its cards: the same on Parsers, Rules,
+// Playbooks and Connectors. section is parsers, rules, playbooks or connectors, text gives the text
+// the search matches for an entry's metadata (and the entry), card draws an entry, and none is what
+// an empty list says. filter, for Rules, adds controls under the search: {el, test(entry),
+// subscribe(redraw), shown(list)}. Each list keeps its own search and sort while the tab is open.
+export function searchList(root, { section, entries, placeholder, label, text, card, none, filter = null }) {
   const keep = state.lists[section] || (state.lists[section] = { q: '', sort: 'az' });
   const search = h('input', { class: 'input', type: 'search', placeholder, 'aria-label': label, value: keep.q });
   const sort = sortPicker(section, entries, keep.sort, () => { keep.sort = sort.value; draw(); });
   const cards = h('div', { class: 'cards' });
-  root.append(h('div', { class: 'libtools' }, search, h('label', { class: 'sortpick' }, 'Sort', sort)), cards);
+  root.append(h('div', { class: 'libtools' }, search, h('label', { class: 'sortpick' }, 'Sort', sort)));
+  if (filter) root.append(filter.el);
+  root.append(cards);
   const draw = () => {
     clear(cards);
     const q = keep.q.toLowerCase().trim();
-    const list = entries.filter((e) => !q || text(e.meta).includes(q));
+    const list = entries.filter((e) => (!q || text(e.meta, e).includes(q)) && (!filter || filter.test(e)));
+    if (filter && filter.shown) filter.shown(list);
     if (!list.length) { cards.append(h('p', { class: 'empty', text: state.library.status !== 'ready' ? 'Loading…' : entries.length ? 'No entries match.' : none })); return; }
     for (const e of sortEntries(list, sort.value, { section, ...stars.snapshot() })) cards.append(card(e));
   };
   search.addEventListener('input', () => { keep.q = search.value; draw(); });
+  if (filter) filter.subscribe(draw);
   draw();
 }
 

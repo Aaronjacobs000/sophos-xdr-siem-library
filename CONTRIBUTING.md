@@ -9,6 +9,7 @@ To report a security problem, follow [SECURITY.md](SECURITY.md) instead of openi
 | You have | Send it with | Then |
 | --- | --- | --- |
 | [Parsers](#add-parsers-to-the-library) | **Share to the library** in [Parser Studio](https://aaronjacobs000.github.io/sophos-xdr-siem-library/#/build/sample), then a pull request in the browser or the parser issue form | The checks run. A new entry, or one that's already yours, merges on its own when they pass. |
+| [Rules](#add-rules) | A pull request | The checks run, then the owner reviews it. |
 | [A playbook](#add-a-playbook-or-connector) | The [playbook form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=playbook-submission.yml), or a pull request | The checks run, then the owner reviews it. |
 | [A connector](#add-a-playbook-or-connector) | The [connector form](https://github.com/Aaronjacobs000/sophos-xdr-siem-library/issues/new?template=connector-submission.yml), or a pull request | The checks run, then the owner reviews it. |
 | [A bridge](#bridges) | A pull request | CI runs its tests, then the maintainer reviews it. |
@@ -77,7 +78,7 @@ The repo merges a pull request on its own when all of these hold:
 - The pull request changes nothing outside `parsers/`.
 - Each entry it changes is new, or its `meta.json` already names the person who opened the pull request as `author`.
 
-Anything else, such as a change to someone else's entry, a deletion, a bridge, a playbook or connector, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
+Anything else, such as a change to someone else's entry, a deletion, a bridge, a rule, a playbook or connector, or a change to the tools, waits for a maintainer review. Library entries are a starting point for other people, so a maintainer may still edit or remove one later.
 
 ## Mark an entry tenant tested
 
@@ -101,6 +102,56 @@ Follow [bridges/ai-compliance-logs](bridges/ai-compliance-logs/):
 To show a bridge on an entry's page, set `"bridge": "bridges/<name>"` in the entry's `meta.json`. The bridge has to be on the main branch first, so it merges before the entry that points at it.
 
 Bridges are code that people download and run, so the maintainer reviews every bridge before it merges. Send one as a pull request from a git clone, or upload its files to `bridges/<name>` in the browser as [With a pull request](#with-a-pull-request) shows. CI runs its tests, and the pull request waits for that review.
+
+## Add rules
+
+Rules act on tenants the way playbooks do: a detection rule makes detections, and a case rule takes detections that other case rules would have had. So the owner reviews every rule entry, and nothing under `rules/` merges on its own. The checks label the pull request "needs review" and leave it open.
+
+### What a rule entry holds
+
+```
+rules/<vendor>/<name>/   a detection entry: meta.json, rules.yaml, tests.json, and an optional README.md
+rules/<vendor>/<name>/   a case entry: meta.json, case-rule.yaml, and an optional README.md
+```
+
+The folder comes from `vendor` and `title` in `meta.json`, in lowercase with hyphens. [rules/thinkst/opencanary-honeypot-activity](rules/thinkst/opencanary-honeypot-activity/) and [rules/thinkst/opencanary-one-case-per-source-ip](rules/thinkst/opencanary-one-case-per-source-ip/) show the shape.
+
+- A detection entry holds one or more rules for one source and use case. `rules.yaml` has a `rules` list, and each rule has the fields of the console's Create Rule form and nothing else: `name` (its detections' title, unique across the library), `description`, `severity` (critical, high, medium, low or informational), `mitre` (technique IDs such as T1110), `query` and `enabled_by_default`.
+- `tests.json` names the linked parser entry's sample lines each rule must trigger, under `triggers`, and lines that must trigger nothing, under `quiet`: `{"triggers": {"<rule name>": [12]}, "quiet": [1, 2]}`. Every other sample line must trigger nothing too.
+- A case entry holds one automatic case rule and its case template in `case-rule.yaml`, as Automatic Cases exports them: the rule, then `---` and the template. Leave out the assignee.
+- `meta.json` has `kind` (detection or case), `title`, `vendor`, `product`, `parser` (the parser entry's path, such as `parsers/thinkst/opencanary`), `mdr_note`, `tested`, `author`, `license`, `docs`, `summary`, `notes` and `links`. A detection entry also has `schema`, `sensor_types` and `volume`, and its `links` can name its `case_rule` and the `playbooks` that act on its cases. A case entry's `links` names the `detection_rules` it collects.
+- `tested` is `{"search": null, "tenant": null}`. Set `search` to the date each query returned its sample lines, and only them, in Data Lake Search, and `tenant` to `{"date": "YYYY-MM-DD", "region": "us01"}` once the rules ran live in a tenant. A case rule has no search to run.
+- `summary` and `notes` are the About text, as for any entry. The usual notes sections, in this order, are `Setup:`, `How it works:`, `Tuning:`, `Testing:` and `Known gaps:`.
+
+### The rules a rule follows
+
+1. Match the `sensor_type` of a library parser entry. Never `sensor_id`, host names or one tenant's IP addresses.
+2. No rules on Sophos products or built-in integrations.
+3. No IOC or reputation rules: bare lists of IPs, domains or hashes. Sophos's watchlists do those.
+4. Check Sophos doesn't already detect it. After your samples are ingested, the tenant shows no Sophos detection for that sensor type, and Detector Explorer's MITRE filter shows no Sophos rule on the same schema with the same technique.
+5. One line, one rule. Each trigger line matches exactly one rule across the whole library, and every entry has lines that must not trigger.
+6. Narrow and quiet. Every rule has a condition beyond `sensor_type` and a stated daily volume. Low and Informational rules ship off.
+7. A case rule collects only its own entry's detections. Its filter takes custom detections (`metadata.creator.detector.detector_id = 'app:event-filter-ql'`) with the entry's rule names as titles, its `group_by` carries the rule's name, it ships in Test state, and its template is a Security Case with no assignee. It can only collect Medium and higher rules, because case rules skip Low and Informational detections.
+8. The MDR note uses public wording: the detections and cases are the customer's to work. Nothing about internal tiers or roadmaps.
+
+### What the rule checks look at
+
+- `meta.json` has the required fields, the folder holds only the allowed files, and its path comes from `vendor` and `title`.
+- `rules.yaml` and `case-rule.yaml` parse and have the required fields, and MITRE IDs are valid.
+- Each query parses, reads one schema, and uses only that schema's fields, none of them one that rules can't match: host names, the geo and blocklist fields on auth, netflow and dnsquery, or whois. An enum field is compared by name, such as `severity = 'HIGH'`, since Sophos refuses a number there. `NOT IN` is a syntax error: write `!IN`.
+- Regex has no backreferences, lookarounds, atomic groups or possessive quantifiers, which the rule engine refuses.
+- The emulator runs the linked parser on its `samples.log`, then runs the rules on the records, and the result has to match `tests.json` exactly.
+- The contributor rules above that CI can check: 1, 2, 3, 5, 6, 7 and 8. For rule 4 it warns when a rule shares a technique with a Sophos rule on the same schema that matches every sensor type, from [rules/sophos-coverage.json](rules/sophos-coverage.json).
+- The same secret and personal data scan as every entry.
+
+The checks run offline. Run each query in Data Lake Search in your own tenant before you open the pull request: it is the authority, and Data Lake Search and rules still treat regex and empty fields differently.
+
+### What review looks at for rules
+
+- Each query against the parser's samples, and what else in a real tenant it could match.
+- The stated volume.
+- The MDR note.
+- A case rule's filter and `group_by`: that the filter can't reach Sophos's detections, and that only this rule can add to its cases.
 
 ## Add a playbook or connector
 
@@ -195,6 +246,9 @@ Open an issue first for anything large. Keep the page free of runtime dependenci
 ## Notes for maintainers
 
 - **Playbook and connector pull requests.** The gate labels them "needs review" and never merges them. Review them as the section above says, then squash-merge as owner.
+- **Rule pull requests.** The same: the gate labels them "needs review", its report adds warnings for what CI can only flag (an overlap with Sophos's rules, the stated volume, regex, and a case rule's filter), and you review them as [What review looks at for rules](#what-review-looks-at-for-rules) says, then squash-merge as owner.
+- **A rule entry against a tenant.** `node tools/ql-check.mjs rules/<vendor>/<name> --env-file <path>` searches a tenant that ingests the entry's samples with the parser: each rule's query, and every record of the entry's sensor types, which the rules then run on offline. Each rule's search has to return the records the offline check predicts, and the sample lines `tests.json` lists. `--where` narrows every search, such as to one test batch, and `--earliest` sets the time range, which goes by event time. It only searches. `node tools/case-rule-install.mjs rules/<vendor>/<name> --env-file <path>` reads the tenant and says how it would install a case rule; `--install` installs it in Test state.
+- **The Sophos coverage snapshot.** `rules/sophos-coverage.json` comes from a read-only `searchRules` query of Sophos's global rules in a lab tenant. It keeps counts, the technique IDs of rules that match every sensor type, and the sensor types Sophos rules name, by schema, and no rule names or logic. Refresh it in its own pull request; the checks read it from the main branch.
 - **Playbook and connector issue forms.** The Playbook and connector submission workflow opens the pull request with GITHUB_TOKEN, so no checks run on it. Its body is the library check report, and CI runs on main when you merge. The forms only start the workflow while the `playbook-submission` and `connector-submission` labels exist, so keep them.
 - **"needs review" after you merge.** When you merge a pull request the gate labeled "needs review", the Review label workflow takes that label off. It leaves every other label, and a "needs review" that someone other than the gate added.
 

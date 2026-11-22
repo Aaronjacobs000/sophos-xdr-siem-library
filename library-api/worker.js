@@ -14,7 +14,7 @@
 // accepted, and the view counts from the site's GoatCounter.
 
 const SLUG = '[a-z0-9]+(?:-[a-z0-9]+)*';
-const ENTRY_ID = new RegExp(`^(?:parsers|playbooks|connectors)/${SLUG}/${SLUG}$`);
+const ENTRY_ID = new RegExp(`^(?:parsers|rules|playbooks|connectors)/${SLUG}/${SLUG}$`);
 const WHO = /^[0-9a-f]{32}$/;
 const MINUTE = 60e3;
 const HOUR = 60 * MINUTE;
@@ -70,11 +70,11 @@ export async function clientHash(ip, salt) {
 }
 
 // The entry ids in the site's library-ids.json, or in its library-index.json as parsers/<id>,
-// playbooks/<id> and connectors/<id>.
+// rules/<id>, playbooks/<id> and connectors/<id>.
 export function entryIds(index) {
   if (index && Array.isArray(index.ids)) return [...new Set(index.ids.filter(isEntryId))];
   const list = (key, section) => (Array.isArray(index && index[key]) ? index[key] : []).map((e) => `${section}/${e && e.id}`);
-  return [...new Set([...list('entries', 'parsers'), ...list('playbooks', 'playbooks'), ...list('connectors', 'connectors')].filter(isEntryId))];
+  return [...new Set([...list('entries', 'parsers'), ...list('rules', 'rules'), ...list('playbooks', 'playbooks'), ...list('connectors', 'connectors')].filter(isEntryId))];
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
