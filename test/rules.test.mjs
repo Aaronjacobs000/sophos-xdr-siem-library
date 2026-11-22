@@ -55,7 +55,6 @@ test('QL: refuses what the query language refuses, such as NOT IN, with the reas
   assert.throws(() => parseQuery("from thirdparty where log_type not in ('5001')"), /write !IN rather than NOT IN/);
   assert.throws(() => parseQuery("from nids where x = 'open"), QlError);
   assert.throws(() => parseQuery('where x = 1'), /expected FROM/);
-  assert.throws(() => parseQuery("from nids where x !matches_regex 'a'"), /!MATCHES_REGEX isn't an operator/);
 });
 
 test('QL: runs a query on a record the way Data Lake Search and rules do', () => {
@@ -66,6 +65,9 @@ test('QL: runs a query on a record the way Data Lake Search and rules do', () =>
   assert.ok(m("title contains 'nmap'") && m("title !contains 'ssh'"));
   assert.ok(m("title matches 'OpenCanary: Nmap*'") && !m("title matches 'Nmap*'"));
   assert.ok(m("title matches_regex 'nmap (os|null)'"));
+  // !MATCHES_REGEX is in the query language docs' operator table, and Sophos's own rules use it.
+  assert.ok(m("title !matches_regex 'ssh'") && !m("title !matches_regex 'nmap (os|null)'") && m("missing_field !matches_regex 'x'"));
+  assert.equal(parseQuery("from nids where x !MATCHES_REGEX 'a\\d'").where.op, '!matches_regex');
   assert.ok(m("severity = 'medium'") && m("severity != 'HIGH'"));
   assert.ok(m("source_address = '203.0.113.0/24'") && !m("source_address = '198.51.100.0/24'"), 'CIDR on an address');
   assert.ok(m("additional_data.record.key = 'honeycred'"), 'a path through a repeated field matches any element');
@@ -112,6 +114,8 @@ test('QL: regex stays inside the rule engine\'s limits', () => {
   assert.match(regexLimits('(a')[0], /doesn't compile/);
   const p = ruleQueryProblems(parseQuery("from thirdparty where title matches_regex '(a)\\1'"));
   assert.ok(p.some((x) => x.code === 'regex' && /backreference/.test(x.message)));
+  const n = ruleQueryProblems(parseQuery("from thirdparty where title !matches_regex 'a(?=b)'"));
+  assert.ok(n.some((x) => x.code === 'regex' && /!MATCHES_REGEX 'a\(\?=b\)' uses a lookahead/.test(x.message)));
 });
 
 // ---------------------------------------------------------------- the entries in the library
@@ -201,6 +205,9 @@ test('detection checks: overlap with Sophos\'s rules and regex are warnings for 
   assert.deepEqual(patterns.map((p) => p.pattern), ['(Cisco eStreamer|isensor)', '(microsoft|azure)'], 'an unanchored alternation matches any sensor type containing a name');
   const rx = errors(validateRuleEntry(variant(DET, 'rules.yaml', (t) => t.replace("and log_type = '5000'", "and log_type = '5000'\n        and title matches_regex 'SMB.*'")), opts()));
   assert.equal(rx, '');
+  const notRx = validateRuleEntry(variant(DET, 'rules.yaml', (t) => t.replace("and log_type = '5000'", "and log_type = '5000'\n        and title !matches_regex '^zz.*nope'")), opts());
+  assert.equal(errors(notRx), '');
+  assert.match(notRx.problems.filter((p) => p.code === 'review').map((p) => p.message).join('\n'), /uses MATCHES_REGEX\. Rules and Data Lake Search use different regex engines/);
 });
 
 test('case checks: the filter takes only the entry\'s own Medium and higher custom detections', () => {
