@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: atlassian_one_case_per_admin
+title: Atlassian, one case per admin (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Atlassian security policy changed', 'Atlassian admin API key created', 'Atlassian audit log exported')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' atlassian_one_case_per_admin')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: atlassian_security_policy_api_key_and_audit_log_changes_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: atlassian_security_policy_api_key_and_audit_log_changes_unofficial
+title: Atlassian security policy, API key and audit log changes (unofficial)
+description: Case for Atlassian security policy, API key and audit log changes custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - atlassian
+    type: SECURITY_INVESTIGATION
+    title: Atlassian security policy, API key and audit log changes by one admin
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

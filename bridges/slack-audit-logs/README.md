@@ -1,6 +1,6 @@
 # Slack audit logs bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Slack organization or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from Slack's Audit Logs API reference. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Slack organization. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up entries from a local mock of the Audit Logs API's logs endpoint, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from Slack's Audit Logs API reference. Run it with `--dry-run` first and check what it would send.
 
 Slack offers the audit logs of an Enterprise organization (sign-ins and sign-outs, member, role and session changes, channel, file, canvas and app actions, workspace and organization settings, and Slack's own anomaly detections) through its Audit Logs API, which is pull only. This script reads them and sends each entry as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It adds `"slack_record": "audit"` in front of each entry, and the library parsers in `parsers/slack/slack-audit-logs` normalize them. Sophos Fusion has no Slack integration.
 

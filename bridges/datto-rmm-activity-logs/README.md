@@ -1,6 +1,6 @@
 # Datto RMM Activity Log bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Datto RMM account or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from the response shapes in Datto's API help page and public OpenAPI spec. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Datto RMM account. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up records from a local mock of the token and activity-logs endpoints, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from the response shapes in Datto's API help page and public OpenAPI spec. Run it with `--dry-run` first and check what it would send.
 
 Datto RMM pushes monitor alerts through Global Webhooks, but its Activity Log is only available from the API. That log is where an RMM intrusion shows up: logins, jobs and components run, remote takeover and Web Remote sessions, file transfers, and device and user changes. This script polls `GET /api/v2/activity-logs`, keeps a cursor, and sends each record unchanged as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. The library parser `DATTO_RMM_ACTIVITY_JSON_STANDALONE_CLOUDAUDIT` in `parsers/datto/datto-rmm` then normalizes it to CloudAudit.
 

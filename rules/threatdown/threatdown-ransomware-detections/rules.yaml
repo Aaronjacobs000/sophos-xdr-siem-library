@@ -1,0 +1,14 @@
+# Custom detection rules for ThreatDown Nebula and OneView, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: ThreatDown ransomware detection
+    description: ThreatDown's ransomware protection stopped a process behaving like ransomware on an endpoint. The process was blocked, but files it touched before then may be encrypted, and whatever started it is still there.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from antivirus
+      where sensor_type = 'ThreatDown'
+        and threat_category = 'RANSOMWARE'

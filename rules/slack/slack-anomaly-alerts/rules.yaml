@@ -1,0 +1,14 @@
+# Custom detection rules for Slack, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Slack flagged anomalous activity
+    description: Slack's own anomaly detection flagged a member's session, such as a new address and network, a spoofed or unexpected client, or a Tor exit. Slack raises these when a session looks stolen.
+    severity: medium
+    mitre:
+      - T1078.004
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Slack Audit Logs'
+        and alert_category = 'anomaly'

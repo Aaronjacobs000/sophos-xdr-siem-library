@@ -1,0 +1,38 @@
+{
+  "kind": "detection",
+  "title": "Kubernetes pod exec, secrets and anonymous access",
+  "vendor": "Kubernetes",
+  "product": "Kubernetes audit logs",
+  "parser": "parsers/kubernetes/kubernetes-audit-logs",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Kubernetes",
+    "Azure Kubernetes Service"
+  ],
+  "volume": "A few a day where engineers debug with kubectl exec and read secrets by hand; none where only pipelines touch the cluster. Anonymous requests come every day on an API server open to the internet: there, add and status = '200'.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/",
+    "https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/"
+  ],
+  "summary": "Four custom detection rules for Kubernetes audit logs from AKS, EKS or a self-managed API server, on the CloudAudit records the library's Kubernetes parser writes. They make a detection when someone execs into a pod, a person reads secrets, an anonymous request reaches the API server, or a namespace is deleted. Each rule matches sensor types Kubernetes and Azure Kubernetes Service only.",
+  "notes": "Setup:\n- Add the library's Kubernetes parser, and send the cluster's audit log through Azure Event Hubs, S3 Ingest or a log forwarder, as the parser entry says. Then run the check-your-data search to see events arrive.\n- The secret rules need the Metadata audit level for secrets, and AKS sends get and list only in its kube-audit category, not kube-audit-admin.\n\nHow it works:\n- The parser writes the verb (get, list, create, delete) as the event name, the resource and subresource, such as pods/exec, as the event type, and the user's kind (User, ServiceAccount, Anonymous) as user type.\n- The secret rule takes reads by a User only, so controllers and pods reading their own secrets through service accounts aren't taken.\n- The rules take both sensor types the parser writes: Kubernetes for EKS and self-managed clusters, and Azure Kubernetes Service for AKS.\n\nTuning:\n- If an on-call group execs into pods every day, leave it out in the query itself, such as and user_name != 'oncall@example.com'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 8 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 19 to 20 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- Sophos's two CloudAudit rules that match any sensor type with microsoft or azure in its name, the review the checks raise for Azure Kubernetes Service, fired on none of these records, offline or in the lab.\n- The records went to HTTP Ingest one per request as JSON, standing in for Azure Event Hubs, S3 Ingest and a forwarder.\n\nKnown gaps:\n- A service account token stolen from a pod reads secrets as a ServiceAccount, which the secret rule doesn't take.\n- The exec rule sees that a shell opened, not the commands typed in it.",
+  "links": {
+    "case_rule": "rules/kubernetes/kubernetes-one-case-per-source-address",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

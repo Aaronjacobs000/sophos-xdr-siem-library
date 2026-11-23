@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Slack member made an admin or owner": [9],
+    "Slack SSO or two-factor setting changed": [10],
+    "Slack app scopes expanded": [11]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 7, 8, 12]
+}

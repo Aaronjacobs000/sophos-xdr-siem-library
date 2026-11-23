@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "SQL Server privilege and audit tampering",
+  "vendor": "Microsoft",
+  "product": "SQL Server audit",
+  "parser": "parsers/microsoft/sql-server-audit",
+  "schema": "scwx.managementevent",
+  "sensor_types": [
+    "Microsoft SQL Server"
+  ],
+  "volume": "None on a normal day. DBAs grant sysadmin and change audits a few times a year. xp_cmdshell runs often where an old maintenance job uses it, so check that first.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ManagementEventSchema/",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-records",
+    "https://learn.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-audit-actions-transact-sql"
+  ],
+  "summary": "Four custom detection rules for Microsoft SQL Server, on the ManagementEvent records the library's SQL Server audit parsers write from SQL Server Audit events. They make a detection when someone grants the sysadmin role, runs or turns on xp_cmdshell, turns off or drops an audit, or drops an audit table. Each rule matches sensor type Microsoft SQL Server only.",
+  "notes": "Setup:\n- Add the library's SQL Server audit parsers, and create a server audit to the Windows Application or Security log with the action groups these rules need and forward it in Snare format, as the parser entry says. Then run the check-your-data search to see events arrive.\n- The sysadmin rule needs SERVER_ROLE_MEMBER_CHANGE_GROUP, the audit rule AUDIT_CHANGE_GROUP, and the xp_cmdshell and table rules the statements, from SCHEMA_OBJECT_CHANGE_GROUP and SCHEMA_OBJECT_ACCESS_GROUP or a database audit specification.\n\nHow it works:\n- The parsers write the audit action's name, such as ADD MEMBER, ALTER or DROP, as the operation name, and the T-SQL statement as the query.\n- The audit rule takes ALTER SERVER AUDIT or a database audit specification turned to STATE = OFF, and a DROP of either.\n- The table rule takes DROP TABLE on any table with audit in its name, so it also takes a test table called that.\n\nTuning:\n- If a maintenance job calls xp_cmdshell on purpose, leave its login out in the query itself, such as and username != 'svc_sqlmaint'. A suppression rule would hide Sophos's detections for that login as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 19 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The lines went to HTTP Ingest one per request as text, and the built-in SNARE_Unsupported parser handed them to the library's children, as it does for the Windows Event Log feed.\n\nKnown gaps:\n- A statement over 4,000 characters arrives in several records, and a keyword split across two of them isn't taken.\n- A sysadmin grant through sp_addsrvrolemember is taken only when its audit record names sysadmin.",
+  "links": {
+    "case_rule": "rules/microsoft/sql-server-one-case-per-server",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

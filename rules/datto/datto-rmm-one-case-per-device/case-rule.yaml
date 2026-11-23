@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: datto_rmm_one_case_per_device
+title: Datto RMM, one case per device (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Datto RMM ransomware detection', 'Datto RMM antivirus protection alert')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' datto_rmm_one_case_per_device')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: datto_rmm_ransomware_and_antivirus_alerts_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: datto_rmm_ransomware_and_antivirus_alerts_unofficial
+title: Datto RMM ransomware and antivirus alerts (unofficial)
+description: Case for Datto RMM ransomware and antivirus alerts custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - datto
+    type: SECURITY_INVESTIGATION
+    title: Datto RMM ransomware and antivirus alerts on one device
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

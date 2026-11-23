@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Bitwarden vault export and admin changes",
+  "vendor": "Bitwarden",
+  "product": "Bitwarden event logs",
+  "parser": "parsers/bitwarden/bitwarden-event-logs",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Bitwarden"
+  ],
+  "volume": "None on a normal day for exports and policies. Invites come with new starters, a few a week.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://bitwarden.com/help/event-logs/",
+    "https://bitwarden.com/help/public-api/"
+  ],
+  "summary": "Three custom detection rules for Bitwarden, on the CloudAudit records the library's Bitwarden parsers write from the organization event log. They make a detection when someone exports a vault, an admin changes an organization policy, or a member is invited. Each rule matches sensor type Bitwarden only.",
+  "notes": "Setup:\n- Add the library's Bitwarden parsers and the example bridge in bridges/bitwarden-events, and run the bridge with an organization API key, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the event name from Bitwarden's Public API, such as Organization_ClientExportedVault, and the acting member's email, which the bridge looks up, as the user.\n- Bitwarden's event doesn't say which policy changed or how, so the policy rule takes every policy change. The policy ID is a resource on the record.\n- Vault exports are on the event log only when the export ran in a Bitwarden app that sends events, which every official app does.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 8 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 20 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n- The events went in through bridges/bitwarden-events, run once on the lab machine against a local mock of the Bitwarden Public API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- Bitwarden's apps send events about every 60 seconds, and a modified client could suppress them.",
+  "links": {
+    "case_rule": "rules/bitwarden/bitwarden-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

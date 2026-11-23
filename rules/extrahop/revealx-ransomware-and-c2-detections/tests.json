@@ -1,0 +1,7 @@
+{
+  "triggers": {
+    "RevealX ransomware activity": [3],
+    "RevealX C2 beaconing at High risk": [4]
+  },
+  "quiet": [1, 2, 5]
+}

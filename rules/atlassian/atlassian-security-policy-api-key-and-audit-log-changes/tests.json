@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Atlassian security policy changed": [4],
+    "Atlassian admin API key created": [6],
+    "Atlassian audit log exported": [7]
+  },
+  "quiet": [1, 2, 3, 5, 8, 9]
+}

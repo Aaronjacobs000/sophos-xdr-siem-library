@@ -1,0 +1,48 @@
+# Custom detection rules for Microsoft SQL Server, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: SQL Server sysadmin role granted
+    description: Someone added a login to the SQL Server sysadmin role, which can do anything on the instance, including run operating system commands. An attacker who gets in with a weaker login grants sysadmin to keep full control.
+    severity: high
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Microsoft SQL Server'
+        and operation_name = 'ADD MEMBER'
+        and query contains 'sysadmin'
+  - name: SQL Server xp_cmdshell run or turned on
+    description: A statement ran or configured xp_cmdshell, which runs Windows commands as the SQL Server service account. Ransomware crews turn it on to run their tools on database servers.
+    severity: high
+    mitre:
+      - T1505.001
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Microsoft SQL Server'
+        and query contains 'xp_cmdshell'
+  - name: SQL Server audit turned off or dropped
+    description: Someone turned off or dropped a SQL Server audit or audit specification (ALTER SERVER AUDIT with STATE = OFF, or DROP). What happens on the instance after this isn't recorded.
+    severity: high
+    mitre:
+      - T1562
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Microsoft SQL Server'
+        and (query contains 'SERVER AUDIT' or query contains 'DATABASE AUDIT SPECIFICATION')
+        and (query contains 'STATE = OFF' or query contains 'STATE=OFF' or operation_name = 'DROP')
+  - name: SQL Server audit table dropped
+    description: Someone dropped a table with audit in its name, such as an application's own audit trail. Attackers drop them to remove the record of what they changed.
+    severity: medium
+    mitre:
+      - T1070
+    enabled_by_default: true
+    query: |-
+      from managementevent
+      where sensor_type = 'Microsoft SQL Server'
+        and operation_name = 'DROP'
+        and query contains 'DROP TABLE'
+        and query contains 'audit'

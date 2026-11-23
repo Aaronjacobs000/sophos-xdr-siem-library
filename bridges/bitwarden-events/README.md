@@ -1,6 +1,6 @@
 # Bitwarden event logs bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Bitwarden organization or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from Bitwarden's Public API reference and OpenAPI document. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Bitwarden organization. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the Public API's token, events and members endpoints, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from Bitwarden's Public API reference and OpenAPI document. Run it with `--dry-run` first and check what it would send.
 
 Bitwarden offers its organization event logs to other tools only through the Public API, which is pull only. This script signs in with the organization's API key, reads the events by time window, and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. The library parsers in `parsers/bitwarden/bitwarden-event-logs` normalize them.
 

@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: revealx_one_case_per_source_host
+title: RevealX, one case per source host (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('RevealX ransomware activity', 'RevealX C2 beaconing at High risk')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('sourceHostName:')).map(e, e.split(':')[1] + ' revealx_one_case_per_source_host')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: revealx_ransomware_and_c2_detections_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: revealx_ransomware_and_c2_detections_unofficial
+title: RevealX ransomware and C2 detections (unofficial)
+description: Case for RevealX ransomware and C2 detections custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - extrahop
+    type: SECURITY_INVESTIGATION
+    title: RevealX ransomware and C2 detections for one host
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

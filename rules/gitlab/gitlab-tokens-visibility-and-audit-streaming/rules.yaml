@@ -1,0 +1,35 @@
+# Custom detection rules for GitLab, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: GitLab access token created
+    description: Someone created a GitLab personal, project or group access token. A token reaches the API and Git without a sign-in or two-factor, so an attacker with a session creates one to keep access.
+    severity: medium
+    mitre:
+      - T1098.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitLab'
+        and event_name in ('personal_access_token_created', 'project_access_token_created', 'group_access_token_created')
+  - name: GitLab project made public
+    description: Someone changed a GitLab project's visibility to Public, so anyone can read its code. Making a private repository public is a quick way to leak source code and the secrets in it.
+    severity: high
+    mitre:
+      - T1567.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitLab'
+        and event_name = 'project_visibility_level_updated'
+        and request_parameters.record.value = 'Public'
+  - name: GitLab audit event streaming changed
+    description: Someone created, changed or removed a GitLab audit event streaming destination or one of its headers. Removing or redirecting the stream stops audit events reaching the SIEM.
+    severity: high
+    mitre:
+      - T1562.008
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'GitLab'
+        and event_name contains 'audit_events_streaming'

@@ -309,5 +309,30 @@
     "extractor_path": null,
     "schema": "scwx.generic",
     "normalized": null
+  },
+  {
+    "line": 12,
+    "extractor_path": "MSSQL_AUDIT_SNARE_CHILD_MGMT",
+    "schema": "scwx.managementevent",
+    "normalized": {
+      "sensor_type": "Microsoft SQL Server",
+      "event_time_usec": 1792025560312000,
+      "event_time_fidelity": "MICRO",
+      "sensor_event_id": "41209",
+      "host_id": "sql01.example.com",
+      "operation": "AL",
+      "operation_name": "ALTER",
+      "query": "ALTER SERVER AUDIT [SecurityAudit] WITH (STATE = OFF)",
+      "query_language": "T-SQL",
+      "result": "succeeded",
+      "username": "EXAMPLE\\jdoe",
+      "source_address": "192.0.2.10",
+      "client_hostname": "WS01",
+      "target_hostname": "sql01.example.com",
+      "namespace": "master",
+      "remote_operation": true,
+      "channel": "Application",
+      "event_id": 33205
+    }
   }
 ]

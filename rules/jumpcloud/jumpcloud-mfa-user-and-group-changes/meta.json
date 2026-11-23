@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "JumpCloud MFA, user and group changes",
+  "vendor": "JumpCloud",
+  "product": "Directory Insights",
+  "parser": "parsers/jumpcloud/directory-insights",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "JumpCloud Directory Insights"
+  ],
+  "volume": "None on a normal day for MFA. User creation by API comes with HR or SCIM sync, and group changes with onboarding, a few a day where admins manage groups by hand.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://docs.jumpcloud.com/api/insights/directory/1.0/index.html",
+    "https://docs.jumpcloud.com/new/others/siem-event-types/index.html"
+  ],
+  "summary": "Three custom detection rules for JumpCloud, on the CloudAudit records the library's JumpCloud parsers write from Directory Insights. They make a detection when an admin turns off a user's MFA, a user is created with an API key, or a user group's membership changes. Each rule matches sensor type JumpCloud Directory Insights only.",
+  "notes": "Setup:\n- Add the library's JumpCloud parsers and the example bridge in bridges/jumpcloud-directory-insights, and run the bridge with a read-only admin API key, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the Directory Insights event type, such as user_update, as the event name, the admin who made the change as the user, and the first three changed fields as request parameters, each as old to new.\n- The MFA rule takes enable_user_portal_multifactor or totp_enabled going from true to false in one update.\n- The API key rule takes users created with auth_method api-key, which the parsers keep in additional_event_data.\n\nTuning:\n- If an HR or SCIM sync creates users with an API key, leave its admin out of that rule in the query itself, such as and user_name != 'hr-sync@example.com'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 3 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 22 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n- The events went in through bridges/jumpcloud-directory-insights, run once on the lab machine against a local mock of the JumpCloud Directory Insights API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- The parsers keep the first three changed fields of an update, so an MFA change made with many other changes in one save can be missed.",
+  "links": {
+    "case_rule": "rules/jumpcloud/jumpcloud-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

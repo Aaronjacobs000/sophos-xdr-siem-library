@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: nasuni_one_case_per_appliance
+title: Nasuni, one case per appliance (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Nasuni ransomware attack detected', 'Nasuni ransomware mitigation blocked a client')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' nasuni_one_case_per_appliance')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: nasuni_ransomware_protection_alerts_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: nasuni_ransomware_protection_alerts_unofficial
+title: Nasuni ransomware protection alerts (unofficial)
+description: Case for Nasuni ransomware protection alerts custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - nasuni
+    type: SECURITY_INVESTIGATION
+    title: Nasuni ransomware protection alerts on one appliance
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

@@ -1,0 +1,34 @@
+# Custom detection rules for Slack, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Slack member made an admin or owner
+    description: Someone made a Slack member a workspace or org admin or owner. An attacker with an admin session promotes an account of theirs to keep access after the first one is cleaned up.
+    severity: high
+    mitre:
+      - T1098.003
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Slack Audit Logs'
+        and event_name in ('role_change_to_admin', 'role_change_to_owner')
+  - name: Slack SSO or two-factor setting changed
+    description: An admin changed the SSO setting or the two-factor requirement for the workspace or org. Making SSO optional or dropping two-factor lets a stolen password sign in on its own.
+    severity: high
+    mitre:
+      - T1556
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Slack Audit Logs'
+        and event_name in ('pref.sso_setting_changed', 'pref.two_factor_auth_changed')
+  - name: Slack app scopes expanded
+    description: An installed Slack app was given more scopes, such as files or message history it couldn't read before. A malicious or compromised app asks for wider scopes to read what users share.
+    severity: medium
+    mitre:
+      - T1528
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Slack Audit Logs'
+        and event_name = 'app_scopes_expanded'

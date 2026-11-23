@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Nasuni ransomware protection alerts",
+  "vendor": "Nasuni",
+  "product": "Edge Appliance",
+  "parser": "parsers/nasuni/edge-appliance",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Nasuni Edge Appliance"
+  ],
+  "volume": "None on a normal day. Each detected attack and each block makes one detection, in the appliance's case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://docs.nasuni.com/docs/nmc-cyber-resilience-page",
+    "https://docs.nasuni.com/docs/audit-events"
+  ],
+  "summary": "Two custom detection rules for Nasuni Edge Appliances, on the third-party alert records the library's Nasuni parsers write from Ransomware Protection notifications. They make a detection when Nasuni detects a ransomware attack on a volume, and when its mitigation policy blocks a client. Each rule matches sensor type Nasuni Edge Appliance only.",
+  "notes": "Setup:\n- Add the library's Nasuni parsers, and turn on Syslog Export for the Edge Appliances to the data collector, as the parser entry says. Then run the check-your-data search to see events arrive.\n- Ransomware Protection must be turned on for the volumes, with a mitigation policy.\n\nHow it works:\n- The parsers set the title from Nasuni's message: an attack detected, with the user, client address and confidence level, or the mitigation policy blocking a client address.\n- The rules take both at any confidence: Nasuni rates a known signature Low, and it still means files are being encrypted.\n- Nasuni's antivirus notification goes to the same schema and isn't taken.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 3 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 26 to 27 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The lines went to HTTP Ingest one per request as text, the way a syslog line arrives.\n\nKnown gaps:\n- The message wording the parsers read is the one Edge Appliance 9.14 and later send; older appliances may not match.",
+  "links": {
+    "case_rule": "rules/nasuni/nasuni-one-case-per-appliance",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # Kaseya VSA 10 audit log bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real VSA 10 server, a Pulseway account or a Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from the response shapes in the VSA 10 REST API documentation. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real VSA 10 server or a Pulseway account. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up records from a local mock of the auditlogs endpoint, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from the response shapes in the VSA 10 REST API documentation. Run it with `--dry-run` first and check what it would send.
 
 VSA 10 pushes notifications through webhooks, but its audit log is only available from the API. That log records who ran which ad-hoc or automation script on which device, remote control sessions, file transfers, API token and account changes, with the source address of each request. This script polls `GET /api/v3/auditlogs`, keeps the last `AuditLogRecordId` as its cursor, and sends each record unchanged as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. The library parser `KASEYA_VSA10_AUDIT_JSON_STANDALONE_CLOUDAUDIT` in `parsers/kaseya/vsa-10` then normalizes it to CloudAudit.
 

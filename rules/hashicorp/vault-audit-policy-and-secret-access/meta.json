@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Vault audit, policy and secret access",
+  "vendor": "HashiCorp",
+  "product": "HashiCorp Vault",
+  "parser": "parsers/hashicorp/hashicorp-vault",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "HashiCorp Vault"
+  ],
+  "volume": "None on a normal day for audit devices. Policies change with releases, a few a week where Terraform runs them. Denied reads come with misconfigured apps, so expect some until those are fixed.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://developer.hashicorp.com/vault/docs/audit/schema",
+    "https://developer.hashicorp.com/vault/docs/audit"
+  ],
+  "summary": "Three custom detection rules for HashiCorp Vault, on the CloudAudit records the library's Vault parsers write from Vault's audit device. They make a detection when someone disables an audit device, writes or deletes an ACL policy, or is denied a secret read. Each rule matches sensor type HashiCorp Vault only.",
+  "notes": "Setup:\n- Add the library's Vault parsers, and turn on a Vault audit device and forward its lines to the data collector, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write each API call's operation (read, list, create, update, delete) as the event name and its path as object_key, from the response entry Vault logs for the call.\n- The audit rule takes a delete on a path under sys/audit/, the call that disables an audit device. The policy rule takes writes and deletes under sys/policies/acl/ and the older sys/policy/.\n- The denied read rule takes reads and lists that Vault answered with permission denied.\n\nTuning:\n- If an automation account writes policies on every deploy, leave it out of the policy rule in the query itself, such as and user_name != 'approle-terraform'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 5 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 17 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only sample sign-ins on Auth, as an unseen user, address or application.\n- The lines went to HTTP Ingest one per request as text, the way a syslog line arrives.\n\nKnown gaps:\n- Disabling the only audit device leaves nothing to record what follows. Run two, so removing one is still recorded by the other.\n- Vault hashes most values with HMAC, so the detection names the Vault identity and the path, not the token.",
+  "links": {
+    "case_rule": "rules/hashicorp/vault-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

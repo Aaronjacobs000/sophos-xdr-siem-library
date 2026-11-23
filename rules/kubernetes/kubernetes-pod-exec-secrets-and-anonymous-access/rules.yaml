@@ -1,0 +1,48 @@
+# Custom detection rules for Kubernetes, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Kubernetes exec or attach into a pod
+    description: Someone opened a shell in a running container with kubectl exec or attach. Attackers with cluster credentials do this to run tools inside a workload and reach what its service account can.
+    severity: medium
+    mitre:
+      - T1609
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type in ('Kubernetes', 'Azure Kubernetes Service')
+        and event_type in ('pods/exec', 'pods/attach')
+        and event_name = 'create'
+  - name: Kubernetes secret read by a person
+    description: A user account, not a service account, read or listed Kubernetes secrets. Controllers read secrets all day, but a person doing it with kubectl is how stolen credentials get turned into database passwords and cloud keys.
+    severity: medium
+    mitre:
+      - T1552.007
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type in ('Kubernetes', 'Azure Kubernetes Service')
+        and event_type = 'secrets'
+        and event_name in ('get', 'list', 'watch')
+        and user_type = 'User'
+  - name: Kubernetes anonymous API request
+    description: The API server got a request as system:anonymous, with no credentials. On an API server reachable from the internet this is scanning; one that succeeds means anonymous access is turned on.
+    severity: medium
+    mitre:
+      - T1078.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type in ('Kubernetes', 'Azure Kubernetes Service')
+        and user_name = 'system:anonymous'
+  - name: Kubernetes namespace deleted
+    description: Someone deleted a Kubernetes namespace, which deletes every workload, secret and volume claim in it. Attackers delete namespaces to destroy environments; operators rarely do it outside test clusters.
+    severity: high
+    mitre:
+      - T1485
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type in ('Kubernetes', 'Azure Kubernetes Service')
+        and event_type = 'namespaces'
+        and event_name = 'delete'

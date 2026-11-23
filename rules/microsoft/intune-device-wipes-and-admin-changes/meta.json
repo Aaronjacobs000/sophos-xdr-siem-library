@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Intune device wipes and admin changes",
+  "vendor": "Microsoft",
+  "product": "Intune audit logs",
+  "parser": "parsers/microsoft/intune-audit-logs",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Microsoft Intune"
+  ],
+  "volume": "A few a week: help desks wipe and retire lost or replaced devices, and scripts change with deployments. Role assignments and deleted compliance policies are rare. A burst of wipes from one account is the attack.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://learn.microsoft.com/en-us/intune/governance/monitor-audit-logs",
+    "https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/intuneauditlogs"
+  ],
+  "summary": "Four custom detection rules for Microsoft Intune, on the CloudAudit records the library's Intune parser writes from Intune audit logs. They make a detection when a device is wiped or retired, a compliance policy is deleted, an Intune admin role is assigned, or a device script is added or changed. Each rule matches sensor type Microsoft Intune only.",
+  "notes": "Setup:\n- Add the library's Intune parser, and stream the AuditLogs category to an event hub and read it with an Azure Event Hubs integration, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parser writes Intune's operation name, such as wipe ManagedDevice or Delete DeviceCompliancePolicy, as the event name, the Intune area as the event type, and the admin's UPN or the acting app as the user.\n- The wipe rule takes wipe and retire. The script rule takes create, change and assign operations on platform scripts (DeviceManagementScript and DeviceShellScript) and remediation scripts (DeviceHealthScript), and leaves deletes out.\n- A partner's delegated admin is the user on their records, so a wipe through GDAP lands in the partner technician's case.\n\nTuning:\n- If a lifecycle tool retires devices through Graph every day, leave its app out of the wipe rule in the query itself, such as and user_name != 'Contoso Device Lifecycle'. A suppression rule would hide Sophos's detections for that app as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 18 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- Sophos's two CloudAudit rules that match any sensor type with microsoft or azure in its name, the review the checks raise for Microsoft Intune, fired on none of these records, offline or in the lab.\n- The records went to HTTP Ingest one per request as JSON, standing in for the Azure Event Hubs integration.\n\nKnown gaps:\n- Each wipe is one detection: the rules can't count wipes per hour, so read the case for how many devices one account wiped.\n- Microsoft warns the export can repeat records, which makes a second detection for the same change.",
+  "links": {
+    "case_rule": "rules/microsoft/intune-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

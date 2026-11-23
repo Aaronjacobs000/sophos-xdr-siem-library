@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: kaseya_vsa_10_one_case_per_admin
+title: Kaseya VSA 10, one case per admin (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Kaseya VSA 10 API token created')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' kaseya_vsa_10_one_case_per_admin')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: kaseya_vsa_10_api_tokens_created_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: kaseya_vsa_10_api_tokens_created_unofficial
+title: Kaseya VSA 10 API tokens created (unofficial)
+description: Case for Kaseya VSA 10 API tokens created custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - kaseya
+    type: SECURITY_INVESTIGATION
+    title: Kaseya VSA 10 API tokens created by one admin
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

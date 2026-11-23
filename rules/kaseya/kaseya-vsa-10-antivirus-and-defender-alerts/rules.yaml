@@ -1,0 +1,24 @@
+# Custom detection rules for Kaseya VSA 10, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Kaseya VSA 10 antivirus threat detected
+    description: VSA 10 reported a threat its antivirus found on a device, with the threat's name and file. Check the device for what brought it in, even if the file was quarantined.
+    severity: high
+    mitre: []
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Kaseya VSA 10'
+        and title = 'Antivirus threat detected'
+  - name: Kaseya VSA 10 Defender service stopped
+    description: VSA 10's service monitor reported that the Microsoft Defender Antivirus service (WinDefend) stopped on a device. Attackers stop Defender before they run ransomware.
+    severity: high
+    mitre:
+      - T1562.001
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Kaseya VSA 10'
+        and title = 'Windows service stopped'
+        and summary contains 'WinDefend'

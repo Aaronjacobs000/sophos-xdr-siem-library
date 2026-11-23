@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: threatdown_one_case_per_computer
+title: ThreatDown, one case per computer (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('ThreatDown blocked an exploit', 'ThreatDown suspicious activity at High severity')
+append_filter: ""
+group_by:
+    - ${alertHostnames(inputs).map(h, h + ' threatdown_one_case_per_computer')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: threatdown_exploit_and_suspicious_activity_alerts_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: threatdown_exploit_and_suspicious_activity_alerts_unofficial
+title: ThreatDown exploit and suspicious activity alerts (unofficial)
+description: Case for ThreatDown exploit and suspicious activity alerts custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - threatdown
+    type: SECURITY_INVESTIGATION
+    title: ThreatDown exploit and suspicious activity on one computer
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

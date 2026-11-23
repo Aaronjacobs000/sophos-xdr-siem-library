@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Atlassian security policy, API key and audit log changes",
+  "vendor": "Atlassian",
+  "product": "Atlassian organization audit log",
+  "parser": "parsers/atlassian/atlassian-organization-audit-log",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Atlassian"
+  ],
+  "volume": "None on a normal day. Admins change security policies and create admin API keys a few times a year; audit log exports come with audits.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://support.atlassian.com/security-and-access-policies/docs/audit-log-activities-database/",
+    "https://developer.atlassian.com/cloud/admin/organization/rest/api-group-events/"
+  ],
+  "summary": "Three custom detection rules for the Atlassian organization audit log, on the CloudAudit records the library's Atlassian parsers write. They make a detection when an admin changes a security policy, creates an admin API key, or exports the audit log. Each rule matches sensor type Atlassian only.",
+  "notes": "Setup:\n- Add the library's Atlassian parsers and the example bridge in bridges/atlassian-org-audit, and run the bridge with an organization API key that has the read:events:admin scope, as the parser entry says. Then run the check-your-data search to see events arrive.\n- The organization audit log needs Atlassian Guard or a Cloud Enterprise plan.\n\nHow it works:\n- Atlassian doesn't publish its action keys, so the rules read the names the bridge takes from the event actions list: the action's group, Security policies, which the parsers write as the event type, and its display name, which they keep in additional_event_data.\n- The API key and export rules take the display names Created admin API key and Exported organization audit log, from Atlassian's audit log activities list.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 7 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 23 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The events went in through bridges/atlassian-org-audit, run once on the lab machine against a local mock of the Atlassian Organizations REST API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- If Atlassian renames an activity, the rule that names it stops matching; run the check-your-data search for the display names you see.",
+  "links": {
+    "case_rule": "rules/atlassian/atlassian-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

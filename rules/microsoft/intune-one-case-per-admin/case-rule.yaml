@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: intune_one_case_per_admin
+title: Intune, one case per admin (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Intune device wiped or retired', 'Intune compliance policy deleted', 'Intune admin role assigned', 'Intune device script added or changed')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' intune_one_case_per_admin')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: intune_device_wipes_and_admin_changes_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: intune_device_wipes_and_admin_changes_unofficial
+title: Intune device wipes and admin changes (unofficial)
+description: Case for Intune device wipes and admin changes custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - intune
+    type: SECURITY_INVESTIGATION
+    title: Intune device wipes and admin changes by one admin
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

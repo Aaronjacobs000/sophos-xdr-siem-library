@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "Intune device wiped or retired": [1, 6],
+    "Intune compliance policy deleted": [3],
+    "Intune admin role assigned": [4],
+    "Intune device script added or changed": [5]
+  },
+  "quiet": [2]
+}

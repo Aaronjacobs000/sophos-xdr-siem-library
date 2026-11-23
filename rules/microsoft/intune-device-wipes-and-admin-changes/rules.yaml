@@ -1,0 +1,46 @@
+# Custom detection rules for Microsoft Intune, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Intune device wiped or retired
+    description: An Intune admin, partner or app wiped or retired a managed device. Attackers with Intune admin rights have wiped thousands of devices at once, so a burst of these from one account is an attack, not housekeeping.
+    severity: high
+    mitre:
+      - T1485
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Microsoft Intune'
+        and event_name in ('wipe ManagedDevice', 'retire ManagedDevice')
+  - name: Intune compliance policy deleted
+    description: Someone deleted an Intune device compliance policy. Conditional Access relies on compliance, so deleting a policy can let devices that fail it reach company data.
+    severity: medium
+    mitre:
+      - T1562
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Microsoft Intune'
+        and event_name = 'Delete DeviceCompliancePolicy'
+  - name: Intune admin role assigned
+    description: Someone created or changed an Intune role assignment, which gives its members admin rights over the devices in its scope. An attacker adds an account of theirs to keep the rights to wipe devices or push scripts.
+    severity: high
+    mitre:
+      - T1098.003
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Microsoft Intune'
+        and event_name in ('Create DeviceAndAppManagementRoleAssignment', 'Patch DeviceAndAppManagementRoleAssignment')
+  - name: Intune device script added or changed
+    description: "Someone created, changed or assigned an Intune device script: a platform script or a remediation (health) script. Intune runs these on every device in scope, often as SYSTEM, so an attacker uses them to run code across the fleet."
+    severity: high
+    mitre:
+      - T1072
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Microsoft Intune'
+        and event_type = 'DeviceConfiguration'
+        and (event_name contains 'DeviceManagementScript' or event_name contains 'DeviceHealthScript' or event_name contains 'DeviceShellScript')
+        and event_name !contains 'delete'

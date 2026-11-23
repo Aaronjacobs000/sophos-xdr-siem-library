@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "SQL Server sysadmin role granted": [5],
+    "SQL Server xp_cmdshell run or turned on": [9],
+    "SQL Server audit turned off or dropped": [12],
+    "SQL Server audit table dropped": [7]
+  },
+  "quiet": [1, 2, 3, 4, 6, 8, 10, 11]
+}

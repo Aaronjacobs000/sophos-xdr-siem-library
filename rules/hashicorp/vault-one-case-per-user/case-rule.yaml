@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: vault_one_case_per_user
+title: Vault, one case per user (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Vault audit device disabled', 'Vault ACL policy written or deleted', 'Vault secret read denied')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('userName:')).map(e, e.split(':')[1] + ' vault_one_case_per_user')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: vault_audit_policy_and_secret_access_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: vault_audit_policy_and_secret_access_unofficial
+title: Vault audit, policy and secret access (unofficial)
+description: Case for Vault audit, policy and secret access custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - vault
+    type: SECURITY_INVESTIGATION
+    title: Vault audit, policy and secret access by one user
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

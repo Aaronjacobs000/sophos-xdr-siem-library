@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: kubernetes_one_case_per_source_address
+title: Kubernetes, one case per source address (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('Kubernetes exec or attach into a pod', 'Kubernetes secret read by a person', 'Kubernetes anonymous API request', 'Kubernetes namespace deleted')
+append_filter: ""
+group_by:
+    - ${alertSourceIPs(inputs).map(ip, ip + ' kubernetes_one_case_per_source_address')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: kubernetes_pod_exec_secrets_and_anonymous_access_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: kubernetes_pod_exec_secrets_and_anonymous_access_unofficial
+title: Kubernetes pod exec, secrets and anonymous access (unofficial)
+description: Case for Kubernetes pod exec, secrets and anonymous access custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - kubernetes
+    type: SECURITY_INVESTIGATION
+    title: Kubernetes activity from one source address
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION
