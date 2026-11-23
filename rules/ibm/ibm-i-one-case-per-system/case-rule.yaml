@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: ibm_i_one_case_per_system
+title: IBM i, one case per system (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('IBM i powerful special authority granted', 'IBM i audit system value changed', 'IBM i security system value changed', 'IBM i service tools user ID changed or reset', 'IBM i program set to adopt owner authority', 'IBM i IBM-supplied profile changed', 'IBM i intrusion monitor event', 'IBM i audit journal receiver deleted')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('sensorHostId:')).map(e, e.split(':')[1] + ' ibm_i_one_case_per_system')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: ibm_i_security_changes_and_intrusion_events_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: ibm_i_security_changes_and_intrusion_events_unofficial
+title: IBM i security changes and intrusion events (unofficial)
+description: Case for IBM i security changes and intrusion events custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - ibm-i
+    type: SECURITY_INVESTIGATION
+    title: IBM i security changes and intrusion events on one system
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

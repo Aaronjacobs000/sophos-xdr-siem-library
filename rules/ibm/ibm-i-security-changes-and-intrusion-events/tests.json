@@ -1,0 +1,13 @@
+{
+  "triggers": {
+    "IBM i powerful special authority granted": [2],
+    "IBM i audit system value changed": [11],
+    "IBM i security system value changed": [4],
+    "IBM i service tools user ID changed or reset": [15],
+    "IBM i program set to adopt owner authority": [16],
+    "IBM i IBM-supplied profile changed": [10],
+    "IBM i intrusion monitor event": [17],
+    "IBM i audit journal receiver deleted": [13]
+  },
+  "quiet": [1, 3, 5, 6, 7, 8, 9, 12, 14]
+}

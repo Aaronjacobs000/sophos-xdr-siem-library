@@ -1,0 +1,39 @@
+{
+  "kind": "detection",
+  "title": "IBM i security changes and intrusion events",
+  "vendor": "IBM",
+  "product": "IBM i security audit journal",
+  "parser": "parsers/ibm/ibm-i-security-audit-journal",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "IBM i"
+  ],
+  "volume": "None on a normal day for most. Security officers change special authorities, IBM-supplied profiles and security system values a few times a year, and a restore of user profiles writes a CP entry for each profile. Intrusion monitor entries follow your intrusion detection policy, so a system that faces the internet can have a few a day.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://www.ibm.com/docs/en/i/7.5.0?topic=services-display-journal-table-function",
+    "https://www.ibm.com/docs/en/i/7.5.0?topic=entries-audit-journal-qaudjrn-entry-types",
+    "https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlf12.htm",
+    "https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/cl/chgsecaud.htm"
+  ],
+  "summary": "Eight custom detection rules for IBM i (AS400, formerly AS/400, iSeries and System i), on the CloudAudit records the library's IBM i audit journal parsers write. They make a detection when a profile gets *ALLOBJ, *SECADM, *SERVICE or *AUDIT, an audit or security system value changes, a service tools user ID changes, a program is set to adopt its owner's authority, an IBM-supplied profile changes, the intrusion monitor fires, or an audit receiver is deleted. Each matches sensor type IBM i only.",
+  "notes": "Setup:\n- Add the library's IBM i parsers and send the audit journal as the parser entry says, then run the check-your-data search to see entries arrive.\n- QAUDCTL needs *AUDLVL. CHGSECAUD's default QAUDLVL set (*AUTFAIL, *CREATE, *DELETE, *SECURITY and *SAVRST) records the CP, DS, DO, PA and SV entries these rules read. IM entries also need *ATNEVT in QAUDLVL and an intrusion detection policy.\n\nHow it works:\n- Each rule matches the audit journal entry type, which the parsers write as the event type, such as T=CP.\n- The special authority rule reads special_authorities_granted, which the parsers write for a CP entry from the authorities attrValue lists and oldAttrValue doesn't. A profile that already had *ALLOBJ, or lost it, doesn't trigger it.\n- The two system value rules take the system value's name, which IBM sends as attrName. Others, such as QDATFMT, aren't taken.\n- The IBM-supplied profile rule takes a CP entry for one of its six profiles that grants no special authority; one that does goes to the special authority rule.\n- The receiver rule takes a DO entry for a *JRNRCV with AUDRCV in its name, the prefix CHGSECAUD gives audit receivers.\n\nTuning:\n- The receiver rule ships off, since most systems delete saved audit receivers on a schedule. Turn it on where nothing deletes them routinely, or leave the cleanup job's user out in the query itself, such as and user_name != 'AUDCLEAN'. If your receivers have another prefix, change AUDRCV in the query.\n- Leave a planned change out in the query too, not with a suppression rule, which would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 14 records agreed. The samples' dates were moved to the day before, inside the search's range.\n- As live rules there, each one fired on exactly its sample line within about two minutes. The lines went in 16 minutes after the rules were made, and every rule fired on the first send.\n- Data Lake Search warned that event_type's value will never match a list of enum values, and returned the lines all the same. The live rules fired on them too.\n- No Sophos detector made a detection on these records. The lines went to HTTP Ingest one per request as text, syslog header and all.\n\nKnown gaps:\n- IBM lists DISPLAY_JOURNAL's CEF keys but not which entry data each entry type puts in them. The rules follow IBM's key table: names in attrName, new and old values in attrValue and oldAttrValue. Run the check-your-data search on your own entries first.\n- Powertech SIEM Agent sends a CP or SV entry's detail as event text and an unlabelled DETAIL list, so only the DS, PA and IM rules, which need just the entry type, take its events.\n- Auditing changes for one user or object (AD, from CHGUSRAUD and CHGOBJAUD), ownership changes (OW) and exit program changes (GR) aren't taken.",
+  "links": {
+    "case_rule": "rules/ibm/ibm-i-one-case-per-system",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
