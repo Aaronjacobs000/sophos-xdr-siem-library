@@ -10,7 +10,8 @@
 # (SV), object creation and deletion and the rest.
 # Child of IBM_I_CEF_PARENT: each one to CloudAudit, with the entry's description as the event name,
 # T=<type> as the event type, the job's user as the user, the client address as the source and the
-# system as the target host. The object and attribute keys go to request_parameters.
+# system as the target host. The object and attribute keys go to request_parameters, and for CP the
+# special authorities granted go to additional_event_data.
 # v, h, ibm, entryType, msg, actor, client, clientOk, reason, jobText, hostName, sensorType$,
 # hostId$ and eventTimeUsec$ come from the parent.
 
@@ -69,3 +70,22 @@ additionalEventData$.record$ = IF a3.value$ != "" THEN additionalEventData$.reco
 a4.key$ = "sequence"
 a4.value$ = STRING(v["cs6"])
 additionalEventData$.record$ = IF a4.value$ != "" THEN additionalEventData$.record$ + [a4] ELSE additionalEventData$.record$
+
+# CP entries: the special authorities attrValue lists and oldAttrValue doesn't, such as *ALLOBJ
+# *SECADM, so a rule can tell authority granted from authority a profile already held or lost.
+# No special authority's name is part of another's, so CONTAINS finds each one on its own.
+cp = entryType == "CP"
+spNew = STRING(v["attrValue"])
+spOld = STRING(v["oldAttrValue"])
+g1 = IF cp AND CONTAINS(spNew, "*ALLOBJ") AND NOT CONTAINS(spOld, "*ALLOBJ") THEN " *ALLOBJ" ELSE ""
+g2 = IF cp AND CONTAINS(spNew, "*AUDIT") AND NOT CONTAINS(spOld, "*AUDIT") THEN " *AUDIT" ELSE ""
+g3 = IF cp AND CONTAINS(spNew, "*IOSYSCFG") AND NOT CONTAINS(spOld, "*IOSYSCFG") THEN " *IOSYSCFG" ELSE ""
+g4 = IF cp AND CONTAINS(spNew, "*JOBCTL") AND NOT CONTAINS(spOld, "*JOBCTL") THEN " *JOBCTL" ELSE ""
+g5 = IF cp AND CONTAINS(spNew, "*SAVSYS") AND NOT CONTAINS(spOld, "*SAVSYS") THEN " *SAVSYS" ELSE ""
+g6 = IF cp AND CONTAINS(spNew, "*SECADM") AND NOT CONTAINS(spOld, "*SECADM") THEN " *SECADM" ELSE ""
+g7 = IF cp AND CONTAINS(spNew, "*SERVICE") AND NOT CONTAINS(spOld, "*SERVICE") THEN " *SERVICE" ELSE ""
+g8 = IF cp AND CONTAINS(spNew, "*SPLCTL") AND NOT CONTAINS(spOld, "*SPLCTL") THEN " *SPLCTL" ELSE ""
+granted = g1 + g2 + g3 + g4 + g5 + g6 + g7 + g8
+a5.key$ = "special_authorities_granted"
+a5.value$ = REPLACE_REGEX(granted, "^ ", "")
+additionalEventData$.record$ = IF granted != "" THEN additionalEventData$.record$ + [a5] ELSE additionalEventData$.record$
