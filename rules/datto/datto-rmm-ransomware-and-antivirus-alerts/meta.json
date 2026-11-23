@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Datto RMM ransomware and antivirus alerts",
+  "vendor": "Datto",
+  "product": "Datto RMM",
+  "parser": "parsers/datto/datto-rmm",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Datto RMM"
+  ],
+  "volume": "Ransomware: none on a normal day. Antivirus alerts come with updates and reinstalls, a few a week across an MSP's clients.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Setup/Integrations/GlobalWebhooks.htm",
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Monitors/Webhooks.htm"
+  ],
+  "summary": "Two custom detection rules for Datto RMM, on the third-party alert records the library's Datto RMM parsers write from its Global Webhooks. They make a detection when the Ransomware Detection monitor fires, and when the antivirus status monitor raises an alert. Each rule matches sensor type Datto RMM only.",
+  "notes": "Setup:\n- Add the library's Datto RMM parsers, and point a Datto RMM Global Webhook at HTTP Ingest with the alert payload in the parser entry. Then run the check-your-data search to see events arrive.\n- The rules need the Ransomware Detection and antivirus status monitors in the sites' monitoring policies.\n\nHow it works:\n- The parsers write the monitor's alert category, such as Ransomware or Antivirus, the device as the target host, and raised or resolved as the status.\n- Both rules take raised alerts only, so a resolved alert makes no second detection.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 24 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The webhook payloads went to HTTP Ingest one per request as JSON, as a Global Webhook sends them.\n\nKnown gaps:\n- Webhook alerts carry no time, so the detection's event time is when HTTP Ingest received it.\n- The antivirus rule can't tell protection turned off from definitions out of date: read the alert's message.",
+  "links": {
+    "case_rule": "rules/datto/datto-rmm-one-case-per-device",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

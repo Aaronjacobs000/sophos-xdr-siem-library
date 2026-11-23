@@ -1,0 +1,7 @@
+{
+  "triggers": {
+    "Datto RMM ransomware detection": [1],
+    "Datto RMM antivirus protection alert": [2]
+  },
+  "quiet": [3, 4, 5, 6, 7, 8, 9]
+}

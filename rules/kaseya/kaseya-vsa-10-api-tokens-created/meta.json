@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Kaseya VSA 10 API tokens created",
+  "vendor": "Kaseya",
+  "product": "VSA 10",
+  "parser": "parsers/kaseya/vsa-10",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Kaseya VSA 10"
+  ],
+  "volume": "None on a normal day. Admins create tokens for new integrations a few times a year.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://help.vsa10.kaseya.com/help/Content/2-Administration/server-admin/audit-log.htm",
+    "https://api.vsax.net"
+  ],
+  "summary": "One custom detection rule for Kaseya VSA 10, on the CloudAudit records the library's VSA 10 parsers write from its audit log. It makes a detection when someone creates an API token. It matches sensor type Kaseya VSA 10 only.",
+  "notes": "Setup:\n- Add the library's Kaseya VSA 10 parsers and the example bridge in bridges/kaseya-vsa10-audit-logs, and run the bridge with a VSA 10 API token, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the audit log's category, such as Api Tokens, as the event name and the user as the user, and keep the event description in additional_event_data.\n- The rule takes an Api Tokens record whose description starts Created API token, so deleted tokens aren't taken.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 25 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The events went in through bridges/kaseya-vsa10-audit-logs, run once on the lab machine against a local mock of the VSA 10 API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- The event descriptions in the samples are made up apart from the API docs' script example, so run the check-your-data search to see the wording your server writes.",
+  "links": {
+    "case_rule": "rules/kaseya/kaseya-vsa-10-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

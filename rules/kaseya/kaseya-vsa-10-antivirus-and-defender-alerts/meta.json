@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Kaseya VSA 10 antivirus and Defender alerts",
+  "vendor": "Kaseya",
+  "product": "VSA 10",
+  "parser": "parsers/kaseya/vsa-10",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Kaseya VSA 10"
+  ],
+  "volume": "A few a week across an MSP's clients for threats. A stopped Defender service is rare on a device that runs it.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://api.vsax.net",
+    "https://help.vsa10.kaseya.com/help/Content/2-Administration/configuration/api.htm"
+  ],
+  "summary": "Two custom detection rules for Kaseya VSA 10, on the third-party alert records the library's VSA 10 parsers write from its notification webhook. They make a detection when VSA 10 reports an antivirus threat, and when the Defender service stops on a device. Each rule matches sensor type Kaseya VSA 10 only.",
+  "notes": "Setup:\n- Add the library's Kaseya VSA 10 parsers, and create a VSA 10 notification webhook to HTTP Ingest, as the parser entry says. Then run the check-your-data search to see events arrive.\n- The Defender rule needs a Windows service monitor on WinDefend in the devices' policies.\n\nHow it works:\n- The parsers write the notification's title, such as Antivirus threat detected or Windows service stopped, and its message as the summary.\n- The Defender rule takes a stopped service whose message names WinDefend.\n\nTuning:\n- To watch another security service, such as Sense for Defender for Endpoint, add it in the query itself: and (summary contains 'WinDefend' or summary contains 'Service Sense ').\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 3 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 25 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The notifications went to HTTP Ingest one per request as JSON, as the notification webhook sends them.\n\nKnown gaps:\n- The notification webhook sends a device identifier but no device name, so the case names the identifier.",
+  "links": {
+    "case_rule": "rules/kaseya/kaseya-vsa-10-one-case-per-device",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Bitwarden vault exported": [6],
+    "Bitwarden organization policy changed": [8],
+    "Bitwarden member invited": [7]
+  },
+  "quiet": [1, 2, 3, 4, 5, 9, 10, 11, 12]
+}

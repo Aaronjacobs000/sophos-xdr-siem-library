@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Slack admin, SSO and app changes",
+  "vendor": "Slack",
+  "product": "Slack audit logs",
+  "parser": "parsers/slack/slack-audit-logs",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Slack Audit Logs"
+  ],
+  "volume": "None on a normal day for roles and SSO. App scopes change when apps update, a few a month.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://docs.slack.dev/reference/audit-logs-api/methods-actions-reference/",
+    "https://docs.slack.dev/admins/audit-logs-api/"
+  ],
+  "summary": "Three custom detection rules for Slack, on the CloudAudit records the library's Slack parsers write from the Audit Logs API. They make a detection when a member is made an admin or owner, the SSO or two-factor setting changes, or an app's scopes expand. Each rule matches sensor type Slack Audit Logs only.",
+  "notes": "Setup:\n- Add the library's Slack parsers and the example bridge in bridges/slack-audit-logs, and run the bridge with an Enterprise organization's audit logs token, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write Slack's action, such as role_change_to_admin, as the event name, the actor as the user and a user entity as the target user.\n- The SSO rule takes every change to the SSO setting or two-factor requirement; the previous and new values are in request_parameters, so check which way it went.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 21 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The events went in through bridges/slack-audit-logs, run once on the lab machine against a local mock of the Slack Audit Logs API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- Slack audit logs need an Enterprise plan, so these rules don't work on Pro or Business+ workspaces.",
+  "links": {
+    "case_rule": "rules/slack/slack-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

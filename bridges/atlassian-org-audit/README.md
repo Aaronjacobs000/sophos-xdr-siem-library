@@ -1,6 +1,6 @@
 # Atlassian organization audit log bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Atlassian organization or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from Atlassian's Organizations REST API reference and OpenAPI document. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real Atlassian organization. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the events stream and event actions endpoints, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from Atlassian's Organizations REST API reference and OpenAPI document. Run it with `--dry-run` first and check what it would send.
 
 The Atlassian organization audit log records organization admin and security policy changes, sign-ins and, with Atlassian Guard Premium or a Cloud Enterprise plan, activity in the apps. Its SIEM route is the Organizations REST API, which is pull only (audit log webhooks need Guard Premium or an Enterprise plan, and can only send a Basic authorization header, not the Bearer key HTTP Ingest needs). This script polls the events stream with an organization admin API key and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. The library parsers in `parsers/atlassian/atlassian-organization-audit-log` normalize them.
 

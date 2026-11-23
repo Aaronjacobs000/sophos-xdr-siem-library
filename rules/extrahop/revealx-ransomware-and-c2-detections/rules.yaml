@@ -1,0 +1,25 @@
+# Custom detection rules for ExtraHop RevealX, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: RevealX ransomware activity
+    description: ExtraHop RevealX saw a device renaming and overwriting files on SMB shares the way ransomware encrypts them. The source device is the one encrypting.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'ExtraHop RevealX'
+        and alert_category = 'Ransomware Activity'
+  - name: RevealX C2 beaconing at High risk
+    description: RevealX saw a device beaconing to a command and control server, such as Cobalt Strike traffic, and scored it High risk (80 and above). The source device is likely compromised.
+    severity: high
+    mitre:
+      - T1071.001
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'ExtraHop RevealX'
+        and alert_category contains 'Beaconing'
+        and severity = 'HIGH'

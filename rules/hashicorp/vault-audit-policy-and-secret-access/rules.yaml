@@ -1,0 +1,38 @@
+# Custom detection rules for HashiCorp Vault, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Vault audit device disabled
+    description: Someone disabled a HashiCorp Vault audit device (a delete on sys/audit/). With no audit device left, Vault records nothing that follows, so it is the first thing to check when secrets go missing.
+    severity: high
+    mitre:
+      - T1562.008
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'HashiCorp Vault'
+        and event_name = 'delete'
+        and object_key contains 'sys/audit/'
+  - name: Vault ACL policy written or deleted
+    description: Someone created, changed or deleted a Vault ACL policy. Policies decide which tokens read which secrets, so an attacker with a privileged token writes one to give an account of theirs wider access.
+    severity: high
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'HashiCorp Vault'
+        and event_name in ('create', 'update', 'delete')
+        and (object_key contains 'sys/policies/acl/' or object_key contains 'sys/policy/')
+  - name: Vault secret read denied
+    description: Vault refused a read or list of a secret path with permission denied. A stolen token is often tried against paths it can't reach, so a run of these is an identity probing for secrets.
+    severity: medium
+    mitre:
+      - T1555
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'HashiCorp Vault'
+        and event_name in ('read', 'list')
+        and status = 'error'
+        and error_message contains 'permission denied'

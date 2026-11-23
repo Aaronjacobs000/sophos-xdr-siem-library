@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "NetBackup backup policy deleted": [5],
+    "NetBackup policy storage target removed": [4],
+    "NetBackup backup schedule window changed": [3]
+  },
+  "quiet": [1, 2, 6, 7]
+}

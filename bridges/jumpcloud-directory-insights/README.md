@@ -1,6 +1,6 @@
 # JumpCloud Directory Insights bridge
 
-> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real JumpCloud organization or Sophos NG-SIEM HTTP Ingest integration. Its unit tests use a local mock server built from JumpCloud's Directory Insights API reference. Run it with `--dry-run` first and check what it would send.
+> **Unofficial, and tested against documented response shapes only.** This bridge has not run against a real JumpCloud organization. It has sent to a real Sophos NG-SIEM HTTP Ingest integration: made-up events from a local mock of the Directory Insights events endpoint, in a lab tenant on 2026-11-23. Its unit tests use a local mock server built from JumpCloud's Directory Insights API reference. Run it with `--dry-run` first and check what it would send.
 
 JumpCloud offers its Directory Insights events (Admin Portal and User Portal sign-ins and changes, SSO, RADIUS, LDAP and device sign-ins, MDM, password manager and more) through its REST API, which is pull only. This script reads them and sends each event as one JSON line to a Sophos NG-SIEM HTTP Ingest integration. It adds `"jumpcloud_record": "directory_insights"` in front of each event, and the library parsers in `parsers/jumpcloud/directory-insights` normalize them. Sophos Fusion has no JumpCloud integration.
 

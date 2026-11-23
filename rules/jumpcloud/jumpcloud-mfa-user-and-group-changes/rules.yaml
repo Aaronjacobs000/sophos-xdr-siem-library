@@ -1,0 +1,38 @@
+# Custom detection rules for JumpCloud Directory Insights, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: JumpCloud MFA turned off for a user
+    description: An admin turned off a JumpCloud user's MFA requirement (enable_user_portal_multifactor or totp_enabled went from true to false). An attacker does this so a stolen password signs that user in on its own.
+    severity: high
+    mitre:
+      - T1556.006
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'JumpCloud Directory Insights'
+        and event_name = 'user_update'
+        and request_parameters.record.key in ('enable_user_portal_multifactor', 'totp_enabled')
+        and request_parameters.record.value = 'true to false'
+  - name: JumpCloud user created with an API key
+    description: A JumpCloud user was created through the API with an API key rather than in the Admin Portal. An attacker with a stolen admin API key creates accounts this way, out of sight of the console.
+    severity: medium
+    mitre:
+      - T1136.003
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'JumpCloud Directory Insights'
+        and event_name = 'user_create'
+        and additional_event_data.record.value = 'api-key'
+  - name: JumpCloud user added to or removed from a group
+    description: An admin changed a JumpCloud user group's membership. Groups decide which devices, apps and RADIUS networks a user reaches, so adding an account to the right group gives it access to all of them.
+    severity: medium
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'JumpCloud Directory Insights'
+        and event_name = 'association_change'
+        and resources.resource_type = 'user_group'

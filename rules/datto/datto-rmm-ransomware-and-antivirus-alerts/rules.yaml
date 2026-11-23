@@ -1,0 +1,26 @@
+# Custom detection rules for Datto RMM, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Datto RMM ransomware detection
+    description: Datto RMM's Ransomware Detection monitor saw files on a device being renamed or encrypted the way ransomware does. Isolate the device and check its shares, which may be encrypted from it.
+    severity: critical
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Datto RMM'
+        and alert_category = 'Ransomware'
+        and status = 'raised'
+  - name: Datto RMM antivirus protection alert
+    description: "Datto RMM's antivirus status monitor raised an alert on a device: its antivirus isn't running, is turned off or is out of date. Attackers turn off antivirus before they run ransomware."
+    severity: high
+    mitre:
+      - T1562.001
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Datto RMM'
+        and alert_category = 'Antivirus'
+        and status = 'raised'

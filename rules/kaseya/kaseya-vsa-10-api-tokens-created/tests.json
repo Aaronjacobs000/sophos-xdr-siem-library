@@ -1,0 +1,6 @@
+{
+  "triggers": {
+    "Kaseya VSA 10 API token created": [7]
+  },
+  "quiet": [1, 2, 3, 4, 5, 6, 8]
+}

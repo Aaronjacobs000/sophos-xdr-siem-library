@@ -1,0 +1,15 @@
+# Custom detection rules for Kaseya VSA 10, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Kaseya VSA 10 API token created
+    description: Someone created a VSA 10 API token. A token runs scripts and reaches every managed device through the API without a sign-in, so an attacker with an admin session creates one to keep that reach.
+    severity: high
+    mitre:
+      - T1098.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Kaseya VSA 10'
+        and event_name = 'Api Tokens'
+        and additional_event_data.record.value contains 'Created API token'

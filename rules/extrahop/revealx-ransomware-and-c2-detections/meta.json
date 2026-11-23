@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "RevealX ransomware and C2 detections",
+  "vendor": "ExtraHop",
+  "product": "RevealX detections",
+  "parser": "parsers/extrahop/revealx-detections",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "ExtraHop RevealX"
+  ],
+  "volume": "None on a normal day. Each detection update from RevealX makes one detection, in the source device's case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://docs.extrahop.com/current/detections-overview/",
+    "https://docs.extrahop.com/current/detections-create-notification-rule/"
+  ],
+  "summary": "Two custom detection rules for ExtraHop RevealX, on the third-party alert records the library's RevealX parser writes from detection webhooks. They make a detection when RevealX sees ransomware activity, and when it scores C2 beaconing High risk. Each rule matches sensor type ExtraHop RevealX only.",
+  "notes": "Setup:\n- Add the library's RevealX parser, and send detections to HTTP Ingest from a notification rule with the one-line payload in the parser entry's README. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parser writes the detection type as the alert category and maps the risk score to severity in ExtraHop's bands: 80 and above is High.\n- The ransomware rule takes Ransomware Activity at any risk score. The beaconing rule takes beaconing detection types at High only.\n- Brute force and recon detection types aren't taken.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 5 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 27 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The detections went to HTTP Ingest one per request as JSON, as the custom webhook sends them.\n\nKnown gaps:\n- With Send for every detection update, RevealX posts each update, so one ongoing detection can make several.\n- src is the device that started the traffic, which for a C2 detection is the victim, not the attacker.",
+  "links": {
+    "case_rule": "rules/extrahop/revealx-one-case-per-source-host",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

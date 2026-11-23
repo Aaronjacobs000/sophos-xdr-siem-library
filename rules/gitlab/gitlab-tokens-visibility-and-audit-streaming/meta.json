@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "GitLab tokens, visibility and audit streaming",
+  "vendor": "GitLab",
+  "product": "GitLab audit events",
+  "parser": "parsers/gitlab/gitlab-audit-events",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "GitLab"
+  ],
+  "volume": "Tokens: a few a week where developers make their own. Projects made public and streaming changes are rare.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://docs.gitlab.com/user/compliance/audit_event_types/",
+    "https://docs.gitlab.com/user/compliance/audit_event_schema/"
+  ],
+  "summary": "Three custom detection rules for GitLab, on the CloudAudit records the library's GitLab parsers write from streamed audit events. They make a detection when someone creates an access token, makes a project public, or changes audit event streaming. Each rule matches sensor type GitLab only.",
+  "notes": "Setup:\n- Add the library's GitLab parsers, and point a GitLab audit event streaming destination at HTTP Ingest, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write GitLab's event type, such as personal_access_token_created, as the event name and the author as the user.\n- The visibility rule takes project_visibility_level_updated whose new value is Public. GitLab writes the change's from and to values, which the parsers keep in request_parameters.\n- The streaming rule takes every audit_events_streaming event type, for an instance or a group.\n\nTuning:\n- If a service account creates project tokens for CI, leave it out of the token rule in the query itself, such as and user_name != 'ci-bot'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 5 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 24 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The events went to HTTP Ingest one per request as JSON, as GitLab's streaming destination sends them.\n\nKnown gaps:\n- The parsers write the author's display name as the user, so two people with the same name share a case.\n- A group made public (group_visibility_level_updated) isn't taken.",
+  "links": {
+    "case_rule": "rules/gitlab/gitlab-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

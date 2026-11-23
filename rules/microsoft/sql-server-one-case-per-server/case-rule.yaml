@@ -1,0 +1,34 @@
+apiVersion: v0.0.1
+kind: rule
+name: sql_server_one_case_per_server
+title: SQL Server, one case per server (unofficial)
+tags:
+    - unofficial-library
+type: STATIC
+order: 90
+state: TEST
+filter: from detection where metadata.creator.detector.detector_id = 'app:event-filter-ql' and title in ('SQL Server sysadmin role granted', 'SQL Server xp_cmdshell run or turned on', 'SQL Server audit turned off or dropped', 'SQL Server audit table dropped')
+append_filter: ""
+group_by:
+    - ${alertEntities(inputs).filter(e, e.startsWith('sensorHostId:')).map(e, e.split(':')[1] + ' sql_server_one_case_per_server')}
+group_count: 1
+skip_alert_prioritization: true
+is_global: false
+template_name: sql_server_privilege_and_audit_tampering_unofficial
+---
+apiVersion: v0.0.1
+kind: template
+name: sql_server_privilege_and_audit_tampering_unofficial
+title: SQL Server privilege and audit tampering (unofficial)
+description: Case for SQL Server privilege and audit tampering custom detections, from the Unofficial Sophos Fusion XDR and SIEM Library.
+tags: []
+investigation:
+    tags:
+        - mssql
+    type: SECURITY_INVESTIGATION
+    title: SQL Server privilege and audit tampering on one server
+    status: OPEN
+    priority: "3"
+    generate_key_findings: false
+    usages:
+        - AUTO_INVESTIGATION

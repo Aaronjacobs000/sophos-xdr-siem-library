@@ -1,0 +1,40 @@
+# Custom detection rules for Veritas NetBackup, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: NetBackup backup policy deleted
+    description: Someone deleted a NetBackup backup policy, so its clients stop being backed up. Ransomware crews delete or empty backup jobs before they encrypt, so restores have nothing recent to work from.
+    severity: high
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Veritas NetBackup'
+        and event_type = 'POLICY'
+        and event_name = 'DELETE'
+  - name: NetBackup policy storage target removed
+    description: Someone changed a NetBackup policy so it no longer names a storage unit to write to (its Residence went from a storage unit to none). The policy still exists, but its backups have nowhere to go.
+    severity: high
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Veritas NetBackup'
+        and event_type = 'POLICY'
+        and event_name = 'MODIFY'
+        and additional_event_data.record.value contains 'Residence OLDV:'
+        and additional_event_data.record.value contains 'NULL'
+  - name: NetBackup backup schedule window changed
+    description: Someone changed when a NetBackup schedule may run, its backup window. Moving or stretching the window is a quiet way to stop backups running before an attack, without deleting anything.
+    severity: medium
+    mitre:
+      - T1490
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'Veritas NetBackup'
+        and event_type = 'POLICY'
+        and event_name = 'MODIFY'
+        and additional_event_data.record.value contains 'BackupWindow'

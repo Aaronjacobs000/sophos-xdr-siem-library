@@ -1,0 +1,24 @@
+# Custom detection rules for Nasuni Edge Appliance, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: Nasuni ransomware attack detected
+    description: Nasuni's Ransomware Protection detected an attack on a volume from a user and client address, from known ransomware file names or its own analysis. The client is encrypting files on the share now.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Nasuni Edge Appliance'
+        and title = 'Nasuni ransomware attack detected'
+  - name: Nasuni ransomware mitigation blocked a client
+    description: Nasuni enforced its ransomware mitigation policy and blocked a client address from a volume. The client is the machine to isolate, and files it changed before the block need restoring from a snapshot.
+    severity: high
+    mitre:
+      - T1486
+    enabled_by_default: true
+    query: |-
+      from thirdparty
+      where sensor_type = 'Nasuni Edge Appliance'
+        and title = 'Nasuni ransomware mitigation blocked a client'

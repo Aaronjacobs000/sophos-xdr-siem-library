@@ -1,0 +1,7 @@
+{
+  "triggers": {
+    "Kaseya VSA 10 antivirus threat detected": [1],
+    "Kaseya VSA 10 Defender service stopped": [2]
+  },
+  "quiet": [3, 4, 5, 6, 7, 8]
+}

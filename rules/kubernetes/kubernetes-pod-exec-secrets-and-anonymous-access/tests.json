@@ -1,0 +1,9 @@
+{
+  "triggers": {
+    "Kubernetes exec or attach into a pod": [2],
+    "Kubernetes secret read by a person": [1, 7],
+    "Kubernetes anonymous API request": [4],
+    "Kubernetes namespace deleted": [8]
+  },
+  "quiet": [3, 5, 6, 9]
+}

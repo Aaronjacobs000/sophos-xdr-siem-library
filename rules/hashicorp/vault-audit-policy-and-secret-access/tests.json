@@ -1,0 +1,8 @@
+{
+  "triggers": {
+    "Vault audit device disabled": [7],
+    "Vault ACL policy written or deleted": [6],
+    "Vault secret read denied": [5]
+  },
+  "quiet": [1, 2, 3, 4, 8, 9, 10]
+}

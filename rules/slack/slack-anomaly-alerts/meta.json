@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Slack anomaly alerts",
+  "vendor": "Slack",
+  "product": "Slack audit logs",
+  "parser": "parsers/slack/slack-audit-logs",
+  "schema": "scwx.thirdpartyalert",
+  "sensor_types": [
+    "Slack Audit Logs"
+  ],
+  "volume": "A few a week in a large org: Slack flags travel and new networks too. Each anomaly is one detection, in the member's case.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/ThirdpartySchema/",
+    "https://docs.slack.dev/reference/audit-logs-api/anomalous-events-reference/",
+    "https://docs.slack.dev/admins/audit-logs-api/"
+  ],
+  "summary": "One custom detection rule for Slack, on the third-party alert records the library's Slack parsers write from Slack's anomaly entries. It makes a detection when Slack flags a member's session as anomalous. It matches sensor type Slack Audit Logs only.",
+  "notes": "Setup:\n- Add the library's Slack parsers and the example bridge in bridges/slack-audit-logs, and run the bridge, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- Slack writes an anomaly entry with reason codes, such as ip_address, asn or spoofed_user_agent. The parsers put the first three in the title and the member as the target user.\n- Slack gives anomalies no severity, so the rule is Medium. Read the reasons in the title: unexpected_client and spoofed_user_agent matter more than ip_address alone.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 2 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 21 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The events went in through bridges/slack-audit-logs, run once on the lab machine against a local mock of the Slack Audit Logs API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.",
+  "links": {
+    "case_rule": "rules/slack/slack-one-case-per-user",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

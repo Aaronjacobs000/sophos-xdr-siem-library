@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "NetBackup backup policy tampering",
+  "vendor": "Veritas",
+  "product": "NetBackup",
+  "parser": "parsers/veritas/netbackup",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Veritas NetBackup"
+  ],
+  "volume": "None on a normal day. Backup admins delete policies and change storage targets a few times a year; schedule windows change a little more often.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://docs.cohesity.com/docs/netbackup/11.0/21733320-167894921-0/v141930078-167894921",
+    "https://docs.cohesity.com/docs/netbackup/11.0/18716246-168258057-0/v141914248-168258057"
+  ],
+  "summary": "Three custom detection rules for Veritas NetBackup, on the CloudAudit records the library's NetBackup parsers write from the primary server's audit events. They make a detection when someone deletes a backup policy, removes its storage target, or changes a schedule's backup window, the tampering that comes before ransomware. Each rule matches sensor type Veritas NetBackup only.",
+  "notes": "Setup:\n- Add the library's NetBackup parsers, and send the primary server's audit events to its system logs and forward them to the data collector, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the audit category, such as POLICY, as the event type, the action as the event name, and the changed attributes with their old and new values (the DETAILS list) in additional_event_data.\n- The storage target rule takes a policy change whose Residence attribute went to *NULL*, and the window rule takes a change to a BackupWindow attribute.\n- A policy change that touches nothing else, such as a policy opened and saved with 0 attributes, isn't taken.\n\nTuning:\n- If a change process edits schedules every week, leave its account out in the query itself, such as and user_name != 'svc-nbu@nbu-primary'. A suppression rule would hide Sophos's detections for that account as well.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 6 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 16 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take. Sophos's sign-in analytics flagged only a sample sign-in on Auth, as an unseen user, address or application.\n- The lines went to HTTP Ingest one per request as text, the way a syslog line arrives.\n\nKnown gaps:\n- Windows primary servers write to the event log, which the parsers don't read, so these rules see Linux and UNIX primary servers only.\n- A storage unit swapped for another one, rather than removed, isn't taken.",
+  "links": {
+    "case_rule": "rules/veritas/netbackup-one-case-per-primary-server",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "kind": "detection",
+  "title": "Datto RMM users deleted",
+  "vendor": "Datto",
+  "product": "Datto RMM",
+  "parser": "parsers/datto/datto-rmm",
+  "schema": "scwx.cloudaudit",
+  "sensor_types": [
+    "Datto RMM"
+  ],
+  "volume": "None on a normal day. Technicians leave a few times a year. Several deletions from one account in an hour is the attack.",
+  "mdr_note": "These detections are yours to work. Sophos MDR doesn't work custom detections, and a case your own case rule opens from them is Managed By Self.",
+  "tested": {
+    "search": "2026-11-23",
+    "tenant": {
+      "date": "2026-11-23",
+      "region": "eu02"
+    }
+  },
+  "author": "Aaronjacobs000",
+  "license": "MIT",
+  "docs": [
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Detections/DetectionRules/CustomDetectionRules/",
+    "https://docs.sophos.com/fusion/customer/help/en-us/ManageYourProducts/XDRSecOps/Integrations/CustomParsers/Schemas/CloudAuditSchema/",
+    "https://rmm.datto.com/help/en/Content/3NEWUI/Analytics/ActivityLog.htm",
+    "https://rmm.datto.com/help/en/Content/2SETUP/APIv2.htm"
+  ],
+  "summary": "One custom detection rule for Datto RMM, on the CloudAudit records the library's Datto RMM parsers write from the Activity Log. It makes a detection when someone deletes a Datto RMM user. It matches sensor type Datto RMM only.",
+  "notes": "Setup:\n- Add the library's Datto RMM parsers and the example bridge in bridges/datto-rmm-activity-logs, and run the bridge with a Datto RMM API key, as the parser entry says. Then run the check-your-data search to see events arrive.\n\nHow it works:\n- The parsers write the Activity Log's category and action, such as user.delete, as the event name, and the RMM user who acted as the user. The deleted user is in the details text.\n\nTesting:\n- In a lab tenant on 2026-11-23, each query returned exactly the sample lines tests.json lists in Data Lake Search, and the rules run offline on the same 4 records agreed. The samples went in with their dates moved to the day before the test, so they fell inside the search's time range.\n- As live rules there, each one fired on exactly its sample lines within about a minute. The lines went in 24 minutes after the rules were made, and every rule fired on the first send.\n- No Sophos detector made a detection on the lines these rules take.\n- The events went in through bridges/datto-rmm-activity-logs, run once on the lab machine against a local mock of the Datto RMM API that served the sample events, and posted to HTTP Ingest as gzipped NDJSON, the way the bridge's README says.\n\nKnown gaps:\n- The bridge polls, so detections arrive up to one poll interval after the event.\n- Datto doesn't list its Activity Log categories and actions, so user.delete follows the API's shape; run the check-your-data search to see the names your account writes.",
+  "links": {
+    "case_rule": "rules/datto/datto-rmm-one-case-per-admin",
+    "playbooks": [
+      "playbooks/microsoft/teams-case-chat-sync",
+      "playbooks/slack/slack-case-chat-sync"
+    ]
+  }
+}
