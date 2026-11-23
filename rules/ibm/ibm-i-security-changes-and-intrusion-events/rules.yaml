@@ -1,0 +1,93 @@
+# Custom detection rules for the IBM i security audit journal, from the Unofficial Sophos Fusion XDR and SIEM Library.
+# Sophos Fusion has no import for custom detection rules: add each one under Security Operations >
+# Rules > Create Rule, with the fields below. Each rule's title becomes its detections' title.
+rules:
+  - name: IBM i powerful special authority granted
+    description: A user profile was given *ALLOBJ, *SECADM, *SERVICE or *AUDIT special authority it didn't have (a CP entry). *ALLOBJ reaches every object on the system and *SECADM manages every profile, so an attacker who gets in with an ordinary profile grants these to keep full control.
+    severity: high
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=CP'
+        and additional_event_data.record.key = 'special_authorities_granted'
+        and (additional_event_data.record.value contains '*ALLOBJ' or additional_event_data.record.value contains '*SECADM' or additional_event_data.record.value contains '*SERVICE' or additional_event_data.record.value contains '*AUDIT')
+  - name: IBM i audit system value changed
+    description: Someone changed a system value that controls security auditing (QAUDCTL, QAUDLVL, QAUDLVL2, QAUDENDACN or QAUDFRCLVL). QAUDCTL set to *NONE turns auditing off, and dropping a value from QAUDLVL stops that kind of entry, so what happens next goes unrecorded.
+    severity: high
+    mitre:
+      - T1562
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=SV'
+        and request_parameters.record.value in ('QAUDCTL', 'QAUDLVL', 'QAUDLVL2', 'QAUDENDACN', 'QAUDFRCLVL')
+  - name: IBM i security system value changed
+    description: Someone changed a security system value, such as QSECURITY, the password rules, sign-on limits, the password validation program, or what a restore may bring in. Lowering QSECURITY, setting QPWDEXPITV or QMAXSIGN to *NOMAX, or naming a new QPWDVLDPGM (which sees every new password) weakens the whole system.
+    severity: medium
+    mitre:
+      - T1562
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=SV'
+        and request_parameters.record.value in ('QSECURITY', 'QPWDLVL', 'QPWDEXPITV', 'QPWDMINLEN', 'QPWDRULES', 'QPWDVLDPGM', 'QMAXSIGN', 'QMAXSGNACN', 'QLMTSECOFR', 'QLMTDEVSSN', 'QINACTITV', 'QRMTSIGN', 'QRETSVRSEC', 'QDSPSGNINF', 'QALWOBJRST', 'QVFYOBJRST', 'QFRCCVNRST', 'QCRTAUT', 'QUSEADPAUT', 'QALWUSRDMN')
+  - name: IBM i service tools user ID changed or reset
+    description: A service tools (DST and SST) user ID was reset to its default password, changed, or given a new password (a DS entry). Service tools reach below the operating system, including resetting QSECOFR's password, so a changed service tools ID is a way back in.
+    severity: high
+    mitre:
+      - T1098
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=DS'
+  - name: IBM i program set to adopt owner authority
+    description: A program was changed to run with its owner's authority (a PA entry, such as CHGPGM USRPRF(*OWNER)), or an IFS object's SETUID or SETGID mode was set. A program owned by QSECOFR that adopts its owner gives anyone who can run it QSECOFR's authority.
+    severity: medium
+    mitre:
+      - T1548
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=PA'
+  - name: IBM i IBM-supplied profile changed
+    description: Someone changed one of the powerful profiles IBM ships, QSECOFR, QSYSOPR, QPGMR, QUSER, QSRV or QSRVBAS (a CP entry). These are usually disabled or have no password, so re-enabling one or giving it a password opens a well-known account to sign in with.
+    severity: medium
+    mitre:
+      - T1078.001
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=CP'
+        and request_parameters.record.value in ('QSECOFR', 'QSYSOPR', 'QPGMR', 'QUSER', 'QSRV', 'QSRVBAS')
+        and additional_event_data.record.key != 'special_authorities_granted'
+  - name: IBM i intrusion monitor event
+    description: IBM i's own intrusion detection saw a potential intrusion on the system's TCP/IP stack (an IM entry), such as a port scan, a flood, a malformed packet or restricted IP options. IBM gives these entries its highest syslog severity.
+    severity: medium
+    mitre:
+      - T1046
+      - T1498
+    enabled_by_default: true
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=IM'
+  - name: IBM i audit journal receiver deleted
+    description: Someone deleted a security audit journal receiver, one named AUDRCV as CHGSECAUD names them (a DO entry for a *JRNRCV). Deleting receivers before they are saved removes the audit trail of what was done.
+    severity: medium
+    mitre:
+      - T1070
+    enabled_by_default: false
+    query: |-
+      from cloudaudit
+      where sensor_type = 'IBM i'
+        and event_type = 'T=DO'
+        and request_parameters.record.value = '*JRNRCV'
+        and request_parameters.record.value contains 'AUDRCV'
