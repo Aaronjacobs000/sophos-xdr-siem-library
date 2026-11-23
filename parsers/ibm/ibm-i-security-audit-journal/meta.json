@@ -1,6 +1,12 @@
 {
   "vendor": "IBM",
   "product": "IBM i security audit journal",
+  "aliases": [
+    "AS400",
+    "AS/400",
+    "iSeries",
+    "System i"
+  ],
   "versions": [
     "7.4",
     "7.5",

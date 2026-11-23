@@ -10,6 +10,7 @@ import { notesView, searchList } from './common.js';
 import { starSlot, popularSlot } from '../stars.js';
 import { compileRules, ruleHits, ruleSearchText, testedState, parserLabel, SEVERITIES, SEVERITY_BANDS } from '../../core/rules.js';
 import { qlName } from '../../core/ql.js';
+import { aliasesOf } from '../../core/library.js';
 
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const SEV_PILL = { critical: 'red', high: 'amber', medium: 'grey', low: 'grey', informational: 'grey' };
@@ -76,7 +77,7 @@ export function renderRulesList(root) {
     const ps = new Set(list.map((e) => e.meta.parser)).size;
     line.textContent = L.status !== 'ready' ? '' : `${list.length} ${list.length === 1 ? 'entry' : 'entries'} with ${rules} rule${rules === 1 ? '' : 's'}, for ${ps} library parser${ps === 1 ? '' : 's'}`;
   };
-  searchList(root, { section: 'rules', entries: all, placeholder: 'Search source, title, schema, technique or author', label: 'Search the rules', text: (m, e) => ruleSearchText(m, e && e.rules), card: ruleCard, none: 'No rules yet.',
+  searchList(root, { section: 'rules', entries: all, placeholder: 'Search source, title, schema, technique or author', label: 'Search the rules', text: (m, e) => ruleSearchText(m, e && e.rules, aliasesOf(parserOf(m) && parserOf(m).meta)), card: ruleCard, none: 'No rules yet.',
     filter: { el: h('div', {}, bar, line), test, subscribe: (fn) => listeners.push(fn), shown: summary } });
   root.append(h('div', { class: 'callout blue' }, pill('Scope', 'blue'), h('span', { text: 'Only sources that come in through a library parser, matched on that parser\'s sensor type. Sophos\'s own detectors cover its products and built-in integrations, and its IP Watchlist, Domain Watchlist and DGA detectors already run on custom-parsed addresses and domains, so there are no rules for those here.' })));
 }

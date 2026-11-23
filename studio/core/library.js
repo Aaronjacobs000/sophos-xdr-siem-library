@@ -3,8 +3,9 @@
 //
 // parsers/<vendor-slug>/<product-slug>/
 //   meta.json            vendor, product, versions, format, ship method, author, license, parsers,
-//                        the About text (summary and notes, see notes.js), and an optional
-//                        bridge (bridges/<name>) for pull-only sources and webhooks that need a relay
+//                        the About text (summary and notes, see notes.js), an optional
+//                        bridge (bridges/<name>) for pull-only sources and webhooks that need a relay,
+//                        and optional aliases, other names people search for the product by
 //   <NAME>.parser.txt    one file per parser
 //   samples.log          synthetic sample lines, one event per line
 //   expected.json        the emulator result for each sample line
@@ -33,6 +34,10 @@ export const BRIDGE_PATH = /^bridges\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LEGACY_PATH = /^collectors\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const NAME = /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/;
+// An entry's optional "aliases": other names people search for the product by, such as a former
+// name (AS/400 for IBM i). The library search reads them, and the Rules search does through the
+// parser entry a rule needs. They aren't marketing keywords.
+export const ALIAS_LIMITS = { count: 8, length: 40 };
 
 export function slug(s) {
   return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -55,6 +60,11 @@ export function hasBridge(meta) {
   return bridgeOf(meta) !== null;
 }
 
+// The entry's aliases, or [] when it has none or the value isn't a list.
+export function aliasesOf(meta) {
+  return meta && Array.isArray(meta.aliases) ? meta.aliases.filter((a) => typeof a === 'string' && a.trim()) : [];
+}
+
 // The metadata with a legacy "collector" key carried as "bridge", for copies of the library
 // that the page reads, such as the snapshot.
 export function withBridgeKey(meta) {
@@ -66,12 +76,12 @@ export function withBridgeKey(meta) {
   return out;
 }
 
-// The text the library search matches: vendor, product, author, format, parser names and schemas,
-// and, for an entry that needs a bridge, "needs a bridge" and the bridge's path.
+// The text the library search matches: vendor, product, aliases, author, format, parser names and
+// schemas, and, for an entry that needs a bridge, "needs a bridge" and the bridge's path.
 export function searchText(meta) {
   const m = meta && typeof meta === 'object' ? meta : {};
   const bridge = bridgeOf(m);
-  return JSON.stringify([m.vendor, m.product, m.author, m.format, (Array.isArray(m.parsers) ? m.parsers : []).map((p) => [p && p.name, p && p.schema]), bridge ? ['needs a bridge', bridge] : []]).toLowerCase();
+  return JSON.stringify([m.vendor, m.product, aliasesOf(m), m.author, m.format, (Array.isArray(m.parsers) ? m.parsers : []).map((p) => [p && p.name, p && p.schema]), bridge ? ['needs a bridge', bridge] : []]).toLowerCase();
 }
 
 // The same for a playbook or connector, by folder: vendor, product, title and author; a playbook's
@@ -115,6 +125,19 @@ export function validateMeta(meta, fileNames = null, opts = {}) {
   if (!meta || typeof meta !== 'object' || Array.isArray(meta)) { err('meta', 'meta.json must be a JSON object'); return out; }
   for (const k of ['vendor', 'product']) if (typeof meta[k] !== 'string' || !meta[k].trim() || meta[k].length > 80) err('meta', `${k} is required (up to 80 characters)`);
   if (!Array.isArray(meta.versions) || meta.versions.some((v) => typeof v !== 'string' || v.length > 40)) err('meta', 'versions must be a list of version strings, for example ["11.1"]; use [] when unknown');
+  if (meta.aliases !== undefined) {
+    const a = meta.aliases;
+    const { count, length } = ALIAS_LIMITS;
+    if (!Array.isArray(a) || !a.length || a.length > count || a.some((x) => typeof x !== 'string' || !x.trim() || x !== x.trim() || x.length > length)) {
+      err('meta', `aliases must list 1 to ${count} other names people search for the product by, each up to ${length} characters with no spaces around it, such as ["AS400", "AS/400"] for IBM i. Leave it out when there are none.`);
+    } else {
+      const seen = new Set([meta.vendor, meta.product].filter((x) => typeof x === 'string').map((x) => x.trim().toLowerCase()));
+      for (const x of a) {
+        if (seen.has(x.toLowerCase())) err('meta', `aliases: "${x}" is already the vendor, the product or another alias`);
+        seen.add(x.toLowerCase());
+      }
+    }
+  }
   if (!FORMATS.includes(meta.format)) err('meta', `format must be one of ${FORMATS.join(', ')}`);
   if (!SHIP_METHODS.includes(meta.ship_method)) err('meta', `ship_method must be one of ${SHIP_METHODS.join(', ')}`);
   if (typeof meta.author !== 'string' || !HANDLE.test(meta.author)) err('meta', 'author must be a GitHub handle, without the @');
