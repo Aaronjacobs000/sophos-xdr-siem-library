@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug, searchText, hasBridge } from '../studio/core/library.js';
+import { validateMeta, validateEntry, packBundle, unpackBundle, compareExpected, entryId, slug, searchText, hasBridge, aliasesOf, ALIAS_LIMITS } from '../studio/core/library.js';
 import { scanText } from '../studio/core/scan.js';
 import { noteBlocks, aboutProblems, sentenceCount, NOTES_MAX, SUMMARY_MAX, NOTE_LINE_MAX } from '../studio/core/notes.js';
 import { loadLibrary, loadEntryFromDir, listBridges } from '../tools/lib/fs-library.mjs';
@@ -59,6 +59,28 @@ test('metadata rules', () => {
   const msgs = bad.map((p) => p.message).join('\n');
   for (const s of ['GitHub handle', 'license must be', 'sample_source', 'format must be', 'evil.exe is not allowed', 'samples.log is missing']) assert.match(msgs, new RegExp(s));
   assert.equal(slug('ESET PROTECT On-Prem'), 'eset-protect-on-prem');
+});
+
+test('aliases: an optional list of other names, checked and searched', async () => {
+  const good = { vendor: 'Acme', product: 'Gateway', versions: [], format: 'json', ship_method: 'syslog', author: 'octocat', license: 'MIT', sample_source: 'synthetic', reference_time: '2026-10-13T00:00:00Z', tested: { emulator: '0.1.0', tenant: null }, summary: 'These parsers read Acme Gateway JSON logs sent over syslog to the data collector. Every line stays in the generic schema.', parsers: [{ name: 'ACME_GW_JSON_PARENT', file: 'ACME_GW_JSON_PARENT.parser.txt', role: 'parent' }] };
+  const errors = (m) => validateMeta(m).filter((p) => p.level === 'error').map((p) => p.message);
+  assert.deepEqual(errors({ ...good, aliases: ['Acme GW', 'Roadrunner/400'] }), []);
+  assert.deepEqual(errors(good), []);
+  for (const bad of [[], 'Acme GW', ['ok', ''], ['ok', 7], [' padded'], ['x'.repeat(ALIAS_LIMITS.length + 1)], Array.from({ length: ALIAS_LIMITS.count + 1 }, (_, i) => `name ${i}`)]) {
+    assert.match(errors({ ...good, aliases: bad }).join('\n'), /aliases must list/, JSON.stringify(bad));
+  }
+  assert.match(errors({ ...good, aliases: ['GW', 'gw'] }).join('\n'), /"gw" is already/);
+  assert.match(errors({ ...good, aliases: ['gateway'] }).join('\n'), /"gateway" is already the vendor, the product or another alias/);
+  assert.deepEqual(aliasesOf({ aliases: ['AS400', 3, ' '] }), ['AS400']);
+  assert.deepEqual(aliasesOf({ aliases: 'AS400' }), []);
+  assert.ok(searchText({ ...good, aliases: ['Roadrunner/400'] }).includes('roadrunner/400'));
+  assert.equal(searchText(good).includes('roadrunner'), false);
+  // The IBM i entry is found by the names people know it by.
+  const lib = await loadLibrary(ROOT);
+  for (const q of ['as400', 'as/400', 'iseries', 'system i']) {
+    assert.ok(lib.filter((e) => searchText(e.meta).includes(q)).some((e) => e.id === 'ibm/ibm-i-security-audit-journal'), q);
+  }
+  for (const e of lib) assert.deepEqual(validateMeta(e.meta).filter((p) => /aliases/.test(p.message)), [], e.id);
 });
 
 test('notes take up to 3000 characters', () => {

@@ -7,7 +7,7 @@ import { state } from '../store.js';
 import { call } from '../emulator-client.js';
 import { libraryForLint, enginePayload } from './test.js';
 import { problemRow, SHIP_LABELS, FORMAT_LABELS } from './common.js';
-import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, vendorNames, FORMATS, LICENSES } from '../../core/library.js';
+import { entryId, entryFiles, packBundle, expectedFrom, bridgeOf, aliasesOf, vendorNames, FORMATS, LICENSES } from '../../core/library.js';
 import { makeZip } from '../../core/zip.js';
 import { NOTE_SECTIONS } from '../../core/notes.js';
 import { TOOL_VERSION, BRANCH } from '../../core/version.js';
@@ -22,6 +22,7 @@ export function draftEntry(results) {
   const meta = {
     vendor: (plan && plan.vendor) || state.source.vendor || (origin && origin.vendor) || '',
     product: (plan && plan.product) || state.source.product || (origin && origin.product) || '',
+    ...(aliasesOf(origin).length ? { aliases: [...aliasesOf(origin)] } : {}),
     versions: state.source.version ? [state.source.version] : origin ? origin.versions || [] : [],
     format: plan ? FORMAT_FROM_ANALYSIS[plan.format] || 'other' : origin ? origin.format : 'other',
     ship_method: state.source.shipMethod || (origin && origin.ship_method) || 'syslog',
@@ -65,6 +66,7 @@ export function openShare() {
   const vendor = h('input', { class: 'input', value: m.vendor });
   const product = h('input', { class: 'input', value: m.product });
   const versions = h('input', { class: 'input', value: m.versions.join(', '), placeholder: 'for example 11.1, 12' });
+  const aliases = h('input', { class: 'input', value: aliasesOf(m).join(', '), placeholder: 'for example AS400, AS/400 (optional)' });
   const author = h('input', { class: 'input', value: m.author, placeholder: 'your-github-handle', autocomplete: 'username' });
   const format = select(FORMATS.map((f) => ({ value: f, label: FORMAT_LABELS[f] || f })), m.format, () => {}, { class: 'input' });
   const ship = select(Object.entries(SHIP_LABELS).map(([value, label]) => ({ value, label })), m.ship_method, () => {}, { class: 'input' });
@@ -85,6 +87,7 @@ export function openShare() {
     h('h2', { id: 'share-h', text: 'Share to the library' }),
     h('p', { class: 'sub' }, 'The library lives in a public GitHub repo. The page packages your parsers with these details and runs the same checks as the repo, then you submit with your own GitHub account. ', ext(githubUrl('/blob/main/CONTRIBUTING.md'), 'How contributing works')),
     h('div', { class: 'fields' }, field('Vendor', vendor), field('Product', product)),
+    field('Other names', aliases, 'Optional. Other names people search for the product by, such as a former name, separated by commas. The library search finds the entry by them.'),
     h('div', { class: 'fields' }, field('Versions seen', versions), field('Your GitHub handle', author, 'Shown as the author. It must match the account you submit from.')),
     h('div', { class: 'fields' }, field('Log format', format), field('Shipped by', ship)),
     h('div', { class: 'fields' }, field('Samples are', source), field('License', license)),
@@ -102,10 +105,12 @@ export function openShare() {
     Object.assign(m, {
       vendor: vendor.value.trim(), product: product.value.trim(),
       versions: versions.value.split(',').map((v) => v.trim()).filter(Boolean),
+      aliases: aliases.value.split(',').map((v) => v.trim()).filter(Boolean),
       author: state.shareAuthor, format: format.value, ship_method: ship.value, license: license.value, sample_source: source.value,
       docs: docs.value.split(/\s+/).map((d) => d.trim()).filter(Boolean), summary: summary.value.replace(/\s+/g, ' ').trim(), notes: notes.value.trim(),
       reference_time: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     });
+    if (!m.aliases.length) delete m.aliases;
     entry.id = entryId(m);
   }
 

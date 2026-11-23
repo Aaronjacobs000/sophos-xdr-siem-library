@@ -8,7 +8,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseQuery, matches, ruleQueryProblems, regexLimits, pinnedSensorTypes, schemaFromQlName, valuesAt, QlError } from '../studio/core/ql.js';
-import { compileRules, ruleHits, compareTests, testedState, parserLabel } from '../studio/core/rules.js';
+import { compileRules, ruleHits, compareTests, testedState, parserLabel, ruleSearchText } from '../studio/core/rules.js';
+import { aliasesOf } from '../studio/core/library.js';
 import { validateRuleEntry, crossLibraryProblems, coveragePatterns, sharedTechniques, readCaseRuleYaml, caseRuleTitles } from '../tools/lib/rules.mjs';
 import { loadRules, loadRuleEntry, loadCoverage } from '../tools/lib/fs-rules.mjs';
 import { loadLibrary } from '../tools/lib/fs-library.mjs';
@@ -421,4 +422,17 @@ test('parserLabel names a parser entry without saying the vendor twice', () => {
   assert.equal(parserLabel({ vendor: '1Password', product: '1Password Business' }), '1Password Business');
   assert.equal(parserLabel({ vendor: 'GitHub', product: 'GitHub Enterprise Cloud audit log' }), 'GitHub Enterprise Cloud audit log');
   assert.equal(parserLabel({ vendor: 'Acme', product: '' }), 'Acme');
+});
+
+test('the Rules search finds rule entries by the aliases of the parser they need', () => {
+  const meta = { kind: 'detection', title: 'Acme admin changes', vendor: 'Acme', product: 'Gateway', parser: 'parsers/acme/gateway' };
+  assert.ok(ruleSearchText(meta, [], ['Roadrunner/400']).includes('roadrunner/400'));
+  assert.equal(ruleSearchText(meta, []).includes('roadrunner'), false);
+  assert.equal(ruleSearchText(meta, [], 'not a list').includes('not a list'), false);
+  // Both IBM i rule entries, through the IBM i parser entry's aliases.
+  const parserOf = (m) => library.find((e) => `parsers/${e.id}` === m.parser);
+  for (const q of ['as400', 'as/400', 'iseries']) {
+    const found = rules.filter((r) => ruleSearchText(r.meta, [], aliasesOf(parserOf(r.meta) && parserOf(r.meta).meta)).includes(q)).map((r) => r.id).sort();
+    assert.deepEqual(found, ['ibm/ibm-i-one-case-per-system', 'ibm/ibm-i-security-changes-and-intrusion-events'], q);
+  }
 });

@@ -55,6 +55,10 @@ Both are plain text. The page shows sections, bullets and paragraphs, and shows 
 "notes": "Setup:\n- Set the log format to CEF under System > Logging.\n\nField mapping:\n- Traffic lines go to Netflow with the addresses, ports and action.\n\nKnown gaps:\n- IPS lines stay generic."
 ```
 
+### Other names
+
+If people know the product by another name, such as a former one, list it in `aliases` in `meta.json` (or **Other names** in the share dialog), as `"aliases": ["AS400", "AS/400", "iSeries", "System i"]` does for IBM i. The Parsers search, and the Rules search for rules that need the entry, find it by these names. List names people search for, not marketing keywords: up to 8, each up to 40 characters. Leave the field out when there are none.
+
 ## What the checks look at
 
 Every pull request that touches `parsers/` and every parser issue form is checked with the code on the main branch:
