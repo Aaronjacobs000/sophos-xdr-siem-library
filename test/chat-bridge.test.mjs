@@ -450,6 +450,25 @@ test('short IDs: a Teams command and a Slack button on an E-01167 case find it b
   assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
 });
 
+// Sophos Fusion issues short IDs like F-08717 beside CSE00042 and E-01167 since 26/11/2026.
+test('short IDs: F-08717 parses like E-01167, in any case, and a Teams command finds it by short ID', async () => {
+  const cfg = settings(ENV);
+  for (const ref of ['F-08717', 'f-08717']) {
+    assert.deepEqual(parseCommand(`active ${ref} on it`, cfg), { kind: 'status', ref, status: 'active', text: 'on it' }, ref);
+    assert.deepEqual(parseCommand(`approve ${ref} AP-7K2M9QX4`, cfg), { kind: 'approve', ref, request: 'AP-7K2M9QX4' }, ref);
+  }
+  for (const ref of ['F-', 'F08717', 'F-0A']) assert.equal(parseCommand(`active ${ref}`, cfg), null, ref);
+
+  kase = fusionCase({ shortId: 'F-08717' });
+  const c = ctx();
+  const res = await worker.fetch(teamsRequest('<at>Fusion</at> active f-08717 on it'), ENV, c);
+  await c.settle();
+  assert.match((await res.json()).text, /^F-08717 is now Active\./);
+  const searches = calls.filter((x) => x.url.endsWith('/graphql')).map((x) => JSON.parse(x.body)).filter((b) => b.query.includes('cases(arguments'));
+  assert.deepEqual(searches.map((b) => b.variables.q), ["shortId = 'F-08717'"]);
+  assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
+});
+
 test('short IDs: the Teams usage names both formats', async () => {
   const reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> help'), ENV, ctx())).json();
   assert.match(reply.text, /A case is its ID, such as CSE00042 or E-01167,/);

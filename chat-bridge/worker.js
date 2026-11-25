@@ -17,8 +17,8 @@
 // console: "[chat-sync] Approval decision: approve AP-7K2M9QX4 by Jane Analyst via Teams."
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// Sophos Fusion case short IDs: CSE00042 and, since 18/11/2026, E-01167.
-const SHORT_ID = /^(?:CSE\d{3,10}|E-\d{3,10})$/i;
+// Sophos Fusion case short IDs: CSE00042, since 18/11/2026 E-01167, and since 26/11/2026 F-08717.
+const SHORT_ID = /^(?:CSE\d{3,10}|[EF]-\d{3,10})$/i;
 const REQUEST_ID = /^AP-[A-Z2-9]{8}$/;
 const SLACK_TOLERANCE_SECONDS = 300;
 const TEAMS_BUDGET_MS = 4200;
