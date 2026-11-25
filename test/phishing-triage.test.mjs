@@ -58,8 +58,19 @@ test('a run by hand searches E-01167 and CSE00042 by short ID, in any case, and 
   assert.equal(manualRun('E-01167', { caseId: CASE_UUID }).search, false);
 });
 
-test('the 1.1.1 change notes describe the short ID fix, not the 1.1.0 change', () => {
-  assert.equal(TEMPLATE.version, '1.1.1');
-  assert.match(TEMPLATE.changeNotes, /E-01167/);
+// Sophos Fusion issues short IDs like F-08717 beside CSE00042 and E-01167 since 26/11/2026.
+test('a run by hand searches F-08717 by short ID, in any case', () => {
+  for (const ref of ['F-08717', 'f-08717']) {
+    const run = manualRun(ref, { found: [{ id: CASE_UUID }] });
+    assert.equal(run.shortId, true, ref);
+    assert.equal(run.query, "shortId = 'F-08717'", ref);
+    assert.equal(run.id, CASE_UUID, ref);
+  }
+  assert.equal(manualRun('F-09999').id, '');
+});
+
+test('the 1.1.2 change notes describe the F- short ID fix, not an earlier change', () => {
+  assert.equal(TEMPLATE.version, '1.1.2');
+  assert.match(TEMPLATE.changeNotes, /F-08717/);
   assert.doesNotMatch(TEMPLATE.changeNotes, /Ask for approval first/);
 });
