@@ -69,8 +69,25 @@ test('a run by hand searches F-08717 by short ID, in any case', () => {
   assert.equal(manualRun('F-09999').id, '');
 });
 
-test('the 1.1.2 change notes describe the F- short ID fix, not an earlier change', () => {
+// Since mid November 2026 a short ID is the region's first letter, a dash and five or more digits,
+// such as P-12345. Two letters (AP-23456789) or fewer digits (X-1234) are read as a full ID.
+test('a run by hand searches any region letter with five or more digits by short ID, in any case', () => {
+  for (const [ref, query] of [['P-12345', "shortId = 'P-12345'"], ['p-12345', "shortId = 'P-12345'"], ['A-1234567', "shortId = 'A-1234567'"], ['z-000001', "shortId = 'Z-000001'"]]) {
+    const run = manualRun(ref, { found: [{ id: CASE_UUID }] });
+    assert.equal(run.shortId, true, ref);
+    assert.equal(run.query, query, ref);
+    assert.equal(run.id, CASE_UUID, ref);
+  }
+  for (const ref of ['AP-23456789', 'X-1234', 'P-', 'P12345', 'P-1234A', 'CSE']) {
+    const run = manualRun(ref);
+    assert.equal(run.shortId, false, ref);
+    assert.equal(run.search, false, ref);
+    assert.equal(run.id, ref, ref);
+  }
+});
+
+test('the 1.1.2 change notes describe the short ID format fix, not an earlier change', () => {
   assert.equal(TEMPLATE.version, '1.1.2');
-  assert.match(TEMPLATE.changeNotes, /F-08717/);
+  assert.match(TEMPLATE.changeNotes, /P-12345/);
   assert.doesNotMatch(TEMPLATE.changeNotes, /Ask for approval first/);
 });

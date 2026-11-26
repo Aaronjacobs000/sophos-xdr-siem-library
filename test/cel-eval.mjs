@@ -42,6 +42,7 @@ const STRING_METHODS = {
   startsWith: (s, [x]) => s.startsWith(x),
   endsWith: (s, [x]) => s.endsWith(x),
   contains: (s, [x]) => s.includes(x),
+  matches: (s, [re]) => new RegExp(re).test(s),
   split: (s, [sep]) => s.split(sep),
   replace: (s, [a, b]) => s.split(a).join(b),
   trim: (s) => s.trim(),
