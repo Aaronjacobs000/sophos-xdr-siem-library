@@ -429,7 +429,7 @@ test('short IDs: E-01167 parses like CSE00042, in any case, and a Classic case I
     assert.deepEqual(parseCommand(`active ${ref} on it`, cfg), { kind: 'status', ref, status: 'active', text: 'on it' }, ref);
     assert.deepEqual(parseCommand(`approve ${ref} AP-7K2M9QX4`, cfg), { kind: 'approve', ref, request: 'AP-7K2M9QX4' }, ref);
   }
-  for (const ref of ['1-598868', 'E-', 'E01167', 'X-01167', 'AP-7K2M9QX4']) assert.equal(parseCommand(`active ${ref}`, cfg), null, ref);
+  for (const ref of ['1-598868', 'E-', 'E01167', 'X-1234', 'AP-7K2M9QX4']) assert.equal(parseCommand(`active ${ref}`, cfg), null, ref);
 });
 
 test('short IDs: a Teams command and a Slack button on an E-01167 case find it by short ID and change it', async () => {
@@ -469,7 +469,28 @@ test('short IDs: F-08717 parses like E-01167, in any case, and a Teams command f
   assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
 });
 
+// Since mid November 2026 a Sophos Fusion short ID is the region's first letter, a dash and five or
+// more digits, such as P-12345. Two letters (AP-23456789, an approval request ID) or fewer digits
+// (X-1234) are not a case.
+test('short IDs: any region letter with five or more digits parses, in any case, and a Teams command finds it', async () => {
+  const cfg = settings(ENV);
+  for (const ref of ['P-12345', 'p-12345', 'A-1234567', 'z-000001']) {
+    assert.deepEqual(parseCommand(`active ${ref} on it`, cfg), { kind: 'status', ref, status: 'active', text: 'on it' }, ref);
+    assert.deepEqual(parseCommand(`approve ${ref} AP-23456789`, cfg), { kind: 'approve', ref, request: 'AP-23456789' }, ref);
+  }
+  for (const ref of ['AP-23456789', 'X-1234', 'P-', 'P12345', 'P-1234A', 'P-12345-1']) assert.equal(parseCommand(`active ${ref}`, cfg), null, ref);
+
+  kase = fusionCase({ shortId: 'P-123456' });
+  const c = ctx();
+  const res = await worker.fetch(teamsRequest('<at>Fusion</at> active p-123456 on it'), ENV, c);
+  await c.settle();
+  assert.match((await res.json()).text, /^P-123456 is now Active\./);
+  const searches = calls.filter((x) => x.url.endsWith('/graphql')).map((x) => JSON.parse(x.body)).filter((b) => b.query.includes('cases(arguments'));
+  assert.deepEqual(searches.map((b) => b.variables.q), ["shortId = 'P-123456'"]);
+  assert.deepEqual(mutations()[0].variables.i, { id: CASE_ID, primaryStatusId: STATUS.active });
+});
+
 test('short IDs: the Teams usage names both formats', async () => {
   const reply = await (await worker.fetch(teamsRequest('<at>Fusion</at> help'), ENV, ctx())).json();
-  assert.match(reply.text, /A case is its ID, such as CSE00042 or E-01167,/);
+  assert.match(reply.text, /A case is its ID, such as P-12345 or CSE00042,/);
 });
