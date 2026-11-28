@@ -122,7 +122,7 @@ The tests start a local mock of the token endpoint, the activityLogging resource
 
 ## References
 
-- Workday REST API directory, Privacy service v1 (the activityLogging resource, its parameters, the userActivityTracking entry, errors, the System Auditing domain and System scope): https://community.workday.com/sites/default/files/file-hosting/restapi/privacy_v1_20261003_oas2.json
+- Workday REST API directory, Privacy service v1 (the activityLogging resource, its parameters, the userActivityTracking entry, errors, the System Auditing domain and System scope): https://community.workday.com/sites/default/files/file-hosting/restapi/privacy_v1_20261121_oas2.json
 - User activity logging (activity categories, writes about every 2 minutes, up to 250,000 results, 30 days kept): https://doc.workday.com/admin-guide/en-us/manage-workday/tenant-configuration/user-activity-logging/unv1636547598141.html
 - Limitations and availability (429 when a tenant is busy, the first page builds a cache): https://doc.workday.com/admin-guide/en-us/manage-workday/tenant-configuration/it-administrator-resources/limitations-and-availability/dan1370797408285.html
 - Registering an API client with a refresh token (Data Lake, the same steps): https://doc.workday.com/admin-guide/en-us/workday-data-cloud/data-out/workday-data-lake/register-api-client-for-data-lake--refresh-token-g.html
